@@ -267,6 +267,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
 JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
                                    JnjvmClassLoader& JCL, JavaObject* loader,
                                    Jnjvm* I) : allocator(Alloc) {
+  llvm_gcroot(loader, 0);
   bootstrapLoader = JCL.bootstrapLoader;
   TheCompiler = bootstrapLoader->getCompiler()->Create("Applicative loader");
   
@@ -281,7 +282,7 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
 
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
   loadClassMethod = 
-    loader->getClass()->asClass()->lookupMethodDontThrow(
+    JavaObject::getClass(loader)->asClass()->lookupMethodDontThrow(
         meth->name, meth->type, false, true, &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
 
@@ -855,8 +856,8 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   vmdata = 
     (VMClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
   
-  if (!vmdata) {
-    loader->acquire();
+  if (vmdata == NULL) {
+    JavaObject::acquire(loader);
     vmdata = 
       (VMClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
     if (!vmdata) {
@@ -864,9 +865,9 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
       JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
                                                      loader, vm);
       vmdata = VMClassLoader::allocate(JCL);
-      (upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)vmdata));
+      upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)vmdata);
     }
-    loader->release();
+    JavaObject::release(loader);
   } else {
     JCL = vmdata->getClassLoader();
   }

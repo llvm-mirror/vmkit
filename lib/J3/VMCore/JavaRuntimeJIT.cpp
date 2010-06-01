@@ -155,13 +155,14 @@ extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
   JavaMethod* dmeth = lookup->lookupMethodDontThrow(utf8, sign->keyName, false,
                                                     true, 0);
   if (!dmeth) {
-    assert((obj->getClass()->isClass() && 
-            obj->getClass()->asClass()->isInitializing()) &&
+    assert((JavaObject::getClass(obj)->isClass() && 
+            JavaObject::getClass(obj)->asClass()->isInitializing()) &&
            "Class not ready in a virtual lookup.");
     // Arg, the bytecode is buggy! Perform the lookup on the object class
     // and do not update offset.
-    lookup = obj->getClass()->isArray() ? obj->getClass()->super : 
-                                       obj->getClass()->asClass();
+    lookup = JavaObject::getClass(obj)->isArray() ?
+      JavaObject::getClass(obj)->super : 
+      JavaObject::getClass(obj)->asClass();
     dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
   } else {
     *offset = dmeth->offset;
@@ -366,28 +367,31 @@ extern "C" void* j3StartJNI(uint32* localReferencesNumber,
 // Never throws.
 extern "C" void j3JavaObjectAquire(JavaObject* obj) {
   llvm_gcroot(obj, 0);
-  obj->acquire();
+  JavaObject::acquire(obj);
 }
 
 // Never throws.
 extern "C" void j3JavaObjectRelease(JavaObject* obj) {
   llvm_gcroot(obj, 0);
-  obj->release();
+  JavaObject::release(obj);
 }
 
 // Does not call any Java code. Can not yield a GC.
 extern "C" void j3ThrowException(JavaObject* obj) {
+  llvm_gcroot(obj, 0);
   return JavaThread::get()->throwException(obj);
 }
 
 // Never throws.
 extern "C" void j3OverflowThinLock(JavaObject* obj) {
-  obj->overflowThinLock();
+  llvm_gcroot(obj, 0);
+  JavaObject::overflowThinLock(obj);
 }
 
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3NullPointerException() {
   JavaObject *exc = 0;
+  llvm_gcroot(exc, 0);
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -408,6 +412,7 @@ extern "C" JavaObject* j3NullPointerException() {
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3NegativeArraySizeException(sint32 val) {
   JavaObject *exc = 0;
+  llvm_gcroot(exc, 0);
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -428,6 +433,7 @@ extern "C" JavaObject* j3NegativeArraySizeException(sint32 val) {
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3OutOfMemoryError(sint32 val) {
   JavaObject *exc = 0;
+  llvm_gcroot(exc, 0);
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -448,6 +454,7 @@ extern "C" JavaObject* j3OutOfMemoryError(sint32 val) {
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3StackOverflowError() {
   JavaObject *exc = 0;
+  llvm_gcroot(exc, 0);
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -468,6 +475,7 @@ extern "C" JavaObject* j3StackOverflowError() {
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3ArithmeticException() {
   JavaObject *exc = 0;
+  llvm_gcroot(exc, 0);
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -537,6 +545,7 @@ extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
 extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT,
                                              JavaVirtualTable* VT2) {
   JavaObject *exc = 0;
+  llvm_gcroot(exc, 0);
   JavaThread *th = JavaThread::get();
 
   BEGIN_NATIVE_EXCEPTION(1)
@@ -556,6 +565,7 @@ extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT,
 // Create an exception then throws it.
 extern "C" void j3ThrowExceptionFromJIT() {
   JavaObject *exc = 0;
+  llvm_gcroot(exc, 0);
   JavaThread *th = JavaThread::get();
   
   BEGIN_NATIVE_EXCEPTION(1)
@@ -594,7 +604,7 @@ extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {
 extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   llvm_gcroot(obj, 0);
   JavaThread *th = JavaThread::get();
-  UserCommonClass* cl = obj->getClass();
+  UserCommonClass* cl = JavaObject::getClass(obj);
   void* result = NULL;
   
   BEGIN_NATIVE_EXCEPTION(1)

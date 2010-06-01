@@ -547,7 +547,7 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   }
  
   const Typedef* type = field->getSignature();
-  val->decapsulePrimitive(vm, &buf, type);
+  JavaObject::decapsulePrimitive(val, vm, &buf, type);
   
 
   if (type->isPrimitive()) {

@@ -18,5 +18,5 @@ extern "C" uint16_t MMTkCharAt(JavaString* str, uint32_t index) {
 }
 
 extern "C" JavaObject* MMTkGetClass(JavaObject* obj) {
-  return obj->getClass()->delegatee[0];
+  return JavaObject::getClass(obj)->delegatee[0];
 }

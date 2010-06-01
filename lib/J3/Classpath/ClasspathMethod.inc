@@ -124,7 +124,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
     
     if (isVirtual(meth->access)) {
       verifyNull(obj);
-      UserCommonClass* objCl = obj->getClass();
+      UserCommonClass* objCl = JavaObject::getClass(obj);
       if (!(objCl->isAssignableFrom(cl))) {
         vm->illegalArgumentException("<this> is not a valid type");
       }
@@ -143,7 +143,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
     JavaObject** ptr = (JavaObject**)(void*)(args->elements);
     Typedef* const* arguments = sign->getArgumentsType();
     for (sint32 i = 0; i < size; ++i) {
-      ptr[i]->decapsulePrimitive(vm, &buf[i], arguments[i]);
+      JavaObject::decapsulePrimitive(ptr[i], vm, &buf[i], arguments[i]);
       if (buf[i].l == reinterpret_cast<jobject>(ptr[i])) {
         buf[i].l = reinterpret_cast<jobject>(&ptr[i]);
       }
@@ -167,7 +167,8 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       exc = th->getJavaException();                                            \
     } END_CATCH;                                                               \
     if (exc) {                                                                 \
-      if (exc->getClass()->isAssignableFrom(vm->upcalls->newException)) {      \
+      if (JavaObject::getClass(exc)->isAssignableFrom(                         \
+              vm->upcalls->newException)) {                                    \
         th->clearException();                                                  \
         th->getJVM()->invocationTargetException(exc);                          \
       } else {                                                                 \

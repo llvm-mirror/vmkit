@@ -76,7 +76,7 @@ extern "C" void EmptyTracer(void*, uintptr_t) {}
 
 /// Method for scanning the root of an object.
 extern "C" void JavaObjectTracer(JavaObject* obj, uintptr_t closure) {
-  CommonClass* cl = obj->getClass();
+  CommonClass* cl = JavaObject::getClass(obj);
   assert(cl && "No class");
   mvm::Collector::markAndTraceRoot(
       cl->classLoader->getJavaClassLoaderPtr(), closure);
@@ -85,7 +85,7 @@ extern "C" void JavaObjectTracer(JavaObject* obj, uintptr_t closure) {
 /// Method for scanning an array whose elements are JavaObjects. This method is
 /// called by all non-native Java arrays.
 extern "C" void ArrayObjectTracer(ArrayObject* obj, uintptr_t closure) {
-  CommonClass* cl = obj->getClass();
+  CommonClass* cl = JavaObject::getClass(obj);
   assert(cl && "No class");
   mvm::Collector::markAndTraceRoot(
       cl->classLoader->getJavaClassLoaderPtr(), closure);
@@ -106,7 +106,7 @@ extern "C" void JavaArrayTracer(JavaArray* obj, uintptr_t closure) {
 
 /// Method for scanning regular objects.
 extern "C" void RegularObjectTracer(JavaObject* obj, uintptr_t closure) {
-  Class* cl = obj->getClass()->asClass();
+  Class* cl = JavaObject::getClass(obj)->asClass();
   assert(cl && "Not a class in regular tracer");
   mvm::Collector::markAndTraceRoot(
       cl->classLoader->getJavaClassLoaderPtr(), closure);

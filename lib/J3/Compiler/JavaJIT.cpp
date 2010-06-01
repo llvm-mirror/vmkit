@@ -100,7 +100,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   JavaObject* source = TheCompiler->getFinalObject(obj);
   if (source) {
     canBeDirect = true;
-    CommonClass* sourceClass = source->getClass();
+    CommonClass* sourceClass = JavaObject::getClass(source);
     Class* lookup = sourceClass->isArray() ? sourceClass->super :
                                              sourceClass->asClass();
     meth = lookup->lookupMethodDontThrow(name, signature->keyName, false,
@@ -2125,7 +2125,8 @@ void JavaJIT::getStaticField(uint16 index) {
           JavaObject* val = field->getObjectField(Obj);
           JnjvmClassLoader* JCL = field->classDef->classLoader;
           Value* V = TheCompiler->getFinalObject(val, sign->assocClass(JCL));
-          CommonClass* cl = mvm::Collector::begOf(val) ? val->getClass() : NULL;
+          CommonClass* cl = mvm::Collector::begOf(val) ?
+              JavaObject::getClass(val) : NULL;
           push(V, false, cl);
         } else {
           Value* V = CallInst::Create(intrinsics->GetFinalObjectFieldFunction, ptr,

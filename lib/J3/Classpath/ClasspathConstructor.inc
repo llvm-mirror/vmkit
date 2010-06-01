@@ -110,7 +110,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       Typedef* const* arguments = sign->getArgumentsType();
       // Store the arguments, unboxing primitives if necessary.
       for (sint32 i = 0; i < size; ++i) {
-        ptr[i]->decapsulePrimitive(vm, &buf[i], arguments[i]);
+        JavaObject::decapsulePrimitive(ptr[i], vm, &buf[i], arguments[i]);
         if (buf[i].l == reinterpret_cast<jobject>(ptr[i])) {
           buf[i].l = reinterpret_cast<jobject>(&ptr[i]);
         }
@@ -123,7 +123,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
         excp = th->getJavaException();
       } END_CATCH;
       if (excp) {
-        if (excp->getClass()->isAssignableFrom(vm->upcalls->newException)) {
+        if (JavaObject::getClass(excp)->isAssignableFrom(vm->upcalls->newException)) {
           th->clearException();
           // If it's an exception, we encapsule it in an
           // invocationTargetException

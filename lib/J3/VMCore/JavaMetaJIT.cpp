@@ -108,7 +108,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
 TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
   llvm_gcroot(obj, 0); \
   verifyNull(obj); \
-  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  UserClass* objCl = JavaObject::getClass(obj)->isArray() ? JavaObject::getClass(obj)->super : JavaObject::getClass(obj)->asClass(); \
   if (objCl == classDef || isFinal(access)) { \
     meth = this; \
   } else { \
@@ -170,7 +170,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   llvm_gcroot(obj, 0); \
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
-  UserClass* objCl = obj->getClass()->isArray() ? obj->getClass()->super : obj->getClass()->asClass(); \
+  UserClass* objCl = JavaObject::getClass(obj)->isArray() ? JavaObject::getClass(obj)->super : JavaObject::getClass(obj)->asClass(); \
   JavaMethod* meth = NULL; \
   if (objCl == classDef || isFinal(access)) { \
     meth = this; \
@@ -290,7 +290,7 @@ void Jnjvm::invokeFinalizer(gc* _obj) {
   JavaObject* obj = (JavaObject*)_obj;
   llvm_gcroot(obj, 0);
   JavaMethod* meth = upcalls->FinalizeObject;
-  UserClass* cl = obj->getClass()->asClass();
+  UserClass* cl = JavaObject::getClass(obj)->asClass();
   meth->invokeIntVirtualBuf(this, cl, obj, 0);
 }
 
@@ -298,6 +298,6 @@ bool Jnjvm::enqueueReference(gc* _obj) {
   JavaObject* obj = (JavaObject*)_obj;
   llvm_gcroot(obj, 0);
   JavaMethod* meth = upcalls->EnqueueReference;
-  UserClass* cl = obj->getClass()->asClass();
+  UserClass* cl = JavaObject::getClass(obj)->asClass();
   return (bool)meth->invokeIntSpecialBuf(this, cl, obj, 0);
 }

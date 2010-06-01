@@ -44,14 +44,15 @@ jint len) {
     return;
   }
   
-  if (!(src->getClass()->isArray() && dst->getClass()->isArray())) {
+  if (!(JavaObject::getClass(src)->isArray() &&
+        JavaObject::getClass(dst)->isArray())) {
     th->pendingException = vm->CreateArrayStoreException(
       (JavaVirtualTable*)dst->getVirtualTable());
     return;
   }
   
-  UserClassArray* ts = (UserClassArray*)src->getClass();
-  UserClassArray* td = (UserClassArray*)dst->getClass();
+  UserClassArray* ts = (UserClassArray*)JavaObject::getClass(src);
+  UserClassArray* td = (UserClassArray*)JavaObject::getClass(dst);
   UserCommonClass* dstType = td->baseClass();
   UserCommonClass* srcType = ts->baseClass();
 
@@ -83,7 +84,7 @@ jint len) {
     while (i < sstart + len && !doThrow) {
       cur = ((ArrayObject*)src)->elements[i];
       if (cur) {
-        if (!(cur->getClass()->isAssignableFrom(dstType))) {
+        if (!(JavaObject::getClass(cur)->isAssignableFrom(dstType))) {
           doThrow = true;
           length = i;
         }
@@ -114,7 +115,7 @@ JavaObject* obj) {
 
   llvm_gcroot(obj, 0);
   if (obj == NULL) return 0;
-  return obj->hashCode();
+  return JavaObject::hashCode(obj);
 }
 
 }

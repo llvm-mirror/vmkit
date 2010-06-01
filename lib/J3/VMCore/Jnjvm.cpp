@@ -225,12 +225,12 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //     ExceptionInInitializerError cannot be created because an
     //     OutOfMemoryError occurs, then instead use an OutOfMemoryError object
     //     in place of E in the following step.
-    if (exc->getClass()->isAssignableFrom(vm->upcalls->newException)) {
+    if (JavaObject::getClass(exc)->isAssignableFrom(vm->upcalls->newException)) {
       Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
       Jnjvm* vm = self->getJVM();
       obj = clExcp->doNew(vm);
-      if (!obj) {
+      if (obj == NULL) {
         fprintf(stderr, "implement me");
         abort();
       }
@@ -1244,7 +1244,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 
   if (exc != NULL) {
     fprintf(stderr, "Exception %s while bootstrapping VM.",
-        UTF8Buffer(exc->getClass()->name).cString());
+        UTF8Buffer(JavaObject::getClass(exc)->name).cString());
   } else {
 #ifdef SERVICE
     thread->ServiceException = vm->upcalls->newThrowable->doNew(vm);

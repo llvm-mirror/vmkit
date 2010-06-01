@@ -404,7 +404,7 @@ JavaObject* Cl, JavaObject* obj) {
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-  res = obj->instanceOf(cl);
+  res = JavaObject::instanceOf(obj, cl);
 
   END_NATIVE_EXCEPTION
 

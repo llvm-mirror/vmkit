@@ -22,12 +22,12 @@ using namespace j3;
 
 uint16_t JavaObject::hashCodeGenerator = 1;
 
-void JavaObject::waitIntern(struct timeval* info, bool timed) {
+void JavaObject::waitIntern(
+    JavaObject* self, struct timeval* info, bool timed) {
   JavaLock* l = 0;
-  JavaObject* self = this;
   llvm_gcroot(self, 0);
 
-  if (owner()) {
+  if (owner(self)) {
     l = self->lock.changeToFatlock(self);
     JavaThread* thread = JavaThread::get();
     thread->waitsOn = l;
@@ -102,7 +102,7 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
         } else {
           assert(!thread->prevWaiting && "Inconstitent state");
           // Notify lost, notify someone else.
-          notify();
+          notify(self);
         }
       } else {
         assert(!thread->prevWaiting && !thread->nextWaiting &&
@@ -121,27 +121,24 @@ void JavaObject::waitIntern(struct timeval* info, bool timed) {
     JavaThread::get()->getJVM()->illegalMonitorStateException(self);
   }
   
-  assert(owner() && "Not owner after wait");
+  assert(owner(self) && "Not owner after wait");
 }
 
-void JavaObject::wait() {
-  JavaObject* self = this;
+void JavaObject::wait(JavaObject* self) {
   llvm_gcroot(self, 0);
-  self->waitIntern(0, false);
+  waitIntern(self, NULL, false);
 }
 
-void JavaObject::timedWait(struct timeval& info) {
-  JavaObject* self = this;
+void JavaObject::timedWait(JavaObject* self, struct timeval& info) {
   llvm_gcroot(self, 0);
-  self->waitIntern(&info, true);
+  waitIntern(self, &info, true);
 }
 
-void JavaObject::notify() {
+void JavaObject::notify(JavaObject* self) {
   JavaLock* l = 0;
-  JavaObject* self = this;
   llvm_gcroot(self, 0);
 
-  if (owner()) {
+  if (owner(self)) {
     l = self->lock.getFatLock();
     if (l) {
       JavaThread* cur = l->firstThread;
@@ -178,15 +175,14 @@ void JavaObject::notify() {
   } else {
     JavaThread::get()->getJVM()->illegalMonitorStateException(self);
   }
-  assert(owner() && "Not owner after notify");
+  assert(owner(self) && "Not owner after notify");
 }
 
-void JavaObject::notifyAll() {
+void JavaObject::notifyAll(JavaObject* self) {
   JavaLock* l = 0;
-  JavaObject* self = this;
   llvm_gcroot(self, 0);
   
-  if (owner()) {
+  if (owner(self)) {
     l = self->lock.getFatLock();
     if (l) {
       JavaThread* cur = l->firstThread;
@@ -205,17 +201,16 @@ void JavaObject::notifyAll() {
     JavaThread::get()->getJVM()->illegalMonitorStateException(self);
   }
 
-  assert(owner() && "Not owner after notifyAll");
+  assert(owner(self) && "Not owner after notifyAll");
 }
 
-void JavaObject::decapsulePrimitive(Jnjvm *vm, jvalue* buf,
+void JavaObject::decapsulePrimitive(JavaObject* obj, Jnjvm *vm, jvalue* buf,
                                     const Typedef* signature) {
 
-  JavaObject* obj = this;
   llvm_gcroot(obj, 0);
 
   if (!signature->isPrimitive()) {
-    if (obj && !(obj->getClass()->isOfTypeName(signature->getName()))) {
+    if (obj && !(getClass(obj)->isOfTypeName(signature->getName()))) {
       vm->illegalArgumentException("wrong type argument");
     }
     (*buf).l = reinterpret_cast<jobject>(obj);
@@ -223,7 +218,7 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, jvalue* buf,
   } else if (obj == 0) {
     vm->illegalArgumentException("");
   } else {
-    UserCommonClass* cl = obj->getClass();
+    UserCommonClass* cl = getClass(obj);
     UserClassPrimitive* value = cl->toPrimitive(vm);
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)signature;
 
@@ -332,10 +327,8 @@ void JavaObject::decapsulePrimitive(Jnjvm *vm, jvalue* buf,
   return;
 }
 
-bool JavaObject::instanceOf(UserCommonClass* cl) {
-  JavaObject* self = this;
+bool JavaObject::instanceOf(JavaObject* self, UserCommonClass* cl) {
   llvm_gcroot(self, 0);
-
-  if (!self) return false;
-  else return self->getClass()->isAssignableFrom(cl);
+  if (self == NULL) return false;
+  else return getClass(self)->isAssignableFrom(cl);
 }

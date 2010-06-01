@@ -172,7 +172,7 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
     return SI->second;
   } else {
     assert(str && "No string given");
-    LLVMClassInfo* LCI = getClassInfo(str->getClass()->asClass());
+    LLVMClassInfo* LCI = getClassInfo(JavaObject::getClass(str)->asClass());
     const llvm::Type* Ty = LCI->getVirtualType();
     Module& Mod = *getLLVMModule();
     
@@ -311,7 +311,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
   
     if (mvm::Collector::begOf(obj)) {
       const Type* Ty = 0;
-      CommonClass* cl = obj->getClass();
+      CommonClass* cl = JavaObject::getClass(obj);
       
       if (cl->isArray()) {
         Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
@@ -616,7 +616,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaClass(CommonClass* cl) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
-  CommonClass* cl = obj->getClass();
+  CommonClass* cl = JavaObject::getClass(obj);
 
   if (cl->isArray()) {
     Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
@@ -657,7 +657,8 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
     std::vector<Constant*> Elmts;
     
     // JavaObject
-    Constant* CurConstant = CreateConstantForBaseObject(obj->getClass());
+    Constant* CurConstant =
+        CreateConstantForBaseObject(JavaObject::getClass(obj));
 
     for (uint32 j = 1; j <= cl->virtualVT->depth; ++j) {
       std::vector<Constant*> TempElts;
@@ -721,7 +722,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
-  Class* cl = str->getClass()->asClass();
+  Class* cl = JavaObject::getClass(str)->asClass();
   LLVMClassInfo* LCI = getClassInfo(cl);
   const StructType* STy = 
     dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
@@ -1249,7 +1250,7 @@ Constant* JavaAOTCompiler::CreateConstantFromIntArray(const T* val, const Type* 
   const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
   
   std::vector<Constant*> Cts;
-  Cts.push_back(CreateConstantForBaseObject(val->getClass()));
+  Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
   Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, val->size));
   
   std::vector<Constant*> Vals;
@@ -1275,7 +1276,7 @@ Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, const Type* T
   const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
   
   std::vector<Constant*> Cts;
-  Cts.push_back(CreateConstantForBaseObject(val->getClass()));
+  Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
   Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, val->size));
   
   std::vector<Constant*> Vals;
@@ -1301,14 +1302,14 @@ Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val)
   const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
   
   std::vector<Constant*> Cts;
-  Cts.push_back(CreateConstantForBaseObject(val->getClass()));
+  Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
   Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, val->size));
   
   std::vector<Constant*> Vals;
   for (sint32 i = 0; i < val->size; ++i) {
     if (val->elements[i]) {
       Vals.push_back(getFinalObject(val->elements[i],
-                                val->getClass()->asArrayClass()->baseClass()));
+          JavaObject::getClass(val)->asArrayClass()->baseClass()));
     } else {
       Vals.push_back(Constant::getNullValue(JavaIntrinsics.JavaObjectType));
     }
@@ -2191,13 +2192,13 @@ CommonClass* JavaAOTCompiler::getUniqueBaseClass(CommonClass* cl) {
 
   for (; I != E; ++I) {
     JavaObject* obj = (JavaObject*)(*I);
-    if (!VMClassLoader::isVMClassLoader(obj) && obj->instanceOf(cl)) {
-      if (currentClass) {
-        if (obj->getClass() != currentClass) {
+    if (!VMClassLoader::isVMClassLoader(obj) && JavaObject::instanceOf(obj, cl)) {
+      if (currentClass != NULL) {
+        if (JavaObject::getClass(obj) != currentClass) {
           return 0;
         }
       } else {
-        currentClass = obj->getClass();
+        currentClass = JavaObject::getClass(obj);
       }
     }
   }

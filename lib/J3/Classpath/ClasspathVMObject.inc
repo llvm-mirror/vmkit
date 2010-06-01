@@ -33,7 +33,7 @@ JavaObject* src) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  UserCommonClass* cl = src->getClass();
+  UserCommonClass* cl = JavaObject::getClass(src);
   size_t size = 0;
   if (cl->isArray()) {
     UserClassArray* array = cl->asArrayClass();
@@ -71,7 +71,7 @@ JavaObject* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  res = obj->getClass()->getClassDelegatee(vm);
+  res = JavaObject::getClass(obj)->getClassDelegatee(vm);
 
   END_NATIVE_EXCEPTION
 
@@ -89,7 +89,7 @@ JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  obj->notifyAll();
+  JavaObject::notifyAll(obj);
 
   END_NATIVE_EXCEPTION
 }
@@ -113,9 +113,9 @@ JavaObject* obj, jlong ms, jint ns) {
     struct timeval t;
     t.tv_sec = sec;
     t.tv_usec = usec;
-    obj->timedWait(t);
+    JavaObject::timedWait(obj, t);
   } else {
-    obj->wait();
+    JavaObject::wait(obj);
   }
 
   END_NATIVE_EXCEPTION
@@ -132,7 +132,7 @@ JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  obj->notify();
+  JavaObject::notify(obj);
 
   END_NATIVE_EXCEPTION
 }

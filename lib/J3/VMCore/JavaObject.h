@@ -234,14 +234,14 @@ private:
   
   /// waitIntern - internal wait on a monitor
   ///
-  void waitIntern(struct timeval *info, bool timed);
+  static void waitIntern(JavaObject* self, struct timeval *info, bool timed);
   
 public:
 
   /// getClass - Returns the class of this object.
   ///
-  UserCommonClass* getClass() const {
-    return ((JavaVirtualTable*)getVirtualTable())->cl;
+  static UserCommonClass* getClass(const JavaObject* self) {
+    return ((JavaVirtualTable*)self->getVirtualTable())->cl;
   }
 
   /// lock - The monitor of this object. Most of the time null.
@@ -250,51 +250,51 @@ public:
 
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///
-  void wait();
+  static void wait(JavaObject* self);
 
   /// timedWait - Java timed wait. Makes the current thread waiting on a
   /// monitor for the given amount of time.
   ///
-  void timedWait(struct timeval &info);
+  static void timedWait(JavaObject* self, struct timeval &info);
   
   /// notify - Java notify. Notifies a thread from the availability of the
   /// monitor.
   ///
-  void notify();
+  static void notify(JavaObject* self);
   
   /// notifyAll - Java notifyAll. Notifies all threads from the availability of
   /// the monitor.
   ///
-  void notifyAll();
+  static void notifyAll(JavaObject* self);
  
   /// overflowThinLock - Notify that the thin lock has overflowed.
   ///
-  void overflowThinLock() {
-    lock.overflowThinLock(this);
+  static void overflowThinLock(JavaObject* self) {
+    llvm_gcroot(self, 0);
+    self->lock.overflowThinLock(self);
   }
 
   /// instanceOf - Is this object's class of type the given class?
   ///
-  bool instanceOf(UserCommonClass* cl);
+  static bool instanceOf(JavaObject* self, UserCommonClass* cl);
 
   /// acquire - Acquire the lock on this object.
-  void acquire() {
-    JavaObject* self = this;
+  static void acquire(JavaObject* self) {
     llvm_gcroot(self, 0);
     self->lock.acquire(self);
   }
 
   /// release - Release the lock on this object
-  void release() {
-    JavaObject* self = this;
+  static void release(JavaObject* self) {
     llvm_gcroot(self, 0);
-    lock.release(self);
+    self->lock.release(self);
   }
 
   /// owner - Returns true if the current thread is the owner of this object's
   /// lock.
-  bool owner() {
-    return lock.owner();
+  static bool owner(JavaObject* self) {
+    llvm_gcroot(self, 0);
+    return self->lock.owner();
   }
 
 #ifdef SIGSEGV_THROW_NULL
@@ -305,24 +305,25 @@ public:
 #endif
   
   /// lockObj - Get the LockObj if the lock is a fat lock.
-  JavaLock* lockObj() {
-    return lock.getFatLock();
+  static JavaLock* lockObj(JavaObject* self) {
+    llvm_gcroot(self, 0);
+    return self->lock.getFatLock();
   }
 
   /// decapsulePrimitive - Based on the signature argument, decapsule
   /// obj as a primitive and put it in the buffer.
   ///
-  void decapsulePrimitive(Jnjvm* vm, jvalue* buf, const Typedef* signature);
+  static void decapsulePrimitive(JavaObject* self, Jnjvm* vm, jvalue* buf,
+                                 const Typedef* signature);
 
   static uint16_t hashCodeGenerator;
 
   /// hashCode - Return the hash code of this object.
-  uint32_t hashCode() {
-    JavaObject* self = this;
+  static uint32_t hashCode(JavaObject* self) {
     llvm_gcroot(self, 0);
     uintptr_t oldLock = self->lock.lock;
     uintptr_t val = (oldLock & mvm::HashMask) >> LockSystem::BitGC;
-    if (val) return val ^ (uintptr_t)getClass();
+    if (val) return val ^ (uintptr_t)getClass(self);
     else {
       if (hashCodeGenerator >= (mvm::HashMask >> LockSystem::BitGC))
         val = hashCodeGenerator = 1;
@@ -335,7 +336,7 @@ public:
       __sync_val_compare_and_swap(&(self->lock.lock), oldLock, newLock);
     } while ((self->lock.lock & mvm::HashMask)  == 0);
     return ((self->lock.lock & mvm::HashMask) >> LockSystem::BitGC) ^
-			(uintptr_t)getClass();
+			(uintptr_t)getClass(self);
   }
 };
 
