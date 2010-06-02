@@ -28,14 +28,15 @@ const int Reader::SeekEnd = SEEK_END;
 ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path,
                              bool temp) {
   FILE* fp = fopen(path, "r");
-  ArrayUInt8* res = 0;
+  ArrayUInt8* res = NULL;
+  llvm_gcroot(res, 0);
   if (fp != 0) {
     fseek(fp, 0, SeekEnd);
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
     UserClassArray* array = loader->upcalls->ArrayOfByte;
     res = (ArrayUInt8*)array->doNew((sint32)nbb, loader->allocator, temp);
-    if (fread(res->elements, nbb, 1, fp) == 0) {
+    if (fread(ArrayUInt8::getElements(res), nbb, 1, fp) == 0) {
       fprintf(stderr, "fread error\n");
       abort();  
     }
@@ -46,17 +47,17 @@ ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path,
 
 ArrayUInt8* Reader::openZip(JnjvmBootstrapLoader* loader, ZipArchive* archive,
                             const char* filename) {
-  ArrayUInt8* ret = 0;
+  ArrayUInt8* res = 0;
+  llvm_gcroot(res, 0);
   ZipFile* file = archive->getFile(filename);
   if (file != 0) {
     UserClassArray* array = loader->upcalls->ArrayOfByte;
-    ArrayUInt8* res = 
-      (ArrayUInt8*)array->doNew((sint32)file->ucsize, loader->allocator);
+    res = (ArrayUInt8*)array->doNew((sint32)file->ucsize, loader->allocator);
     if (archive->readFile(res, file) != 0) {
-      ret = res;
+      return res;
     }
   }
-  return ret;
+  return NULL;
 }
 
 void Reader::seek(uint32 pos, int from) {

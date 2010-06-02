@@ -253,7 +253,7 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC | JNJVM_ARRAY;
 }
 
-JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
+JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   if (n < 0)
     vm->negativeArraySizeException(n);
   else if (n > JavaArray::MaxArraySize)
@@ -262,20 +262,21 @@ JavaArray* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   return doNew(n);
 }
 
-JavaArray* UserClassArray::doNew(sint32 n) {
+JavaObject* UserClassArray::doNew(sint32 n) {
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
   UserCommonClass* cl = baseClass();
-
   uint32 logSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
   VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
-  JavaArray* res = (JavaArray*)gc::operator new(size, VT);
-  res->size = n;
+  res = (JavaObject*)gc::operator new(size, VT);
+  JavaArray::setSize(res, n);
   return res;
 }
 
-JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
-                                 bool temp) {
+JavaObject* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
+                                  bool temp) {
   UserCommonClass* cl = baseClass();
 
   uint32 logSize = cl->isPrimitive() ? 
@@ -283,17 +284,17 @@ JavaArray* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
   VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
  
-  JavaArray* res = 0;
+  JavaObject* res = 0;
 
   // If the array is not temporary, use the allocator.
   if (!temp) {
-    res = (JavaArray*)allocator.Allocate(size, "Array");
+    res = (JavaObject*)allocator.Allocate(size, "Array");
   } else {
     // Otherwise, allocate with the malloc
-    res = (JavaArray*)malloc(size);
+    res = (JavaObject*)malloc(size);
   }
   ((void**)res)[0] = VT;
-  res->size = n;
+  JavaArray::setSize(res, n);
   return res;
 }
 
@@ -1082,7 +1083,7 @@ ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
   res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(sign->nbArguments,vm);
 
   for (uint32 index = 0; index < sign->nbArguments; ++index) {
-    res->elements[index] = getClassType(vm, loader, arguments[index]);
+    ArrayObject::setElement(res, getClassType(vm, loader, arguments[index]), index);
   }
 
   return res;
@@ -1115,7 +1116,7 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
       UserCommonClass* cl = ctp->loadClass(idx);
       assert(cl->asClass() && "Wrong exception type");
       cl->asClass()->resolveClass();
-      res->elements[i] = cl->getClassDelegatee(vm);
+      ArrayObject::setElement(res, cl->getClassDelegatee(vm), i);
     }
     return res;
   }
@@ -1359,18 +1360,25 @@ ArrayUInt16* JavaMethod::toString() const {
   uint32 i = 0;
  
   for (sint32 j = 0; j < classDef->name->size; ++j) {
-    if (classDef->name->elements[j] == '/') res->elements[i++] = '.';
-    else res->elements[i++] = classDef->name->elements[j];
+    if (classDef->name->elements[j] == '/') {
+      ArrayUInt16::setElement(res, '.', i);
+    } else {
+      ArrayUInt16::setElement(res, classDef->name->elements[j], i);
+    }
+    i++;
   }
 
-  res->elements[i++] = '.';
+  ArrayUInt16::setElement(res, '.', i);
+  i++;
   
   for (sint32 j = 0; j < name->size; ++j) {
-    res->elements[i++] = name->elements[j];
+    ArrayUInt16::setElement(res, name->elements[j], i);
+    i++;
   }
   
   for (sint32 j = 0; j < type->size; ++j) {
-    res->elements[i++] = type->elements[j];
+    ArrayUInt16::setElement(res, type->elements[j], i);
+    i++;
   }
 
   return res;

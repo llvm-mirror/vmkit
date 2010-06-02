@@ -70,12 +70,12 @@ JavaObjectConstructor* cons) {
 }
 
 static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
-                                      JavaArray* args,
+                                      ArrayObject* args,
                                       JavaObject* Clazz, jint index) 
   __attribute__ ((noinline));
  
 static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
-                                      JavaArray* args,
+                                      ArrayObject* args,
                                       JavaObject* Clazz, jint index) {
   JavaObject* res = 0;
   JavaObject* excp = 0;
@@ -89,7 +89,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
   UserClass* cl = JavaObjectConstructor::getClass(cons);
-  sint32 nbArgs = args ? args->size : 0;
+  sint32 nbArgs = args ? ArrayObject::getSize(args) : 0;
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
 
@@ -105,7 +105,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
     if (cl) {
       cl->initialiseClass(vm);
       res = cl->doNew(vm);
-      JavaObject** ptr = (JavaObject**)(void*)(args->elements);
+      JavaObject** ptr = (JavaObject**)ArrayObject::getElements(args);
       
       Typedef* const* arguments = sign->getArgumentsType();
       // Store the arguments, unboxing primitives if necessary.
@@ -148,7 +148,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Constructor_constructNative
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectConstructor* cons, JavaArray* args, JavaObject* Clazz, jint index) {
+JavaObjectConstructor* cons, ArrayObject* args, JavaObject* Clazz, jint index) {
 
   JavaObject* res = 0;
 

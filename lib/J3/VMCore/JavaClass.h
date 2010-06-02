@@ -928,9 +928,9 @@ public:
   
   /// doNew - Allocate a new array with the given allocator.
   ///
-  JavaArray* doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
+  JavaObject* doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
                    bool temp = false);
-  JavaArray* doNew(sint32 n);
+  JavaObject* doNew(sint32 n);
 
   /// _baseClass - The base class of the array.
   ///
@@ -944,7 +944,7 @@ public:
 
   /// doNew - Allocate a new array in the given vm.
   ///
-  JavaArray* doNew(sint32 n, Jnjvm* vm);
+  JavaObject* doNew(sint32 n, Jnjvm* vm);
 
   /// ClassArray - Construct a Java array class with the given name.
   ///

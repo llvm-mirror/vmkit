@@ -91,11 +91,11 @@ JavaObjectMethod* Meth) {
 }
 
 static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
-                                 JavaArray* args, JavaObject* Cl, jint index) 
+                                 ArrayObject* args, JavaObject* Cl, jint index) 
   __attribute__((noinline));
 
 static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
-                                 JavaArray* args, JavaObject* Cl, jint index) {
+                                 ArrayObject* args, JavaObject* Cl, jint index) {
 
   JavaObject* res = 0;
   JavaObject* exc = 0;
@@ -111,7 +111,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
 
   JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   
-  sint32 nbArgs = args ? args->size : 0;
+  sint32 nbArgs = args ? ArrayObject::getSize(args) : 0;
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
 
@@ -140,7 +140,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       cl->initialiseClass(vm);
     }
     
-    JavaObject** ptr = (JavaObject**)(void*)(args->elements);
+    JavaObject** ptr = ArrayObject::getElements(args);
     Typedef* const* arguments = sign->getArgumentsType();
     for (sint32 i = 0; i < size; ++i) {
       JavaObject::decapsulePrimitive(ptr[i], vm, &buf[i], arguments[i]);
@@ -242,7 +242,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_invokeNative(
 #ifdef NATIVE_JNI
 JNIEnv *env, 
 #endif
-JavaObjectMethod* Meth, JavaObject* obj, JavaArray* args, JavaObject* Cl, jint index) {
+JavaObjectMethod* Meth, JavaObject* obj, ArrayObject* args, JavaObject* Cl, jint index) {
   
   JavaObject* res = 0;
   llvm_gcroot(res, 0);

@@ -357,7 +357,7 @@ extern "C" ArrayObject* nativeGetBootPackages() {
   Jnjvm* vm = JavaThread::get()->getJVM();
   obj = (ArrayObject*)vm->upcalls->ArrayOfString->doNew(NUM_BOOT_PACKAGES, vm);
   for (uint32 i = 0; i < NUM_BOOT_PACKAGES; ++i) {
-    obj->elements[i] = vm->asciizToStr(bootPackages[i]);
+    ArrayObject::setElement(obj, vm->asciizToStr(bootPackages[i]), i);
   }
   
   END_NATIVE_EXCEPTION

@@ -48,10 +48,11 @@ struct ltarray16
 {
   bool operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const
   {
-    if (s1->size < s2->size) return true;
-    else if (s1->size > s2->size) return false;
-    else return memcmp((const char*)s1->elements, (const char*)s2->elements,
-                       s1->size * sizeof(uint16)) < 0;
+    if (ArrayUInt16::getSize(s1) < ArrayUInt16::getSize(s2)) return true;
+    else if (ArrayUInt16::getSize(s1) > ArrayUInt16::getSize(s2)) return false;
+    else return memcmp((const char*)ArrayUInt16::getElements(s1),
+                       (const char*)ArrayUInt16::getElements(s2),
+                       ArrayUInt16::getSize(s1) * sizeof(uint16)) < 0;
   }
 };
 

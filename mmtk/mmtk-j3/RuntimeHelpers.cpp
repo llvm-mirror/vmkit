@@ -14,7 +14,7 @@
 using namespace j3;
 
 extern "C" uint16_t MMTkCharAt(JavaString* str, uint32_t index) {
-  return str->value->elements[index];
+  return ArrayUInt16::getElement(str->value, index);
 }
 
 extern "C" JavaObject* MMTkGetClass(JavaObject* obj) {

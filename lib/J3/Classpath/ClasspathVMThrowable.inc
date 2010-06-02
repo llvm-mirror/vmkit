@@ -38,16 +38,15 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
 
   ClassArray* cl = sizeof(void*) == 4 ? vm->upcalls->ArrayOfInt : 
                                         vm->upcalls->ArrayOfLong;
-  JavaArray* result = (JavaArray*) cl->doNew(length, vm);
-  void** tab = (void**)result->elements;
+  JavaObject* result = (JavaObject*) cl->doNew(length, vm);
+  void** tab = (void**)JavaArray::getElements(result);
   
   // Get the frame context.
   th->getFrameContext(tab);
   
   // Set the tempory data in the new VMThrowable object.
   vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
-  uint64 ptr = (uint64)vmThrowable + vm->upcalls->vmDataVMThrowable->ptrOffset;
-  ((JavaObject**)ptr)[0] = result;
+  vm->upcalls->vmDataVMThrowable->setObjectField(vmThrowable, result);
   return vmThrowable;
 }
 
@@ -116,21 +115,23 @@ JNIEnv *env,
 #endif
 JavaObject* vmthrow, JavaObject* throwable) {
 
-  ArrayObject* result = 0;
+  ArrayObject* result = NULL;
+  JavaObject* stack = NULL;
   llvm_gcroot(vmthrow, 0);
   llvm_gcroot(throwable, 0);
   llvm_gcroot(result, 0);
+  llvm_gcroot(stack, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->vmDataVMThrowable;
-  JavaArray* stack = (JavaArray*)field->getObjectField(vmthrow);
+  stack = field->getObjectField(vmthrow);
   
   // remove the VMThrowable.fillInStackTrace method and the last method
   // on the stack.
   sint32 index = 2;;
-  while (index != stack->size) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[index]);
+  while (index != JavaArray::getSize(stack)) {
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
     if (MI->MethodType != 1) ++index;
     else {
       JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
@@ -143,8 +144,8 @@ JavaObject* vmthrow, JavaObject* throwable) {
   
   sint32 size = 0;
   sint32 cur = index;
-  while (cur < stack->size) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[cur]);
+  while (cur < JavaArray::getSize(stack)) {
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
     ++cur;
     if (MI->MethodType == 1) ++size;
   }
@@ -153,11 +154,11 @@ JavaObject* vmthrow, JavaObject* throwable) {
     vm->upcalls->stackTraceArray->doNew(size, vm);
   
   cur = 0;
-  for (sint32 i = index; i < stack->size; ++i) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(stack->elements[i]);
+  for (sint32 i = index; i < JavaArray::getSize(stack); ++i) {
+    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, i));
     if (MI->MethodType == 1) {
       JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
-      result->elements[cur] = consStackElement(meth, stack->elements[i]);
+      ArrayObject::setElement(result, consStackElement(meth, ArrayPtr::getElement((ArrayPtr*)stack, i)), cur);
       cur++;
     }
   }
@@ -168,4 +169,3 @@ JavaObject* vmthrow, JavaObject* throwable) {
 }
 
 }
-

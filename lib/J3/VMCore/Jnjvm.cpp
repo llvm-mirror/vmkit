@@ -480,33 +480,40 @@ static JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
   uint32 i = 0;
 
 
-  msg->elements[i++] = 'u';
-  msg->elements[i++] = 'n';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 'b';
-  msg->elements[i++] = 'l';
-  msg->elements[i++] = 'e';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 't';
-  msg->elements[i++] = 'o';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'f';
-  msg->elements[i++] = 'i';
-  msg->elements[i++] = 'n';
-  msg->elements[i++] = 'd';
-  msg->elements[i++] = ' ';
+  ArrayUInt16::setElement(msg, 'u', i); i++;
+  ArrayUInt16::setElement(msg, 'n', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 'b', i); i++;
+  ArrayUInt16::setElement(msg, 'l', i); i++;
+  ArrayUInt16::setElement(msg, 'e', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 't', i); i++;
+  ArrayUInt16::setElement(msg, 'o', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'f', i); i++;
+  ArrayUInt16::setElement(msg, 'i', i); i++;
+  ArrayUInt16::setElement(msg, 'n', i); i++;
+  ArrayUInt16::setElement(msg, 'd', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
 
-  for (sint32 j = 0; j < name->size; ++j)
-    msg->elements[i++] = name->elements[j];
+  for (sint32 j = 0; j < name->size; ++j) {
+    ArrayUInt16::setElement(msg, name->elements[j], i);
+    i++;
+  }
 
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'i';
-  msg->elements[i++] = 'n';
-  msg->elements[i++] = ' ';
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'i', i); i++;
+  ArrayUInt16::setElement(msg, 'n', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
   
   for (sint32 j = 0; j < cl->name->size; ++j) {
-    if (cl->name->elements[j] == '/') msg->elements[i++] = '.';
-    else msg->elements[i++] = cl->name->elements[j];
+    if (cl->name->elements[j] == '/') {
+      ArrayUInt16::setElement(msg, '.', i);
+      i++;
+    } else {
+      ArrayUInt16::setElement(msg, cl->name->elements[i], i);
+      i++;
+    }
   }
 
   str = vm->constructString(msg);
@@ -544,25 +551,28 @@ static JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
   uint32 i = 0;
 
 
-  msg->elements[i++] = 'u';
-  msg->elements[i++] = 'n';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 'b';
-  msg->elements[i++] = 'l';
-  msg->elements[i++] = 'e';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 't';
-  msg->elements[i++] = 'o';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'l';
-  msg->elements[i++] = 'o';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 'd';
-  msg->elements[i++] = ' ';
+  ArrayUInt16::setElement(msg, 'u', i); i++;
+  ArrayUInt16::setElement(msg, 'n', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 'b', i); i++;
+  ArrayUInt16::setElement(msg, 'l', i); i++;
+  ArrayUInt16::setElement(msg, 'e', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 't', i); i++;
+  ArrayUInt16::setElement(msg, 'o', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'l', i); i++;
+  ArrayUInt16::setElement(msg, 'o', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 'd', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
 
   for (sint32 j = 0; j < name->size; ++j) {
-    if (name->elements[j] == '/') msg->elements[i++] = '.';
-    else msg->elements[i++] = name->elements[j];
+    if (name->elements[j] == '/') {
+      ArrayUInt16::setElement(msg, '.', i); i++;
+    } else {
+      ArrayUInt16::setElement(msg, name->elements[i], i); i++;
+    }
   }
 
   str = vm->constructString(msg);
@@ -579,25 +589,28 @@ static JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
   uint32 i = 0;
 
 
-  msg->elements[i++] = 'u';
-  msg->elements[i++] = 'n';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 'b';
-  msg->elements[i++] = 'l';
-  msg->elements[i++] = 'e';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 't';
-  msg->elements[i++] = 'o';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'l';
-  msg->elements[i++] = 'o';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 'd';
-  msg->elements[i++] = ' ';
+  ArrayUInt16::setElement(msg, 'u', i); i++;
+  ArrayUInt16::setElement(msg, 'n', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 'b', i); i++;
+  ArrayUInt16::setElement(msg, 'l', i); i++;
+  ArrayUInt16::setElement(msg, 'e', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 't', i); i++;
+  ArrayUInt16::setElement(msg, 'o', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'l', i); i++;
+  ArrayUInt16::setElement(msg, 'o', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 'd', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
 
   for (sint32 j = name->offset; j < name->offset + name->count; ++j) {
-    if (name->value->elements[j] == '/') msg->elements[i++] = '.';
-    else msg->elements[i++] = name->value->elements[j];
+    if (ArrayUInt16::getElement(name->value, j) == '/') {
+      ArrayUInt16::setElement(msg, '.', i); i++;
+    } else {
+      ArrayUInt16::setElement(msg, ArrayUInt16::getElement(name->value, j), i);
+    }
   }
 
   str = vm->constructString(msg);
@@ -630,51 +643,57 @@ void Jnjvm::noClassDefFoundError(UserClass* cl, const UTF8* name) {
   uint32 i = 0;
 
 
-  msg->elements[i++] = 't';
-  msg->elements[i++] = 'r';
-  msg->elements[i++] = 'y';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 't';
-  msg->elements[i++] = 'o';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'l';
-  msg->elements[i++] = 'o';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 'd';
-  msg->elements[i++] = ' ';
+  ArrayUInt16::setElement(msg, 't', i);
+  ArrayUInt16::setElement(msg, 'r', i);
+  ArrayUInt16::setElement(msg, 'y', i);
+  ArrayUInt16::setElement(msg, ' ', i);
+  ArrayUInt16::setElement(msg, 't', i);
+  ArrayUInt16::setElement(msg, 'o', i);
+  ArrayUInt16::setElement(msg, ' ', i);
+  ArrayUInt16::setElement(msg, 'l', i);
+  ArrayUInt16::setElement(msg, 'o', i);
+  ArrayUInt16::setElement(msg, 'a', i);
+  ArrayUInt16::setElement(msg, 'd', i);
+  ArrayUInt16::setElement(msg, ' ', i);
 
   for (sint32 j = 0; j < cl->name->size; ++j) {
-    if (cl->name->elements[j] == '/') msg->elements[i++] = '.';
-    else msg->elements[i++] = cl->name->elements[j];
+    if (cl->name->elements[j] == '/') {
+      ArrayUInt16::setElement(msg, '.', i); i++;
+    } else {
+      ArrayUInt16::setElement(msg, cl->name->elements[j], i); i++;
+    }
   }
   
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 'n';
-  msg->elements[i++] = 'd';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'f';
-  msg->elements[i++] = 'o';
-  msg->elements[i++] = 'u';
-  msg->elements[i++] = 'n';
-  msg->elements[i++] = 'd';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'c';
-  msg->elements[i++] = 'l';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 's';
-  msg->elements[i++] = 's';
-  msg->elements[i++] = ' ';
-  msg->elements[i++] = 'n';
-  msg->elements[i++] = 'a';
-  msg->elements[i++] = 'm';
-  msg->elements[i++] = 'e';
-  msg->elements[i++] = 'd';
-  msg->elements[i++] = ' ';
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 'n', i); i++;
+  ArrayUInt16::setElement(msg, 'd', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'f', i); i++;
+  ArrayUInt16::setElement(msg, 'o', i); i++;
+  ArrayUInt16::setElement(msg, 'u', i); i++;
+  ArrayUInt16::setElement(msg, 'n', i); i++;
+  ArrayUInt16::setElement(msg, 'd', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'c', i); i++;
+  ArrayUInt16::setElement(msg, 'l', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 's', i); i++;
+  ArrayUInt16::setElement(msg, 's', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'n', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 'm', i); i++;
+  ArrayUInt16::setElement(msg, 'e', i); i++;
+  ArrayUInt16::setElement(msg, 'd', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
   
   for (sint32 j = 0; j < name->size; ++j) {
-    if (name->elements[j] == '/') msg->elements[i++] = '.';
-    else msg->elements[i++] = name->elements[j];
+    if (name->elements[j] == '/') {
+      ArrayUInt16::setElement(msg, '.', i); i++;
+    } else {
+      ArrayUInt16::setElement(msg, name->elements[j], i); i++;
+    }
   }
  
   assert(i == size && "Array overflow");
@@ -694,10 +713,9 @@ JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
   uint32 size = utf8->size;
   ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
   llvm_gcroot(tmp, 0);
-  uint16* buf = tmp->elements;
   
   for (uint32 i = 0; i < size; i++) {
-    buf[i] = utf8->elements[i];
+    ArrayUInt16::setElement(tmp, utf8->elements[i], i);
   }
   
   return hashStr.lookupOrCreate(const_cast<const ArrayUInt16*&>(tmp), this,
@@ -786,17 +804,17 @@ extern "C" int sys_strnstr(const char *haystack, const char *needle) {
 
 static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
                              uint32 len) {
-  uint8* ptr = manifest->elements;
-  sint32 index = sys_strnstr((char*)ptr, entry);
+  llvm_gcroot(manifest, 0);
+  sint32 index = sys_strnstr((char*)ArrayUInt8::getElements(manifest), entry);
   if (index != -1) {
     index += len;
-    sint32 end = sys_strnstr((char*)&(ptr[index]), "\n");
-    if (end == -1) end = manifest->size;
+    sint32 end = sys_strnstr((char*)ArrayUInt8::getElements(manifest) + index, "\n");
+    if (end == -1) end = ArrayUInt8::getSize(manifest);
     else end += index;
 
     sint32 length = end - index - 1;
     char* name = (char*)vm->allocator.Allocate(length + 1, "class name");
-    memcpy(name, &(ptr[index]), length);
+    memcpy(name, ArrayUInt8::getElements(manifest) + index, length);
     name[length] = 0;
     return name;
   } else {
@@ -806,13 +824,15 @@ static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
 
 void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv, 
                                           int i) {
+  ArrayUInt8* bytes = NULL;
+  llvm_gcroot(bytes, 0);
   jarFile = argv[i];
 
   vm->setClasspath(jarFile);
   
-  ArrayUInt8* bytes = Reader::openFile(vm->bootstrapLoader, jarFile, true);
+  bytes = Reader::openFile(vm->bootstrapLoader, jarFile, true);
 
-  if (!bytes) {
+  if (bytes == NULL) {
     printf("Unable to access jarfile %s\n", jarFile);
     return;
   }
@@ -1266,7 +1286,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
     UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfString;
     args = (ArrayObject*)array->doNew(info.argc - 2, vm);
     for (int i = 2; i < info.argc; ++i) {
-      args->elements[i - 2] = (JavaObject*)vm->asciizToStr(info.argv[i]);
+      ArrayObject::setElement(args, (JavaObject*)vm->asciizToStr(info.argv[i]), i - 2);
     }
 
     vm->executeClass(info.className, args);
@@ -1394,10 +1414,9 @@ const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {
 ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
   uint32 size = strlen(asciiz);
   ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
-  uint16* buf = tmp->elements;
   
   for (uint32 i = 0; i < size; i++) {
-    buf[i] = asciiz[i];
+    ArrayUInt16::setElement(tmp, asciiz[i], i);
   }
   return tmp;
 }

@@ -569,47 +569,44 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
   
   llvm_gcroot(str, 0);
   
-  UTF8* name = (UTF8*)alloca(sizeof(UTF8) + str->count * sizeof(uint16));
+  UTF8* name = (UTF8*)malloc(sizeof(UTF8) + str->count * sizeof(uint16));
  
-  if (name) {
-    name->size = str->count;
-    if (str->value->elements[str->offset] != I_TAB) {
-      for (sint32 i = 0; i < str->count; ++i) {
-        uint16 cur = str->value->elements[str->offset + i];
-        if (cur == '.') name->elements[i] = '/';
-        else if (cur == '/') return 0;
-        else name->elements[i] = cur;
-      }
-    } else {
-      for (sint32 i = 0; i < str->count; ++i) {
-        uint16 cur = str->value->elements[str->offset + i];
-        if (cur == '.') name->elements[i] = '/';
-        else if (cur == '/') return 0;
-        else name->elements[i] = cur;
-      }
+  name->size = str->count;
+  if (ArrayUInt16::getElement(str->value, str->offset) != I_TAB) {
+    for (sint32 i = 0; i < str->count; ++i) {
+      uint16 cur = ArrayUInt16::getElement(str->value, str->offset + i);
+      if (cur == '.') name->elements[i] = '/';
+      else if (cur == '/') return 0;
+      else name->elements[i] = cur;
     }
-    
-    return loadClassFromUserUTF8(name, doResolve, doThrow, str);
+  } else {
+    for (sint32 i = 0; i < str->count; ++i) {
+      uint16 cur = ArrayUInt16::getElement(str->value, str->offset + i);
+      if (cur == '.') name->elements[i] = '/';
+      else if (cur == '/') return 0;
+      else name->elements[i] = cur;
+    }
   }
-
-  return 0;
+    
+  UserCommonClass* cls = loadClassFromUserUTF8(name, doResolve, doThrow, str);
+  free(name);
+  return cls;
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str) {
   
   llvm_gcroot(str, 0);
   
-  UTF8* name = (UTF8*)alloca(sizeof(UTF8) + str->count * sizeof(uint16));
-  if (name) {
-    name->size = str->count;
-    for (sint32 i = 0; i < str->count; ++i) {
-      uint16 cur = str->value->elements[str->offset + i];
-      if (cur == '.') name->elements[i] = '/';
-      else name->elements[i] = cur;
-    }
-    return lookupClass(name);
+  UTF8* name = (UTF8*)malloc(sizeof(UTF8) + str->count * sizeof(uint16));
+  name->size = str->count;
+  for (sint32 i = 0; i < str->count; ++i) {
+    uint16 cur = ArrayUInt16::getElement(str->value, str->offset + i);
+    if (cur == '.') name->elements[i] = '/';
+    else name->elements[i] = cur;
   }
-  return 0;
+  UserCommonClass* cls = lookupClass(name);
+  free(name);
+  return cls;
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {

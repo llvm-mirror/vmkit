@@ -123,7 +123,8 @@ jboolean publicOnly) {
         UserClass* Cons = vm->upcalls->newConstructor;
         tmp = Cons->doNew(vm);
         vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp, &Cl, i);
-        ret->elements[index++] = tmp;
+        ArrayObject::setElement(ret, tmp, index);
+        index++;
       }
     }
   }
@@ -187,7 +188,8 @@ jboolean publicOnly) {
         tmp = Meth->doNew(vm);
         str = vm->internalUTF8ToStr(meth->name);
         upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, &Cl, &str, i);
-        ret->elements[index++] = tmp;
+        ArrayObject::setElement(ret, tmp, index);
+        index++;
       }
     }
   }
@@ -457,7 +459,8 @@ JavaObject* Cl, jboolean publicOnly) {
         tmp = Field->doNew(vm);
         name = vm->internalUTF8ToStr(field->name);
         vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, &Cl, &name, i);
-        ret->elements[index++] = tmp;
+        ArrayObject::setElement(ret, tmp, index);
+        index++;
       }
     }
   }
@@ -486,7 +489,7 @@ JavaObject* Cl) {
 
   for (uint16 i = 0; i < cl->nbInterfaces; ++i) {
     UserClass* klass = cl->interfaces[i];
-    res->elements[i] = klass->getClassDelegatee(vm);
+    ArrayObject::setElement(res, klass->getClassDelegatee(vm), i);
   }
 
   END_NATIVE_EXCEPTION
@@ -560,7 +563,7 @@ JavaObject* Cl, bool publicOnly) {
     for (uint16 i = 0; i < cl->nbInnerClasses; ++i) {
       UserClass* klass = cl->innerClasses[i];
       if (!publicOnly || isPublic(klass->innerAccess))
-        result->elements[i] = klass->getClassDelegatee(vm); 
+        ArrayObject::setElement(result, klass->getClassDelegatee(vm), i); 
     }
   }
   

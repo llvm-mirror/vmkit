@@ -950,13 +950,14 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     }
   }
    
-  exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
+  // TODO: THIS IS UNSAFE!
+  exploreOpcodes(ArrayUInt8::getElements(compilingClass->bytes) + start, codeLen);
 
   if (returnType != Type::getVoidTy(*llvmContext)) {
     endNode = PHINode::Create(returnType, "", endBlock);
   }
 
-  compileOpcodes(&compilingClass->bytes->elements[start], codeLen);
+  compileOpcodes(ArrayUInt8::getElements(compilingClass->bytes) + start, codeLen);
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL,
               "--> end inline compiling %s.%s\n",
@@ -1185,7 +1186,8 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
   
-  exploreOpcodes(&compilingClass->bytes->elements[start], codeLen);
+  // TODO: THIS IS UNSAFE!
+  exploreOpcodes(ArrayUInt8::getElements(compilingClass->bytes) + start, codeLen);
  
   endBlock = createBasicBlock("end");
 
@@ -1241,7 +1243,8 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock = noStackOverflow;
   }
 
-  compileOpcodes(&compilingClass->bytes->elements[start], codeLen); 
+  // TODO: THIS IS UNSAFE!
+  compileOpcodes(ArrayUInt8::getElements(compilingClass->bytes) + start, codeLen);
   
   assert(stack.size() == 0 && "Stack not empty after compiling bytecode");
   // Fix a javac(?) bug where a method only throws an exception and does

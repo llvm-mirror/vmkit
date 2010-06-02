@@ -49,7 +49,7 @@ jclass clazz,
   for (uint32 i = 0; i != finalSize; ++i) {
     JavaMethod* meth = (JavaMethod*)buffer[i];
     assert(meth && "Wrong stack trace");
-    result->elements[i] = meth->classDef->getClassDelegatee(vm);
+    ArrayObject::setElement(result, meth->classDef->getClassDelegatee(vm), i);
   }
   
   END_NATIVE_EXCEPTION

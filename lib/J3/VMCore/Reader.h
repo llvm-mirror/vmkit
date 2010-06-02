@@ -84,11 +84,13 @@ public:
                              const char* filename);
   
   uint8 readU1() {
-    return (*bytes)->elements[cursor++];
+    ++cursor;
+    return ArrayUInt8::getElement(*bytes, cursor - 1);
   }
   
   sint8 readS1() {
-    return (*bytes)->elements[cursor++];
+    ++cursor;
+    return ArrayUInt8::getElement(*bytes, cursor - 1);
   }
   
   uint16 readU2() {
@@ -122,7 +124,7 @@ public:
   }
 
   Reader(ArrayUInt8** array, uint32 start = 0, uint32 end = 0) {
-    if (!end) end = (*array)->size;
+    if (!end) end = ArrayUInt8::getSize(*array);
     this->bytes = array;
     this->cursor = start;
     this->min = start;

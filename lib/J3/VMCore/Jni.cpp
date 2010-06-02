@@ -2654,10 +2654,10 @@ jsize GetArrayLength(JNIEnv *env, jarray _array) {
   BEGIN_JNI_EXCEPTION
   
   // Local object references.
-  JavaArray* array = *(JavaArray**)_array;
+  JavaObject* array = *(JavaObject**)_array;
   llvm_gcroot(array, 0);
 
-  RETURN_FROM_JNI(array->size);
+  RETURN_FROM_JNI(JavaArray::getSize(array));
 
   END_JNI_EXCEPTION
   RETURN_FROM_JNI(0);
@@ -2692,7 +2692,7 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass _elementClass,
   
   if (initialElement) {
     for (sint32 i = 0; i < length; ++i) {
-      res->elements[i] = initialElement;
+      ArrayObject::setElement(res, initialElement, i);
     }
   }
   
@@ -2717,10 +2717,12 @@ jobject GetObjectArrayElement(JNIEnv *env, jobjectArray _array, jsize index) {
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
   
-  if (index >= array->size) vm->indexOutOfBounds(array, index);
+  if (index >= ArrayObject::getSize(array)) {
+    vm->indexOutOfBounds(array, index);
+  }
   
   // Store local refererence.
-  res = array->elements[index];
+  res = ArrayObject::getElement(array, index);
   
   jobject ret = (jobject)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
@@ -2742,11 +2744,12 @@ void SetObjectArrayElement(JNIEnv *env, jobjectArray _array, jsize index,
   llvm_gcroot(array, 0);
   llvm_gcroot(val, 0);
 
-  if (index >= array->size)
+  if (index >= ArrayObject::getSize(array)) {
     JavaThread::get()->getJVM()->indexOutOfBounds(array, index);
+  }
   
   // Store global reference.
-  array->elements[index] = val;
+  ArrayObject::setElement(array, val, index);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2896,9 +2899,9 @@ jboolean* GetBooleanArrayElements(JNIEnv *env, jbooleanArray _array,
 
   if (isCopy) (*isCopy) = true;
 
-  sint32 len = array->size * sizeof(uint8);
+  sint32 len = ArrayUInt8::getSize(array) * sizeof(uint8);
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, ArrayUInt8::getElements(array), len);
 
   RETURN_FROM_JNI((jboolean*)buffer);
 
@@ -2917,9 +2920,9 @@ jbyte *GetByteArrayElements(JNIEnv *env, jbyteArray _array, jboolean *isCopy) {
 
   if (isCopy) (*isCopy) = true;
 
-  sint32 len = array->size * sizeof(uint8);
+  sint32 len = ArraySInt8::getSize(array) * sizeof(uint8);
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, ArraySInt8::getElements(array), len);
 
   RETURN_FROM_JNI((jbyte*)buffer);
 
@@ -2938,9 +2941,9 @@ jchar *GetCharArrayElements(JNIEnv *env, jcharArray _array, jboolean *isCopy) {
 
   if (isCopy) (*isCopy) = true;
 
-  sint32 len = array->size * sizeof(uint16);
+  sint32 len = ArrayUInt16::getSize(array) * sizeof(uint16);
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, ArrayUInt16::getElements(array), len);
 
   RETURN_FROM_JNI((jchar*)buffer);
 
@@ -2960,9 +2963,9 @@ jshort *GetShortArrayElements(JNIEnv *env, jshortArray _array,
   
   if (isCopy) (*isCopy) = true;
 
-  sint32 len = array->size * sizeof(sint16);
+  sint32 len = ArraySInt16::getSize(array) * sizeof(sint16);
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, ArraySInt16::getElements(array), len);
 
   RETURN_FROM_JNI((jshort*)buffer);
 
@@ -2981,9 +2984,9 @@ jint *GetIntArrayElements(JNIEnv *env, jintArray _array, jboolean *isCopy) {
 
   if (isCopy) (*isCopy) = true;
 
-  sint32 len = array->size * sizeof(sint32);
+  sint32 len = ArraySInt32::getSize(array) * sizeof(sint32);
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, ArraySInt32::getElements(array), len);
 
   RETURN_FROM_JNI((jint*)buffer);
 
@@ -3002,9 +3005,9 @@ jlong *GetLongArrayElements(JNIEnv *env, jlongArray _array, jboolean *isCopy) {
 
   if (isCopy) (*isCopy) = true;
 
-  sint32 len = array->size * sizeof(sint64);
+  sint32 len = ArrayLong::getSize(array) * sizeof(sint64);
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, ArrayLong::getElements(array), len);
 
   RETURN_FROM_JNI((jlong*)buffer);
 
@@ -3024,9 +3027,9 @@ jfloat *GetFloatArrayElements(JNIEnv *env, jfloatArray _array,
 
   if (isCopy) (*isCopy) = true;
 
-  sint32 len = array->size * sizeof(float);
+  sint32 len = ArrayFloat::getSize(array) * sizeof(float);
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, ArrayFloat::getElements(array), len);
 
   RETURN_FROM_JNI((jfloat*)buffer);
 
@@ -3046,9 +3049,9 @@ jdouble *GetDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
   
   if (isCopy) (*isCopy) = true;
 
-  sint32 len = array->size * sizeof(double);
+  sint32 len = ArrayDouble::getSize(array) * sizeof(double);
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, ArrayDouble::getElements(array), len);
 
   RETURN_FROM_JNI((jdouble*)buffer);
 
@@ -3065,11 +3068,11 @@ void ReleaseBooleanArrayElements(JNIEnv *env, jbooleanArray _array,
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    ArrayUInt8* array = *(ArrayUInt8**)_array;
     llvm_gcroot(array, 0);
 
-    sint32 len = array->size;
-    memcpy(array->elements, elems, len);
+    sint32 len = ArrayUInt8::getSize(array);
+    memcpy(ArrayUInt8::getElements(array), elems, len);
 
     if (mode == 0) free(elems);
   }
@@ -3088,11 +3091,11 @@ void ReleaseByteArrayElements(JNIEnv *env, jbyteArray _array, jbyte *elems,
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    ArraySInt16* array = *(ArraySInt16**)_array;
     llvm_gcroot(array, 0);
 
-    sint32 len = array->size;
-    memcpy(array->elements, elems, len);
+    sint32 len = ArraySInt16::getSize(array);
+    memcpy(ArraySInt16::getElements(array), elems, len);
 
     if (mode == 0) free(elems);
   }
@@ -3111,11 +3114,11 @@ void ReleaseCharArrayElements(JNIEnv *env, jcharArray _array, jchar *elems,
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    ArrayUInt16* array = *(ArrayUInt16**)_array;
     llvm_gcroot(array, 0);
 
-    sint32 len = array->size << 1;
-    memcpy(array->elements, elems, len);
+    sint32 len = ArrayUInt16::getSize(array) << 1;
+    memcpy(ArrayUInt16::getElements(array), elems, len);
 
     if (mode == 0) free(elems);
   }
@@ -3134,11 +3137,11 @@ void ReleaseShortArrayElements(JNIEnv *env, jshortArray _array, jshort *elems,
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    ArraySInt16* array = *(ArraySInt16**)_array;
     llvm_gcroot(array, 0);
 
-    sint32 len = array->size << 1;
-    memcpy(array->elements, elems, len);
+    sint32 len = ArraySInt16::getSize(array) << 1;
+    memcpy(ArraySInt16::getElements(array), elems, len);
 
     if (mode == 0) free(elems);
   }
@@ -3157,11 +3160,11 @@ void ReleaseIntArrayElements(JNIEnv *env, jintArray _array, jint *elems,
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    ArraySInt32* array = *(ArraySInt32**)_array;
     llvm_gcroot(array, 0);
 
-    sint32 len = array->size << 2;
-    memcpy(array->elements, elems, len);
+    sint32 len = ArraySInt32::getSize(array) << 2;
+    memcpy(ArraySInt32::getElements(array), elems, len);
 
     if (mode == 0) free(elems);
   }
@@ -3180,11 +3183,11 @@ void ReleaseLongArrayElements(JNIEnv *env, jlongArray _array, jlong *elems,
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    ArrayLong* array = *(ArrayLong**)_array;
     llvm_gcroot(array, 0);
 
-    sint32 len = array->size << 3;
-    memcpy(array->elements, elems, len);
+    sint32 len = ArrayLong::getSize(array) << 3;
+    memcpy(ArrayLong::getElements(array), elems, len);
 
     if (mode == 0) free(elems);
   }
@@ -3202,11 +3205,11 @@ void ReleaseFloatArrayElements(JNIEnv *env, jfloatArray _array, jfloat *elems,
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    ArrayFloat* array = *(ArrayFloat**)_array;
     llvm_gcroot(array, 0);
 
-    sint32 len = array->size << 2;
-    memcpy(array->elements, elems, len);
+    sint32 len = ArrayFloat::getSize(array) << 2;
+    memcpy(ArrayFloat::getElements(array), elems, len);
 
     if (mode == 0) free(elems);
   }
@@ -3225,11 +3228,11 @@ void ReleaseDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    ArrayDouble* array = *(ArrayDouble**)_array;
     llvm_gcroot(array, 0);
 
-    sint32 len = array->size << 3;
-    memcpy(array->elements, elems, len);
+    sint32 len = ArrayDouble::getSize(array) << 3;
+    memcpy(ArrayDouble::getElements(array), elems, len);
 
     if (mode == 0) free(elems);
   }
@@ -3246,7 +3249,7 @@ void GetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
   
   ArrayUInt8* Array = *(ArrayUInt8**)array;
   llvm_gcroot(Array, 0);
-  memcpy(buf, &(Array->elements[start]), len * sizeof(uint8));
+  memcpy(buf, ArrayUInt8::getElements(Array) + start, len * sizeof(uint8));
   
   END_JNI_EXCEPTION
   
@@ -3261,7 +3264,7 @@ void GetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
   
   ArraySInt8* Array = *(ArraySInt8**)array;
   llvm_gcroot(Array, 0);
-  memcpy(buf, &(Array->elements[start]), len * sizeof(sint8));
+  memcpy(buf, ArraySInt8::getElements(Array) + start, len * sizeof(uint8));
   
   END_JNI_EXCEPTION
   
@@ -3276,7 +3279,7 @@ void GetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
   
   ArrayUInt16* Array = *(ArrayUInt16**)array;
   llvm_gcroot(Array, 0);
-  memcpy(buf, &(Array->elements[start]), len * sizeof(uint16));
+  memcpy(buf, ArrayUInt16::getElements(Array) + start, len * sizeof(uint16));
   
   END_JNI_EXCEPTION
   
@@ -3291,7 +3294,7 @@ void GetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
   
   ArraySInt16* Array = *(ArraySInt16**)array;
   llvm_gcroot(Array, 0);
-  memcpy(buf, &(Array->elements[start]), len * sizeof(sint16));
+  memcpy(buf, ArraySInt16::getElements(Array) + start, len * sizeof(sint16));
   
   END_JNI_EXCEPTION
   
@@ -3306,7 +3309,7 @@ void GetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
   
   ArraySInt32* Array = *(ArraySInt32**)array;
   llvm_gcroot(Array, 0);
-  memcpy(buf, &(Array->elements[start]), len * sizeof(sint32));
+  memcpy(buf, ArraySInt32::getElements(Array) + start, len * sizeof(sint32));
   
   END_JNI_EXCEPTION
   
@@ -3321,7 +3324,7 @@ void GetLongArrayRegion(JNIEnv *env, jlongArray array, jsize start, jsize len,
   
   ArrayLong* Array = *(ArrayLong**)array;
   llvm_gcroot(Array, 0);
-  memcpy(buf, &(Array->elements[start]), len * sizeof(sint64));
+  memcpy(buf, ArrayLong::getElements(Array) + start, len * sizeof(sint64));
   
   END_JNI_EXCEPTION
   
@@ -3336,7 +3339,7 @@ void GetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
   
   ArrayFloat* Array = *(ArrayFloat**)array;
   llvm_gcroot(Array, 0);
-  memcpy(buf, &(Array->elements[start]), len * sizeof(float));
+  memcpy(buf, ArrayFloat::getElements(Array) + start, len * sizeof(float));
   
   END_JNI_EXCEPTION
   
@@ -3351,7 +3354,7 @@ void GetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
   
   ArrayDouble* Array = *(ArrayDouble**)array;
   llvm_gcroot(Array, 0);
-  memcpy(buf, &(Array->elements[start]), len * sizeof(double));
+  memcpy(buf, ArrayDouble::getElements(Array) + start, len * sizeof(double));
   
   END_JNI_EXCEPTION
   
@@ -3366,7 +3369,7 @@ void SetBooleanArrayRegion(JNIEnv *env, jbooleanArray array, jsize start,
   
   ArrayUInt8* Array = *(ArrayUInt8**)array;
   llvm_gcroot(Array, 0);
-  memcpy(&(Array->elements[start]), buf, len * sizeof(uint8));
+  memcpy(ArrayUInt8::getElements(Array) + start, buf, len * sizeof(uint8));
   
   END_JNI_EXCEPTION
   
@@ -3381,7 +3384,7 @@ void SetByteArrayRegion(JNIEnv *env, jbyteArray array, jsize start, jsize len,
   
   ArraySInt8* Array = *(ArraySInt8**)array;
   llvm_gcroot(Array, 0);
-  memcpy(&(Array->elements[start]), buf, len * sizeof(sint8));
+  memcpy(ArraySInt8::getElements(Array) + start, buf, len * sizeof(sint8));
   
   END_JNI_EXCEPTION
   
@@ -3396,7 +3399,7 @@ void SetCharArrayRegion(JNIEnv *env, jcharArray array, jsize start, jsize len,
   
   ArrayUInt16* Array = *(ArrayUInt16**)array;
   llvm_gcroot(Array, 0);
-  memcpy(&(Array->elements[start]), buf, len * sizeof(uint16));
+  memcpy(ArrayUInt16::getElements(Array) + start, buf, len * sizeof(uint16));
   
   END_JNI_EXCEPTION
   
@@ -3411,7 +3414,7 @@ void SetShortArrayRegion(JNIEnv *env, jshortArray array, jsize start,
   
   ArraySInt16* Array = *(ArraySInt16**)array;
   llvm_gcroot(Array, 0);
-  memcpy(&(Array->elements[start]), buf, len * sizeof(sint16));
+  memcpy(ArraySInt16::getElements(Array) + start, buf, len * sizeof(sint16));
   
   END_JNI_EXCEPTION
   
@@ -3426,7 +3429,7 @@ void SetIntArrayRegion(JNIEnv *env, jintArray array, jsize start, jsize len,
   
   ArraySInt32* Array = *(ArraySInt32**)array;
   llvm_gcroot(Array, 0);
-  memcpy(&(Array->elements[start]), buf, len * sizeof(sint32));
+  memcpy(ArraySInt32::getElements(Array) + start, buf, len * sizeof(sint32));
   
   END_JNI_EXCEPTION
   
@@ -3441,7 +3444,7 @@ void SetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len,
   
   ArrayLong* Array = *(ArrayLong**)array;
   llvm_gcroot(Array, 0);
-  memcpy(&(Array->elements[start]), buf, len * sizeof(sint64));
+  memcpy(ArrayLong::getElements(Array) + start, buf, len * sizeof(sint64));
   
   END_JNI_EXCEPTION
   
@@ -3456,7 +3459,7 @@ void SetFloatArrayRegion(JNIEnv *env, jfloatArray array, jsize start,
   
   ArrayFloat* Array = *(ArrayFloat**)array;
   llvm_gcroot(Array, 0);
-  memcpy(&(Array->elements[start]), buf, len * sizeof(float));
+  memcpy(ArrayFloat::getElements(Array) + start, buf, len * sizeof(float));
   
   END_JNI_EXCEPTION
   
@@ -3471,7 +3474,7 @@ void SetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
   
   ArrayDouble* Array = *(ArrayDouble**)array;
   llvm_gcroot(Array, 0);
-  memcpy(&(Array->elements[start]), buf, len * sizeof(double));
+  memcpy(ArrayDouble::getElements(Array) + start, buf, len * sizeof(double));
   
   END_JNI_EXCEPTION
   
@@ -3564,16 +3567,16 @@ void GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len,
 void *GetPrimitiveArrayCritical(JNIEnv *env, jarray _array, jboolean *isCopy) {
   BEGIN_JNI_EXCEPTION
   
-  JavaArray* array = *(JavaArray**)_array;
+  JavaObject* array = *(JavaObject**)_array;
   llvm_gcroot(array, 0);
 
   if (isCopy) (*isCopy) = true;
 
   UserClassArray* cl = JavaObject::getClass(array)->asArrayClass();
   uint32 logSize = cl->baseClass()->asPrimitiveClass()->logSize;
-  sint32 len = array->size << logSize;
+  sint32 len = JavaArray::getSize(array) << logSize;
   void* buffer = malloc(len);
-  memcpy(buffer, array->elements, len);
+  memcpy(buffer, JavaArray::getElements(array), len);
 
   RETURN_FROM_JNI((jchar*)buffer);
 
@@ -3590,13 +3593,13 @@ void ReleasePrimitiveArrayCritical(JNIEnv *env, jarray _array, void *carray,
   if (mode == JNI_ABORT) {
     free(carray);
   } else {
-    JavaArray* array = *(JavaArray**)_array;
+    JavaObject* array = *(JavaObject**)_array;
     llvm_gcroot(array, 0);
 
     UserClassArray* cl = JavaObject::getClass(array)->asArrayClass();
     uint32 logSize = cl->baseClass()->asPrimitiveClass()->logSize;
-    sint32 len = array->size << logSize;
-    memcpy(array->elements, carray, len);
+    sint32 len = JavaArray::getSize(array) << logSize;
+    memcpy(JavaArray::getElements(array), carray, len);
 
     if (mode == 0) free(carray);
   }

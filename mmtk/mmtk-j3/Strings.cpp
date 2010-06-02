@@ -17,8 +17,9 @@ using namespace j3;
 extern "C" void Java_org_j3_mmtk_Strings_write___3CI(JavaObject* str,
                                                      ArrayUInt16* msg,
                                                      sint32 len) {
-  for (sint32 i = 0; i < len; ++i)
-    fprintf(stderr, "%c", msg->elements[i]);
+  for (sint32 i = 0; i < len; ++i) {
+    fprintf(stderr, "%c", ArrayUInt16::getElement(msg, i));
+  }
 }
 
 extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(JavaObject*str,
@@ -27,8 +28,9 @@ extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(JavaObject*str,
   
   fprintf(stderr, "[%p] ", (void*)JavaThread::get());
   
-  for (sint32 i = 0; i < len; ++i)
-    fprintf(stderr, "%c", msg->elements[i]);
+  for (sint32 i = 0; i < len; ++i) {
+    fprintf(stderr, "%c", ArrayUInt16::getElement(msg, i));
+  }
 }
 
 
@@ -41,7 +43,8 @@ Java_org_j3_mmtk_Strings_copyStringToChars__Ljava_lang_String_2_3CII(
   sint32 n = (dstBegin + len <= dstEnd) ? len : (dstEnd - dstBegin);
 
   for (sint32 i = 0; i < n; i++) {
-    dst->elements[dstBegin + i] = str->value->elements[str->offset + i];
+    ArrayUInt16::setElement(dst,
+        ArrayUInt16::getElement(str->value, str->offset + i), dstBegin + i);
   }
   
   return n;

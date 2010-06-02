@@ -38,7 +38,7 @@ JavaString* JavaString::stringDup(const ArrayUInt16*& _array, Jnjvm* vm) {
   // No need to call the Java function: both the Java function and
   // this function do the same thing.
   res->value = array;
-  res->count = array->size;
+  res->count = ArrayUInt16::getSize(array);
   res->offset = 0;
   res->cachedHashCode = 0;
   return res;
@@ -47,7 +47,7 @@ JavaString* JavaString::stringDup(const ArrayUInt16*& _array, Jnjvm* vm) {
 char* JavaString::strToAsciiz() {
   char* buf = new char[count + 1]; 
   for (sint32 i = 0; i < count; ++i) {
-    buf[i] = value->elements[i + offset];
+    buf[i] = ArrayUInt16::getElement(value, i + offset);
   }
   buf[count] =  0; 
   return buf;
@@ -60,12 +60,11 @@ const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {
   llvm_gcroot(array, 0);
 
   assert(self->value && "String without an array?");
-  if (self->offset || (self->count != self->value->size)) {
+  if (self->offset || (self->count != ArrayUInt16::getSize(self->value))) {
     array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(self->count, vm);
-    uint16* buf = array->elements;
-
     for (sint32 i = 0; i < count; i++) {
-      buf[i] = self->value->elements[i + self->offset];
+      ArrayUInt16::setElement(
+          array, ArrayUInt16::getElement(value, i + self->offset), i);
     }
     return array;
   } else {
@@ -88,11 +87,13 @@ JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
 
   array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(name->size, vm);
   
-  uint16* java = array->elements;
   for (sint32 i = 0; i < name->size; i++) {
     uint16 cur = name->elements[i];
-    if (cur == '/') java[i] = '.';
-    else java[i] = cur;
+    if (cur == '/') {
+      ArrayUInt16::setElement(array, '.', i);
+    } else {
+      ArrayUInt16::setElement(array, cur, i);
+    }
   }
 
   return vm->constructString(array);
@@ -102,13 +103,15 @@ const UTF8* JavaString::javaToInternal(UTF8Map* map) const {
   const JavaString* self = this;
   llvm_gcroot(self, 0);
   
-  uint16* java = (uint16*)alloca(sizeof(uint16) * self->count);
+  uint16* java = new uint16[self->count];
 
   for (sint32 i = 0; i < count; ++i) {
-    uint16 cur = self->value->elements[offset + i];
+    uint16 cur = ArrayUInt16::getElement(self->value, offset + i);
     if (cur == '.') java[i] = '/';
     else java[i] = cur;
   }
   
-  return map->lookupOrCreateReader(java, self->count);
+  const UTF8* res = map->lookupOrCreateReader(java, self->count);
+  delete[] java;
+  return res;
 }

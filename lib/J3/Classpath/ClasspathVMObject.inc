@@ -42,7 +42,7 @@ JavaObject* src) {
       base->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
 
     size = sizeof(JavaObject) + sizeof(ssize_t) + 
-                            (((JavaArray*)src)->size << logSize);
+                  (JavaArray::getSize(src) << logSize);
   } else {
     assert(cl->isClass() && "Not a class!");
     size = cl->asClass()->getVirtualSize();

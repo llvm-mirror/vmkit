@@ -341,7 +341,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
         }
         
         std::vector<const Type*> Elemts;
-        const ArrayType* ATy = ArrayType::get(Ty, ((JavaArray*)obj)->size);
+        const ArrayType* ATy = ArrayType::get(Ty, JavaArray::getSize(obj));
         Elemts.push_back(JavaIntrinsics.JavaObjectType->getContainedType(0));
         Elemts.push_back(JavaIntrinsics.pointerSizeType);
         Elemts.push_back(ATy);
@@ -1240,7 +1240,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
 template<typename T>
 Constant* JavaAOTCompiler::CreateConstantFromIntArray(const T* val, const Type* Ty) {
   std::vector<const Type*> Elemts;
-  const ArrayType* ATy = ArrayType::get(Ty, val->size);
+  const ArrayType* ATy = ArrayType::get(Ty, T::getSize(val));
   Elemts.push_back(JavaIntrinsics.JavaObjectType->getContainedType(0));
   Elemts.push_back(JavaIntrinsics.pointerSizeType);
   
@@ -1251,11 +1251,11 @@ Constant* JavaAOTCompiler::CreateConstantFromIntArray(const T* val, const Type* 
   
   std::vector<Constant*> Cts;
   Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
-  Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, val->size));
+  Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, T::getSize(val)));
   
   std::vector<Constant*> Vals;
-  for (sint32 i = 0; i < val->size; ++i) {
-    Vals.push_back(ConstantInt::get(Ty, (uint64)val->elements[i]));
+  for (sint32 i = 0; i < T::getSize(val); ++i) {
+    Vals.push_back(ConstantInt::get(Ty, (uint64)T::getElement(val, i)));
   }
 
   Cts.push_back(ConstantArray::get(ATy, Vals));
@@ -1266,7 +1266,7 @@ Constant* JavaAOTCompiler::CreateConstantFromIntArray(const T* val, const Type* 
 template<typename T>
 Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, const Type* Ty) {
   std::vector<const Type*> Elemts;
-  const ArrayType* ATy = ArrayType::get(Ty, val->size);
+  const ArrayType* ATy = ArrayType::get(Ty, T::getSize(val));
   Elemts.push_back(JavaIntrinsics.JavaObjectType->getContainedType(0));
   Elemts.push_back(JavaIntrinsics.pointerSizeType);
   
@@ -1277,11 +1277,11 @@ Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, const Type* T
   
   std::vector<Constant*> Cts;
   Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
-  Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, val->size));
+  Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, T::getSize(val)));
   
   std::vector<Constant*> Vals;
-  for (sint32 i = 0; i < val->size; ++i) {
-    Vals.push_back(ConstantFP::get(Ty, (double)val->elements[i]));
+  for (sint32 i = 0; i < T::getSize(val); ++i) {
+    Vals.push_back(ConstantFP::get(Ty, (double)T::getElement(val, i)));
   }
 
   Cts.push_back(ConstantArray::get(ATy, Vals));
@@ -1292,7 +1292,7 @@ Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, const Type* T
 Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val) {
   std::vector<const Type*> Elemts;
   const llvm::Type* Ty = JavaIntrinsics.JavaObjectType;
-  const ArrayType* ATy = ArrayType::get(Ty, val->size);
+  const ArrayType* ATy = ArrayType::get(Ty, ArrayObject::getSize(val));
   Elemts.push_back(JavaIntrinsics.JavaObjectType->getContainedType(0));
   Elemts.push_back(JavaIntrinsics.pointerSizeType);
   
@@ -1303,12 +1303,13 @@ Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val)
   
   std::vector<Constant*> Cts;
   Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
-  Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, val->size));
+  Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType,
+        ArrayObject::getSize(val)));
   
   std::vector<Constant*> Vals;
-  for (sint32 i = 0; i < val->size; ++i) {
-    if (val->elements[i]) {
-      Vals.push_back(getFinalObject(val->elements[i],
+  for (sint32 i = 0; i < ArrayObject::getSize(val); ++i) {
+    if (ArrayObject::getElement(val, i)) {
+      Vals.push_back(getFinalObject(ArrayObject::getElement(val, i),
           JavaObject::getClass(val)->asArrayClass()->baseClass()));
     } else {
       Vals.push_back(Constant::getNullValue(JavaIntrinsics.JavaObjectType));

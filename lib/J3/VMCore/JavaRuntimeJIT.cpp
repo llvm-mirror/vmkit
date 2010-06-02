@@ -252,11 +252,11 @@ extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl) {
 }
 
 // Throws if one of the dimension is negative.
-static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
-                                     sint32* dims, Jnjvm* vm) {
+static JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len,
+                                      sint32* dims, Jnjvm* vm) {
   assert(len > 0 && "Negative size given by VMKit");
  
-  JavaArray* _res = cl->doNew(dims[0], vm);
+  JavaObject* _res = cl->doNew(dims[0], vm);
   ArrayObject* res = 0;
   llvm_gcroot(_res, 0);
   llvm_gcroot(res, 0);
@@ -268,13 +268,15 @@ static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
     UserClassArray* base = (UserClassArray*)_base;
     if (dims[0] > 0) {
       for (sint32 i = 0; i < dims[0]; ++i) {
-        res->elements[i] = multiCallNewIntern(base, (len - 1),
-                                              &dims[1], vm);
+        ArrayObject::setElement(
+            res, multiCallNewIntern(base, (len - 1), &dims[1], vm), i);
       }
     } else {
       for (uint32 i = 1; i < len; ++i) {
         sint32 p = dims[i];
-        if (p < 0) JavaThread::get()->getJVM()->negativeArraySizeException(p);
+        if (p < 0) {
+          JavaThread::get()->getJVM()->negativeArraySizeException(p);
+        }
       }
     }
   }
@@ -282,8 +284,8 @@ static JavaArray* multiCallNewIntern(UserClassArray* cl, uint32 len,
 }
 
 // Throws if one of the dimension is negative.
-extern "C" JavaArray* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
-  JavaArray* res = 0;
+extern "C" JavaObject* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
+  JavaObject* res = 0;
   llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(1)

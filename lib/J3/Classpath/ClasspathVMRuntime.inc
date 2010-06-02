@@ -57,11 +57,11 @@ JavaString* strLib) {
   
   uint32 size = (uint32)(lgPre + lgLib + lgPost);
   array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
-  uint16* elements = array->elements;
+  uint16* elements = ArrayUInt16::getElements(array);
 
   memmove(elements, vm->bootstrapLoader->prelib->elements,
           lgPre * sizeof(uint16));
-  memmove(&(elements[lgPre]), &(utf8Lib->elements[stLib]), 
+  memmove(&(elements[lgPre]), ArrayUInt16::getElements(utf8Lib) + stLib,
           lgLib * sizeof(uint16));
   memmove(&(elements[lgPre + lgLib]), vm->bootstrapLoader->postlib->elements,
            lgPost * sizeof(uint16));
@@ -73,12 +73,6 @@ JavaString* strLib) {
   return res;
   
 }
-
-#if defined(__MACH__)
-typedef int* jumpbuf_t;
-#else
-typedef __jmp_buf_tag* jumpbuf_t;
-#endif
 
 typedef int (*onLoad_t)(const void**, void*);
 extern "C" void  j3EndJNI(uint32** old);

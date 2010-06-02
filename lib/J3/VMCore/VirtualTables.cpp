@@ -91,9 +91,10 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj, uintptr_t closure) {
       cl->classLoader->getJavaClassLoaderPtr(), closure);
   
 
-  for (sint32 i = 0; i < obj->size; i++) {
-    if (obj->elements[i]) {
-      mvm::Collector::markAndTrace(obj, obj->elements + i, closure);
+  for (sint32 i = 0; i < ArrayObject::getSize(obj); i++) {
+    if (ArrayObject::getElement(obj, i) != NULL) {
+      mvm::Collector::markAndTrace(
+          obj, ArrayObject::getElements(obj) + i, closure);
     }
   } 
 }

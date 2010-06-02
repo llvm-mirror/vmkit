@@ -25,9 +25,9 @@ JNIEXPORT void JNICALL Java_java_lang_VMSystem_arraycopy(
 JNIEnv *env,
 jclass _cl,
 #endif
-JavaArray* src,
+JavaObject* src,
 jint sstart,
-JavaArray* dst,
+JavaObject* dst,
 jint dstart,
 jint len) {
 
@@ -56,13 +56,16 @@ jint len) {
   UserCommonClass* dstType = td->baseClass();
   UserCommonClass* srcType = ts->baseClass();
 
-  if (len > src->size) {
+  sint32 srcSize = JavaArray::getSize(src);
+  sint32 dstSize = JavaArray::getSize(dst);
+
+  if (len > srcSize) {
     th->pendingException = vm->CreateIndexOutOfBoundsException(len);
-  } else if (len > dst->size) {
+  } else if (len > dstSize) {
     th->pendingException = vm->CreateIndexOutOfBoundsException(len);
-  } else if (len + sstart > src->size) {
+  } else if (len + sstart > srcSize) {
     th->pendingException = vm->CreateIndexOutOfBoundsException(len + sstart);
-  } else if (len + dstart > dst->size) {
+  } else if (len + dstart > dstSize) {
     th->pendingException = vm->CreateIndexOutOfBoundsException(len + dstart);
   } else if (dstart < 0) {
     th->pendingException = vm->CreateIndexOutOfBoundsException(dstart);
@@ -82,7 +85,7 @@ jint len) {
   bool doThrow = false;
   if (!(dstType->isPrimitive())) {
     while (i < sstart + len && !doThrow) {
-      cur = ((ArrayObject*)src)->elements[i];
+      cur = ArrayObject::getElement((ArrayObject*)src, i);
       if (cur) {
         if (!(JavaObject::getClass(cur)->isAssignableFrom(dstType))) {
           doThrow = true;
@@ -96,8 +99,8 @@ jint len) {
   uint32 logSize = dstType->isPrimitive() ? 
     dstType->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
 
-  void* ptrDst = (void*)((int64_t)(dst->elements) + (dstart << logSize));
-  void* ptrSrc = (void*)((int64_t)(src->elements) + (sstart << logSize));
+  void* ptrDst = (void*)((int64_t)JavaArray::getElements(dst) + (dstart << logSize));
+  void* ptrSrc = (void*)((int64_t)JavaArray::getElements(src) + (sstart << logSize));
   memmove(ptrDst, ptrSrc, length << logSize);
 
   if (doThrow) {
