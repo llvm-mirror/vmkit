@@ -926,12 +926,6 @@ class ClassArray : public CommonClass {
 
 public:
   
-  /// doNew - Allocate a new array with the given allocator.
-  ///
-  JavaObject* doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
-                   bool temp = false);
-  JavaObject* doNew(sint32 n);
-
   /// _baseClass - The base class of the array.
   ///
   CommonClass*  _baseClass;

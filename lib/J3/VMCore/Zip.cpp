@@ -17,7 +17,7 @@
 
 using namespace j3;
 
-ZipArchive::ZipArchive(ArrayUInt8* bytes, mvm::BumpPtrAllocator& A) : allocator(A) {
+ZipArchive::ZipArchive(ArrayUInt8** bytes, mvm::BumpPtrAllocator& A) : allocator(A) {
   this->bytes = bytes;
   findOfscd();
   if (ofscd > -1) addFiles();
@@ -73,7 +73,7 @@ void ZipArchive::findOfscd() {
   sint32 minOffs = 0;
   sint32 st = END_CENTRAL_DIRECTORY_FILE_HEADER_SIZE + 4;
   
-  Reader reader(&bytes);
+  Reader reader(bytes);
   curOffs = reader.max;
   if (curOffs >= (65535 + END_CENTRAL_DIRECTORY_FILE_HEADER_SIZE + 4)) {
     minOffs = curOffs - (65535 + END_CENTRAL_DIRECTORY_FILE_HEADER_SIZE + 4);
@@ -119,7 +119,7 @@ void ZipArchive::findOfscd() {
 void ZipArchive::addFiles() {
   sint32 temp = ofscd;
   
-  Reader reader(&bytes);
+  Reader reader(bytes);
   reader.cursor = temp;
 
   while (true) {
@@ -167,7 +167,7 @@ sint32 ZipArchive::readFile(ArrayUInt8* array, const ZipFile* file) {
   uint32 extraFieldLength = 0;
   uint32 temp = 0;
 
-  Reader reader(&bytes);
+  Reader reader(bytes);
   reader.cursor = file->rolh;
   
   if (!(memcmp(ArrayUInt8::getElements(*(reader.bytes)) + file->rolh, HDR_LOCAL, 4))) {

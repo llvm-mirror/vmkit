@@ -254,15 +254,11 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
 }
 
 JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
-  if (n < 0)
+  if (n < 0) {
     vm->negativeArraySizeException(n);
-  else if (n > JavaArray::MaxArraySize)
+  } else if (n > JavaArray::MaxArraySize) {
     vm->outOfMemoryError();
-
-  return doNew(n);
-}
-
-JavaObject* UserClassArray::doNew(sint32 n) {
+  }
   JavaObject* res = NULL;
   llvm_gcroot(res, 0);
   UserCommonClass* cl = baseClass();
@@ -271,29 +267,6 @@ JavaObject* UserClassArray::doNew(sint32 n) {
   VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
   res = (JavaObject*)gc::operator new(size, VT);
-  JavaArray::setSize(res, n);
-  return res;
-}
-
-JavaObject* UserClassArray::doNew(sint32 n, mvm::BumpPtrAllocator& allocator,
-                                  bool temp) {
-  UserCommonClass* cl = baseClass();
-
-  uint32 logSize = cl->isPrimitive() ? 
-    cl->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
-  VirtualTable* VT = virtualVT;
-  uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
- 
-  JavaObject* res = 0;
-
-  // If the array is not temporary, use the allocator.
-  if (!temp) {
-    res = (JavaObject*)allocator.Allocate(size, "Array");
-  } else {
-    // Otherwise, allocate with the malloc
-    res = (JavaObject*)malloc(size);
-  }
-  ((void**)res)[0] = VT;
   JavaArray::setSize(res, n);
   return res;
 }

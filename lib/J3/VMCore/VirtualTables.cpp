@@ -29,6 +29,7 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
+#include "Zip.h"
 
 using namespace j3;
 
@@ -38,9 +39,9 @@ using namespace j3;
 // absolutely necessary. If there is an easy way to avoid it, do it! Only
 // Java classes should be GC classes.
 // Having many GC classes gives more work to the GC for the scanning phase
-// and for the relocation phase (for copying collectors.
+// and for the relocation phase (for copying collectors).
 //
-// In JnJVM, there is only one internal gc object, the class loader.
+// In J3, there is only one internal gc object, the class loader.
 // We decided that this was the best solution because
 // otherwise it would involve hacks on the java.lang.Classloader class.
 // Therefore, we create a new GC class with a finalize method that will
@@ -99,7 +100,7 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj, uintptr_t closure) {
   } 
 }
 
-/// Method for scanning a native array. Only scan the lock. The classloader of
+/// Method for scanning a native array. The classloader of
 /// the class is the bootstrap loader and therefore does not need to be
 /// scanned here.
 extern "C" void JavaArrayTracer(JavaArray* obj, uintptr_t closure) {
@@ -167,9 +168,7 @@ void CommonClass::tracer(uintptr_t closure) {
 
 void Class::tracer(uintptr_t closure) {
   CommonClass::tracer(closure);
-  if (classLoader != classLoader->bootstrapLoader) {
-    mvm::Collector::markAndTraceRoot(&bytes, closure);
-  }
+  mvm::Collector::markAndTraceRoot(&bytes, closure);
   
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
@@ -238,6 +237,11 @@ void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
+  
+  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
+       e = bootArchives.end(); i != e; i++) {
+    mvm::Collector::markAndTraceRoot((*i)->bytes, closure);
+  }
 }
 
 //===----------------------------------------------------------------------===//

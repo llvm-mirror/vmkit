@@ -658,9 +658,7 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
                                             ArrayUInt8* bytes) {
-  
-  // The array of bytes might be GC-allocated or malloc'd. Consider
-  // that this function can never be interrupted.
+  llvm_gcroot(bytes, 0); 
   assert(bytes && "constructing a class without bytes");
   classes->lock.lock();
   ClassMap::iterator End = classes->map.end();
@@ -960,11 +958,10 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
             temp[len + 1] = 0;
             bootClasspath.push_back(temp);
           } else {
-            ArrayUInt8* bytes =
-              Reader::openFile(this, rp);
+            ArrayUInt8* bytes = Reader::openFile(this, rp);
             if (bytes) {
               ZipArchive *archive = new(allocator, "ZipArchive")
-                ZipArchive(bytes, allocator);
+                ZipArchive(&bytes, allocator);
               if (archive) {
                 bootArchives.push_back(archive);
               }

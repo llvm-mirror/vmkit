@@ -35,7 +35,7 @@ ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path,
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
     UserClassArray* array = loader->upcalls->ArrayOfByte;
-    res = (ArrayUInt8*)array->doNew((sint32)nbb, loader->allocator, temp);
+    res = (ArrayUInt8*)array->doNew((sint32)nbb, JavaThread::get()->getJVM());
     if (fread(ArrayUInt8::getElements(res), nbb, 1, fp) == 0) {
       fprintf(stderr, "fread error\n");
       abort();  
@@ -52,7 +52,7 @@ ArrayUInt8* Reader::openZip(JnjvmBootstrapLoader* loader, ZipArchive* archive,
   ZipFile* file = archive->getFile(filename);
   if (file != 0) {
     UserClassArray* array = loader->upcalls->ArrayOfByte;
-    res = (ArrayUInt8*)array->doNew((sint32)file->ucsize, loader->allocator);
+    res = (ArrayUInt8*)array->doNew((sint32)file->ucsize, JavaThread::get()->getJVM());
     if (archive->readFile(res, file) != 0) {
       return res;
     }

@@ -49,9 +49,9 @@ class ZipArchive : public mvm::PermanentObject {
 public:
   std::map<const char*, ZipFile*, ltstr> filetable;
   typedef std::map<const char*, ZipFile*, ltstr>::iterator table_iterator;
+  ArrayUInt8** bytes;
 
 private:
-  ArrayUInt8* bytes;
   
   void findOfscd();
   void addFiles();
@@ -70,7 +70,7 @@ public:
   }
 
   int getOfscd() { return ofscd; }
-  ZipArchive(ArrayUInt8* bytes, mvm::BumpPtrAllocator& allocator);
+  ZipArchive(ArrayUInt8** bytes, mvm::BumpPtrAllocator& allocator);
   ZipFile* getFile(const char* filename);
   int readFile(ArrayUInt8* array, const ZipFile* file);
 

@@ -1885,8 +1885,7 @@ static void extractFiles(ArrayUInt8* bytes,
                          JavaAOTCompiler* M,
                          JnjvmBootstrapLoader* bootstrapLoader,
                          std::vector<Class*>& classes) {
-      
-  ZipArchive archive(bytes, bootstrapLoader->allocator);
+  ZipArchive archive(&bytes, bootstrapLoader->allocator);
     
   char* realName = (char*)alloca(4096);
   for (ZipArchive::table_iterator i = archive.filetable.begin(), 
@@ -1898,7 +1897,7 @@ static void extractFiles(ArrayUInt8* bytes,
     if (size > 6 && !strcmp(&(name[size - 6]), ".class")) {
       UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
       ArrayUInt8* res = 
-        (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
+        (ArrayUInt8*)array->doNew(file->ucsize, JavaThread::get()->getJVM());
       int ok = archive.readFile(res, file);
       if (!ok) return;
       
@@ -1912,7 +1911,7 @@ static void extractFiles(ArrayUInt8* bytes,
                             !strcmp(&name[size - 4], ".zip"))) {
       UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
       ArrayUInt8* res = 
-        (ArrayUInt8*)array->doNew(file->ucsize, bootstrapLoader->allocator);
+        (ArrayUInt8*)array->doNew(file->ucsize, JavaThread::get()->getJVM());
       int ok = archive.readFile(res, file);
       if (!ok) return;
       

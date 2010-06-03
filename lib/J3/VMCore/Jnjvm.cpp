@@ -825,7 +825,9 @@ static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
 void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv, 
                                           int i) {
   ArrayUInt8* bytes = NULL;
+  ArrayUInt8* res = NULL;
   llvm_gcroot(bytes, 0);
+  llvm_gcroot(res, 0);
   jarFile = argv[i];
 
   vm->setClasspath(jarFile);
@@ -837,13 +839,12 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
     return;
   }
 
-  ZipArchive archive(bytes, vm->allocator);
+  ZipArchive archive(&bytes, vm->allocator);
   if (archive.getOfscd() != -1) {
     ZipFile* file = archive.getFile(PATH_MANIFEST);
     if (file) {
       UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
-      ArrayUInt8* res = (ArrayUInt8*)array->doNew(file->ucsize, vm->allocator,
-                                                  true);
+      res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
       int ok = archive.readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(vm, res, MAIN_CLASS,
@@ -859,14 +860,12 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
       } else {
         printf("Can't extract Manifest file from archive %s\n", jarFile);
       }
-      free(res);
     } else {
       printf("Can't find Manifest file in archive %s\n", jarFile);
     }
   } else {
     printf("Can't find archive %s\n", jarFile);
   }
-  free(bytes);
 }
 
 void ClArgumentsInfo::nyi() {
@@ -1255,6 +1254,15 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   llvm_gcroot(exc, 0);
 
   Jnjvm* vm = thread->getJVM();
+  vm->argumentsInfo.readArgs(vm);
+  if (vm->argumentsInfo.className == NULL) {
+    vm->threadSystem.nonDaemonThreads = 0;
+    return;
+  }
+  int pos = vm->argumentsInfo.appArgumentsPos;  
+  vm->argumentsInfo.argv = vm->argumentsInfo.argv + pos - 1;
+  vm->argumentsInfo.argc = vm->argumentsInfo.argc - pos + 1;
+
   vm->mainThread = thread;
 
   TRY {
@@ -1323,31 +1331,22 @@ static void serviceCPUMonitor(mvm::Thread* th) {
 void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;
-  argumentsInfo.readArgs(this);
-  if (argumentsInfo.className) {
-    int pos = argumentsInfo.appArgumentsPos;
-    
-    argumentsInfo.argv = argumentsInfo.argv + pos - 1;
-    argumentsInfo.argc = argumentsInfo.argc - pos + 1;
 #ifdef SERVICE
-    struct sigaction sa;
-    sigset_t mask;
-    sigfillset(&mask);
-    sigaction(SIGUSR1, 0, &sa);
-    sa.sa_mask = mask;
-    sa.sa_handler = terminationHandler;
-    sa.sa_flags |= SA_RESTART;
-    sigaction(SIGUSR1, &sa, NULL);
+  struct sigaction sa;
+  sigset_t mask;
+  sigfillset(&mask);
+  sigaction(SIGUSR1, 0, &sa);
+  sa.sa_mask = mask;
+  sa.sa_handler = terminationHandler;
+  sa.sa_flags |= SA_RESTART;
+  sigaction(SIGUSR1, &sa, NULL);
 
-    mvm::Thread* th = new JavaThread(0, 0, this);
-    th->start(serviceCPUMonitor);
+  mvm::Thread* th = new JavaThread(0, 0, this);
+  th->start(serviceCPUMonitor);
 #endif
    
-    mainThread = new JavaThread(0, 0, this);
-    mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
-  } else {
-    threadSystem.nonDaemonThreads = 0;
-  }
+  mainThread = new JavaThread(0, 0, this);
+  mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) : 
