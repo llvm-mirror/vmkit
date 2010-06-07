@@ -963,11 +963,12 @@ public:
 class JavaStaticMethodInfo : public mvm::CamlMethodInfo {
 protected:
   JavaMethod* meth;
+
 public:
   virtual void print(void* ip, void* addr);
   
-  JavaStaticMethodInfo(mvm::CamlFrame* CF, void* ip, JavaMethod* M) :
-    mvm::CamlMethodInfo(CF, ip) {
+  JavaStaticMethodInfo(mvm::CamlMethodInfo* super, void* ip, JavaMethod* M) :
+    mvm::CamlMethodInfo(super != NULL ? super->CF : NULL, ip) {
     meth = M;
     MethodType = 1;
   }

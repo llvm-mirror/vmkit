@@ -44,8 +44,8 @@ public:
 };
 
 class CamlMethodInfo : public MethodInfo {
-  CamlFrame* CF;
 public:
+  CamlFrame* CF;
   virtual void scan(uintptr_t closure, void* ip, void* addr);
   CamlMethodInfo(CamlFrame* C, void* ip);
 };

@@ -45,6 +45,19 @@ public:
   /// FunctionMapLock - Spin lock to protect the Functions map.
   ///
   mvm::SpinLock FunctionMapLock;
+
+  /// IPToMethodInfo - Map a code start instruction instruction to the MethodInfo.
+  ///
+  MethodInfo* CodeStartToMethodInfo(void* ip) {
+    FunctionMapLock.acquire();
+    std::map<void*, MethodInfo*>::iterator I = Functions.find(ip);
+    MethodInfo* res = NULL;
+    if (I != Functions.end()) {
+      res = I->second;
+    }
+    FunctionMapLock.release();
+    return res;
+  }
 };
 
 /// StartEndFunctionMap - This map is for functions for which we have

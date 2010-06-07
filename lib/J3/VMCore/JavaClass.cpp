@@ -302,10 +302,11 @@ void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
   if (code == 0) {
     code = ptr;
     Jnjvm* vm = JavaThread::get()->getJVM();
-    JavaStaticMethodInfo* MI =
+    mvm::MethodInfo* MI = vm->SharedStaticFunctions.CodeStartToMethodInfo(ptr);
+    JavaStaticMethodInfo* JMI =
       new (classDef->classLoader->allocator, "JavaStaticMethodInfo")
-        JavaStaticMethodInfo(0, code, this);
-    vm->StaticFunctions.addMethodInfo(MI, code);
+        JavaStaticMethodInfo((mvm::CamlMethodInfo*)MI, code, this);
+    vm->StaticFunctions.addMethodInfo(JMI, code);
     classDef->classLoader->getCompiler()->setMethod(this, ptr, name);
   }
   access |= ACC_NATIVE;
