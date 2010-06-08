@@ -1270,12 +1270,13 @@ private:
   ///
   Typedef* _signature;
   
-  /// InitField - Set an initial value to the field of an object.
+  /// InitField - Set an initial value to the field.
   ///
-  void InitField(void* obj, uint64 val = 0);
-  void InitField(void* obj, JavaObject* val);
-  void InitField(void* obj, double val);
-  void InitField(void* obj, float val);
+  void InitStaticField(uint64 val);
+  void InitStaticField(JavaObject* val);
+  void InitStaticField(double val);
+  void InitStaticField(float val);
+  void InitNullStaticField();
 
 public:
   
@@ -1329,10 +1330,10 @@ public:
     return _signature;
   }
 
-  /// initField - Init the value of the field in the given object. This is
+  /// InitStaticField - Init the value of the field in the given object. This is
   /// used for static fields which have a default value.
   ///
-  void initField(void* obj, Jnjvm* vm);
+  void InitStaticField(Jnjvm* vm);
 
   /// lookupAttribut - Look up the attribut in the field's list of attributs.
   ///

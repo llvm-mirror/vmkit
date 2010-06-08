@@ -545,14 +545,41 @@ bool JavaVirtualTable::isSubtypeOf(JavaVirtualTable* otherVT) {
   return false;
 }
 
-void JavaField::InitField(void* obj, uint64 val) {
+void JavaField::InitNullStaticField() {
   
   Typedef* type = getSignature();
+  void* obj = classDef->getStaticInstance();
   if (!type->isPrimitive()) {
-    ((JavaObject**)((uint64)obj + ptrOffset))[0] = (JavaObject*)val;
+    ((JavaObject**)((uint64)obj + ptrOffset))[0] = NULL;
     return;
   }
 
+  PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
+  if (prim->isLong()) {
+    ((sint64*)((uint64)obj + ptrOffset))[0] = 0;
+  } else if (prim->isInt()) {
+    ((sint32*)((uint64)obj + ptrOffset))[0] = 0;
+  } else if (prim->isChar()) {
+    ((uint16*)((uint64)obj + ptrOffset))[0] = 0;
+  } else if (prim->isShort()) {
+    ((sint16*)((uint64)obj + ptrOffset))[0] = 0;
+  } else if (prim->isByte()) {
+    ((sint8*)((uint64)obj + ptrOffset))[0] = 0;
+  } else if (prim->isBool()) {
+    ((uint8*)((uint64)obj + ptrOffset))[0] = 0;
+  } else if (prim->isDouble()) {
+    ((double*)((uint64)obj + ptrOffset))[0] = 0.0;
+  } else if (prim->isFloat()) {
+    ((float*)((uint64)obj + ptrOffset))[0] = 0.0;
+  } else {
+    abort();
+  }
+}
+
+void JavaField::InitStaticField(uint64 val) { 
+  Typedef* type = getSignature();
+  void* obj = classDef->getStaticInstance();
+  assert(type->isPrimitive() && "Non primitive field");
   PrimitiveTypedef* prim = (PrimitiveTypedef*)type;
   if (prim->isLong()) {
     ((sint64*)((uint64)obj + ptrOffset))[0] = val;
@@ -567,29 +594,33 @@ void JavaField::InitField(void* obj, uint64 val) {
   } else if (prim->isBool()) {
     ((uint8*)((uint64)obj + ptrOffset))[0] = (uint8)val;
   } else {
-    // 0 value for everything else
-    ((sint32*)((uint64)obj + ptrOffset))[0] = (sint32)val;
+    // Should never be here.
+    abort();
   }
 }
 
-void JavaField::InitField(void* obj, JavaObject* val) {
+void JavaField::InitStaticField(JavaObject* val) {
+  llvm_gcroot(val, 0);
+  void* obj = classDef->getStaticInstance();
   ((JavaObject**)((uint64)obj + ptrOffset))[0] = val;
 }
 
-void JavaField::InitField(void* obj, double val) {
+void JavaField::InitStaticField(double val) {
+  void* obj = classDef->getStaticInstance();
   ((double*)((uint64)obj + ptrOffset))[0] = val;
 }
 
-void JavaField::InitField(void* obj, float val) {
+void JavaField::InitStaticField(float val) {
+  void* obj = classDef->getStaticInstance();
   ((float*)((uint64)obj + ptrOffset))[0] = val;
 }
 
-void JavaField::initField(void* obj, Jnjvm* vm) {
+void JavaField::InitStaticField(Jnjvm* vm) {
   const Typedef* type = getSignature();
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
   if (!attribut) {
-    InitField(obj);
+    InitNullStaticField();
   } else {
     Reader reader(attribut, &(classDef->bytes));
     JavaConstantPool * ctpInfo = classDef->ctpInfo;
@@ -597,17 +628,17 @@ void JavaField::initField(void* obj, Jnjvm* vm) {
     if (type->isPrimitive()) {
       UserCommonClass* cl = type->assocClass(vm->bootstrapLoader);
       if (cl == vm->upcalls->OfLong) {
-        InitField(obj, (uint64)ctpInfo->LongAt(idx));
+        InitStaticField((uint64)ctpInfo->LongAt(idx));
       } else if (cl == vm->upcalls->OfDouble) {
-        InitField(obj, ctpInfo->DoubleAt(idx));
+        InitStaticField(ctpInfo->DoubleAt(idx));
       } else if (cl == vm->upcalls->OfFloat) {
-        InitField(obj, ctpInfo->FloatAt(idx));
+        InitStaticField(ctpInfo->FloatAt(idx));
       } else {
-        InitField(obj, (uint64)ctpInfo->IntegerAt(idx));
+        InitStaticField((uint64)ctpInfo->IntegerAt(idx));
       }
     } else if (type->isReference()){
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
-      InitField(obj, (JavaObject*)ctpInfo->resolveString(utf8, idx));
+      InitStaticField((JavaObject*)ctpInfo->resolveString(utf8, idx));
     } else {
       fprintf(stderr, "I haven't verified your class file and it's malformed:"
                       " unknown constant %s!\n",

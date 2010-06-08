@@ -182,7 +182,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       JavaField* fields = cl->getStaticFields();
       void* val = cl->getStaticInstance();
       for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
-        fields[i].initField(val, vm);
+        fields[i].InitStaticField(vm);
       }
     }
   
