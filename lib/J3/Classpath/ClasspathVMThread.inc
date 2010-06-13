@@ -58,9 +58,7 @@ static void start(JavaThread* thread) {
   bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
 
   if (!isDaemon) {
-    ts.nonDaemonLock.lock();
-    ts.nonDaemonThreads++;
-    ts.nonDaemonLock.unlock();
+    vm->threadSystem.enter();
   }
   
   // Run the VMThread::run function
@@ -68,11 +66,7 @@ static void start(JavaThread* thread) {
  
   // Remove the thread from the list.
   if (!isDaemon) {
-    ts.nonDaemonLock.lock();
-    ts.nonDaemonThreads--;
-    if (ts.nonDaemonThreads == 0)
-      ts.nonDaemonVar.signal();
-    ts.nonDaemonLock.unlock();
+    vm->threadSystem.leave();
   }
 }
 

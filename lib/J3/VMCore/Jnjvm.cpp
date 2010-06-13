@@ -1255,9 +1255,10 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   Jnjvm* vm = thread->getJVM();
   vm->argumentsInfo.readArgs(vm);
   if (vm->argumentsInfo.className == NULL) {
-    vm->threadSystem.nonDaemonThreads = 0;
+    vm->threadSystem.leave();
     return;
   }
+
   int pos = vm->argumentsInfo.appArgumentsPos;  
   vm->argumentsInfo.argv = vm->argumentsInfo.argv + pos - 1;
   vm->argumentsInfo.argc = vm->argumentsInfo.argc - pos + 1;
@@ -1298,11 +1299,20 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 
     vm->executeClass(info.className, args);
   }
-  vm->threadSystem.nonDaemonLock.lock();
-  --(vm->threadSystem.nonDaemonThreads);
-  if (vm->threadSystem.nonDaemonThreads == 0)
-      vm->threadSystem.nonDaemonVar.signal();
-  vm->threadSystem.nonDaemonLock.unlock();  
+  vm->threadSystem.leave();
+}
+
+void ThreadSystem::leave() {
+  nonDaemonLock.lock();
+  --nonDaemonThreads;
+  if (nonDaemonThreads == 0) nonDaemonVar.signal();
+  nonDaemonLock.unlock();  
+}
+
+void ThreadSystem::enter() {
+  nonDaemonLock.lock();
+  ++nonDaemonThreads;
+  nonDaemonLock.unlock();  
 }
 
 #ifdef SERVICE

@@ -79,6 +79,14 @@ public:
   ///
   ~ThreadSystem() {}
 
+  /// leave - A thread calls this function when it leaves the thread system.
+  ///
+  void leave();
+
+  /// enter - A thread calls this function when it enters the thread system.
+  ///
+  void enter();
+
 };
 
 class ClArgumentsInfo {
