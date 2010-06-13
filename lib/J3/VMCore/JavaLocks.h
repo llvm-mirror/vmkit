@@ -44,6 +44,10 @@ public:
     return associatedObject;
   }
 
+  JavaObject** getAssociatedObjectPtr() {
+    return &associatedObject;
+  }
+
   /// acquire - Acquires the internalLock.
   ///
   bool acquire(JavaObject* obj) {
@@ -159,7 +163,7 @@ public:
   /// deallocate - Put a lock in the free list lock.
   ///
   void deallocate(JavaLock* lock) {
-    lock->associatedObject = 0;
+    lock->associatedObject = NULL;
     threadLock.lock();
     lock->nextFreeLock = freeLock;
     freeLock = lock;

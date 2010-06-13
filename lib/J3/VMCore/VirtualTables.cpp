@@ -282,7 +282,16 @@ void Jnjvm::tracer(uintptr_t closure) {
     JavaString** str = &(i->second);
     mvm::Collector::markAndTraceRoot(str, closure);
   }
-
+ 
+  for (uint32 i = 0; i < LockSystem::GlobalSize; i++) {
+    JavaLock** array = lockSystem.LockTable[i];
+    if (array == NULL) break;
+    for (uint32 j = 0; j < LockSystem::IndexSize; j++) {
+      if (array[j] == NULL) break;
+      JavaLock* lock = array[j];
+      mvm::Collector::markAndTraceRoot(lock->getAssociatedObjectPtr(), closure);
+    }
+  }
 #if defined(ISOLATE_SHARING)
   mvm::Collector::markAndTraceRoot(&JnjvmSharedLoader::sharedLoader, closure);
 #endif

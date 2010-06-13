@@ -14,6 +14,7 @@
 using namespace j3;
 
 JavaLock* JavaLock::allocate(JavaObject* obj) {
+  llvm_gcroot(obj, 0);
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaLock* res = vm->lockSystem.allocate(obj);  
   return res;
@@ -25,7 +26,8 @@ void JavaLock::deallocate() {
 }
 
 JavaLock* LockSystem::allocate(JavaObject* obj) { 
-  
+ 
+  llvm_gcroot(obj, 0); 
   JavaLock* res = 0;
   threadLock.lock();
 
@@ -88,8 +90,8 @@ JavaLock* JavaLock::getFromID(uintptr_t ID) {
 }
 
 void JavaLock::release(JavaObject* obj) {
-  assert(associatedObject == obj && "Mismatch object in lock");
   llvm_gcroot(obj, 0);
+  assert(associatedObject == obj && "Mismatch object in lock");
   if (!waitingThreads && !lockingThreads &&
       internalLock.recursionCount() == 1) {
     assert(associatedObject && "No associated object when releasing");
