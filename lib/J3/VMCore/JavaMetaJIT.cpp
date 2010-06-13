@@ -227,6 +227,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
 
 #define INVOKE_VA(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
 TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) { \
+  llvm_gcroot(obj, 0); \
   va_list ap;\
   va_start(ap, obj);\
   llvm_gcroot(obj, 0); \
@@ -236,6 +237,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject
 }\
 \
 TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) {\
+  llvm_gcroot(obj, 0); \
   va_list ap;\
   va_start(ap, obj);\
   TYPE res = invoke##TYPE_NAME##SpecialAP(vm, cl, obj, ap);\

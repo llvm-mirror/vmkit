@@ -213,9 +213,8 @@ void JavaObject::decapsulePrimitive(JavaObject* obj, Jnjvm *vm, jvalue* buf,
     if (obj && !(getClass(obj)->isOfTypeName(signature->getName()))) {
       vm->illegalArgumentException("wrong type argument");
     }
-    (*buf).l = reinterpret_cast<jobject>(obj);
     return;
-  } else if (obj == 0) {
+  } else if (obj == NULL) {
     vm->illegalArgumentException("");
   } else {
     UserCommonClass* cl = getClass(obj);
