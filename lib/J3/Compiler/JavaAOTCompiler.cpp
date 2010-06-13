@@ -391,45 +391,44 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
     Attribut* attribut = field.lookupAttribut(Attribut::constantAttribut);
 
     if (!attribut) {
-      void* obj = cl->getStaticInstance();
-      if (obj) {
+      if (cl->getStaticInstance() != NULL) {
         if (type->isPrimitive()) {
           const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
           if (prim->isBool() || prim->isByte()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt8Ty(getLLVMContext()),
-                field.getInt8Field(obj));
+                field.getStaticInt8Field());
             Elts.push_back(CI);
           } else if (prim->isShort() || prim->isChar()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt16Ty(getLLVMContext()),
-                field.getInt16Field(obj));
+                field.getStaticInt16Field());
             Elts.push_back(CI);
           } else if (prim->isInt()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt32Ty(getLLVMContext()),
-                field.getInt32Field(obj));
+                field.getStaticInt32Field());
             Elts.push_back(CI);
           } else if (prim->isLong()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt64Ty(getLLVMContext()),
-                field.getLongField(obj));
+                field.getStaticLongField());
             Elts.push_back(CI);
           } else if (prim->isFloat()) {
             Constant* CF = ConstantFP::get(
                 Type::getFloatTy(getLLVMContext()),
-                field.getFloatField(obj));
+                field.getStaticFloatField());
             Elts.push_back(CF);
           } else if (prim->isDouble()) {
             Constant* CF = ConstantFP::get(
                 Type::getDoubleTy(getLLVMContext()),
-                field.getDoubleField(obj));
+                field.getStaticDoubleField());
             Elts.push_back(CF);
           } else {
             abort();
           }
         } else {
-          JavaObject* val = field.getObjectField(obj);
+          JavaObject* val = field.getStaticObjectField();
           if (val) {
             JnjvmClassLoader* JCL = cl->classLoader;
             CommonClass* FieldCl = field.getSignature()->assocClass(JCL);
@@ -676,33 +675,33 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
           const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
           if (prim->isBool() || prim->isByte()) {
             ConstantInt* CI = ConstantInt::get(Type::getInt8Ty(getLLVMContext()),
-                                               field.getInt8Field(obj));
+                                               field.getInstanceInt8Field(obj));
             TempElts.push_back(CI);
           } else if (prim->isShort() || prim->isChar()) {
             ConstantInt* CI = ConstantInt::get(Type::getInt16Ty(getLLVMContext()),
-                                               field.getInt16Field(obj));
+                                               field.getInstanceInt16Field(obj));
             TempElts.push_back(CI);
           } else if (prim->isInt()) {
             ConstantInt* CI = ConstantInt::get(Type::getInt32Ty(getLLVMContext()),
-                                               field.getInt32Field(obj));
+                                               field.getInstanceInt32Field(obj));
             TempElts.push_back(CI);
           } else if (prim->isLong()) {
             ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
-                                               field.getLongField(obj));
+                                               field.getInstanceLongField(obj));
             TempElts.push_back(CI);
           } else if (prim->isFloat()) {
             Constant* CF = ConstantFP::get(Type::getFloatTy(getLLVMContext()),
-                                           field.getFloatField(obj));
+                                           field.getInstanceFloatField(obj));
             TempElts.push_back(CF);
           } else if (prim->isDouble()) {
             Constant* CF = ConstantFP::get(Type::getDoubleTy(getLLVMContext()),
-                                           field.getDoubleField(obj));
+                                           field.getInstanceDoubleField(obj));
             TempElts.push_back(CF);
           } else {
             abort();
           }
         } else {
-          JavaObject* val = field.getObjectField(obj);
+          JavaObject* val = field.getInstanceObjectField(obj);
           if (val) {
             JnjvmClassLoader* JCL = cl->classLoader;
             CommonClass* FieldCl = field.getSignature()->assocClass(JCL);

@@ -82,11 +82,9 @@ JavaObjectField* Field, JavaObject* obj) {
   JavaField* field = JavaObjectField::getInternalField(Field);
   const Typedef* type = field->getSignature();
   bool stat =  isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -94,16 +92,33 @@ JavaObjectField* Field, JavaObject* obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
 
-    if (prim->isInt())
-      res = (sint32)field->getInt32Field(stat ? StatPtr : obj);
-    else if (prim->isChar())
-      res = (uint32)field->getInt16Field(stat ? StatPtr : obj);
-    else if (prim->isByte())
-      res = (sint32)field->getInt8Field(stat ? StatPtr : obj);
-    else if (prim->isShort())
-      res = (sint32)field->getInt16Field(stat ? StatPtr : obj);
-    else
+    if (prim->isInt()) {
+      if (stat) {
+        res = (sint32)field->getStaticInt32Field();
+      } else {
+        res = (sint32)field->getInstanceInt32Field(obj);
+      }
+    } else if (prim->isChar()) {
+      if (stat) {
+        res = (uint32)field->getStaticInt16Field();
+      } else {
+        res = (uint32)field->getInstanceInt16Field(obj);
+      }
+    } else if (prim->isByte()) {
+      if (stat) {
+        res = (sint32)field->getStaticInt8Field();
+      } else {
+        res = (sint32)field->getInstanceInt8Field(obj);
+      }
+    } else if (prim->isShort()) {
+      if (stat) {
+        res = (sint32)field->getStaticInt16Field();
+      } else {
+        res = (sint32)field->getInstanceInt16Field(obj);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
       vm->illegalArgumentException("wrong type");
   }
@@ -130,12 +145,10 @@ JavaObjectField* Field, JavaObject* obj) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  bool stat =  isStatic(field->access);
-  void* StatPtr = 0;
+  bool stat = isStatic(field->access);
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -144,18 +157,39 @@ JavaObjectField* Field, JavaObject* obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     
-    if (prim->isInt())
-      res = (sint64)field->getInt32Field(stat ? StatPtr : obj);
-    else if (prim->isChar())
-      res = (uint64)field->getInt16Field(stat ? StatPtr : obj);
-    else if (prim->isByte())
-      res = (sint64)field->getInt8Field(stat ? StatPtr : obj);
-    else if (prim->isShort())
-      res = (sint64)field->getInt16Field(stat ? StatPtr : obj);
-    else if (prim->isLong())
-      res = (sint64)field->getLongField(stat ? StatPtr : obj);
-    else
+    if (prim->isInt()) {
+      if (stat) {
+        res = (sint64)field->getStaticInt32Field();
+      } else {
+        res = (sint64)field->getInstanceInt32Field(obj);
+      }
+    } else if (prim->isChar()) {
+      if (stat) {
+        res = (uint64)field->getStaticInt16Field();
+      } else {
+        res = (uint64)field->getInstanceInt16Field(obj);
+      }
+    } else if (prim->isByte()) {
+      if (stat) {
+        res = (sint64)field->getStaticInt8Field();
+      } else {
+        res = (sint64)field->getInstanceInt8Field(obj);
+      }
+    } else if (prim->isShort()) {
+      if (stat) {
+        res = (sint64)field->getStaticInt16Field();
+      } else {
+        res = (sint64)field->getInstanceInt16Field(obj);
+      }
+    } else if (prim->isLong()) {
+      if (stat) {
+        res = (sint64)field->getStaticLongField();
+      } else {
+        res = (sint64)field->getInstanceLongField(obj);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -182,11 +216,9 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat =  isStatic(field->access);
-  void* StatPtr = 0;
    
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -194,10 +226,15 @@ JavaObjectField* Field, JavaObject* obj) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isBool())  
-      res = (uint8)field->getInt8Field(stat ? StatPtr : obj);
-    else
+    if (prim->isBool()) { 
+      if (stat) {
+        res = (uint8)field->getStaticInt8Field();
+      } else {
+        res = (uint8)field->getInstanceInt8Field(obj);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -224,11 +261,9 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -236,21 +271,46 @@ JavaObjectField* Field, JavaObject* obj) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isByte())
-      res = (jfloat)field->getInt8Field(stat ? StatPtr : obj);
-    else if (prim->isInt())
-      res = (jfloat)field->getInt32Field(stat ? StatPtr : obj);
-    else if (prim->isShort())
-      res = (jfloat)field->getInt16Field(stat ? StatPtr : obj);
-    else if (prim->isLong())
-      res = (jfloat)field->getLongField(stat ? StatPtr : obj);
-    else if (prim->isChar())
+    if (prim->isByte()) {
+      if (stat) {
+        res = (jfloat)field->getStaticInt8Field();
+      } else {
+        res = (jfloat)field->getInstanceInt8Field(obj);
+      }
+    } else if (prim->isInt()) {
+      if (stat) {
+        res = (jfloat)field->getStaticInt32Field();
+      } else {
+        res = (jfloat)field->getInstanceInt32Field(obj);
+      }
+    } else if (prim->isShort()) {
+      if (stat) {
+        res = (jfloat)field->getStaticInt16Field();
+      } else {
+        res = (jfloat)field->getInstanceInt16Field(obj);
+      }
+    } else if (prim->isLong()) {
+      if (stat) {
+        res = (jfloat)field->getStaticLongField();
+      } else {
+        res = (jfloat)field->getInstanceLongField(obj);
+      }
+    } else if (prim->isChar()) {
       // Cast to uint32 because char is unsigned.
-      res = (jfloat)(uint32)field->getInt16Field(stat ? StatPtr : obj);
-    else if (prim->isFloat())
-      res = (jfloat)field->getFloatField(stat ? StatPtr : obj);
-    else
+      if (stat) {
+        res = (jfloat)(uint32)field->getStaticInt16Field();
+      } else {
+        res = (jfloat)(uint32)field->getInstanceInt16Field(obj);
+      }
+    } else if (prim->isFloat()) {
+      if (stat) {
+        res = (jfloat)field->getStaticFloatField();
+      } else {
+        res = (jfloat)field->getInstanceFloatField(obj);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -276,11 +336,9 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -288,10 +346,15 @@ JavaObjectField* Field, JavaObject* obj) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isByte())
-      res = (sint8)field->getInt8Field(stat ? StatPtr : obj);
-    else
+    if (prim->isByte()) {
+      if (stat) {
+        res = (sint8)field->getStaticInt8Field();
+      } else {
+        res = (sint8)field->getInstanceInt8Field(obj);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -317,11 +380,9 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -329,10 +390,15 @@ JavaObjectField* Field, JavaObject* obj) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isChar())
-      res = (uint16)field->getInt16Field(stat ? StatPtr : obj);
-    else
+    if (prim->isChar()) {
+      if (stat) {
+        res = (uint16)field->getStaticInt16Field();
+      } else {
+        res = (uint16)field->getInstanceInt16Field(obj);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -360,11 +426,9 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -372,12 +436,21 @@ JavaObjectField* Field, JavaObject* obj) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isShort())
-      res = (sint16)field->getInt16Field(stat ? StatPtr : obj);
-    else if (prim->isByte())
-      res = (sint16)field->getInt8Field(stat ? StatPtr : obj);
-    else
+    if (prim->isShort()) {
+      if (stat) {
+        res = (sint16)field->getStaticInt16Field();
+      } else {
+        res = (sint16)field->getInstanceInt16Field(obj);
+      }
+    } else if (prim->isByte()) {
+      if (stat) {
+        res = (sint16)field->getStaticInt8Field();
+      } else {
+        res = (sint16)field->getInstanceInt8Field(obj);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -403,11 +476,9 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -415,22 +486,51 @@ JavaObjectField* Field, JavaObject* obj) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isByte())
-      res = (jdouble)(sint64)field->getInt8Field(stat ? StatPtr : obj);
-    else if (prim->isInt())
-      res = (jdouble)(sint64)field->getInt32Field(stat ? StatPtr : obj);
-    else if (prim->isShort())
-      res = (jdouble)(sint64)field->getInt16Field(stat? StatPtr : obj);
-    else if (prim->isLong())
-      res = (jdouble)(sint64)field->getLongField(stat? StatPtr : obj);
-    else if (prim->isChar())
-      res = (jdouble)(uint64)field->getInt16Field(stat ? StatPtr : obj);
-    else if (prim->isFloat())
-      res = (jdouble)field->getFloatField(stat ? StatPtr : obj);
-    else if (prim->isDouble())
-      res = (jdouble)field->getDoubleField(stat ? StatPtr : obj);
-    else
+    if (prim->isByte()) {
+      if (stat) {
+        res = (jdouble)(sint64)field->getStaticInt8Field();
+      } else {
+        res = (jdouble)(sint64)field->getInstanceInt8Field(obj);
+      }
+    } else if (prim->isInt()) {
+      if (stat) {
+        res = (jdouble)(sint64)field->getStaticInt32Field();
+      } else {
+        res = (jdouble)(sint64)field->getInstanceInt32Field(obj);
+      }
+    } else if (prim->isShort()) {
+      if (stat) {
+        res = (jdouble)(sint64)field->getStaticInt16Field();
+      } else {
+        res = (jdouble)(sint64)field->getInstanceInt16Field(obj);
+      }
+    } else if (prim->isLong()) {
+      if (stat) {
+        res = (jdouble)(sint64)field->getStaticLongField();
+      } else {
+        res = (jdouble)(sint64)field->getInstanceLongField(obj);
+      }
+    } else if (prim->isChar()) {
+      if (stat) {
+        res = (jdouble)(uint64)field->getStaticInt16Field();
+      } else {
+        res = (jdouble)(uint64)field->getInstanceInt16Field(obj);
+      }
+    } else if (prim->isFloat()) {
+      if (stat) {
+        res = (jdouble)field->getStaticFloatField();
+      } else {
+        res = (jdouble)field->getInstanceFloatField(obj);
+      }
+    } else if (prim->isDouble()) {
+      if (stat) {
+        res = (jdouble)field->getStaticDoubleField();
+      } else {
+        res = (jdouble)field->getInstanceDoubleField(obj);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -458,11 +558,9 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -471,47 +569,59 @@ JavaObjectField* Field, JavaObject* obj) {
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
     if (prim->isBool()) {
-      uint8 val = field->getInt8Field(stat ? StatPtr : obj);
+      uint8 val =  stat ? field->getStaticInt8Field() :
+                          field->getInstanceInt8Field(obj);
       res = vm->upcalls->boolClass->doNew(vm);
-      vm->upcalls->boolValue->setInt8Field(res, val);
+      vm->upcalls->boolValue->setInstanceInt8Field(res, val);
     }
     else if (prim->isByte()) {
-      sint8 val =  field->getInt8Field(stat ? StatPtr : obj);
+      sint8 val =  stat ? field->getStaticInt8Field() :
+                          field->getInstanceInt8Field(obj);
       res = vm->upcalls->byteClass->doNew(vm);
-      vm->upcalls->byteValue->setInt8Field(res, val);
+      vm->upcalls->byteValue->setInstanceInt8Field(res, val);
     }
     else if (prim->isChar()) {
-      uint16 val =  field->getInt16Field(stat ? StatPtr : obj);
+      uint16 val =  stat ? field->getStaticInt16Field() :
+                           field->getInstanceInt16Field(obj);
       res = vm->upcalls->charClass->doNew(vm);
-      vm->upcalls->charValue->setInt16Field(res, val);
+      vm->upcalls->charValue->setInstanceInt16Field(res, val);
     }
     else if (prim->isShort()) {
-      sint16 val =  field->getInt16Field(stat ? StatPtr : obj);
+      sint16 val =  stat ? field->getStaticInt16Field() :
+                           field->getInstanceInt16Field(obj);
       res = vm->upcalls->shortClass->doNew(vm);
-      vm->upcalls->shortValue->setInt16Field(res, val);
+      vm->upcalls->shortValue->setInstanceInt16Field(res, val);
     }
     else if (prim->isInt()) {
-      sint32 val =  field->getInt32Field(stat ? StatPtr : obj);
+      sint64 val =  stat ? field->getStaticInt32Field() :
+                           field->getInstanceInt32Field(obj);
       res = vm->upcalls->intClass->doNew(vm);
-      vm->upcalls->intValue->setInt32Field(res, val);
+      vm->upcalls->intValue->setInstanceInt32Field(res, val);
     }
     else if (prim->isLong()) {
-      sint64 val =  field->getLongField(stat ? StatPtr : obj);
+      sint64 val =  stat ? field->getStaticLongField() :
+                           field->getInstanceLongField(obj);
       res = vm->upcalls->longClass->doNew(vm);
-      vm->upcalls->longValue->setLongField(res, val);
+      vm->upcalls->longValue->setInstanceLongField(res, val);
     }
     else if (prim->isFloat()) {
-      float val =  field->getFloatField(stat ? StatPtr : obj);
+      float val =  stat ? field->getStaticFloatField() :
+                          field->getInstanceFloatField(obj);
       res = vm->upcalls->floatClass->doNew(vm);
-      vm->upcalls->floatValue->setFloatField(res, val);
+      vm->upcalls->floatValue->setInstanceFloatField(res, val);
     }
     else if (prim->isDouble()) {
-      double val =  field->getDoubleField(stat ? StatPtr : obj);
+      double val =  stat ? field->getStaticDoubleField() :
+                           field->getInstanceDoubleField(obj);
       res = vm->upcalls->doubleClass->doNew(vm);
-      vm->upcalls->doubleValue->setDoubleField(res, val);
+      vm->upcalls->doubleValue->setInstanceDoubleField(res, val);
     }
   } else {
-    res =  field->getObjectField(stat ? StatPtr : obj);
+    if (stat) {
+      res =  field->getStaticObjectField();
+    } else {
+      res =  field->getInstanceObjectField(obj);
+    }
   }
   
   END_NATIVE_EXCEPTION
@@ -536,12 +646,10 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   JavaField* field = JavaObjectField::getInternalField(Field);
   jvalue buf;
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -552,24 +660,61 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
 
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isBool())
-      field->setInt8Field(stat ? StatPtr : obj, buf.z);
-    else if (prim->isByte())
-      field->setInt8Field(stat ? StatPtr : obj, buf.b);
-    else if (prim->isChar())
-      field->setInt16Field(stat ? StatPtr : obj, buf.c);
-    else if (prim->isShort())
-      field->setInt16Field(stat ? StatPtr : obj, buf.s);
-    else if (prim->isInt())
-      field->setInt32Field(stat ? StatPtr : obj, buf.i);
-    else if (prim->isLong())
-      field->setLongField(stat ? StatPtr : obj, buf.j);
-    else if (prim->isFloat())
-      field->setFloatField(stat ? StatPtr : obj, buf.f);
-    else if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, buf.d);
+    if (prim->isBool()) {
+      if (stat) {
+        field->setStaticInt8Field(buf.z);
+      } else {
+        field->setInstanceInt8Field(obj, buf.z);
+      }
+    } else if (prim->isByte()) {
+      if (stat) {
+        field->setStaticInt8Field(buf.b);
+      } else {
+        field->setInstanceInt8Field(obj, buf.b);
+      }
+    } else if (prim->isChar()) {
+      if (stat) {
+        field->setStaticInt16Field(buf.c);
+      } else {
+        field->setInstanceInt16Field(obj, buf.c);
+      }
+    } else if (prim->isShort()) {
+      if (stat) {
+        field->setStaticInt16Field(buf.s);
+      } else {
+        field->setInstanceInt16Field(obj, buf.s);
+      }
+    } else if (prim->isInt()) {
+      if (stat) {
+        field->setStaticInt32Field(buf.i);
+      } else {
+        field->setInstanceInt32Field(obj, buf.i);
+      }
+    } else if (prim->isLong()) {
+      if (stat) {
+        field->setStaticLongField(buf.j);
+      } else {
+        field->setInstanceLongField(obj, buf.j);
+      }
+    } else if (prim->isFloat()) {
+      if (stat) {
+        field->setStaticFloatField(buf.f);
+      } else {
+        field->setInstanceFloatField(obj, buf.f);
+      }
+    } else if (prim->isDouble()) {
+      if (stat) {
+        field->setStaticDoubleField(buf.d);
+      } else {
+        field->setInstanceDoubleField(obj, buf.d);
+      }
+    }
   } else {
-    field->setObjectField(stat ? StatPtr : obj, val);
+    if (stat) {
+      field->setStaticObjectField(val);
+    } else {
+      field->setInstanceObjectField(obj, val);
+    }
   }
 
   END_NATIVE_EXCEPTION
@@ -590,11 +735,9 @@ JavaObjectField* Field, JavaObject* obj, jboolean val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -602,10 +745,15 @@ JavaObjectField* Field, JavaObject* obj, jboolean val) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isBool())
-      field->setInt8Field(stat ? StatPtr : obj, (uint8)val);
-    else
+    if (prim->isBool()) {
+      if (stat) {
+        field->setStaticInt8Field((uint8)val);
+      } else {
+        field->setInstanceInt8Field(obj, (uint8)val);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -629,11 +777,9 @@ JavaObjectField* Field, JavaObject* obj, jbyte val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -641,20 +787,45 @@ JavaObjectField* Field, JavaObject* obj, jbyte val) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isByte())
-      field->setInt8Field(stat ? StatPtr : obj, (sint8)val);
-    else if (prim->isShort())
-      field->setInt16Field(stat ? StatPtr : obj, (sint16)val);
-    else if (prim->isInt())
-      field->setInt32Field(stat ? StatPtr : obj, (sint32)val);
-    else if (prim->isLong())
-      field->setLongField(stat ? StatPtr : obj, (sint64)val);
-    else if (prim->isFloat())
-      field->setFloatField(stat ? StatPtr : obj, (float)val);
-    else if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, (double)val);
-    else
+    if (prim->isByte()) {
+      if (stat) {
+        field->setStaticInt8Field((sint8)val);
+      } else {
+        field->setInstanceInt8Field(obj, (sint8)val);
+      }
+    } else if (prim->isShort()) {
+      if (stat) {
+        field->setStaticInt16Field((sint16)val);
+      } else {
+        field->setInstanceInt16Field(obj, (sint16)val);
+      }
+    } else if (prim->isInt()) {
+      if (stat) {
+        field->setStaticInt32Field((sint32)val);
+      } else {
+        field->setInstanceInt32Field(obj, (sint32)val);
+      }
+    } else if (prim->isLong()) {
+      if (stat) {
+        field->setStaticLongField((sint64)val);
+      } else {
+        field->setInstanceLongField(obj, (sint64)val);
+      }
+    } else if (prim->isFloat()) {
+      if (stat) {
+        field->setStaticFloatField((float)val);
+      } else {
+        field->setInstanceFloatField(obj, (float)val);
+      }
+    } else if (prim->isDouble()) {
+      if (stat) {
+        field->setStaticDoubleField((double)val);
+      } else {
+        field->setInstanceDoubleField(obj, (double)val);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -677,29 +848,48 @@ JavaObjectField* Field, JavaObject* obj, jchar val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isChar())
-      field->setInt16Field(stat ? StatPtr : obj, (uint16)val);
-    else if (prim->isInt())
-      field->setInt32Field(stat ? StatPtr : obj, (uint32)val);
-    else if (prim->isLong())
-      field->setLongField(stat ? StatPtr : obj, (uint64)val);
-    else if (prim->isFloat())
-      field->setFloatField(stat ? StatPtr : obj, (float)(uint32)val);
-    else if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, (double)(uint64)val);
-    else
+    if (prim->isChar()) {
+      if (stat) {
+        field->setStaticInt16Field((uint16)val);
+      } else {
+        field->setInstanceInt16Field(obj, (uint16)val);
+      }
+    } else if (prim->isInt()) {
+      if (stat) {
+        field->setStaticInt32Field((uint32)val);
+      } else {
+        field->setInstanceInt32Field(obj, (uint32)val);
+      }
+    } else if (prim->isLong()) {
+      if (stat) {
+        field->setStaticLongField((uint64)val);
+      } else {
+        field->setInstanceLongField(obj, (uint64)val);
+      }
+    } else if (prim->isFloat()) {
+      if (stat) {
+        field->setStaticFloatField((float)(uint32)val);
+      } else {
+        field->setInstanceFloatField(obj, (float)(uint32)val);
+      }
+    } else if (prim->isDouble()) {
+      if (stat) {
+        field->setStaticDoubleField((double)(uint64)val);
+      } else {
+        field->setInstanceDoubleField(obj, (double)(uint64)val);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -722,11 +912,9 @@ JavaObjectField* Field, JavaObject* obj, jshort val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -734,18 +922,38 @@ JavaObjectField* Field, JavaObject* obj, jshort val) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isShort())
-      field->setInt16Field(stat ? StatPtr : obj, (sint16)val);
-    else if (prim->isInt())
-      field->setInt32Field(stat ? StatPtr : obj, (sint32)val);
-    else if (prim->isLong())
-      field->setLongField(stat ? StatPtr : obj, (sint64)val);
-    else if (prim->isFloat())
-      field->setFloatField(stat ? StatPtr : obj, (float)val);
-    else if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, (double)val);
-    else
+    if (prim->isShort()) {
+      if (stat) {
+        field->setStaticInt16Field((sint16)val);
+      } else {
+        field->setInstanceInt16Field(obj, (sint16)val);
+      }
+    } else if (prim->isInt()) {
+      if (stat) {
+        field->setStaticInt32Field((sint32)val);
+      } else {
+        field->setInstanceInt32Field(obj, (sint32)val);
+      }
+    } else if (prim->isLong()) {
+      if (stat) {
+        field->setStaticLongField((sint64)val);
+      } else {
+      }
+    } else if (prim->isFloat()) {
+      if (stat) {
+        field->setStaticFloatField((float)val);
+      } else {
+        field->setInstanceFloatField(obj, (float)val);
+      }
+    } else if (prim->isDouble()) {
+      if (stat) {
+        field->setStaticDoubleField((double)val);
+      } else {
+        field->setInstanceDoubleField(obj, (double)val);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -768,11 +976,9 @@ JavaObjectField* Field, JavaObject* obj, jint val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -780,16 +986,33 @@ JavaObjectField* Field, JavaObject* obj, jint val) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isInt())
-      field->setInt32Field(stat ? StatPtr : obj, (sint32)val);
-    else if (prim->isLong())
-      field->setLongField(stat ? StatPtr : obj, (sint64)val);
-    else if (prim->isFloat())
-      field->setFloatField(stat ? StatPtr : obj, (float)val);
-    else if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, (double)val);
-    else
+    if (prim->isInt()) {
+      if (stat) {
+        field->setStaticInt32Field((sint32)val);
+      } else {
+        field->setInstanceInt32Field(obj, (sint32)val);
+      }
+    } else if (prim->isLong()) {
+      if (stat) {
+        field->setStaticLongField((sint64)val);
+      } else {
+        field->setInstanceLongField(obj, (sint64)val);
+      }
+    } else if (prim->isFloat()) {
+      if (stat) {
+        field->setStaticFloatField((float)val);
+      } else {
+        field->setInstanceFloatField(obj, (float)val);
+      }
+    } else if (prim->isDouble()) {
+      if (stat) {
+        field->setStaticDoubleField((double)val);
+      } else {
+        field->setInstanceDoubleField(obj, (double)val);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -812,11 +1035,9 @@ JavaObjectField* Field, JavaObject* obj, jlong val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -824,14 +1045,27 @@ JavaObjectField* Field, JavaObject* obj, jlong val) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isLong())
-      field->setLongField(stat ? StatPtr : obj, (sint64)val);
-    else if (prim->isFloat())
-      field->setFloatField(stat ? StatPtr : obj, (float)val);
-    else if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, (double)val);
-    else
+    if (prim->isLong()) {
+      if (stat) {
+        field->setStaticLongField((sint64)val);
+      } else {
+        field->setInstanceLongField(obj, (sint64)val);
+      }
+    } else if (prim->isFloat()) {
+      if (stat) {
+        field->setStaticFloatField((float)val);
+      } else {
+        field->setInstanceFloatField(obj, (float)val);
+      }
+    } else if (prim->isDouble()) {
+      if (stat) {
+        field->setStaticDoubleField((double)val);
+      } else {
+        field->setInstanceDoubleField(obj, (double)val);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -854,11 +1088,9 @@ JavaObjectField* Field, JavaObject* obj, jfloat val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -866,12 +1098,21 @@ JavaObjectField* Field, JavaObject* obj, jfloat val) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isFloat())
-      field->setFloatField(stat ? StatPtr : obj, (float)val);
-    else if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, (double)val);
-    else 
+    if (prim->isFloat()) {
+      if (stat) {
+        field->setStaticFloatField((float)val);
+      } else {
+        field->setInstanceFloatField(obj, (float)val);
+      }
+    } else if (prim->isDouble()) {
+      if (stat) {
+        field->setStaticDoubleField((double)val);
+      } else {
+        field->setInstanceDoubleField(obj, (double)val);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }
@@ -894,11 +1135,9 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  void* StatPtr = 0;
   
   if (stat) {
     cl->initialiseClass(vm);
-    StatPtr = cl->getStaticInstance();
   } else {
     verifyNull(obj);
   }
@@ -906,10 +1145,15 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isDouble())
-      field->setDoubleField(stat ? StatPtr : obj, (double)val);
-    else
+    if (prim->isDouble()) {
+      if (stat) {
+        field->setStaticDoubleField((double)val);
+      } else {
+        field->setInstanceDoubleField(obj, (double)val);
+      }
+    } else {
       vm->illegalArgumentException("wrong type");
+    }
   } else {
     vm->illegalArgumentException("wrong type");
   }

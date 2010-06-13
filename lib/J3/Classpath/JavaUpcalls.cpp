@@ -229,8 +229,9 @@ Class*      Classpath::newReference;
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
-  JavaObject* vmth = 0;
-  JavaObject* th = 0;
+  JavaObject* vmth = NULL;
+  JavaObject* th = NULL;
+  JavaObject* name = NULL;
   llvm_gcroot(Group, 0);
   llvm_gcroot(vmth, 0);
   llvm_gcroot(th, 0);
@@ -238,16 +239,17 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   th = newThread->doNew(vm);
   myth->javaThread = th;
   vmth = newVMThread->doNew(vm);
+  name = vm->asciizToStr(thName);
   
-  threadName->setObjectField(th, vm->asciizToStr(thName));
-  priority->setInt32Field(th, (uint32)1);
-  daemon->setInt8Field(th, (uint32)0);
-  vmThread->setObjectField(th, vmth);
-  assocThread->setObjectField(vmth, th);
-  running->setInt8Field(vmth, (uint32)1);
-  vmdataVMThread->setObjectField(vmth, (JavaObject*)myth);
+  threadName->setInstanceObjectField(th, name);
+  priority->setInstanceInt32Field(th, (uint32)1);
+  daemon->setInstanceInt8Field(th, (uint32)0);
+  vmThread->setInstanceObjectField(th, vmth);
+  assocThread->setInstanceObjectField(vmth, th);
+  running->setInstanceInt8Field(vmth, (uint32)1);
+  ((JavaObjectVMThread*)vmdataVMThread)->setVmdata(myth);
   
-  group->setObjectField(th, Group);
+  group->setInstanceObjectField(th, Group);
   groupAddThread->invokeIntSpecial(vm, threadGroup, Group, &th);
   
   finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, &th);
@@ -273,8 +275,7 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   threadGroup->initialiseClass(vm);
 
   // Create the main thread
-  void* Stat = threadGroup->getStaticInstance();
-  RG = rootGroup->getObjectField(Stat);
+  RG = rootGroup->getStaticObjectField();
   assert(RG && "No root group");
   assert(vm->getMainThread() && "VM did not set its main thread");
   CreateJavaThread(vm, (JavaThread*)vm->getMainThread(), "main", RG);
@@ -283,7 +284,7 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   SystemGroup = threadGroup->doNew(vm);
   initGroup->invokeIntSpecial(vm, threadGroup, SystemGroup);
   systemName = vm->asciizToStr("system");
-  groupName->setObjectField(SystemGroup, systemName);
+  groupName->setInstanceObjectField(SystemGroup, systemName);
 
   // Create the finalizer thread.
   assert(vm->getFinalizerThread() && "VM did not set its finalizer thread");

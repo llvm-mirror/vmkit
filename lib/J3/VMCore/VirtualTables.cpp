@@ -117,7 +117,7 @@ extern "C" void RegularObjectTracer(JavaObject* obj, uintptr_t closure) {
     for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
       JavaField& field = cl->virtualFields[i];
       if (field.isReference()) {
-        JavaObject** ptr = field.getObjectFieldPtr(obj);
+        JavaObject** ptr = field.getInstanceObjectFieldPtr(obj);
         mvm::Collector::markAndTrace(obj, ptr, closure);
       }
     }
@@ -176,7 +176,7 @@ void Class::tracer(uintptr_t closure) {
       for (uint32 i = 0; i < nbStaticFields; ++i) {
         JavaField& field = staticFields[i];
         if (field.isReference()) {
-          JavaObject** ptr = field.getObjectFieldPtr(M.staticInstance);
+          JavaObject** ptr = field.getStaticObjectFieldPtr();
           mvm::Collector::markAndTraceRoot(ptr, closure);
         }
       }

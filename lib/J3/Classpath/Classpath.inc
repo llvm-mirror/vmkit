@@ -65,7 +65,7 @@ JavaObjectField* Field, JavaObject* obj, jboolean val) {
 
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setInt8Field(obj, (uint8)val);
+  field->setInstanceInt8Field(obj, (uint8)val);
 
   END_NATIVE_EXCEPTION
 }
@@ -83,7 +83,7 @@ JavaObjectField* Field, JavaObject* obj, jbyte val) {
 
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setInt8Field(obj, (uint8)val);
+  field->setInstanceInt8Field(obj, (uint8)val);
 
   END_NATIVE_EXCEPTION
 }
@@ -101,7 +101,7 @@ JavaObjectField* Field, JavaObject* obj, jchar val) {
 
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setInt16Field((JavaObject*)obj, (uint16)val);
+  field->setInstanceInt16Field((JavaObject*)obj, (uint16)val);
 
   END_NATIVE_EXCEPTION
 }
@@ -119,7 +119,7 @@ JavaObjectField* Field, JavaObject* obj, jshort val) {
   
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setInt16Field(obj, (sint16)val);
+  field->setInstanceInt16Field(obj, (sint16)val);
   
   END_NATIVE_EXCEPTION
 }
@@ -137,7 +137,7 @@ JavaObjectField* Field, JavaObject* obj, jint val) {
   
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setInt32Field(obj, (sint32)val);
+  field->setInstanceInt32Field(obj, (sint32)val);
 
   END_NATIVE_EXCEPTION
 }
@@ -155,7 +155,7 @@ JavaObjectField* Field, JavaObject* obj, jlong val) {
   
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setLongField(obj, (sint64)val);
+  field->setInstanceLongField(obj, (sint64)val);
   
   END_NATIVE_EXCEPTION
 }
@@ -173,7 +173,7 @@ JavaObjectField* Field, JavaObject* obj, jfloat val) {
   
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setFloatField(obj, (float)val);
+  field->setInstanceFloatField(obj, (float)val);
   
   END_NATIVE_EXCEPTION
 }
@@ -191,7 +191,7 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
   
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setDoubleField(obj, (double)val);
+  field->setInstanceDoubleField(obj, (double)val);
 
   END_NATIVE_EXCEPTION
 }
@@ -210,7 +210,7 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
-  field->setObjectField(obj, val);
+  field->setInstanceObjectField(obj, val);
 
   END_NATIVE_EXCEPTION
 }

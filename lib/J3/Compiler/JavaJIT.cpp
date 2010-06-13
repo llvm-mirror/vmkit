@@ -2093,39 +2093,38 @@ void JavaJIT::getStaticField(uint16 index) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, true);
     if (field && field->classDef->isReady()) final = isFinal(field->access);
     if (final) {
-      void* Obj = field->classDef->getStaticInstance();
       if (sign->isPrimitive()) {
         const PrimitiveTypedef* prim = (PrimitiveTypedef*)sign;
         if (prim->isInt()) {
-          sint32 val = field->getInt32Field(Obj);
+          sint32 val = field->getStaticInt32Field();
           push(ConstantInt::get(Type::getInt32Ty(*llvmContext), val), false);
         } else if (prim->isByte()) {
-          sint8 val = (sint8)field->getInt8Field(Obj);
+          sint8 val = (sint8)field->getStaticInt8Field();
           push(ConstantInt::get(Type::getInt8Ty(*llvmContext), val), false);
         } else if (prim->isBool()) {
-          uint8 val = (uint8)field->getInt8Field(Obj);
+          uint8 val = (uint8)field->getStaticInt8Field();
           push(ConstantInt::get(Type::getInt8Ty(*llvmContext), val), true);
         } else if (prim->isShort()) {
-          sint16 val = (sint16)field->getInt16Field(Obj);
+          sint16 val = (sint16)field->getStaticInt16Field();
           push(ConstantInt::get(Type::getInt16Ty(*llvmContext), val), false);
         } else if (prim->isChar()) {
-          uint16 val = (uint16)field->getInt16Field(Obj);
+          uint16 val = (uint16)field->getStaticInt16Field();
           push(ConstantInt::get(Type::getInt16Ty(*llvmContext), val), true);
         } else if (prim->isLong()) {
-          sint64 val = (sint64)field->getLongField(Obj);
+          sint64 val = (sint64)field->getStaticLongField();
           push(ConstantInt::get(Type::getInt64Ty(*llvmContext), val), false);
         } else if (prim->isFloat()) {
-          float val = (float)field->getFloatField(Obj);
+          float val = (float)field->getStaticFloatField();
           push(ConstantFP::get(Type::getFloatTy(*llvmContext), val), false);
         } else if (prim->isDouble()) {
-          double val = (double)field->getDoubleField(Obj);
+          double val = (double)field->getStaticDoubleField();
           push(ConstantFP::get(Type::getDoubleTy(*llvmContext), val), false);
         } else {
           abort();
         }
       } else {
         if (TheCompiler->isStaticCompiling()) {
-          JavaObject* val = field->getObjectField(Obj);
+          JavaObject* val = field->getStaticObjectField();
           JnjvmClassLoader* JCL = field->classDef->classLoader;
           Value* V = TheCompiler->getFinalObject(val, sign->assocClass(JCL));
           CommonClass* cl = mvm::Collector::begOf(val) ?

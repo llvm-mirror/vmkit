@@ -1273,7 +1273,7 @@ jobject GetObjectField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   JavaField* field = (JavaField*)fieldID;
 
   // Store local reference.
-  res = field->getObjectField(obj);
+  res = field->getInstanceObjectField(obj);
 
   JavaThread* th = JavaThread::get();
   jobject ret = (jobject)th->pushJNIRef(res);
@@ -1293,7 +1293,7 @@ jboolean GetBooleanField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  uint8 res = (uint8)field->getInt8Field(obj);
+  uint8 res = (uint8)field->getInstanceInt8Field(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1310,7 +1310,7 @@ jbyte GetByteField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  sint8 res = (sint8)field->getInt8Field(obj);
+  sint8 res = (sint8)field->getInstanceInt8Field(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1327,7 +1327,7 @@ jchar GetCharField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  uint16 res = (uint16)field->getInt16Field(obj);
+  uint16 res = (uint16)field->getInstanceInt16Field(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1344,7 +1344,7 @@ jshort GetShortField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  sint16 res = (sint16)field->getInt16Field(obj);
+  sint16 res = (sint16)field->getInstanceInt16Field(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1361,7 +1361,7 @@ jint GetIntField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  sint32 res = (sint32)field->getInt32Field(obj);
+  sint32 res = (sint32)field->getInstanceInt32Field(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1378,7 +1378,7 @@ jlong GetLongField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  sint64 res = (sint64)field->getLongField(obj);
+  sint64 res = (sint64)field->getInstanceLongField(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1395,7 +1395,7 @@ jfloat GetFloatField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  jfloat res = (jfloat)field->getFloatField(obj);
+  jfloat res = (jfloat)field->getInstanceFloatField(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1412,7 +1412,7 @@ jdouble GetDoubleField(JNIEnv *env, jobject _obj, jfieldID fieldID) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  jdouble res = (jdouble)field->getDoubleField(obj);
+  jdouble res = (jdouble)field->getInstanceDoubleField(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1431,7 +1431,7 @@ void SetObjectField(JNIEnv *env, jobject _obj, jfieldID fieldID, jobject _value)
   llvm_gcroot(value, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  field->setObjectField(obj, value);
+  field->setInstanceObjectField(obj, value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -1451,7 +1451,7 @@ void SetBooleanField(JNIEnv *env, jobject _obj, jfieldID fieldID,
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  field->setInt8Field(obj, (uint8)value);
+  field->setInstanceInt8Field(obj, (uint8)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -1470,7 +1470,7 @@ void SetByteField(JNIEnv *env, jobject _obj, jfieldID fieldID, jbyte value) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  field->setInt8Field(obj, (uint8)value);
+  field->setInstanceInt8Field(obj, (uint8)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -1489,7 +1489,7 @@ void SetCharField(JNIEnv *env, jobject _obj, jfieldID fieldID, jchar value) {
   llvm_gcroot(obj, 0);
 
   JavaField* field = (JavaField*)fieldID;
-  field->setInt16Field(obj, (uint16)value);
+  field->setInstanceInt16Field(obj, (uint16)value);
   
   RETURN_VOID_FROM_JNI;
   
@@ -1508,7 +1508,7 @@ void SetShortField(JNIEnv *env, jobject _obj, jfieldID fieldID, jshort value) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  field->setInt16Field(obj, (sint16)value);
+  field->setInstanceInt16Field(obj, (sint16)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -1527,7 +1527,7 @@ void SetIntField(JNIEnv *env, jobject _obj, jfieldID fieldID, jint value) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  field->setInt32Field(obj, (sint32)value);
+  field->setInstanceInt32Field(obj, (sint32)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -1546,7 +1546,7 @@ void SetLongField(JNIEnv *env, jobject _obj, jfieldID fieldID, jlong value) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  field->setLongField(obj, (sint64)value);
+  field->setInstanceLongField(obj, (sint64)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -1565,7 +1565,7 @@ void SetFloatField(JNIEnv *env, jobject _obj, jfieldID fieldID, jfloat value) {
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  field->setFloatField(obj, (float)value);
+  field->setInstanceFloatField(obj, (float)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -1584,7 +1584,7 @@ void SetDoubleField(JNIEnv *env, jobject _obj, jfieldID fieldID, jdouble value) 
   llvm_gcroot(obj, 0);
   
   JavaField* field = (JavaField*)fieldID;
-  field->setDoubleField(obj, (float)value);
+  field->setInstanceDoubleField(obj, (float)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2190,17 +2190,12 @@ jobject GetStaticObjectField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   BEGIN_JNI_EXCEPTION
   
   // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
   JavaObject* obj = 0;
-  llvm_gcroot(clazz, 0);
   llvm_gcroot(obj, 0);
 
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  obj = field->getObjectField(Stat);
+  obj = field->getStaticObjectField();
   jobject res = (jobject)th->pushJNIRef(obj);
   RETURN_FROM_JNI(res);
 
@@ -2213,15 +2208,8 @@ jboolean GetStaticBooleanField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
   
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  jboolean res = (jboolean)field->getInt8Field(Stat);
+  jboolean res = (jboolean)field->getStaticInt8Field();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2233,15 +2221,8 @@ jbyte GetStaticByteField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  jbyte res = (jbyte)field->getInt8Field(Stat);
+  jbyte res = (jbyte)field->getStaticInt8Field();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2253,15 +2234,8 @@ jchar GetStaticCharField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   BEGIN_JNI_EXCEPTION
 
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  jchar res = (jchar)field->getInt16Field(Stat);
+  jchar res = (jchar)field->getStaticInt16Field();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2273,15 +2247,8 @@ jshort GetStaticShortField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   BEGIN_JNI_EXCEPTION
 
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  jshort res = (jshort)field->getInt16Field(Stat);
+  jshort res = (jshort)field->getStaticInt16Field();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2293,15 +2260,8 @@ jint GetStaticIntField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   BEGIN_JNI_EXCEPTION
 
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  jint res = (jint)field->getInt32Field(Stat);
+  jint res = (jint)field->getStaticInt32Field();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2313,15 +2273,8 @@ jlong GetStaticLongField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  jlong res = (jlong)field->getLongField(Stat);
+  jlong res = (jlong)field->getStaticLongField();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2333,15 +2286,8 @@ jfloat GetStaticFloatField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  jfloat res = (jfloat)field->getFloatField(Stat);
+  jfloat res = (jfloat)field->getStaticFloatField();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2353,15 +2299,8 @@ jdouble GetStaticDoubleField(JNIEnv *env, jclass _clazz, jfieldID fieldID) {
 
   BEGIN_JNI_EXCEPTION
 
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  jdouble res = (jdouble)field->getDoubleField(Stat);
+  jdouble res = (jdouble)field->getStaticDoubleField();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2375,16 +2314,11 @@ void SetStaticObjectField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   BEGIN_JNI_EXCEPTION
   
   // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
   JavaObject* value = *(JavaObject**)_value;
-  llvm_gcroot(clazz, 0);
   llvm_gcroot(value, 0);
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setObjectField(Stat, value);
+  field->setStaticObjectField(value);
   
   RETURN_VOID_FROM_JNI;
   
@@ -2399,14 +2333,8 @@ void SetStaticBooleanField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
   
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setInt8Field(Stat, (uint8)value);
+  field->setStaticInt8Field((uint8)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2421,15 +2349,8 @@ void SetStaticByteField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
   BEGIN_JNI_EXCEPTION
 
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setInt8Field(Stat, (sint8)value);
+  field->setStaticInt8Field((sint8)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2444,15 +2365,8 @@ void SetStaticCharField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setInt16Field(Stat, (uint16)value);
+  field->setStaticInt16Field((uint16)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2467,15 +2381,8 @@ void SetStaticShortField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setInt16Field(Stat, (sint16)value);
+  field->setStaticInt16Field((sint16)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2490,15 +2397,8 @@ void SetStaticIntField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setInt32Field(Stat, (sint32)value);
+  field->setStaticInt32Field((sint32)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2513,15 +2413,8 @@ void SetStaticLongField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setLongField(Stat, (sint64)value);
+  field->setStaticLongField((sint64)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2536,15 +2429,8 @@ void SetStaticFloatField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setFloatField(Stat, (float)value);
+  field->setStaticFloatField((float)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2559,15 +2445,8 @@ void SetStaticDoubleField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
   BEGIN_JNI_EXCEPTION
   
-  // Local object references.
-  JavaObject* clazz = *(JavaObject**)_clazz;
-  llvm_gcroot(clazz, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = (JavaField*)fieldID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
-  void* Stat = cl->asClass()->getStaticInstance();
-  field->setDoubleField(Stat, (double)value);
+  field->setStaticDoubleField((double)value);
   
   RETURN_VOID_FROM_JNI;
 
@@ -3709,11 +3588,11 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
 #if (__WORDSIZE == 32)
   UserClass* PP = myvm->upcalls->newPointer32;
   p = PP->doNew(myvm);
-  myvm->upcalls->dataPointer32->setInt32Field(p, (uint32)address);
+  myvm->upcalls->dataPointer32->setInstanceInt32Field(p, (uint32)address);
 #else
   UserClass* PP = myvm->upcalls->newPointer64;
   p = PP->doNew(myvm);
-  myvm->upcalls->dataPointer64->setLongField(p, (jlong)address);
+  myvm->upcalls->dataPointer64->setInstanceLongField(p, (jlong)address);
 #endif
 
   myvm->upcalls->InitDirectByteBuffer->invokeIntSpecial(myvm, BB, res, 0, &p,
@@ -3740,12 +3619,12 @@ void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
   llvm_gcroot(address, 0);
 
   Jnjvm* vm = myVM(env);
-  address = vm->upcalls->bufferAddress->getObjectField(buf);
+  address = vm->upcalls->bufferAddress->getInstanceObjectField(buf);
   if (address != 0) {
 #if (__WORDSIZE == 32)
-    int res = vm->upcalls->dataPointer32->getInt32Field(address);
+    int res = vm->upcalls->dataPointer32->getInstanceInt32Field(address);
 #else
-    jlong res = vm->upcalls->dataPointer64->getLongField(address);
+    jlong res = vm->upcalls->dataPointer64->getInstanceLongField(address);
 #endif
     RETURN_FROM_JNI((void*)res);
   } else {

@@ -948,50 +948,43 @@ void Class::readClass() {
 
 #ifndef ISOLATE_SHARING
 void Class::resolveClass() {
+  JavaObject* exc = 0;
+  llvm_gcroot(exc, 0);
   if (!isResolved() && !isErroneous()) {
     acquire();
     if (isResolved() || isErroneous()) {
       release();
     } else if (!isResolving()) {
       setOwnerClass(JavaThread::get());
-      
-      {
-        JavaObject* exc = 0;
-        llvm_gcroot(exc, 0);
-        TRY {
-          readClass();
-        } CATCH {
-          exc = JavaThread::get()->pendingException;
-          JavaThread::get()->clearException();
-        } END_CATCH;
+      TRY {
+        readClass();
+      } CATCH {
+        exc = JavaThread::get()->pendingException;
+        JavaThread::get()->clearException();
+      } END_CATCH;
 
-        if (exc) {
-          setErroneous();        
-          setOwnerClass(0);
-          broadcastClass();
-          release();
-          JavaThread::get()->throwException(exc);
-        }
+      if (exc != NULL) {
+        setErroneous();        
+        setOwnerClass(0);
+        broadcastClass();
+        release();
+        JavaThread::get()->throwException(exc);
       }
  
       release();
       
-      {
-        JavaObject* exc = 0;
-        llvm_gcroot(exc, 0);
-        TRY {
-          loadParents();
-        } CATCH {
-          setInitializationState(loaded);
-          exc = JavaThread::get()->pendingException;
-          JavaThread::get()->clearException();
-        } END_CATCH;
+      TRY {
+        loadParents();
+      } CATCH {
+        setInitializationState(loaded);
+        exc = JavaThread::get()->pendingException;
+        JavaThread::get()->clearException();
+      } END_CATCH;
       
-        if (exc) {
-          setErroneous();        
-          setOwnerClass(0);
-          JavaThread::get()->throwException(exc);
-        }
+      if (exc != NULL) {
+        setErroneous();        
+        setOwnerClass(0);
+        JavaThread::get()->throwException(exc);
       }
       
       makeVT();
@@ -1142,10 +1135,12 @@ JavaObject** CommonClass::getDelegateePtr() {
 }
 
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
+  JavaObject* prev = NULL;
+  llvm_gcroot(val, 0);
+  llvm_gcroot(prev, 0);
   JavaObject** obj = &(delegatee[JavaThread::get()->getJVM()->IsolateID]);
 
-  JavaObject* prev = (JavaObject*)
-    __sync_val_compare_and_swap((uintptr_t)obj, NULL, val);
+  prev = (JavaObject*)__sync_val_compare_and_swap((uintptr_t)obj, NULL, val);
 
   if (!prev) return val;
   else return prev;
@@ -1154,8 +1149,10 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
 #else
 
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
-  JavaObject* prev = (JavaObject*)
-    __sync_val_compare_and_swap(&(delegatee[0]), NULL, val);
+  JavaObject* prev = NULL;
+  llvm_gcroot(val, 0);
+  llvm_gcroot(prev, 0);
+  prev = (JavaObject*)__sync_val_compare_and_swap(&(delegatee[0]), NULL, val);
 
   if (!prev) return val;
   else return prev;

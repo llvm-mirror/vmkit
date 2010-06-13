@@ -147,7 +147,7 @@ class JavaObjectVMThread : public JavaObject {
 private:
   JavaObject* thread;
   bool running;
-  void* vmdata;
+  JavaThread* vmdata;
 
 public:
   static void staticDestructor(JavaObjectVMThread* obj) {
@@ -156,6 +156,10 @@ public:
   
   static void staticTracer(JavaObjectVMThread* obj, uintptr_t closure) {
     mvm::Collector::markAndTrace(obj, &obj->thread, closure);
+  }
+
+  void setVmdata(JavaThread* internal_thread) {
+    vmdata = internal_thread;
   }
 
 };

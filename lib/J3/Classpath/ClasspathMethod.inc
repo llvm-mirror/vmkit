@@ -188,42 +188,42 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
         uint32 val = 0;
         RUN_METH(Int, val);
         res = vm->upcalls->boolClass->doNew(vm);
-        vm->upcalls->boolValue->setInt8Field(res, val);
+        vm->upcalls->boolValue->setInstanceInt8Field(res, val);
       } else if (prim->isByte()) {
         uint32 val = 0;
         RUN_METH(Int, val);
         res = vm->upcalls->byteClass->doNew(vm);
-        vm->upcalls->byteValue->setInt8Field(res, val);
+        vm->upcalls->byteValue->setInstanceInt8Field(res, val);
       } else if (prim->isChar()) {
         uint32 val = 0;
         RUN_METH(Int, val);
         res = vm->upcalls->charClass->doNew(vm);
-        vm->upcalls->charValue->setInt16Field(res, val);
+        vm->upcalls->charValue->setInstanceInt16Field(res, val);
       } else if (prim->isShort()) {
         uint32 val = 0;
         RUN_METH(Int, val);
         res = vm->upcalls->shortClass->doNew(vm);
-        vm->upcalls->shortValue->setInt16Field(res, val);
+        vm->upcalls->shortValue->setInstanceInt16Field(res, val);
       } else if (prim->isInt()) {
         uint32 val = 0;
         RUN_METH(Int, val);
         res = vm->upcalls->intClass->doNew(vm);
-        vm->upcalls->intValue->setInt32Field(res, val);
+        vm->upcalls->intValue->setInstanceInt32Field(res, val);
       } else if (prim->isLong()) {
         sint64 val = 0;
         RUN_METH(Long, val);
         res = vm->upcalls->longClass->doNew(vm);
-        vm->upcalls->longValue->setLongField(res, val);
+        vm->upcalls->longValue->setInstanceLongField(res, val);
       } else if (prim->isFloat()) {
         float val = 0;
         RUN_METH(Float, val);
         res = vm->upcalls->floatClass->doNew(vm);
-        vm->upcalls->floatValue->setFloatField(res, val);
+        vm->upcalls->floatValue->setInstanceFloatField(res, val);
       } else if (prim->isDouble()) {
         double val = 0;
         RUN_METH(Double, val);
         res = vm->upcalls->doubleClass->doNew(vm);
-        vm->upcalls->doubleValue->setDoubleField(res, val);
+        vm->upcalls->doubleValue->setInstanceDoubleField(res, val);
       }
     } else {
       RUN_METH(JavaObject, res);

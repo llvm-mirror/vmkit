@@ -304,12 +304,12 @@ public:
   /// getClassDelegatee - Return the java/lang/Class representation of this
   /// class.
   ///
-  JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = 0);
+  JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = NULL);
   
   /// getClassDelegateePtr - Return a pointer on the java/lang/Class
   /// representation of this class. Used for JNI.
   ///
-  JavaObject* const* getClassDelegateePtr(Jnjvm* vm, JavaObject* pd = 0);
+  JavaObject* const* getClassDelegateePtr(Jnjvm* vm, JavaObject* pd = NULL);
   
   /// CommonClass - Create a class with th given name.
   ///
@@ -1339,41 +1339,94 @@ public:
   ///
   Attribut* lookupAttribut(const UTF8* key);
 
-  JavaObject** getObjectFieldPtr(void* obj) {
+  JavaObject** getStaticObjectFieldPtr() {
     assert(classDef->isResolved());
-    void* ptr = (void*)((uint64)obj + ptrOffset);
-    return (JavaObject**)ptr;
+    return (JavaObject**)((uint64)classDef->getStaticInstance() + ptrOffset);
   }
 
-  /// getVritual*Field - Get a virtual field of an object.
+  JavaObject** getInstanceObjectFieldPtr(JavaObject* obj) {
+    llvm_gcroot(obj, 0);
+    return (JavaObject**)((uint64)obj + ptrOffset);
+  }
+
+  /// getStatic*Field - Get a static field.
   ///
-  #define GETFIELD(TYPE, TYPE_NAME) \
-  TYPE get##TYPE_NAME##Field(void* obj) { \
-    assert(classDef->isResolved()); \
-    void* ptr = (void*)((uint64)obj + ptrOffset); \
-    return ((TYPE*)ptr)[0]; \
+  #define GETSTATICFIELD(TYPE, TYPE_NAME)                                   \
+  TYPE getStatic##TYPE_NAME##Field() {                                      \
+    assert(classDef->isResolved());                                         \
+    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset); \
+    return ((TYPE*)ptr)[0];                                                 \
   }
 
-  /// set*Field - Set a field of an object.
+  /// setStatic*Field - Set a field of an object.
   ///
-  #define SETFIELD(TYPE, TYPE_NAME) \
-  void set##TYPE_NAME##Field(void* obj, TYPE val) { \
-    assert(classDef->isResolved()); \
-    void* ptr = (void*)((uint64)obj + ptrOffset); \
-    ((TYPE*)ptr)[0] = val; \
+  #define SETSTATICFIELD(TYPE, TYPE_NAME)                                   \
+  void setStatic##TYPE_NAME##Field(TYPE val) {                              \
+    assert(classDef->isResolved());                                         \
+    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset); \
+    ((TYPE*)ptr)[0] = val;                                                  \
   }
 
-  #define MK_ASSESSORS(TYPE, TYPE_NAME) \
-    GETFIELD(TYPE, TYPE_NAME) \
-    SETFIELD(TYPE, TYPE_NAME) \
+  /// getInstance*Field - Get an instance field.
+  ///
+  #define GETINSTANCEFIELD(TYPE, TYPE_NAME)                                 \
+  TYPE getInstance##TYPE_NAME##Field(JavaObject* obj) {                     \
+    llvm_gcroot(obj, 0);                                                    \
+    assert(classDef->isResolved());                                         \
+    void* ptr = (void*)((uint64)obj + ptrOffset);                           \
+    return ((TYPE*)ptr)[0];                                                 \
+  }
+
+  /// setInstance*Field - Set an instance field.
+  ///
+  #define SETINSTANCEFIELD(TYPE, TYPE_NAME)                                 \
+  void setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val) {           \
+    llvm_gcroot(obj, 0);                                                    \
+    assert(classDef->isResolved());                                         \
+    void* ptr = (void*)((uint64)obj + ptrOffset);                           \
+    ((TYPE*)ptr)[0] = val;                                                  \
+  }
+
+  #define MK_ASSESSORS(TYPE, TYPE_NAME)                                     \
+    GETSTATICFIELD(TYPE, TYPE_NAME)                                         \
+    SETSTATICFIELD(TYPE, TYPE_NAME)                                         \
+    GETINSTANCEFIELD(TYPE, TYPE_NAME)                                       \
+    SETINSTANCEFIELD(TYPE, TYPE_NAME)                                       \
 
   MK_ASSESSORS(float, Float);
   MK_ASSESSORS(double, Double);
-  MK_ASSESSORS(JavaObject*, Object);
   MK_ASSESSORS(uint8, Int8);
   MK_ASSESSORS(uint16, Int16);
   MK_ASSESSORS(uint32, Int32);
   MK_ASSESSORS(sint64, Long);
+
+  JavaObject* getStaticObjectField() {
+    assert(classDef->isResolved());
+    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset);
+    return ((JavaObject**)ptr)[0];
+  }
+
+  void setStaticObjectField(JavaObject* val) {
+    llvm_gcroot(val, 0);
+    assert(classDef->isResolved());
+    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset);
+    ((JavaObject**)ptr)[0] = val;
+  }
+
+  JavaObject* getInstanceObjectField(JavaObject* obj) {
+    llvm_gcroot(obj, 0);
+    assert(classDef->isResolved());
+    void* ptr = (void*)((uint64)obj + ptrOffset);
+    return ((JavaObject**)ptr)[0];
+  }
+
+  void setInstanceObjectField(JavaObject* obj, JavaObject* val) {
+    llvm_gcroot(obj, 0);
+    llvm_gcroot(val, 0);
+    assert(classDef->isResolved());
+    void* ptr = (void*)((uint64)obj + ptrOffset);
+    ((JavaObject**)ptr)[0] = val;
+  }
   
   bool isReference() {
     uint16 val = type->elements[0];

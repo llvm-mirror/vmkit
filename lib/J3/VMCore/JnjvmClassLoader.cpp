@@ -849,18 +849,18 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   JnjvmClassLoader* JCL = 0;
   Classpath* upcalls = vm->bootstrapLoader->upcalls;
   vmdata = 
-    (VMClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
+    (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
   
   if (vmdata == NULL) {
     JavaObject::acquire(loader);
     vmdata = 
-      (VMClassLoader*)(upcalls->vmdataClassLoader->getObjectField(loader));
+      (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
     if (!vmdata) {
       mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();    
       JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
                                                      loader, vm);
       vmdata = VMClassLoader::allocate(JCL);
-      upcalls->vmdataClassLoader->setObjectField(loader, (JavaObject*)vmdata);
+      upcalls->vmdataClassLoader->setInstanceObjectField(loader, (JavaObject*)vmdata);
     }
     JavaObject::release(loader);
   } else {

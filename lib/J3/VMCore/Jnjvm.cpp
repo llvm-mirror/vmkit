@@ -180,7 +180,6 @@ void UserClass::initialiseClass(Jnjvm* vm) {
 
     if (!vmjced) {
       JavaField* fields = cl->getStaticFields();
-      void* val = cl->getStaticInstance();
       for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
         fields[i].InitStaticField(vm);
       }
@@ -1200,7 +1199,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     JavaThread* th = JavaThread::get();
     th->clearException();
     obj = th->currentThread();
-    group = upcalls->group->getObjectField(obj);
+    group = upcalls->group->getInstanceObjectField(obj);
     TRY {
       upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
                                                    group, &obj, &exc);

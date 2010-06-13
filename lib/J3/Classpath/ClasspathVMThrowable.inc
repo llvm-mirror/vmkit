@@ -46,7 +46,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   
   // Set the tempory data in the new VMThrowable object.
   vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
-  vm->upcalls->vmDataVMThrowable->setObjectField(vmThrowable, result);
+  vm->upcalls->vmDataVMThrowable->setInstanceObjectField(vmThrowable, result);
   return vmThrowable;
 }
 
@@ -125,7 +125,7 @@ JavaObject* vmthrow, JavaObject* throwable) {
   BEGIN_NATIVE_EXCEPTION(0)
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->vmDataVMThrowable;
-  stack = field->getObjectField(vmthrow);
+  stack = field->getInstanceObjectField(vmthrow);
   
   // remove the VMThrowable.fillInStackTrace method and the last method
   // on the stack.

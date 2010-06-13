@@ -34,27 +34,28 @@ jclass clazz
 
 static void start(JavaThread* thread) {
 
-  JavaObject* vmThread = 0;
+  JavaObjectVMThread* vmThread = NULL;
+  JavaObject* javaThread = NULL;
   llvm_gcroot(vmThread, 0);
+  llvm_gcroot(javaThread, 0);
 
   Jnjvm* vm = thread->getJVM();
 
   // Ok, now that the thread is created we can set the the value of vmdata,
   // which is the JavaThread object.
-  JavaField* field = vm->upcalls->vmdataVMThread;
-  vmThread = thread->vmThread;
+  vmThread = (JavaObjectVMThread*)thread->vmThread;
   assert(vmThread && "Didn't fix the vmThread of a j3 thread");
-  JavaObject* javaThread = thread->javaThread;
-  assert(javaThread && "Didn't fix the javaThread of a j3 thread");
-  field->setObjectField(vmThread, (JavaObject*)(void*)thread);
+  vmThread->setVmdata(thread);
   
   UserClass* vmthClass = (UserClass*)JavaObject::getClass(vmThread);
   ThreadSystem& ts = vm->threadSystem;
   
   
+  javaThread = thread->javaThread;
+  assert(javaThread && "Didn't fix the javaThread of a j3 thread");
   // If the thread is not a daemon, it is added to the list of threads to
   // wait until exit.
-  bool isDaemon = vm->upcalls->daemon->getInt8Field(javaThread);
+  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
 
   if (!isDaemon) {
     ts.nonDaemonLock.lock();
@@ -90,7 +91,7 @@ JavaObject* vmThread, sint64 stackSize) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   
   // Classpath has set this field.
-  javaThread = vm->upcalls->assocThread->getObjectField(vmThread);
+  javaThread = vm->upcalls->assocThread->getInstanceObjectField(vmThread);
   assert(javaThread && "VMThread with no Java equivalent");
  
   JavaThread* th = new JavaThread(javaThread, vmThread, vm);
@@ -115,10 +116,10 @@ JavaObject* vmthread) {
   
   // It's possible that the thread to be interrupted has not finished
   // its initialization. Wait until the initialization is done.
-  while (field->getObjectField(vmthread) == 0)
+  while (field->getInstanceObjectField(vmthread) == 0)
     mvm::Thread::yield();
   
-  JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
+  JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
   th->interruptFlag = 1;
   JavaLock* lock = th->waitsOn;
 
@@ -174,7 +175,7 @@ JavaObject* vmthread) {
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->vmdataVMThread;
-  JavaThread* th = (JavaThread*)field->getObjectField(vmthread);
+  JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
   return (jboolean)th->interruptFlag;
 }
 
