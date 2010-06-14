@@ -22,11 +22,10 @@ JavaVirtualTable* JavaString::internStringVT = 0;
 JavaString* JavaString::stringDup(const ArrayUInt16*& _array, Jnjvm* vm) {
   
   JavaString* res = 0;
-  const ArrayUInt16* array = 0;
+  const ArrayUInt16* array = _array;
   llvm_gcroot(array, 0);
   llvm_gcroot(res, 0);
 
-  array = _array;
   UserClass* cl = vm->upcalls->newString;
   res = (JavaString*)cl->doNew(vm);
   
@@ -37,38 +36,38 @@ JavaString* JavaString::stringDup(const ArrayUInt16*& _array, Jnjvm* vm) {
 
   // No need to call the Java function: both the Java function and
   // this function do the same thing.
-  res->value = array;
+  setValue(res, array);
   res->count = ArrayUInt16::getSize(array);
   res->offset = 0;
   res->cachedHashCode = 0;
   return res;
 }
 
-char* JavaString::strToAsciiz() {
-  char* buf = new char[count + 1]; 
-  for (sint32 i = 0; i < count; ++i) {
-    buf[i] = ArrayUInt16::getElement(value, i + offset);
+char* JavaString::strToAsciiz(JavaString* self) {
+  llvm_gcroot(self, 0);
+  char* buf = new char[self->count + 1]; 
+  for (sint32 i = 0; i < self->count; ++i) {
+    buf[i] = ArrayUInt16::getElement(getValue(self), i + self->offset);
   }
-  buf[count] =  0; 
+  buf[self->count] =  0; 
   return buf;
 }
 
-const ArrayUInt16* JavaString::strToArray(Jnjvm* vm) {
-  JavaString* self = this;
+const ArrayUInt16* JavaString::strToArray(JavaString* self, Jnjvm* vm) {
   ArrayUInt16* array = 0;
   llvm_gcroot(self, 0);
   llvm_gcroot(array, 0);
 
-  assert(self->value && "String without an array?");
-  if (self->offset || (self->count != ArrayUInt16::getSize(self->value))) {
+  assert(getValue(self) && "String without an array?");
+  if (self->offset || (self->count != ArrayUInt16::getSize(getValue(self)))) {
     array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(self->count, vm);
-    for (sint32 i = 0; i < count; i++) {
+    for (sint32 i = 0; i < self->count; i++) {
       ArrayUInt16::setElement(
-          array, ArrayUInt16::getElement(value, i + self->offset), i);
+          array, ArrayUInt16::getElement(getValue(self), i + self->offset), i);
     }
     return array;
   } else {
-    return self->value;
+    return getValue(self);
   }
 }
 
@@ -77,7 +76,7 @@ void JavaString::stringDestructor(JavaString* str) {
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   assert(vm && "No vm when destroying a string");
-  if (str->value) vm->hashStr.removeUnlocked(str->value, str);
+  if (getValue(str) != NULL) vm->hashStr.removeUnlocked(getValue(str), str);
 }
 
 JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
@@ -99,14 +98,13 @@ JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
   return vm->constructString(array);
 }
 
-const UTF8* JavaString::javaToInternal(UTF8Map* map) const {
-  const JavaString* self = this;
+const UTF8* JavaString::javaToInternal(const JavaString* self, UTF8Map* map) {
   llvm_gcroot(self, 0);
   
   uint16* java = new uint16[self->count];
 
-  for (sint32 i = 0; i < count; ++i) {
-    uint16 cur = ArrayUInt16::getElement(self->value, offset + i);
+  for (sint32 i = 0; i < self->count; ++i) {
+    uint16 cur = ArrayUInt16::getElement(getValue(self), self->offset + i);
     if (cur == '.') java[i] = '/';
     else java[i] = cur;
   }

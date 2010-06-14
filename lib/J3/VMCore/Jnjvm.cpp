@@ -605,10 +605,10 @@ static JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
   ArrayUInt16::setElement(msg, ' ', i); i++;
 
   for (sint32 j = name->offset; j < name->offset + name->count; ++j) {
-    if (ArrayUInt16::getElement(name->value, j) == '/') {
+    if (ArrayUInt16::getElement(JavaString::getValue(name), j) == '/') {
       ArrayUInt16::setElement(msg, '.', i); i++;
     } else {
-      ArrayUInt16::setElement(msg, ArrayUInt16::getElement(name->value, j), i);
+      ArrayUInt16::setElement(msg, ArrayUInt16::getElement(JavaString::getValue(name), j), i);
     }
   }
 

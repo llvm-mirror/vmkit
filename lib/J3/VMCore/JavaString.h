@@ -21,13 +21,23 @@ class ArrayUInt16;
 class Jnjvm;
 
 class JavaString : public JavaObject {
-public:
-
+private:
   // CLASSPATH FIELDS!!
   const ArrayUInt16* value;
+public:
   sint32 count;
   sint32 cachedHashCode;
   sint32 offset;
+
+  static void setValue(JavaString* self, const ArrayUInt16* array) {
+    llvm_gcroot(self, 0);
+    llvm_gcroot(array, 0);
+    self->value = array;
+  }
+  static const ArrayUInt16* getValue(const JavaString* self) {
+    llvm_gcroot(self, 0);
+    return self->value;
+  }
   
   static JavaString* stringDup(const ArrayUInt16*& array, Jnjvm* vm);
 
@@ -39,11 +49,11 @@ public:
   static JavaString* internalToJava(const UTF8* utf8, Jnjvm* vm);
 
   static void stringDestructor(JavaString*);
-  char* strToAsciiz();
-  const ArrayUInt16* strToArray(Jnjvm* vm);
+  static char* strToAsciiz(JavaString* self);
+  static const ArrayUInt16* strToArray(JavaString* self, Jnjvm* vm);
 
-    /// javaToInternal - Replaces all '/' into '.'.
-  const UTF8* javaToInternal(UTF8Map* map) const;
+  /// javaToInternal - Replaces all '/' into '.'.
+  static const UTF8* javaToInternal(const JavaString* self, UTF8Map* map);
 
   static JavaVirtualTable* internStringVT;
 };

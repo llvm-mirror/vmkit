@@ -49,7 +49,7 @@ JavaString* strLib) {
 
   Jnjvm* vm = JavaThread::get()->getJVM();
 
-  utf8Lib = strLib->value;
+  utf8Lib = JavaString::getValue(strLib);
   uint32 stLib = strLib->offset;
   sint32 lgLib = strLib->count;
   sint32 lgPre = vm->bootstrapLoader->prelib->size;
@@ -118,7 +118,7 @@ JavaObject* javaLoader) {
   JnjvmClassLoader* loader = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject(javaLoader, vm);
 
-  char* buf = str->strToAsciiz();
+  char* buf = JavaString::strToAsciiz(str);
   
   res = loader->loadLib(buf);
  

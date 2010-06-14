@@ -730,8 +730,9 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 
   Elmts.push_back(CreateConstantForBaseObject(cl));
 
-  Constant* Array = CreateConstantFromIntArray<ArrayUInt16>(str->value,
-                                        Type::getInt16Ty(getLLVMContext()));
+  Constant* Array =
+    CreateConstantFromIntArray<ArrayUInt16>(JavaString::getValue(str),
+                                            Type::getInt16Ty(getLLVMContext()));
   
 
   Module& Mod = *getLLVMModule();

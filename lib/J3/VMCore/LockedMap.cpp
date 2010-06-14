@@ -22,5 +22,5 @@ using namespace j3;
 
 void StringMap::insert(JavaString* str) {
   llvm_gcroot(str, 0);
-  map.insert(std::make_pair(str->value, str));
+  map.insert(std::make_pair(JavaString::getValue(str), str));
 }

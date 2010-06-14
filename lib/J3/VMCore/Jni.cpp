@@ -2515,7 +2515,7 @@ const char *GetStringUTFChars(JNIEnv *env, jstring _string, jboolean *isCopy) {
   llvm_gcroot(string, 0);
 
   if (isCopy != 0) (*isCopy) = true;
-  const char* res = string->strToAsciiz();
+  const char* res = JavaString::strToAsciiz(string);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION

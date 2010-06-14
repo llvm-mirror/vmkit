@@ -281,6 +281,8 @@ void Jnjvm::tracer(uintptr_t closure) {
        i!= e; ++i) {
     JavaString** str = &(i->second);
     mvm::Collector::markAndTraceRoot(str, closure);
+    ArrayUInt16** key = const_cast<ArrayUInt16**>(&(i->first));
+    mvm::Collector::markAndTraceRoot(key, closure);
   }
  
   for (uint32 i = 0; i < LockSystem::GlobalSize; i++) {

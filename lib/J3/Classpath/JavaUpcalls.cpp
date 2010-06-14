@@ -383,7 +383,7 @@ extern "C" JavaString* nativeInternString(JavaString* obj) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  array = obj->strToArray(vm);
+  array = JavaString::strToArray(obj, vm);
   res = vm->constructString(array);
   
   END_NATIVE_EXCEPTION
@@ -534,7 +534,7 @@ extern "C" JavaString* nativeGetenv(JavaString* str) {
   
   BEGIN_NATIVE_EXCEPTION(0)
 
-  char* buf = str->strToAsciiz();
+  char* buf = JavaString::strToAsciiz(str);
   char* res = getenv(buf);
   delete[] buf;
   if (res) {

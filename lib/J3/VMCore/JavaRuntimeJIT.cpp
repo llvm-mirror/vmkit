@@ -341,8 +341,6 @@ extern "C" void j3EndJNI(uint32** oldLRN) {
   
   // Update the number of references.
   th->currentAddedReferences = *oldLRN;
-
-
 }
 
 extern "C" void* j3StartJNI(uint32* localReferencesNumber,

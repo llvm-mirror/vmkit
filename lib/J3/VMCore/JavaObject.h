@@ -241,6 +241,7 @@ public:
   /// getClass - Returns the class of this object.
   ///
   static UserCommonClass* getClass(const JavaObject* self) {
+    llvm_gcroot(self, 0);
     return ((JavaVirtualTable*)self->getVirtualTable())->cl;
   }
 
@@ -301,7 +302,7 @@ public:
   #define verifyNull(obj) {}
 #else
   #define verifyNull(obj) \
-    if (obj == 0) JavaThread::get()->getJVM()->nullPointerException();
+    if (obj == NULL) JavaThread::get()->getJVM()->nullPointerException();
 #endif
   
   /// lockObj - Get the LockObj if the lock is a fat lock.

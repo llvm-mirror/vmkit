@@ -47,9 +47,7 @@ static void start(JavaThread* thread) {
   assert(vmThread && "Didn't fix the vmThread of a j3 thread");
   vmThread->setVmdata(thread);
   
-  UserClass* vmthClass = (UserClass*)JavaObject::getClass(vmThread);
-  ThreadSystem& ts = vm->threadSystem;
-  
+  UserClass* vmthClass = (UserClass*)JavaObject::getClass(vmThread); 
   
   javaThread = thread->javaThread;
   assert(javaThread && "Didn't fix the javaThread of a j3 thread");
