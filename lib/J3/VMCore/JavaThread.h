@@ -122,6 +122,7 @@ public:
 
 
   JavaObject** pushJNIRef(JavaObject* obj) {
+    llvm_gcroot(obj, 0);
     if (!obj) return 0;
    
     ++(*currentAddedReferences);
@@ -251,7 +252,7 @@ private:
   /// currently pending.
   ///
   virtual void internalClearException() {
-    pendingException = 0;
+    pendingException = NULL;
   }
 
 public:

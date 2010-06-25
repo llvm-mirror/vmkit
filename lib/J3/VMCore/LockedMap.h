@@ -48,6 +48,8 @@ struct ltarray16
 {
   bool operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const
   {
+    llvm_gcroot(s1, 0);
+    llvm_gcroot(s2, 0);
     if (ArrayUInt16::getSize(s1) < ArrayUInt16::getSize(s2)) return true;
     else if (ArrayUInt16::getSize(s1) > ArrayUInt16::getSize(s2)) return false;
     else return memcmp((const char*)ArrayUInt16::getElements(s1),
@@ -87,11 +89,12 @@ public:
   inline Container lookupOrCreate(Key& V, Meta meta, funcCreate func) {
     Container res = 0;
     IsGC::gcroot(res, 0);
+    IsGC::gcroot((void*)V, 0);
     lock.lock();
     iterator End = map.end();
     iterator I = map.find(V);
     if (I == End) {
-      Container res = func(V, meta);
+      res = func(V, meta);
       map.insert(std::make_pair(V, res));
       lock.unlock();
       return res;
@@ -102,6 +105,7 @@ public:
   }
   
   inline void remove(Key V) {
+    IsGC::gcroot(V, 0);
     lock.lock();
     map.erase(V);
     lock.unlock();
@@ -109,6 +113,7 @@ public:
   
   inline void remove(Key V, Container C) {
     IsGC::gcroot(C, 0);
+    IsGC::gcroot(V, 0);
     lock.lock();
     removeUnlocked(V, C); 
     lock.unlock();
@@ -116,6 +121,7 @@ public:
   
   inline void removeUnlocked(Key V, Container C) {
     IsGC::gcroot(C, 0);
+    IsGC::gcroot((void*)V, 0);
     iterator End = map.end();
     iterator I = map.find(V);
     
@@ -124,6 +130,7 @@ public:
   }
 
   inline Container lookup(Key V) {
+    IsGC::gcroot((void*)V, 0);
     lock.lock();
     iterator End = map.end();
     iterator I = map.find(V);
@@ -133,6 +140,7 @@ public:
 
   inline void hash(Key k, Container c) {
     IsGC::gcroot(c, 0);
+    IsGC::gcroot(k, 0);
     lock.lock();
     map.insert(std::make_pair(k, c));
     lock.unlock();

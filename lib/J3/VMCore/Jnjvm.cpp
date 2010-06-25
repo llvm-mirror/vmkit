@@ -51,6 +51,10 @@ mvm::LockNormal Jnjvm::IsolateLock;
 /// initialiseClass - Java class initialisation. Java specification §2.17.5.
 
 void UserClass::initialiseClass(Jnjvm* vm) {
+  JavaObject* exc = NULL;
+  JavaObject* obj = NULL;
+  llvm_gcroot(exc, 0);
+  llvm_gcroot(obj, 0);
   
   // Primitives are initialized at boot time, arrays are initialized directly.
   
@@ -157,10 +161,6 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       }
     }
  
-    JavaObject* exc = 0;
-    JavaObject* obj = 0;
-    llvm_gcroot(exc, 0);
-    llvm_gcroot(obj, 0);
 #ifdef SERVICE
     if (classLoader == classLoader->bootstrapLoader || 
         classLoader->getIsolate() == vm) {
@@ -253,18 +253,23 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       
 void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init,
                           const JavaObject* excp) {
-  JavaObject* obj = cl->doNew(this);
+  JavaObject* obj = NULL;
   llvm_gcroot(obj, 0);
+  llvm_gcroot(excp, 0);
+
+  obj = cl->doNew(this);
   init->invokeIntSpecial(this, cl, obj, &excp);
   JavaThread::get()->throwException(obj);
 }
 
 JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
                                const char* asciiz) {
-  JavaObject* obj = cl->doNew(this);
-  JavaString* str = 0;
+  JavaObject* obj = NULL;
+  JavaString* str = NULL;
   llvm_gcroot(obj, 0);
   llvm_gcroot(str, 0);
+  obj = cl->doNew(this);
+
   if (asciiz) str = asciizToStr(asciiz);
 
   init->invokeIntSpecial(this, cl, obj, &str);
@@ -273,7 +278,7 @@ JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
 
 JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
                                JavaString* str) {
-  JavaObject* obj = 0;
+  JavaObject* obj = NULL;
   llvm_gcroot(str, 0);
   llvm_gcroot(obj, 0);
   obj = cl->doNew(this);
@@ -295,19 +300,21 @@ void Jnjvm::arrayStoreException() {
 }
 
 void Jnjvm::indexOutOfBounds(const JavaObject* obj, sint32 entry) {
-  JavaString* str = (JavaString*)
-    upcalls->IntToString->invokeJavaObjectStatic(this, upcalls->intClass,
-                                                 entry, 10);
+  JavaString* str = NULL;
+  llvm_gcroot(obj, 0);
   llvm_gcroot(str, 0);
+  str = (JavaString*)upcalls->IntToString->invokeJavaObjectStatic(
+      this, upcalls->intClass, entry, 10);
   error(upcalls->ArrayIndexOutOfBoundsException,
         upcalls->InitArrayIndexOutOfBoundsException, str);
 }
 
 void Jnjvm::negativeArraySizeException(sint32 size) {
-  JavaString* str = (JavaString*)
+  JavaString* str = NULL;
+  llvm_gcroot(str, 0);
+  str = (JavaString*)
     upcalls->IntToString->invokeJavaObjectStatic(this, upcalls->intClass,
                                                  size, 10);
-  llvm_gcroot(str, 0);
   error(upcalls->NegativeArraySizeException,
         upcalls->InitNegativeArraySizeException, str);
 }
@@ -318,10 +325,11 @@ void Jnjvm::nullPointerException() {
 }
 
 JavaObject* Jnjvm::CreateIndexOutOfBoundsException(sint32 entry) {
-  JavaString* str = (JavaString*)
+  JavaString* str = NULL;
+  llvm_gcroot(str, 0);
+  str = (JavaString*)
     upcalls->IntToString->invokeJavaObjectStatic(this, upcalls->intClass,
                                                  entry, 10);
-  llvm_gcroot(str, 0);
   return CreateError(upcalls->ArrayIndexOutOfBoundsException,
                      upcalls->InitArrayIndexOutOfBoundsException, str);
 }
@@ -333,16 +341,18 @@ JavaObject* Jnjvm::CreateNegativeArraySizeException() {
 }
 
 JavaObject* Jnjvm::CreateUnsatisfiedLinkError(JavaMethod* meth) {
-  JavaString* str = constructString(meth->toString());
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = constructString(meth->toString());
   return CreateError(upcalls->UnsatisfiedLinkError,
                      upcalls->InitUnsatisfiedLinkError,
                      str);
 }
 
 JavaObject* Jnjvm::CreateArithmeticException() {
-  JavaString* str = asciizToStr("/ by zero");
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = asciizToStr("/ by zero");
   return CreateError(upcalls->ArithmeticException,
                      upcalls->InitArithmeticException, str);
 }
@@ -354,23 +364,26 @@ JavaObject* Jnjvm::CreateNullPointerException() {
 }
 
 JavaObject* Jnjvm::CreateOutOfMemoryError() {
-  JavaString* str = asciizToStr("Java heap space");
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = asciizToStr("Java heap space");
   return CreateError(upcalls->OutOfMemoryError,
                      upcalls->InitOutOfMemoryError, str);
 }
 
 JavaObject* Jnjvm::CreateStackOverflowError() {
   // Don't call init, or else we'll get a new stack overflow error.
-  JavaObject* obj = upcalls->StackOverflowError->doNew(this);
+  JavaObject* obj = NULL;
   llvm_gcroot(obj, 0);
+  obj = upcalls->StackOverflowError->doNew(this);
   JavaObjectThrowable::fillInStackTrace((JavaObjectThrowable*)obj);
   return obj;
 }
 
 JavaObject* Jnjvm::CreateArrayStoreException(JavaVirtualTable* VT) {
-  JavaString* str = VT ? JavaString::internalToJava(VT->cl->name, this) : NULL;
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  if (VT != NULL) str = JavaString::internalToJava(VT->cl->name, this);
   return CreateError(upcalls->ArrayStoreException,
                      upcalls->InitArrayStoreException, str);
 }
@@ -384,15 +397,17 @@ JavaObject* Jnjvm::CreateClassCastException(JavaObject* obj,
 }
 
 JavaObject* Jnjvm::CreateLinkageError(const char* msg) {
-  JavaString* str = asciizToStr(msg);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = asciizToStr(msg);
   return CreateError(upcalls->LinkageError,
                      upcalls->InitLinkageError, str);
 }
 
 void Jnjvm::illegalAccessException(const char* msg) {
-  JavaString* str = asciizToStr(msg);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = asciizToStr(msg);
   error(upcalls->IllegalAccessException,
         upcalls->InitIllegalAccessException, str);
 }
@@ -427,15 +442,17 @@ void Jnjvm::invocationTargetException(const JavaObject* excp) {
 }
 
 void Jnjvm::outOfMemoryError() {
-  JavaString* str = asciizToStr("Java heap space");
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = asciizToStr("Java heap space");
   error(upcalls->OutOfMemoryError,
         upcalls->InitOutOfMemoryError, str);
 }
 
 void Jnjvm::illegalArgumentException(const char* msg) {
-  JavaString* str = asciizToStr(msg);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = asciizToStr(msg);
   error(upcalls->IllegalArgumentException,
         upcalls->InitIllegalArgumentException, str);
 }
@@ -455,26 +472,29 @@ void Jnjvm::noClassDefFoundError(JavaObject* obj) {
 }
 
 void Jnjvm::instantiationException(UserCommonClass* cl) {
-  JavaString* str = internalUTF8ToStr(cl->name);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = internalUTF8ToStr(cl->name);
   error(upcalls->InstantiationException, upcalls->InitInstantiationException,
         str);
 }
 
 void Jnjvm::instantiationError(UserCommonClass* cl) {
-  JavaString* str = internalUTF8ToStr(cl->name);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = internalUTF8ToStr(cl->name);
   error(upcalls->InstantiationError, upcalls->InitInstantiationError, str);
 }
   
 
 static JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
                                    Jnjvm* vm) {
-  ArrayUInt16* msg = (ArrayUInt16*)
-    vm->upcalls->ArrayOfChar->doNew(19 + cl->name->size + name->size, vm);
-  JavaString* str = 0;
+  ArrayUInt16* msg = NULL;
+  JavaString* str = NULL;
   llvm_gcroot(msg, 0);
   llvm_gcroot(str, 0);
+  msg = (ArrayUInt16*)
+    vm->upcalls->ArrayOfChar->doNew(19 + cl->name->size + name->size, vm);
 
   uint32 i = 0;
 
@@ -521,32 +541,36 @@ static JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
 }
 
 void Jnjvm::noSuchFieldError(CommonClass* cl, const UTF8* name) { 
-  JavaString* str = CreateNoSuchMsg(cl, name, this);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = CreateNoSuchMsg(cl, name, this);
   error(upcalls->NoSuchFieldError,
         upcalls->InitNoSuchFieldError, str);
 }
 
 void Jnjvm::noSuchMethodError(CommonClass* cl, const UTF8* name) {
-  JavaString* str = CreateNoSuchMsg(cl, name, this);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = CreateNoSuchMsg(cl, name, this);
   error(upcalls->NoSuchMethodError,
         upcalls->InitNoSuchMethodError, str);
 }
 
 void Jnjvm::abstractMethodError(CommonClass* cl, const UTF8* name) {
-  JavaString* str = CreateNoSuchMsg(cl, name, this);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = CreateNoSuchMsg(cl, name, this);
   error(upcalls->AbstractMethodError,
         upcalls->InitAbstractMethodError, str);
 }
 
 static JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
-  ArrayUInt16* msg = (ArrayUInt16*)
-    vm->upcalls->ArrayOfChar->doNew(15 + name->size, vm);
-  JavaString* str = 0;
+  ArrayUInt16* msg = NULL;
+  JavaString* str = NULL;
   llvm_gcroot(msg, 0);
   llvm_gcroot(str, 0);
+
+  msg = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(15 + name->size, vm);
   uint32 i = 0;
 
 
@@ -580,13 +604,13 @@ static JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
 }
 
 static JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
-  JavaString* str = 0;
-  ArrayUInt16* msg = (ArrayUInt16*)
-    vm->upcalls->ArrayOfChar->doNew(15 + name->count, vm);
+  JavaString* str = NULL;
+  ArrayUInt16* msg = NULL;
   llvm_gcroot(msg, 0);
   llvm_gcroot(str, 0);
-  uint32 i = 0;
 
+  msg = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(15 + name->count, vm);
+  uint32 i = 0;
 
   ArrayUInt16::setElement(msg, 'u', i); i++;
   ArrayUInt16::setElement(msg, 'n', i); i++;
@@ -620,25 +644,29 @@ static JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
 
 
 void Jnjvm::noClassDefFoundError(const UTF8* name) {
-  JavaString* str = CreateUnableToLoad(name, this);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = CreateUnableToLoad(name, this);
   error(upcalls->NoClassDefFoundError,
         upcalls->InitNoClassDefFoundError, str);
 }
 
 void Jnjvm::classNotFoundException(JavaString* name) {
-  JavaString* str = CreateUnableToLoad(name, this);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = CreateUnableToLoad(name, this);
   error(upcalls->ClassNotFoundException,
         upcalls->InitClassNotFoundException, str);
 }
 
 void Jnjvm::noClassDefFoundError(UserClass* cl, const UTF8* name) {
-  uint32 size = 35 + name->size + cl->name->size;
-  ArrayUInt16* msg = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
-  JavaString* str = 0;
+  ArrayUInt16* msg = NULL;
+  JavaString* str = NULL;
   llvm_gcroot(msg, 0);
   llvm_gcroot(str, 0);
+
+  uint32 size = 35 + name->size + cl->name->size;
+  msg = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
   uint32 i = 0;
 
 
@@ -703,15 +731,17 @@ void Jnjvm::noClassDefFoundError(UserClass* cl, const UTF8* name) {
 
 
 void Jnjvm::classFormatError(const char* msg) {
-  JavaString* str = asciizToStr(msg);
+  JavaString* str = NULL;
   llvm_gcroot(str, 0);
+  str = asciizToStr(msg);
   error(upcalls->ClassFormatError, upcalls->InitClassFormatError, str);
 }
 
 JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
-  uint32 size = utf8->size;
-  ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
+  ArrayUInt16* tmp = NULL;
   llvm_gcroot(tmp, 0);
+  uint32 size = utf8->size;
+  tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
   
   for (uint32 i = 0; i < size; i++) {
     ArrayUInt16::setElement(tmp, utf8->elements[i], i);
@@ -722,15 +752,17 @@ JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
 }
 
 JavaString* Jnjvm::constructString(const ArrayUInt16* array) { 
+  JavaString* res = NULL;
   llvm_gcroot(array, 0);
-  JavaString* res = hashStr.lookupOrCreate(array, this, JavaString::stringDup);
+  llvm_gcroot(res, 0);
+  res = hashStr.lookupOrCreate(array, this, JavaString::stringDup);
   return res;
 }
 
 JavaString* Jnjvm::asciizToStr(const char* asciiz) {
-  assert(asciiz && "No asciiz given");
-  ArrayUInt16* var = 0;
+  ArrayUInt16* var = NULL;
   llvm_gcroot(var, 0);
+  assert(asciiz && "No asciiz given");
   var = asciizToArray(asciiz);
   return constructString(var);
 }
@@ -747,11 +779,11 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   llvm_gcroot(delegatee, 0);
   llvm_gcroot(base, 0);
 
-  if (!getDelegatee()) {
+  if (getDelegatee() == NULL) {
     UserClass* cl = vm->upcalls->newClass;
     delegatee = (JavaObjectClass*)cl->doNew(vm);
     JavaObjectClass::setClass(delegatee, this);
-    if (!pd && isArray()) {
+    if (pd == NULL && isArray()) {
       base = (JavaObjectClass*)
         asArrayClass()->baseClass()->getClassDelegatee(vm, pd);
       JavaObjectClass::setProtectionDomain(
@@ -770,11 +802,6 @@ JavaObject* const* UserCommonClass::getClassDelegateePtr(Jnjvm* vm, JavaObject* 
   getClassDelegatee(vm, pd);
   return getDelegateePtr();
 }
-
-//===----------------------------------------------------------------------===//
-// The command line parsing tool does not manipulate any GC-allocated objects.
-// The ArrayUInt8 is allocated with malloc and free'd after parsing.
-//===----------------------------------------------------------------------===//
 
 #define PATH_MANIFEST "META-INF/MANIFEST.MF"
 #define MAIN_CLASS "Main-Class: "
@@ -841,17 +868,18 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   ZipArchive archive(&bytes, vm->allocator);
   if (archive.getOfscd() != -1) {
     ZipFile* file = archive.getFile(PATH_MANIFEST);
-    if (file) {
+    if (file != NULL) {
       UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
       res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
       int ok = archive.readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(vm, res, MAIN_CLASS,
                                           LENGTH_MAIN_CLASS);
-        if (!mainClass)
+        if (mainClass == NULL) {
           mainClass = findInformation(vm, res, MAIN_LOWER_CLASS,
                                       LENGTH_MAIN_CLASS);
-        if (mainClass) {
+        }
+        if (mainClass != NULL) {
           className = mainClass;
         } else {
           printf("No Main-Class:  in Manifest of archive %s.\n", jarFile);
@@ -1031,21 +1059,26 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
   JavaObject* loader = 0;
   llvm_gcroot(loader, 0);
   
-  if (appClassLoader == 0) {
+  if (appClassLoader == NULL) {
     UserClass* cl = upcalls->newClassLoader;
     loader = upcalls->getSystemClassLoader->invokeJavaObjectStatic(this, cl);
     appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader,
                                                                     this);
-    if (argumentsInfo.jarFile)
+    if (argumentsInfo.jarFile) {
       appClassLoader->loadLibFromJar(this, argumentsInfo.jarFile,
                                      argumentsInfo.className);
-    else if (argumentsInfo.className)
+    } else if (argumentsInfo.className) {
       appClassLoader->loadLibFromFile(this, argumentsInfo.className);
+    }
   }
   return appClassLoader;
 }
 
 void Jnjvm::loadBootstrap() {
+  JavaObject* obj = NULL;
+  JavaObject* javaLoader = NULL;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(javaLoader, 0);
   JnjvmClassLoader* loader = bootstrapLoader;
   
   // First create system threads.
@@ -1057,8 +1090,9 @@ void Jnjvm::loadBootstrap() {
   
   // Initialise the bootstrap class loader if it's not
   // done already.
-  if (!bootstrapLoader->upcalls->newString)
+  if (bootstrapLoader->upcalls->newString == NULL) {
     bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
+  }
   
 #define LOAD_CLASS(cl) \
   cl->resolveClass(); \
@@ -1069,7 +1103,7 @@ void Jnjvm::loadBootstrap() {
   // placed in the hashmap. This VT will have its destructor set so
   // that the string is removed when deallocated.
   upcalls->newString->resolveClass();
-  if (!JavaString::internStringVT) {
+  if (JavaString::internStringVT == NULL) {
     JavaVirtualTable* stringVT = upcalls->newString->getVirtualVT();
     uint32 size = upcalls->newString->virtualTableSize * sizeof(uintptr_t);
     
@@ -1145,8 +1179,8 @@ void Jnjvm::loadBootstrap() {
 #undef LOAD_CLASS
 
   loadAppClassLoader();
-  JavaObject* obj = JavaThread::get()->currentThread();
-  JavaObject* javaLoader = appClassLoader->getJavaClassLoader();
+  obj = JavaThread::get()->currentThread();
+  javaLoader = appClassLoader->getJavaClassLoader();
 
 #ifdef SERVICE
   if (!IsolateID)
@@ -1161,9 +1195,9 @@ void Jnjvm::loadBootstrap() {
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
-  JavaObject* exc = 0;
-  JavaObject* obj = 0;
-  JavaObject* group = 0;
+  JavaObject* exc = NULL;
+  JavaObject* obj = NULL;
+  JavaObject* group = NULL;
   
   llvm_gcroot(args, 0);
   llvm_gcroot(exc, 0);
@@ -1175,7 +1209,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     UserClass* cl = appClassLoader->loadClassFromSelf(this, className);
     
     // If not, load the class.
-    if (!cl) {
+    if (cl == NULL) {
       const UTF8* name = appClassLoader->asciizConstructUTF8(className);
       cl = (UserClass*)appClassLoader->loadName(name, true, true);
     }
@@ -1195,7 +1229,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   } END_CATCH;
 
   exc = JavaThread::get()->pendingException;
-  if (exc) {
+  if (exc != NULL) {
     JavaThread* th = JavaThread::get();
     th->clearException();
     obj = th->currentThread();
@@ -1212,6 +1246,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
 
 void Jnjvm::executePremain(const char* className, JavaString* args,
                              JavaObject* instrumenter) {
+  llvm_gcroot(args, 0);
   llvm_gcroot(instrumenter, 0);
   TRY {
     const UTF8* name = appClassLoader->asciizConstructUTF8(className);
@@ -1242,10 +1277,10 @@ void Jnjvm::waitForExit() {
 
 void Jnjvm::mainJavaStart(JavaThread* thread) {
 
-  JavaString* str = 0;
-  JavaObject* instrumenter = 0;
-  ArrayObject* args = 0;
-  JavaObject* exc = 0;
+  JavaString* str = NULL;
+  JavaObject* instrumenter = NULL;
+  ArrayObject* args = NULL;
+  JavaObject* exc = NULL;
 
   llvm_gcroot(str, 0);
   llvm_gcroot(instrumenter, 0);
@@ -1420,8 +1455,11 @@ const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {
 }
   
 ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
+  ArrayUInt16* tmp = NULL;
+  llvm_gcroot(tmp, 0);
+
   uint32 size = strlen(asciiz);
-  ArrayUInt16* tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
+  tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
   
   for (uint32 i = 0; i < size; i++) {
     ArrayUInt16::setElement(tmp, asciiz[i], i);

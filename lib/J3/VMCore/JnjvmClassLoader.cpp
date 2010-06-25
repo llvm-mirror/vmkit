@@ -315,13 +315,15 @@ void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
 }
 
 ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
+  ArrayUInt8* res = 0;
+  llvm_gcroot(res, 0);
+
   char* asciiz = (char*)alloca(utf8->size + 1);
   for (sint32 i = 0; i < utf8->size; ++i) 
     asciiz[i] = utf8->elements[i];
   asciiz[utf8->size] = 0;
   
   uint32 alen = utf8->size;
-  ArrayUInt8* res = 0;
   
   for (std::vector<const char*>::iterator i = bootClasspath.begin(),
        e = bootClasspath.end(); i != e; ++i) {
@@ -353,15 +355,15 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
                                               bool doResolve,
                                               JavaString* strName) {
- 
+  ArrayUInt8* bytes = NULL;
+  llvm_gcroot(bytes, 0);
   llvm_gcroot(strName, 0);
 
   UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
-    // This array is not allocated by the GC.
-    ArrayUInt8* bytes = openName(name);
-    if (bytes) {
+    bytes = openName(name);
+    if (bytes != NULL) {
       cl = constructClass(name, bytes);
     }
   }
@@ -384,7 +386,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
   
   if (!cl) {
     UserClass* forCtp = loadClass;
-    if (!strName) {
+    if (strName == NULL) {
       strName = JavaString::internalToJava(name, isolate);
     }
     obj = loadClassMethod->invokeJavaObjectVirtual(isolate, forCtp, javaLoader,
@@ -843,8 +845,7 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
   
-  if (loader == 0)
-    return vm->bootstrapLoader;
+  if (loader == NULL) return vm->bootstrapLoader;
  
   JnjvmClassLoader* JCL = 0;
   Classpath* upcalls = vm->bootstrapLoader->upcalls;
@@ -920,20 +921,24 @@ JnjvmBootstrapLoader::~JnjvmBootstrapLoader() {
 }
 
 JavaString** JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
-  JavaString* res = isolate->internalUTF8ToStr(val);
+  JavaString* res = NULL;
+  llvm_gcroot(res, 0);
+  res = isolate->internalUTF8ToStr(val);
   return strings->addString(this, res);
 }
 
 JavaString** JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
+  JavaString* res = NULL;
+  llvm_gcroot(res, 0);
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaString* res = vm->internalUTF8ToStr(val);
+  res = vm->internalUTF8ToStr(val);
   return strings->addString(this, res);
 }
 
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
   if (str != 0) {
     unsigned int len = strlen(str);
-    char* buf = (char*)alloca(len + 1);
+    char* buf = new char[len + 1];
     const char* cur = str;
     int top = 0;
     char c = 1;
@@ -972,6 +977,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
       cur = cur + top + 1;
       top = 0;
     }
+    delete[] buf;
   }
 }
 

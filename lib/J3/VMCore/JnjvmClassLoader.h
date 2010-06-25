@@ -451,19 +451,22 @@ public:
   /// Is the object a VMClassLoader object?
   ///
   static bool isVMClassLoader(JavaObject* obj) {
+    llvm_gcroot(obj, 0);
     return obj->getVirtualTable() == &VT;
   }
 
   /// staticTracer - Trace the internal class loader.
   ///
   static void staticTracer(VMClassLoader* obj, uintptr_t closure) {
-    if (obj->JCL) obj->JCL->tracer(closure);
+    llvm_gcroot(obj, 0);
+    if (obj->JCL != NULL) obj->JCL->tracer(closure);
   }
 
   /// ~VMClassLoader - Delete the internal class loader.
   ///
   static void staticDestructor(VMClassLoader* obj) {
-    if (obj->JCL) {
+    llvm_gcroot(obj, 0);
+    if (obj->JCL != NULL) {
       obj->JCL->~JnjvmClassLoader();
       delete &(obj->JCL->allocator);
     }
