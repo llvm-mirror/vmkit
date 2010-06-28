@@ -25,11 +25,10 @@ const int Reader::SeekSet = SEEK_SET;
 const int Reader::SeekCur = SEEK_CUR;
 const int Reader::SeekEnd = SEEK_END;
 
-ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path,
-                             bool temp) {
-  FILE* fp = fopen(path, "r");
+ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path) {
   ArrayUInt8* res = NULL;
   llvm_gcroot(res, 0);
+  FILE* fp = fopen(path, "r");
   if (fp != 0) {
     fseek(fp, 0, SeekEnd);
     long nbb = ftell(fp);

@@ -858,7 +858,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
 
   vm->setClasspath(jarFile);
   
-  bytes = Reader::openFile(vm->bootstrapLoader, jarFile, true);
+  bytes = Reader::openFile(vm->bootstrapLoader, jarFile);
 
   if (bytes == NULL) {
     printf("Unable to access jarfile %s\n", jarFile);
