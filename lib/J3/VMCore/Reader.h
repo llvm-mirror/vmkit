@@ -99,7 +99,7 @@ public:
   
   sint16 readS2() {
     sint16 tmp = ((sint16)(readS1())) << 8;
-    return tmp | ((sint16)(readS1()));
+    return tmp | ((sint16)(readU1()));
   }
   
   uint32 readU4() {
@@ -109,7 +109,7 @@ public:
   
   sint32 readS4() {
     sint32 tmp = ((sint32)(readS2())) << 16;
-    return tmp | ((sint32)(readS2()));
+    return tmp | ((sint32)(readU2()));
   }
 
   uint64 readU8() {
@@ -118,8 +118,8 @@ public:
   }
   
   sint64 readS8() {
-    sint64 tmp = ((sint64)(readS8())) << 32;
-    return tmp | ((sint64)(readS8()));
+    sint64 tmp = ((sint64)(readS4())) << 32;
+    return tmp | ((sint64)(readU4()));
   }
 
   Reader(ArrayUInt8** array, uint32 start = 0, uint32 end = 0) {

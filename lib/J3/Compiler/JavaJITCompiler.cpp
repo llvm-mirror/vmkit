@@ -163,10 +163,9 @@ Constant* JavaJITCompiler::getMethodInClass(JavaMethod* meth) {
 }
 
 Constant* JavaJITCompiler::getString(JavaString* str) {
-  assert(str && "No string given");
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
-                                     uint64(str));
-  return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.JavaObjectType);
+  llvm_gcroot(str, 0);
+  fprintf(stderr, "Should not be here\n");
+  abort();
 }
 
 Constant* JavaJITCompiler::getStringPtr(JavaString** str) {
@@ -196,18 +195,13 @@ Constant* JavaJITCompiler::getJavaClassPtr(CommonClass* cl) {
 }
 
 JavaObject* JavaJITCompiler::getFinalObject(llvm::Value* obj) {
-  if (ConstantExpr* CE = dyn_cast<ConstantExpr>(obj)) {
-    if (ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0))) {
-      return (JavaObject*)C->getZExtValue();
-    }
-  }
-  return 0;
+  // obj can not encode direclty an object.
+  return NULL;
 }
 
 Constant* JavaJITCompiler::getFinalObject(JavaObject* obj, CommonClass* cl) {
-  Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
-                                  uint64(obj));
-  return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.JavaObjectType);
+  llvm_gcroot(obj, 0);
+  return NULL;
 }
 
 Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {

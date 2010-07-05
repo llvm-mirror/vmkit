@@ -95,19 +95,18 @@ void JavaJIT::invokeVirtual(uint16 index) {
  
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
-
-  Value* obj = objectStack[stack.size() - signature->nbArguments - 1];
-  JavaObject* source = TheCompiler->getFinalObject(obj);
-  if (source) {
-    canBeDirect = true;
-    CommonClass* sourceClass = JavaObject::getClass(source);
-    Class* lookup = sourceClass->isArray() ? sourceClass->super :
-                                             sourceClass->asClass();
-    meth = lookup->lookupMethodDontThrow(name, signature->keyName, false,
-                                         true, 0);
-  }
-  
+ 
   if (TheCompiler->isStaticCompiling()) {
+    Value* obj = objectStack[stack.size() - signature->nbArguments - 1];
+    JavaObject* source = TheCompiler->getFinalObject(obj);
+    if (source) {
+      canBeDirect = true;
+      CommonClass* sourceClass = JavaObject::getClass(source);
+      Class* lookup = sourceClass->isArray() ? sourceClass->super :
+                                               sourceClass->asClass();
+      meth = lookup->lookupMethodDontThrow(name, signature->keyName, false,
+                                           true, 0);
+    }
     CommonClass* unique = TheCompiler->getUniqueBaseClass(cl);
     if (unique) {
       canBeDirect = true;
@@ -950,14 +949,15 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     }
   }
    
-  // TODO: THIS IS UNSAFE!
-  exploreOpcodes(ArrayUInt8::getElements(compilingClass->bytes) + start, codeLen);
+  reader.cursor = start;
+  exploreOpcodes(reader, codeLen);
 
   if (returnType != Type::getVoidTy(*llvmContext)) {
     endNode = PHINode::Create(returnType, "", endBlock);
   }
 
-  compileOpcodes(ArrayUInt8::getElements(compilingClass->bytes) + start, codeLen);
+  reader.cursor = start;
+  compileOpcodes(reader, codeLen);
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL,
               "--> end inline compiling %s.%s\n",
@@ -1186,8 +1186,8 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
   
-  // TODO: THIS IS UNSAFE!
-  exploreOpcodes(ArrayUInt8::getElements(compilingClass->bytes) + start, codeLen);
+  reader.cursor = start;
+  exploreOpcodes(reader, codeLen);
  
   endBlock = createBasicBlock("end");
 
@@ -1243,8 +1243,8 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock = noStackOverflow;
   }
 
-  // TODO: THIS IS UNSAFE!
-  compileOpcodes(ArrayUInt8::getElements(compilingClass->bytes) + start, codeLen);
+  reader.cursor = start;
+  compileOpcodes(reader, codeLen);
   
   assert(stack.size() == 0 && "Stack not empty after compiling bytecode");
   // Fix a javac(?) bug where a method only throws an exception and does

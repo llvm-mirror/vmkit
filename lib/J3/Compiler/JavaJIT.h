@@ -206,10 +206,10 @@ private:
 //===------------------------- Bytecode parsing ---------------------------===//
 
   /// compileOpcodes - Parse the bytecode and create LLVM instructions.
-  void compileOpcodes(uint8* bytecodes, uint32 codeLength);
+  void compileOpcodes(Reader& reader, uint32 codeLength);
 
   /// exploreOpcodes - Parse the bytecode and create the basic blocks.
-  void exploreOpcodes(uint8* bytecodes, uint32 codeLength);
+  void exploreOpcodes(Reader& reader, uint32 codeLength);
   
   /// readExceptionTable - Read the exception table in the bytecode. Prepare
   /// exception destination for all Java instructions and set the exception

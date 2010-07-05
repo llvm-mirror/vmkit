@@ -32,6 +32,7 @@
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "Jnjvm.h"
+#include "Reader.h"
 
 #include "j3/J3Intrinsics.h"
 
@@ -68,49 +69,25 @@ uint8 arrayType(JavaMethod* meth, unsigned int t) {
   }
 }
 
-static inline sint8 readS1(uint8* bytecode, uint32& i) {
-  return ((sint8*)bytecode)[++i];
-}
-
-static inline uint8 readU1(uint8* bytecode, uint32& i) {
-  return bytecode[++i];
-}
-
-static inline sint16 readS2(uint8* bytecode, uint32& i) {
-  sint16 val = readS1(bytecode, i) << 8;
-  return val | readU1(bytecode, i);
-}
-
-static inline uint16 readU2(uint8* bytecode, uint32& i) {
-  uint16 val = readU1(bytecode, i) << 8;
-  return val | readU1(bytecode, i);
-}
-
-static inline sint32 readS4(uint8* bytecode, uint32& i) {
-  sint32 val = readU2(bytecode, i) << 16;
-  return val | readU2(bytecode, i);
-}
-
-
-static inline uint32 readU4(uint8* bytecode, uint32& i) {
-  return readS4(bytecode, i);
-}
-
-static inline uint32 WREAD_U1(uint8* array, bool init, uint32 &i, bool& wide) {
+static inline uint32 WREAD_U1(Reader& reader, bool init, uint32 &i, bool& wide) {
   if (wide) {
-    wide = init; 
-    return readU2(array, i);
+    wide = init;
+    i += 2;
+    return reader.readU2();
   } else {
-    return readU1(array, i);
+    i += 1;
+    return reader.readU1();
   }
 }
 
-static inline sint32 WREAD_S1(uint8* array, bool init, uint32 &i, bool &wide) {
+static inline sint32 WREAD_S1(Reader& reader, bool init, uint32 &i, bool &wide) {
   if (wide) {
     wide = init; 
-    return readS2(array, i);
+    i += 2;
+    return reader.readS2();
   } else {
-    return readS1(array, i);
+    i += 1;
+    return reader.readS1();
   }
 }
 
@@ -123,15 +100,18 @@ static inline uint32 WCALC(uint32 n, bool& wide) {
   }
 }
 
-void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
+void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
   bool wide = false;
   uint32 jsrIndex = 0;
+  uint32 start = reader.cursor;
   for(uint32 i = 0; i < codeLength; ++i) {
+    reader.cursor = start + i;
+    uint8 bytecode = reader.readU1();
     
     PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
-                bytecodes[i]);
+                bytecode);
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "compiling ");
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecode]);
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n");
     
     Opinfo* opinfo = &(opcodeInfos[i]);
@@ -173,7 +153,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
    
     currentCtpIndex = -1;
     currentBytecodeIndex = i;
-    currentBytecode = bytecodes[i];
+    currentBytecode = bytecode;
 
     // To prevent a gcj bug with useless goto
     if (currentBlock->getTerminator() != 0) { 
@@ -183,7 +163,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 #if JNJVM_EXECUTE > 1
     {
       Value* args[3] = {
-        ConstantInt::get(Type::getInt32Ty(*llvmContext), (int64_t)bytecodes[i]),
+        ConstantInt::get(Type::getInt32Ty(*llvmContext), (int64_t)bytecode),
         ConstantInt::get(Type::getInt32Ty(*llvmContext), (int64_t)i),
         TheCompiler->getMethodInClass(compilingMethod)
       };
@@ -194,7 +174,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
     }
 #endif
     
-    switch (bytecodes[i]) {
+    switch (bytecode) {
       
       case NOP : break;
 
@@ -264,53 +244,58 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case BIPUSH : 
         push(ConstantExpr::getSExt(ConstantInt::get(Type::getInt8Ty(*llvmContext),
-                                                    bytecodes[++i]),
+                                                    reader.readU1()),
                                    Type::getInt32Ty(*llvmContext)), false);
+        i++;
         break;
 
       case SIPUSH :
         push(ConstantExpr::getSExt(ConstantInt::get(Type::getInt16Ty(*llvmContext),
-                                                    readS2(bytecodes, i)),
+                                                    reader.readS2()),
                                    Type::getInt32Ty(*llvmContext)), false);
+        i += 2;
         break;
 
       case LDC :
-        loadConstant(bytecodes[++i]);
+        loadConstant(reader.readU1());
+        i++;
         break;
 
       case LDC_W :
-        loadConstant(readS2(bytecodes, i));
+        loadConstant(reader.readS2());
+        i += 2;
         break;
 
       case LDC2_W :
-        loadConstant(readS2(bytecodes, i));
+        loadConstant(reader.readS2());
+        i += 2;
         push(intrinsics->constantZero, false);
         break;
 
       case ILOAD :
-        push(new LoadInst(intLocals[WREAD_U1(bytecodes, false, i, wide)], "",
+        push(new LoadInst(intLocals[WREAD_U1(reader, false, i, wide)], "",
                           currentBlock), false);
         break;
 
       case LLOAD :
-        push(new LoadInst(longLocals[WREAD_U1(bytecodes, false, i, wide)], "",
+        push(new LoadInst(longLocals[WREAD_U1(reader, false, i, wide)], "",
                           currentBlock), false);
         push(intrinsics->constantZero, false);
         break;
 
       case FLOAD :
-        push(new LoadInst(floatLocals[WREAD_U1(bytecodes, false, i, wide)], "",
+        push(new LoadInst(floatLocals[WREAD_U1(reader, false, i, wide)], "",
                           currentBlock), false);
         break;
 
       case DLOAD :
-        push(new LoadInst(doubleLocals[WREAD_U1(bytecodes, false, i, wide)], "",
+        push(new LoadInst(doubleLocals[WREAD_U1(reader, false, i, wide)], "",
                           currentBlock), false);
         push(intrinsics->constantZero, false);
         break;
 
       case ALOAD :
-        push(new LoadInst(objectLocals[WREAD_U1(bytecodes, false, i, wide)], "",
+        push(new LoadInst(objectLocals[WREAD_U1(reader, false, i, wide)], "",
                           currentBlock), false);
         break;
       
@@ -503,32 +488,32 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case ISTORE : {
         Value* val = popAsInt();
-        new StoreInst(val, intLocals[WREAD_U1(bytecodes, false, i, wide)],
+        new StoreInst(val, intLocals[WREAD_U1(reader, false, i, wide)],
                       false, currentBlock);
         break;
       }
       
       case LSTORE :
         pop(); // remove the 0 on the stack
-        new StoreInst(pop(), longLocals[WREAD_U1(bytecodes, false, i, wide)],
+        new StoreInst(pop(), longLocals[WREAD_U1(reader, false, i, wide)],
                       false, currentBlock);
         break;
       
       case FSTORE :
-        new StoreInst(pop(), floatLocals[WREAD_U1(bytecodes, false, i, wide)],
+        new StoreInst(pop(), floatLocals[WREAD_U1(reader, false, i, wide)],
                       false, currentBlock);
         break;
       
       case DSTORE :
         pop(); // remove the 0 on the stack
-        new StoreInst(pop(), doubleLocals[WREAD_U1(bytecodes, false, i, wide)],
+        new StoreInst(pop(), doubleLocals[WREAD_U1(reader, false, i, wide)],
                       false, currentBlock);
         break;
 
       case ASTORE : {
         CommonClass* cl = topTypeInfo();
         Instruction* V =
-          new StoreInst(pop(), objectLocals[WREAD_U1(bytecodes, false, i, wide)],
+          new StoreInst(pop(), objectLocals[WREAD_U1(reader, false, i, wide)],
                         false, currentBlock);
         addHighLevelType(V, cl);
         break;
@@ -1294,8 +1279,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case IINC : {
-        uint16 idx = WREAD_U1(bytecodes, true, i, wide);
-        sint16 val = WREAD_S1(bytecodes, false, i, wide);
+        uint16 idx = WREAD_U1(reader, true, i, wide);
+        sint16 val = WREAD_S1(reader, false, i, wide);
         llvm::Value* add = BinaryOperator::CreateAdd(
             new LoadInst(intLocals[idx], "", currentBlock), 
             ConstantInt::get(Type::getInt32Ty(*llvmContext), val), "",
@@ -1636,7 +1621,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case IFEQ : {
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
 
         Value* op = pop();
@@ -1652,7 +1638,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case IFNE : {
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         
         Value* op = pop();
@@ -1668,7 +1655,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case IFLT : {
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
         const Type* type = op->getType();
@@ -1683,7 +1671,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case IFGE : {
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
         const Type* type = op->getType();
@@ -1698,7 +1687,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case IFGT : {
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
         const Type* type = op->getType();
@@ -1713,7 +1703,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case IFLE : {
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
         const Type* type = op->getType();
@@ -1730,7 +1721,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val1,
                                          val2, "");
@@ -1744,7 +1736,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, val1,
                                          val2, "");
@@ -1758,7 +1751,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLT,
                                          val1, val2, "");
@@ -1772,7 +1766,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGE,
                                          val1, val2, "");
@@ -1786,7 +1781,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGT,
                                          val1, val2, "");
@@ -1800,7 +1796,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = popAsInt();
         Value *val1 = popAsInt();
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLE,
                                          val1, val2, "");
@@ -1814,7 +1811,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = pop();
         Value *val1 = pop();
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
                                          val1, val2, "");
@@ -1828,7 +1826,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value *val2 = pop();
         Value *val1 = pop();
         uint32 tmp = i;
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE,
                                          val1, val2, "");
@@ -1840,8 +1839,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       case GOTO : {
         uint32 tmp = i;
-        branch(opcodeInfos[tmp + readS2(bytecodes, i)],
+        branch(opcodeInfos[tmp + reader.readS2()],
                currentBlock);
+        i += 2;
         break;
       }
       
@@ -1854,13 +1854,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
                                                      uint64_t (index)),
                                     intrinsics->JavaObjectType);
         push(expr, false);
-        branch(opcodeInfos[tmp + readS2(bytecodes, i)],
-               currentBlock);
+        branch(opcodeInfos[tmp + reader.readS2()], currentBlock);
+        i += 2;
         break;
       }
 
       case RET : {
-        uint8 local = readU1(bytecodes, i);
+        uint8 local = reader.readU1();
+        i += 1;
         Value* _val = new LoadInst(objectLocals[local], "", currentBlock);
         Value* val = new PtrToIntInst(_val, Type::getInt32Ty(*llvmContext), "", currentBlock);
         SwitchInst* inst = SwitchInst::Create(val, jsrs[0], jsrs.size(),
@@ -1880,10 +1881,14 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 reste = (i + 1) & 3;
         uint32 filled = reste ?  (4 - reste) : 0;
         i += filled;
-        Opinfo& def = opcodeInfos[tmp + readU4(bytecodes, i)];
+        reader.cursor += filled;
+        Opinfo& def = opcodeInfos[tmp + reader.readU4()];
+        i += 4;
 
-        sint32 low = readS4(bytecodes, i);
-        sint32 high = readS4(bytecodes, i) + 1;
+        sint32 low = reader.readS4();
+        i += 4;
+        sint32 high = reader.readS4() + 1;
+        i += 4;
         
         Value* index = pop(); 
         
@@ -1892,7 +1897,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
                                     ConstantInt::get(type, cur), index, "");
           BasicBlock* falseBlock = createBasicBlock("continue tableswitch");
-          Opinfo& info = opcodeInfos[tmp + readU4(bytecodes, i)];
+          Opinfo& info = opcodeInfos[tmp + reader.readU4()];
+          i += 4;
           branch(cmp, info.newBlock, falseBlock, currentBlock, info);
           currentBlock = falseBlock;
         }
@@ -1908,16 +1914,21 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         uint32 filled = (3 - i) & 3;
         i += filled;
-        Opinfo& def = opcodeInfos[tmp + readU4(bytecodes, i)];
-        uint32 nbs = readU4(bytecodes, i);
+        reader.cursor += filled;
+        Opinfo& def = opcodeInfos[tmp + reader.readU4()];
+        i += 4;
+        uint32 nbs = reader.readU4();
+        i += 4;
         
         Value* key = pop();
         for (uint32 cur = 0; cur < nbs; ++cur) {
-          Value* val = ConstantInt::get(Type::getInt32Ty(*llvmContext), readU4(bytecodes, i));
+          Value* val = ConstantInt::get(Type::getInt32Ty(*llvmContext), reader.readU4());
+          i += 4;
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val, key,
                                     "");
           BasicBlock* falseBlock = createBasicBlock("continue lookupswitch");
-          Opinfo& info = opcodeInfos[tmp + readU4(bytecodes, i)];
+          Opinfo& info = opcodeInfos[tmp + reader.readU4()];
+          i += 4;
           branch(cmp, info.newBlock, falseBlock, currentBlock, info);
           currentBlock = falseBlock;
         }
@@ -1966,52 +1977,60 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case GETSTATIC : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         getStaticField(index);
         break;
       }
 
       case PUTSTATIC : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         setStaticField(index);
         break;
       }
 
       case GETFIELD : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         getVirtualField(index);
         break;
       }
 
       case PUTFIELD : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         setVirtualField(index);
         break;
       }
 
       case INVOKEVIRTUAL : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         currentCtpIndex = index;
         invokeVirtual(index);
         break;
       }
 
       case INVOKESPECIAL : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         currentCtpIndex = index;
         invokeSpecial(index);
         break;
       }
 
       case INVOKESTATIC : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         currentCtpIndex = index;
         invokeStatic(index);
         break;
       }
 
       case INVOKEINTERFACE : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         currentCtpIndex = index;
         invokeInterface(index);
         i += 2;
@@ -2019,7 +2038,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case NEW : {
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         invokeNew(index);
         break;
       }
@@ -2032,8 +2052,9 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         Value* valCl = 0;
         UserClassArray* dcl = 0;
 
-        if (bytecodes[i] == NEWARRAY) {
-          uint8 id = bytecodes[++i];
+        if (bytecode == NEWARRAY) {
+          uint8 id = reader.readU1();
+          i += 1;
           uint8 charId = arrayType(compilingMethod, id);
 #ifndef ISOLATE_SHARING
           JnjvmBootstrapLoader* loader = 
@@ -2059,7 +2080,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
             TheVT = TheCompiler->getVirtualTable(dcl->virtualVT);
           }
         } else {
-          uint16 index = readU2(bytecodes, i);
+          uint16 index = reader.readU2();
+          i += 2;
           CommonClass* cl =
             compilingClass->ctpInfo->getMethodClassIfLoaded(index); 
 
@@ -2163,17 +2185,19 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       case CHECKCAST :
         if (!TheCompiler->hasExceptionsEnabled()) {
           i += 2;
+          reader.cursor += 2;
           break;
         }
 
       case INSTANCEOF : {
         
-        bool checkcast = (bytecodes[i] == CHECKCAST);
+        bool checkcast = (bytecode == CHECKCAST);
         
         BasicBlock* exceptionCheckcast = 0;
         BasicBlock* endCheckcast = 0;
 
-        uint16 index = readU2(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
         UserCommonClass* cl = 0;
         Value* clVar = getResolvedCommonClass(index, true, &cl);
         Value* obj = top();
@@ -2273,8 +2297,10 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       }
 
       case MULTIANEWARRAY : {
-        uint16 index = readU2(bytecodes, i);
-        uint8 dim = readU1(bytecodes, i);
+        uint16 index = reader.readU2();
+        i += 2;
+        uint8 dim = reader.readU1();
+        i += 1;
         
         UserCommonClass* dcl = 0; 
         Value* valCl = getResolvedCommonClass(index, true, &dcl);
@@ -2305,7 +2331,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
                                          nil, "");
         BasicBlock* ifFalse = createBasicBlock("true IFNULL");
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
@@ -2319,7 +2346,8 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, val,
                                          nil, "");
         BasicBlock* ifFalse = createBasicBlock("false IFNONNULL");
-        Opinfo& ifTrueInfo = opcodeInfos[tmp + readS2(bytecodes, i)];
+        Opinfo& ifTrueInfo = opcodeInfos[tmp + reader.readS2()];
+        i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         branch(test, ifTrue, ifFalse, currentBlock, ifTrueInfo);
         currentBlock = ifFalse;
@@ -2328,7 +2356,7 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       default : {
         fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " unknown bytecode %d in %s.%s\n!", bytecodes[i],
+                    " unknown bytecode %d in %s.%s\n!", bytecode,
                     UTF8Buffer(compilingClass->name).cString(),
                     UTF8Buffer(compilingMethod->name).cString());
         abort();
@@ -2337,17 +2365,19 @@ void JavaJIT::compileOpcodes(uint8* bytecodes, uint32 codeLength) {
   }
 }
 
-void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
+void JavaJIT::exploreOpcodes(Reader& reader, uint32 codeLength) {
   bool wide = false;
+  uint32 start = reader.cursor;
   for(uint32 i = 0; i < codeLength; ++i) {
-    
+    reader.cursor = start + i;
+    uint8 bytecode = reader.readU1();
     PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
-                bytecodes[i]);
+                bytecode);
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "exploring ");
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecodes[i]]);
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecode]);
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n");
     
-    switch (bytecodes[i]) {
+    switch (bytecode) {
      
       case NOP :
       case ACONST_NULL : 
@@ -2535,7 +2565,8 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IF_ACMPNE :
       case GOTO : {
         uint32 tmp = i;
-        uint16 index = tmp + readU2(bytecodes, i);
+        uint16 index = tmp + reader.readU2();
+        i += 2;
         if (!(opcodeInfos[index].newBlock))
           opcodeInfos[index].newBlock = createBasicBlock("GOTO or IF*");
         break;
@@ -2543,7 +2574,8 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       
       case JSR : {
         uint32 tmp = i;
-        uint16 index = tmp + readU2(bytecodes, i);
+        uint16 index = tmp + reader.readU2();
+        i += 2;
         if (!(opcodeInfos[index].newBlock)) {
           BasicBlock* block = createBasicBlock("JSR");
           opcodeInfos[index].newBlock = block;
@@ -2565,16 +2597,21 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 reste = (i + 1) & 3;
         uint32 filled = reste ? (4 - reste) : 0; 
         i += filled;
-        uint32 index = tmp + readU4(bytecodes, i);
+        reader.cursor += filled;
+        uint32 index = tmp + reader.readU4();
+        i += 4;
         if (!(opcodeInfos[index].newBlock)) {
           BasicBlock* block = createBasicBlock("tableswitch");
           opcodeInfos[index].newBlock = block;
         }
-        uint32 low = readU4(bytecodes, i);
-        uint32 high = readU4(bytecodes, i) + 1;
+        uint32 low = reader.readU4();
+        i += 4;
+        uint32 high = reader.readU4() + 1;
+        i += 4;
         uint32 depl = high - low;
         for (uint32 cur = 0; cur < depl; ++cur) {
-          uint32 index2 = tmp + readU4(bytecodes, i);
+          uint32 index2 = tmp + reader.readU4();
+          i += 4;
           if (!(opcodeInfos[index2].newBlock)) {
             BasicBlock* block = createBasicBlock("tableswitch");
             opcodeInfos[index2].newBlock = block;
@@ -2588,15 +2625,20 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
         uint32 tmp = i;
         uint32 filled = (3 - i) & 3;
         i += filled;
-        uint32 index = tmp + readU4(bytecodes, i);
+        reader.cursor += filled;
+        uint32 index = tmp + reader.readU4();
+        i += 4;
         if (!(opcodeInfos[index].newBlock)) {
           BasicBlock* block = createBasicBlock("tableswitch");
           opcodeInfos[index].newBlock = block;
         }
-        uint32 nbs = readU4(bytecodes, i);
+        uint32 nbs = reader.readU4();
+        i += 4;
         for (uint32 cur = 0; cur < nbs; ++cur) {
           i += 4;
-          uint32 index2 = tmp + readU4(bytecodes, i);
+          reader.cursor += 4;
+          uint32 index2 = tmp + reader.readU4();
+          i += 4;
           if (!(opcodeInfos[index2].newBlock)) {
             BasicBlock* block = createBasicBlock("tableswitch");
             opcodeInfos[index2].newBlock = block;
@@ -2668,7 +2710,8 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
       case IFNULL :
       case IFNONNULL : {
         uint32 tmp = i;
-        uint16 index = tmp + readU2(bytecodes, i);
+        uint16 index = tmp + reader.readU2();
+        i += 2;
         if (!(opcodeInfos[index].newBlock))
           opcodeInfos[index].newBlock = createBasicBlock("true IF*NULL");
         break;
@@ -2677,7 +2720,7 @@ void JavaJIT::exploreOpcodes(uint8* bytecodes, uint32 codeLength) {
 
       default : {
         fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " unknown bytecode %d in %s.%s!\n", bytecodes[i],
+                    " unknown bytecode %d in %s.%s!\n", bytecode,
                     UTF8Buffer(compilingClass->name).cString(),
                     UTF8Buffer(compilingMethod->name).cString());
         abort();
