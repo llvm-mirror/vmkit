@@ -83,7 +83,7 @@ JavaObjectMethod* Meth) {
   JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   JnjvmClassLoader* loader = cl->classLoader;
   
-  res = (meth->getParameterTypes(loader));
+  res = meth->getParameterTypes(loader);
 
   END_NATIVE_EXCEPTION
 
@@ -115,7 +115,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
 
-  jvalue* buf = size ? (jvalue*)alloca(size * sizeof(jvalue)) : 0;
+  jvalue* buf = size ? new jvalue[size] : 0;
   if (size) memset(buf, 0, size * sizeof(jvalue));
   
   if (nbArgs == size) {
@@ -167,6 +167,7 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       exc = th->getJavaException();                                            \
     } END_CATCH;                                                               \
     if (exc) {                                                                 \
+      if (size) delete[] buf;                                                  \
       if (JavaObject::getClass(exc)->isAssignableFrom(                         \
               vm->upcalls->newException)) {                                    \
         th->clearException();                                                  \
@@ -229,10 +230,12 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       RUN_METH(JavaObject, res);
     } 
   } else {
+    if (size) delete[] buf;
     vm->illegalArgumentException("wrong number of arguments");
     return NULL;
   }
 
+  if (size) delete[] buf;
   return res;
 }
 
@@ -253,7 +256,6 @@ JavaObjectMethod* Meth, JavaObject* obj, ArrayObject* args, JavaObject* Cl, jint
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  // Create a new function because we use alloca.
   res = proceedMethod(Meth, obj, args, Cl, index);
   
   END_NATIVE_EXCEPTION

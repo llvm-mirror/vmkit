@@ -229,16 +229,17 @@ Class*      Classpath::newReference;
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
-  JavaObject* vmth = NULL;
+  JavaObjectVMThread* vmth = NULL;
   JavaObject* th = NULL;
   JavaObject* name = NULL;
   llvm_gcroot(Group, 0);
   llvm_gcroot(vmth, 0);
   llvm_gcroot(th, 0);
+  llvm_gcroot(name, 0);
 
   th = newThread->doNew(vm);
   myth->javaThread = th;
-  vmth = newVMThread->doNew(vm);
+  vmth = (JavaObjectVMThread*)newVMThread->doNew(vm);
   name = vm->asciizToStr(thName);
   
   threadName->setInstanceObjectField(th, name);
@@ -247,7 +248,7 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   vmThread->setInstanceObjectField(th, vmth);
   assocThread->setInstanceObjectField(vmth, th);
   running->setInstanceInt8Field(vmth, (uint32)1);
-  ((JavaObjectVMThread*)vmdataVMThread)->setVmdata(myth);
+  JavaObjectVMThread::setVmdata(vmth, myth);
   
   group->setInstanceObjectField(th, Group);
   groupAddThread->invokeIntSpecial(vm, threadGroup, Group, &th);
@@ -422,7 +423,7 @@ extern "C" JavaObject* nativeGetCallingClass() {
 
 extern "C" JavaObject* nativeGetCallingClassLoader() {
   
-  JavaObject *res = 0;
+  JavaObject* res = 0;
   llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
@@ -437,7 +438,7 @@ extern "C" JavaObject* nativeGetCallingClassLoader() {
 }
 
 extern "C" JavaObject* nativeFirstNonNullClassLoader() {
-  JavaObject *res = 0;
+  JavaObject* res = 0;
   llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
@@ -452,7 +453,7 @@ extern "C" JavaObject* nativeFirstNonNullClassLoader() {
 
 extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
   
-  JavaObject *res = 0;
+  JavaObject* res = 0;
   llvm_gcroot(res, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)

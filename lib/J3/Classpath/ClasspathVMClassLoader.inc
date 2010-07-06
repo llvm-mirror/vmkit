@@ -120,10 +120,13 @@ jint len,
 JavaObject* pd) {
   
   JavaObject* res = 0;
+  JavaObject* excp = 0;
   llvm_gcroot(loader, 0);
   llvm_gcroot(str, 0);
   llvm_gcroot(bytes, 0);
   llvm_gcroot(pd, 0);
+  llvm_gcroot(res, 0);
+  llvm_gcroot(excp, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -148,8 +151,8 @@ JavaObject* pd) {
 
     res = cl->getClassDelegatee(vm, pd);
   } else {
-    JavaObject* obj = vm->CreateLinkageError("duplicate class definition");
-    JavaThread::get()->throwException(obj);
+    excp = vm->CreateLinkageError("duplicate class definition");
+    JavaThread::get()->throwException(excp);
   }
 
   END_NATIVE_EXCEPTION

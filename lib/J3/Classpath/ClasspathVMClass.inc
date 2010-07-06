@@ -58,7 +58,7 @@ JavaObject* loader) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(str);
-  Jnjvm* vm = JavaThread::get()->getJVM(); 
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader* JCL = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
   UserCommonClass* cl = JCL->loadClassFromJavaString(str, true, false);
@@ -67,7 +67,7 @@ JavaObject* loader) {
     if (clinit && cl->asClass()) {
       cl->asClass()->initialiseClass(vm);
     }
-    res =cl->getClassDelegatee(vm);
+    res = cl->getClassDelegatee(vm);
   } else {
     vm->classNotFoundException(str);
   }
@@ -534,7 +534,6 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl, bool publicOnly) {
-
 
   ArrayObject* result = 0;
   llvm_gcroot(result, 0);

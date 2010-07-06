@@ -573,44 +573,37 @@ JavaObjectField* Field, JavaObject* obj) {
                           field->getInstanceInt8Field(obj);
       res = vm->upcalls->boolClass->doNew(vm);
       vm->upcalls->boolValue->setInstanceInt8Field(res, val);
-    }
-    else if (prim->isByte()) {
+    } else if (prim->isByte()) {
       sint8 val =  stat ? field->getStaticInt8Field() :
                           field->getInstanceInt8Field(obj);
       res = vm->upcalls->byteClass->doNew(vm);
       vm->upcalls->byteValue->setInstanceInt8Field(res, val);
-    }
-    else if (prim->isChar()) {
+    } else if (prim->isChar()) {
       uint16 val =  stat ? field->getStaticInt16Field() :
                            field->getInstanceInt16Field(obj);
       res = vm->upcalls->charClass->doNew(vm);
       vm->upcalls->charValue->setInstanceInt16Field(res, val);
-    }
-    else if (prim->isShort()) {
+    } else if (prim->isShort()) {
       sint16 val =  stat ? field->getStaticInt16Field() :
                            field->getInstanceInt16Field(obj);
       res = vm->upcalls->shortClass->doNew(vm);
       vm->upcalls->shortValue->setInstanceInt16Field(res, val);
-    }
-    else if (prim->isInt()) {
+    } else if (prim->isInt()) {
       sint64 val =  stat ? field->getStaticInt32Field() :
                            field->getInstanceInt32Field(obj);
       res = vm->upcalls->intClass->doNew(vm);
       vm->upcalls->intValue->setInstanceInt32Field(res, val);
-    }
-    else if (prim->isLong()) {
+    } else if (prim->isLong()) {
       sint64 val =  stat ? field->getStaticLongField() :
                            field->getInstanceLongField(obj);
       res = vm->upcalls->longClass->doNew(vm);
       vm->upcalls->longValue->setInstanceLongField(res, val);
-    }
-    else if (prim->isFloat()) {
+    } else if (prim->isFloat()) {
       float val =  stat ? field->getStaticFloatField() :
                           field->getInstanceFloatField(obj);
       res = vm->upcalls->floatClass->doNew(vm);
       vm->upcalls->floatValue->setInstanceFloatField(res, val);
-    }
-    else if (prim->isDouble()) {
+    } else if (prim->isDouble()) {
       double val =  stat ? field->getStaticDoubleField() :
                            field->getInstanceDoubleField(obj);
       res = vm->upcalls->doubleClass->doNew(vm);

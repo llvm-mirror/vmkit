@@ -96,7 +96,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
   if (isAbstract(cl->access)) vm->instantiationException(cl);
 
   // Allocate a buffer to store the arguments.
-  jvalue* buf = size ? (jvalue*)alloca(size * sizeof(jvalue)) : 0;
+  jvalue* buf = size ? new jvalue[size] : NULL;
   if (size) memset(buf, 0, size * sizeof(jvalue));
 
   if (nbArgs == size) {
@@ -123,6 +123,7 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
         excp = th->getJavaException();
       } END_CATCH;
       if (excp) {
+        if (size) delete[] buf;
         if (JavaObject::getClass(excp)->isAssignableFrom(vm->upcalls->newException)) {
           th->clearException();
           // If it's an exception, we encapsule it in an
@@ -135,12 +136,17 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
         return NULL;
       }
     } else {
+      if (size) delete[] buf;
       vm->illegalArgumentException("class is not a regular class");
+      return NULL;
     }
   } else {
+    if (size) delete[] buf;
     vm->illegalArgumentException("wrong number of arguments");
+    return NULL;
   }
  
+  if (size) delete[] buf;
   return res;
 }
 
@@ -159,7 +165,6 @@ JavaObjectConstructor* cons, ArrayObject* args, JavaObject* Clazz, jint index) {
   
   BEGIN_NATIVE_EXCEPTION(0)
 
-  // Proceed in another function because we are using alloca.
   res = proceedConstructor(cons, args, Clazz, index);
   
   END_NATIVE_EXCEPTION

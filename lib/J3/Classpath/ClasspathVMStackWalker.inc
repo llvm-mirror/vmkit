@@ -39,21 +39,22 @@ jclass clazz,
   Jnjvm* vm = th->getJVM();
   uint32 length = th->getFrameContextLength();
   
-  void** buffer = (void**)alloca(length * sizeof(void*));
+  uintptr_t* buffer = new uintptr_t[length];
   
-  uint32 finalSize = th->getJavaFrameContext(buffer);
+  uint32 finalSize = th->getJavaFrameContext((void**)buffer);
   
   result = (ArrayObject*)
     vm->upcalls->stackTraceArray->doNew(finalSize, vm);
    
   for (uint32 i = 0; i != finalSize; ++i) {
-    JavaMethod* meth = (JavaMethod*)buffer[i];
+    JavaMethod* meth = ((JavaMethod**)buffer)[i];
     assert(meth && "Wrong stack trace");
     ArrayObject::setElement(result, meth->classDef->getClassDelegatee(vm), i);
   }
+  delete[] buffer;
   
   END_NATIVE_EXCEPTION
-
+  
   return result;
 }
 

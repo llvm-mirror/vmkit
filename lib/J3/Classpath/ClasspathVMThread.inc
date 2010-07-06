@@ -45,7 +45,7 @@ static void start(JavaThread* thread) {
   // which is the JavaThread object.
   vmThread = (JavaObjectVMThread*)thread->vmThread;
   assert(vmThread && "Didn't fix the vmThread of a j3 thread");
-  vmThread->setVmdata(thread);
+  JavaObjectVMThread::setVmdata(vmThread, thread);
   
   UserClass* vmthClass = (UserClass*)JavaObject::getClass(vmThread); 
   
@@ -188,9 +188,10 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_nativeStop(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* vmthread, jobject exc) {
+JavaObject* vmthread, JavaObject* exc) {
   // Currently not implemented
   llvm_gcroot(vmthread, 0);
+  llvm_gcroot(exc, 0);
 }
 
 // Never throws.

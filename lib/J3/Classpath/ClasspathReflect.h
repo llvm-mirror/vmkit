@@ -158,8 +158,10 @@ public:
     mvm::Collector::markAndTrace(obj, &obj->thread, closure);
   }
 
-  void setVmdata(JavaThread* internal_thread) {
-    vmdata = internal_thread;
+  static void setVmdata(JavaObjectVMThread* vmthread,
+                        JavaThread* internal_thread) {
+    llvm_gcroot(vmthread, 0);
+    vmthread->vmdata = internal_thread;
   }
 
 };

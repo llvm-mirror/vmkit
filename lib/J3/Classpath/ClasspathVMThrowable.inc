@@ -28,22 +28,34 @@ extern "C" {
 JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   
   JavaObject* vmThrowable = 0;
+  ArrayPtr* result = 0;
   llvm_gcroot(throwable, 0);
   llvm_gcroot(vmThrowable, 0);
+  llvm_gcroot(result, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
  
   uint32 length = th->getFrameContextLength();
 
-  ClassArray* cl = sizeof(void*) == 4 ? vm->upcalls->ArrayOfInt : 
-                                        vm->upcalls->ArrayOfLong;
-  JavaObject* result = (JavaObject*) cl->doNew(length, vm);
-  void** tab = (void**)JavaArray::getElements(result);
+  if (sizeof(void*) == 4) {
+    ClassArray* cl = vm->upcalls->ArrayOfInt;
+    result = (ArrayPtr*) cl->doNew(length, vm);
+  } else {
+    ClassArray* cl = vm->upcalls->ArrayOfLong;
+    result = (ArrayPtr*) cl->doNew(length, vm);
+  }
   
-  // Get the frame context.
-  th->getFrameContext(tab);
-  
+  // Don't call th->getFrameContext because it is not GC-safe.
+  mvm::StackWalker Walker(th);
+  uint32_t i = 0;
+
+  while (void* ip = *Walker) {
+    ArrayPtr::setElement(result, ip, i);
+    ++i;
+    ++Walker;
+  }
+
   // Set the tempory data in the new VMThrowable object.
   vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
   vm->upcalls->vmDataVMThrowable->setInstanceObjectField(vmThrowable, result);

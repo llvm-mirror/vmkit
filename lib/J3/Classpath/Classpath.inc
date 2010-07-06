@@ -27,21 +27,21 @@ JNIEXPORT bool JNICALL Java_java_io_VMObjectStreamClass_hasClassInitializer(
 JNIEnv *env,
 jclass clazz,
 #endif
-jclass Cl) {
+JavaObject* Cl) {
   
+  llvm_gcroot(Cl, 0);
   bool res = false;
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = 
-    UserCommonClass::resolvedImplClass(vm, (JavaObject*)Cl, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, true);
   
   if (cl->isClass() && 
       cl->asClass()->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
                                            vm->bootstrapLoader->clinitType, 
                                            true, false, 0))
-    res = true;
+  res = true;
 
   END_NATIVE_EXCEPTION
 
@@ -226,6 +226,7 @@ JavaObject* target, JavaObject* constr, JavaObjectConstructor* cons) {
   llvm_gcroot(res, 0);
   llvm_gcroot(target, 0);
   llvm_gcroot(constr, 0);
+  llvm_gcroot(cons, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   
