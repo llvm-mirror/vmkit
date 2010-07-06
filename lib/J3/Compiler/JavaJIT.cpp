@@ -530,6 +530,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
       compilingMethod->codeInfo[i].bytecodeIndex = codeInfo[i].bytecodeIndex;
       compilingMethod->codeInfo[i].bytecode = codeInfo[i].bytecode;
     }
+  } else {
+    compilingMethod->codeInfo == NULL;
   }
  
   return llvmFunction;
@@ -1365,6 +1367,8 @@ llvm::Function* JavaJIT::javaCompile() {
       compilingMethod->codeInfo[i].bytecodeIndex = codeInfo[i].bytecodeIndex;
       compilingMethod->codeInfo[i].bytecode = codeInfo[i].bytecode;
     }
+  } else {
+    compilingMethod->codeInfo == NULL;
   }
 
   return llvmFunction;

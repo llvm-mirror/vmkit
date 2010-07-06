@@ -669,6 +669,7 @@ void JavaMethod::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
   access = A;
   canBeInlined = false;
   offset = 0;
+  codeInfo = NULL;
 }
 
 void JavaField::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
@@ -865,8 +866,10 @@ void Class::readMethods(Reader& reader) {
   uint16 nbMethods = reader.readU2();
   if (isAbstract(access)) {
     virtualMethods = new JavaMethod[nbMethods];
+    memset(virtualMethods, 0, nbMethods * sizeof(JavaMethod));
   } else {
-    virtualMethods = new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
+    virtualMethods =
+      new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
   }
   staticMethods = virtualMethods + nbMethods;
   for (int i = 0; i < nbMethods; i++) {
