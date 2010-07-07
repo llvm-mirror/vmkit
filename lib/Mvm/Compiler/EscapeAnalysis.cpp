@@ -96,10 +96,10 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
         }
 
         if (CallInst *CI = dyn_cast<CallInst>(I)) {
-          Changed |= processMalloc(CI, CI->getOperand(1), CI->getOperand(2),
+          Changed |= processMalloc(CI, CI->getArgOperand(0), CI->getArgOperand(1),
                                    CurLoop);
         } else if (InvokeInst *CI = dyn_cast<InvokeInst>(I)) {
-          Changed |= processMalloc(CI, CI->getOperand(3), CI->getOperand(4),
+          Changed |= processMalloc(CI, CI->getArgOperand(0), CI->getArgOperand(1),
                                    CurLoop);
         }
       }
