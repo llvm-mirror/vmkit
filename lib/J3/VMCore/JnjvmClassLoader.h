@@ -419,6 +419,8 @@ public:
   }
 
   virtual ~JnjvmBootstrapLoader();
+
+  friend class ClArgumentsInfo;
 };
 
 /// VMClassLoader - The vmdata object that will be placed in and will only

@@ -1885,7 +1885,7 @@ static void extractFiles(ArrayUInt8* bytes,
                          JavaAOTCompiler* M,
                          JnjvmBootstrapLoader* bootstrapLoader,
                          std::vector<Class*>& classes) {
-  ZipArchive archive(&bytes, bootstrapLoader->allocator);
+  ZipArchive archive(bytes, bootstrapLoader->allocator);
     
   char* realName = (char*)alloca(4096);
   for (ZipArchive::table_iterator i = archive.filetable.begin(), 

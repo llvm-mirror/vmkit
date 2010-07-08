@@ -343,7 +343,6 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
     ZipArchive* archive = *i;
     char* buf = (char*)alloca(alen + 7);
     sprintf(buf, "%s.class", asciiz);
-    // This array is not allocated by the GC.
     res = Reader::openZip(this, archive, buf);
     if (res) return res;
   }
@@ -936,6 +935,8 @@ JavaString** JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
 }
 
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
+  ArrayUInt8* bytes = NULL;
+  llvm_gcroot(bytes, 0);
   if (str != 0) {
     unsigned int len = strlen(str);
     char* buf = new char[len + 1];
@@ -963,10 +964,10 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
             temp[len + 1] = 0;
             bootClasspath.push_back(temp);
           } else {
-            ArrayUInt8* bytes = Reader::openFile(this, rp);
+            bytes = Reader::openFile(this, rp);
             if (bytes) {
               ZipArchive *archive = new(allocator, "ZipArchive")
-                ZipArchive(&bytes, allocator);
+                ZipArchive(bytes, allocator);
               if (archive) {
                 bootArchives.push_back(archive);
               }

@@ -17,7 +17,8 @@
 
 using namespace j3;
 
-ZipArchive::ZipArchive(ArrayUInt8** bytes, mvm::BumpPtrAllocator& A) : allocator(A) {
+ZipArchive::ZipArchive(ArrayUInt8* bytes, mvm::BumpPtrAllocator& A) : allocator(A) {
+  llvm_gcroot(bytes, 0);
   this->bytes = bytes;
   findOfscd();
   if (ofscd > -1) addFiles();
@@ -73,7 +74,7 @@ void ZipArchive::findOfscd() {
   sint32 minOffs = 0;
   sint32 st = END_CENTRAL_DIRECTORY_FILE_HEADER_SIZE + 4;
   
-  Reader reader(bytes);
+  Reader reader(&bytes);
   curOffs = reader.max;
   if (curOffs >= (65535 + END_CENTRAL_DIRECTORY_FILE_HEADER_SIZE + 4)) {
     minOffs = curOffs - (65535 + END_CENTRAL_DIRECTORY_FILE_HEADER_SIZE + 4);
@@ -103,8 +104,8 @@ void ZipArchive::findOfscd() {
     if (searchPos >= st) {
       sint32 searchPtr = temp + (searchPos - st);
       while (searchPtr > temp) {
-        if (ArrayUInt8::getElement(*(reader.bytes), searchPtr) == 'P' && 
-          !(memcmp(ArrayUInt8::getElements(*(reader.bytes)) + searchPtr, HDR_ENDCENTRAL, 4))) {
+        if (ArrayUInt8::getElement(bytes, searchPtr) == 'P' && 
+          !(memcmp(ArrayUInt8::getElements(bytes) + searchPtr, HDR_ENDCENTRAL, 4))) {
           sint32 offset = searchPtr + 4 + E_OFFSET_START_CENTRAL_DIRECTORY;
           reader.cursor = offset;
           this->ofscd = readEndianDep4(reader);
@@ -119,11 +120,11 @@ void ZipArchive::findOfscd() {
 void ZipArchive::addFiles() {
   sint32 temp = ofscd;
   
-  Reader reader(bytes);
+  Reader reader(&bytes);
   reader.cursor = temp;
 
   while (true) {
-    if (memcmp(ArrayUInt8::getElements(*(reader.bytes)) + temp, HDR_CENTRAL, 4)) return;
+    if (memcmp(ArrayUInt8::getElements(bytes) + temp, HDR_CENTRAL, 4)) return;
     ZipFile* ptr = new(allocator, "ZipFile") ZipFile();
     reader.cursor = temp + 4 + C_COMPRESSION_METHOD;
     ptr->compressionMethod = readEndianDep2(reader);
@@ -147,7 +148,7 @@ void ZipArchive::addFiles() {
 
     ptr->filename = (char*)allocator.Allocate(ptr->filenameLength + 1,
                                               "Zip file name");
-    memcpy(ptr->filename, ArrayUInt8::getElements(*(reader.bytes)) + temp,
+    memcpy(ptr->filename, ArrayUInt8::getElements(bytes) + temp,
            ptr->filenameLength);
     ptr->filename[ptr->filenameLength] = 0;
 
@@ -167,10 +168,10 @@ sint32 ZipArchive::readFile(ArrayUInt8* array, const ZipFile* file) {
   uint32 extraFieldLength = 0;
   uint32 temp = 0;
 
-  Reader reader(bytes);
+  Reader reader(&bytes);
   reader.cursor = file->rolh;
   
-  if (!(memcmp(ArrayUInt8::getElements(*(reader.bytes)) + file->rolh, HDR_LOCAL, 4))) {
+  if (!(memcmp(ArrayUInt8::getElements(bytes) + file->rolh, HDR_LOCAL, 4))) {
     reader.cursor += 4;
     temp = reader.cursor;
     reader.cursor += L_FILENAME_LENGTH;
@@ -181,7 +182,7 @@ sint32 ZipArchive::readFile(ArrayUInt8* array, const ZipFile* file) {
       temp + extraFieldLength + filenameLength + LOCAL_FILE_HEADER_SIZE;
 
     if (file->compressionMethod == ZIP_STORE) {
-      memcpy(ArrayUInt8::getElements(array), ArrayUInt8::getElements(*(reader.bytes)) + reader.cursor, file->ucsize);
+      memcpy(ArrayUInt8::getElements(array), ArrayUInt8::getElements(bytes) + reader.cursor, file->ucsize);
       return 1;
     } else if (file->compressionMethod == ZIP_DEFLATE) {
       z_stream stre;
@@ -201,7 +202,7 @@ sint32 ZipArchive::readFile(ArrayUInt8* array, const ZipFile* file) {
 
       while (bytesLeft) {
         uint32 size = 0;
-        stre.next_in = ArrayUInt8::getElements(*(reader.bytes)) + reader.cursor;
+        stre.next_in = ArrayUInt8::getElements(bytes) + reader.cursor;
         if (bytesLeft > 1024) size = 1024;
         else size = bytesLeft;
 

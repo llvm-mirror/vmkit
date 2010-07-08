@@ -865,13 +865,17 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
     return;
   }
 
-  ZipArchive archive(&bytes, vm->allocator);
-  if (archive.getOfscd() != -1) {
-    ZipFile* file = archive.getFile(PATH_MANIFEST);
+  mvm::BumpPtrAllocator allocator;
+  ZipArchive* archive = new(allocator, "TempZipArchive")
+      ZipArchive(bytes, allocator);
+  // Make sure it gets GC'd.
+  vm->bootstrapLoader->bootArchives.push_back(archive);
+  if (archive->getOfscd() != -1) {
+    ZipFile* file = archive->getFile(PATH_MANIFEST);
     if (file != NULL) {
       UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
       res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
-      int ok = archive.readFile(res, file);
+      int ok = archive->readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(vm, res, MAIN_CLASS,
                                           LENGTH_MAIN_CLASS);
@@ -893,6 +897,8 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   } else {
     printf("Can't find archive %s\n", jarFile);
   }
+  // We don't need this archive anymore.
+  vm->bootstrapLoader->bootArchives.pop_back();
 }
 
 void ClArgumentsInfo::nyi() {

@@ -240,7 +240,7 @@ void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
   
   for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
        e = bootArchives.end(); i != e; i++) {
-    mvm::Collector::markAndTraceRoot((*i)->bytes, closure);
+    mvm::Collector::markAndTraceRoot(&((*i)->bytes), closure);
   }
 }
 
