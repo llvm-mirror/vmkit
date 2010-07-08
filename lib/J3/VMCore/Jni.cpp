@@ -2488,10 +2488,12 @@ jstring NewStringUTF(JNIEnv *env, const char *bytes) {
 
   BEGIN_JNI_EXCEPTION
 
+  JavaObject* obj = NULL;
+  llvm_gcroot(obj, 0);
+
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* obj = vm->asciizToStr(bytes);
-  llvm_gcroot(obj, 0);
+  obj = vm->asciizToStr(bytes);
   jstring ret = (jstring)th->pushJNIRef(obj);
   RETURN_FROM_JNI(ret);
 
@@ -2643,10 +2645,12 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   
   BEGIN_JNI_EXCEPTION
   
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
+  
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* res = vm->upcalls->ArrayOfBool->doNew(len, vm);
-  llvm_gcroot(res, 0);
+  res = vm->upcalls->ArrayOfBool->doNew(len, vm);
   jbooleanArray ret = (jbooleanArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2659,11 +2663,13 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
 jbyteArray NewByteArray(JNIEnv *env, jsize len) {
   
   BEGIN_JNI_EXCEPTION
+  
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* res = vm->upcalls->ArrayOfByte->doNew(len, vm);
-  llvm_gcroot(res, 0);
+  res = vm->upcalls->ArrayOfByte->doNew(len, vm);
   jbyteArray ret = (jbyteArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2675,11 +2681,13 @@ jbyteArray NewByteArray(JNIEnv *env, jsize len) {
 jcharArray NewCharArray(JNIEnv *env, jsize len) {
   
   BEGIN_JNI_EXCEPTION
+
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* res = vm->upcalls->ArrayOfChar->doNew(len, vm);
-  llvm_gcroot(res, 0);
+  res = vm->upcalls->ArrayOfChar->doNew(len, vm);
   jcharArray ret = (jcharArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2691,11 +2699,13 @@ jcharArray NewCharArray(JNIEnv *env, jsize len) {
 jshortArray NewShortArray(JNIEnv *env, jsize len) {
   
   BEGIN_JNI_EXCEPTION
+
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* res = vm->upcalls->ArrayOfShort->doNew(len, vm);
-  llvm_gcroot(res, 0);
+  res = vm->upcalls->ArrayOfShort->doNew(len, vm);
   jshortArray ret = (jshortArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2707,11 +2717,13 @@ jshortArray NewShortArray(JNIEnv *env, jsize len) {
 jintArray NewIntArray(JNIEnv *env, jsize len) {
   
   BEGIN_JNI_EXCEPTION
+
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* res = vm->upcalls->ArrayOfInt->doNew(len, vm);
-  llvm_gcroot(res, 0);
+  res = vm->upcalls->ArrayOfInt->doNew(len, vm);
   jintArray ret = (jintArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2723,11 +2735,13 @@ jintArray NewIntArray(JNIEnv *env, jsize len) {
 jlongArray NewLongArray(JNIEnv *env, jsize len) {
   
   BEGIN_JNI_EXCEPTION
+
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* res = vm->upcalls->ArrayOfLong->doNew(len, vm);
-  llvm_gcroot(res, 0);
+  res = vm->upcalls->ArrayOfLong->doNew(len, vm);
   jlongArray ret = (jlongArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2739,11 +2753,13 @@ jlongArray NewLongArray(JNIEnv *env, jsize len) {
 jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   
   BEGIN_JNI_EXCEPTION
+
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* res = vm->upcalls->ArrayOfFloat->doNew(len, vm);
-  llvm_gcroot(res, 0);
+  res = vm->upcalls->ArrayOfFloat->doNew(len, vm);
   jfloatArray ret = (jfloatArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2755,11 +2771,13 @@ jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
 jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   
   BEGIN_JNI_EXCEPTION
+
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  JavaObject* res = vm->upcalls->ArrayOfDouble->doNew(len, vm);
-  llvm_gcroot(res, 0);
+  res = vm->upcalls->ArrayOfDouble->doNew(len, vm);
   jdoubleArray ret = (jdoubleArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2945,12 +2963,12 @@ void ReleaseBooleanArrayElements(JNIEnv *env, jbooleanArray _array,
   
   BEGIN_JNI_EXCEPTION
   
+  ArrayUInt8* array = *(ArrayUInt8**)_array;
+  llvm_gcroot(array, 0);
+  
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    ArrayUInt8* array = *(ArrayUInt8**)_array;
-    llvm_gcroot(array, 0);
-
     sint32 len = ArrayUInt8::getSize(array);
     memcpy(ArrayUInt8::getElements(array), elems, len);
 
@@ -2967,13 +2985,13 @@ void ReleaseByteArrayElements(JNIEnv *env, jbyteArray _array, jbyte *elems,
 			      jint mode) {
   
   BEGIN_JNI_EXCEPTION
+
+  ArraySInt16* array = *(ArraySInt16**)_array;
+  llvm_gcroot(array, 0);
   
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    ArraySInt16* array = *(ArraySInt16**)_array;
-    llvm_gcroot(array, 0);
-
     sint32 len = ArraySInt16::getSize(array);
     memcpy(ArraySInt16::getElements(array), elems, len);
 
@@ -2990,13 +3008,13 @@ void ReleaseCharArrayElements(JNIEnv *env, jcharArray _array, jchar *elems,
 			      jint mode) {
   
   BEGIN_JNI_EXCEPTION
-  
+
+  ArrayUInt16* array = *(ArrayUInt16**)_array;
+  llvm_gcroot(array, 0);
+
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    ArrayUInt16* array = *(ArrayUInt16**)_array;
-    llvm_gcroot(array, 0);
-
     sint32 len = ArrayUInt16::getSize(array) << 1;
     memcpy(ArrayUInt16::getElements(array), elems, len);
 
@@ -3013,13 +3031,13 @@ void ReleaseShortArrayElements(JNIEnv *env, jshortArray _array, jshort *elems,
 			       jint mode) {
   
   BEGIN_JNI_EXCEPTION
+
+  ArraySInt16* array = *(ArraySInt16**)_array;
+  llvm_gcroot(array, 0);
   
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    ArraySInt16* array = *(ArraySInt16**)_array;
-    llvm_gcroot(array, 0);
-
     sint32 len = ArraySInt16::getSize(array) << 1;
     memcpy(ArraySInt16::getElements(array), elems, len);
 
@@ -3036,13 +3054,13 @@ void ReleaseIntArrayElements(JNIEnv *env, jintArray _array, jint *elems,
 			     jint mode) {
   
   BEGIN_JNI_EXCEPTION
+    
+  ArraySInt32* array = *(ArraySInt32**)_array;
+  llvm_gcroot(array, 0);
   
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    ArraySInt32* array = *(ArraySInt32**)_array;
-    llvm_gcroot(array, 0);
-
     sint32 len = ArraySInt32::getSize(array) << 2;
     memcpy(ArraySInt32::getElements(array), elems, len);
 
@@ -3059,13 +3077,13 @@ void ReleaseLongArrayElements(JNIEnv *env, jlongArray _array, jlong *elems,
 			      jint mode) {
   
   BEGIN_JNI_EXCEPTION
+    
+  ArrayLong* array = *(ArrayLong**)_array;
+  llvm_gcroot(array, 0);
   
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    ArrayLong* array = *(ArrayLong**)_array;
-    llvm_gcroot(array, 0);
-
     sint32 len = ArrayLong::getSize(array) << 3;
     memcpy(ArrayLong::getElements(array), elems, len);
 
@@ -3081,13 +3099,13 @@ void ReleaseLongArrayElements(JNIEnv *env, jlongArray _array, jlong *elems,
 void ReleaseFloatArrayElements(JNIEnv *env, jfloatArray _array, jfloat *elems,
 			       jint mode) {
   BEGIN_JNI_EXCEPTION
+    
+  ArrayFloat* array = *(ArrayFloat**)_array;
+  llvm_gcroot(array, 0);
   
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    ArrayFloat* array = *(ArrayFloat**)_array;
-    llvm_gcroot(array, 0);
-
     sint32 len = ArrayFloat::getSize(array) << 2;
     memcpy(ArrayFloat::getElements(array), elems, len);
 
@@ -3104,13 +3122,13 @@ void ReleaseDoubleArrayElements(JNIEnv *env, jdoubleArray _array,
 				jdouble *elems, jint mode) {
   
   BEGIN_JNI_EXCEPTION
+    
+  ArrayDouble* array = *(ArrayDouble**)_array;
+  llvm_gcroot(array, 0);
   
   if (mode == JNI_ABORT) {
     free(elems);
   } else {
-    ArrayDouble* array = *(ArrayDouble**)_array;
-    llvm_gcroot(array, 0);
-
     sint32 len = ArrayDouble::getSize(array) << 3;
     memcpy(ArrayDouble::getElements(array), elems, len);
 
@@ -3470,12 +3488,12 @@ void ReleasePrimitiveArrayCritical(JNIEnv *env, jarray _array, void *carray,
   
   BEGIN_JNI_EXCEPTION
   
+  JavaObject* array = *(JavaObject**)_array;
+  llvm_gcroot(array, 0);
+
   if (mode == JNI_ABORT) {
     free(carray);
   } else {
-    JavaObject* array = *(JavaObject**)_array;
-    llvm_gcroot(array, 0);
-
     UserClassArray* cl = JavaObject::getClass(array)->asArrayClass();
     uint32 logSize = cl->baseClass()->asPrimitiveClass()->logSize;
     sint32 len = JavaArray::getSize(array) << logSize;
@@ -3519,10 +3537,13 @@ void DeleteWeakGlobalRef(JNIEnv* env, jweak ref) {
 jobject NewGlobalRef(JNIEnv* env, jobject obj) {
   
   BEGIN_JNI_EXCEPTION
+    
+  JavaObject* Obj = NULL;
+  llvm_gcroot(Obj, 0);
   
   // Local object references.
   if (obj) {
-    JavaObject* Obj = *(JavaObject**)obj;
+    Obj = *(JavaObject**)obj;
     llvm_gcroot(Obj, 0);
 
     Jnjvm* vm = JavaThread::get()->getJVM();

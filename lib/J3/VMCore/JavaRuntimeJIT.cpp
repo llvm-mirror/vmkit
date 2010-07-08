@@ -257,9 +257,11 @@ static JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len,
   assert(len > 0 && "Negative size given by VMKit");
  
   JavaObject* _res = cl->doNew(dims[0], vm);
-  ArrayObject* res = 0;
+  ArrayObject* res = NULL;
+  JavaObject* temp = NULL;
   llvm_gcroot(_res, 0);
   llvm_gcroot(res, 0);
+  llvm_gcroot(temp, 0);
 
   if (len > 1) {
     res = (ArrayObject*)_res;
@@ -268,8 +270,8 @@ static JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len,
     UserClassArray* base = (UserClassArray*)_base;
     if (dims[0] > 0) {
       for (sint32 i = 0; i < dims[0]; ++i) {
-        ArrayObject::setElement(
-            res, multiCallNewIntern(base, (len - 1), &dims[1], vm), i);
+        temp = multiCallNewIntern(base, (len - 1), &dims[1], vm);
+        ArrayObject::setElement(res, temp, i);
       }
     } else {
       for (uint32 i = 1; i < len; ++i) {

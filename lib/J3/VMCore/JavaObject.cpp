@@ -24,8 +24,8 @@ uint16_t JavaObject::hashCodeGenerator = 1;
 
 void JavaObject::waitIntern(
     JavaObject* self, struct timeval* info, bool timed) {
-  JavaLock* l = 0;
   llvm_gcroot(self, 0);
+  JavaLock* l = 0;
 
   if (owner(self)) {
     l = self->lock.changeToFatlock(self);
@@ -135,8 +135,8 @@ void JavaObject::timedWait(JavaObject* self, struct timeval& info) {
 }
 
 void JavaObject::notify(JavaObject* self) {
-  JavaLock* l = 0;
   llvm_gcroot(self, 0);
+  JavaLock* l = 0;
 
   if (owner(self)) {
     l = self->lock.getFatLock();
@@ -179,8 +179,8 @@ void JavaObject::notify(JavaObject* self) {
 }
 
 void JavaObject::notifyAll(JavaObject* self) {
-  JavaLock* l = 0;
   llvm_gcroot(self, 0);
+  JavaLock* l = 0;
   
   if (owner(self)) {
     l = self->lock.getFatLock();

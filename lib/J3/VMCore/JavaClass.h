@@ -1284,7 +1284,7 @@ public:
   ///
   void initialise(Class* cl, const UTF8* name, const UTF8* type, uint16 access);
 
-  /// ~JavaField - Destroy the field as well as its attributs.
+  /// ~JavaField - Destroy the field as well as its attributes.
   ///
   ~JavaField();
 

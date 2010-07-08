@@ -50,7 +50,7 @@ public:
   sint32* ctpDef;
   
   /// ctpRes - Objects resolved dynamically, e.g. UTF8s, classes, methods,
-  /// fields, strings.
+  /// fields, string pointers.
   ///
   void**  ctpRes; 
   

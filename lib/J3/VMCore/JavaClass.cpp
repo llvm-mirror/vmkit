@@ -219,6 +219,7 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
 
 Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) : 
     CommonClass(loader, n) {
+  llvm_gcroot(B, 0);
   virtualVT = 0;
   bytes = B;
   super = 0;
@@ -254,13 +255,13 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
 }
 
 JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
+  JavaObject* res = NULL;
+  llvm_gcroot(res, 0);
   if (n < 0) {
     vm->negativeArraySizeException(n);
   } else if (n > JavaArray::MaxArraySize) {
     vm->outOfMemoryError();
   }
-  JavaObject* res = NULL;
-  llvm_gcroot(res, 0);
   UserCommonClass* cl = baseClass();
   uint32 logSize = cl->isPrimitive() ? 
     cl->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
@@ -471,7 +472,7 @@ JavaField* Class::lookupField(const UTF8* name, const UTF8* type,
 }
 
 JavaObject* UserClass::doNew(Jnjvm* vm) {
-  JavaObject* res = 0;
+  JavaObject* res = NULL;
   llvm_gcroot(res, 0);
   assert(this && "No class when allocating.");
   assert((this->isInitializing() || 
@@ -1075,8 +1076,10 @@ static JavaObject* getClassType(Jnjvm* vm, JnjvmClassLoader* loader,
 
 ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
   
-  ArrayObject* res = 0;
+  ArrayObject* res = NULL;
+  JavaObject* delegatee = NULL;
   llvm_gcroot(res, 0);
+  llvm_gcroot(delegatee, 0);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   Signdef* sign = getSignature();
@@ -1084,7 +1087,8 @@ ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
   res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(sign->nbArguments,vm);
 
   for (uint32 index = 0; index < sign->nbArguments; ++index) {
-    ArrayObject::setElement(res, getClassType(vm, loader, arguments[index]), index);
+    delegatee = getClassType(vm, loader, arguments[index]);
+    ArrayObject::setElement(res, delegatee, index);
   }
 
   return res;
@@ -1099,8 +1103,10 @@ JavaObject* JavaMethod::getReturnType(JnjvmClassLoader* loader) {
 
 ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
   
-  ArrayObject* res = 0;
+  ArrayObject* res = NULL;
+  JavaObject* delegatee = NULL;
   llvm_gcroot(res, 0);
+  llvm_gcroot(delegatee, 0);
   
   Attribut* exceptionAtt = lookupAttribut(Attribut::exceptionsAttribut);
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1117,7 +1123,8 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
       UserCommonClass* cl = ctp->loadClass(idx);
       assert(cl->asClass() && "Wrong exception type");
       cl->asClass()->resolveClass();
-      ArrayObject::setElement(res, cl->getClassDelegatee(vm), i);
+      delegatee = cl->getClassDelegatee(vm);
+      ArrayObject::setElement(res, delegatee, i);
     }
     return res;
   }

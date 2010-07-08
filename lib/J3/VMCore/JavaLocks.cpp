@@ -48,9 +48,10 @@ JavaLock* LockSystem::allocate(JavaObject* obj) {
   
     JavaLock** tab = LockTable[index >> BitIndex];
   
-    if (tab == NULL) 
-      tab = (JavaLock**)associatedVM->allocator.Allocate(IndexSize,
-                                                         "Index LockTable");
+    if (tab == NULL) {
+      tab = (JavaLock**)associatedVM->allocator.Allocate(
+          IndexSize * sizeof(JavaLock*), "Index LockTable");
+    }
     threadLock.unlock();
    
     // Allocate the lock.
@@ -68,9 +69,9 @@ JavaLock* LockSystem::allocate(JavaObject* obj) {
 LockSystem::LockSystem(Jnjvm* vm) {
   associatedVM = vm;
   LockTable = (JavaLock* **)
-    vm->allocator.Allocate(GlobalSize, "Global LockTable");
+    vm->allocator.Allocate(GlobalSize * sizeof(JavaLock**), "Global LockTable");
   LockTable[0] = (JavaLock**)
-    vm->allocator.Allocate(IndexSize, "Index LockTable");
+    vm->allocator.Allocate(IndexSize * sizeof(JavaLock*), "Index LockTable");
   currentIndex = 0;
 }
 

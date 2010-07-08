@@ -230,7 +230,6 @@ TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject
   llvm_gcroot(obj, 0); \
   va_list ap;\
   va_start(ap, obj);\
-  llvm_gcroot(obj, 0); \
   TYPE res = invoke##TYPE_NAME##VirtualAP(vm, cl, obj, ap);\
   va_end(ap); \
   return res; \
