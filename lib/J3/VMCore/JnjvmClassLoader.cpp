@@ -196,12 +196,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
   arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
   
-  // Analyse the boot classpath to locate java/lang/Object. Since the
-  // analyseClasspathEnv function may require to create a Java byte array to
-  // hold the .zip file, we call the function after creation of the
-  // array classes.
-  analyseClasspathEnv(bootClasspathEnv);
-  
   Attribut::annotationsAttribut =
     asciizConstructUTF8("RuntimeVisibleAnnotations");
   Attribut::codeAttribut = asciizConstructUTF8("Code");

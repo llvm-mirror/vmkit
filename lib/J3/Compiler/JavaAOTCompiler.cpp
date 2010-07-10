@@ -1929,15 +1929,16 @@ void mainCompilerStart(JavaThread* th) {
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
   JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
   JavaJITCompiler* Comp = 0;
-    if (!M->clinits->empty()) {
-      Comp = JavaJITCompiler::CreateCompiler("JIT");
-      Comp->EmitFunctionName = true;
-      bootstrapLoader->setCompiler(Comp);
-      bootstrapLoader->analyseClasspathEnv(vm->classpath);
-    } else {
-      bootstrapLoader->analyseClasspathEnv(vm->classpath);
-      bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
-    }
+  bootstrapLoader->analyseClasspathEnv(vm->bootstrapLoader->bootClasspathEnv);
+  if (!M->clinits->empty()) {
+    Comp = JavaJITCompiler::CreateCompiler("JIT");
+    Comp->EmitFunctionName = true;
+    bootstrapLoader->setCompiler(Comp);
+    bootstrapLoader->analyseClasspathEnv(vm->classpath);
+  } else {
+    bootstrapLoader->analyseClasspathEnv(vm->classpath);
+    bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
+  }
   
     uint32 size = strlen(name);
     
