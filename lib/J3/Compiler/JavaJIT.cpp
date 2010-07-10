@@ -1507,7 +1507,8 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
   nb += 1;
 #endif
   Args.reserve(nb + 2);
-  Value** args = (Value**)alloca(nb*sizeof(Value*));
+  mvm::ThreadAllocator threadAllocator;
+  Value** args = (Value**)threadAllocator.Allocate(nb*sizeof(Value*));
 #if defined(ISOLATE_SHARING)
   args[nb - 1] = isolateLocal;
   sint32 start = nb - 2;

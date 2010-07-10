@@ -45,6 +45,24 @@ public:
 
 };
 
+class ThreadAllocator {
+private:
+  llvm::BumpPtrAllocator Allocator;
+public:
+  void* Allocate(size_t sz) {
+#ifdef USE_GC_BOEHM
+    return GC_MALLOC(sz);
+#else
+    void* res = Allocator.Allocate(sz, sizeof(void*));
+    memset(res, 0, sz);
+    return res;
+#endif
+  }
+
+  void Deallocate(void* obj) {}
+
+};
+
 class PermanentObject {
 public:
   void* operator new(size_t sz, BumpPtrAllocator& allocator,

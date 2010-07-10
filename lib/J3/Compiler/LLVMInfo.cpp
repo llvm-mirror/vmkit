@@ -138,6 +138,7 @@ extern llvm::cl::opt<bool> EmitDebugInfo;
 
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
+    mvm::ThreadAllocator allocator;
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
     if (Compiler->emitFunctionName() || EmitDebugInfo) {
       const UTF8* jniConsClName = methodDef->classDef->name;
@@ -147,8 +148,8 @@ Function* LLVMMethodInfo::getMethod() {
       sint32 mnlen = jniConsName->size;
       sint32 mtlen = jniConsType->size;
 
-      char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
-                                ((mnlen + clen + mtlen) << 3));
+      char* buf = (char*)allocator.Allocate(
+          3 + JNI_NAME_PRE_LEN + 1 + ((mnlen + clen + mtlen) << 3));
       
       bool j3 = false;
       if (isNative(methodDef->access)) {
@@ -327,8 +328,10 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   J3Intrinsics& Intrinsics = *Compiler->getIntrinsics();
   Function* res = 0;
   if (Compiler->isStaticCompiling()) {
+    mvm::ThreadAllocator allocator;
     const char* type = virt ? "virtual_buf" : "static_buf";
-    char* buf = (char*)alloca((signature->keyName->size << 1) + 1 + 11);
+    char* buf = (char*)allocator.Allocate(
+        (signature->keyName->size << 1) + 1 + 11);
     signature->nativeName(buf, type);
     res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
                            GlobalValue::ExternalLinkage, buf,

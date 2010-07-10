@@ -311,8 +311,9 @@ void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
 ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
   ArrayUInt8* res = 0;
   llvm_gcroot(res, 0);
+  mvm::ThreadAllocator threadAllocator;
 
-  char* asciiz = (char*)alloca(utf8->size + 1);
+  char* asciiz = (char*)threadAllocator.Allocate(utf8->size + 1);
   for (sint32 i = 0; i < utf8->size; ++i) 
     asciiz[i] = utf8->elements[i];
   asciiz[utf8->size] = 0;
@@ -323,7 +324,7 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
        e = bootClasspath.end(); i != e; ++i) {
     const char* str = *i;
     unsigned int strLen = strlen(str);
-    char* buf = (char*)alloca(strLen + alen + 7);
+    char* buf = (char*)threadAllocator.Allocate(strLen + alen + 7);
 
     sprintf(buf, "%s%s.class", str, asciiz);
     res = Reader::openFile(this, buf);
@@ -334,7 +335,7 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
        e = bootArchives.end(); i != e; ++i) {
     
     ZipArchive* archive = *i;
-    char* buf = (char*)alloca(alen + 7);
+    char* buf = (char*)threadAllocator.Allocate(alen + 7);
     sprintf(buf, "%s.class", asciiz);
     res = Reader::openZip(this, archive, buf);
     if (res) return res;
@@ -511,8 +512,10 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
   if (name->size == 0) {
     return 0;
   } else if (name->elements[0] == I_TAB) {
+    mvm::ThreadAllocator threadAllocator;
     bool prim = false;
-    UTF8* holder = (UTF8*)alloca(sizeof(UTF8) + name->size * sizeof(uint16));
+    UTF8* holder = (UTF8*)threadAllocator.Allocate(
+        sizeof(UTF8) + name->size * sizeof(uint16));
     if (!holder) return 0;
     
     const UTF8* componentName = lookupComponentName(name, holder, prim);
@@ -534,8 +537,10 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
   const UTF8* name = hashUTF8->lookupAsciiz(asciiz);
   if (!name) name = bootstrapLoader->hashUTF8->lookupAsciiz(asciiz);
   if (!name) {
+    mvm::ThreadAllocator threadAllocator;
     uint32 size = strlen(asciiz);
-    UTF8* temp = (UTF8*)alloca(sizeof(UTF8) + size * sizeof(uint16));
+    UTF8* temp = (UTF8*)threadAllocator.Allocate(
+        sizeof(UTF8) + size * sizeof(uint16));
     temp->size = size;
     if (!temp) return 0;
 
@@ -938,6 +943,7 @@ JavaString** JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
   ArrayUInt8* bytes = NULL;
   llvm_gcroot(bytes, 0);
+  mvm::ThreadAllocator threadAllocator;
   if (str != 0) {
     unsigned int len = strlen(str);
     char* buf = new char[len + 1];
@@ -951,7 +957,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
       if (top != 0) {
         memcpy(buf, cur, top);
         buf[top] = 0;
-        char* rp = (char*)alloca(PATH_MAX);
+        char* rp = (char*)threadAllocator.Allocate(PATH_MAX);
         memset(rp, 0, PATH_MAX);
         rp = realpath(buf, rp);
         if (rp && rp[PATH_MAX - 1] == 0 && strlen(rp) != 0) {
@@ -1091,7 +1097,9 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
 void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
                                       const char* file) {
 
-  char* soName = (char*)alloca(strlen(name) + strlen(DYLD_EXTENSION));
+  mvm::ThreadAllocator threadAllocator;
+  char* soName = (char*)threadAllocator.Allocate(
+      strlen(name) + strlen(DYLD_EXTENSION));
   const char* ptr = strrchr(name, '/');
   sprintf(soName, "%s%s", ptr ? ptr + 1 : name, DYLD_EXTENSION);
   void* handle = dlopen(soName, RTLD_LAZY | RTLD_LOCAL);
@@ -1107,8 +1115,10 @@ void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
 }
 
 void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
+  mvm::ThreadAllocator threadAllocator;
   assert(classes->map.size() == 0);
-  char* soName = (char*)alloca(strlen(name) + strlen(DYLD_EXTENSION));
+  char* soName = (char*)threadAllocator.Allocate(
+      strlen(name) + strlen(DYLD_EXTENSION));
   sprintf(soName, "%s%s", name, DYLD_EXTENSION);
   void* handle = dlopen(soName, RTLD_LAZY | RTLD_LOCAL);
   if (handle) {
@@ -1201,8 +1211,9 @@ extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
   sint32 mnlen = jniConsName->size;
   sint32 mtlen = jniConsType->size;
 
-  char* buf = (char*)alloca(3 + JNI_NAME_PRE_LEN + 1 +
-                            ((mnlen + clen + mtlen) << 3));
+  mvm::ThreadAllocator threadAllocator;
+  char* buf = (char*)threadAllocator.Allocate(
+      3 + JNI_NAME_PRE_LEN + 1 + ((mnlen + clen + mtlen) << 3));
   intptr_t res = meth->classDef->classLoader->nativeLookup(meth, j3, buf);
   assert(res && "Could not find required native method");
   return res;

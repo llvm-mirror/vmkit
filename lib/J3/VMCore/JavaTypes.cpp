@@ -59,7 +59,8 @@ ObjectTypedef::ObjectTypedef(const UTF8* name, UTF8Map* map) {
 
 intptr_t Signdef::staticCallBuf() {
   if (!_staticCallBuf) {
-    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    mvm::ThreadAllocator allocator;
+    char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_buf");
     bool unused = false;
     intptr_t res = initialLoader->loadInLib(buf, unused);
@@ -74,7 +75,8 @@ intptr_t Signdef::staticCallBuf() {
 
 intptr_t Signdef::virtualCallBuf() {
   if (!_virtualCallBuf) {
-    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    mvm::ThreadAllocator allocator;
+    char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_buf");
     bool unused = false;
     intptr_t res = initialLoader->loadInLib(buf, unused);
@@ -89,7 +91,8 @@ intptr_t Signdef::virtualCallBuf() {
 
 intptr_t Signdef::staticCallAP() {
   if (!_staticCallAP) {
-    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    mvm::ThreadAllocator allocator;
+    char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_ap");
     bool unused = false;
     intptr_t res = initialLoader->loadInLib(buf, unused);
@@ -104,7 +107,8 @@ intptr_t Signdef::staticCallAP() {
 
 intptr_t Signdef::virtualCallAP() {
   if (!_virtualCallAP) {
-    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    mvm::ThreadAllocator allocator;
+    char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_ap");
     bool unused = false;
     intptr_t res = initialLoader->loadInLib(buf, unused);
@@ -119,7 +123,8 @@ intptr_t Signdef::virtualCallAP() {
 
 intptr_t Signdef::virtualCallStub() {
   if (!_virtualCallAP) {
-    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    mvm::ThreadAllocator allocator;
+    char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_stub");
     bool unused = false;
     intptr_t res = initialLoader->loadInLib(buf, unused);
@@ -134,7 +139,8 @@ intptr_t Signdef::virtualCallStub() {
 
 intptr_t Signdef::specialCallStub() {
   if (!_specialCallStub) {
-    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    mvm::ThreadAllocator allocator;
+    char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "special_stub");
     bool unused = false;
     intptr_t res = initialLoader->loadInLib(buf, unused);
@@ -149,7 +155,8 @@ intptr_t Signdef::specialCallStub() {
 
 intptr_t Signdef::staticCallStub() {
   if (!_staticCallStub) {
-    char* buf = (char*)alloca((keyName->size << 1) + 1 + 11);
+    mvm::ThreadAllocator allocator;
+    char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_stub");
     bool unused = false;
     intptr_t res = initialLoader->loadInLib(buf, unused);

@@ -294,7 +294,8 @@ extern "C" JavaObject* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
 
   va_list ap;
   va_start(ap, len);
-  sint32* dims = (sint32*)alloca(sizeof(sint32) * len);
+  mvm::ThreadAllocator allocator;
+  sint32* dims = (sint32*)allocator.Allocate(sizeof(sint32) * len);
   for (uint32 i = 0; i < len; ++i){
     dims[i] = va_arg(ap, int);
   }

@@ -104,6 +104,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
   bool wide = false;
   uint32 jsrIndex = 0;
   uint32 start = reader.cursor;
+  mvm::ThreadAllocator allocator;
   for(uint32 i = 0; i < codeLength; ++i) {
     reader.cursor = start + i;
     uint8 bytecode = reader.readU1();
@@ -2304,7 +2305,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         
         UserCommonClass* dcl = 0; 
         Value* valCl = getResolvedCommonClass(index, true, &dcl);
-        Value** args = (Value**)alloca(sizeof(Value*) * (dim + 2));
+        Value** args = (Value**)allocator.Allocate(sizeof(Value*) * (dim + 2));
         args[0] = valCl;
         args[1] = ConstantInt::get(Type::getInt32Ty(*llvmContext), dim);
 

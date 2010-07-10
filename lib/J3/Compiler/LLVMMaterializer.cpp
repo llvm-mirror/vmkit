@@ -82,9 +82,10 @@ Value* JavaLLVMLazyJITCompiler::addCallback(Class* cl, uint16 index,
   
   Function* F = 0;
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
+  mvm::ThreadAllocator allocator;
   
   const UTF8* name = cl->name;
-  char* key = (char*)alloca(name->size + 16);
+  char* key = (char*)allocator.Allocate(name->size + 16);
   for (sint32 i = 0; i < name->size; ++i)
     key[i] = name->elements[i];
   sprintf(key + name->size, "%d", index);

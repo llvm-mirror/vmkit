@@ -323,8 +323,10 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
   sint16 sync = isSynchro(compilingMethod->access) ? 1 : 0;
   nbe += sync;
  
+  mvm::ThreadAllocator allocator;
   // Loop over all handlers in the bytecode to initialize their values.
-  Handler* handlers = (Handler*)alloca(sizeof(Handler) * (nbe - sync));
+  Handler* handlers =
+      (Handler*)allocator.Allocate(sizeof(Handler) * (nbe - sync));
   for (uint16 i = 0; i < nbe - sync; ++i) {
     Handler* ex   = &handlers[i];
     ex->startpc   = reader.readU2();

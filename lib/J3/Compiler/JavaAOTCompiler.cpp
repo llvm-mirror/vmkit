@@ -1886,8 +1886,9 @@ static void extractFiles(ArrayUInt8* bytes,
                          JnjvmBootstrapLoader* bootstrapLoader,
                          std::vector<Class*>& classes) {
   ZipArchive archive(bytes, bootstrapLoader->allocator);
-    
-  char* realName = (char*)alloca(4096);
+   
+  mvm::ThreadAllocator allocator; 
+  char* realName = (char*)allocator.Allocate(4096);
   for (ZipArchive::table_iterator i = archive.filetable.begin(), 
        e = archive.filetable.end(); i != e; ++i) {
     ZipFile* file = i->second;
@@ -1929,6 +1930,7 @@ void mainCompilerStart(JavaThread* th) {
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
   JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
   JavaJITCompiler* Comp = 0;
+  mvm::ThreadAllocator allocator;
   bootstrapLoader->analyseClasspathEnv(vm->bootstrapLoader->bootClasspathEnv);
   if (!M->clinits->empty()) {
     Comp = JavaJITCompiler::CreateCompiler("JIT");
@@ -1940,22 +1942,22 @@ void mainCompilerStart(JavaThread* th) {
     bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
   }
   
-    uint32 size = strlen(name);
+  uint32 size = strlen(name);
     
-    if (size > 4 && 
-       (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
+  if (size > 4 && 
+      (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
   
-      std::vector<Class*> classes;
-      ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
+    std::vector<Class*> classes;
+    ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
       
-      if (!bytes) {
-        fprintf(stderr, "Can't find zip file.\n");
-        goto end;
-      }
+    if (!bytes) {
+      fprintf(stderr, "Can't find zip file.\n");
+      goto end;
+    }
 
-      extractFiles(bytes, M, bootstrapLoader, classes);
-      // Now that we know if we can trust this compiler, add the Java passes.
-      M->addJavaPasses(M->compileRT);
+    extractFiles(bytes, M, bootstrapLoader, classes);
+    // Now that we know if we can trust this compiler, add the Java passes.
+    M->addJavaPasses(M->compileRT);
 
 
       // First resolve everyone so that there can not be unknown references in
@@ -2033,7 +2035,7 @@ void mainCompilerStart(JavaThread* th) {
       }
 
     } else {
-      char* realName = (char*)alloca(size + 1);
+      char* realName = (char*)allocator.Allocate(size + 1);
       if (size > 6 && !strcmp(&name[size - 6], ".class")) {
         memcpy(realName, name, size - 6);
         realName[size - 6] = 0;
