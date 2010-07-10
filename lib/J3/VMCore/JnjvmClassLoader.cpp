@@ -567,8 +567,8 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
                                           bool doThrow) {
   
   llvm_gcroot(str, 0);
-  
-  UTF8* name = (UTF8*)malloc(sizeof(UTF8) + str->count * sizeof(uint16));
+  mvm::ThreadAllocator allocator; 
+  UTF8* name = (UTF8*)allocator.Allocate(sizeof(UTF8) + str->count * sizeof(uint16));
  
   name->size = str->count;
   if (ArrayUInt16::getElement(JavaString::getValue(str), str->offset) != I_TAB) {
@@ -576,7 +576,6 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
       uint16 cur = ArrayUInt16::getElement(JavaString::getValue(str), str->offset + i);
       if (cur == '.') name->elements[i] = '/';
       else if (cur == '/') {
-        free(name);
         return 0;
       }
       else name->elements[i] = cur;
@@ -587,7 +586,6 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
       if (cur == '.') {
         name->elements[i] = '/';
       } else if (cur == '/') {
-        free(name);
         return 0;
       } else {
         name->elements[i] = cur;
@@ -596,23 +594,25 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
   }
     
   UserCommonClass* cls = loadClassFromUserUTF8(name, doResolve, doThrow, str);
-  free(name);
   return cls;
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str) {
   
+  const ArrayUInt16* value = NULL;
   llvm_gcroot(str, 0);
+  llvm_gcroot(value, 0);
+  value = JavaString::getValue(str);
+  mvm::ThreadAllocator allocator; 
   
-  UTF8* name = (UTF8*)malloc(sizeof(UTF8) + str->count * sizeof(uint16));
+  UTF8* name = (UTF8*)allocator.Allocate(sizeof(UTF8) + str->count * sizeof(uint16));
   name->size = str->count;
   for (sint32 i = 0; i < str->count; ++i) {
-    uint16 cur = ArrayUInt16::getElement(JavaString::getValue(str), str->offset + i);
+    uint16 cur = ArrayUInt16::getElement(value, str->offset + i);
     if (cur == '.') name->elements[i] = '/';
     else name->elements[i] = cur;
   }
   UserCommonClass* cls = lookupClass(name);
-  free(name);
   return cls;
 }
 

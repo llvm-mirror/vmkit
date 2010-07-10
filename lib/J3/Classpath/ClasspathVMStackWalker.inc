@@ -55,7 +55,6 @@ jclass clazz,
     delegatee = meth->classDef->getClassDelegatee(vm);;
     ArrayObject::setElement(result, delegatee, i);
   }
-  delete[] buffer;
   
   END_NATIVE_EXCEPTION
   

@@ -440,7 +440,6 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();
   
-  delete[] newArgv;
   return 0;
 }
 

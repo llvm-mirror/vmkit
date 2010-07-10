@@ -168,7 +168,6 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       exc = th->getJavaException();                                            \
     } END_CATCH;                                                               \
     if (exc) {                                                                 \
-      if (size) delete[] buf;                                                  \
       if (JavaObject::getClass(exc)->isAssignableFrom(                         \
               vm->upcalls->newException)) {                                    \
         th->clearException();                                                  \
@@ -231,12 +230,10 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       RUN_METH(JavaObject, res);
     } 
   } else {
-    if (size) delete[] buf;
     vm->illegalArgumentException("wrong number of arguments");
     return NULL;
   }
 
-  if (size) delete[] buf;
   return res;
 }
 
