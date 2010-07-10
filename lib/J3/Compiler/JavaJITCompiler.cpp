@@ -428,7 +428,8 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   mvm::MvmModule::initialise();
   mvm::Collector::initialise();
  
-  char** newArgv = new char*[argc + 1];
+  mvm::ThreadAllocator allocator;
+  char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));
   memcpy(newArgv + 1, argv, argc * sizeof(void*));
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;

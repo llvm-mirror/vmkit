@@ -946,7 +946,7 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
   mvm::ThreadAllocator threadAllocator;
   if (str != 0) {
     unsigned int len = strlen(str);
-    char* buf = new char[len + 1];
+    char* buf = (char*)threadAllocator.Allocate((len + 1) * sizeof(char));
     const char* cur = str;
     int top = 0;
     char c = 1;
@@ -985,7 +985,6 @@ void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
       cur = cur + top + 1;
       top = 0;
     }
-    delete[] buf;
   }
 }
 
@@ -998,7 +997,8 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   uint32 pos = steps;
   bool isTab = (className->elements[0] == I_TAB ? true : false);
   uint32 n = steps + len + (isTab ? 0 : 2);
-  uint16* buf = new uint16[n];
+  mvm::ThreadAllocator allocator;
+  uint16* buf = (uint16*)allocator.Allocate(n * sizeof(uint16));
     
   for (uint32 i = 0; i < steps; i++) {
     buf[i] = I_TAB;
@@ -1018,7 +1018,6 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   }
 
   const UTF8* res = readerConstructUTF8(buf, n);
-  delete[] buf;
   return res;
 }
 

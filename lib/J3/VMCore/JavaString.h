@@ -50,6 +50,7 @@ public:
 
   static void stringDestructor(JavaString*);
   static char* strToAsciiz(JavaString* self);
+  static char* strToAsciiz(JavaString* self, mvm::ThreadAllocator* allocator);
   static const ArrayUInt16* strToArray(JavaString* self, Jnjvm* vm);
 
   /// javaToInternal - Replaces all '/' into '.'.

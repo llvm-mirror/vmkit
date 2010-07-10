@@ -41,7 +41,8 @@ jclass clazz,
   Jnjvm* vm = th->getJVM();
   uint32 length = th->getFrameContextLength();
   
-  uintptr_t* buffer = new uintptr_t[length];
+  mvm::ThreadAllocator allocator;  
+  uintptr_t* buffer = (uintptr_t*)allocator.Allocate(length * sizeof(uintptr_t));
   
   uint32 finalSize = th->getJavaFrameContext((void**)buffer);
   

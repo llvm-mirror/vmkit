@@ -1506,8 +1506,9 @@ public:
 // Helper function to run Jnjvm without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   mvm::Collector::initialise();
-  
-  char** newArgv = new char*[argc + 1];
+ 
+  mvm::ThreadAllocator allocator; 
+  char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));
   memcpy(newArgv + 1, argv, argc * sizeof(char*));
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;
@@ -1517,8 +1518,6 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();
-
-  delete[] newArgv;
   
   return 0; 
 }

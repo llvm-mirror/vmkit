@@ -95,9 +95,10 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
 
   if (isAbstract(cl->access)) vm->instantiationException(cl);
 
+  mvm::ThreadAllocator allocator;
   // Allocate a buffer to store the arguments.
-  jvalue* buf = size ? new jvalue[size] : NULL;
-  if (size) memset(buf, 0, size * sizeof(jvalue));
+  jvalue* buf = size ? 
+      (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
 
   if (nbArgs == size) {
     UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Clazz, false);
@@ -123,7 +124,6 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
         excp = th->getJavaException();
       } END_CATCH;
       if (excp) {
-        if (size) delete[] buf;
         if (JavaObject::getClass(excp)->isAssignableFrom(vm->upcalls->newException)) {
           th->clearException();
           // If it's an exception, we encapsule it in an
@@ -136,17 +136,14 @@ static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
         return NULL;
       }
     } else {
-      if (size) delete[] buf;
       vm->illegalArgumentException("class is not a regular class");
       return NULL;
     }
   } else {
-    if (size) delete[] buf;
     vm->illegalArgumentException("wrong number of arguments");
     return NULL;
   }
  
-  if (size) delete[] buf;
   return res;
 }
 

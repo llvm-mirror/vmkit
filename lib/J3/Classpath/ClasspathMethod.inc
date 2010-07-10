@@ -115,8 +115,9 @@ static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
 
-  jvalue* buf = size ? new jvalue[size] : 0;
-  if (size) memset(buf, 0, size * sizeof(jvalue));
+  mvm::ThreadAllocator allocator;
+  jvalue* buf = size ?
+      (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
   
   if (nbArgs == size) {
     UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Cl, false);

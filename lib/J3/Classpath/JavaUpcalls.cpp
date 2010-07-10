@@ -536,9 +536,9 @@ extern "C" JavaString* nativeGetenv(JavaString* str) {
   
   BEGIN_NATIVE_EXCEPTION(0)
 
-  char* buf = JavaString::strToAsciiz(str);
+  mvm::ThreadAllocator allocator;
+  char* buf = JavaString::strToAsciiz(str, &allocator);
   char* res = getenv(buf);
-  delete[] buf;
   if (res) {
     Jnjvm* vm = JavaThread::get()->getJVM();
     ret = vm->asciizToStr(res);

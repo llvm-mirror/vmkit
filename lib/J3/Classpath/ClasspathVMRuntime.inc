@@ -118,14 +118,13 @@ JavaObject* javaLoader) {
   JnjvmClassLoader* loader = 
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject(javaLoader, vm);
 
-  char* buf = JavaString::strToAsciiz(str);
+  mvm::ThreadAllocator allocator;
+  char* buf = JavaString::strToAsciiz(str, &allocator);
   
   res = loader->loadLib(buf);
  
   if (res) callOnLoad(res, loader, vm);
 
-  delete[] buf;
-  
   END_NATIVE_EXCEPTION
 
   return res != 0;

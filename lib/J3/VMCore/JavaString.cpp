@@ -56,6 +56,20 @@ char* JavaString::strToAsciiz(JavaString* self) {
   return buf;
 }
 
+char* JavaString::strToAsciiz(JavaString* self,
+                              mvm::ThreadAllocator* allocator) {
+  const ArrayUInt16* value = NULL;
+  llvm_gcroot(self, 0);
+  llvm_gcroot(value, 0);
+  value = JavaString::getValue(self);
+  char* buf = (char*)allocator->Allocate((self->count + 1) * sizeof(char));
+  for (sint32 i = 0; i < self->count; ++i) {
+    buf[i] = ArrayUInt16::getElement(value, i + self->offset);
+  }
+  buf[self->count] =  0; 
+  return buf;
+}
+
 const ArrayUInt16* JavaString::strToArray(JavaString* self, Jnjvm* vm) {
   ArrayUInt16* array = NULL;
   const ArrayUInt16* value = NULL;
@@ -112,8 +126,9 @@ const UTF8* JavaString::javaToInternal(const JavaString* self, UTF8Map* map) {
   llvm_gcroot(self, 0);
   llvm_gcroot(value, 0);
   value = JavaString::getValue(self);
-  
-  uint16* java = new uint16[self->count];
+ 
+  mvm::ThreadAllocator allocator; 
+  uint16* java = (uint16*)allocator.Allocate(self->count * sizeof(uint16));
 
   for (sint32 i = 0; i < self->count; ++i) {
     uint16 cur = ArrayUInt16::getElement(value, self->offset + i);
@@ -122,6 +137,5 @@ const UTF8* JavaString::javaToInternal(const JavaString* self, UTF8Map* map) {
   }
   
   const UTF8* res = map->lookupOrCreateReader(java, self->count);
-  delete[] java;
   return res;
 }

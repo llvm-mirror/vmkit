@@ -865,9 +865,10 @@ static void computeMirandaMethods(Class* current,
 
 void Class::readMethods(Reader& reader) {
   uint16 nbMethods = reader.readU2();
+  mvm::ThreadAllocator allocator;
   if (isAbstract(access)) {
-    virtualMethods = new JavaMethod[nbMethods];
-    memset(virtualMethods, 0, nbMethods * sizeof(JavaMethod));
+    virtualMethods = (JavaMethod*)
+      allocator.Allocate(nbMethods * sizeof(JavaMethod));
   } else {
     virtualMethods =
       new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
@@ -910,7 +911,6 @@ void Class::readMethods(Reader& reader) {
         realMethods[j++].initialise(this, cur->name, cur->type, cur->access);
       }
     }
-    delete[] virtualMethods;
     virtualMethods = realMethods;
   }
 }
