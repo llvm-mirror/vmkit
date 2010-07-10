@@ -151,6 +151,7 @@ private:
 
 public:
   static void staticDestructor(JavaObjectVMThread* obj) {
+    llvm_gcroot(obj, 0);
     mvm::Thread::releaseThread(obj->vmdata);
   }
   

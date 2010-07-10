@@ -294,11 +294,6 @@ public:
   ///
   JavaString* internalUTF8ToStr(const UTF8* utf8);
      
-  /// asciizToInternalUTF8 - Constructs an UTF8 out of the asciiz and changes
-  /// '.' into '/'.
-  ///
-  const UTF8* asciizToInternalUTF8(const char* asciiz);
-  
   /// asciizToUTF8 - Constructs an UTF8 out of the asciiz.
   ///
   ArrayUInt16* asciizToArray(const char* asciiz);

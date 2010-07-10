@@ -30,8 +30,10 @@ jclass clazz,
 #endif
 ) {
 
-  ArrayObject* result = 0;
+  ArrayObject* result = NULL;
+  JavaObject* delegatee = NULL;
   llvm_gcroot(result, 0);
+  llvm_gcroot(delegatee, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -49,7 +51,8 @@ jclass clazz,
   for (uint32 i = 0; i != finalSize; ++i) {
     JavaMethod* meth = ((JavaMethod**)buffer)[i];
     assert(meth && "Wrong stack trace");
-    ArrayObject::setElement(result, meth->classDef->getClassDelegatee(vm), i);
+    delegatee = meth->classDef->getClassDelegatee(vm);;
+    ArrayObject::setElement(result, delegatee, i);
   }
   delete[] buffer;
   

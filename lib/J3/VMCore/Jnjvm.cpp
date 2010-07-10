@@ -1447,19 +1447,6 @@ Jnjvm::~Jnjvm() {
 #endif
 }
 
-const UTF8* Jnjvm::asciizToInternalUTF8(const char* asciiz) {
-  uint32 size = strlen(asciiz);
-  UTF8* tmp = (UTF8*)upcalls->ArrayOfChar->doNew(size, this);
-  uint16* buf = tmp->elements;
-  
-  for (uint32 i = 0; i < size; i++) {
-    if (asciiz[i] == '.') buf[i] = '/';
-    else buf[i] = asciiz[i];
-  }
-  return (const UTF8*)tmp;
-
-}
-  
 ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
   ArrayUInt16* tmp = NULL;
   llvm_gcroot(tmp, 0);

@@ -332,7 +332,6 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
     char* buf = (char*)alloca(strLen + alen + 7);
 
     sprintf(buf, "%s%s.class", str, asciiz);
-    // This array is not allocated by the GC.
     res = Reader::openFile(this, buf);
     if (res) return res;
   }
@@ -577,15 +576,23 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
     for (sint32 i = 0; i < str->count; ++i) {
       uint16 cur = ArrayUInt16::getElement(JavaString::getValue(str), str->offset + i);
       if (cur == '.') name->elements[i] = '/';
-      else if (cur == '/') return 0;
+      else if (cur == '/') {
+        free(name);
+        return 0;
+      }
       else name->elements[i] = cur;
     }
   } else {
     for (sint32 i = 0; i < str->count; ++i) {
       uint16 cur = ArrayUInt16::getElement(JavaString::getValue(str), str->offset + i);
-      if (cur == '.') name->elements[i] = '/';
-      else if (cur == '/') return 0;
-      else name->elements[i] = cur;
+      if (cur == '.') {
+        name->elements[i] = '/';
+      } else if (cur == '/') {
+        free(name);
+        return 0;
+      } else {
+        name->elements[i] = cur;
+      }
     }
   }
     

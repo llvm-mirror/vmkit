@@ -522,6 +522,7 @@ extern "C" void nativeJavaObjectVMThreadTracer(
 }
 
 extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
+  llvm_gcroot(obj, 0);
   JavaObjectVMThread::staticDestructor(obj);
 }
 
