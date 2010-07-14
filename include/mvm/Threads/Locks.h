@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstdio>
 
+#include "ObjectHeader.h"
 #include "mvm/Threads/Thread.h"
 
 #ifdef WITH_LLVM_GCC
@@ -184,44 +185,27 @@ public:
   void lockAll(int count);
 };
 
-#if (__WORDSIZE == 64)
-  static const uint64_t FatMask = 0x8000000000000000;
-#else
-  static const uint64_t FatMask = 0x80000000;
-#endif
+class FatLockNoGC {
+public:
+  static void gcroot(void* val, void* unused) 
+    __attribute__ ((always_inline)) {}
 
-  static const uint64_t ThinCountMask = 0xFF000;
-  static const uint64_t ThinCountShift = 12;
-  static const uint64_t ThinCountAdd = 0x1000;
-  // Mask for all GC objects.
-  static const uint64_t GCMask = 0xFFF;
-  // Mask for the hash code bits.
-  static const uint64_t HashMask = 0xFFC;
-  // Mask for the GC bits.
-  static const uint64_t GCBitMask = 0x3;
-
-  class FatLockNoGC {
-  public:
-    static void gcroot(void* val, void* unused) 
-      __attribute__ ((always_inline)) {}
-
-    static uintptr_t mask() {
-      return 0;
-    }
-  };
+  static uintptr_t mask() {
+    return 0;
+  }
+};
   
-  class FatLockWithGC {
-  public:
-    static void gcroot(void* val, void* unused) 
-      __attribute__ ((always_inline)) {
-      llvm_gcroot(val, unused);
-    }
+class FatLockWithGC {
+public:
+  static void gcroot(void* val, void* unused) 
+    __attribute__ ((always_inline)) {
+    llvm_gcroot(val, unused);
+  }
     
-    static uintptr_t mask() {
-      return GCMask;
-    }
-  };
-
+  static uintptr_t mask() {
+    return NonLockBitsMask;
+  }
+};
 
 /// ThinLock - This class is an implementation of thin locks. The template class
 /// TFatLock is a virtual machine specific fat lock.
@@ -230,9 +214,6 @@ template <class TFatLock, class Owner, class IsGC>
 class ThinLock {
 public:
   uintptr_t lock;
-
-
-
 
   /// overflowThinlock - Change the lock of this object to a fat lock because
   /// we have reached 0xFF locks.
@@ -254,8 +235,7 @@ public:
   ThinLock() {
     initialise();
   }
-
-  
+ 
   /// changeToFatlock - Change the lock of this object to a fat lock. The lock
   /// may be in a thin lock or fat lock state.
   TFatLock* changeToFatlock(Owner* O) {

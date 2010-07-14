@@ -546,10 +546,10 @@ void JavaJIT::monitorEnter(Value* obj) {
   
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
   lock = new PtrToIntInst(lock, intrinsics->pointerSizeType, "", currentBlock);
-  Value* GCMask = ConstantInt::get(intrinsics->pointerSizeType,
-                                   mvm::GCMask);
+  Value* NonLockBitsMask = ConstantInt::get(intrinsics->pointerSizeType,
+                                            mvm::NonLockBitsMask);
 
-  lock = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
+  lock = BinaryOperator::CreateAnd(lock, NonLockBitsMask, "", currentBlock);
 
   lockPtr = new BitCastInst(lockPtr, 
                             PointerType::getUnqual(intrinsics->pointerSizeType),
@@ -644,9 +644,11 @@ void JavaJIT::monitorExit(Value* obj) {
                             PointerType::getUnqual(intrinsics->pointerSizeType),
                             "", currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
-  Value* GCMask = ConstantInt::get(intrinsics->pointerSizeType, ~mvm::GCMask);
+  Value* NonLockBitsMask = ConstantInt::get(
+      intrinsics->pointerSizeType, ~mvm::NonLockBitsMask);
 
-  Value* lockedMask = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
+  Value* lockedMask = BinaryOperator::CreateAnd(
+      lock, NonLockBitsMask, "", currentBlock);
   
   Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
   threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "",
@@ -667,8 +669,10 @@ void JavaJIT::monitorExit(Value* obj) {
   
   // Locked once, set zero
   currentBlock = LockedOnceBB;
-  GCMask = ConstantInt::get(intrinsics->pointerSizeType, mvm::GCMask);
-  lockedMask = BinaryOperator::CreateAnd(lock, GCMask, "", currentBlock);
+  NonLockBitsMask = ConstantInt::get(
+      intrinsics->pointerSizeType, mvm::NonLockBitsMask);
+  lockedMask = BinaryOperator::CreateAnd(
+      lock, NonLockBitsMask, "", currentBlock);
   new StoreInst(lockedMask, lockPtr, false, currentBlock);
   BranchInst::Create(EndUnlock, currentBlock);
 
