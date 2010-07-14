@@ -70,9 +70,11 @@ namespace mvm {
     #include "LLVMRuntime.inc"
   }
   
+#ifdef WITH_MMTK
   namespace mmtk_runtime {
     #include "MMTkInline.inc"
   }
+#endif
   void linkVmkitGC();
 }
 
@@ -174,20 +176,21 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   }
 }
 
-static const char* MMTkSymbol =
-  "JnJVM_org_j3_bindings_Bindings_gcmalloc__"
-  "ILorg_vmmagic_unboxed_ObjectReference_2";
-
 BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
 
   module->setDataLayout(MvmModule::globalModule->getDataLayout());
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
   
+#ifdef WITH_MMTK
+  static const char* MMTkSymbol =
+    "JnJVM_org_j3_bindings_Bindings_gcmalloc__"
+    "ILorg_vmmagic_unboxed_ObjectReference_2";
   if (dlsym(SELF_HANDLE, MMTkSymbol)) {
     // If we have found MMTk, read the gcmalloc function.
     mvm::mmtk_runtime::makeLLVMFunction(module);
   }
+#endif
   mvm::llvm_runtime::makeLLVMModuleContents(module);
   
   
