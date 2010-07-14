@@ -220,6 +220,13 @@ AC_ARG_WITH(gc,
        ]]
 )
 
+AC_ARG_WITH(mmtk-plan,
+       [AS_HELP_STRING(--with-mmtk-plan=something,
+           [MMTk plan type ('marksweep')])],
+       [[MMTK_PLAN=$withval]],
+       [[MMTK_PLAN=marksweep]]
+)
+
 if test "x$gc" = "xboehm";  then
   GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/BoehmGC -DGC_THREADS"
   AC_DEFINE([USE_GC_BOEHM], [1], [Using the boehm gc])
@@ -234,14 +241,13 @@ if test "x$gc" = "xboehm";  then
   esac
 else
   if test "x$gc" = "xmmtk";  then
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/mmtk/mmtk-j3"
     AC_SUBST([GC_MULTI_MMAP], [0])
     AC_SUBST([GC_SINGLE_MMAP], [1])
     AC_SUBST(GC_MMAP2, [0])
     AC_SUBST(GC_BOEHM, [0])
     AC_SUBST(GC_MMTK, [1])
     GC_LIBS=MMTk
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK -I\$(PROJ_SRC_ROOT)/mmtk/config/\$(MMTK_PLAN)"
   else
     GC_LIBS=GCMmap2
     if test "x$gc" = "xmulti-mmap"; then
@@ -262,6 +268,7 @@ fi
   
 AC_SUBST([GC_FLAGS])
 AC_SUBST([GC_LIBS])
+AC_SUBST([MMTK_PLAN])
 
 dnl **************************************************************************
 dnl Virtual Machine type
@@ -614,6 +621,7 @@ AC_CONFIG_FILES([lib/J3/Classpath/Classpath.h])
 AC_CONFIG_FILES([lib/N3/PNetLib/PNetPath.inc])
 AC_CONFIG_FILES([lib/N3/Mono/MonoPath.inc])
 AC_CONFIG_FILES([tools/llcj/LinkPaths.h])
+AC_CONFIG_FILES([mmtk/java/build.xml])
 
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)

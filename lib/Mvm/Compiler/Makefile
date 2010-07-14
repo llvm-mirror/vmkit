@@ -18,6 +18,5 @@ endif
 
 VMKIT_RUNTIME = $(PROJ_SRC_DIR)/LLVMRuntime.ll
 BUILT_SOURCES = LLVMRuntime.inc
-EXTRA_DIST = MMTkInline.inc
 
 include $(LEVEL)/Makefile.common
