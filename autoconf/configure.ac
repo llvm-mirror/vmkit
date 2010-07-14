@@ -473,7 +473,13 @@ AC_PATH_PROG(CAT,[cat],  [cat])
 
 AC_PATH_PROG(LLVMAS, [llvm-as],  [llvm-as])
 AC_PATH_PROG(LLC, [llc],  [llc])
-AC_PATH_PROG(ANT, [ant])
+
+if test "x$gc" = "xmmtk";  then
+  AC_PATH_PROG(ANT, [ant])
+  if test -z "$ANT"; then
+    AC_MSG_ERROR([Apache ANT required for MMTk, but not found])
+  fi
+fi
 
 dnl Find the install program
 AC_PROG_INSTALL
