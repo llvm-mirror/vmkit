@@ -5596,7 +5596,9 @@ $as_echo "no" >&6; }
 fi
 
 
-# Extract the first word of "ant", so it can be a program name with args.
+
+if test "x$gc" = "xmmtk";  then
+  # Extract the first word of "ant", so it can be a program name with args.
 set dummy ant; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5636,6 +5638,10 @@ $as_echo "no" >&6; }
 fi
 
 
+  if test -z "$ANT"; then
+    as_fn_error "Apache ANT required for MMTk, but not found" "$LINENO" 5
+  fi
+fi
 
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
