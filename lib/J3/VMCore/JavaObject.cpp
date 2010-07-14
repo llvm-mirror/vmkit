@@ -22,6 +22,31 @@ using namespace j3;
 
 uint16_t JavaObject::hashCodeGenerator = 1;
 
+/// hashCode - Return the hash code of this object.
+uint32_t JavaObject::hashCode(JavaObject* self) {
+  llvm_gcroot(self, 0);
+  if (!mvm::MovesObject) return (uint32_t)self;
+
+  uintptr_t oldLock = self->lock.lock;
+  uintptr_t val = (oldLock & mvm::HashMask) >> mvm::GCBits;
+  if (val) return val ^ (uintptr_t)getClass(self);
+  if (hashCodeGenerator >= (mvm::HashMask >> mvm::GCBits)) {
+    val = hashCodeGenerator = 1;
+  } else {
+    val = ++hashCodeGenerator;
+  }
+
+  do {
+    uintptr_t oldLock = self->lock.lock;
+    uintptr_t newLock = (val << mvm::GCBits) | oldLock;
+      __sync_val_compare_and_swap(&(self->lock.lock), oldLock, newLock);
+  } while ((self->lock.lock & mvm::HashMask)  == 0);
+
+  return ((self->lock.lock & mvm::HashMask) >> mvm::GCBits) ^
+      (uintptr_t)getClass(self);
+}
+
+
 void JavaObject::waitIntern(
     JavaObject* self, struct timeval* info, bool timed) {
   llvm_gcroot(self, 0);

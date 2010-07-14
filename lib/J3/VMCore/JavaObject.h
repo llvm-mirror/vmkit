@@ -320,25 +320,7 @@ public:
   static uint16_t hashCodeGenerator;
 
   /// hashCode - Return the hash code of this object.
-  static uint32_t hashCode(JavaObject* self) {
-    llvm_gcroot(self, 0);
-    uintptr_t oldLock = self->lock.lock;
-    uintptr_t val = (oldLock & mvm::HashMask) >> LockSystem::BitGC;
-    if (val) return val ^ (uintptr_t)getClass(self);
-    else {
-      if (hashCodeGenerator >= (mvm::HashMask >> LockSystem::BitGC))
-        val = hashCodeGenerator = 1;
-      else val = ++hashCodeGenerator;
-    }
-
-    do {
-      uintptr_t oldLock = self->lock.lock;
-      uintptr_t newLock = (val << LockSystem::BitGC) | oldLock;
-      __sync_val_compare_and_swap(&(self->lock.lock), oldLock, newLock);
-    } while ((self->lock.lock & mvm::HashMask)  == 0);
-    return ((self->lock.lock & mvm::HashMask) >> LockSystem::BitGC) ^
-			(uintptr_t)getClass(self);
-  }
+  static uint32_t hashCode(JavaObject* self);
 };
 
 
