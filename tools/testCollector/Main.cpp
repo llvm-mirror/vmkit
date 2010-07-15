@@ -7,37 +7,29 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/GC/GC.h"
+#include "MvmGC.h"
 #include "mvm/Threads/Thread.h"
 #include <stdio.h>
 
-mvm::Key<mvm::Thread>* mvm::Thread::threadKey = 0;
-
 void destr(gc *me, size_t sz) {
- 	printf("Destroy %p\n", me);
+ 	printf("Destroy %p\n", (void*)me);
 }
 
 void trace(gc *me, size_t sz) {
-	// 	printf("Trace %p\n", me);
+	// printf("Trace %p\n", (void*)me);
 }
 
 void marker(void*) {
-	//	printf("Marker...\n");
+	// printf("Marker...\n");
 }
 
 int main(int argc, char **argv) {
-  mvm::Thread::initialise();
-  Collector::initialise(marker, 0);
+  mvm::Collector::initialise();
 #ifdef MULTIPLE_GC
   mvm::Thread::get()->GC->destroy();
 #else
-  Collector::destroy();
+  mvm::Collector::destroy();
 #endif
   return 0;
 }
-
-
-
-
-
 

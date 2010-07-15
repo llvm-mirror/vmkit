@@ -26,7 +26,7 @@ ifeq ($(WITH_LLVM_GCC), 1)
 else
 
   USEDLIBS = J3.a Classpath.a J3.a J3Compiler.a Allocator.a \
-	     Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
+	     Mvm.a MvmCompiler.a $(GCLIB).a Allocator.a CommonThread.a
 endif
 
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter bitreader asmparser linker

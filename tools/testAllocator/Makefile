@@ -9,7 +9,7 @@
 LEVEL = ../..
 
 TOOLNAME = testAllocator
-USEDLIBS = Allocator
+USEDLIBS = Allocator.a
 
 include $(LEVEL)/Makefile.common
 

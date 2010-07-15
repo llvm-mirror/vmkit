@@ -25,7 +25,7 @@ uint16_t JavaObject::hashCodeGenerator = 1;
 /// hashCode - Return the hash code of this object.
 uint32_t JavaObject::hashCode(JavaObject* self) {
   llvm_gcroot(self, 0);
-  if (!mvm::MovesObject) return (uint32_t)self;
+  if (!mvm::MovesObject) return (uint32_t)(long)self;
 
   uintptr_t oldLock = self->lock.lock;
   uintptr_t val = (oldLock & mvm::HashMask) >> mvm::GCBits;

@@ -14,6 +14,28 @@
 #include <math.h>
 #include <sys/time.h>
 
+#include <sys/resource.h>
+void set_stack_size(uint Mbs)
+{
+    const rlim_t kStackSize = Mbs * 1024 * 1024;
+    struct rlimit rl;
+    int result;
+
+    result = getrlimit(RLIMIT_STACK, &rl);
+    if (result == 0)
+    {
+        if (rl.rlim_cur < kStackSize)
+        {
+            rl.rlim_cur = kStackSize;
+            result = setrlimit(RLIMIT_STACK, &rl);
+            if (result != 0)
+              fprintf(stderr, "setrlimit returned result = %d\n", result);
+            else
+              fprintf(stderr, "setrlimit OK\n");
+        }
+    }
+}
+
 unsigned int rand(unsigned int min, unsigned int max) {
 	return (unsigned int)nearbyint((((double)(max - min))*::rand())/(RAND_MAX + 1.0)) + min;
 }
@@ -61,8 +83,8 @@ void printMesure(size_t n, size_t *vals, size_t *reallocs, size_t *frees, struct
 			nf++;
 	}
 
-	printf("; %d allocations (%d reallocations, %d free, %d chunks)\n", na, nr, nf, no);
-	printf(";   Allocated: %d bytes, current %d bytes\n", totAllocated, curAllocated);
+	printf("; %lu allocations (%lu reallocations, %lu free, %lu chunks)\n", na, nr, nf, no);
+	printf(";   Allocated: %lu bytes, current %lu bytes\n", totAllocated, curAllocated);
 	
 	struct timeval diff;
 	timersub(end, start, &diff);
@@ -71,7 +93,7 @@ void printMesure(size_t n, size_t *vals, size_t *reallocs, size_t *frees, struct
 }
 
 void mesureAllocateur() {
-	size_t n = 512*1024;
+	size_t n = 512*1024; //512K 4bytes==2Mb, times3=6Mb; for x86_64:12Mb
 	size_t* vals = (size_t*)alloca(sizeof(size_t) * n);
 	size_t* reallocs = (size_t*)alloca(sizeof(size_t) * n);
 	size_t* frees = (size_t*)alloca(sizeof(size_t) * n);
@@ -116,6 +138,8 @@ void mesureAllocateur() {
 }
 
 int main(int argc, char **argv) {
+	if( sizeof(size_t) > 4) //bogus check for 64bits
+	  set_stack_size(16); //update min stack size to 16 MB for mesureAllocateur()
 	mesureAllocateur();
 
 	GCHash::destroy();

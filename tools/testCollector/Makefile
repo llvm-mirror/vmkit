@@ -8,8 +8,10 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../..
 
-TOOLNAME = CollectorTest
-USEDLIBS = Allocator GCMmap2 CommonThread
+TOOLNAME = testCollector
+USEDLIBS=GCMmap2.a CommonThread.a Allocator.a GCMmap2.a Mvm.a GCMmap2.a
+
+LINK_COMPONENTS = support
 
 include $(LEVEL)/Makefile.common
 
