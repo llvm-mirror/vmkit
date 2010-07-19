@@ -177,11 +177,8 @@ Constant* JavaJITCompiler::getStringPtr(JavaString** str) {
 }
 
 Constant* JavaJITCompiler::getJavaClass(CommonClass* cl) {
-  JavaObject* obj = cl->getClassDelegatee(JavaThread::get()->getJVM());
-  assert(obj && "Delegatee not created");
-  Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
-                                  uint64(obj));
-  return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.JavaObjectType);
+  fprintf(stderr, "Should not be here\n");
+  abort();
 }
 
 Constant* JavaJITCompiler::getJavaClassPtr(CommonClass* cl) {

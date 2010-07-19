@@ -729,7 +729,8 @@ void JavaJIT::beginSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-    obj = TheCompiler->getJavaClass(compilingClass);
+    obj = TheCompiler->getJavaClassPtr(compilingClass);
+    obj = new LoadInst(obj, "", false, currentBlock);
   }
   monitorEnter(obj);
 }
@@ -739,7 +740,8 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     obj = llvmFunction->arg_begin();
   } else {
-    obj = TheCompiler->getJavaClass(compilingClass);
+    obj = TheCompiler->getJavaClassPtr(compilingClass);
+    obj = new LoadInst(obj, "", false, currentBlock);
   }
   monitorExit(obj);
 }
@@ -1030,17 +1032,6 @@ llvm::Function* JavaJIT::javaCompile() {
   for (uint32 i = 0; i < codeLen; ++i) {
     opcodeInfos[i].exceptionBlock = endExceptionBlock;
   }
-  
-#if JNJVM_EXECUTE > 0
-    {
-    Value* arg = TheCompiler->getMethodInClass(compilingMethod);
-
-    llvm::CallInst::Create(intrinsics->PrintMethodStartFunction, arg, "",
-                           currentBlock);
-    }
-#endif
-
-  
 
   for (int i = 0; i < maxLocals; i++) {
     intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", currentBlock));
@@ -1067,6 +1058,15 @@ llvm::Function* JavaJIT::javaCompile() {
     longStack.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", currentBlock));
     floatStack.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", currentBlock));
   }
+
+#if JNJVM_EXECUTE > 0
+    {
+    Value* arg = TheCompiler->getMethodInClass(compilingMethod);
+
+    llvm::CallInst::Create(intrinsics->PrintMethodStartFunction, arg, "",
+                           currentBlock);
+    }
+#endif
   
   uint32 index = 0;
   uint32 count = 0;
