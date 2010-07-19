@@ -127,6 +127,7 @@ endif
 ifdef RUN_ANT
 ifdef ANT
 
+ifndef DISABLE_MMTK_COMPILE
 ADDITIONAL_ARGS := -load-bc=$(LibDir)/MMTKRuntime.bc 
 
 all::
@@ -138,7 +139,7 @@ all::
 	$(Verb) $(LLVMLD) -r -o $(LibDir)/FinalMMTk.bc $(LibDir)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LibDir)/MMTKRuntime.bc
 	$(Verb) $(LOPT) -std-compile-opts $(LibDir)/FinalMMTk.bc -o $(LibDir)/FinalMMTk.bc
 	#$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=gcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/lib/Mvm/Compiler/MMTkInline.inc
-
+endif
     
 endif
 clean-local::
