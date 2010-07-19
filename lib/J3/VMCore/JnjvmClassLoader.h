@@ -157,13 +157,13 @@ public:
   /// loadName - Loads the class of the given name.
   ///
   UserClass* loadName(const UTF8* name, bool doResolve, bool doThrow,
-                      JavaString* strName);
+                      JavaString* strName = 0);
   
   /// loadClassFromUTF8 - Lookup a class from an UTF8 name and load it.
   ///
   UserCommonClass* loadClassFromUserUTF8(const UTF8* utf8,
                                          bool doResolve, bool doThrow,
-                                         JavaString* strName);
+                                         JavaString* strName = 0);
   
   /// loadClassFromAsciiz - Lookup a class from an asciiz name and load it.
   ///
@@ -483,6 +483,7 @@ public:
   JnjvmClassLoader* getClassLoader() {
     return JCL;
   }
+
 };
 
 #define MAXIMUM_STRINGS 100

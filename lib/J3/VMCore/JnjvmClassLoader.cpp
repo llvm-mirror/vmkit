@@ -521,7 +521,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
     const UTF8* componentName = lookupComponentName(name, holder, prim);
     if (prim) return constructArray(name);
     if (componentName) {
-      UserCommonClass* temp = loadName(componentName, doResolve, doThrow, NULL);
+      UserCommonClass* temp = loadName(componentName, doResolve, doThrow);
       if (temp) return constructArray(name);
     }
   } else {
@@ -558,7 +558,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
     if (temp) return temp;
   }
  
-  return loadClassFromUserUTF8(name, doResolve, doThrow, NULL);
+  return loadClassFromUserUTF8(name, doResolve, doThrow);
 }
 
 
@@ -631,7 +631,7 @@ UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
   } else if (name->elements[start] == I_REF) {
     const UTF8* componentName = name->extract(hashUTF8,
                                               start + 1, start + len - 1);
-    UserCommonClass* cl = loadName(componentName, false, true, NULL);
+    UserCommonClass* cl = loadName(componentName, false, true);
     return cl;
   } else {
     Classpath* upcalls = bootstrapLoader->upcalls;

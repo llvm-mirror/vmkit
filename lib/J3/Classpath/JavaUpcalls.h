@@ -15,7 +15,7 @@
 #include "JnjvmConfig.h"
 
 #define UPCALL_CLASS(vm, name)                                                 \
-  vm->loadName(vm->asciizConstructUTF8(name), true, false, NULL)                        
+  vm->loadName(vm->asciizConstructUTF8(name), true, false)                        
 
 #define UPCALL_PRIMITIVE_CLASS(loader, name, nb)                               \
   new(loader->allocator, "Primitive class")                                    \

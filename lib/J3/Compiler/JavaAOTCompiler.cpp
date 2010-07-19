@@ -2044,7 +2044,7 @@ void mainCompilerStart(JavaThread* th) {
       }
      
       const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
-      UserClass* cl = bootstrapLoader->loadName(utf8, true, true, NULL);
+      UserClass* cl = bootstrapLoader->loadName(utf8, true, true);
       
       if (!M->clinits->empty()) {
         vm->loadBootstrap();

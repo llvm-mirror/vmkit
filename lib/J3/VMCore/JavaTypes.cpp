@@ -21,7 +21,7 @@ UserCommonClass* ArrayTypedef::assocClass(JnjvmClassLoader* loader) const {
 }
 
 UserCommonClass* ObjectTypedef::assocClass(JnjvmClassLoader* loader) const {
-  return loader->loadName(pseudoAssocClassName, false, true, NULL);
+  return loader->loadName(pseudoAssocClassName, false, true);
 }
 
 UserCommonClass* ObjectTypedef::findAssocClass(JnjvmClassLoader* loader) const {

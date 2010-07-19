@@ -939,10 +939,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                  "Ljava/lang/Class;", ACC_VIRTUAL);
 
   loader->loadName(loader->asciizConstructUTF8("java/lang/String"), 
-                                       true, false, NULL);
+                                       true, false);
 
   loader->loadName(loader->asciizConstructUTF8("java/lang/Object"), 
-                                       true, false, NULL);
+                                       true, false);
   
   // Don't compile methods here, we still don't know where to allocate Java
   // strings.

@@ -289,7 +289,7 @@ CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
     if (name->elements[0] == I_TAB) {
       temp = loader->constructArray(name);
     } else {
-      temp = loader->loadName(name, resolve, false, NULL);
+      temp = loader->loadName(name, resolve, false);
     } 
     ctpRes[index] = temp;
   }
