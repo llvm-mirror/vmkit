@@ -169,6 +169,9 @@ public:
   llvm::Function* StaticInitializer;
   llvm::Function* ObjectPrinter;
   llvm::Function* Callback;
+  llvm::Function* ArrayObjectTracer;
+  llvm::Function* RegularObjectTracer;
+  llvm::Function* JavaObjectTracer;
   
   bool generateStubs;
   bool assumeCompiled;

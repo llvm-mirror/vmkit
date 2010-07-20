@@ -48,12 +48,6 @@ public:
   const llvm::Type* JnjvmType;
 #endif
   
-  llvm::Function* EmptyTracerFunction;
-  llvm::Function* JavaObjectTracerFunction;
-  llvm::Function* JavaArrayTracerFunction;
-  llvm::Function* ArrayObjectTracerFunction;
-  llvm::Function* RegularObjectTracerFunction;
-  
   llvm::Function* StartJNIFunction;
   llvm::Function* EndJNIFunction;
   llvm::Function* InterfaceLookupFunction;

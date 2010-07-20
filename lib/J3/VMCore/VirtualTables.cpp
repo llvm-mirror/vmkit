@@ -56,54 +56,16 @@ VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
                                (uintptr_t)VMClassLoader::staticTracer);
 
 //===----------------------------------------------------------------------===//
-// Empty tracer for static tracers of classes that do not declare static
-// variables.
+// Trace methods for Java objects. There are three types of objects:
+// (1) java.lang.Object and primitive arrays: no need to trace anything.
+// (2) Object whose class is not an array: needs to trace the classloader, and
+//     all the virtual fields.
+// (3) Object whose class is an array of objects: needs to trace the class
+//     loader and all elements in the array.
 //===----------------------------------------------------------------------===//
 
-extern "C" void EmptyTracer(void*, uintptr_t) {}
-
-//===----------------------------------------------------------------------===//
-// Trace methods for Java objects. There are four types of objects:
-// (1) Base object whose class is not an array: needs to trace the classloader
-//     and the lock.
-// (1) Object whose class is not an array: needs to trace the classloader, the
-//     lock and all the virtual fields.
-// (2) Object whose class is an array of objects: needs to trace root (1) and
-//     all elements in the array.
-// (3) Object whose class is a native array: only needs to trace the lock. The
-//     classloader is the bootstrap loader and is traced by the JVM.
-//===----------------------------------------------------------------------===//
-
-
-/// Method for scanning the root of an object.
+/// Scanning java.lang.Object and primitive arrays.
 extern "C" void JavaObjectTracer(JavaObject* obj, uintptr_t closure) {
-  CommonClass* cl = JavaObject::getClass(obj);
-  assert(cl && "No class");
-  mvm::Collector::markAndTraceRoot(
-      cl->classLoader->getJavaClassLoaderPtr(), closure);
-}
-
-/// Method for scanning an array whose elements are JavaObjects. This method is
-/// called by all non-native Java arrays.
-extern "C" void ArrayObjectTracer(ArrayObject* obj, uintptr_t closure) {
-  CommonClass* cl = JavaObject::getClass(obj);
-  assert(cl && "No class");
-  mvm::Collector::markAndTraceRoot(
-      cl->classLoader->getJavaClassLoaderPtr(), closure);
-  
-
-  for (sint32 i = 0; i < ArrayObject::getSize(obj); i++) {
-    if (ArrayObject::getElement(obj, i) != NULL) {
-      mvm::Collector::markAndTrace(
-          obj, ArrayObject::getElements(obj) + i, closure);
-    }
-  } 
-}
-
-/// Method for scanning a native array. The classloader of
-/// the class is the bootstrap loader and therefore does not need to be
-/// scanned here.
-extern "C" void JavaArrayTracer(JavaArray* obj, uintptr_t closure) {
 }
 
 /// Method for scanning regular objects.
@@ -125,6 +87,22 @@ extern "C" void RegularObjectTracer(JavaObject* obj, uintptr_t closure) {
   }
 }
 
+/// Method for scanning an array whose elements are JavaObjects. This method is
+/// called for all non-native Java arrays.
+extern "C" void ArrayObjectTracer(ArrayObject* obj, uintptr_t closure) {
+  CommonClass* cl = JavaObject::getClass(obj);
+  assert(cl && "No class");
+  mvm::Collector::markAndTraceRoot(
+      cl->classLoader->getJavaClassLoaderPtr(), closure);
+  
+
+  for (sint32 i = 0; i < ArrayObject::getSize(obj); i++) {
+    if (ArrayObject::getElement(obj, i) != NULL) {
+      mvm::Collector::markAndTrace(
+          obj, ArrayObject::getElements(obj) + i, closure);
+    }
+  } 
+}
 
 //===----------------------------------------------------------------------===//
 // Support for scanning Java objects referenced by classes. All classes must
@@ -138,28 +116,29 @@ extern "C" void RegularObjectTracer(JavaObject* obj, uintptr_t closure) {
 // (4) The static instance.
 //===----------------------------------------------------------------------===//
 
-
 void CommonClass::tracer(uintptr_t closure) {
   
-  if (super && super->classLoader) {
+  if (super != NULL && super->classLoader != NULL) {
     JavaObject** Obj = super->classLoader->getJavaClassLoaderPtr();
-    if (*Obj) mvm::Collector::markAndTraceRoot(Obj, closure);
+    if (*Obj != NULL) mvm::Collector::markAndTraceRoot(Obj, closure);
   
     for (uint32 i = 0; i < nbInterfaces; ++i) {
       if (interfaces[i]->classLoader) {
         JavaObject** Obj = interfaces[i]->classLoader->getJavaClassLoaderPtr();
-        if (*Obj) mvm::Collector::markAndTraceRoot(Obj, closure);
+        if (*Obj != NULL) mvm::Collector::markAndTraceRoot(Obj, closure);
       }
     }
   }
 
-  if (classLoader)
+  if (classLoader != NULL) {
     mvm::Collector::markAndTraceRoot(
         classLoader->getJavaClassLoaderPtr(), closure);
+  }
 
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-    // If the delegatee was static allocated, we want to trace its fields.
-    if (delegatee[i]) {
+    if (delegatee[i] != NULL) {
+      // TODO: remove this call to trace once no delegatee is static allocated
+      // in AOT mode.
       delegatee[i]->tracer(closure);
       mvm::Collector::markAndTraceRoot(delegatee + i, closure);
     }
@@ -172,7 +151,7 @@ void Class::tracer(uintptr_t closure) {
   
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
-    if (M.staticInstance) {
+    if (M.staticInstance != NULL) {
       for (uint32 i = 0; i < nbStaticFields; ++i) {
         JavaField& field = staticFields[i];
         if (field.isReference()) {
@@ -263,13 +242,13 @@ void Jnjvm::tracer(uintptr_t closure) {
   VirtualMachine::tracer(closure);
   bootstrapLoader->tracer(closure);
   
-  if (appClassLoader) {
+  if (appClassLoader != NULL) {
     mvm::Collector::markAndTraceRoot(
         appClassLoader->getJavaClassLoaderPtr(), closure);
   }
   
   JNIGlobalReferences* start = &globalRefs;
-  while (start) {
+  while (start != NULL) {
     for (uint32 i = 0; i < start->length; ++i) {
       JavaObject** obj = start->globalReferences + i;
       mvm::Collector::markAndTraceRoot(obj, closure);
@@ -312,7 +291,7 @@ void Jnjvm::tracer(uintptr_t closure) {
 }
 
 void JavaThread::tracer(uintptr_t closure) {
-  if (pendingException) {
+  if (pendingException != NULL) {
     mvm::Collector::markAndTraceRoot(&pendingException, closure);
   }
   mvm::Collector::markAndTraceRoot(&javaThread, closure);
@@ -321,7 +300,7 @@ void JavaThread::tracer(uintptr_t closure) {
 #endif
   
   JNILocalReferences* end = localJNIRefs;
-  while (end) {
+  while (end != NULL) {
     for (uint32 i = 0; i < end->length; ++i) {
       JavaObject** obj = end->localReferences + i;
       mvm::Collector::markAndTraceRoot(obj, closure);

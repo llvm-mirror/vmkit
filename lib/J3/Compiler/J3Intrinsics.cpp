@@ -241,12 +241,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   ServiceCallStopFunction = module->getFunction("j3ServiceCallStop");
 #endif
 
-  JavaObjectTracerFunction = module->getFunction("JavaObjectTracer");
-  EmptyTracerFunction = module->getFunction("EmptyTracer");
-  JavaArrayTracerFunction = module->getFunction("JavaArrayTracer");
-  ArrayObjectTracerFunction = module->getFunction("ArrayObjectTracer");
-  RegularObjectTracerFunction = module->getFunction("RegularObjectTracer");
-
 #ifndef WITHOUT_VTABLE
   VirtualLookupFunction = module->getFunction("j3VirtualTableLookup");
 #endif

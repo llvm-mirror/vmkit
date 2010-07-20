@@ -1398,12 +1398,12 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   Function* Tracer = 0;
   if (classDef->isArray()) {
     if (classDef->asArrayClass()->baseClass()->isPrimitive()) {
-      Tracer = JavaIntrinsics.JavaArrayTracerFunction;
+      Tracer = JavaObjectTracer;
     } else {
-      Tracer = JavaIntrinsics.ArrayObjectTracerFunction;
+      Tracer = ArrayObjectTracer;
     }
   } else if (classDef->isClass()) {
-    Tracer = JavaIntrinsics.RegularObjectTracerFunction;
+    Tracer = RegularObjectTracer;
   }
 
   Elemts.push_back(Tracer ? 
@@ -1630,7 +1630,17 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()), llvmArgs, false);
   ObjectPrinter = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                    "printJavaObject", getLLVMModule());
-
+  
+  ArrayObjectTracer = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                       "ArrayObjectTracer", getLLVMModule());
+  
+  RegularObjectTracer = Function::Create(FTy,
+                                         GlobalValue::ExternalLinkage,
+                                         "RegularObjectTracer",
+                                         getLLVMModule());
+  
+  JavaObjectTracer = Function::Create(FTy, GlobalValue::ExternalLinkage,
+                                      "JavaObjectTracer", getLLVMModule());
 }
 
 void JavaAOTCompiler::printStats() {

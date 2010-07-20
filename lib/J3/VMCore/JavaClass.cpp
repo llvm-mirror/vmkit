@@ -40,7 +40,6 @@ const UTF8* Attribut::sourceFileAttribut = 0;
 Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;
 
-extern "C" void JavaArrayTracer(JavaObject*);
 extern "C" void JavaObjectTracer(JavaObject*);
 extern "C" void ArrayObjectTracer(JavaObject*);
 extern "C" void RegularObjectTracer(JavaObject*);
@@ -1756,7 +1755,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
 
   } else {
     // Set the tracer, destructor and delete
-    tracer = (uintptr_t)JavaArrayTracer;
+    tracer = (uintptr_t)JavaObjectTracer;
     destructor = 0;
     operatorDelete = 0;
     
