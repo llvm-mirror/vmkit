@@ -127,9 +127,10 @@ endif
 ifdef RUN_ANT
 ifdef ANT
 
-ADDITIONAL_ARGS := -load-bc=$(LibDir)/MMTKRuntime.bc 
+ifneq ($(DISABLE_MMTK_COMPILE), 1)
+  ADDITIONAL_ARGS := -load-bc=$(LibDir)/MMTKRuntime.bc 
 
-all::
+  all::
 	$(Verb) $(ANT) -buildfile $(PROJ_SRC_ROOT)/mmtk/java/build.xml
 	$(Echo) Building $(BuildMode) $(JARNAME).jar $(notdir $@)
 	$(Verb) $(LOPT) -load=$(LibDir)/JITGCPass$(SHLIBEXT) -std-compile-opts -JITGCPass -f $(LibDir)/MMTKAlloc.bc -o $(LibDir)/MMTKAlloc.bc
@@ -138,8 +139,8 @@ all::
 	$(Verb) $(LLVMLD) -r -o $(LibDir)/FinalMMTk.bc $(LibDir)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LibDir)/MMTKRuntime.bc
 	$(Verb) $(LOPT) -std-compile-opts $(LibDir)/FinalMMTk.bc -o $(LibDir)/FinalMMTk.bc
 	#$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=gcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/lib/Mvm/Compiler/MMTkInline.inc
+endif
 
-    
 endif
 clean-local::
 	$(Verb) $(RM) -rf classes $(JARNAME).jar $(JARNAME).bc $(JARNAME)-optimized.bc
