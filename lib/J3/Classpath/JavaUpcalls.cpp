@@ -490,7 +490,6 @@ extern "C" JavaObject* nativeGetDeclaredAnnotations() {
 
 extern "C" void nativePropertiesPostInit(JavaObject* prop);
 
-
 extern "C" void nativeJavaObjectClassTracer(
     JavaObjectClass* obj, uintptr_t closure) {
   JavaObjectClass::staticTracer(obj, closure);
@@ -509,11 +508,6 @@ extern "C" void nativeJavaObjectMethodTracer(
 extern "C" void nativeJavaObjectConstructorTracer(
     JavaObjectConstructor* obj, uintptr_t closure) {
   JavaObjectConstructor::staticTracer(obj, closure);
-}
-
-extern "C" void nativeJavaObjectReferenceTracer(
-    JavaObjectReference* obj, uintptr_t closure) {
-  JavaObjectReference::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectVMThreadTracer(
@@ -1042,10 +1036,6 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
    
   newReference = UPCALL_CLASS(loader, "java/lang/ref/Reference");
     
-  newReference->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectReferenceTracer,
-      "nativeJavaObjectReferenceTracer");
-  
   EnqueueReference = 
     UPCALL_METHOD(loader, "java/lang/ref/Reference",  "enqueue", "()Z",
                   ACC_VIRTUAL);

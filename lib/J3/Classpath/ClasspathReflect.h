@@ -1,6 +1,4 @@
-//===------ ClasspathReflect.h - GNU classpath definitions of ----------------//
-// java/lang/Class, java/lang/reflect/Field, java/lang/reflect/Method and ----//
-// java/lang/reflect/Constructor as compiled by JnJVM. -----------------------//
+//===-- ClasspathReflect.h - Internal representation of core system classes --//
 //
 //                            The VMKit project
 //
@@ -210,15 +208,11 @@ public:
     llvm_gcroot(self, 0);
     return &(self->referent);
   }
+
   static void setReferent(JavaObjectReference* self, JavaObject* r) {
     llvm_gcroot(self, 0);
     llvm_gcroot(r, 0);
     self->referent = r;
-  }
-  
-  static void staticTracer(JavaObjectReference* obj, uintptr_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->queue, closure);
-    mvm::Collector::markAndTrace(obj, &obj->nextOnQueue, closure);
   }
 };
 

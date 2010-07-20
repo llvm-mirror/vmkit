@@ -20,6 +20,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
@@ -56,12 +57,14 @@ VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
                                (uintptr_t)VMClassLoader::staticTracer);
 
 //===----------------------------------------------------------------------===//
-// Trace methods for Java objects. There are three types of objects:
+// Trace methods for Java objects. There are four types of objects:
 // (1) java.lang.Object and primitive arrays: no need to trace anything.
 // (2) Object whose class is not an array: needs to trace the classloader, and
 //     all the virtual fields.
 // (3) Object whose class is an array of objects: needs to trace the class
 //     loader and all elements in the array.
+// (4) Objects that extend java.lang.ref.Reference: must trace the class loader
+//     and all the fields except the referent.
 //===----------------------------------------------------------------------===//
 
 /// Scanning java.lang.Object and primitive arrays.
@@ -102,6 +105,32 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj, uintptr_t closure) {
           obj, ArrayObject::getElements(obj) + i, closure);
     }
   } 
+}
+
+/// Method for scanning Java java.lang.ref.Reference objects.
+extern "C" void ReferenceObjectTracer(
+    JavaObjectReference* obj, uintptr_t closure) {
+  Class* cl = JavaObject::getClass(obj)->asClass();
+  assert(cl && "Not a class in reference tracer");
+  mvm::Collector::markAndTraceRoot(
+      cl->classLoader->getJavaClassLoaderPtr(), closure);
+
+  bool found = false;
+  while (cl->super != 0) {
+    for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
+      JavaField& field = cl->virtualFields[i];
+      if (field.isReference()) {
+        JavaObject** ptr = field.getInstanceObjectFieldPtr(obj);
+        if (ptr != JavaObjectReference::getReferentPtr(obj)) {
+          mvm::Collector::markAndTrace(obj, ptr, closure);
+        } else {
+          found = true;
+        }
+      }
+    }
+    cl = cl->super;
+  }
+  assert(found && "No referent in a reference");
 }
 
 //===----------------------------------------------------------------------===//
@@ -190,7 +219,7 @@ void JnjvmClassLoader::tracer(uintptr_t closure) {
   }
   
   StringList* end = strings;
-  while (end) {
+  while (end != NULL) {
     for (uint32 i = 0; i < end->length; ++i) {
       JavaString** obj = end->strings + i;
       mvm::Collector::markAndTraceRoot(obj, closure);

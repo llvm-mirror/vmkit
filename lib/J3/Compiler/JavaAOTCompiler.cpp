@@ -1403,7 +1403,12 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
       Tracer = ArrayObjectTracer;
     }
   } else if (classDef->isClass()) {
-    Tracer = RegularObjectTracer;
+    if (classDef->isAssignableFrom(
+          classDef->classLoader->bootstrapLoader->upcalls->newReference)) {
+      Tracer = ReferenceObjectTracer;
+    } else {
+      Tracer = RegularObjectTracer;
+    }
   }
 
   Elemts.push_back(Tracer ? 
@@ -1641,6 +1646,11 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   
   JavaObjectTracer = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                       "JavaObjectTracer", getLLVMModule());
+  
+  ReferenceObjectTracer = Function::Create(FTy,
+                                           GlobalValue::ExternalLinkage,
+                                           "ReferenceObjectTracer",
+                                           getLLVMModule());
 }
 
 void JavaAOTCompiler::printStats() {

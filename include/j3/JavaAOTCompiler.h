@@ -172,6 +172,7 @@ public:
   llvm::Function* ArrayObjectTracer;
   llvm::Function* RegularObjectTracer;
   llvm::Function* JavaObjectTracer;
+  llvm::Function* ReferenceObjectTracer;
   
   bool generateStubs;
   bool assumeCompiled;

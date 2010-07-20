@@ -43,6 +43,7 @@ Class** ClassArray::InterfacesArray;
 extern "C" void JavaObjectTracer(JavaObject*);
 extern "C" void ArrayObjectTracer(JavaObject*);
 extern "C" void RegularObjectTracer(JavaObject*);
+extern "C" void ReferenceObjectTracer(JavaObject*);
 
 Attribut::Attribut(const UTF8* name, uint32 length,
                    uint32 offset) {
@@ -50,7 +51,6 @@ Attribut::Attribut(const UTF8* name, uint32 length,
   this->start    = offset;
   this->nbb      = length;
   this->name     = name;
-
 }
 
 Attribut* Class::lookupAttribut(const UTF8* key ) {
@@ -1472,23 +1472,28 @@ void ClassArray::initialiseVT(Class* javaLangObject) {
 JavaVirtualTable::JavaVirtualTable(Class* C) {
    
   if (C->super) {
-    
-    assert(C->super->virtualVT && "Super has no VT");
 
-    // Set the regular object tracer, destructor and delete.
-    tracer = (uintptr_t)RegularObjectTracer;
+    Class* referenceClass = 
+        C->classLoader->bootstrapLoader->upcalls->newReference;
+    if (referenceClass != NULL && C->super->isAssignableFrom(referenceClass)) {
+      tracer = (uintptr_t)ReferenceObjectTracer;
+    } else {
+      tracer = (uintptr_t)RegularObjectTracer;
+    }
     destructor = 0;
     operatorDelete = 0;
     
     // Set IMT.
-    if (!isAbstract(C->access))
+    if (!isAbstract(C->access)) {
       IMT = new (C->classLoader->allocator, "IMT") InterfaceMethodTable();
+    }
     
     // Set the class of this VT.
     cl = C;
     
     // Set depth and display for fast dynamic type checking.
-    JavaVirtualTable* superVT = C->super->virtualVT;
+    JavaVirtualTable* superVT = C->super->virtualVT; 
+    assert(superVT && "Super has no VT");
     depth = superVT->depth + 1;
     nbSecondaryTypes = superVT->nbSecondaryTypes + cl->nbInterfaces;
 

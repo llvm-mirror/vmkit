@@ -377,7 +377,9 @@ private:
         fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
         abort();
       }
-      for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = ToEnqueue[i];
+      for (uint32 i = 0; i < ToEnqueueLength; ++i) {
+        newQueue[i] = ToEnqueue[i];
+      }
       delete[] ToEnqueue;
       ToEnqueue = newQueue;
       ToEnqueueLength = newLength;
