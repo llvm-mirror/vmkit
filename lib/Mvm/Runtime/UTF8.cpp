@@ -1,3 +1,4 @@
+#include "mvm/Allocator.h"
 #include "mvm/UTF8.h"
 #include "mvm/PrintBuffer.h"
 
@@ -10,7 +11,8 @@ void UTF8::print(PrintBuffer *pb) const {
 
 const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   uint32 len = end - start;
-  uint16* buf = (uint16*)alloca(sizeof(uint16) * len);
+  ThreadAllocator allocator;
+  uint16* buf = (uint16*)allocator.Allocate(sizeof(uint16) * len);
 
   for (uint32 i = 0; i < len; i++) {
     buf[i] = elements[i + start];
