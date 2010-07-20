@@ -41,14 +41,14 @@ void CamlMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
 }
 
 void StaticCamlMethodInfo::print(void* ip, void* addr) {
-  fprintf(stderr, "; %p in %s static method\n", ip, name);
+  fprintf(stderr, "; %p (%p) in %s static method\n", ip, addr, name);
 }
 
 void DefaultMethodInfo::print(void* ip, void* addr) {
   Dl_info info;
   int res = dladdr(ip, &info);
   if (res != 0) {
-    fprintf(stderr, "; %p in %s\n",  ip, info.dli_sname);
+    fprintf(stderr, "; %p (%p) in %s\n",  ip, addr, info.dli_sname);
   } else {
     fprintf(stderr, "; %p in Unknown method\n",  ip);
   }
@@ -124,7 +124,10 @@ void SharedStartFunctionMap::initialize() {
     for (uint16_t i = 0; i < frames->NumDescriptors; i++) {
       int res = dladdr(currentFrame->ReturnAddress, &info);
       if (res != 0) {
-        if (previousPtr && info.dli_saddr != previousPtr) {
+        if (previousPtr && info.dli_saddr != previousPtr &&
+            previousFrame->ReturnAddress != previousPtr) { // This test is to avoid adding a frame to a method
+                                                           // that does not have one but starts just where the previous
+                                                           // method ends.
           StaticCamlMethodInfo* MI =
             new(*StaticAllocator, "StaticCamlMethodInfo")
             StaticCamlMethodInfo(previousFrame, previousPtr, previousName);
