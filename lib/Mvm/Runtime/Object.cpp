@@ -202,14 +202,12 @@ gc* ReferenceQueue::processReference(
     gc* reference, VirtualMachine* vm, uintptr_t closure) {
   if (!Collector::isLive(reference, closure)) {
     vm->clearReferent(reference);
-    return NULL;
+    return 0;
   }
 
   gc* referent = *(vm->getReferentPtr(reference));
 
-  if (!referent) {
-    return NULL;
-  }
+  if (!referent) return 0;
 
   if (semantics == SOFT) {
     // TODO: are we are out of memory? Consider that we always are for now.
@@ -220,16 +218,16 @@ gc* ReferenceQueue::processReference(
     // Nothing to do.
   }
 
-  gc* newReference =
-      mvm::Collector::getForwardedReference(reference, closure);
   if (Collector::isLive(referent, closure)) {
     gc* newReferent = mvm::Collector::getForwardedReferent(referent, closure);
+    gc* newReference =
+      mvm::Collector::getForwardedReference(reference, closure);
     vm->setReferent(newReference, newReferent);
     return newReference;
   } else {
-    vm->clearReferent(newReference);
-    vm->addToEnqueue(newReference);
-    return NULL;
+    vm->clearReferent(reference);
+    vm->addToEnqueue(reference);
+    return 0;
   }
 }
 
