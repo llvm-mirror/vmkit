@@ -41,7 +41,6 @@ Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;
 
 extern "C" void JavaArrayTracer(JavaObject*);
-extern "C" void JavaObjectTracer(JavaObject*);
 extern "C" void ArrayObjectTracer(JavaObject*);
 extern "C" void RegularObjectTracer(JavaObject*);
 
@@ -1477,7 +1476,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     assert(C->super->virtualVT && "Super has no VT");
 
     // Set the regular object tracer, destructor and delete.
-    tracer = (uintptr_t)RegularObjectTracer;
+    tracer = (uintptr_t)C->super->tracer;
     destructor = 0;
     operatorDelete = 0;
     
@@ -1544,7 +1543,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
 
   } else {
     // Set the tracer, destructor and delete.
-    tracer = (uintptr_t)JavaObjectTracer;
+    tracer = (uintptr_t)RegularObjectTracer;
     destructor = 0;
     operatorDelete = 0;
     
