@@ -1195,8 +1195,8 @@ void Jnjvm::loadBootstrap() {
                                                    obj, &javaLoader);
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
-  UserCommonClass* math = 
-    loader->loadName(loader->asciizConstructUTF8("java/lang/Math"), true, true);
+  UserCommonClass* math = loader->loadName(
+      loader->asciizConstructUTF8("java/lang/Math"), true, true, NULL);
   math->asClass()->initialiseClass(this);
 }
 
@@ -1217,7 +1217,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     // If not, load the class.
     if (cl == NULL) {
       const UTF8* name = appClassLoader->asciizConstructUTF8(className);
-      cl = (UserClass*)appClassLoader->loadName(name, true, true);
+      cl = (UserClass*)appClassLoader->loadName(name, true, true, NULL);
     }
     
     cl->initialiseClass(this);
@@ -1256,7 +1256,8 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
   llvm_gcroot(instrumenter, 0);
   TRY {
     const UTF8* name = appClassLoader->asciizConstructUTF8(className);
-    UserClass* cl = (UserClass*)appClassLoader->loadName(name, true, true);
+    UserClass* cl = (UserClass*)
+        appClassLoader->loadName(name, true, true, NULL);
     cl->initialiseClass(this);
   
     const UTF8* funcSign = appClassLoader->asciizConstructUTF8(

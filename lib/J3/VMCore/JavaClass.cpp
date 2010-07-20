@@ -686,7 +686,7 @@ void Class::readParents(Reader& reader) {
   uint16 superEntry = reader.readU2();
   if (superEntry) {
     const UTF8* superUTF8 = ctpInfo->resolveClassName(superEntry);
-    super = classLoader->loadName(superUTF8, false, true);
+    super = classLoader->loadName(superUTF8, false, true, NULL);
   }
 
   uint16 nbI = reader.readU2();
@@ -698,7 +698,7 @@ void Class::readParents(Reader& reader) {
   // in anon-cooperative environment.
   for (int i = 0; i < nbI; i++) {
     const UTF8* name = ctpInfo->resolveClassName(reader.readU2());
-    interfaces[i] = classLoader->loadName(name, false, true);
+    interfaces[i] = classLoader->loadName(name, false, true, NULL);
   }
   nbInterfaces = nbI;
 
@@ -1431,11 +1431,11 @@ void ClassArray::initialiseVT(Class* javaLangObject) {
   // so that the secondary type list of array VTs can reference them.
   ClassArray::InterfacesArray[0] = 
     JCL->loadName(JCL->asciizConstructUTF8("java/lang/Cloneable"),
-                  true, false);
+                  true, false, NULL);
   
   ClassArray::InterfacesArray[1] = 
     JCL->loadName(JCL->asciizConstructUTF8("java/io/Serializable"),
-                  true, false);
+                  true, false, NULL);
    
   // Load base array classes that JnJVM internally uses. Now that the interfaces
   // have been loaded, the secondary type can be safely created.
