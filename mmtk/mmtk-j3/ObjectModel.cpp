@@ -75,7 +75,7 @@ Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectRe
 }
 
 extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(
-    void* res, void* src, int size) __attribute__ ((always_inline));
+    void* res, void* src, int size) ALWAYS_INLINE;
 
 extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(
     void* res, void* src, int size) {
@@ -83,10 +83,10 @@ extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_Objec
 }
 
 extern "C" uintptr_t JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
-    JavaObject* obj, VirtualTable* VT, int size, int allocator) __attribute__ ((always_inline));
+    JavaObject* obj, VirtualTable* VT, int size, int allocator) ALWAYS_INLINE;
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
-    JavaObject* OM, JavaObject* src, int allocator) __attribute__ ((always_inline));
+    JavaObject* OM, JavaObject* src, int allocator) ALWAYS_INLINE;
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
     JavaObject* OM, JavaObject* src, int allocator) {

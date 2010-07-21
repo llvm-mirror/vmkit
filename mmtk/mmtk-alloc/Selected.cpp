@@ -15,41 +15,39 @@
 #include <sys/mman.h>
 #include <set>
 
+#include "debug.h"
+
 using namespace mvm;
 
 int Collector::verbose = 0;
-extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I(
-    uintptr_t, int32_t) __attribute__ ((always_inline));
+extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I(uintptr_t, int32_t) ALWAYS_INLINE;
 
-extern "C" intptr_t JnJVM_org_j3_bindings_Bindings_allocateMutator__I(
-    int32_t) __attribute__ ((always_inline));
-extern "C" void JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(
-    intptr_t) __attribute__ ((always_inline));
-extern "C" void JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(
-    intptr_t, intptr_t) __attribute__ ((always_inline));
+extern "C" intptr_t JnJVM_org_j3_bindings_Bindings_allocateMutator__I(int32_t) ALWAYS_INLINE;
+extern "C" void JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(intptr_t) ALWAYS_INLINE;
+extern "C" void JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(intptr_t, intptr_t) ALWAYS_INLINE;
 
 extern "C" void JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(
-    uintptr_t closure, void* source, void* slot) __attribute__ ((always_inline));
+    uintptr_t closure, void* source, void* slot) ALWAYS_INLINE;
 
 extern "C" void JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(
-    uintptr_t TraceLocal, void** slot) __attribute__ ((always_inline));
+    uintptr_t TraceLocal, void** slot) ALWAYS_INLINE;
 extern "C" void JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(
-    uintptr_t TraceLocal, void* slot, uint8_t untraced) __attribute__ ((always_inline));
+    uintptr_t TraceLocal, void* slot, uint8_t untraced) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_retainForFinalize__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_retainReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedReference__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedFinalizable__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" uint8_t JnJVM_org_j3_bindings_Bindings_isLive__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) __attribute__ ((always_inline));
+    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
 
 extern "C" void* JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(
-    int sz, void* VT) __attribute__ ((always_inline));
+    int sz, void* VT) ALWAYS_INLINE;
 
 extern "C" void* gcmalloc(uint32_t sz, void* VT) {
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
