@@ -1,6 +1,6 @@
 //===----------------- debug.h - Debug facilities -------------------------===//
 //
-//                               Mvm
+//                            The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
@@ -64,5 +64,14 @@
 #define PRINT_DEBUG(symb, level, color, args...) do {} while(0);
 #endif
 
+#define UNIMPLEMENTED() {                           \
+  mvm::Thread::get()->printBacktrace();           \
+  fprintf(stderr, "%s:%d\n", __FILE__, __LINE__); \
+  abort(); }                                      \
+
+#define ABORT() UNIMPLEMENTED()
+
+#define ASSERT(cond) {  \
+  if (!cond) ABORT(); } \
 
 #endif

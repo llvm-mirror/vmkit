@@ -11,8 +11,10 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
+#include "debug.h"
+
 using namespace j3;
 
-extern "C" void Java_org_j3_mmtk_SynchronizedCounter_reset__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_SynchronizedCounter_increment__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_SynchronizedCounter_reset__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_SynchronizedCounter_increment__ () { UNIMPLEMENTED(); }
 

@@ -96,4 +96,22 @@ public final class Bindings {
     plan.postBoot();
     plan.fullyBooted();
   }
+
+  @Inline
+  private static Address copy(ObjectReference from,
+                              ObjectReference virtualTable,
+                              int size,
+                              int allocator) {
+    Selected.Collector plan = Selected.Collector.get();
+    allocator = plan.copyCheckAllocator(from, size, 0, allocator);
+    Address to = plan.allocCopy(from, size, 0, 0, allocator);
+    memcpy(to.toObjectReference(), from, size);
+    plan.postCopy(to.toObjectReference(), virtualTable, size, allocator);
+    return to;
+  }
+
+  @Inline
+  private static native void memcpy(
+      ObjectReference to, ObjectReference from, int size);
+
 }

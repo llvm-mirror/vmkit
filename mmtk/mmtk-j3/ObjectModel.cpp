@@ -7,8 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "JavaArray.h"
+#include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+
+#include "debug.h"
 
 using namespace j3;
 
@@ -70,18 +74,56 @@ Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectRe
   return __sync_bool_compare_and_swap(((intptr_t*)obj) + 1, oldValue, newValue);
 }
 
-extern "C" void Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_copyTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getReferenceWhenCopiedTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getObjectEndAddress__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getSizeWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getAlignWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getAlignOffsetWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getCurrentSize__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getNextObject__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getArrayLength__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_isArray__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_isPrimitiveArray__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_isAcyclic__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_dumpObject__Lorg_vmmagic_unboxed_ObjectReference_2 () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(
+    void* res, void* src, int size) __attribute__ ((always_inline));
+
+extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(
+    void* res, void* src, int size) {
+  memcpy(res, src, size);
+}
+
+extern "C" uintptr_t JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
+    JavaObject* obj, VirtualTable* VT, int size, int allocator) __attribute__ ((always_inline));
+
+extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
+    JavaObject* OM, JavaObject* src, int allocator) __attribute__ ((always_inline));
+
+extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
+    JavaObject* OM, JavaObject* src, int allocator) {
+  size_t size = 0;
+  VirtualTable* VT = src->getVirtualTable();
+  if (VMClassLoader::isVMClassLoader(src)) {
+    size = sizeof(VMClassLoader);
+  } else {
+    CommonClass* cl = JavaObject::getClass(src);
+    if (cl->isArray()) {
+      UserClassArray* array = cl->asArrayClass();
+      UserCommonClass* base = array->baseClass();
+      uint32 logSize = base->isPrimitive() ? 
+        base->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2); 
+
+      size = sizeof(JavaObject) + sizeof(ssize_t) + 
+                    (JavaArray::getSize(src) << logSize);
+    } else {
+      assert(cl->isClass() && "Not a class!");
+      size = cl->asClass()->getVirtualSize();
+    }
+  }
+  size = llvm::RoundUpToAlignment(size, sizeof(void*));
+  return JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(src, VT, size, allocator);
+}
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_copyTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getReferenceWhenCopiedTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getObjectEndAddress__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getSizeWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getAlignWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getAlignOffsetWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getCurrentSize__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getNextObject__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_getArrayLength__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_isArray__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_isPrimitiveArray__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_isAcyclic__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_dumpObject__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }

@@ -13,15 +13,17 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
+#include "debug.h"
+
 using namespace j3;
 
 extern "C" void Java_org_j3_mmtk_FinalizableProcessor_clear__ () {
-  JavaThread::get()->printBacktrace(); abort();
+  UNIMPLEMENTED();
 }
 
 extern "C" void
 Java_org_j3_mmtk_FinalizableProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () {
-  JavaThread::get()->printBacktrace(); abort();
+  UNIMPLEMENTED();
 }
 
 extern "C" void

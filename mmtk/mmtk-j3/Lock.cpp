@@ -11,6 +11,9 @@
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/VirtualMachine.h"
+
+#include "debug.h"
 
 using namespace j3;
 
@@ -24,7 +27,7 @@ struct Lock {
 extern "C" void Java_org_j3_mmtk_Lock_acquire__(Lock* l) {
   l->spin.acquire();
 }
-extern "C" void Java_org_j3_mmtk_Lock_check__I () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Lock_check__I () { UNIMPLEMENTED(); }
 
 extern "C" void Java_org_j3_mmtk_Lock_release__(Lock* l) {
   l->spin.release();

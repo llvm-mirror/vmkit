@@ -10,16 +10,16 @@ std::vector<const Type*>FuncTy_1_args;
 FuncTy_1_args.push_back(IntegerType::get(mod->getContext(), 32));
 FuncTy_1_args.push_back(PointerTy_0);
 FunctionType* FuncTy_1 = FunctionType::get(
-  /*Result=*/PointerTy_0,
-  /*Params=*/FuncTy_1_args,
-  /*isVarArg=*/false);
+ /*Result=*/PointerTy_0,
+ /*Params=*/FuncTy_1_args,
+ /*isVarArg=*/false);
 
 std::vector<const Type*>FuncTy_3_args;
 FuncTy_3_args.push_back(IntegerType::get(mod->getContext(), 32));
 FunctionType* FuncTy_3 = FunctionType::get(
-  /*Result=*/PointerTy_0,
-  /*Params=*/FuncTy_3_args,
-  /*isVarArg=*/false);
+ /*Result=*/PointerTy_0,
+ /*Params=*/FuncTy_3_args,
+ /*isVarArg=*/false);
 
 PointerType* PointerTy_2 = PointerType::get(FuncTy_3, 0);
 
@@ -28,9 +28,9 @@ std::vector<const Type*>StructTy_struct_mvm__Thread_fields;
 std::vector<const Type*>StructTy_struct_mvm__CircularBase_fields;
 std::vector<const Type*>FuncTy_7_args;
 FunctionType* FuncTy_7 = FunctionType::get(
-  /*Result=*/IntegerType::get(mod->getContext(), 32),
-  /*Params=*/FuncTy_7_args,
-  /*isVarArg=*/true);
+ /*Result=*/IntegerType::get(mod->getContext(), 32),
+ /*Params=*/FuncTy_7_args,
+ /*isVarArg=*/true);
 
 PointerType* PointerTy_6 = PointerType::get(FuncTy_7, 0);
 
@@ -266,9 +266,9 @@ StructTy_struct_mvm__Thread_fields.push_back(PointerTy_0);
 std::vector<const Type*>FuncTy_19_args;
 FuncTy_19_args.push_back(PointerTy_13);
 FunctionType* FuncTy_19 = FunctionType::get(
-  /*Result=*/Type::getVoidTy(mod->getContext()),
-  /*Params=*/FuncTy_19_args,
-  /*isVarArg=*/false);
+ /*Result=*/Type::getVoidTy(mod->getContext()),
+ /*Params=*/FuncTy_19_args,
+ /*isVarArg=*/false);
 
 PointerType* PointerTy_18 = PointerType::get(FuncTy_19, 0);
 
@@ -344,9 +344,9 @@ PointerType* PointerTy_26 = PointerType::get(StructTy_struct_j3__JavaObject, 0);
 
 std::vector<const Type*>FuncTy_28_args;
 FunctionType* FuncTy_28 = FunctionType::get(
-  /*Result=*/Type::getVoidTy(mod->getContext()),
-  /*Params=*/FuncTy_28_args,
-  /*isVarArg=*/false);
+ /*Result=*/Type::getVoidTy(mod->getContext()),
+ /*Params=*/FuncTy_28_args,
+ /*isVarArg=*/false);
 
 PointerType* PointerTy_27 = PointerType::get(FuncTy_28, 0);
 
@@ -373,9 +373,9 @@ FuncTy_34_args.push_back(IntegerType::get(mod->getContext(), 32));
 FuncTy_34_args.push_back(IntegerType::get(mod->getContext(), 32));
 FuncTy_34_args.push_back(IntegerType::get(mod->getContext(), 32));
 FunctionType* FuncTy_34 = FunctionType::get(
-  /*Result=*/PointerTy_30,
-  /*Params=*/FuncTy_34_args,
-  /*isVarArg=*/false);
+ /*Result=*/PointerTy_30,
+ /*Params=*/FuncTy_34_args,
+ /*isVarArg=*/false);
 
 PointerType* PointerTy_33 = PointerType::get(FuncTy_34, 0);
 
@@ -388,9 +388,9 @@ FuncTy_37_args.push_back(PointerTy_30);
 FuncTy_37_args.push_back(IntegerType::get(mod->getContext(), 32));
 FuncTy_37_args.push_back(IntegerType::get(mod->getContext(), 32));
 FunctionType* FuncTy_37 = FunctionType::get(
-  /*Result=*/PointerTy_30,
-  /*Params=*/FuncTy_37_args,
-  /*isVarArg=*/false);
+ /*Result=*/PointerTy_30,
+ /*Params=*/FuncTy_37_args,
+ /*isVarArg=*/false);
 
 PointerType* PointerTy_36 = PointerType::get(FuncTy_37, 0);
 
@@ -470,9 +470,9 @@ FuncTy_51_args.push_back(IntegerType::get(mod->getContext(), 1));
 FuncTy_51_args.push_back(IntegerType::get(mod->getContext(), 1));
 FuncTy_51_args.push_back(IntegerType::get(mod->getContext(), 1));
 FunctionType* FuncTy_51 = FunctionType::get(
-  /*Result=*/Type::getVoidTy(mod->getContext()),
-  /*Params=*/FuncTy_51_args,
-  /*isVarArg=*/false);
+ /*Result=*/Type::getVoidTy(mod->getContext()),
+ /*Params=*/FuncTy_51_args,
+ /*isVarArg=*/false);
 
 PointerType* PointerTy_50 = PointerType::get(FuncTy_51, 0);
 
@@ -481,9 +481,9 @@ FuncTy_53_args.push_back(PointerTy_25);
 FuncTy_53_args.push_back(IntegerType::get(mod->getContext(), 32));
 FuncTy_53_args.push_back(IntegerType::get(mod->getContext(), 32));
 FunctionType* FuncTy_53 = FunctionType::get(
-  /*Result=*/IntegerType::get(mod->getContext(), 32),
-  /*Params=*/FuncTy_53_args,
-  /*isVarArg=*/false);
+ /*Result=*/IntegerType::get(mod->getContext(), 32),
+ /*Params=*/FuncTy_53_args,
+ /*isVarArg=*/false);
 
 PointerType* PointerTy_52 = PointerType::get(FuncTy_53, 0);
 
@@ -491,177 +491,177 @@ PointerType* PointerTy_52 = PointerType::get(FuncTy_53, 0);
 // Function Declarations
 
 Function* func_llvm_frameaddress = Function::Create(
-  /*Type=*/FuncTy_3,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"llvm.frameaddress", mod); // (external, no body)
+ /*Type=*/FuncTy_3,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"llvm.frameaddress", mod); // (external, no body)
 func_llvm_frameaddress->setCallingConv(CallingConv::C);
 AttrListPtr func_llvm_frameaddress_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind | Attribute::ReadNone;
-  Attrs.push_back(PAWI);
-  func_llvm_frameaddress_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind | Attribute::ReadNone;
+ Attrs.push_back(PAWI);
+ func_llvm_frameaddress_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 func_llvm_frameaddress->setAttributes(func_llvm_frameaddress_PAL);
 
 Function* func_abort = Function::Create(
-  /*Type=*/FuncTy_28,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"abort", mod); // (external, no body)
+ /*Type=*/FuncTy_28,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"abort", mod); // (external, no body)
 func_abort->setCallingConv(CallingConv::C);
 AttrListPtr func_abort_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoReturn | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  func_abort_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoReturn | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ func_abort_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 func_abort->setAttributes(func_abort_PAL);
 
 Function* func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III = Function::Create(
-  /*Type=*/FuncTy_34,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III", mod); 
+ /*Type=*/FuncTy_34,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III", mod); 
 func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III->setCallingConv(CallingConv::C);
 AttrListPtr func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoInline;
-  Attrs.push_back(PAWI);
-  func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoInline;
+ Attrs.push_back(PAWI);
+ func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III->setAttributes(func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III_PAL);
 
 Function* func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II = Function::Create(
-  /*Type=*/FuncTy_37,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II", mod); 
+ /*Type=*/FuncTy_37,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II", mod); 
 func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II->setCallingConv(CallingConv::C);
 AttrListPtr func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoInline;
-  Attrs.push_back(PAWI);
-  func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoInline;
+ Attrs.push_back(PAWI);
+ func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II->setAttributes(func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II_PAL);
 
 Function* func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III = Function::Create(
-  /*Type=*/FuncTy_34,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III", mod); 
+ /*Type=*/FuncTy_34,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III", mod); 
 func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III->setCallingConv(CallingConv::C);
 AttrListPtr func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoInline;
-  Attrs.push_back(PAWI);
-  func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoInline;
+ Attrs.push_back(PAWI);
+ func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III->setAttributes(func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III_PAL);
 
 Function* func_llvm_memory_barrier = Function::Create(
-  /*Type=*/FuncTy_51,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"llvm.memory.barrier", mod); // (external, no body)
+ /*Type=*/FuncTy_51,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"llvm.memory.barrier", mod); // (external, no body)
 func_llvm_memory_barrier->setCallingConv(CallingConv::C);
 AttrListPtr func_llvm_memory_barrier_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  func_llvm_memory_barrier_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ func_llvm_memory_barrier_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 func_llvm_memory_barrier->setAttributes(func_llvm_memory_barrier_PAL);
 
 Function* func_llvm_atomic_cmp_swap_i32_p0i32 = Function::Create(
-  /*Type=*/FuncTy_53,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"llvm.atomic.cmp.swap.i32.p0i32", mod); // (external, no body)
+ /*Type=*/FuncTy_53,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"llvm.atomic.cmp.swap.i32.p0i32", mod); // (external, no body)
 func_llvm_atomic_cmp_swap_i32_p0i32->setCallingConv(CallingConv::C);
 AttrListPtr func_llvm_atomic_cmp_swap_i32_p0i32_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 1U; PAWI.Attrs = 0  | Attribute::NoCapture;
-  Attrs.push_back(PAWI);
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  func_llvm_atomic_cmp_swap_i32_p0i32_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 1U; PAWI.Attrs = 0  | Attribute::NoCapture;
+ Attrs.push_back(PAWI);
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ func_llvm_atomic_cmp_swap_i32_p0i32_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 func_llvm_atomic_cmp_swap_i32_p0i32->setAttributes(func_llvm_atomic_cmp_swap_i32_p0i32_PAL);
 
 Function* func__ZN3mvm6Thread5yieldEv = Function::Create(
-  /*Type=*/FuncTy_28,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"_ZN3mvm6Thread5yieldEv", mod); // (external, no body)
+ /*Type=*/FuncTy_28,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"_ZN3mvm6Thread5yieldEv", mod); // (external, no body)
 func__ZN3mvm6Thread5yieldEv->setCallingConv(CallingConv::C);
 AttrListPtr func__ZN3mvm6Thread5yieldEv_PAL;
 func__ZN3mvm6Thread5yieldEv->setAttributes(func__ZN3mvm6Thread5yieldEv_PAL);
 
 // Global Variable Declarations
 
-GlobalVariable* gvar_struct_finalObject87 = new GlobalVariable(/*Module=*/ *mod, 
+GlobalVariable* gvar_struct_finalObject67 = new GlobalVariable(/*Module=*/*mod, 
 /*Type=*/StructTy_40,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::ExternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"finalObject87");
+/*Name=*/"finalObject67");
 
-GlobalVariable* gvar_struct_finalObject39 = new GlobalVariable(/*Module=*/ *mod, 
+GlobalVariable* gvar_struct_finalObject2 = new GlobalVariable(/*Module=*/*mod, 
 /*Type=*/StructTy_44,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::ExternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"finalObject39");
+/*Name=*/"finalObject2");
 
-GlobalVariable* gvar_struct_finalObject64 = new GlobalVariable(/*Module=*/ *mod, 
+GlobalVariable* gvar_struct_finalObject32 = new GlobalVariable(/*Module=*/*mod, 
 /*Type=*/StructTy_46,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::ExternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"finalObject64");
+/*Name=*/"finalObject32");
 
-GlobalVariable* gvar_struct_org_mmtk_utility_DoublyLinkedList_static = new GlobalVariable(/*Module=*/ *mod, 
+GlobalVariable* gvar_struct_org_mmtk_utility_DoublyLinkedList_static = new GlobalVariable(/*Module=*/*mod, 
 /*Type=*/StructTy_49,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::ExternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
 /*Name=*/"org_mmtk_utility_DoublyLinkedList_static");
 
-GlobalVariable* gvar_struct_finalObject105 = new GlobalVariable(/*Module=*/ *mod, 
+GlobalVariable* gvar_struct_finalObject85 = new GlobalVariable(/*Module=*/*mod, 
 /*Type=*/StructTy_40,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::ExternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"finalObject105");
+/*Name=*/"finalObject85");
 
-GlobalVariable* gvar_struct_finalObject121 = new GlobalVariable(/*Module=*/ *mod, 
+GlobalVariable* gvar_struct_finalObject101 = new GlobalVariable(/*Module=*/*mod, 
 /*Type=*/StructTy_46,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::ExternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"finalObject121");
+/*Name=*/"finalObject101");
 
-GlobalVariable* gvar_struct_finalObject142 = new GlobalVariable(/*Module=*/ *mod, 
+GlobalVariable* gvar_struct_finalObject122 = new GlobalVariable(/*Module=*/*mod, 
 /*Type=*/StructTy_40,
 /*isConstant=*/false,
 /*Linkage=*/GlobalValue::ExternalLinkage,
 /*Initializer=*/0, // has initializer, specified below
-/*Name=*/"finalObject142");
+/*Name=*/"finalObject122");
 
 // Constant Definitions
 ConstantInt* const_int32_54 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("3"), 10));
@@ -689,64 +689,65 @@ ConstantInt* const_int32_75 = ConstantInt::get(mod->getContext(), APInt(32, Stri
 ConstantInt* const_int32_76 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("26"), 10));
 ConstantInt* const_int32_77 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("1"), 10));
 ConstantPointerNull* const_ptr_78 = ConstantPointerNull::get(PointerTy_31);
-std::vector<Constant*> const_ptr_79_indices;
-const_ptr_79_indices.push_back(const_int32_56);
-const_ptr_79_indices.push_back(const_int32_58);
-Constant* const_ptr_79 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject87, &const_ptr_79_indices[0], const_ptr_79_indices.size());
-ConstantInt* const_int8_80 = ConstantInt::get(mod->getContext(), APInt(8, StringRef("-4"), 10));
-std::vector<Constant*> const_ptr_81_indices;
-const_ptr_81_indices.push_back(const_int32_56);
-const_ptr_81_indices.push_back(const_int32_77);
-Constant* const_ptr_81 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject39, &const_ptr_81_indices[0], const_ptr_81_indices.size());
+ConstantInt* const_int32_79 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("-16"), 10));
+std::vector<Constant*> const_ptr_80_indices;
+const_ptr_80_indices.push_back(const_int32_56);
+const_ptr_80_indices.push_back(const_int32_58);
+Constant* const_ptr_80 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject67, &const_ptr_80_indices[0], const_ptr_80_indices.size());
+ConstantInt* const_int32_81 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("-2"), 10));
 std::vector<Constant*> const_ptr_82_indices;
 const_ptr_82_indices.push_back(const_int32_56);
 const_ptr_82_indices.push_back(const_int32_77);
-Constant* const_ptr_82 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject64, &const_ptr_82_indices[0], const_ptr_82_indices.size());
+Constant* const_ptr_82 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject2, &const_ptr_82_indices[0], const_ptr_82_indices.size());
 std::vector<Constant*> const_ptr_83_indices;
 const_ptr_83_indices.push_back(const_int32_56);
-const_ptr_83_indices.push_back(const_int32_54);
-Constant* const_ptr_83 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject64, &const_ptr_83_indices[0], const_ptr_83_indices.size());
-ConstantInt* const_int32_84 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("-32"), 10));
-ConstantPointerNull* const_ptr_85 = ConstantPointerNull::get(PointerTy_0);
-std::vector<Constant*> const_ptr_86_indices;
-const_ptr_86_indices.push_back(const_int32_56);
-const_ptr_86_indices.push_back(const_int32_58);
-Constant* const_ptr_86 = ConstantExpr::getGetElementPtr(gvar_struct_org_mmtk_utility_DoublyLinkedList_static, &const_ptr_86_indices[0], const_ptr_86_indices.size());
-ConstantPointerNull* const_ptr_87 = ConstantPointerNull::get(PointerTy_30);
-ConstantInt* const_int32_88 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("1000"), 10));
-ConstantInt* const_int1_89 = ConstantInt::get(mod->getContext(), APInt(1, StringRef("-1"), 10));
-std::vector<Constant*> const_ptr_90_indices;
-const_ptr_90_indices.push_back(const_int32_56);
-const_ptr_90_indices.push_back(const_int32_58);
-Constant* const_ptr_90 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject105, &const_ptr_90_indices[0], const_ptr_90_indices.size());
+const_ptr_83_indices.push_back(const_int32_77);
+Constant* const_ptr_83 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject32, &const_ptr_83_indices[0], const_ptr_83_indices.size());
+std::vector<Constant*> const_ptr_84_indices;
+const_ptr_84_indices.push_back(const_int32_56);
+const_ptr_84_indices.push_back(const_int32_54);
+Constant* const_ptr_84 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject32, &const_ptr_84_indices[0], const_ptr_84_indices.size());
+ConstantInt* const_int32_85 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("-32"), 10));
+ConstantPointerNull* const_ptr_86 = ConstantPointerNull::get(PointerTy_0);
+std::vector<Constant*> const_ptr_87_indices;
+const_ptr_87_indices.push_back(const_int32_56);
+const_ptr_87_indices.push_back(const_int32_58);
+Constant* const_ptr_87 = ConstantExpr::getGetElementPtr(gvar_struct_org_mmtk_utility_DoublyLinkedList_static, &const_ptr_87_indices[0], const_ptr_87_indices.size());
+ConstantPointerNull* const_ptr_88 = ConstantPointerNull::get(PointerTy_30);
+ConstantInt* const_int32_89 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("1000"), 10));
+ConstantInt* const_int1_90 = ConstantInt::get(mod->getContext(), APInt(1, StringRef("-1"), 10));
 std::vector<Constant*> const_ptr_91_indices;
 const_ptr_91_indices.push_back(const_int32_56);
-const_ptr_91_indices.push_back(const_int32_77);
-Constant* const_ptr_91 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject121, &const_ptr_91_indices[0], const_ptr_91_indices.size());
+const_ptr_91_indices.push_back(const_int32_58);
+Constant* const_ptr_91 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject85, &const_ptr_91_indices[0], const_ptr_91_indices.size());
 std::vector<Constant*> const_ptr_92_indices;
 const_ptr_92_indices.push_back(const_int32_56);
-const_ptr_92_indices.push_back(const_int32_54);
-Constant* const_ptr_92 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject121, &const_ptr_92_indices[0], const_ptr_92_indices.size());
+const_ptr_92_indices.push_back(const_int32_77);
+Constant* const_ptr_92 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject101, &const_ptr_92_indices[0], const_ptr_92_indices.size());
 std::vector<Constant*> const_ptr_93_indices;
 const_ptr_93_indices.push_back(const_int32_56);
-const_ptr_93_indices.push_back(const_int32_58);
-Constant* const_ptr_93 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject142, &const_ptr_93_indices[0], const_ptr_93_indices.size());
+const_ptr_93_indices.push_back(const_int32_54);
+Constant* const_ptr_93 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject101, &const_ptr_93_indices[0], const_ptr_93_indices.size());
+std::vector<Constant*> const_ptr_94_indices;
+const_ptr_94_indices.push_back(const_int32_56);
+const_ptr_94_indices.push_back(const_int32_58);
+Constant* const_ptr_94 = ConstantExpr::getGetElementPtr(gvar_struct_finalObject122, &const_ptr_94_indices[0], const_ptr_94_indices.size());
 
 // Global Variable Definitions
 
 Function* func_gcmalloc = Function::Create(
-  /*Type=*/FuncTy_1,
-  /*Linkage=*/GlobalValue::ExternalLinkage,
-  /*Name=*/"gcmalloc", mod); 
+ /*Type=*/FuncTy_1,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"gcmalloc", mod); 
 func_gcmalloc->setCallingConv(CallingConv::C);
 AttrListPtr func_gcmalloc_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  func_gcmalloc_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ func_gcmalloc_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 func_gcmalloc->setAttributes(func_gcmalloc_PAL);
 Function::arg_iterator args = func_gcmalloc->arg_begin();
@@ -835,1057 +836,1076 @@ BasicBlock* label_false_IFNE_i_i = BasicBlock::Create(mod->getContext(), "false 
 BasicBlock* label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit = BasicBlock::Create(mod->getContext(), "JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2.exit",func_gcmalloc,0);
 
 // Block entry (label_entry)
-BinaryOperator* int32_94 = BinaryOperator::Create(Instruction::Add, int32_sz, const_int32_54, "", label_entry);
-BinaryOperator* int32_95 = BinaryOperator::Create(Instruction::And, int32_94, const_int32_55, "", label_entry);
-CallInst* ptr_96 = CallInst::Create(func_llvm_frameaddress, const_int32_56, "", label_entry);
-ptr_96->setCallingConv(CallingConv::C);
-ptr_96->setTailCall(true);AttrListPtr ptr_96_PAL;
+BinaryOperator* int32_95 = BinaryOperator::Create(Instruction::Add, int32_sz, const_int32_54, "", label_entry);
+BinaryOperator* int32_96 = BinaryOperator::Create(Instruction::And, int32_95, const_int32_55, "", label_entry);
+CallInst* ptr_97 = CallInst::Create(func_llvm_frameaddress, const_int32_56, "", label_entry);
+ptr_97->setCallingConv(CallingConv::C);
+ptr_97->setTailCall(true);
+AttrListPtr ptr_97_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  ptr_96_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_97_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-ptr_96->setAttributes(ptr_96_PAL);
+ptr_97->setAttributes(ptr_97_PAL);
 
-CastInst* int32_97 = new PtrToIntInst(ptr_96, IntegerType::get(mod->getContext(), 32), "", label_entry);
-BinaryOperator* int32_98 = BinaryOperator::Create(Instruction::And, int32_97, const_int32_57, "", label_entry);
-CastInst* ptr_99 = new IntToPtrInst(int32_98, PointerTy_4, "", label_entry);
-std::vector<Value*> ptr_100_indices;
-ptr_100_indices.push_back(const_int32_56);
-ptr_100_indices.push_back(const_int32_58);
-Instruction* ptr_100 = GetElementPtrInst::Create(ptr_99, ptr_100_indices.begin(), ptr_100_indices.end(), "", label_entry);
-LoadInst* int32_101 = new LoadInst(ptr_100, "", false, label_entry);
-CastInst* ptr_102 = new IntToPtrInst(int32_101, PointerTy_26, "", label_entry);
-ICmpInst* int1_103 = new ICmpInst(*label_entry, ICmpInst::ICMP_SLT, int32_95, const_int32_59, "");
-SelectInst* int32_storemerge_i_i = SelectInst::Create(int1_103, const_int32_56, const_int32_60, "storemerge.i.i", label_entry);
-SwitchInst* void_104 = SwitchInst::Create(int32_storemerge_i_i, label_tableswitch_i_i1_i, 7, label_entry);
-void_104->addCase(const_int32_56, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
-void_104->addCase(const_int32_58, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
-void_104->addCase(const_int32_54, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-void_104->addCase(const_int32_60, label_tableswitch3_i_i4_i);
-void_104->addCase(const_int32_61, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
-void_104->addCase(const_int32_62, label_tableswitch5_i_i6_i);
+CastInst* int32_98 = new PtrToIntInst(ptr_97, IntegerType::get(mod->getContext(), 32), "", label_entry);
+BinaryOperator* int32_99 = BinaryOperator::Create(Instruction::And, int32_98, const_int32_57, "", label_entry);
+CastInst* ptr_100 = new IntToPtrInst(int32_99, PointerTy_4, "", label_entry);
+std::vector<Value*> ptr_101_indices;
+ptr_101_indices.push_back(const_int32_56);
+ptr_101_indices.push_back(const_int32_58);
+Instruction* ptr_101 = GetElementPtrInst::Create(ptr_100, ptr_101_indices.begin(), ptr_101_indices.end(), "", label_entry);
+LoadInst* int32_102 = new LoadInst(ptr_101, "", false, label_entry);
+CastInst* ptr_103 = new IntToPtrInst(int32_102, PointerTy_26, "", label_entry);
+ICmpInst* int1_104 = new ICmpInst(*label_entry, ICmpInst::ICMP_SLT, int32_96, const_int32_59, "");
+SelectInst* int32_storemerge_i_i = SelectInst::Create(int1_104, const_int32_56, const_int32_60, "storemerge.i.i", label_entry);
+SwitchInst* void_105 = SwitchInst::Create(int32_storemerge_i_i, label_tableswitch_i_i1_i, 7, label_entry);
+void_105->addCase(const_int32_56, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
+void_105->addCase(const_int32_58, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
+void_105->addCase(const_int32_54, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+void_105->addCase(const_int32_60, label_tableswitch3_i_i4_i);
+void_105->addCase(const_int32_61, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
+void_105->addCase(const_int32_62, label_tableswitch5_i_i6_i);
 
 
 // Block tableswitch.i.i1.i (label_tableswitch_i_i1_i)
-CallInst* void_105 = CallInst::Create(func_abort, "", label_tableswitch_i_i1_i);
-void_105->setCallingConv(CallingConv::C);
-void_105->setTailCall(true);AttrListPtr void_105_PAL;
+CallInst* void_106 = CallInst::Create(func_abort, "", label_tableswitch_i_i1_i);
+void_106->setCallingConv(CallingConv::C);
+void_106->setTailCall(true);
+AttrListPtr void_106_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoReturn | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_105_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoReturn | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_106_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-void_105->setAttributes(void_105_PAL);
+void_106->setAttributes(void_106_PAL);
 
 new UnreachableInst(mod->getContext(), label_tableswitch_i_i1_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II.exit.i.i.i.i (label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i)
-GetElementPtrInst* ptr_107 = GetElementPtrInst::Create(ptr_102, const_int32_60, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
-CastInst* ptr_108 = new BitCastInst(ptr_107, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
-LoadInst* ptr_109 = new LoadInst(ptr_108, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
-BinaryOperator* int32_110 = BinaryOperator::Create(Instruction::Add, int32_95, const_int32_63, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
-ICmpInst* int1_111 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i, ICmpInst::ICMP_SGT, int32_110, const_int32_64, "");
-BranchInst::Create(label_GOTO_or_IF_4_i_i_i_i_i_i, label_false_IF_ICMPGT16_i_i_i_i_i_i, int1_111, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
+GetElementPtrInst* ptr_108 = GetElementPtrInst::Create(ptr_103, const_int32_60, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
+CastInst* ptr_109 = new BitCastInst(ptr_108, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
+LoadInst* ptr_110 = new LoadInst(ptr_109, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
+BinaryOperator* int32_111 = BinaryOperator::Create(Instruction::Add, int32_96, const_int32_63, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
+ICmpInst* int1_112 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i, ICmpInst::ICMP_SGT, int32_111, const_int32_64, "");
+BranchInst::Create(label_GOTO_or_IF_4_i_i_i_i_i_i, label_false_IF_ICMPGT16_i_i_i_i_i_i, int1_112, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i_i);
 
 // Block GOTO or IF*4.i.i.i.i.i.i (label_GOTO_or_IF_4_i_i_i_i_i_i)
-ICmpInst* int1_113 = new ICmpInst(*label_GOTO_or_IF_4_i_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_110, const_int32_65, "");
-BranchInst::Create(label_GOTO_or_IF_6_i_i_i_i_i_i, label_false_IF_ICMPGT17_i_i_i_i_i_i, int1_113, label_GOTO_or_IF_4_i_i_i_i_i_i);
+ICmpInst* int1_114 = new ICmpInst(*label_GOTO_or_IF_4_i_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_111, const_int32_65, "");
+BranchInst::Create(label_GOTO_or_IF_6_i_i_i_i_i_i, label_false_IF_ICMPGT17_i_i_i_i_i_i, int1_114, label_GOTO_or_IF_4_i_i_i_i_i_i);
 
 // Block GOTO or IF*6.i.i.i.i.i.i (label_GOTO_or_IF_6_i_i_i_i_i_i)
-ICmpInst* int1_115 = new ICmpInst(*label_GOTO_or_IF_6_i_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_110, const_int32_66, "");
-BranchInst::Create(label_GOTO_or_IF_7_i_i1_i_i_i_i, label_false_IF_ICMPGT18_i_i_i_i_i_i, int1_115, label_GOTO_or_IF_6_i_i_i_i_i_i);
+ICmpInst* int1_116 = new ICmpInst(*label_GOTO_or_IF_6_i_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_111, const_int32_66, "");
+BranchInst::Create(label_GOTO_or_IF_7_i_i1_i_i_i_i, label_false_IF_ICMPGT18_i_i_i_i_i_i, int1_116, label_GOTO_or_IF_6_i_i_i_i_i_i);
 
 // Block GOTO or IF*7.i.i1.i.i.i.i (label_GOTO_or_IF_7_i_i1_i_i_i_i)
-ICmpInst* int1_117 = new ICmpInst(*label_GOTO_or_IF_7_i_i1_i_i_i_i, ICmpInst::ICMP_SGT, int32_110, const_int32_67, "");
-BranchInst::Create(label_GOTO_or_IF_8_i_i_i_i_i_i, label_false_IF_ICMPGT19_i_i_i_i_i_i, int1_117, label_GOTO_or_IF_7_i_i1_i_i_i_i);
+ICmpInst* int1_118 = new ICmpInst(*label_GOTO_or_IF_7_i_i1_i_i_i_i, ICmpInst::ICMP_SGT, int32_111, const_int32_67, "");
+BranchInst::Create(label_GOTO_or_IF_8_i_i_i_i_i_i, label_false_IF_ICMPGT19_i_i_i_i_i_i, int1_118, label_GOTO_or_IF_7_i_i1_i_i_i_i);
 
 // Block GOTO or IF*8.i.i.i.i.i.i (label_GOTO_or_IF_8_i_i_i_i_i_i)
-ICmpInst* int1_119 = new ICmpInst(*label_GOTO_or_IF_8_i_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_110, const_int32_68, "");
-BranchInst::Create(label_GOTO_or_IF_9_i_i_i_i_i_i, label_false_IF_ICMPGT20_i_i_i_i_i_i, int1_119, label_GOTO_or_IF_8_i_i_i_i_i_i);
+ICmpInst* int1_120 = new ICmpInst(*label_GOTO_or_IF_8_i_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_111, const_int32_68, "");
+BranchInst::Create(label_GOTO_or_IF_9_i_i_i_i_i_i, label_false_IF_ICMPGT20_i_i_i_i_i_i, int1_120, label_GOTO_or_IF_8_i_i_i_i_i_i);
 
 // Block GOTO or IF*9.i.i.i.i.i.i (label_GOTO_or_IF_9_i_i_i_i_i_i)
-BinaryOperator* int32_121 = BinaryOperator::Create(Instruction::AShr, int32_110, const_int32_69, "", label_GOTO_or_IF_9_i_i_i_i_i_i);
-BinaryOperator* int32_122 = BinaryOperator::Create(Instruction::Add, int32_121, const_int32_70, "", label_GOTO_or_IF_9_i_i_i_i_i_i);
+BinaryOperator* int32_122 = BinaryOperator::Create(Instruction::AShr, int32_111, const_int32_69, "", label_GOTO_or_IF_9_i_i_i_i_i_i);
+BinaryOperator* int32_123 = BinaryOperator::Create(Instruction::Add, int32_122, const_int32_70, "", label_GOTO_or_IF_9_i_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i, label_GOTO_or_IF_9_i_i_i_i_i_i);
 
 // Block false IF_ICMPGT16.i.i.i.i.i.i (label_false_IF_ICMPGT16_i_i_i_i_i_i)
-BinaryOperator* int32_124 = BinaryOperator::Create(Instruction::AShr, int32_110, const_int32_58, "", label_false_IF_ICMPGT16_i_i_i_i_i_i);
+BinaryOperator* int32_125 = BinaryOperator::Create(Instruction::AShr, int32_111, const_int32_58, "", label_false_IF_ICMPGT16_i_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i, label_false_IF_ICMPGT16_i_i_i_i_i_i);
 
 // Block false IF_ICMPGT17.i.i.i.i.i.i (label_false_IF_ICMPGT17_i_i_i_i_i_i)
-BinaryOperator* int32_126 = BinaryOperator::Create(Instruction::AShr, int32_110, const_int32_60, "", label_false_IF_ICMPGT17_i_i_i_i_i_i);
-BinaryOperator* int32_127 = BinaryOperator::Create(Instruction::Add, int32_126, const_int32_71, "", label_false_IF_ICMPGT17_i_i_i_i_i_i);
+BinaryOperator* int32_127 = BinaryOperator::Create(Instruction::AShr, int32_111, const_int32_60, "", label_false_IF_ICMPGT17_i_i_i_i_i_i);
+BinaryOperator* int32_128 = BinaryOperator::Create(Instruction::Add, int32_127, const_int32_71, "", label_false_IF_ICMPGT17_i_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i, label_false_IF_ICMPGT17_i_i_i_i_i_i);
 
 // Block false IF_ICMPGT18.i.i.i.i.i.i (label_false_IF_ICMPGT18_i_i_i_i_i_i)
-BinaryOperator* int32_129 = BinaryOperator::Create(Instruction::AShr, int32_110, const_int32_72, "", label_false_IF_ICMPGT18_i_i_i_i_i_i);
-BinaryOperator* int32_130 = BinaryOperator::Create(Instruction::Add, int32_129, const_int32_73, "", label_false_IF_ICMPGT18_i_i_i_i_i_i);
+BinaryOperator* int32_130 = BinaryOperator::Create(Instruction::AShr, int32_111, const_int32_72, "", label_false_IF_ICMPGT18_i_i_i_i_i_i);
+BinaryOperator* int32_131 = BinaryOperator::Create(Instruction::Add, int32_130, const_int32_73, "", label_false_IF_ICMPGT18_i_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i, label_false_IF_ICMPGT18_i_i_i_i_i_i);
 
 // Block false IF_ICMPGT19.i.i.i.i.i.i (label_false_IF_ICMPGT19_i_i_i_i_i_i)
-BinaryOperator* int32_132 = BinaryOperator::Create(Instruction::AShr, int32_110, const_int32_74, "", label_false_IF_ICMPGT19_i_i_i_i_i_i);
-BinaryOperator* int32_133 = BinaryOperator::Create(Instruction::Add, int32_132, const_int32_75, "", label_false_IF_ICMPGT19_i_i_i_i_i_i);
+BinaryOperator* int32_133 = BinaryOperator::Create(Instruction::AShr, int32_111, const_int32_74, "", label_false_IF_ICMPGT19_i_i_i_i_i_i);
+BinaryOperator* int32_134 = BinaryOperator::Create(Instruction::Add, int32_133, const_int32_75, "", label_false_IF_ICMPGT19_i_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i, label_false_IF_ICMPGT19_i_i_i_i_i_i);
 
 // Block false IF_ICMPGT20.i.i.i.i.i.i (label_false_IF_ICMPGT20_i_i_i_i_i_i)
-BinaryOperator* int32_135 = BinaryOperator::Create(Instruction::AShr, int32_110, const_int32_62, "", label_false_IF_ICMPGT20_i_i_i_i_i_i);
-BinaryOperator* int32_136 = BinaryOperator::Create(Instruction::Add, int32_135, const_int32_76, "", label_false_IF_ICMPGT20_i_i_i_i_i_i);
+BinaryOperator* int32_136 = BinaryOperator::Create(Instruction::AShr, int32_111, const_int32_62, "", label_false_IF_ICMPGT20_i_i_i_i_i_i);
+BinaryOperator* int32_137 = BinaryOperator::Create(Instruction::Add, int32_136, const_int32_76, "", label_false_IF_ICMPGT20_i_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i, label_false_IF_ICMPGT20_i_i_i_i_i_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I.exit.i.i.i.i (label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i)
-PHINode* int32_138 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
-int32_138->reserveOperandSpace(6);
-int32_138->addIncoming(int32_124, label_false_IF_ICMPGT16_i_i_i_i_i_i);
-int32_138->addIncoming(int32_127, label_false_IF_ICMPGT17_i_i_i_i_i_i);
-int32_138->addIncoming(int32_130, label_false_IF_ICMPGT18_i_i_i_i_i_i);
-int32_138->addIncoming(int32_133, label_false_IF_ICMPGT19_i_i_i_i_i_i);
-int32_138->addIncoming(int32_136, label_false_IF_ICMPGT20_i_i_i_i_i_i);
-int32_138->addIncoming(int32_122, label_GOTO_or_IF_9_i_i_i_i_i_i);
+PHINode* int32_139 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+int32_139->reserveOperandSpace(6);
+int32_139->addIncoming(int32_125, label_false_IF_ICMPGT16_i_i_i_i_i_i);
+int32_139->addIncoming(int32_128, label_false_IF_ICMPGT17_i_i_i_i_i_i);
+int32_139->addIncoming(int32_131, label_false_IF_ICMPGT18_i_i_i_i_i_i);
+int32_139->addIncoming(int32_134, label_false_IF_ICMPGT19_i_i_i_i_i_i);
+int32_139->addIncoming(int32_137, label_false_IF_ICMPGT20_i_i_i_i_i_i);
+int32_139->addIncoming(int32_123, label_GOTO_or_IF_9_i_i_i_i_i_i);
 
-std::vector<Value*> ptr_139_indices;
-ptr_139_indices.push_back(const_int32_77);
-ptr_139_indices.push_back(const_int32_77);
-Instruction* ptr_139 = GetElementPtrInst::Create(ptr_109, ptr_139_indices.begin(), ptr_139_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
-LoadInst* ptr_140 = new LoadInst(ptr_139, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
-BinaryOperator* int32_141 = BinaryOperator::Create(Instruction::Add, int32_138, const_int32_77, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
-CastInst* ptr_142 = new BitCastInst(ptr_140, PointerTy_25, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
-GetElementPtrInst* ptr_143 = GetElementPtrInst::Create(ptr_142, int32_141, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
-LoadInst* int32_144 = new LoadInst(ptr_143, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
-CastInst* ptr_145 = new IntToPtrInst(int32_144, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
-ICmpInst* int1_146 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i, ICmpInst::ICMP_EQ, int32_144, const_int32_56, "");
-BranchInst::Create(label_GOTO_or_IF__i_i_i_i, label_false_IFNE_i_i_i_i, int1_146, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+std::vector<Value*> ptr_140_indices;
+ptr_140_indices.push_back(const_int32_77);
+ptr_140_indices.push_back(const_int32_77);
+Instruction* ptr_140 = GetElementPtrInst::Create(ptr_110, ptr_140_indices.begin(), ptr_140_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+LoadInst* ptr_141 = new LoadInst(ptr_140, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+BinaryOperator* int32_142 = BinaryOperator::Create(Instruction::Add, int32_139, const_int32_77, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+CastInst* ptr_143 = new BitCastInst(ptr_141, PointerTy_25, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+GetElementPtrInst* ptr_144 = GetElementPtrInst::Create(ptr_143, int32_142, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+LoadInst* int32_145 = new LoadInst(ptr_144, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+CastInst* ptr_146 = new IntToPtrInst(int32_145, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
+ICmpInst* int1_147 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i, ICmpInst::ICMP_EQ, int32_145, const_int32_56, "");
+BranchInst::Create(label_GOTO_or_IF__i_i_i_i, label_false_IFNE_i_i_i_i, int1_147, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i_i);
 
 // Block GOTO or IF*.i.i.i.i (label_GOTO_or_IF__i_i_i_i)
-std::vector<Value*> ptr_148_params;
-ptr_148_params.push_back(ptr_109);
-ptr_148_params.push_back(int32_95);
-ptr_148_params.push_back(const_int32_56);
-ptr_148_params.push_back(const_int32_56);
-CallInst* ptr_148 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III, ptr_148_params.begin(), ptr_148_params.end(), "", label_GOTO_or_IF__i_i_i_i);
-ptr_148->setCallingConv(CallingConv::C);
-ptr_148->setTailCall(true);AttrListPtr ptr_148_PAL;
+std::vector<Value*> ptr_149_params;
+ptr_149_params.push_back(ptr_110);
+ptr_149_params.push_back(int32_96);
+ptr_149_params.push_back(const_int32_56);
+ptr_149_params.push_back(const_int32_56);
+CallInst* ptr_149 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III, ptr_149_params.begin(), ptr_149_params.end(), "", label_GOTO_or_IF__i_i_i_i);
+ptr_149->setCallingConv(CallingConv::C);
+ptr_149->setTailCall(true);
+AttrListPtr ptr_149_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  ptr_148_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_149_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-ptr_148->setAttributes(ptr_148_PAL);
+ptr_149->setAttributes(ptr_149_PAL);
 
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_GOTO_or_IF__i_i_i_i);
 
 // Block false IFNE.i.i.i.i (label_false_IFNE_i_i_i_i)
-CastInst* ptr_150 = new IntToPtrInst(int32_144, PointerTy_29, "", label_false_IFNE_i_i_i_i);
-LoadInst* ptr_151 = new LoadInst(ptr_150, "", false, label_false_IFNE_i_i_i_i);
-CastInst* int32_152 = new PtrToIntInst(ptr_151, IntegerType::get(mod->getContext(), 32), "", label_false_IFNE_i_i_i_i);
- new StoreInst(int32_152, ptr_143, false, label_false_IFNE_i_i_i_i);
-std::vector<Value*> ptr_154_indices;
-ptr_154_indices.push_back(const_int32_56);
-ptr_154_indices.push_back(const_int32_56);
-Instruction* ptr_154 = GetElementPtrInst::Create(ptr_145, ptr_154_indices.begin(), ptr_154_indices.end(), "", label_false_IFNE_i_i_i_i);
- new StoreInst(const_ptr_78, ptr_154, false, label_false_IFNE_i_i_i_i);
+CastInst* ptr_151 = new IntToPtrInst(int32_145, PointerTy_29, "", label_false_IFNE_i_i_i_i);
+LoadInst* ptr_152 = new LoadInst(ptr_151, "", false, label_false_IFNE_i_i_i_i);
+CastInst* int32_153 = new PtrToIntInst(ptr_152, IntegerType::get(mod->getContext(), 32), "", label_false_IFNE_i_i_i_i);
+ new StoreInst(int32_153, ptr_144, false, label_false_IFNE_i_i_i_i);
+std::vector<Value*> ptr_155_indices;
+ptr_155_indices.push_back(const_int32_56);
+ptr_155_indices.push_back(const_int32_56);
+Instruction* ptr_155 = GetElementPtrInst::Create(ptr_146, ptr_155_indices.begin(), ptr_155_indices.end(), "", label_false_IFNE_i_i_i_i);
+ new StoreInst(const_ptr_78, ptr_155, false, label_false_IFNE_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_false_IFNE_i_i_i_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II.exit.i.i.i.i (label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i)
-GetElementPtrInst* ptr_157 = GetElementPtrInst::Create(ptr_102, const_int32_58, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-CastInst* ptr_158 = new BitCastInst(ptr_157, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-LoadInst* ptr_159 = new LoadInst(ptr_158, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-GetElementPtrInst* ptr_160 = GetElementPtrInst::Create(ptr_159, const_int32_77, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-CastInst* ptr_161 = new BitCastInst(ptr_160, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-LoadInst* ptr_162 = new LoadInst(ptr_161, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-CastInst* int32_163 = new PtrToIntInst(ptr_162, IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-BinaryOperator* int32_164 = BinaryOperator::Create(Instruction::Add, int32_163, int32_95, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-CastInst* ptr_165 = new IntToPtrInst(int32_164, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-std::vector<Value*> ptr_166_indices;
-ptr_166_indices.push_back(const_int32_77);
-ptr_166_indices.push_back(const_int32_77);
-Instruction* ptr_166 = GetElementPtrInst::Create(ptr_159, ptr_166_indices.begin(), ptr_166_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-LoadInst* ptr_167 = new LoadInst(ptr_166, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-CastInst* ptr_168 = new BitCastInst(ptr_167, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
-ICmpInst* int1_169 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i, ICmpInst::ICMP_UGT, ptr_165, ptr_168, "");
-BranchInst::Create(label_false_IFEQ_i_i_i_i, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i, int1_169, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+GetElementPtrInst* ptr_158 = GetElementPtrInst::Create(ptr_103, const_int32_58, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+CastInst* ptr_159 = new BitCastInst(ptr_158, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+LoadInst* ptr_160 = new LoadInst(ptr_159, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+GetElementPtrInst* ptr_161 = GetElementPtrInst::Create(ptr_160, const_int32_77, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+CastInst* ptr_162 = new BitCastInst(ptr_161, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+LoadInst* ptr_163 = new LoadInst(ptr_162, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+CastInst* int32_164 = new PtrToIntInst(ptr_163, IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+BinaryOperator* int32_165 = BinaryOperator::Create(Instruction::Add, int32_164, int32_96, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+CastInst* ptr_166 = new IntToPtrInst(int32_165, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+std::vector<Value*> ptr_167_indices;
+ptr_167_indices.push_back(const_int32_77);
+ptr_167_indices.push_back(const_int32_77);
+Instruction* ptr_167 = GetElementPtrInst::Create(ptr_160, ptr_167_indices.begin(), ptr_167_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+LoadInst* ptr_168 = new LoadInst(ptr_167, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+CastInst* ptr_169 = new BitCastInst(ptr_168, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
+ICmpInst* int1_170 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i, ICmpInst::ICMP_UGT, ptr_166, ptr_169, "");
+BranchInst::Create(label_false_IFEQ_i_i_i_i, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i, int1_170, label_JnJVM_org_mmtk_utility_alloc_Allocator_alignAllocationNoFill__Lorg_vmmagic_unboxed_Address_2II_exit_i_i_i_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2.exit.i.i.i.i (label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i)
-std::vector<Value*> ptr_171_indices;
-ptr_171_indices.push_back(const_int32_77);
-ptr_171_indices.push_back(const_int32_56);
-Instruction* ptr_171 = GetElementPtrInst::Create(ptr_159, ptr_171_indices.begin(), ptr_171_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
-CastInst* ptr__c_i_i_i_i = new IntToPtrInst(int32_164, PointerTy_31, ".c.i.i.i.i", label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
- new StoreInst(ptr__c_i_i_i_i, ptr_171, false, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
+std::vector<Value*> ptr_172_indices;
+ptr_172_indices.push_back(const_int32_77);
+ptr_172_indices.push_back(const_int32_56);
+Instruction* ptr_172 = GetElementPtrInst::Create(ptr_160, ptr_172_indices.begin(), ptr_172_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
+CastInst* ptr__c_i_i_i_i = new IntToPtrInst(int32_165, PointerTy_31, ".c.i.i.i.i", label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
+ new StoreInst(ptr__c_i_i_i_i, ptr_172, false, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
 
 // Block false IFEQ.i.i.i.i (label_false_IFEQ_i_i_i_i)
-std::vector<Value*> ptr_174_params;
-ptr_174_params.push_back(ptr_159);
-ptr_174_params.push_back(ptr_162);
-ptr_174_params.push_back(ptr_165);
-ptr_174_params.push_back(const_int32_56);
-ptr_174_params.push_back(const_int32_56);
-CallInst* ptr_174 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II, ptr_174_params.begin(), ptr_174_params.end(), "", label_false_IFEQ_i_i_i_i);
-ptr_174->setCallingConv(CallingConv::C);
-ptr_174->setTailCall(true);AttrListPtr ptr_174_PAL;
+std::vector<Value*> ptr_175_params;
+ptr_175_params.push_back(ptr_160);
+ptr_175_params.push_back(ptr_163);
+ptr_175_params.push_back(ptr_166);
+ptr_175_params.push_back(const_int32_56);
+ptr_175_params.push_back(const_int32_56);
+CallInst* ptr_175 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II, ptr_175_params.begin(), ptr_175_params.end(), "", label_false_IFEQ_i_i_i_i);
+ptr_175->setCallingConv(CallingConv::C);
+ptr_175->setTailCall(true);
+AttrListPtr ptr_175_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  ptr_174_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_175_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-ptr_174->setAttributes(ptr_174_PAL);
+ptr_175->setAttributes(ptr_175_PAL);
 
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_false_IFEQ_i_i_i_i);
 
 // Block tableswitch3.i.i4.i (label_tableswitch3_i_i4_i)
-std::vector<Value*> ptr_176_indices;
-ptr_176_indices.push_back(const_int32_58);
-ptr_176_indices.push_back(const_int32_77);
-Instruction* ptr_176 = GetElementPtrInst::Create(ptr_102, ptr_176_indices.begin(), ptr_176_indices.end(), "", label_tableswitch3_i_i4_i);
-CastInst* ptr_177 = new BitCastInst(ptr_176, PointerTy_32, "", label_tableswitch3_i_i4_i);
-LoadInst* ptr_178 = new LoadInst(ptr_177, "", false, label_tableswitch3_i_i4_i);
-CastInst* ptr_179 = new BitCastInst(ptr_178, PointerTy_30, "", label_tableswitch3_i_i4_i);
-std::vector<Value*> ptr_180_params;
-ptr_180_params.push_back(ptr_179);
-ptr_180_params.push_back(int32_95);
-ptr_180_params.push_back(const_int32_56);
-ptr_180_params.push_back(const_int32_56);
-CallInst* ptr_180 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III, ptr_180_params.begin(), ptr_180_params.end(), "", label_tableswitch3_i_i4_i);
-ptr_180->setCallingConv(CallingConv::C);
-ptr_180->setTailCall(true);AttrListPtr ptr_180_PAL;
+std::vector<Value*> ptr_177_indices;
+ptr_177_indices.push_back(const_int32_58);
+ptr_177_indices.push_back(const_int32_77);
+Instruction* ptr_177 = GetElementPtrInst::Create(ptr_103, ptr_177_indices.begin(), ptr_177_indices.end(), "", label_tableswitch3_i_i4_i);
+CastInst* ptr_178 = new BitCastInst(ptr_177, PointerTy_32, "", label_tableswitch3_i_i4_i);
+LoadInst* ptr_179 = new LoadInst(ptr_178, "", false, label_tableswitch3_i_i4_i);
+CastInst* ptr_180 = new BitCastInst(ptr_179, PointerTy_30, "", label_tableswitch3_i_i4_i);
+std::vector<Value*> ptr_181_params;
+ptr_181_params.push_back(ptr_180);
+ptr_181_params.push_back(int32_96);
+ptr_181_params.push_back(const_int32_56);
+ptr_181_params.push_back(const_int32_56);
+CallInst* ptr_181 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III, ptr_181_params.begin(), ptr_181_params.end(), "", label_tableswitch3_i_i4_i);
+ptr_181->setCallingConv(CallingConv::C);
+ptr_181->setTailCall(true);
+AttrListPtr ptr_181_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  ptr_180_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_181_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-ptr_180->setAttributes(ptr_180_PAL);
+ptr_181->setAttributes(ptr_181_PAL);
 
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_tableswitch3_i_i4_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II.exit.i5.i.i.i (label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i)
-GetElementPtrInst* ptr_182 = GetElementPtrInst::Create(ptr_102, const_int32_54, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
-CastInst* ptr_183 = new BitCastInst(ptr_182, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
-LoadInst* ptr_184 = new LoadInst(ptr_183, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
-BinaryOperator* int32_185 = BinaryOperator::Create(Instruction::Add, int32_95, const_int32_63, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
-ICmpInst* int1_186 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i, ICmpInst::ICMP_SGT, int32_185, const_int32_64, "");
-BranchInst::Create(label_GOTO_or_IF_4_i_i_i6_i_i_i, label_false_IF_ICMPGT16_i_i_i11_i_i_i, int1_186, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
+GetElementPtrInst* ptr_183 = GetElementPtrInst::Create(ptr_103, const_int32_54, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
+CastInst* ptr_184 = new BitCastInst(ptr_183, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
+LoadInst* ptr_185 = new LoadInst(ptr_184, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
+BinaryOperator* int32_186 = BinaryOperator::Create(Instruction::Add, int32_96, const_int32_63, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
+ICmpInst* int1_187 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i, ICmpInst::ICMP_SGT, int32_186, const_int32_64, "");
+BranchInst::Create(label_GOTO_or_IF_4_i_i_i6_i_i_i, label_false_IF_ICMPGT16_i_i_i11_i_i_i, int1_187, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i5_i_i_i);
 
 // Block GOTO or IF*4.i.i.i6.i.i.i (label_GOTO_or_IF_4_i_i_i6_i_i_i)
-ICmpInst* int1_188 = new ICmpInst(*label_GOTO_or_IF_4_i_i_i6_i_i_i, ICmpInst::ICMP_SGT, int32_185, const_int32_65, "");
-BranchInst::Create(label_GOTO_or_IF_6_i_i_i7_i_i_i, label_false_IF_ICMPGT17_i_i_i12_i_i_i, int1_188, label_GOTO_or_IF_4_i_i_i6_i_i_i);
+ICmpInst* int1_189 = new ICmpInst(*label_GOTO_or_IF_4_i_i_i6_i_i_i, ICmpInst::ICMP_SGT, int32_186, const_int32_65, "");
+BranchInst::Create(label_GOTO_or_IF_6_i_i_i7_i_i_i, label_false_IF_ICMPGT17_i_i_i12_i_i_i, int1_189, label_GOTO_or_IF_4_i_i_i6_i_i_i);
 
 // Block GOTO or IF*6.i.i.i7.i.i.i (label_GOTO_or_IF_6_i_i_i7_i_i_i)
-ICmpInst* int1_190 = new ICmpInst(*label_GOTO_or_IF_6_i_i_i7_i_i_i, ICmpInst::ICMP_SGT, int32_185, const_int32_66, "");
-BranchInst::Create(label_GOTO_or_IF_7_i_i1_i8_i_i_i, label_false_IF_ICMPGT18_i_i_i13_i_i_i, int1_190, label_GOTO_or_IF_6_i_i_i7_i_i_i);
+ICmpInst* int1_191 = new ICmpInst(*label_GOTO_or_IF_6_i_i_i7_i_i_i, ICmpInst::ICMP_SGT, int32_186, const_int32_66, "");
+BranchInst::Create(label_GOTO_or_IF_7_i_i1_i8_i_i_i, label_false_IF_ICMPGT18_i_i_i13_i_i_i, int1_191, label_GOTO_or_IF_6_i_i_i7_i_i_i);
 
 // Block GOTO or IF*7.i.i1.i8.i.i.i (label_GOTO_or_IF_7_i_i1_i8_i_i_i)
-ICmpInst* int1_192 = new ICmpInst(*label_GOTO_or_IF_7_i_i1_i8_i_i_i, ICmpInst::ICMP_SGT, int32_185, const_int32_67, "");
-BranchInst::Create(label_GOTO_or_IF_8_i_i_i9_i_i_i, label_false_IF_ICMPGT19_i_i_i14_i_i_i, int1_192, label_GOTO_or_IF_7_i_i1_i8_i_i_i);
+ICmpInst* int1_193 = new ICmpInst(*label_GOTO_or_IF_7_i_i1_i8_i_i_i, ICmpInst::ICMP_SGT, int32_186, const_int32_67, "");
+BranchInst::Create(label_GOTO_or_IF_8_i_i_i9_i_i_i, label_false_IF_ICMPGT19_i_i_i14_i_i_i, int1_193, label_GOTO_or_IF_7_i_i1_i8_i_i_i);
 
 // Block GOTO or IF*8.i.i.i9.i.i.i (label_GOTO_or_IF_8_i_i_i9_i_i_i)
-ICmpInst* int1_194 = new ICmpInst(*label_GOTO_or_IF_8_i_i_i9_i_i_i, ICmpInst::ICMP_SGT, int32_185, const_int32_68, "");
-BranchInst::Create(label_GOTO_or_IF_9_i_i_i10_i_i_i, label_false_IF_ICMPGT20_i_i_i15_i_i_i, int1_194, label_GOTO_or_IF_8_i_i_i9_i_i_i);
+ICmpInst* int1_195 = new ICmpInst(*label_GOTO_or_IF_8_i_i_i9_i_i_i, ICmpInst::ICMP_SGT, int32_186, const_int32_68, "");
+BranchInst::Create(label_GOTO_or_IF_9_i_i_i10_i_i_i, label_false_IF_ICMPGT20_i_i_i15_i_i_i, int1_195, label_GOTO_or_IF_8_i_i_i9_i_i_i);
 
 // Block GOTO or IF*9.i.i.i10.i.i.i (label_GOTO_or_IF_9_i_i_i10_i_i_i)
-BinaryOperator* int32_196 = BinaryOperator::Create(Instruction::AShr, int32_185, const_int32_69, "", label_GOTO_or_IF_9_i_i_i10_i_i_i);
-BinaryOperator* int32_197 = BinaryOperator::Create(Instruction::Add, int32_196, const_int32_70, "", label_GOTO_or_IF_9_i_i_i10_i_i_i);
+BinaryOperator* int32_197 = BinaryOperator::Create(Instruction::AShr, int32_186, const_int32_69, "", label_GOTO_or_IF_9_i_i_i10_i_i_i);
+BinaryOperator* int32_198 = BinaryOperator::Create(Instruction::Add, int32_197, const_int32_70, "", label_GOTO_or_IF_9_i_i_i10_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i, label_GOTO_or_IF_9_i_i_i10_i_i_i);
 
 // Block false IF_ICMPGT16.i.i.i11.i.i.i (label_false_IF_ICMPGT16_i_i_i11_i_i_i)
-BinaryOperator* int32_199 = BinaryOperator::Create(Instruction::AShr, int32_185, const_int32_58, "", label_false_IF_ICMPGT16_i_i_i11_i_i_i);
+BinaryOperator* int32_200 = BinaryOperator::Create(Instruction::AShr, int32_186, const_int32_58, "", label_false_IF_ICMPGT16_i_i_i11_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i, label_false_IF_ICMPGT16_i_i_i11_i_i_i);
 
 // Block false IF_ICMPGT17.i.i.i12.i.i.i (label_false_IF_ICMPGT17_i_i_i12_i_i_i)
-BinaryOperator* int32_201 = BinaryOperator::Create(Instruction::AShr, int32_185, const_int32_60, "", label_false_IF_ICMPGT17_i_i_i12_i_i_i);
-BinaryOperator* int32_202 = BinaryOperator::Create(Instruction::Add, int32_201, const_int32_71, "", label_false_IF_ICMPGT17_i_i_i12_i_i_i);
+BinaryOperator* int32_202 = BinaryOperator::Create(Instruction::AShr, int32_186, const_int32_60, "", label_false_IF_ICMPGT17_i_i_i12_i_i_i);
+BinaryOperator* int32_203 = BinaryOperator::Create(Instruction::Add, int32_202, const_int32_71, "", label_false_IF_ICMPGT17_i_i_i12_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i, label_false_IF_ICMPGT17_i_i_i12_i_i_i);
 
 // Block false IF_ICMPGT18.i.i.i13.i.i.i (label_false_IF_ICMPGT18_i_i_i13_i_i_i)
-BinaryOperator* int32_204 = BinaryOperator::Create(Instruction::AShr, int32_185, const_int32_72, "", label_false_IF_ICMPGT18_i_i_i13_i_i_i);
-BinaryOperator* int32_205 = BinaryOperator::Create(Instruction::Add, int32_204, const_int32_73, "", label_false_IF_ICMPGT18_i_i_i13_i_i_i);
+BinaryOperator* int32_205 = BinaryOperator::Create(Instruction::AShr, int32_186, const_int32_72, "", label_false_IF_ICMPGT18_i_i_i13_i_i_i);
+BinaryOperator* int32_206 = BinaryOperator::Create(Instruction::Add, int32_205, const_int32_73, "", label_false_IF_ICMPGT18_i_i_i13_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i, label_false_IF_ICMPGT18_i_i_i13_i_i_i);
 
 // Block false IF_ICMPGT19.i.i.i14.i.i.i (label_false_IF_ICMPGT19_i_i_i14_i_i_i)
-BinaryOperator* int32_207 = BinaryOperator::Create(Instruction::AShr, int32_185, const_int32_74, "", label_false_IF_ICMPGT19_i_i_i14_i_i_i);
-BinaryOperator* int32_208 = BinaryOperator::Create(Instruction::Add, int32_207, const_int32_75, "", label_false_IF_ICMPGT19_i_i_i14_i_i_i);
+BinaryOperator* int32_208 = BinaryOperator::Create(Instruction::AShr, int32_186, const_int32_74, "", label_false_IF_ICMPGT19_i_i_i14_i_i_i);
+BinaryOperator* int32_209 = BinaryOperator::Create(Instruction::Add, int32_208, const_int32_75, "", label_false_IF_ICMPGT19_i_i_i14_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i, label_false_IF_ICMPGT19_i_i_i14_i_i_i);
 
 // Block false IF_ICMPGT20.i.i.i15.i.i.i (label_false_IF_ICMPGT20_i_i_i15_i_i_i)
-BinaryOperator* int32_210 = BinaryOperator::Create(Instruction::AShr, int32_185, const_int32_62, "", label_false_IF_ICMPGT20_i_i_i15_i_i_i);
-BinaryOperator* int32_211 = BinaryOperator::Create(Instruction::Add, int32_210, const_int32_76, "", label_false_IF_ICMPGT20_i_i_i15_i_i_i);
+BinaryOperator* int32_211 = BinaryOperator::Create(Instruction::AShr, int32_186, const_int32_62, "", label_false_IF_ICMPGT20_i_i_i15_i_i_i);
+BinaryOperator* int32_212 = BinaryOperator::Create(Instruction::Add, int32_211, const_int32_76, "", label_false_IF_ICMPGT20_i_i_i15_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i, label_false_IF_ICMPGT20_i_i_i15_i_i_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I.exit.i16.i.i.i (label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i)
-PHINode* int32_213 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
-int32_213->reserveOperandSpace(6);
-int32_213->addIncoming(int32_199, label_false_IF_ICMPGT16_i_i_i11_i_i_i);
-int32_213->addIncoming(int32_202, label_false_IF_ICMPGT17_i_i_i12_i_i_i);
-int32_213->addIncoming(int32_205, label_false_IF_ICMPGT18_i_i_i13_i_i_i);
-int32_213->addIncoming(int32_208, label_false_IF_ICMPGT19_i_i_i14_i_i_i);
-int32_213->addIncoming(int32_211, label_false_IF_ICMPGT20_i_i_i15_i_i_i);
-int32_213->addIncoming(int32_197, label_GOTO_or_IF_9_i_i_i10_i_i_i);
+PHINode* int32_214 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+int32_214->reserveOperandSpace(6);
+int32_214->addIncoming(int32_200, label_false_IF_ICMPGT16_i_i_i11_i_i_i);
+int32_214->addIncoming(int32_203, label_false_IF_ICMPGT17_i_i_i12_i_i_i);
+int32_214->addIncoming(int32_206, label_false_IF_ICMPGT18_i_i_i13_i_i_i);
+int32_214->addIncoming(int32_209, label_false_IF_ICMPGT19_i_i_i14_i_i_i);
+int32_214->addIncoming(int32_212, label_false_IF_ICMPGT20_i_i_i15_i_i_i);
+int32_214->addIncoming(int32_198, label_GOTO_or_IF_9_i_i_i10_i_i_i);
 
-std::vector<Value*> ptr_214_indices;
-ptr_214_indices.push_back(const_int32_77);
-ptr_214_indices.push_back(const_int32_77);
-Instruction* ptr_214 = GetElementPtrInst::Create(ptr_184, ptr_214_indices.begin(), ptr_214_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
-LoadInst* ptr_215 = new LoadInst(ptr_214, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
-BinaryOperator* int32_216 = BinaryOperator::Create(Instruction::Add, int32_213, const_int32_77, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
-CastInst* ptr_217 = new BitCastInst(ptr_215, PointerTy_25, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
-GetElementPtrInst* ptr_218 = GetElementPtrInst::Create(ptr_217, int32_216, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
-LoadInst* int32_219 = new LoadInst(ptr_218, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
-CastInst* ptr_220 = new IntToPtrInst(int32_219, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
-ICmpInst* int1_221 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i, ICmpInst::ICMP_EQ, int32_219, const_int32_56, "");
-BranchInst::Create(label_GOTO_or_IF__i17_i_i_i, label_false_IFNE_i21_i_i_i, int1_221, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+std::vector<Value*> ptr_215_indices;
+ptr_215_indices.push_back(const_int32_77);
+ptr_215_indices.push_back(const_int32_77);
+Instruction* ptr_215 = GetElementPtrInst::Create(ptr_185, ptr_215_indices.begin(), ptr_215_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+LoadInst* ptr_216 = new LoadInst(ptr_215, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+BinaryOperator* int32_217 = BinaryOperator::Create(Instruction::Add, int32_214, const_int32_77, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+CastInst* ptr_218 = new BitCastInst(ptr_216, PointerTy_25, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+GetElementPtrInst* ptr_219 = GetElementPtrInst::Create(ptr_218, int32_217, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+LoadInst* int32_220 = new LoadInst(ptr_219, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+CastInst* ptr_221 = new IntToPtrInst(int32_220, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
+ICmpInst* int1_222 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i, ICmpInst::ICMP_EQ, int32_220, const_int32_56, "");
+BranchInst::Create(label_GOTO_or_IF__i17_i_i_i, label_false_IFNE_i21_i_i_i, int1_222, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i16_i_i_i);
 
 // Block GOTO or IF*.i17.i.i.i (label_GOTO_or_IF__i17_i_i_i)
-std::vector<Value*> ptr_223_params;
-ptr_223_params.push_back(ptr_184);
-ptr_223_params.push_back(int32_95);
-ptr_223_params.push_back(const_int32_56);
-ptr_223_params.push_back(const_int32_56);
-CallInst* ptr_223 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III, ptr_223_params.begin(), ptr_223_params.end(), "", label_GOTO_or_IF__i17_i_i_i);
-ptr_223->setCallingConv(CallingConv::C);
-ptr_223->setTailCall(true);AttrListPtr ptr_223_PAL;
+std::vector<Value*> ptr_224_params;
+ptr_224_params.push_back(ptr_185);
+ptr_224_params.push_back(int32_96);
+ptr_224_params.push_back(const_int32_56);
+ptr_224_params.push_back(const_int32_56);
+CallInst* ptr_224 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III, ptr_224_params.begin(), ptr_224_params.end(), "", label_GOTO_or_IF__i17_i_i_i);
+ptr_224->setCallingConv(CallingConv::C);
+ptr_224->setTailCall(true);
+AttrListPtr ptr_224_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  ptr_223_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_224_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-ptr_223->setAttributes(ptr_223_PAL);
+ptr_224->setAttributes(ptr_224_PAL);
 
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_GOTO_or_IF__i17_i_i_i);
 
 // Block false IFNE.i21.i.i.i (label_false_IFNE_i21_i_i_i)
-CastInst* ptr_225 = new IntToPtrInst(int32_219, PointerTy_29, "", label_false_IFNE_i21_i_i_i);
-LoadInst* ptr_226 = new LoadInst(ptr_225, "", false, label_false_IFNE_i21_i_i_i);
-CastInst* int32_227 = new PtrToIntInst(ptr_226, IntegerType::get(mod->getContext(), 32), "", label_false_IFNE_i21_i_i_i);
- new StoreInst(int32_227, ptr_218, false, label_false_IFNE_i21_i_i_i);
-std::vector<Value*> ptr_229_indices;
-ptr_229_indices.push_back(const_int32_56);
-ptr_229_indices.push_back(const_int32_56);
-Instruction* ptr_229 = GetElementPtrInst::Create(ptr_220, ptr_229_indices.begin(), ptr_229_indices.end(), "", label_false_IFNE_i21_i_i_i);
- new StoreInst(const_ptr_78, ptr_229, false, label_false_IFNE_i21_i_i_i);
+CastInst* ptr_226 = new IntToPtrInst(int32_220, PointerTy_29, "", label_false_IFNE_i21_i_i_i);
+LoadInst* ptr_227 = new LoadInst(ptr_226, "", false, label_false_IFNE_i21_i_i_i);
+CastInst* int32_228 = new PtrToIntInst(ptr_227, IntegerType::get(mod->getContext(), 32), "", label_false_IFNE_i21_i_i_i);
+ new StoreInst(int32_228, ptr_219, false, label_false_IFNE_i21_i_i_i);
+std::vector<Value*> ptr_230_indices;
+ptr_230_indices.push_back(const_int32_56);
+ptr_230_indices.push_back(const_int32_56);
+Instruction* ptr_230 = GetElementPtrInst::Create(ptr_221, ptr_230_indices.begin(), ptr_230_indices.end(), "", label_false_IFNE_i21_i_i_i);
+ new StoreInst(const_ptr_78, ptr_230, false, label_false_IFNE_i21_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_false_IFNE_i21_i_i_i);
 
 // Block tableswitch5.i.i6.i (label_tableswitch5_i_i6_i)
-std::vector<Value*> ptr_232_indices;
-ptr_232_indices.push_back(const_int32_54);
-ptr_232_indices.push_back(const_int32_77);
-Instruction* ptr_232 = GetElementPtrInst::Create(ptr_102, ptr_232_indices.begin(), ptr_232_indices.end(), "", label_tableswitch5_i_i6_i);
-CastInst* ptr_233 = new BitCastInst(ptr_232, PointerTy_32, "", label_tableswitch5_i_i6_i);
-LoadInst* ptr_234 = new LoadInst(ptr_233, "", false, label_tableswitch5_i_i6_i);
-CastInst* ptr_235 = new BitCastInst(ptr_234, PointerTy_30, "", label_tableswitch5_i_i6_i);
-std::vector<Value*> ptr_236_params;
-ptr_236_params.push_back(ptr_235);
-ptr_236_params.push_back(int32_95);
-ptr_236_params.push_back(const_int32_56);
-ptr_236_params.push_back(const_int32_56);
-CallInst* ptr_236 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III, ptr_236_params.begin(), ptr_236_params.end(), "", label_tableswitch5_i_i6_i);
-ptr_236->setCallingConv(CallingConv::C);
-ptr_236->setTailCall(true);AttrListPtr ptr_236_PAL;
+std::vector<Value*> ptr_233_indices;
+ptr_233_indices.push_back(const_int32_54);
+ptr_233_indices.push_back(const_int32_77);
+Instruction* ptr_233 = GetElementPtrInst::Create(ptr_103, ptr_233_indices.begin(), ptr_233_indices.end(), "", label_tableswitch5_i_i6_i);
+CastInst* ptr_234 = new BitCastInst(ptr_233, PointerTy_32, "", label_tableswitch5_i_i6_i);
+LoadInst* ptr_235 = new LoadInst(ptr_234, "", false, label_tableswitch5_i_i6_i);
+CastInst* ptr_236 = new BitCastInst(ptr_235, PointerTy_30, "", label_tableswitch5_i_i6_i);
+std::vector<Value*> ptr_237_params;
+ptr_237_params.push_back(ptr_236);
+ptr_237_params.push_back(int32_96);
+ptr_237_params.push_back(const_int32_56);
+ptr_237_params.push_back(const_int32_56);
+CallInst* ptr_237 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_LargeObjectAllocator_alloc__III, ptr_237_params.begin(), ptr_237_params.end(), "", label_tableswitch5_i_i6_i);
+ptr_237->setCallingConv(CallingConv::C);
+ptr_237->setTailCall(true);
+AttrListPtr ptr_237_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  ptr_236_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_237_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-ptr_236->setAttributes(ptr_236_PAL);
+ptr_237->setAttributes(ptr_237_PAL);
 
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_tableswitch5_i_i6_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II.exit.i.i.i (label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i)
-std::vector<Value*> ptr_238_indices;
-ptr_238_indices.push_back(const_int32_60);
-ptr_238_indices.push_back(const_int32_77);
-Instruction* ptr_238 = GetElementPtrInst::Create(ptr_102, ptr_238_indices.begin(), ptr_238_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
-CastInst* ptr_239 = new BitCastInst(ptr_238, PointerTy_32, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
-LoadInst* ptr_240 = new LoadInst(ptr_239, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
-CastInst* ptr_241 = new BitCastInst(ptr_240, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
-BinaryOperator* int32_242 = BinaryOperator::Create(Instruction::Add, int32_95, const_int32_63, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
-ICmpInst* int1_243 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i, ICmpInst::ICMP_SGT, int32_242, const_int32_64, "");
-BranchInst::Create(label_GOTO_or_IF_4_i_i_i_i_i, label_false_IF_ICMPGT16_i_i_i_i_i, int1_243, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
+std::vector<Value*> ptr_239_indices;
+ptr_239_indices.push_back(const_int32_60);
+ptr_239_indices.push_back(const_int32_77);
+Instruction* ptr_239 = GetElementPtrInst::Create(ptr_103, ptr_239_indices.begin(), ptr_239_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
+CastInst* ptr_240 = new BitCastInst(ptr_239, PointerTy_32, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
+LoadInst* ptr_241 = new LoadInst(ptr_240, "", false, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
+CastInst* ptr_242 = new BitCastInst(ptr_241, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
+BinaryOperator* int32_243 = BinaryOperator::Create(Instruction::Add, int32_96, const_int32_63, "", label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
+ICmpInst* int1_244 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i, ICmpInst::ICMP_SGT, int32_243, const_int32_64, "");
+BranchInst::Create(label_GOTO_or_IF_4_i_i_i_i_i, label_false_IF_ICMPGT16_i_i_i_i_i, int1_244, label_JnJVM_org_mmtk_utility_alloc_Allocator_getMaximumAlignedSize__II_exit_i_i_i);
 
 // Block GOTO or IF*4.i.i.i.i.i (label_GOTO_or_IF_4_i_i_i_i_i)
-ICmpInst* int1_245 = new ICmpInst(*label_GOTO_or_IF_4_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_242, const_int32_65, "");
-BranchInst::Create(label_GOTO_or_IF_6_i_i_i_i_i, label_false_IF_ICMPGT17_i_i_i_i_i, int1_245, label_GOTO_or_IF_4_i_i_i_i_i);
+ICmpInst* int1_246 = new ICmpInst(*label_GOTO_or_IF_4_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_243, const_int32_65, "");
+BranchInst::Create(label_GOTO_or_IF_6_i_i_i_i_i, label_false_IF_ICMPGT17_i_i_i_i_i, int1_246, label_GOTO_or_IF_4_i_i_i_i_i);
 
 // Block GOTO or IF*6.i.i.i.i.i (label_GOTO_or_IF_6_i_i_i_i_i)
-ICmpInst* int1_247 = new ICmpInst(*label_GOTO_or_IF_6_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_242, const_int32_66, "");
-BranchInst::Create(label_GOTO_or_IF_7_i_i1_i_i_i, label_false_IF_ICMPGT18_i_i_i_i_i, int1_247, label_GOTO_or_IF_6_i_i_i_i_i);
+ICmpInst* int1_248 = new ICmpInst(*label_GOTO_or_IF_6_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_243, const_int32_66, "");
+BranchInst::Create(label_GOTO_or_IF_7_i_i1_i_i_i, label_false_IF_ICMPGT18_i_i_i_i_i, int1_248, label_GOTO_or_IF_6_i_i_i_i_i);
 
 // Block GOTO or IF*7.i.i1.i.i.i (label_GOTO_or_IF_7_i_i1_i_i_i)
-ICmpInst* int1_249 = new ICmpInst(*label_GOTO_or_IF_7_i_i1_i_i_i, ICmpInst::ICMP_SGT, int32_242, const_int32_67, "");
-BranchInst::Create(label_GOTO_or_IF_8_i_i_i_i_i, label_false_IF_ICMPGT19_i_i_i_i_i, int1_249, label_GOTO_or_IF_7_i_i1_i_i_i);
+ICmpInst* int1_250 = new ICmpInst(*label_GOTO_or_IF_7_i_i1_i_i_i, ICmpInst::ICMP_SGT, int32_243, const_int32_67, "");
+BranchInst::Create(label_GOTO_or_IF_8_i_i_i_i_i, label_false_IF_ICMPGT19_i_i_i_i_i, int1_250, label_GOTO_or_IF_7_i_i1_i_i_i);
 
 // Block GOTO or IF*8.i.i.i.i.i (label_GOTO_or_IF_8_i_i_i_i_i)
-ICmpInst* int1_251 = new ICmpInst(*label_GOTO_or_IF_8_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_242, const_int32_68, "");
-BranchInst::Create(label_GOTO_or_IF_9_i_i_i_i_i, label_false_IF_ICMPGT20_i_i_i_i_i, int1_251, label_GOTO_or_IF_8_i_i_i_i_i);
+ICmpInst* int1_252 = new ICmpInst(*label_GOTO_or_IF_8_i_i_i_i_i, ICmpInst::ICMP_SGT, int32_243, const_int32_68, "");
+BranchInst::Create(label_GOTO_or_IF_9_i_i_i_i_i, label_false_IF_ICMPGT20_i_i_i_i_i, int1_252, label_GOTO_or_IF_8_i_i_i_i_i);
 
 // Block GOTO or IF*9.i.i.i.i.i (label_GOTO_or_IF_9_i_i_i_i_i)
-BinaryOperator* int32_253 = BinaryOperator::Create(Instruction::AShr, int32_242, const_int32_69, "", label_GOTO_or_IF_9_i_i_i_i_i);
-BinaryOperator* int32_254 = BinaryOperator::Create(Instruction::Add, int32_253, const_int32_70, "", label_GOTO_or_IF_9_i_i_i_i_i);
+BinaryOperator* int32_254 = BinaryOperator::Create(Instruction::AShr, int32_243, const_int32_69, "", label_GOTO_or_IF_9_i_i_i_i_i);
+BinaryOperator* int32_255 = BinaryOperator::Create(Instruction::Add, int32_254, const_int32_70, "", label_GOTO_or_IF_9_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i, label_GOTO_or_IF_9_i_i_i_i_i);
 
 // Block false IF_ICMPGT16.i.i.i.i.i (label_false_IF_ICMPGT16_i_i_i_i_i)
-BinaryOperator* int32_256 = BinaryOperator::Create(Instruction::AShr, int32_242, const_int32_58, "", label_false_IF_ICMPGT16_i_i_i_i_i);
+BinaryOperator* int32_257 = BinaryOperator::Create(Instruction::AShr, int32_243, const_int32_58, "", label_false_IF_ICMPGT16_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i, label_false_IF_ICMPGT16_i_i_i_i_i);
 
 // Block false IF_ICMPGT17.i.i.i.i.i (label_false_IF_ICMPGT17_i_i_i_i_i)
-BinaryOperator* int32_258 = BinaryOperator::Create(Instruction::AShr, int32_242, const_int32_60, "", label_false_IF_ICMPGT17_i_i_i_i_i);
-BinaryOperator* int32_259 = BinaryOperator::Create(Instruction::Add, int32_258, const_int32_71, "", label_false_IF_ICMPGT17_i_i_i_i_i);
+BinaryOperator* int32_259 = BinaryOperator::Create(Instruction::AShr, int32_243, const_int32_60, "", label_false_IF_ICMPGT17_i_i_i_i_i);
+BinaryOperator* int32_260 = BinaryOperator::Create(Instruction::Add, int32_259, const_int32_71, "", label_false_IF_ICMPGT17_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i, label_false_IF_ICMPGT17_i_i_i_i_i);
 
 // Block false IF_ICMPGT18.i.i.i.i.i (label_false_IF_ICMPGT18_i_i_i_i_i)
-BinaryOperator* int32_261 = BinaryOperator::Create(Instruction::AShr, int32_242, const_int32_72, "", label_false_IF_ICMPGT18_i_i_i_i_i);
-BinaryOperator* int32_262 = BinaryOperator::Create(Instruction::Add, int32_261, const_int32_73, "", label_false_IF_ICMPGT18_i_i_i_i_i);
+BinaryOperator* int32_262 = BinaryOperator::Create(Instruction::AShr, int32_243, const_int32_72, "", label_false_IF_ICMPGT18_i_i_i_i_i);
+BinaryOperator* int32_263 = BinaryOperator::Create(Instruction::Add, int32_262, const_int32_73, "", label_false_IF_ICMPGT18_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i, label_false_IF_ICMPGT18_i_i_i_i_i);
 
 // Block false IF_ICMPGT19.i.i.i.i.i (label_false_IF_ICMPGT19_i_i_i_i_i)
-BinaryOperator* int32_264 = BinaryOperator::Create(Instruction::AShr, int32_242, const_int32_74, "", label_false_IF_ICMPGT19_i_i_i_i_i);
-BinaryOperator* int32_265 = BinaryOperator::Create(Instruction::Add, int32_264, const_int32_75, "", label_false_IF_ICMPGT19_i_i_i_i_i);
+BinaryOperator* int32_265 = BinaryOperator::Create(Instruction::AShr, int32_243, const_int32_74, "", label_false_IF_ICMPGT19_i_i_i_i_i);
+BinaryOperator* int32_266 = BinaryOperator::Create(Instruction::Add, int32_265, const_int32_75, "", label_false_IF_ICMPGT19_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i, label_false_IF_ICMPGT19_i_i_i_i_i);
 
 // Block false IF_ICMPGT20.i.i.i.i.i (label_false_IF_ICMPGT20_i_i_i_i_i)
-BinaryOperator* int32_267 = BinaryOperator::Create(Instruction::AShr, int32_242, const_int32_62, "", label_false_IF_ICMPGT20_i_i_i_i_i);
-BinaryOperator* int32_268 = BinaryOperator::Create(Instruction::Add, int32_267, const_int32_76, "", label_false_IF_ICMPGT20_i_i_i_i_i);
+BinaryOperator* int32_268 = BinaryOperator::Create(Instruction::AShr, int32_243, const_int32_62, "", label_false_IF_ICMPGT20_i_i_i_i_i);
+BinaryOperator* int32_269 = BinaryOperator::Create(Instruction::Add, int32_268, const_int32_76, "", label_false_IF_ICMPGT20_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i, label_false_IF_ICMPGT20_i_i_i_i_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I.exit.i.i.i (label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i)
-PHINode* int32_270 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-int32_270->reserveOperandSpace(6);
-int32_270->addIncoming(int32_256, label_false_IF_ICMPGT16_i_i_i_i_i);
-int32_270->addIncoming(int32_259, label_false_IF_ICMPGT17_i_i_i_i_i);
-int32_270->addIncoming(int32_262, label_false_IF_ICMPGT18_i_i_i_i_i);
-int32_270->addIncoming(int32_265, label_false_IF_ICMPGT19_i_i_i_i_i);
-int32_270->addIncoming(int32_268, label_false_IF_ICMPGT20_i_i_i_i_i);
-int32_270->addIncoming(int32_254, label_GOTO_or_IF_9_i_i_i_i_i);
+PHINode* int32_271 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+int32_271->reserveOperandSpace(6);
+int32_271->addIncoming(int32_257, label_false_IF_ICMPGT16_i_i_i_i_i);
+int32_271->addIncoming(int32_260, label_false_IF_ICMPGT17_i_i_i_i_i);
+int32_271->addIncoming(int32_263, label_false_IF_ICMPGT18_i_i_i_i_i);
+int32_271->addIncoming(int32_266, label_false_IF_ICMPGT19_i_i_i_i_i);
+int32_271->addIncoming(int32_269, label_false_IF_ICMPGT20_i_i_i_i_i);
+int32_271->addIncoming(int32_255, label_GOTO_or_IF_9_i_i_i_i_i);
 
-GetElementPtrInst* ptr_271 = GetElementPtrInst::Create(ptr_240, const_int32_71, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-CastInst* ptr_272 = new BitCastInst(ptr_271, PointerTy_32, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-LoadInst* ptr_273 = new LoadInst(ptr_272, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-BinaryOperator* int32_274 = BinaryOperator::Create(Instruction::Add, int32_270, const_int32_77, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-CastInst* ptr_275 = new BitCastInst(ptr_273, PointerTy_25, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-GetElementPtrInst* ptr_276 = GetElementPtrInst::Create(ptr_275, int32_274, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-LoadInst* int32_277 = new LoadInst(ptr_276, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-CastInst* ptr_278 = new IntToPtrInst(int32_277, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
-ICmpInst* int1_279 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i, ICmpInst::ICMP_EQ, int32_277, const_int32_56, "");
-BranchInst::Create(label_GOTO_or_IF__i_i_i, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i, int1_279, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+GetElementPtrInst* ptr_272 = GetElementPtrInst::Create(ptr_241, const_int32_71, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+CastInst* ptr_273 = new BitCastInst(ptr_272, PointerTy_32, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+LoadInst* ptr_274 = new LoadInst(ptr_273, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+BinaryOperator* int32_275 = BinaryOperator::Create(Instruction::Add, int32_271, const_int32_77, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+CastInst* ptr_276 = new BitCastInst(ptr_274, PointerTy_25, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+GetElementPtrInst* ptr_277 = GetElementPtrInst::Create(ptr_276, int32_275, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+LoadInst* int32_278 = new LoadInst(ptr_277, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+CastInst* ptr_279 = new IntToPtrInst(int32_278, PointerTy_30, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
+ICmpInst* int1_280 = new ICmpInst(*label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i, ICmpInst::ICMP_EQ, int32_278, const_int32_56, "");
+BranchInst::Create(label_GOTO_or_IF__i_i_i, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i, int1_280, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_getSizeClass__I_exit_i_i_i);
 
 // Block GOTO or IF*.i.i.i (label_GOTO_or_IF__i_i_i)
-std::vector<Value*> ptr_281_params;
-ptr_281_params.push_back(ptr_241);
-ptr_281_params.push_back(int32_95);
-ptr_281_params.push_back(const_int32_56);
-ptr_281_params.push_back(const_int32_56);
-CallInst* ptr_281 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III, ptr_281_params.begin(), ptr_281_params.end(), "", label_GOTO_or_IF__i_i_i);
-ptr_281->setCallingConv(CallingConv::C);
-ptr_281->setTailCall(true);AttrListPtr ptr_281_PAL;
+std::vector<Value*> ptr_282_params;
+ptr_282_params.push_back(ptr_242);
+ptr_282_params.push_back(int32_96);
+ptr_282_params.push_back(const_int32_56);
+ptr_282_params.push_back(const_int32_56);
+CallInst* ptr_282 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_Allocator_allocSlow__III, ptr_282_params.begin(), ptr_282_params.end(), "", label_GOTO_or_IF__i_i_i);
+ptr_282->setCallingConv(CallingConv::C);
+ptr_282->setTailCall(true);
+AttrListPtr ptr_282_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  ptr_281_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_282_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-ptr_281->setAttributes(ptr_281_PAL);
+ptr_282->setAttributes(ptr_282_PAL);
 
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_GOTO_or_IF__i_i_i);
 
 // Block JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III.exit.i.i (label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i)
-CastInst* ptr_283 = new IntToPtrInst(int32_277, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
-LoadInst* ptr_284 = new LoadInst(ptr_283, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
-CastInst* int32_285 = new PtrToIntInst(ptr_284, IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
- new StoreInst(int32_285, ptr_276, false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
-std::vector<Value*> ptr_287_indices;
-ptr_287_indices.push_back(const_int32_56);
-ptr_287_indices.push_back(const_int32_56);
-Instruction* ptr_287 = GetElementPtrInst::Create(ptr_278, ptr_287_indices.begin(), ptr_287_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
- new StoreInst(const_ptr_78, ptr_287, false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
+CastInst* ptr_284 = new IntToPtrInst(int32_278, PointerTy_29, "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
+LoadInst* ptr_285 = new LoadInst(ptr_284, "", false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
+CastInst* int32_286 = new PtrToIntInst(ptr_285, IntegerType::get(mod->getContext(), 32), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
+ new StoreInst(int32_286, ptr_277, false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
+std::vector<Value*> ptr_288_indices;
+ptr_288_indices.push_back(const_int32_56);
+ptr_288_indices.push_back(const_int32_56);
+Instruction* ptr_288 = GetElementPtrInst::Create(ptr_279, ptr_288_indices.begin(), ptr_288_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
+ new StoreInst(const_ptr_78, ptr_288, false, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
 BranchInst::Create(label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
 
 // Block JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII.exit.i (label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i)
-PHINode* ptr_290 = PHINode::Create(PointerTy_30, "", label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
-ptr_290->reserveOperandSpace(10);
-ptr_290->addIncoming(ptr_236, label_tableswitch5_i_i6_i);
-ptr_290->addIncoming(ptr_223, label_GOTO_or_IF__i17_i_i_i);
-ptr_290->addIncoming(ptr_180, label_tableswitch3_i_i4_i);
-ptr_290->addIncoming(ptr_162, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
-ptr_290->addIncoming(ptr_174, label_false_IFEQ_i_i_i_i);
-ptr_290->addIncoming(ptr_148, label_GOTO_or_IF__i_i_i_i);
-ptr_290->addIncoming(ptr_278, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
-ptr_290->addIncoming(ptr_281, label_GOTO_or_IF__i_i_i);
-ptr_290->addIncoming(ptr_145, label_false_IFNE_i_i_i_i);
-ptr_290->addIncoming(ptr_220, label_false_IFNE_i21_i_i_i);
+PHINode* ptr_291 = PHINode::Create(PointerTy_30, "", label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
+ptr_291->reserveOperandSpace(10);
+ptr_291->addIncoming(ptr_237, label_tableswitch5_i_i6_i);
+ptr_291->addIncoming(ptr_224, label_GOTO_or_IF__i17_i_i_i);
+ptr_291->addIncoming(ptr_181, label_tableswitch3_i_i4_i);
+ptr_291->addIncoming(ptr_163, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i_i);
+ptr_291->addIncoming(ptr_175, label_false_IFEQ_i_i_i_i);
+ptr_291->addIncoming(ptr_149, label_GOTO_or_IF__i_i_i_i);
+ptr_291->addIncoming(ptr_279, label_JnJVM_org_mmtk_utility_alloc_SegregatedFreeList_alloc__III_exit_i_i);
+ptr_291->addIncoming(ptr_282, label_GOTO_or_IF__i_i_i);
+ptr_291->addIncoming(ptr_146, label_false_IFNE_i_i_i_i);
+ptr_291->addIncoming(ptr_221, label_false_IFNE_i21_i_i_i);
 
-std::vector<Value*> ptr_291_indices;
-ptr_291_indices.push_back(const_int32_56);
-ptr_291_indices.push_back(const_int32_56);
-Instruction* ptr_291 = GetElementPtrInst::Create(ptr_290, ptr_291_indices.begin(), ptr_291_indices.end(), "", label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
+std::vector<Value*> ptr_292_indices;
+ptr_292_indices.push_back(const_int32_56);
+ptr_292_indices.push_back(const_int32_56);
+Instruction* ptr_292 = GetElementPtrInst::Create(ptr_291, ptr_292_indices.begin(), ptr_292_indices.end(), "", label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
 CastInst* ptr__c_i = new BitCastInst(ptr_VT, PointerTy_31, ".c.i", label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
- new StoreInst(ptr__c_i, ptr_291, false, label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
-SwitchInst* void_293 = SwitchInst::Create(int32_storemerge_i_i, label_tableswitch_i_i_i, 7, label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
-void_293->addCase(const_int32_56, label_false_IFNE_i_i);
-void_293->addCase(const_int32_58, label_tableswitch1_i_i_i);
-void_293->addCase(const_int32_54, label_tableswitch2_i_i_i);
-void_293->addCase(const_int32_60, label_tableswitch3_i_i_i);
-void_293->addCase(const_int32_61, label_tableswitch4_i_i_i);
-void_293->addCase(const_int32_62, label_tableswitch5_i_i_i);
+ new StoreInst(ptr__c_i, ptr_292, false, label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
+SwitchInst* void_294 = SwitchInst::Create(int32_storemerge_i_i, label_tableswitch_i_i_i, 7, label_JnJVM_org_mmtk_plan_marksweep_MSMutator_alloc__IIIII_exit_i);
+void_294->addCase(const_int32_56, label_false_IFNE_i_i);
+void_294->addCase(const_int32_58, label_tableswitch1_i_i_i);
+void_294->addCase(const_int32_54, label_tableswitch2_i_i_i);
+void_294->addCase(const_int32_60, label_tableswitch3_i_i_i);
+void_294->addCase(const_int32_61, label_tableswitch4_i_i_i);
+void_294->addCase(const_int32_62, label_tableswitch5_i_i_i);
 
 
 // Block tableswitch.i.i.i (label_tableswitch_i_i_i)
-CallInst* void_294 = CallInst::Create(func_abort, "", label_tableswitch_i_i_i);
-void_294->setCallingConv(CallingConv::C);
-void_294->setTailCall(true);AttrListPtr void_294_PAL;
+CallInst* void_295 = CallInst::Create(func_abort, "", label_tableswitch_i_i_i);
+void_295->setCallingConv(CallingConv::C);
+void_295->setTailCall(true);
+AttrListPtr void_295_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoReturn | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_294_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoReturn | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_295_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-void_294->setAttributes(void_294_PAL);
+void_295->setAttributes(void_295_PAL);
 
 new UnreachableInst(mod->getContext(), label_tableswitch_i_i_i);
 
 // Block tableswitch1.i.i.i (label_tableswitch1_i_i_i)
-LoadInst* ptr_296 = new LoadInst(const_ptr_79, "", false, label_tableswitch1_i_i_i);
-CastInst* int32_297 = new PtrToIntInst(ptr_296, IntegerType::get(mod->getContext(), 32), "", label_tableswitch1_i_i_i);
-std::vector<Value*> ptr_298_indices;
-ptr_298_indices.push_back(const_int32_56);
-ptr_298_indices.push_back(const_int32_77);
-Instruction* ptr_298 = GetElementPtrInst::Create(ptr_290, ptr_298_indices.begin(), ptr_298_indices.end(), "", label_tableswitch1_i_i_i);
-CastInst* ptr_299 = new BitCastInst(ptr_298, PointerTy_0, "", label_tableswitch1_i_i_i);
-LoadInst* int8_300 = new LoadInst(ptr_299, "", false, label_tableswitch1_i_i_i);
-BinaryOperator* int8_301 = BinaryOperator::Create(Instruction::And, int8_300, const_int8_80, "", label_tableswitch1_i_i_i);
-CastInst* int8_302 = new TruncInst(int32_297, IntegerType::get(mod->getContext(), 8), "", label_tableswitch1_i_i_i);
-BinaryOperator* int8_303 = BinaryOperator::Create(Instruction::Or, int8_301, int8_302, "", label_tableswitch1_i_i_i);
- new StoreInst(int8_303, ptr_299, false, label_tableswitch1_i_i_i);
+std::vector<Value*> ptr_297_indices;
+ptr_297_indices.push_back(const_int32_56);
+ptr_297_indices.push_back(const_int32_77);
+Instruction* ptr_297 = GetElementPtrInst::Create(ptr_291, ptr_297_indices.begin(), ptr_297_indices.end(), "", label_tableswitch1_i_i_i);
+CastInst* ptr_298 = new BitCastInst(ptr_297, PointerTy_25, "", label_tableswitch1_i_i_i);
+LoadInst* int32_299 = new LoadInst(ptr_298, "", false, label_tableswitch1_i_i_i);
+BinaryOperator* int32_300 = BinaryOperator::Create(Instruction::And, int32_299, const_int32_79, "", label_tableswitch1_i_i_i);
+LoadInst* ptr_301 = new LoadInst(const_ptr_80, "", false, label_tableswitch1_i_i_i);
+CastInst* int32_302 = new PtrToIntInst(ptr_301, IntegerType::get(mod->getContext(), 32), "", label_tableswitch1_i_i_i);
+BinaryOperator* int32_303 = BinaryOperator::Create(Instruction::Or, int32_302, int32_300, "", label_tableswitch1_i_i_i);
+CastInst* ptr__c5 = new IntToPtrInst(int32_303, PointerTy_0, ".c5", label_tableswitch1_i_i_i);
+ new StoreInst(ptr__c5, ptr_297, false, label_tableswitch1_i_i_i);
 BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_tableswitch1_i_i_i);
 
 // Block tableswitch2.i.i.i (label_tableswitch2_i_i_i)
 std::vector<Value*> ptr_306_indices;
 ptr_306_indices.push_back(const_int32_56);
 ptr_306_indices.push_back(const_int32_77);
-Instruction* ptr_306 = GetElementPtrInst::Create(ptr_290, ptr_306_indices.begin(), ptr_306_indices.end(), "", label_tableswitch2_i_i_i);
+Instruction* ptr_306 = GetElementPtrInst::Create(ptr_291, ptr_306_indices.begin(), ptr_306_indices.end(), "", label_tableswitch2_i_i_i);
 CastInst* ptr_307 = new BitCastInst(ptr_306, PointerTy_25, "", label_tableswitch2_i_i_i);
 LoadInst* int32_308 = new LoadInst(ptr_307, "", false, label_tableswitch2_i_i_i);
-BinaryOperator* int32_309 = BinaryOperator::Create(Instruction::And, int32_308, const_int32_58, "", label_tableswitch2_i_i_i);
-LoadInst* ptr_310 = new LoadInst(const_ptr_81, "", false, label_tableswitch2_i_i_i);
+BinaryOperator* int32_309 = BinaryOperator::Create(Instruction::And, int32_308, const_int32_81, "", label_tableswitch2_i_i_i);
+LoadInst* ptr_310 = new LoadInst(const_ptr_82, "", false, label_tableswitch2_i_i_i);
 CastInst* int32_311 = new PtrToIntInst(ptr_310, IntegerType::get(mod->getContext(), 32), "", label_tableswitch2_i_i_i);
 BinaryOperator* int32_312 = BinaryOperator::Create(Instruction::Or, int32_311, int32_309, "", label_tableswitch2_i_i_i);
-CastInst* ptr_313 = new BitCastInst(ptr_306, PointerTy_0, "", label_tableswitch2_i_i_i);
-CastInst* int8_trunc = new TruncInst(int32_308, IntegerType::get(mod->getContext(), 8), "trunc", label_tableswitch2_i_i_i);
-BinaryOperator* int8_314 = BinaryOperator::Create(Instruction::And, int8_trunc, const_int8_80, "", label_tableswitch2_i_i_i);
-CastInst* int8_315 = new TruncInst(int32_312, IntegerType::get(mod->getContext(), 8), "", label_tableswitch2_i_i_i);
-BinaryOperator* int8_316 = BinaryOperator::Create(Instruction::Or, int8_315, int8_314, "", label_tableswitch2_i_i_i);
- new StoreInst(int8_316, ptr_313, false, label_tableswitch2_i_i_i);
+CastInst* ptr__c4 = new IntToPtrInst(int32_312, PointerTy_0, ".c4", label_tableswitch2_i_i_i);
+ new StoreInst(ptr__c4, ptr_306, false, label_tableswitch2_i_i_i);
 BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_tableswitch2_i_i_i);
 
 // Block tableswitch3.i.i.i (label_tableswitch3_i_i_i)
-LoadInst* ptr_319 = new LoadInst(const_ptr_82, "", false, label_tableswitch3_i_i_i);
+std::vector<Value*> ptr_315_indices;
+ptr_315_indices.push_back(const_int32_56);
+ptr_315_indices.push_back(const_int32_77);
+Instruction* ptr_315 = GetElementPtrInst::Create(ptr_291, ptr_315_indices.begin(), ptr_315_indices.end(), "", label_tableswitch3_i_i_i);
+CastInst* ptr_316 = new BitCastInst(ptr_315, PointerTy_25, "", label_tableswitch3_i_i_i);
+LoadInst* int32_317 = new LoadInst(ptr_316, "", false, label_tableswitch3_i_i_i);
+BinaryOperator* int32_318 = BinaryOperator::Create(Instruction::And, int32_317, const_int32_55, "", label_tableswitch3_i_i_i);
+LoadInst* ptr_319 = new LoadInst(const_ptr_83, "", false, label_tableswitch3_i_i_i);
 CastInst* int32_320 = new PtrToIntInst(ptr_319, IntegerType::get(mod->getContext(), 32), "", label_tableswitch3_i_i_i);
-BinaryOperator* int32_321 = BinaryOperator::Create(Instruction::Or, int32_320, const_int32_58, "", label_tableswitch3_i_i_i);
-std::vector<Value*> ptr_322_indices;
-ptr_322_indices.push_back(const_int32_56);
-ptr_322_indices.push_back(const_int32_77);
-Instruction* ptr_322 = GetElementPtrInst::Create(ptr_290, ptr_322_indices.begin(), ptr_322_indices.end(), "", label_tableswitch3_i_i_i);
-CastInst* ptr_323 = new BitCastInst(ptr_322, PointerTy_0, "", label_tableswitch3_i_i_i);
-LoadInst* int8_324 = new LoadInst(ptr_323, "", false, label_tableswitch3_i_i_i);
-BinaryOperator* int8_325 = BinaryOperator::Create(Instruction::And, int8_324, const_int8_80, "", label_tableswitch3_i_i_i);
-CastInst* int8_326 = new TruncInst(int32_321, IntegerType::get(mod->getContext(), 8), "", label_tableswitch3_i_i_i);
-BinaryOperator* int8_327 = BinaryOperator::Create(Instruction::Or, int8_326, int8_325, "", label_tableswitch3_i_i_i);
- new StoreInst(int8_327, ptr_323, false, label_tableswitch3_i_i_i);
-LoadInst* ptr_329 = new LoadInst(const_ptr_83, "", false, label_tableswitch3_i_i_i);
-CastInst* int32_330 = new PtrToIntInst(ptr_290, IntegerType::get(mod->getContext(), 32), "", label_tableswitch3_i_i_i);
-BinaryOperator* int32_331 = BinaryOperator::Create(Instruction::And, int32_330, const_int32_84, "", label_tableswitch3_i_i_i);
-CastInst* ptr_332 = new IntToPtrInst(int32_331, PointerTy_30, "", label_tableswitch3_i_i_i);
-std::vector<Value*> ptr_333_indices;
-ptr_333_indices.push_back(const_int32_58);
-ptr_333_indices.push_back(const_int32_77);
-Instruction* ptr_333 = GetElementPtrInst::Create(ptr_329, ptr_333_indices.begin(), ptr_333_indices.end(), "", label_tableswitch3_i_i_i);
-LoadInst* ptr_334 = new LoadInst(ptr_333, "", false, label_tableswitch3_i_i_i);
-GetElementPtrInst* ptr_335 = GetElementPtrInst::Create(ptr_334, const_int32_71, "", label_tableswitch3_i_i_i);
-CastInst* ptr_336 = new BitCastInst(ptr_335, PointerTy_32, "", label_tableswitch3_i_i_i);
-LoadInst* ptr_337 = new LoadInst(ptr_336, "", false, label_tableswitch3_i_i_i);
-ICmpInst* int1_338 = new ICmpInst(*label_tableswitch3_i_i_i, ICmpInst::ICMP_EQ, ptr_337, const_ptr_85, "");
-BranchInst::Create(label_true_IF_NULL_i1_i_i_i_i_i, label_true_IFNULL_i5_i_i_i_i_i, int1_338, label_tableswitch3_i_i_i);
+BinaryOperator* int32_321 = BinaryOperator::Create(Instruction::Or, int32_318, const_int32_58, "", label_tableswitch3_i_i_i);
+BinaryOperator* int32_322 = BinaryOperator::Create(Instruction::Or, int32_321, int32_320, "", label_tableswitch3_i_i_i);
+CastInst* ptr__c3 = new IntToPtrInst(int32_322, PointerTy_0, ".c3", label_tableswitch3_i_i_i);
+ new StoreInst(ptr__c3, ptr_315, false, label_tableswitch3_i_i_i);
+LoadInst* ptr_324 = new LoadInst(const_ptr_84, "", false, label_tableswitch3_i_i_i);
+CastInst* int32_325 = new PtrToIntInst(ptr_291, IntegerType::get(mod->getContext(), 32), "", label_tableswitch3_i_i_i);
+BinaryOperator* int32_326 = BinaryOperator::Create(Instruction::And, int32_325, const_int32_85, "", label_tableswitch3_i_i_i);
+CastInst* ptr_327 = new IntToPtrInst(int32_326, PointerTy_30, "", label_tableswitch3_i_i_i);
+std::vector<Value*> ptr_328_indices;
+ptr_328_indices.push_back(const_int32_58);
+ptr_328_indices.push_back(const_int32_77);
+Instruction* ptr_328 = GetElementPtrInst::Create(ptr_324, ptr_328_indices.begin(), ptr_328_indices.end(), "", label_tableswitch3_i_i_i);
+LoadInst* ptr_329 = new LoadInst(ptr_328, "", false, label_tableswitch3_i_i_i);
+GetElementPtrInst* ptr_330 = GetElementPtrInst::Create(ptr_329, const_int32_71, "", label_tableswitch3_i_i_i);
+CastInst* ptr_331 = new BitCastInst(ptr_330, PointerTy_32, "", label_tableswitch3_i_i_i);
+LoadInst* ptr_332 = new LoadInst(ptr_331, "", false, label_tableswitch3_i_i_i);
+ICmpInst* int1_333 = new ICmpInst(*label_tableswitch3_i_i_i, ICmpInst::ICMP_EQ, ptr_332, const_ptr_86, "");
+BranchInst::Create(label_true_IF_NULL_i1_i_i_i_i_i, label_true_IFNULL_i5_i_i_i_i_i, int1_333, label_tableswitch3_i_i_i);
 
 // Block true IF*NULL.i1.i.i.i.i.i (label_true_IF_NULL_i1_i_i_i_i_i)
-std::vector<Value*> ptr_340_indices;
-ptr_340_indices.push_back(const_int32_56);
-ptr_340_indices.push_back(const_int32_56);
-Instruction* ptr_340 = GetElementPtrInst::Create(ptr_332, ptr_340_indices.begin(), ptr_340_indices.end(), "", label_true_IF_NULL_i1_i_i_i_i_i);
- new StoreInst(const_ptr_78, ptr_340, false, label_true_IF_NULL_i1_i_i_i_i_i);
-GetElementPtrInst* ptr_342 = GetElementPtrInst::Create(ptr_334, const_int32_62, "", label_true_IF_NULL_i1_i_i_i_i_i);
-CastInst* ptr_343 = new BitCastInst(ptr_342, PointerTy_29, "", label_true_IF_NULL_i1_i_i_i_i_i);
-LoadInst* ptr_344 = new LoadInst(ptr_343, "", false, label_true_IF_NULL_i1_i_i_i_i_i);
-LoadInst* ptr_345 = new LoadInst(const_ptr_86, "", false, label_true_IF_NULL_i1_i_i_i_i_i);
-CastInst* int32_346 = new PtrToIntInst(ptr_345, IntegerType::get(mod->getContext(), 32), "", label_true_IF_NULL_i1_i_i_i_i_i);
-BinaryOperator* int32_347 = BinaryOperator::Create(Instruction::Add, int32_346, int32_331, "", label_true_IF_NULL_i1_i_i_i_i_i);
-CastInst* ptr_348 = new IntToPtrInst(int32_347, PointerTy_29, "", label_true_IF_NULL_i1_i_i_i_i_i);
- new StoreInst(ptr_344, ptr_348, false, label_true_IF_NULL_i1_i_i_i_i_i);
-LoadInst* ptr_350 = new LoadInst(ptr_343, "", false, label_true_IF_NULL_i1_i_i_i_i_i);
-ICmpInst* int1_351 = new ICmpInst(*label_true_IF_NULL_i1_i_i_i_i_i, ICmpInst::ICMP_EQ, ptr_350, const_ptr_87, "");
-BranchInst::Create(label_GOTO_or_IF_1_i3_i_i_i_i_i, label_false_IFNE_i7_i_i_i_i_i, int1_351, label_true_IF_NULL_i1_i_i_i_i_i);
+std::vector<Value*> ptr_335_indices;
+ptr_335_indices.push_back(const_int32_56);
+ptr_335_indices.push_back(const_int32_56);
+Instruction* ptr_335 = GetElementPtrInst::Create(ptr_327, ptr_335_indices.begin(), ptr_335_indices.end(), "", label_true_IF_NULL_i1_i_i_i_i_i);
+ new StoreInst(const_ptr_78, ptr_335, false, label_true_IF_NULL_i1_i_i_i_i_i);
+GetElementPtrInst* ptr_337 = GetElementPtrInst::Create(ptr_329, const_int32_62, "", label_true_IF_NULL_i1_i_i_i_i_i);
+CastInst* ptr_338 = new BitCastInst(ptr_337, PointerTy_29, "", label_true_IF_NULL_i1_i_i_i_i_i);
+LoadInst* ptr_339 = new LoadInst(ptr_338, "", false, label_true_IF_NULL_i1_i_i_i_i_i);
+LoadInst* ptr_340 = new LoadInst(const_ptr_87, "", false, label_true_IF_NULL_i1_i_i_i_i_i);
+CastInst* int32_341 = new PtrToIntInst(ptr_340, IntegerType::get(mod->getContext(), 32), "", label_true_IF_NULL_i1_i_i_i_i_i);
+BinaryOperator* int32_342 = BinaryOperator::Create(Instruction::Add, int32_341, int32_326, "", label_true_IF_NULL_i1_i_i_i_i_i);
+CastInst* ptr_343 = new IntToPtrInst(int32_342, PointerTy_29, "", label_true_IF_NULL_i1_i_i_i_i_i);
+ new StoreInst(ptr_339, ptr_343, false, label_true_IF_NULL_i1_i_i_i_i_i);
+LoadInst* ptr_345 = new LoadInst(ptr_338, "", false, label_true_IF_NULL_i1_i_i_i_i_i);
+ICmpInst* int1_346 = new ICmpInst(*label_true_IF_NULL_i1_i_i_i_i_i, ICmpInst::ICMP_EQ, ptr_345, const_ptr_88, "");
+BranchInst::Create(label_GOTO_or_IF_1_i3_i_i_i_i_i, label_false_IFNE_i7_i_i_i_i_i, int1_346, label_true_IF_NULL_i1_i_i_i_i_i);
 
 // Block GOTO or IF*1.i3.i.i.i.i.i (label_GOTO_or_IF_1_i3_i_i_i_i_i)
-CastInst* ptr_353 = new BitCastInst(ptr_342, PointerTy_35, "", label_GOTO_or_IF_1_i3_i_i_i_i_i);
-CastInst* ptr__c1_i2_i_i_i_i_i = new IntToPtrInst(int32_331, PointerTy_31, ".c1.i2.i.i.i.i.i", label_GOTO_or_IF_1_i3_i_i_i_i_i);
- new StoreInst(ptr__c1_i2_i_i_i_i_i, ptr_353, false, label_GOTO_or_IF_1_i3_i_i_i_i_i);
-LoadInst* ptr_355 = new LoadInst(ptr_336, "", false, label_GOTO_or_IF_1_i3_i_i_i_i_i);
-ICmpInst* int1_356 = new ICmpInst(*label_GOTO_or_IF_1_i3_i_i_i_i_i, ICmpInst::ICMP_EQ, ptr_355, const_ptr_85, "");
-BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_true_IFNULL3_i8_i_i_i_i_i, int1_356, label_GOTO_or_IF_1_i3_i_i_i_i_i);
+CastInst* ptr_348 = new BitCastInst(ptr_337, PointerTy_35, "", label_GOTO_or_IF_1_i3_i_i_i_i_i);
+CastInst* ptr__c1_i2_i_i_i_i_i = new IntToPtrInst(int32_326, PointerTy_31, ".c1.i2.i.i.i.i.i", label_GOTO_or_IF_1_i3_i_i_i_i_i);
+ new StoreInst(ptr__c1_i2_i_i_i_i_i, ptr_348, false, label_GOTO_or_IF_1_i3_i_i_i_i_i);
+LoadInst* ptr_350 = new LoadInst(ptr_331, "", false, label_GOTO_or_IF_1_i3_i_i_i_i_i);
+ICmpInst* int1_351 = new ICmpInst(*label_GOTO_or_IF_1_i3_i_i_i_i_i, ICmpInst::ICMP_EQ, ptr_350, const_ptr_86, "");
+BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_true_IFNULL3_i8_i_i_i_i_i, int1_351, label_GOTO_or_IF_1_i3_i_i_i_i_i);
 
 // Block true IFNULL.i5.i.i.i.i.i (label_true_IFNULL_i5_i_i_i_i_i)
-GetElementPtrInst* ptr_358 = GetElementPtrInst::Create(ptr_337, const_int32_62, "", label_true_IFNULL_i5_i_i_i_i_i);
-CastInst* ptr_359 = new BitCastInst(ptr_358, PointerTy_25, "", label_true_IFNULL_i5_i_i_i_i_i);
+GetElementPtrInst* ptr_353 = GetElementPtrInst::Create(ptr_332, const_int32_62, "", label_true_IFNULL_i5_i_i_i_i_i);
+CastInst* ptr_354 = new BitCastInst(ptr_353, PointerTy_25, "", label_true_IFNULL_i5_i_i_i_i_i);
 BranchInst::Create(label_bb2_i_i36_i, label_true_IFNULL_i5_i_i_i_i_i);
 
 // Block bb.i.i34.i (label_bb_i_i34_i)
-Argument* fwdref_362 = new Argument(IntegerType::get(mod->getContext(), 1));
-BranchInst::Create(label_true_IF_NULL_i1_i_i_i_i_i, label_bb1_i_i35_i, fwdref_362, label_bb_i_i34_i);
+Argument* fwdref_357 = new Argument(IntegerType::get(mod->getContext(), 1));
+BranchInst::Create(label_true_IF_NULL_i1_i_i_i_i_i, label_bb1_i_i35_i, fwdref_357, label_bb_i_i34_i);
 
 // Block bb1.i.i35.i (label_bb1_i_i35_i)
-Argument* fwdref_364 = new Argument(IntegerType::get(mod->getContext(), 32));
-BinaryOperator* int32_363 = BinaryOperator::Create(Instruction::Add, fwdref_364, const_int32_77, "", label_bb1_i_i35_i);
+Argument* fwdref_359 = new Argument(IntegerType::get(mod->getContext(), 32));
+BinaryOperator* int32_358 = BinaryOperator::Create(Instruction::Add, fwdref_359, const_int32_77, "", label_bb1_i_i35_i);
 BranchInst::Create(label_bb2_i_i36_i, label_bb1_i_i35_i);
 
 // Block bb2.i.i36.i (label_bb2_i_i36_i)
-PHINode* int32_366 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_bb2_i_i36_i);
-int32_366->reserveOperandSpace(2);
-int32_366->addIncoming(const_int32_56, label_true_IFNULL_i5_i_i_i_i_i);
-int32_366->addIncoming(int32_363, label_bb1_i_i35_i);
+PHINode* int32_361 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_bb2_i_i36_i);
+int32_361->reserveOperandSpace(2);
+int32_361->addIncoming(const_int32_56, label_true_IFNULL_i5_i_i_i_i_i);
+int32_361->addIncoming(int32_358, label_bb1_i_i35_i);
 
-ICmpInst* int1_367 = new ICmpInst(*label_bb2_i_i36_i, ICmpInst::ICMP_ULT, int32_366, const_int32_88, "");
-std::vector<Value*> void_368_params;
-void_368_params.push_back(const_int1_89);
-void_368_params.push_back(const_int1_89);
-void_368_params.push_back(const_int1_89);
-void_368_params.push_back(const_int1_89);
-void_368_params.push_back(const_int1_89);
-CallInst* void_368 = CallInst::Create(func_llvm_memory_barrier, void_368_params.begin(), void_368_params.end(), "", label_bb2_i_i36_i);
-void_368->setCallingConv(CallingConv::C);
-void_368->setTailCall(true);AttrListPtr void_368_PAL;
+ICmpInst* int1_362 = new ICmpInst(*label_bb2_i_i36_i, ICmpInst::ICMP_ULT, int32_361, const_int32_89, "");
+std::vector<Value*> void_363_params;
+void_363_params.push_back(const_int1_90);
+void_363_params.push_back(const_int1_90);
+void_363_params.push_back(const_int1_90);
+void_363_params.push_back(const_int1_90);
+void_363_params.push_back(const_int1_90);
+CallInst* void_363 = CallInst::Create(func_llvm_memory_barrier, void_363_params.begin(), void_363_params.end(), "", label_bb2_i_i36_i);
+void_363->setCallingConv(CallingConv::C);
+void_363->setTailCall(true);
+AttrListPtr void_363_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_368_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_363_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-void_368->setAttributes(void_368_PAL);
+void_363->setAttributes(void_363_PAL);
 
-std::vector<Value*> int32_369_params;
-int32_369_params.push_back(ptr_359);
-int32_369_params.push_back(const_int32_56);
-int32_369_params.push_back(const_int32_77);
-CallInst* int32_369 = CallInst::Create(func_llvm_atomic_cmp_swap_i32_p0i32, int32_369_params.begin(), int32_369_params.end(), "", label_bb2_i_i36_i);
-int32_369->setCallingConv(CallingConv::C);
-int32_369->setTailCall(true);AttrListPtr int32_369_PAL;
+std::vector<Value*> int32_364_params;
+int32_364_params.push_back(ptr_354);
+int32_364_params.push_back(const_int32_56);
+int32_364_params.push_back(const_int32_77);
+CallInst* int32_364 = CallInst::Create(func_llvm_atomic_cmp_swap_i32_p0i32, int32_364_params.begin(), int32_364_params.end(), "", label_bb2_i_i36_i);
+int32_364->setCallingConv(CallingConv::C);
+int32_364->setTailCall(true);
+AttrListPtr int32_364_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  int32_369_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ int32_364_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-int32_369->setAttributes(int32_369_PAL);
+int32_364->setAttributes(int32_364_PAL);
+
+std::vector<Value*> void_365_params;
+void_365_params.push_back(const_int1_90);
+void_365_params.push_back(const_int1_90);
+void_365_params.push_back(const_int1_90);
+void_365_params.push_back(const_int1_90);
+void_365_params.push_back(const_int1_90);
+CallInst* void_365 = CallInst::Create(func_llvm_memory_barrier, void_365_params.begin(), void_365_params.end(), "", label_bb2_i_i36_i);
+void_365->setCallingConv(CallingConv::C);
+void_365->setTailCall(true);
+AttrListPtr void_365_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_365_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+void_365->setAttributes(void_365_PAL);
+
+ICmpInst* int1_366 = new ICmpInst(*label_bb2_i_i36_i, ICmpInst::ICMP_EQ, int32_364, const_int32_56, "");
+BranchInst::Create(label_bb_i_i34_i, label_bb4_preheader_i_i37_i, int1_362, label_bb2_i_i36_i);
+
+// Block bb4.preheader.i.i37.i (label_bb4_preheader_i_i37_i)
+BranchInst::Create(label_true_IF_NULL_i1_i_i_i_i_i, label_bb3_i_i38_i, int1_366, label_bb4_preheader_i_i37_i);
+
+// Block bb3.i.i38.i (label_bb3_i_i38_i)
+CallInst* void_369 = CallInst::Create(func__ZN3mvm6Thread5yieldEv, "", label_bb3_i_i38_i);
+void_369->setCallingConv(CallingConv::C);
+void_369->setTailCall(true);
+AttrListPtr void_369_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_369_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+void_369->setAttributes(void_369_PAL);
 
 std::vector<Value*> void_370_params;
-void_370_params.push_back(const_int1_89);
-void_370_params.push_back(const_int1_89);
-void_370_params.push_back(const_int1_89);
-void_370_params.push_back(const_int1_89);
-void_370_params.push_back(const_int1_89);
-CallInst* void_370 = CallInst::Create(func_llvm_memory_barrier, void_370_params.begin(), void_370_params.end(), "", label_bb2_i_i36_i);
+void_370_params.push_back(const_int1_90);
+void_370_params.push_back(const_int1_90);
+void_370_params.push_back(const_int1_90);
+void_370_params.push_back(const_int1_90);
+void_370_params.push_back(const_int1_90);
+CallInst* void_370 = CallInst::Create(func_llvm_memory_barrier, void_370_params.begin(), void_370_params.end(), "", label_bb3_i_i38_i);
 void_370->setCallingConv(CallingConv::C);
-void_370->setTailCall(true);AttrListPtr void_370_PAL;
+void_370->setTailCall(true);
+AttrListPtr void_370_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_370_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_370_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 void_370->setAttributes(void_370_PAL);
 
-ICmpInst* int1_371 = new ICmpInst(*label_bb2_i_i36_i, ICmpInst::ICMP_EQ, int32_369, const_int32_56, "");
-BranchInst::Create(label_bb_i_i34_i, label_bb4_preheader_i_i37_i, int1_367, label_bb2_i_i36_i);
-
-// Block bb4.preheader.i.i37.i (label_bb4_preheader_i_i37_i)
-BranchInst::Create(label_true_IF_NULL_i1_i_i_i_i_i, label_bb3_i_i38_i, int1_371, label_bb4_preheader_i_i37_i);
-
-// Block bb3.i.i38.i (label_bb3_i_i38_i)
-CallInst* void_374 = CallInst::Create(func__ZN3mvm6Thread5yieldEv, "", label_bb3_i_i38_i);
-void_374->setCallingConv(CallingConv::C);
-void_374->setTailCall(true);AttrListPtr void_374_PAL;
+std::vector<Value*> int32_371_params;
+int32_371_params.push_back(ptr_354);
+int32_371_params.push_back(const_int32_56);
+int32_371_params.push_back(const_int32_77);
+CallInst* int32_371 = CallInst::Create(func_llvm_atomic_cmp_swap_i32_p0i32, int32_371_params.begin(), int32_371_params.end(), "", label_bb3_i_i38_i);
+int32_371->setCallingConv(CallingConv::C);
+int32_371->setTailCall(true);
+AttrListPtr int32_371_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_374_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ int32_371_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-void_374->setAttributes(void_374_PAL);
+int32_371->setAttributes(int32_371_PAL);
 
-std::vector<Value*> void_375_params;
-void_375_params.push_back(const_int1_89);
-void_375_params.push_back(const_int1_89);
-void_375_params.push_back(const_int1_89);
-void_375_params.push_back(const_int1_89);
-void_375_params.push_back(const_int1_89);
-CallInst* void_375 = CallInst::Create(func_llvm_memory_barrier, void_375_params.begin(), void_375_params.end(), "", label_bb3_i_i38_i);
-void_375->setCallingConv(CallingConv::C);
-void_375->setTailCall(true);AttrListPtr void_375_PAL;
+std::vector<Value*> void_372_params;
+void_372_params.push_back(const_int1_90);
+void_372_params.push_back(const_int1_90);
+void_372_params.push_back(const_int1_90);
+void_372_params.push_back(const_int1_90);
+void_372_params.push_back(const_int1_90);
+CallInst* void_372 = CallInst::Create(func_llvm_memory_barrier, void_372_params.begin(), void_372_params.end(), "", label_bb3_i_i38_i);
+void_372->setCallingConv(CallingConv::C);
+void_372->setTailCall(true);
+AttrListPtr void_372_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_375_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_372_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
-void_375->setAttributes(void_375_PAL);
+void_372->setAttributes(void_372_PAL);
 
-std::vector<Value*> int32_376_params;
-int32_376_params.push_back(ptr_359);
-int32_376_params.push_back(const_int32_56);
-int32_376_params.push_back(const_int32_77);
-CallInst* int32_376 = CallInst::Create(func_llvm_atomic_cmp_swap_i32_p0i32, int32_376_params.begin(), int32_376_params.end(), "", label_bb3_i_i38_i);
-int32_376->setCallingConv(CallingConv::C);
-int32_376->setTailCall(true);AttrListPtr int32_376_PAL;
-{
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  int32_376_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
-}
-int32_376->setAttributes(int32_376_PAL);
-
-std::vector<Value*> void_377_params;
-void_377_params.push_back(const_int1_89);
-void_377_params.push_back(const_int1_89);
-void_377_params.push_back(const_int1_89);
-void_377_params.push_back(const_int1_89);
-void_377_params.push_back(const_int1_89);
-CallInst* void_377 = CallInst::Create(func_llvm_memory_barrier, void_377_params.begin(), void_377_params.end(), "", label_bb3_i_i38_i);
-void_377->setCallingConv(CallingConv::C);
-void_377->setTailCall(true);AttrListPtr void_377_PAL;
-{
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_377_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
-}
-void_377->setAttributes(void_377_PAL);
-
-ICmpInst* int1_378 = new ICmpInst(*label_bb3_i_i38_i, ICmpInst::ICMP_EQ, int32_376, const_int32_56, "");
-BranchInst::Create(label_true_IF_NULL_i1_i_i_i_i_i, label_bb3_i_i38_i, int1_378, label_bb3_i_i38_i);
+ICmpInst* int1_373 = new ICmpInst(*label_bb3_i_i38_i, ICmpInst::ICMP_EQ, int32_371, const_int32_56, "");
+BranchInst::Create(label_true_IF_NULL_i1_i_i_i_i_i, label_bb3_i_i38_i, int1_373, label_bb3_i_i38_i);
 
 // Block false IFNE.i7.i.i.i.i.i (label_false_IFNE_i7_i_i_i_i_i)
-std::vector<Value*> ptr_380_indices;
-ptr_380_indices.push_back(const_int32_56);
-ptr_380_indices.push_back(const_int32_56);
-Instruction* ptr_380 = GetElementPtrInst::Create(ptr_350, ptr_380_indices.begin(), ptr_380_indices.end(), "", label_false_IFNE_i7_i_i_i_i_i);
-CastInst* ptr__c_i6_i_i_i_i_i = new IntToPtrInst(int32_331, PointerTy_31, ".c.i6.i.i.i.i.i", label_false_IFNE_i7_i_i_i_i_i);
- new StoreInst(ptr__c_i6_i_i_i_i_i, ptr_380, false, label_false_IFNE_i7_i_i_i_i_i);
+std::vector<Value*> ptr_375_indices;
+ptr_375_indices.push_back(const_int32_56);
+ptr_375_indices.push_back(const_int32_56);
+Instruction* ptr_375 = GetElementPtrInst::Create(ptr_345, ptr_375_indices.begin(), ptr_375_indices.end(), "", label_false_IFNE_i7_i_i_i_i_i);
+CastInst* ptr__c_i6_i_i_i_i_i = new IntToPtrInst(int32_326, PointerTy_31, ".c.i6.i.i.i.i.i", label_false_IFNE_i7_i_i_i_i_i);
+ new StoreInst(ptr__c_i6_i_i_i_i_i, ptr_375, false, label_false_IFNE_i7_i_i_i_i_i);
 BranchInst::Create(label_GOTO_or_IF_1_i3_i_i_i_i_i, label_false_IFNE_i7_i_i_i_i_i);
 
 // Block true IFNULL3.i8.i.i.i.i.i (label_true_IFNULL3_i8_i_i_i_i_i)
-GetElementPtrInst* ptr_383 = GetElementPtrInst::Create(ptr_355, const_int32_62, "", label_true_IFNULL3_i8_i_i_i_i_i);
-CastInst* ptr_384 = new BitCastInst(ptr_383, PointerTy_25, "", label_true_IFNULL3_i8_i_i_i_i_i);
- new StoreInst(const_int32_56, ptr_384, false, label_true_IFNULL3_i8_i_i_i_i_i);
+GetElementPtrInst* ptr_378 = GetElementPtrInst::Create(ptr_350, const_int32_62, "", label_true_IFNULL3_i8_i_i_i_i_i);
+CastInst* ptr_379 = new BitCastInst(ptr_378, PointerTy_25, "", label_true_IFNULL3_i8_i_i_i_i_i);
+ new StoreInst(const_int32_56, ptr_379, false, label_true_IFNULL3_i8_i_i_i_i_i);
 BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_true_IFNULL3_i8_i_i_i_i_i);
 
 // Block tableswitch4.i.i.i (label_tableswitch4_i_i_i)
-LoadInst* ptr_387 = new LoadInst(const_ptr_90, "", false, label_tableswitch4_i_i_i);
-CastInst* int32_388 = new PtrToIntInst(ptr_387, IntegerType::get(mod->getContext(), 32), "", label_tableswitch4_i_i_i);
-std::vector<Value*> ptr_389_indices;
-ptr_389_indices.push_back(const_int32_56);
-ptr_389_indices.push_back(const_int32_77);
-Instruction* ptr_389 = GetElementPtrInst::Create(ptr_290, ptr_389_indices.begin(), ptr_389_indices.end(), "", label_tableswitch4_i_i_i);
-CastInst* ptr_390 = new BitCastInst(ptr_389, PointerTy_0, "", label_tableswitch4_i_i_i);
-LoadInst* int8_391 = new LoadInst(ptr_390, "", false, label_tableswitch4_i_i_i);
-BinaryOperator* int8_392 = BinaryOperator::Create(Instruction::And, int8_391, const_int8_80, "", label_tableswitch4_i_i_i);
-CastInst* int8_393 = new TruncInst(int32_388, IntegerType::get(mod->getContext(), 8), "", label_tableswitch4_i_i_i);
-BinaryOperator* int8_394 = BinaryOperator::Create(Instruction::Or, int8_392, int8_393, "", label_tableswitch4_i_i_i);
- new StoreInst(int8_394, ptr_390, false, label_tableswitch4_i_i_i);
+std::vector<Value*> ptr_382_indices;
+ptr_382_indices.push_back(const_int32_56);
+ptr_382_indices.push_back(const_int32_77);
+Instruction* ptr_382 = GetElementPtrInst::Create(ptr_291, ptr_382_indices.begin(), ptr_382_indices.end(), "", label_tableswitch4_i_i_i);
+CastInst* ptr_383 = new BitCastInst(ptr_382, PointerTy_25, "", label_tableswitch4_i_i_i);
+LoadInst* int32_384 = new LoadInst(ptr_383, "", false, label_tableswitch4_i_i_i);
+BinaryOperator* int32_385 = BinaryOperator::Create(Instruction::And, int32_384, const_int32_79, "", label_tableswitch4_i_i_i);
+LoadInst* ptr_386 = new LoadInst(const_ptr_91, "", false, label_tableswitch4_i_i_i);
+CastInst* int32_387 = new PtrToIntInst(ptr_386, IntegerType::get(mod->getContext(), 32), "", label_tableswitch4_i_i_i);
+BinaryOperator* int32_388 = BinaryOperator::Create(Instruction::Or, int32_387, int32_385, "", label_tableswitch4_i_i_i);
+CastInst* ptr__c2 = new IntToPtrInst(int32_388, PointerTy_0, ".c2", label_tableswitch4_i_i_i);
+ new StoreInst(ptr__c2, ptr_382, false, label_tableswitch4_i_i_i);
 BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_tableswitch4_i_i_i);
 
 // Block tableswitch5.i.i.i (label_tableswitch5_i_i_i)
-LoadInst* ptr_397 = new LoadInst(const_ptr_91, "", false, label_tableswitch5_i_i_i);
-CastInst* int32_398 = new PtrToIntInst(ptr_397, IntegerType::get(mod->getContext(), 32), "", label_tableswitch5_i_i_i);
-BinaryOperator* int32_399 = BinaryOperator::Create(Instruction::Or, int32_398, const_int32_58, "", label_tableswitch5_i_i_i);
-std::vector<Value*> ptr_400_indices;
-ptr_400_indices.push_back(const_int32_56);
-ptr_400_indices.push_back(const_int32_77);
-Instruction* ptr_400 = GetElementPtrInst::Create(ptr_290, ptr_400_indices.begin(), ptr_400_indices.end(), "", label_tableswitch5_i_i_i);
-CastInst* ptr_401 = new BitCastInst(ptr_400, PointerTy_0, "", label_tableswitch5_i_i_i);
-LoadInst* int8_402 = new LoadInst(ptr_401, "", false, label_tableswitch5_i_i_i);
-BinaryOperator* int8_403 = BinaryOperator::Create(Instruction::And, int8_402, const_int8_80, "", label_tableswitch5_i_i_i);
-CastInst* int8_404 = new TruncInst(int32_399, IntegerType::get(mod->getContext(), 8), "", label_tableswitch5_i_i_i);
-BinaryOperator* int8_405 = BinaryOperator::Create(Instruction::Or, int8_404, int8_403, "", label_tableswitch5_i_i_i);
- new StoreInst(int8_405, ptr_401, false, label_tableswitch5_i_i_i);
-LoadInst* ptr_407 = new LoadInst(const_ptr_92, "", false, label_tableswitch5_i_i_i);
-CastInst* int32_408 = new PtrToIntInst(ptr_290, IntegerType::get(mod->getContext(), 32), "", label_tableswitch5_i_i_i);
-BinaryOperator* int32_409 = BinaryOperator::Create(Instruction::And, int32_408, const_int32_84, "", label_tableswitch5_i_i_i);
-CastInst* ptr_410 = new IntToPtrInst(int32_409, PointerTy_30, "", label_tableswitch5_i_i_i);
-std::vector<Value*> ptr_411_indices;
-ptr_411_indices.push_back(const_int32_58);
-ptr_411_indices.push_back(const_int32_77);
-Instruction* ptr_411 = GetElementPtrInst::Create(ptr_407, ptr_411_indices.begin(), ptr_411_indices.end(), "", label_tableswitch5_i_i_i);
-LoadInst* ptr_412 = new LoadInst(ptr_411, "", false, label_tableswitch5_i_i_i);
-GetElementPtrInst* ptr_413 = GetElementPtrInst::Create(ptr_412, const_int32_71, "", label_tableswitch5_i_i_i);
-CastInst* ptr_414 = new BitCastInst(ptr_413, PointerTy_32, "", label_tableswitch5_i_i_i);
-LoadInst* ptr_415 = new LoadInst(ptr_414, "", false, label_tableswitch5_i_i_i);
-ICmpInst* int1_416 = new ICmpInst(*label_tableswitch5_i_i_i, ICmpInst::ICMP_EQ, ptr_415, const_ptr_85, "");
-BranchInst::Create(label_true_IF_NULL_i1_i_i3_i_i_i, label_true_IFNULL_i5_i_i6_i_i_i, int1_416, label_tableswitch5_i_i_i);
+std::vector<Value*> ptr_391_indices;
+ptr_391_indices.push_back(const_int32_56);
+ptr_391_indices.push_back(const_int32_77);
+Instruction* ptr_391 = GetElementPtrInst::Create(ptr_291, ptr_391_indices.begin(), ptr_391_indices.end(), "", label_tableswitch5_i_i_i);
+CastInst* ptr_392 = new BitCastInst(ptr_391, PointerTy_25, "", label_tableswitch5_i_i_i);
+LoadInst* int32_393 = new LoadInst(ptr_392, "", false, label_tableswitch5_i_i_i);
+BinaryOperator* int32_394 = BinaryOperator::Create(Instruction::And, int32_393, const_int32_55, "", label_tableswitch5_i_i_i);
+LoadInst* ptr_395 = new LoadInst(const_ptr_92, "", false, label_tableswitch5_i_i_i);
+CastInst* int32_396 = new PtrToIntInst(ptr_395, IntegerType::get(mod->getContext(), 32), "", label_tableswitch5_i_i_i);
+BinaryOperator* int32_397 = BinaryOperator::Create(Instruction::Or, int32_394, const_int32_58, "", label_tableswitch5_i_i_i);
+BinaryOperator* int32_398 = BinaryOperator::Create(Instruction::Or, int32_397, int32_396, "", label_tableswitch5_i_i_i);
+CastInst* ptr__c = new IntToPtrInst(int32_398, PointerTy_0, ".c", label_tableswitch5_i_i_i);
+ new StoreInst(ptr__c, ptr_391, false, label_tableswitch5_i_i_i);
+LoadInst* ptr_400 = new LoadInst(const_ptr_93, "", false, label_tableswitch5_i_i_i);
+CastInst* int32_401 = new PtrToIntInst(ptr_291, IntegerType::get(mod->getContext(), 32), "", label_tableswitch5_i_i_i);
+BinaryOperator* int32_402 = BinaryOperator::Create(Instruction::And, int32_401, const_int32_85, "", label_tableswitch5_i_i_i);
+CastInst* ptr_403 = new IntToPtrInst(int32_402, PointerTy_30, "", label_tableswitch5_i_i_i);
+std::vector<Value*> ptr_404_indices;
+ptr_404_indices.push_back(const_int32_58);
+ptr_404_indices.push_back(const_int32_77);
+Instruction* ptr_404 = GetElementPtrInst::Create(ptr_400, ptr_404_indices.begin(), ptr_404_indices.end(), "", label_tableswitch5_i_i_i);
+LoadInst* ptr_405 = new LoadInst(ptr_404, "", false, label_tableswitch5_i_i_i);
+GetElementPtrInst* ptr_406 = GetElementPtrInst::Create(ptr_405, const_int32_71, "", label_tableswitch5_i_i_i);
+CastInst* ptr_407 = new BitCastInst(ptr_406, PointerTy_32, "", label_tableswitch5_i_i_i);
+LoadInst* ptr_408 = new LoadInst(ptr_407, "", false, label_tableswitch5_i_i_i);
+ICmpInst* int1_409 = new ICmpInst(*label_tableswitch5_i_i_i, ICmpInst::ICMP_EQ, ptr_408, const_ptr_86, "");
+BranchInst::Create(label_true_IF_NULL_i1_i_i3_i_i_i, label_true_IFNULL_i5_i_i6_i_i_i, int1_409, label_tableswitch5_i_i_i);
 
 // Block true IF*NULL.i1.i.i3.i.i.i (label_true_IF_NULL_i1_i_i3_i_i_i)
-std::vector<Value*> ptr_418_indices;
-ptr_418_indices.push_back(const_int32_56);
-ptr_418_indices.push_back(const_int32_56);
-Instruction* ptr_418 = GetElementPtrInst::Create(ptr_410, ptr_418_indices.begin(), ptr_418_indices.end(), "", label_true_IF_NULL_i1_i_i3_i_i_i);
- new StoreInst(const_ptr_78, ptr_418, false, label_true_IF_NULL_i1_i_i3_i_i_i);
-GetElementPtrInst* ptr_420 = GetElementPtrInst::Create(ptr_412, const_int32_62, "", label_true_IF_NULL_i1_i_i3_i_i_i);
-CastInst* ptr_421 = new BitCastInst(ptr_420, PointerTy_29, "", label_true_IF_NULL_i1_i_i3_i_i_i);
-LoadInst* ptr_422 = new LoadInst(ptr_421, "", false, label_true_IF_NULL_i1_i_i3_i_i_i);
-LoadInst* ptr_423 = new LoadInst(const_ptr_86, "", false, label_true_IF_NULL_i1_i_i3_i_i_i);
-CastInst* int32_424 = new PtrToIntInst(ptr_423, IntegerType::get(mod->getContext(), 32), "", label_true_IF_NULL_i1_i_i3_i_i_i);
-BinaryOperator* int32_425 = BinaryOperator::Create(Instruction::Add, int32_424, int32_409, "", label_true_IF_NULL_i1_i_i3_i_i_i);
-CastInst* ptr_426 = new IntToPtrInst(int32_425, PointerTy_29, "", label_true_IF_NULL_i1_i_i3_i_i_i);
- new StoreInst(ptr_422, ptr_426, false, label_true_IF_NULL_i1_i_i3_i_i_i);
-LoadInst* ptr_428 = new LoadInst(ptr_421, "", false, label_true_IF_NULL_i1_i_i3_i_i_i);
-ICmpInst* int1_429 = new ICmpInst(*label_true_IF_NULL_i1_i_i3_i_i_i, ICmpInst::ICMP_EQ, ptr_428, const_ptr_87, "");
-BranchInst::Create(label_GOTO_or_IF_1_i3_i_i5_i_i_i, label_false_IFNE_i7_i_i8_i_i_i, int1_429, label_true_IF_NULL_i1_i_i3_i_i_i);
+std::vector<Value*> ptr_411_indices;
+ptr_411_indices.push_back(const_int32_56);
+ptr_411_indices.push_back(const_int32_56);
+Instruction* ptr_411 = GetElementPtrInst::Create(ptr_403, ptr_411_indices.begin(), ptr_411_indices.end(), "", label_true_IF_NULL_i1_i_i3_i_i_i);
+ new StoreInst(const_ptr_78, ptr_411, false, label_true_IF_NULL_i1_i_i3_i_i_i);
+GetElementPtrInst* ptr_413 = GetElementPtrInst::Create(ptr_405, const_int32_62, "", label_true_IF_NULL_i1_i_i3_i_i_i);
+CastInst* ptr_414 = new BitCastInst(ptr_413, PointerTy_29, "", label_true_IF_NULL_i1_i_i3_i_i_i);
+LoadInst* ptr_415 = new LoadInst(ptr_414, "", false, label_true_IF_NULL_i1_i_i3_i_i_i);
+LoadInst* ptr_416 = new LoadInst(const_ptr_87, "", false, label_true_IF_NULL_i1_i_i3_i_i_i);
+CastInst* int32_417 = new PtrToIntInst(ptr_416, IntegerType::get(mod->getContext(), 32), "", label_true_IF_NULL_i1_i_i3_i_i_i);
+BinaryOperator* int32_418 = BinaryOperator::Create(Instruction::Add, int32_417, int32_402, "", label_true_IF_NULL_i1_i_i3_i_i_i);
+CastInst* ptr_419 = new IntToPtrInst(int32_418, PointerTy_29, "", label_true_IF_NULL_i1_i_i3_i_i_i);
+ new StoreInst(ptr_415, ptr_419, false, label_true_IF_NULL_i1_i_i3_i_i_i);
+LoadInst* ptr_421 = new LoadInst(ptr_414, "", false, label_true_IF_NULL_i1_i_i3_i_i_i);
+ICmpInst* int1_422 = new ICmpInst(*label_true_IF_NULL_i1_i_i3_i_i_i, ICmpInst::ICMP_EQ, ptr_421, const_ptr_88, "");
+BranchInst::Create(label_GOTO_or_IF_1_i3_i_i5_i_i_i, label_false_IFNE_i7_i_i8_i_i_i, int1_422, label_true_IF_NULL_i1_i_i3_i_i_i);
 
 // Block GOTO or IF*1.i3.i.i5.i.i.i (label_GOTO_or_IF_1_i3_i_i5_i_i_i)
-CastInst* ptr_431 = new BitCastInst(ptr_420, PointerTy_35, "", label_GOTO_or_IF_1_i3_i_i5_i_i_i);
-CastInst* ptr__c1_i2_i_i4_i_i_i = new IntToPtrInst(int32_409, PointerTy_31, ".c1.i2.i.i4.i.i.i", label_GOTO_or_IF_1_i3_i_i5_i_i_i);
- new StoreInst(ptr__c1_i2_i_i4_i_i_i, ptr_431, false, label_GOTO_or_IF_1_i3_i_i5_i_i_i);
-LoadInst* ptr_433 = new LoadInst(ptr_414, "", false, label_GOTO_or_IF_1_i3_i_i5_i_i_i);
-ICmpInst* int1_434 = new ICmpInst(*label_GOTO_or_IF_1_i3_i_i5_i_i_i, ICmpInst::ICMP_EQ, ptr_433, const_ptr_85, "");
-BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_true_IFNULL3_i8_i_i9_i_i_i, int1_434, label_GOTO_or_IF_1_i3_i_i5_i_i_i);
+CastInst* ptr_424 = new BitCastInst(ptr_413, PointerTy_35, "", label_GOTO_or_IF_1_i3_i_i5_i_i_i);
+CastInst* ptr__c1_i2_i_i4_i_i_i = new IntToPtrInst(int32_402, PointerTy_31, ".c1.i2.i.i4.i.i.i", label_GOTO_or_IF_1_i3_i_i5_i_i_i);
+ new StoreInst(ptr__c1_i2_i_i4_i_i_i, ptr_424, false, label_GOTO_or_IF_1_i3_i_i5_i_i_i);
+LoadInst* ptr_426 = new LoadInst(ptr_407, "", false, label_GOTO_or_IF_1_i3_i_i5_i_i_i);
+ICmpInst* int1_427 = new ICmpInst(*label_GOTO_or_IF_1_i3_i_i5_i_i_i, ICmpInst::ICMP_EQ, ptr_426, const_ptr_86, "");
+BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_true_IFNULL3_i8_i_i9_i_i_i, int1_427, label_GOTO_or_IF_1_i3_i_i5_i_i_i);
 
 // Block true IFNULL.i5.i.i6.i.i.i (label_true_IFNULL_i5_i_i6_i_i_i)
-GetElementPtrInst* ptr_436 = GetElementPtrInst::Create(ptr_415, const_int32_62, "", label_true_IFNULL_i5_i_i6_i_i_i);
-CastInst* ptr_437 = new BitCastInst(ptr_436, PointerTy_25, "", label_true_IFNULL_i5_i_i6_i_i_i);
+GetElementPtrInst* ptr_429 = GetElementPtrInst::Create(ptr_408, const_int32_62, "", label_true_IFNULL_i5_i_i6_i_i_i);
+CastInst* ptr_430 = new BitCastInst(ptr_429, PointerTy_25, "", label_true_IFNULL_i5_i_i6_i_i_i);
 BranchInst::Create(label_bb2_i_i_i, label_true_IFNULL_i5_i_i6_i_i_i);
 
 // Block bb.i.i.i (label_bb_i_i_i)
-Argument* fwdref_440 = new Argument(IntegerType::get(mod->getContext(), 1));
-BranchInst::Create(label_true_IF_NULL_i1_i_i3_i_i_i, label_bb1_i_i_i, fwdref_440, label_bb_i_i_i);
+Argument* fwdref_433 = new Argument(IntegerType::get(mod->getContext(), 1));
+BranchInst::Create(label_true_IF_NULL_i1_i_i3_i_i_i, label_bb1_i_i_i, fwdref_433, label_bb_i_i_i);
 
 // Block bb1.i.i.i (label_bb1_i_i_i)
-Argument* fwdref_442 = new Argument(IntegerType::get(mod->getContext(), 32));
-BinaryOperator* int32_441 = BinaryOperator::Create(Instruction::Add, fwdref_442, const_int32_77, "", label_bb1_i_i_i);
+Argument* fwdref_435 = new Argument(IntegerType::get(mod->getContext(), 32));
+BinaryOperator* int32_434 = BinaryOperator::Create(Instruction::Add, fwdref_435, const_int32_77, "", label_bb1_i_i_i);
 BranchInst::Create(label_bb2_i_i_i, label_bb1_i_i_i);
 
 // Block bb2.i.i.i (label_bb2_i_i_i)
-PHINode* int32_444 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_bb2_i_i_i);
-int32_444->reserveOperandSpace(2);
-int32_444->addIncoming(const_int32_56, label_true_IFNULL_i5_i_i6_i_i_i);
-int32_444->addIncoming(int32_441, label_bb1_i_i_i);
+PHINode* int32_437 = PHINode::Create(IntegerType::get(mod->getContext(), 32), "", label_bb2_i_i_i);
+int32_437->reserveOperandSpace(2);
+int32_437->addIncoming(const_int32_56, label_true_IFNULL_i5_i_i6_i_i_i);
+int32_437->addIncoming(int32_434, label_bb1_i_i_i);
 
-ICmpInst* int1_445 = new ICmpInst(*label_bb2_i_i_i, ICmpInst::ICMP_ULT, int32_444, const_int32_88, "");
-std::vector<Value*> void_446_params;
-void_446_params.push_back(const_int1_89);
-void_446_params.push_back(const_int1_89);
-void_446_params.push_back(const_int1_89);
-void_446_params.push_back(const_int1_89);
-void_446_params.push_back(const_int1_89);
-CallInst* void_446 = CallInst::Create(func_llvm_memory_barrier, void_446_params.begin(), void_446_params.end(), "", label_bb2_i_i_i);
-void_446->setCallingConv(CallingConv::C);
-void_446->setTailCall(true);AttrListPtr void_446_PAL;
+ICmpInst* int1_438 = new ICmpInst(*label_bb2_i_i_i, ICmpInst::ICMP_ULT, int32_437, const_int32_89, "");
+std::vector<Value*> void_439_params;
+void_439_params.push_back(const_int1_90);
+void_439_params.push_back(const_int1_90);
+void_439_params.push_back(const_int1_90);
+void_439_params.push_back(const_int1_90);
+void_439_params.push_back(const_int1_90);
+CallInst* void_439 = CallInst::Create(func_llvm_memory_barrier, void_439_params.begin(), void_439_params.end(), "", label_bb2_i_i_i);
+void_439->setCallingConv(CallingConv::C);
+void_439->setTailCall(true);
+AttrListPtr void_439_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_446_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_439_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+void_439->setAttributes(void_439_PAL);
+
+std::vector<Value*> int32_440_params;
+int32_440_params.push_back(ptr_430);
+int32_440_params.push_back(const_int32_56);
+int32_440_params.push_back(const_int32_77);
+CallInst* int32_440 = CallInst::Create(func_llvm_atomic_cmp_swap_i32_p0i32, int32_440_params.begin(), int32_440_params.end(), "", label_bb2_i_i_i);
+int32_440->setCallingConv(CallingConv::C);
+int32_440->setTailCall(true);
+AttrListPtr int32_440_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ int32_440_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+int32_440->setAttributes(int32_440_PAL);
+
+std::vector<Value*> void_441_params;
+void_441_params.push_back(const_int1_90);
+void_441_params.push_back(const_int1_90);
+void_441_params.push_back(const_int1_90);
+void_441_params.push_back(const_int1_90);
+void_441_params.push_back(const_int1_90);
+CallInst* void_441 = CallInst::Create(func_llvm_memory_barrier, void_441_params.begin(), void_441_params.end(), "", label_bb2_i_i_i);
+void_441->setCallingConv(CallingConv::C);
+void_441->setTailCall(true);
+AttrListPtr void_441_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_441_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+void_441->setAttributes(void_441_PAL);
+
+ICmpInst* int1_442 = new ICmpInst(*label_bb2_i_i_i, ICmpInst::ICMP_EQ, int32_440, const_int32_56, "");
+BranchInst::Create(label_bb_i_i_i, label_bb4_preheader_i_i_i, int1_438, label_bb2_i_i_i);
+
+// Block bb4.preheader.i.i.i (label_bb4_preheader_i_i_i)
+BranchInst::Create(label_true_IF_NULL_i1_i_i3_i_i_i, label_bb3_i_i_i, int1_442, label_bb4_preheader_i_i_i);
+
+// Block bb3.i.i.i (label_bb3_i_i_i)
+CallInst* void_445 = CallInst::Create(func__ZN3mvm6Thread5yieldEv, "", label_bb3_i_i_i);
+void_445->setCallingConv(CallingConv::C);
+void_445->setTailCall(true);
+AttrListPtr void_445_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_445_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+void_445->setAttributes(void_445_PAL);
+
+std::vector<Value*> void_446_params;
+void_446_params.push_back(const_int1_90);
+void_446_params.push_back(const_int1_90);
+void_446_params.push_back(const_int1_90);
+void_446_params.push_back(const_int1_90);
+void_446_params.push_back(const_int1_90);
+CallInst* void_446 = CallInst::Create(func_llvm_memory_barrier, void_446_params.begin(), void_446_params.end(), "", label_bb3_i_i_i);
+void_446->setCallingConv(CallingConv::C);
+void_446->setTailCall(true);
+AttrListPtr void_446_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_446_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 void_446->setAttributes(void_446_PAL);
 
 std::vector<Value*> int32_447_params;
-int32_447_params.push_back(ptr_437);
+int32_447_params.push_back(ptr_430);
 int32_447_params.push_back(const_int32_56);
 int32_447_params.push_back(const_int32_77);
-CallInst* int32_447 = CallInst::Create(func_llvm_atomic_cmp_swap_i32_p0i32, int32_447_params.begin(), int32_447_params.end(), "", label_bb2_i_i_i);
+CallInst* int32_447 = CallInst::Create(func_llvm_atomic_cmp_swap_i32_p0i32, int32_447_params.begin(), int32_447_params.end(), "", label_bb3_i_i_i);
 int32_447->setCallingConv(CallingConv::C);
-int32_447->setTailCall(true);AttrListPtr int32_447_PAL;
+int32_447->setTailCall(true);
+AttrListPtr int32_447_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  int32_447_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ int32_447_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 int32_447->setAttributes(int32_447_PAL);
 
 std::vector<Value*> void_448_params;
-void_448_params.push_back(const_int1_89);
-void_448_params.push_back(const_int1_89);
-void_448_params.push_back(const_int1_89);
-void_448_params.push_back(const_int1_89);
-void_448_params.push_back(const_int1_89);
-CallInst* void_448 = CallInst::Create(func_llvm_memory_barrier, void_448_params.begin(), void_448_params.end(), "", label_bb2_i_i_i);
+void_448_params.push_back(const_int1_90);
+void_448_params.push_back(const_int1_90);
+void_448_params.push_back(const_int1_90);
+void_448_params.push_back(const_int1_90);
+void_448_params.push_back(const_int1_90);
+CallInst* void_448 = CallInst::Create(func_llvm_memory_barrier, void_448_params.begin(), void_448_params.end(), "", label_bb3_i_i_i);
 void_448->setCallingConv(CallingConv::C);
-void_448->setTailCall(true);AttrListPtr void_448_PAL;
+void_448->setTailCall(true);
+AttrListPtr void_448_PAL;
 {
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_448_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ void_448_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
 }
 void_448->setAttributes(void_448_PAL);
 
-ICmpInst* int1_449 = new ICmpInst(*label_bb2_i_i_i, ICmpInst::ICMP_EQ, int32_447, const_int32_56, "");
-BranchInst::Create(label_bb_i_i_i, label_bb4_preheader_i_i_i, int1_445, label_bb2_i_i_i);
-
-// Block bb4.preheader.i.i.i (label_bb4_preheader_i_i_i)
-BranchInst::Create(label_true_IF_NULL_i1_i_i3_i_i_i, label_bb3_i_i_i, int1_449, label_bb4_preheader_i_i_i);
-
-// Block bb3.i.i.i (label_bb3_i_i_i)
-CallInst* void_452 = CallInst::Create(func__ZN3mvm6Thread5yieldEv, "", label_bb3_i_i_i);
-void_452->setCallingConv(CallingConv::C);
-void_452->setTailCall(true);AttrListPtr void_452_PAL;
-{
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_452_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
-}
-void_452->setAttributes(void_452_PAL);
-
-std::vector<Value*> void_453_params;
-void_453_params.push_back(const_int1_89);
-void_453_params.push_back(const_int1_89);
-void_453_params.push_back(const_int1_89);
-void_453_params.push_back(const_int1_89);
-void_453_params.push_back(const_int1_89);
-CallInst* void_453 = CallInst::Create(func_llvm_memory_barrier, void_453_params.begin(), void_453_params.end(), "", label_bb3_i_i_i);
-void_453->setCallingConv(CallingConv::C);
-void_453->setTailCall(true);AttrListPtr void_453_PAL;
-{
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_453_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
-}
-void_453->setAttributes(void_453_PAL);
-
-std::vector<Value*> int32_454_params;
-int32_454_params.push_back(ptr_437);
-int32_454_params.push_back(const_int32_56);
-int32_454_params.push_back(const_int32_77);
-CallInst* int32_454 = CallInst::Create(func_llvm_atomic_cmp_swap_i32_p0i32, int32_454_params.begin(), int32_454_params.end(), "", label_bb3_i_i_i);
-int32_454->setCallingConv(CallingConv::C);
-int32_454->setTailCall(true);AttrListPtr int32_454_PAL;
-{
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  int32_454_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
-}
-int32_454->setAttributes(int32_454_PAL);
-
-std::vector<Value*> void_455_params;
-void_455_params.push_back(const_int1_89);
-void_455_params.push_back(const_int1_89);
-void_455_params.push_back(const_int1_89);
-void_455_params.push_back(const_int1_89);
-void_455_params.push_back(const_int1_89);
-CallInst* void_455 = CallInst::Create(func_llvm_memory_barrier, void_455_params.begin(), void_455_params.end(), "", label_bb3_i_i_i);
-void_455->setCallingConv(CallingConv::C);
-void_455->setTailCall(true);AttrListPtr void_455_PAL;
-{
-  SmallVector<AttributeWithIndex, 4> Attrs;
-  AttributeWithIndex PAWI;
-  PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
-  Attrs.push_back(PAWI);
-  void_455_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
-  
-}
-void_455->setAttributes(void_455_PAL);
-
-ICmpInst* int1_456 = new ICmpInst(*label_bb3_i_i_i, ICmpInst::ICMP_EQ, int32_454, const_int32_56, "");
-BranchInst::Create(label_true_IF_NULL_i1_i_i3_i_i_i, label_bb3_i_i_i, int1_456, label_bb3_i_i_i);
+ICmpInst* int1_449 = new ICmpInst(*label_bb3_i_i_i, ICmpInst::ICMP_EQ, int32_447, const_int32_56, "");
+BranchInst::Create(label_true_IF_NULL_i1_i_i3_i_i_i, label_bb3_i_i_i, int1_449, label_bb3_i_i_i);
 
 // Block false IFNE.i7.i.i8.i.i.i (label_false_IFNE_i7_i_i8_i_i_i)
-std::vector<Value*> ptr_458_indices;
-ptr_458_indices.push_back(const_int32_56);
-ptr_458_indices.push_back(const_int32_56);
-Instruction* ptr_458 = GetElementPtrInst::Create(ptr_428, ptr_458_indices.begin(), ptr_458_indices.end(), "", label_false_IFNE_i7_i_i8_i_i_i);
-CastInst* ptr__c_i6_i_i7_i_i_i = new IntToPtrInst(int32_409, PointerTy_31, ".c.i6.i.i7.i.i.i", label_false_IFNE_i7_i_i8_i_i_i);
- new StoreInst(ptr__c_i6_i_i7_i_i_i, ptr_458, false, label_false_IFNE_i7_i_i8_i_i_i);
+std::vector<Value*> ptr_451_indices;
+ptr_451_indices.push_back(const_int32_56);
+ptr_451_indices.push_back(const_int32_56);
+Instruction* ptr_451 = GetElementPtrInst::Create(ptr_421, ptr_451_indices.begin(), ptr_451_indices.end(), "", label_false_IFNE_i7_i_i8_i_i_i);
+CastInst* ptr__c_i6_i_i7_i_i_i = new IntToPtrInst(int32_402, PointerTy_31, ".c.i6.i.i7.i.i.i", label_false_IFNE_i7_i_i8_i_i_i);
+ new StoreInst(ptr__c_i6_i_i7_i_i_i, ptr_451, false, label_false_IFNE_i7_i_i8_i_i_i);
 BranchInst::Create(label_GOTO_or_IF_1_i3_i_i5_i_i_i, label_false_IFNE_i7_i_i8_i_i_i);
 
 // Block true IFNULL3.i8.i.i9.i.i.i (label_true_IFNULL3_i8_i_i9_i_i_i)
-GetElementPtrInst* ptr_461 = GetElementPtrInst::Create(ptr_433, const_int32_62, "", label_true_IFNULL3_i8_i_i9_i_i_i);
-CastInst* ptr_462 = new BitCastInst(ptr_461, PointerTy_25, "", label_true_IFNULL3_i8_i_i9_i_i_i);
- new StoreInst(const_int32_56, ptr_462, false, label_true_IFNULL3_i8_i_i9_i_i_i);
+GetElementPtrInst* ptr_454 = GetElementPtrInst::Create(ptr_426, const_int32_62, "", label_true_IFNULL3_i8_i_i9_i_i_i);
+CastInst* ptr_455 = new BitCastInst(ptr_454, PointerTy_25, "", label_true_IFNULL3_i8_i_i9_i_i_i);
+ new StoreInst(const_int32_56, ptr_455, false, label_true_IFNULL3_i8_i_i9_i_i_i);
 BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_true_IFNULL3_i8_i_i9_i_i_i);
 
 // Block false IFNE.i.i (label_false_IFNE_i_i)
-LoadInst* ptr_465 = new LoadInst(const_ptr_93, "", false, label_false_IFNE_i_i);
-CastInst* int32_466 = new PtrToIntInst(ptr_465, IntegerType::get(mod->getContext(), 32), "", label_false_IFNE_i_i);
-std::vector<Value*> ptr_467_indices;
-ptr_467_indices.push_back(const_int32_56);
-ptr_467_indices.push_back(const_int32_77);
-Instruction* ptr_467 = GetElementPtrInst::Create(ptr_290, ptr_467_indices.begin(), ptr_467_indices.end(), "", label_false_IFNE_i_i);
-CastInst* ptr_468 = new BitCastInst(ptr_467, PointerTy_0, "", label_false_IFNE_i_i);
-LoadInst* int8_469 = new LoadInst(ptr_468, "", false, label_false_IFNE_i_i);
-BinaryOperator* int8_470 = BinaryOperator::Create(Instruction::And, int8_469, const_int8_80, "", label_false_IFNE_i_i);
-CastInst* int8_471 = new TruncInst(int32_466, IntegerType::get(mod->getContext(), 8), "", label_false_IFNE_i_i);
-BinaryOperator* int8_472 = BinaryOperator::Create(Instruction::Or, int8_470, int8_471, "", label_false_IFNE_i_i);
- new StoreInst(int8_472, ptr_468, false, label_false_IFNE_i_i);
+std::vector<Value*> ptr_458_indices;
+ptr_458_indices.push_back(const_int32_56);
+ptr_458_indices.push_back(const_int32_77);
+Instruction* ptr_458 = GetElementPtrInst::Create(ptr_291, ptr_458_indices.begin(), ptr_458_indices.end(), "", label_false_IFNE_i_i);
+CastInst* ptr_459 = new BitCastInst(ptr_458, PointerTy_25, "", label_false_IFNE_i_i);
+LoadInst* int32_460 = new LoadInst(ptr_459, "", false, label_false_IFNE_i_i);
+BinaryOperator* int32_461 = BinaryOperator::Create(Instruction::And, int32_460, const_int32_79, "", label_false_IFNE_i_i);
+LoadInst* ptr_462 = new LoadInst(const_ptr_94, "", false, label_false_IFNE_i_i);
+CastInst* int32_463 = new PtrToIntInst(ptr_462, IntegerType::get(mod->getContext(), 32), "", label_false_IFNE_i_i);
+BinaryOperator* int32_464 = BinaryOperator::Create(Instruction::Or, int32_463, int32_461, "", label_false_IFNE_i_i);
+CastInst* ptr__c6 = new IntToPtrInst(int32_464, PointerTy_0, ".c6", label_false_IFNE_i_i);
+ new StoreInst(ptr__c6, ptr_458, false, label_false_IFNE_i_i);
 BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_false_IFNE_i_i);
 
 // Block JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2.exit (label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit)
-CastInst* ptr_tmp1 = new BitCastInst(ptr_290, PointerTy_0, "tmp1", label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
+CastInst* ptr_tmp1 = new BitCastInst(ptr_291, PointerTy_0, "tmp1", label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
 ReturnInst::Create(mod->getContext(), ptr_tmp1, label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
 
 // Resolve Forward References
-fwdref_364->replaceAllUsesWith(int32_366); delete fwdref_364;
-fwdref_362->replaceAllUsesWith(int1_371); delete fwdref_362;
-fwdref_442->replaceAllUsesWith(int32_444); delete fwdref_442;
-fwdref_440->replaceAllUsesWith(int1_449); delete fwdref_440;
+fwdref_359->replaceAllUsesWith(int32_361); delete fwdref_359;
+fwdref_357->replaceAllUsesWith(int1_366); delete fwdref_357;
+fwdref_435->replaceAllUsesWith(int32_437); delete fwdref_435;
+fwdref_433->replaceAllUsesWith(int1_442); delete fwdref_433;
 return func_gcmalloc;
 }

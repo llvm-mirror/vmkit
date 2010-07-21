@@ -24,7 +24,7 @@ extern "C" void Java_org_j3_mmtk_Strings_write___3CI(JavaObject* str,
   }
 }
 
-extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(JavaObject*str,
+extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(JavaObject* str,
                                                              ArrayUInt16* msg,
                                                              sint32 len) {
   llvm_gcroot(str, 0);

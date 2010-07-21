@@ -10,41 +10,34 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
+#include "debug.h"
+
 using namespace j3;
 
-extern "C" void Java_org_j3_runtime_VM_sysWrite__Lorg_vmmagic_unboxed_Extent_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM_sysWrite__Lorg_vmmagic_unboxed_Address_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM_sysWrite__F () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM_sysWrite__I () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM_sysWrite__Ljava_lang_String_2 () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM_sysWriteln__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_runtime_VM_sysWriteln__Ljava_lang_String_2 () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_runtime_VM_sysWrite__Lorg_vmmagic_unboxed_Extent_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_runtime_VM_sysWrite__Lorg_vmmagic_unboxed_Address_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_runtime_VM_sysWrite__F () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_runtime_VM_sysWrite__I () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_runtime_VM_sysWrite__Ljava_lang_String_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_runtime_VM_sysWriteln__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_runtime_VM_sysWriteln__Ljava_lang_String_2 () { UNIMPLEMENTED(); }
 
 extern "C" void Java_org_j3_runtime_VM__1assert__ZLjava_lang_String_2 () {
-#ifdef DEBUG
-  JavaThread::get()->printBacktrace();
-#endif
-  abort();
+  ABORT();
 }
 
 extern "C" void Java_org_j3_runtime_VM_sysExit__I () {
-#ifdef DEBUG
-  JavaThread::get()->printBacktrace();
-#endif
-  abort();
+  ABORT();
 }
 
-
-extern "C" void Java_org_j3_runtime_VM_sysFail__Ljava_lang_String_2 () { 
-#ifdef DEBUG
-  JavaThread::get()->printBacktrace();
-#endif
+extern "C" void Java_org_j3_runtime_VM_sysFail__Ljava_lang_String_2 () {
+  // Just call abort because gcmalloc calls this function. If it were to
+  // call printf, MMTkInline.inc could not be JIT-compiled.
   abort();
 }
 
 extern "C" void Java_org_j3_runtime_VM__1assert__Z (bool cond) {
-  
-  assert(cond);
+  ASSERT(cond);
 }
 
 extern "C" bool Java_org_j3_runtime_VM_buildFor64Addr__ () { 

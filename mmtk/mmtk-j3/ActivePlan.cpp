@@ -13,6 +13,8 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
+#include "debug.h"
+
 using namespace j3;
 
 struct ActivePlan {
@@ -37,4 +39,4 @@ extern "C" void Java_org_j3_mmtk_ActivePlan_resetMutatorIterator__ (ActivePlan* 
   A->next = 0;
 }
 
-extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ () { UNIMPLEMENTED(); }

@@ -9,11 +9,14 @@
 
 #include <sys/mman.h>
 
-
+#include "mvm/VirtualMachine.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
 
+#include "debug.h"
+
 using namespace j3;
+
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ () {
   return (uintptr_t)0x30000000;
 }
@@ -40,12 +43,12 @@ Java_org_j3_mmtk_Memory_dzmmap__Lorg_vmmagic_unboxed_Address_2I(JavaObject* M,
 
 extern "C" void
 Java_org_j3_mmtk_Memory_mprotect__Lorg_vmmagic_unboxed_Address_2I () {
-  JavaThread::get()->printBacktrace(); abort();
+  UNIMPLEMENTED();
 }
 
 extern "C" void
 Java_org_j3_mmtk_Memory_munprotect__Lorg_vmmagic_unboxed_Address_2I () {
-  JavaThread::get()->printBacktrace(); abort();
+  UNIMPLEMENTED();
 }
 
 extern "C" void
@@ -57,10 +60,10 @@ Java_org_j3_mmtk_Memory_zero__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed
 
 extern "C" void
 Java_org_j3_mmtk_Memory_zeroPages__Lorg_vmmagic_unboxed_Address_2I () {
-  JavaThread::get()->printBacktrace(); abort();
+  UNIMPLEMENTED();
 }
 
 extern "C" void
 Java_org_j3_mmtk_Memory_dumpMemory__Lorg_vmmagic_unboxed_Address_2II () {
-  JavaThread::get()->printBacktrace(); abort();
+  UNIMPLEMENTED();
 }

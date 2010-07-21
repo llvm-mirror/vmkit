@@ -12,6 +12,8 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
+#include "debug.h"
+
 using namespace j3;
 
 extern "C" void JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
@@ -110,9 +112,9 @@ extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_Mutat
 }
 
 
-extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ () { UNIMPLEMENTED(); }

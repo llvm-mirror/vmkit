@@ -7,9 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "mvm/VirtualMachine.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
 
+#include "debug.h"
+
 using namespace j3;
 
-extern "C" void Java_org_j3_mmtk_Assert_dumpStack__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_Assert_dumpStack__ () { UNIMPLEMENTED(); }

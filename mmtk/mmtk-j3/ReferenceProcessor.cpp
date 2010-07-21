@@ -13,6 +13,8 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
+#include "debug.h"
+
 using namespace j3;
 
 struct ReferenceProcessor {
@@ -36,6 +38,6 @@ extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLo
 
 }
 
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ () { JavaThread::get()->printBacktrace(); abort(); }
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ () { JavaThread::get()->printBacktrace(); abort(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ () { UNIMPLEMENTED(); }
