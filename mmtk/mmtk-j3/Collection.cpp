@@ -112,9 +112,9 @@ extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_Mutat
 }
 
 
-extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ (JavaObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I (JavaObject* C, sint32 val) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ (JavaObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ (JavaObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ (JavaObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ (JavaObject* C) { UNIMPLEMENTED(); }

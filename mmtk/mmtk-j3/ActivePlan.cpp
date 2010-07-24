@@ -41,4 +41,4 @@ extern "C" void Java_org_j3_mmtk_ActivePlan_resetMutatorIterator__ (ActivePlan* 
   A->current = NULL;
 }
 
-extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ (ActivePlan* A) { UNIMPLEMENTED(); }

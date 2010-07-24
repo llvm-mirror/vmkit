@@ -16,11 +16,11 @@
 
 using namespace j3;
 
-extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_getArrayBaseOffset__ () {
+extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_getArrayBaseOffset__ (JavaObject* OM) {
   return sizeof(JavaObject) + sizeof(ssize_t);
 }
 
-extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_GC_1HEADER_1OFFSET__ () {
+extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_GC_1HEADER_1OFFSET__ (JavaObject* OM) {
   return sizeof(void*);
 }
 
@@ -113,17 +113,44 @@ extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_Obj
   return JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(src, VT, size, allocator);
 }
 
-extern "C" void Java_org_j3_mmtk_ObjectModel_copyTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getReferenceWhenCopiedTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getObjectEndAddress__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getSizeWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getAlignWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getAlignOffsetWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getCurrentSize__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getNextObject__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_getArrayLength__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_isArray__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_isPrimitiveArray__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_isAcyclic__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ObjectModel_dumpObject__Lorg_vmmagic_unboxed_ObjectReference_2 () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ObjectModel_copyTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 (
+    JavaObject* OM, uintptr_t from, uintptr_t to, uintptr_t region) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getReferenceWhenCopiedTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 (
+    JavaObject* OM, uintptr_t from, uintptr_t to) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getObjectEndAddress__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getSizeWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getAlignWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getAlignOffsetWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getCurrentSize__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getNextObject__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_getArrayLength__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_isArray__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_isPrimitiveArray__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_isAcyclic__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+extern "C" void Java_org_j3_mmtk_ObjectModel_dumpObject__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }

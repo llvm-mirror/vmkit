@@ -23,21 +23,21 @@ struct ReferenceProcessor {
   uint32_t ordinal;
 };
 
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (ReferenceProcessor* RP, JavaObject* TL, uint8_t nursery) {
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (ReferenceProcessor* RP, uintptr_t TL, uint8_t nursery) {
   mvm::Thread* th = mvm::Thread::get();
   uint32_t val = RP->ordinal;
 
   if (val == 0) {
-    th->MyVM->scanSoftReferencesQueue(reinterpret_cast<uintptr_t>(TL));
+    th->MyVM->scanSoftReferencesQueue(TL);
   } else if (val == 1) {
-    th->MyVM->scanWeakReferencesQueue(reinterpret_cast<uintptr_t>(TL));
+    th->MyVM->scanWeakReferencesQueue(TL);
   } else {
     assert(val == 2);
-    th->MyVM->scanPhantomReferencesQueue(reinterpret_cast<uintptr_t>(TL));
+    th->MyVM->scanPhantomReferencesQueue(TL);
   }
 
 }
 
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z (ReferenceProcessor* RP, uintptr_t TL, uint8_t nursery) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ (ReferenceProcessor* RP) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ (ReferenceProcessor* RP) { UNIMPLEMENTED(); }

@@ -17,19 +17,19 @@
 
 using namespace j3;
 
-extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ () {
+extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ (JavaObject* M) {
   return (uintptr_t)0x30000000;
 }
 
-extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapEndConstant__ () {
+extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapEndConstant__ (JavaObject* M) {
   return (uintptr_t)0x70000000;
 }
 
-extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ () {
+extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (JavaObject* M) {
   return (uintptr_t)0x30000000;
 }
 
-extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableEndConstant__ () {
+extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableEndConstant__ (JavaObject* M) {
   return (uintptr_t)0x70000000;
 }
 
@@ -42,12 +42,12 @@ Java_org_j3_mmtk_Memory_dzmmap__Lorg_vmmagic_unboxed_Address_2I(JavaObject* M,
 }
 
 extern "C" void
-Java_org_j3_mmtk_Memory_mprotect__Lorg_vmmagic_unboxed_Address_2I () {
+Java_org_j3_mmtk_Memory_mprotect__Lorg_vmmagic_unboxed_Address_2I (JavaObject* M, uintptr_t address, sint32 size) {
   UNIMPLEMENTED();
 }
 
 extern "C" void
-Java_org_j3_mmtk_Memory_munprotect__Lorg_vmmagic_unboxed_Address_2I () {
+Java_org_j3_mmtk_Memory_munprotect__Lorg_vmmagic_unboxed_Address_2I (JavaObject* M, uintptr_t address, sint32 size) {
   UNIMPLEMENTED();
 }
 
@@ -59,11 +59,11 @@ Java_org_j3_mmtk_Memory_zero__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed
 }
 
 extern "C" void
-Java_org_j3_mmtk_Memory_zeroPages__Lorg_vmmagic_unboxed_Address_2I () {
+Java_org_j3_mmtk_Memory_zeroPages__Lorg_vmmagic_unboxed_Address_2I (JavaObject* M, uintptr_t address, sint32 size) {
   UNIMPLEMENTED();
 }
 
 extern "C" void
-Java_org_j3_mmtk_Memory_dumpMemory__Lorg_vmmagic_unboxed_Address_2II () {
+Java_org_j3_mmtk_Memory_dumpMemory__Lorg_vmmagic_unboxed_Address_2II (JavaObject* M, uintptr_t address, sint32 before, sint32 after) {
   UNIMPLEMENTED();
 }

@@ -30,7 +30,7 @@ extern "C" void Java_org_j3_mmtk_MMTk_1Events_tracePageReleased__Lorg_mmtk_polic
 }
 
 extern "C" void Java_org_j3_mmtk_MMTk_1Events_heapSizeChanged__Lorg_vmmagic_unboxed_Extent_2(
-    uintptr_t heapSize) {
+    JavaObject* event, uintptr_t heapSize) {
 #ifdef DEBUG
   fprintf(stderr, "New heap size : %d\n", (int)heapSize);
 #endif

@@ -15,15 +15,15 @@
 
 using namespace j3;
 
-extern "C" void Java_org_j3_mmtk_Statistics_perfCtrInit__I (JavaObject* S) {
+extern "C" void Java_org_j3_mmtk_Statistics_perfCtrInit__I (JavaObject* S, sint32 val) {
   // Implement me
 }
 
-extern "C" int64_t Java_org_j3_mmtk_Statistics_cycles__ () {
+extern "C" int64_t Java_org_j3_mmtk_Statistics_cycles__ (JavaObject* S) {
   return 0;
 }
 
-extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ () {
+extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ (JavaObject* S) {
   int64_t result;
   struct timeval tp; 
 
@@ -46,6 +46,7 @@ extern "C" int32_t Java_org_j3_mmtk_Statistics_getCollectionCount__ (JavaObject*
 extern "C" int64_t Java_org_j3_mmtk_Statistics_perfCtrReadCycles__ (JavaObject* S) {
   return 0;
 }
+
 extern "C" int64_t Java_org_j3_mmtk_Statistics_perfCtrReadMetric__ (JavaObject* S) {
   return 0;
 }

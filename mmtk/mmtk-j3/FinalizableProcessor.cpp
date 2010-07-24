@@ -17,12 +17,12 @@
 
 using namespace j3;
 
-extern "C" void Java_org_j3_mmtk_FinalizableProcessor_clear__ () {
+extern "C" void Java_org_j3_mmtk_FinalizableProcessor_clear__ (JavaObject* P) {
   UNIMPLEMENTED();
 }
 
 extern "C" void
-Java_org_j3_mmtk_FinalizableProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z () {
+Java_org_j3_mmtk_FinalizableProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z (JavaObject* P, uintptr_t TL, uint8_t nursery) {
   UNIMPLEMENTED();
 }
 
