@@ -1280,6 +1280,22 @@ llvm::Function* JavaJIT::javaCompile() {
 
   }
   currentBlock = endBlock;
+  
+  Instruction* returnValue = NULL;
+  if (returnType == intrinsics->JavaObjectType &&
+      TheCompiler->useCooperativeGC()) {
+    returnValue = new AllocaInst(intrinsics->JavaObjectType, "",
+                                 func->begin()->getTerminator());
+    Value* GCArgs[2] = { 
+        new BitCastInst(returnValue, intrinsics->ptrPtrType, "",
+                        func->begin()->getTerminator()),
+        intrinsics->constantPtrNull
+    };
+        
+    CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+                     func->begin()->getTerminator());
+    new StoreInst(endNode, returnValue, currentBlock);
+  }
 
   if (isSynchro(compilingMethod->access))
     endSynchronize();
@@ -1318,10 +1334,18 @@ llvm::Function* JavaJIT::javaCompile() {
   if (PI == PE) {
     currentBlock->eraseFromParent();
   } else {
-    if (returnType != Type::getVoidTy(*llvmContext))
-      ReturnInst::Create(*llvmContext, endNode, currentBlock);
-    else
+    if (returnType != Type::getVoidTy(*llvmContext)) {
+      if (returnType == intrinsics->JavaObjectType &&
+          TheCompiler->useCooperativeGC()) {
+        assert(returnValue && "No return value set");
+        Value* obj = new LoadInst(returnValue, "", false, currentBlock);
+        ReturnInst::Create(*llvmContext, obj, currentBlock);
+      } else {
+        ReturnInst::Create(*llvmContext, endNode, currentBlock);
+      }
+    } else {
       ReturnInst::Create(*llvmContext, currentBlock);
+    }
   }
 
   currentBlock = endExceptionBlock;
