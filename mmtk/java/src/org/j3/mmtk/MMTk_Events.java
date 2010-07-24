@@ -21,12 +21,9 @@ import org.vmmagic.unboxed.Extent;
 @Uninterruptible
 public class MMTk_Events extends org.mmtk.vm.MMTk_Events {
 
-  public void tracePageAcquired(Space space, Address startAddress, int numPages) {
-  }
+  public native void tracePageAcquired(Space space, Address startAddress, int numPages);
 
-  public void tracePageReleased(Space space, Address startAddress, int numPages) {
-  }
+  public native void tracePageReleased(Space space, Address startAddress, int numPages);
 
-  public void heapSizeChanged(Extent heapSize) {
-  }
+  public native void heapSizeChanged(Extent heapSize);
 }
