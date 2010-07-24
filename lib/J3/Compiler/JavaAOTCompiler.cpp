@@ -2055,6 +2055,7 @@ void mainCompilerStart(JavaThread* th) {
       }
 
     } else {
+      M->addJavaPasses(false);
       char* realName = (char*)allocator.Allocate(size + 1);
       if (size > 6 && !strcmp(&name[size - 6], ".class")) {
         memcpy(realName, name, size - 6);
