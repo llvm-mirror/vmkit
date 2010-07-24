@@ -78,6 +78,7 @@ void CollectionRV::synchronize() {
   
   // And wait for other threads to finish.
   waitRV();
+  unlockRV();
 }
 
 void CollectionRV::join() {
@@ -152,6 +153,4 @@ void CollectionRV::finishRV() {
   condEndRV.broadcast();
   self->inRV = false;
   self->MyVM->ThreadLock.unlock();
-  
-  unlockRV();
 }
