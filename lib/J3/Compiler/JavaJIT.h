@@ -95,6 +95,7 @@ public:
     currentCtpIndex = -1;
     currentBytecode = -1;
     callNumber = 0;
+    thisObject = NULL;
   }
 
   /// javaCompile - Compile the Java method.
@@ -403,6 +404,8 @@ private:
   
 //===-------------------------- Synchronization  --------------------------===//
   
+  llvm::Value* thisObject;
+
   /// beginSynchronize - Emit synchronization code to acquire the instance
   /// or the class.
   void beginSynchronize();

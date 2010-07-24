@@ -347,10 +347,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Constant* sizeF = ConstantInt::get(Type::getInt32Ty(*llvmContext), 2 * sizeof(void*));
   Value* Frame = new AllocaInst(Type::getInt8Ty(*llvmContext), sizeF, "", currentBlock);
   
-  // Synchronize before saying we're entering native
-  if (isSynchro(compilingMethod->access))
-    beginSynchronize();
-
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
   std::vector<Value*> nativeArgs;
   
@@ -400,6 +396,9 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
       Instruction* temp = new AllocaInst(intrinsics->JavaObjectType, "",
                                          func->begin()->getTerminator());
+      if (i == func->arg_begin() && !stat) {
+        this->thisObject = temp;
+      }
       
       if (TheCompiler->useCooperativeGC()) {
         Value* GCArgs[2] = { 
@@ -473,6 +472,10 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     currentBlock = endBlock;
     nativeFunc = node;
   }
+
+  // Synchronize before saying we're entering native
+  if (isSynchro(compilingMethod->access))
+    beginSynchronize();
   
   Value* Args4[3] = { temp, oldCLIN, Frame };
 
@@ -727,7 +730,8 @@ Value* JavaJIT::getClassCtp() {
 void JavaJIT::beginSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
-    obj = llvmFunction->arg_begin();
+    assert(thisObject != NULL && "beginSynchronize without this");
+    obj = new LoadInst(thisObject, "", false, currentBlock);
   } else {
     obj = TheCompiler->getJavaClassPtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
@@ -738,7 +742,8 @@ void JavaJIT::beginSynchronize() {
 void JavaJIT::endSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
-    obj = llvmFunction->arg_begin();
+    assert(thisObject != NULL && "endSynchronize without this");
+    obj = new LoadInst(thisObject, "", false, currentBlock);
   } else {
     obj = TheCompiler->getJavaClassPtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
@@ -908,6 +913,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     ++i;
     ++index;
     ++count;
+    thisObject = objectLocals[0];
   }
 
   
@@ -1086,6 +1092,7 @@ llvm::Function* JavaJIT::javaCompile() {
     ++i;
     ++index;
     ++count;
+    thisObject = objectLocals[0];
   }
 
   for (;count < max; ++i, ++index, ++count, ++type) {
