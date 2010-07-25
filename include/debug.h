@@ -77,4 +77,10 @@
 #undef ALWAYS_INLINE
 #define ALWAYS_INLINE __attribute__ ((always_inline))
 
+#ifndef DEBUG
+#ifdef _DEBUG
+#define DEBUG
+#endif
+#endif
+
 #endif
