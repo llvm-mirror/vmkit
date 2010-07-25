@@ -65,7 +65,13 @@ extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_Tra
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_scanObject__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (
-    JavaObject* Scanning, JavaObject* TL, uintptr_t ref) { UNIMPLEMENTED(); }
+    JavaObject* Scanning, uintptr_t TC, JavaObject* obj) {
+  assert(obj && "No object to trace");
+  if (obj->getVirtualTable()) {
+    assert(obj->getVirtualTable()->tracer && "No tracer in VT");
+    obj->tracer(TC);
+  }
+}
 
 extern "C" void Java_org_j3_mmtk_Scanning_precopyChildren__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2 (
     JavaObject* Scanning, JavaObject TL, uintptr_t ref) { UNIMPLEMENTED(); }
