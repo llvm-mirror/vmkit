@@ -166,9 +166,6 @@ void CommonClass::tracer(uintptr_t closure) {
 
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
     if (delegatee[i] != NULL) {
-      // TODO: remove this call to trace once no delegatee is static allocated
-      // in AOT mode.
-      delegatee[i]->tracer(closure);
       mvm::Collector::markAndTraceRoot(delegatee + i, closure);
     }
   }
