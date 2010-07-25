@@ -301,6 +301,7 @@ private:
 #endif
   }
 
+
   /// pop - Pop a value from the stack and return it.
   llvm::Value* pop() {
     llvm::Value* res = top();
@@ -312,21 +313,22 @@ private:
   /// top - Return the value on top of the stack.
   llvm::Value* top() {
     CommonClass* cl = stack.back();
-    if (cl == upcalls->OfInt)
+    if (cl == upcalls->OfInt) {
       return new llvm::LoadInst(intStack[currentStackIndex - 1], false,
                                 currentBlock);
-    if (cl == upcalls->OfFloat)
+    } else if (cl == upcalls->OfFloat) {
       return new llvm::LoadInst(floatStack[currentStackIndex - 1], false,
                                 currentBlock);
-    if (cl == upcalls->OfDouble)
+    } else if (cl == upcalls->OfDouble) {
       return new llvm::LoadInst(doubleStack[currentStackIndex - 1], false,
                                 currentBlock);
-    if (cl == upcalls->OfLong)
+    } else if (cl == upcalls->OfLong) {
       return new llvm::LoadInst(longStack[currentStackIndex - 1], false,
                                 currentBlock);
-    
-    return new llvm::LoadInst(objectStack[currentStackIndex - 1], false,
-                              currentBlock);
+    } else {
+      return new llvm::LoadInst(objectStack[currentStackIndex - 1], false,
+                                currentBlock);
+    }
   }
   
   /// topTypeInfo - Return the type of the value on top of the stack.
@@ -440,7 +442,6 @@ private:
 
   /// ldResolved - Emit code to get a pointer to a field.
   llvm::Value* ldResolved(uint16 index, bool stat, llvm::Value* object,
-                          const llvm::Type* fieldType, 
                           const llvm::Type* fieldTypePtr);
 
 //===--------------------- Constant pool accesses  ------------------------===//
@@ -469,6 +470,9 @@ private:
   /// are popped from the compilation stack.
   void makeArgs(llvm::FunctionType::param_iterator it,
                 uint32 index, std::vector<llvm::Value*>& result, uint32 nb);
+
+  /// getTarget - Get the target object for invocation.
+  llvm::Value* getTarget(llvm::FunctionType::param_iterator it, uint32 nb);
 
   /// invokeVirtual - Invoke a Java virtual method.
   void invokeVirtual(uint16 index);

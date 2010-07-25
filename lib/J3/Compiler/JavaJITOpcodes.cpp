@@ -682,14 +682,14 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       }
       
       case AASTORE : {
-        Value* val = pop();
-        Value* index = pop();
-        Value* obj = pop();
-        Value* ptr = verifyAndComputePtr(obj, index,
-                                         intrinsics->JavaArrayObjectType);
-
         if (TheCompiler->hasExceptionsEnabled()) {
-
+          // Get val and object and don't pop them: IsAssignableFromFunction
+          // may go into runtime and we don't want values in registers at that
+          // point.
+          Value* val = new LoadInst(objectStack[currentStackIndex - 1], false,
+                                    currentBlock);
+          Value* obj = new LoadInst(objectStack[currentStackIndex - 3], false,
+                                    currentBlock);
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
                                     intrinsics->JavaObjectNullConstant, "");
 
@@ -720,6 +720,11 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
           currentBlock = endBlock;
         }
+        Value* val = pop();
+        Value* index = pop();
+        Value* obj = pop();
+        Value* ptr = verifyAndComputePtr(obj, index,
+                                         intrinsics->JavaArrayObjectType);
 
         new StoreInst(val, ptr, false, currentBlock);
         break;

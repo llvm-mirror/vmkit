@@ -116,19 +116,17 @@ void JavaJIT::invokeVirtual(uint16 index) {
     }
   }
  
-#if !defined(WITHOUT_VTABLE)
   Typedef* retTypedef = signature->getReturnType();
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->nbArguments + 1);
   const llvm::Type* retType = virtualType->getReturnType();
-   
-  JITVerifyNull(args[0]);
 
   bool needsInit = false;
   if (canBeDirect && meth && !TheCompiler->needsCallback(meth, &needsInit)) {
+    makeArgs(it, index, args, signature->nbArguments + 1);
+    JITVerifyNull(args[0]);
     val = invoke(TheCompiler->getMethod(meth), args, "", currentBlock);
   } else {
 
@@ -167,8 +165,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
     }
 #endif
 
-    Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
-                                 currentBlock);
     Value* indexes2[2];
     indexes2[0] = intrinsics->constantZero;
 
@@ -206,7 +202,9 @@ void JavaJIT::invokeVirtual(uint16 index) {
       Args.push_back(TheCompiler->getNativeClass(compilingClass));
       Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
       Args.push_back(GV);
-      Args.push_back(args[0]);
+      Value* targetObject = getTarget(virtualType->param_end(),
+                                      signature->nbArguments + 1);
+      Args.push_back(new LoadInst(targetObject, "", false, currentBlock));
       load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
       node->addIncoming(load, currentBlock);
       BranchInst::Create(endResolveVirtual, currentBlock);
@@ -219,6 +217,11 @@ void JavaJIT::invokeVirtual(uint16 index) {
       indexesCtp = mul;
 #endif
     }
+
+    makeArgs(it, index, args, signature->nbArguments + 1);
+    JITVerifyNull(args[0]);
+    Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
+                                 currentBlock);
  
     Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, indexes2 + 2, "",
                                                currentBlock);
@@ -256,10 +259,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
       }
     }
   }
-    
-#else
-  return invokeInterface(index);
-#endif
 }
 
 llvm::Value* JavaJIT::getCurrentThread(const llvm::Type* Ty) {
@@ -1570,7 +1569,28 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
   for (uint32 i = 0; i < nb; ++i) {
     Args.push_back(args[i]);
   }
-  
+}
+
+Value* JavaJIT::getTarget(FunctionType::param_iterator it, uint32 nb) {
+#if defined(ISOLATE_SHARING)
+  nb += 1;
+#endif
+#if defined(ISOLATE_SHARING)
+  sint32 start = nb - 2;
+  it--;
+  it--;
+#else
+  sint32 start = nb - 1;
+#endif
+  uint32 nbObjects = 0;
+  for (sint32 i = start; i >= 0; --i) {
+    it--;
+    if (it->get() == intrinsics->JavaObjectType) {
+      nbObjects++;
+    }
+  }
+  assert(nbObjects > 0 && "No this");
+  return objectStack[currentStackIndex - nbObjects];
 }
 
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
@@ -1707,19 +1727,6 @@ void JavaJIT::invokeSpecial(uint16 index) {
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   llvm::Instruction* val = 0;
-  
-  std::vector<Value*> args;
-  FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->nbArguments + 1);
-
-  if (!meth) {
-    meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
-  }
-  
-  if (meth == compilingClass->classLoader->bootstrapLoader->upcalls->InitObject)
-    return;
-  
-  JITVerifyNull(args[0]); 
 
 #if defined(ISOLATE_SHARING)
   const Type* Ty = intrinsics->ConstantPoolType;
@@ -1747,27 +1754,41 @@ void JavaJIT::invokeSpecial(uint16 index) {
   args.push_back(node);
 #endif
 
+  if (!meth) {
+    meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
+  }
+
+  Value* func = 0;
+  bool needsInit = false;
+  if (TheCompiler->needsCallback(meth, &needsInit)) {
+    if (needsInit) {
+      // Make sure the class is loaded before materializing the method.
+      uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
+      UserCommonClass* cl = 0;
+      Value* Cl = getResolvedCommonClass(clIndex, false, &cl);
+      if (cl == NULL) {
+        CallInst::Create(intrinsics->ForceLoadedCheckFunction, Cl, "",
+                         currentBlock);
+      }
+    }
+    func = TheCompiler->addCallback(compilingClass, index, signature, false,
+                                    currentBlock);
+  } else {
+    func = TheCompiler->getMethod(meth);
+  }
+
+  std::vector<Value*> args;
+  FunctionType::param_iterator it  = virtualType->param_end();
+  makeArgs(it, index, args, signature->nbArguments + 1);
+  JITVerifyNull(args[0]); 
+  
+  if (meth == compilingClass->classLoader->bootstrapLoader->upcalls->InitObject) {
+    return;
+  }
+
   if (meth && canBeInlined(meth)) {
     val = invokeInline(meth, args);
   } else {
-    Value* func = 0;
-    bool needsInit = false;
-    if (TheCompiler->needsCallback(meth, &needsInit)) {
-      if (needsInit) {
-        // Make sure the class is loaded before materializing the method.
-        uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
-        UserCommonClass* cl = 0;
-        Value* Cl = getResolvedCommonClass(clIndex, false, &cl);
-        if (!cl) {
-          CallInst::Create(intrinsics->ForceLoadedCheckFunction, Cl, "",
-                           currentBlock);
-        }
-      }
-      func = TheCompiler->addCallback(compilingClass, index, signature, false,
-                                      currentBlock);
-    } else {
-      func = TheCompiler->getMethod(meth);
-    }
     val = invoke(func, args, "", currentBlock);
   }
   
@@ -1784,70 +1805,66 @@ void JavaJIT::invokeSpecial(uint16 index) {
       }
     }
   }
-
 }
 
 void JavaJIT::invokeStatic(uint16 index) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   Signdef* signature = 0;
   const UTF8* name = 0;
-  const UTF8* cl = 0;
-  ctpInfo->nameOfStaticOrSpecialMethod(index, cl, name, signature);
+  const UTF8* className = 0;
+  ctpInfo->nameOfStaticOrSpecialMethod(index, className, name, signature);
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* staticType = LSI->getStaticType();
+  ctpInfo->markAsStaticCall(index);
+  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
   llvm::Instruction* val = 0;
   
-  std::vector<Value*> args; // size = [signature->nbIn + 2]; 
-  FunctionType::param_iterator it  = staticType->param_end();
-  makeArgs(it, index, args, signature->nbArguments);
-  ctpInfo->markAsStaticCall(index);
-
-  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
-  if (cl->equals(loader->mathName)) {
-    val = lowerMathOps(name, args);
-  }
-
-  else if (cl->equals(loader->stackWalkerName)) {
+  if (className->equals(loader->stackWalkerName)) {
     callsStackWalker = true;
   }
 
-  if (!val) {
-    JavaMethod* meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
-                                                            signature);
+  JavaMethod* meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_STATIC,
+                                                          signature);
     
 
+  uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
+  UserClass* cl = 0;
+  Value* Cl = getResolvedClass(clIndex, true, true, &cl);
+  if (!meth || (cl && needsInitialisationCheck(cl, compilingClass))) {
+    CallInst::Create(intrinsics->ForceInitialisationCheckFunction, Cl, "",
+                     currentBlock);
+  }
+  
+  Value* func = 0;
+  bool needsInit = false;
+  if (TheCompiler->needsCallback(meth, &needsInit)) {
+    func = TheCompiler->addCallback(compilingClass, index, signature,
+                                    true, currentBlock);
+  } else {
+    func = TheCompiler->getMethod(meth);
+  }
+
 #if defined(ISOLATE_SHARING)
-    Value* newCtpCache = getConstantPoolAt(index,
-                                           intrinsics->StaticCtpLookupFunction,
-                                           intrinsics->ConstantPoolType, 0,
-                                           false);
-    args.push_back(newCtpCache);
+  Value* newCtpCache = getConstantPoolAt(index,
+                                         intrinsics->StaticCtpLookupFunction,
+                                         intrinsics->ConstantPoolType, 0,
+                                         false);
 #endif
+  std::vector<Value*> args; // size = [signature->nbIn + 2]; 
+  FunctionType::param_iterator it  = staticType->param_end();
+  makeArgs(it, index, args, signature->nbArguments);
+#if defined(ISOLATE_SHARING)
+  args.push_back(newCtpCache);
+#endif
+
+  if (className->equals(loader->mathName)) {
+    val = lowerMathOps(name, args);
+  }
     
-    uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
-    UserClass* cl = 0;
-    Value* Cl = getResolvedClass(clIndex, true, true, &cl);
-    if (!meth || (cl && needsInitialisationCheck(cl, compilingClass))) {
-      CallInst::Create(intrinsics->ForceInitialisationCheckFunction, Cl, "",
-                       currentBlock);
-    }
-    
-    if (meth && canBeInlined(meth)) {
+  if (val == NULL) {
+    if (meth != NULL && canBeInlined(meth)) {
       val = invokeInline(meth, args);
     } else {
-      Value* func = 0;
-      bool needsInit = false;
-      if (TheCompiler->needsCallback(meth, &needsInit)) {
-        func = TheCompiler->addCallback(compilingClass, index, signature,
-                                        true, currentBlock);
-      } else {
-        /*if (meth == upcalls->SystemArraycopy ||
-            meth == upcalls->VMSystemArraycopy) {
-          lowerArraycopy(args);
-          return;
-        }*/
-        func = TheCompiler->getMethod(meth);
-      }
       val = invoke(func, args, "", currentBlock);
     }
   }
@@ -2009,7 +2026,7 @@ void JavaJIT::invokeNew(uint16 index) {
 }
 
 Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object, 
-                           const Type* fieldType, const Type* fieldTypePtr) {
+                           const Type* fieldTypePtr) {
   JavaConstantPool* info = compilingClass->ctpInfo;
   
   JavaField* field = info->lookupField(index, stat);
@@ -2038,6 +2055,8 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
                                 currentBlock); 
 #endif
     } else {
+      object = new LoadInst(object, false, currentBlock);
+      JITVerifyNull(object);
       type = LCI->getVirtualType();
     }
     
@@ -2057,13 +2076,15 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
                           intrinsics->VirtualFieldLookupFunction;
     
   const Type* returnType = 0;
-  if (stat)
+  if (stat) {
     returnType = intrinsics->ptrType;
-  else
+  } else {
     returnType = Type::getInt32Ty(*llvmContext);
+  }
 
   Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
   if (!stat) {
+    object = new LoadInst(object, false, currentBlock);
     Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
     Value* args[2] = { zero, ptr };
     ptr = GetElementPtrInst::Create(tmp, args, args + 2, "", currentBlock);
@@ -2100,22 +2121,22 @@ void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock
  
 
 void JavaJIT::setStaticField(uint16 index) {
-  Value* val = pop(); 
-  
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
-  
-  if (type == Type::getInt64Ty(*llvmContext) || type == Type::getDoubleTy(*llvmContext)) {
+   
+  Value* ptr = ldResolved(index, true, NULL, LAI.llvmTypePtr);
+
+  Value* val = pop(); 
+  if (type == Type::getInt64Ty(*llvmContext) ||
+      type == Type::getDoubleTy(*llvmContext)) {
     val = pop();
   }
-  
-  Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
-  
+
   if (type != val->getType()) { // int1, int8, int16
     convertValue(val, type, currentBlock, false);
   }
-  
+
   new StoreInst(val, ptr, false, currentBlock);
 }
 
@@ -2124,7 +2145,7 @@ void JavaJIT::getStaticField(uint16 index) {
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
   
-  Value* ptr = ldResolved(index, true, 0, type, LAI.llvmTypePtr);
+  Value* ptr = ldResolved(index, true, NULL, LAI.llvmTypePtr);
   
   bool final = false;
 #if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
@@ -2194,20 +2215,24 @@ void JavaJIT::getStaticField(uint16 index) {
 }
 
 void JavaJIT::setVirtualField(uint16 index) {
-  Value* val = pop();
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
-  
+  int stackIndex = currentStackIndex - 2;
+  if (type == Type::getInt64Ty(*llvmContext) ||
+      type == Type::getDoubleTy(*llvmContext)) {
+    stackIndex--;
+  }
+  Value* object = objectStack[stackIndex];
+  Value* ptr = ldResolved(index, false, object, LAI.llvmTypePtr);
+
+  Value* val = pop();
   if (type == Type::getInt64Ty(*llvmContext) ||
       type == Type::getDoubleTy(*llvmContext)) {
     val = pop();
   }
+  pop(); // Pop the object
   
-  Value* object = pop();
-  JITVerifyNull(object);
-  Value* ptr = ldResolved(index, false, object, type, LAI.llvmTypePtr);
-
   if (type != val->getType()) { // int1, int8, int16
     convertValue(val, type, currentBlock, false);
   }
@@ -2222,10 +2247,10 @@ void JavaJIT::getVirtualField(uint16 index) {
   
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   const Type* type = LAI.llvmType;
-  Value* obj = pop();
-  JITVerifyNull(obj);
+  Value* obj = objectStack[currentStackIndex - 1];
+  pop(); // Pop the object
   
-  Value* ptr = ldResolved(index, false, obj, type, LAI.llvmTypePtr);
+  Value* ptr = ldResolved(index, false, obj, LAI.llvmTypePtr);
   
   JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   bool final = false;
@@ -2282,12 +2307,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   const llvm::PointerType* virtualPtrType = LSI->getVirtualPtrType();
-
-  std::vector<Value*> args; // size = [signature->nbIn + 3];
-
-  FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->nbArguments + 1);
-  
+ 
   const llvm::Type* retType = virtualType->getReturnType();
   BasicBlock* endBlock = createBasicBlock("end interface invoke");
   PHINode * node = 0;
@@ -2295,7 +2315,6 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
     node = PHINode::Create(retType, "", endBlock);
   }
   
-  JITVerifyNull(args[0]);
  
   CommonClass* cl = 0;
   JavaMethod* meth = 0;
@@ -2308,6 +2327,14 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
     Meth = getConstantPoolAt(index, intrinsics->InterfaceLookupFunction,
                              intrinsics->JavaMethodType, 0, true);
   }
+
+  // Compute the arguments after calling getConstantPoolAt because the
+  // arguments will be loaded and the runtime may trigger GC.
+  std::vector<Value*> args; // size = [signature->nbIn + 3];
+
+  FunctionType::param_iterator it  = virtualType->param_end();
+  makeArgs(it, index, args, signature->nbArguments + 1);
+  JITVerifyNull(args[0]);
 
   BasicBlock* label_bb = createBasicBlock("bb");
   BasicBlock* label_bb4 = createBasicBlock("bb4");
