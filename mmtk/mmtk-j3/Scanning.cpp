@@ -54,10 +54,9 @@ extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan
 
 extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* Scanning, uint32_t id, JavaObject* TC, JavaObject* obj) {
   assert(obj && "No object to trace");
-  if (obj->getVirtualTable()) {
-    assert(obj->getVirtualTable()->tracer && "No tracer in VT");
-    obj->tracer(reinterpret_cast<uintptr_t>(TC));
-  }
+  assert(obj->getVirtualTable() && "Vo virtual table");
+  assert(obj->getVirtualTable()->tracer && "No tracer in VT");
+  obj->tracer(reinterpret_cast<uintptr_t>(TC));
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_TraceLocal_2 (JavaObject* Scanning, JavaObject* TL) {
@@ -67,10 +66,9 @@ extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_Tra
 extern "C" void Java_org_j3_mmtk_Scanning_scanObject__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (
     JavaObject* Scanning, uintptr_t TC, JavaObject* obj) {
   assert(obj && "No object to trace");
-  if (obj->getVirtualTable()) {
-    assert(obj->getVirtualTable()->tracer && "No tracer in VT");
-    obj->tracer(TC);
-  }
+  assert(obj->getVirtualTable() && "Vo virtual table");
+  assert(obj->getVirtualTable()->tracer && "No tracer in VT");
+  obj->tracer(TC);
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_precopyChildren__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2 (
