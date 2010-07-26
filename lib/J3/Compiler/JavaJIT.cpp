@@ -1063,16 +1063,7 @@ llvm::Function* JavaJIT::javaCompile() {
     longStack.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", currentBlock));
     floatStack.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", currentBlock));
   }
-
-#if JNJVM_EXECUTE > 0
-    {
-    Value* arg = TheCompiler->getMethodInClass(compilingMethod);
-
-    llvm::CallInst::Create(intrinsics->PrintMethodStartFunction, arg, "",
-                           currentBlock);
-    }
-#endif
-  
+ 
   uint32 index = 0;
   uint32 count = 0;
 #if defined(ISOLATE_SHARING)
@@ -1120,6 +1111,16 @@ llvm::Function* JavaJIT::javaCompile() {
       addHighLevelType(V, cur->findAssocClass(compilingClass->classLoader));
     }
   }
+
+  // Now that arguments have been setup, we can proceed with runtime calls.
+#if JNJVM_EXECUTE > 0
+    {
+    Value* arg = TheCompiler->getMethodInClass(compilingMethod);
+
+    llvm::CallInst::Create(intrinsics->PrintMethodStartFunction, arg, "",
+                           currentBlock);
+    }
+#endif
 
 #if defined(ISOLATE_SHARING)
   ctpCache = i;
@@ -1284,15 +1285,16 @@ llvm::Function* JavaJIT::javaCompile() {
   if (returnType == intrinsics->JavaObjectType &&
       TheCompiler->useCooperativeGC()) {
     returnValue = new AllocaInst(intrinsics->JavaObjectType, "",
-                                 func->begin()->getTerminator());
-    Value* GCArgs[2] = { 
-        new BitCastInst(returnValue, intrinsics->ptrPtrType, "",
-                        func->begin()->getTerminator()),
-        intrinsics->constantPtrNull
-    };
+                                 func->begin()->begin());
+    Instruction* cast = 
+        new BitCastInst(returnValue, intrinsics->ptrPtrType, "");
+    cast->insertAfter(returnValue);
+    Value* GCArgs[2] = { cast, intrinsics->constantPtrNull };
         
-    CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
-                     func->begin()->getTerminator());
+    Instruction* call =
+      CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "");
+    call->insertAfter(cast);
+
     new StoreInst(endNode, returnValue, currentBlock);
   }
 
