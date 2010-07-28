@@ -231,10 +231,6 @@ private:
   ///
   virtual void internalClearException() {}
 
-  /// joinRV - Join a rendezvous.
-  ///
-  void joinRV();
-
 public:
  
   /// tracer - Does nothing. Used for child classes which may defined
@@ -244,6 +240,9 @@ public:
   
   void* getLastSP() { return lastSP; }
   void  setLastSP(void* V) { lastSP = V; }
+  
+  void joinRVBeforeEnter();
+  void joinRVAfterLeave();
 
   void enterUncooperativeCode(unsigned level = 0) __attribute__ ((noinline)) {
     if (isMvmThread()) {
@@ -253,7 +252,7 @@ public:
         void* temp = __builtin_frame_address(0);
         while (level--) temp = ((void**)temp)[0];
         lastSP = temp;
-        if (doYield) joinRV();
+        if (doYield) joinRVBeforeEnter();
         assert(lastSP && "No last SP when entering uncooperative code");
       }
     }
@@ -264,7 +263,7 @@ public:
       if (!inRV) {
         assert(!lastSP && "SP already set when entering uncooperative code");
         lastSP = SP;
-        if (doYield) joinRV();
+        if (doYield) joinRVBeforeEnter();
         assert(lastSP && "No last SP when entering uncooperative code");
       }
     }
@@ -274,13 +273,9 @@ public:
     if (isMvmThread()) {
       if (!inRV) {
         assert(lastSP && "No last SP when leaving uncooperative code");
-        // Check to see if a rendezvous has been set while being in native code.
-        if (doYield) joinRV();
-        // Clear lastSP. If a rendezvous happens there, the thread will join it
-        // in the next iteration and set lastSP.
         lastSP = 0;
         // A rendezvous has just been initiated, join it.
-        if (doYield) joinRV();
+        if (doYield) joinRVAfterLeave();
         assert(!lastSP && "SP has a value after leaving uncooperative code");
       }
     }

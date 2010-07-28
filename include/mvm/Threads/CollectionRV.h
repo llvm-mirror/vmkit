@@ -17,7 +17,7 @@
 namespace mvm {
 
 class CollectionRV {
-  
+protected: 
   /// _lockRV - Lock for synchronization.
   LockNormal _lockRV;         
   
@@ -30,26 +30,11 @@ class CollectionRV {
   /// nbJoined - Number of threads that joined the rendezvous.
   unsigned nbJoined;
   
-  /// cooperative - Is the rendez-vous cooperative?
-  bool cooperative;
-
-  /// rendezvousNb - The identifier of the rendez-vous.
-  unsigned rendezvousNb;
-  
-public:
- 
+public: 
   CollectionRV() {
-    rendezvousNb = 0;
     nbJoined = 0;
-#ifdef WITH_LLVM_GCC
-    cooperative = true;
-#else
-    cooperative = false;
-#endif
   }
  
-  bool isCooperative() { return cooperative; }
-
   void lockRV() { _lockRV.lock(); }
   void unlockRV() { _lockRV.unlock(); }
 
@@ -65,19 +50,37 @@ public:
     unlockRV();
     mvm::Thread::get()->inRV = false;
   }
- 
-  void finishRV();
   
-  void collectorGo() { condInitiator.broadcast(); }
+  void another_mark();
 
-  void another_mark() { nbJoined++; }
+  virtual void finishRV() = 0;
+  virtual void synchronize() = 0;
 
+  virtual void join() = 0;
+  virtual void joinAfterUncooperative() = 0;
+  virtual void joinBeforeUncooperative() = 0;
+};
+
+class CooperativeCollectionRV : public CollectionRV {
+public: 
+  void finishRV();
   void synchronize();
 
   void join();
-
-  unsigned getNumber() { return rendezvousNb; }
+  void joinAfterUncooperative();
+  void joinBeforeUncooperative();
 };
+
+class UncooperativeCollectionRV : public CollectionRV {
+public: 
+  void finishRV();
+  void synchronize();
+
+  void join();
+  void joinAfterUncooperative();
+  void joinBeforeUncooperative();
+};
+
 
 }
 

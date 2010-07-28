@@ -70,6 +70,7 @@
   abort(); }                                      \
 
 #define ABORT() UNIMPLEMENTED()
+#define UNREACHABLE() ABORT()
 
 #define ASSERT(cond) {  \
   if (!cond) ABORT(); } \

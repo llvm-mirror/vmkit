@@ -41,13 +41,19 @@ void Thread::exit(int value) {
 void Thread::yield(void) {
   Thread* th = mvm::Thread::get();
   if (th->isMvmThread()) {
-    if (th->doYield && !th->inRV) th->joinRV();
+    if (th->doYield && !th->inRV) {
+      th->MyVM->rendezvous.join();
+    }
   }
   sched_yield();
 }
 
-void Thread::joinRV() {
-  MyVM->rendezvous.join(); 
+void Thread::joinRVBeforeEnter() {
+  MyVM->rendezvous.joinBeforeUncooperative(); 
+}
+
+void Thread::joinRVAfterLeave() {
+  MyVM->rendezvous.joinAfterUncooperative(); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {

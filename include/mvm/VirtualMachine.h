@@ -510,7 +510,11 @@ public:
 
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
-  CollectionRV rendezvous;
+#ifdef WITH_LLVM_GCC
+  CooperativeCollectionRV rendezvous;
+#else
+  UncooperativeCollectionRV rendezvous;
+#endif
 
 
   StartEndFunctionMap RuntimeFunctions;
