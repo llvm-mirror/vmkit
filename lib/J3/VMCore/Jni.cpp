@@ -22,12 +22,12 @@
 
 using namespace j3;
 
-static Jnjvm* myVM(JNIEnv* env) {
+Jnjvm* myVM(JNIEnv* env) {
   return JavaThread::get()->getJVM();
 }
 
-static UserClass* getClassFromStaticMethod(Jnjvm* vm, JavaMethod* meth,
-                                           JavaObject* clazz) {
+UserClass* getClassFromStaticMethod(Jnjvm* vm, JavaMethod* meth,
+                                    JavaObject* clazz) {
   llvm_gcroot(clazz, 0);
 #ifdef ISOLATE_SHARING
   return (UserClass*)UserCommonClass::resolvedImplClass(vm, clazz, false);
