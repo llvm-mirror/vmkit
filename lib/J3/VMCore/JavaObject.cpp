@@ -20,30 +20,44 @@
 
 using namespace j3;
 
-uint16_t JavaObject::hashCodeGenerator = 1;
+static const int hashCodeIncrement = mvm::GCBitMask + 1;
+uint16_t JavaObject::hashCodeGenerator = hashCodeIncrement;
 
 /// hashCode - Return the hash code of this object.
 uint32_t JavaObject::hashCode(JavaObject* self) {
   llvm_gcroot(self, 0);
   if (!mvm::MovesObject) return (uint32_t)(long)self;
 
-  uintptr_t oldLock = self->lock.lock;
-  uintptr_t val = (oldLock & mvm::HashMask) >> mvm::GCBits;
-  if (val) return val ^ (uintptr_t)getClass(self);
-  if (hashCodeGenerator >= (mvm::HashMask >> mvm::GCBits)) {
-    val = hashCodeGenerator = 1;
-  } else {
-    val = ++hashCodeGenerator;
+  uintptr_t header = self->lock.lock;
+  uintptr_t GCBits = header & mvm::GCBitMask;
+  uintptr_t val = header & mvm::HashMask;
+  if (val != 0) {
+    return val ^ (uintptr_t)getClass(self);
   }
+  val = hashCodeGenerator;
+  hashCodeGenerator += hashCodeIncrement;
+  val = val % mvm::HashMask;
+  if (val == 0) {
+    // It is possible that in the same time, a thread is in this method and
+    // gets the same hash code value than this thread. This is fine.
+    val = hashCodeIncrement;
+    hashCodeGenerator += hashCodeIncrement;
+  }
+  assert(val > mvm::GCBitMask);
+  assert(val <= mvm::HashMask);
+  assert(val != hashCodeGenerator);
 
   do {
-    uintptr_t oldLock = self->lock.lock;
-    uintptr_t newLock = (val << mvm::GCBits) | oldLock;
-      __sync_val_compare_and_swap(&(self->lock.lock), oldLock, newLock);
-  } while ((self->lock.lock & mvm::HashMask)  == 0);
+    header = self->lock.lock;
+    if ((header & mvm::HashMask) != 0) break;
+    uintptr_t newHeader = header | val;
+    assert((newHeader & ~mvm::HashMask) == header);
+    __sync_val_compare_and_swap(&(self->lock.lock), header, newHeader);
+  } while (true);
 
-  return ((self->lock.lock & mvm::HashMask) >> mvm::GCBits) ^
-      (uintptr_t)getClass(self);
+  assert((self->lock.lock & mvm::HashMask) != 0);
+  assert(GCBits == (self->lock.lock & mvm::GCBitMask));
+  return (self->lock.lock & mvm::HashMask) ^ (uintptr_t)getClass(self);
 }
 
 
