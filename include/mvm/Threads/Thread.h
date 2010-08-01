@@ -251,7 +251,8 @@ public:
         ++level;
         void* temp = __builtin_frame_address(0);
         while (level--) temp = ((void**)temp)[0];
-        lastSP = temp;
+        // The cas is not necessary, but it does a memory barrier.
+        __sync_bool_compare_and_swap(&lastSP, 0, temp);
         if (doYield) joinRVBeforeEnter();
         assert(lastSP && "No last SP when entering uncooperative code");
       }
@@ -262,7 +263,8 @@ public:
     if (isMvmThread()) {
       if (!inRV) {
         assert(!lastSP && "SP already set when entering uncooperative code");
-        lastSP = SP;
+        // The cas is not necessary, but it does a memory barrier.
+        __sync_bool_compare_and_swap(&lastSP, 0, SP);
         if (doYield) joinRVBeforeEnter();
         assert(lastSP && "No last SP when entering uncooperative code");
       }
@@ -273,7 +275,8 @@ public:
     if (isMvmThread()) {
       if (!inRV) {
         assert(lastSP && "No last SP when leaving uncooperative code");
-        lastSP = 0;
+        // The cas is not necessary, but it does a memory barrier.
+        __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
         // A rendezvous has just been initiated, join it.
         if (doYield) joinRVAfterLeave();
         assert(!lastSP && "SP has a value after leaving uncooperative code");

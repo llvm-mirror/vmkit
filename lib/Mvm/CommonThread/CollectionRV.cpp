@@ -59,8 +59,10 @@ void CooperativeCollectionRV::synchronize() {
     assert(!cur->joinedRV);
     cur = (mvm::Thread*)cur->next();
   } while (cur != self);
+ 
+  // The CAS is not necessary but it does a memory barrier. 
+  __sync_bool_compare_and_swap(&(self->joinedRV), false, true);
 
-  self->joinedRV = true; 
   // Lookup currently blocked threads.
   for (cur = (mvm::Thread*)self->next(); cur != self; 
        cur = (mvm::Thread*)cur->next()) {
