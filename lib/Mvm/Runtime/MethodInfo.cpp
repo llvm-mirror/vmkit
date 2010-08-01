@@ -110,38 +110,72 @@ struct CamlFrames {
   CamlFrame frames[1];
 };
 
+struct CamlFrameDecoder {
+  CamlFrames* frames ;
+  uint32 currentDescriptor;
+  CamlFrame* currentFrame;
+  Dl_info info;
+
+  CamlFrameDecoder(CamlFrames* frames) {
+    this->frames = frames;
+    currentDescriptor = 0;
+    currentFrame = &(frames->frames[0]);
+    int res = dladdr(currentFrame->ReturnAddress, &info);
+    assert(res != 0 && "No frame");
+  }
+
+  bool hasNext() {
+    return currentDescriptor < frames->NumDescriptors;
+  }
+
+  void advance() {
+    ++currentDescriptor;
+    if (!hasNext()) return;
+    currentFrame = (CamlFrame*) ((char*)currentFrame + 
+      (currentFrame->NumLiveOffsets % 2) * sizeof(uint16_t) +
+      currentFrame->NumLiveOffsets * sizeof(uint16_t) +
+      sizeof(void*) + sizeof(uint16_t) + sizeof(uint16_t));
+    int res = dladdr(currentFrame->ReturnAddress, &info);
+    assert(res != 0 && "No frame");
+  }
+
+  CamlFrame* next(void** funcAddress, const char** funcName) {
+    assert(hasNext());
+    CamlFrame* result = currentFrame;
+    *funcAddress = info.dli_saddr;
+    *funcName = info.dli_sname;
+
+    // Skip the remaining ones.
+    do {
+      advance();
+    } while (hasNext() && (info.dli_saddr == *funcAddress));
+
+    // Skip the entries that start at another method.
+    while (hasNext() && (info.dli_saddr == currentFrame->ReturnAddress)) {
+      advance();
+    }
+
+    while (hasNext() && (info.dli_saddr == NULL)) {
+      advance();
+    }
+    return result;
+  }
+};
+
 void SharedStartFunctionMap::initialize() {
   CamlFrames* frames =
     (CamlFrames*)dlsym(SELF_HANDLE, "camlVmkitoptimized__frametable");
-  Dl_info info;
-  void* previousPtr = 0;
-  const char* previousName = 0;
   StaticAllocator = new BumpPtrAllocator();
+  const char* name = NULL;
+  void* address = NULL;
 
   if (frames != NULL) {
-    CamlFrame* currentFrame = &(frames->frames[0]);
-    CamlFrame* previousFrame = currentFrame;
-    for (uint16_t i = 0; i < frames->NumDescriptors; i++) {
-      int res = dladdr(currentFrame->ReturnAddress, &info);
-      if (res != 0) {
-        if (previousPtr && info.dli_saddr != previousPtr &&
-            previousFrame->ReturnAddress != previousPtr) { // This test is to avoid adding a frame to a method
-                                                           // that does not have one but starts just where the previous
-                                                           // method ends.
-          StaticCamlMethodInfo* MI =
-            new(*StaticAllocator, "StaticCamlMethodInfo")
-            StaticCamlMethodInfo(previousFrame, previousPtr, previousName);
-          addMethodInfo(MI, previousPtr);
-        }
-        previousName = info.dli_sname;
-        previousFrame = currentFrame;
-        previousPtr = info.dli_saddr;
-      }
-
-      currentFrame = (CamlFrame*) ((char*)currentFrame + 
-        (currentFrame->NumLiveOffsets % 2) * sizeof(uint16_t) +
-        currentFrame->NumLiveOffsets * sizeof(uint16_t) +
-        sizeof(void*) + sizeof(uint16_t) + sizeof(uint16_t));
+    CamlFrameDecoder decoder(frames);
+    while (decoder.hasNext()) {
+      CamlFrame* frame = decoder.next(&address, &name);
+      StaticCamlMethodInfo* MI = new(*StaticAllocator, "StaticCamlMethodInfo")
+          StaticCamlMethodInfo(frame, address, name);
+      addMethodInfo(MI, address);
     }
   }
 }
