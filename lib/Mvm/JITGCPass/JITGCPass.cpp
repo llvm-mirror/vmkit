@@ -48,7 +48,7 @@ bool JITGCPass::runOnModule(Module& M) {
 
     for (Value::use_iterator I = gcrootFun->use_begin(),
          E = gcrootFun->use_end(); I != E; ++I) {
-      if (Instruction* II = dyn_cast<Instruction>(I)) {
+      if (Instruction* II = dyn_cast<Instruction>(*I)) {
         Function* F = II->getParent()->getParent();
         if (!F->hasGC()) F->setGC("vmkit");
       }

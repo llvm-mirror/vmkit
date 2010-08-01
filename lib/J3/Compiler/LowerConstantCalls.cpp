@@ -161,8 +161,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         bool ToDelete = true;
         for (Value::use_iterator UI = AI->use_begin(), UE = AI->use_end();
              UI != UE; ++UI) {
-          if (dyn_cast<StoreInst>(UI)) continue;
-          if (BitCastInst* BI = dyn_cast<BitCastInst>(UI)) {
+          if (dyn_cast<StoreInst>(*UI)) continue;
+          if (BitCastInst* BI = dyn_cast<BitCastInst>(*UI)) {
             if (BI->hasOneUse()) {
               CallSite Call = CallSite::get(*(BI->use_begin()));
               Instruction* CI = Call.getInstruction();

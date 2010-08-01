@@ -758,8 +758,8 @@ static void removeUnusedLocals(std::vector<AllocaInst*>& locals) {
     unsigned uses = temp->getNumUses();
     if (!uses) {
       temp->eraseFromParent();
-    } else if (uses == 1 && dyn_cast<StoreInst>(temp->use_begin())) {
-      dyn_cast<StoreInst>(temp->use_begin())->eraseFromParent();
+    } else if (uses == 1 && dyn_cast<StoreInst>(*(temp->use_begin()))) {
+      dyn_cast<StoreInst>(*(temp->use_begin()))->eraseFromParent();
       temp->eraseFromParent();
     }
   }
@@ -773,8 +773,8 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
     unsigned uses = temp->getNumUses();
     if (!uses) {
       temp->eraseFromParent();
-    } else if (uses == 1 && dyn_cast<StoreInst>(temp->use_begin())) {
-      dyn_cast<StoreInst>(temp->use_begin())->eraseFromParent();
+    } else if (uses == 1 && dyn_cast<StoreInst>(*(temp->use_begin()))) {
+      dyn_cast<StoreInst>(*(temp->use_begin()))->eraseFromParent();
       temp->eraseFromParent();
     } else {
       if (coop) {

@@ -83,7 +83,7 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
           bool escapesLoop = false;
           for (Value::use_iterator U = I->use_begin(), E = I->use_end();
                U != E; ++U) {
-            if (Instruction* II = dyn_cast<Instruction>(U)) {
+            if (Instruction* II = dyn_cast<Instruction>(*U)) {
               BasicBlock* BBU = II->getParent();
               if (!CurLoop->contains(BBU)) {
                 escapesLoop = true;
@@ -114,7 +114,7 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
 static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
   for (Value::use_iterator I = Ins->use_begin(), E = Ins->use_end(); 
        I != E; ++I) {
-    if (Instruction* II = dyn_cast<Instruction>(I)) {
+    if (Instruction* II = dyn_cast<Instruction>(*I)) {
       if (II->getOpcode() == Instruction::Call || 
           II->getOpcode() == Instruction::Invoke) {
         

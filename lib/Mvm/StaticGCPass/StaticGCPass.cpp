@@ -52,7 +52,7 @@ bool StaticGCPass::runOnModule(Module& M) {
   bool error = false;
   for (Value::use_iterator I = gcrootFun->use_begin(),
        E = gcrootFun->use_end(); I != E; ++I) {
-    if (Instruction* II = dyn_cast<Instruction>(I)) {
+    if (Instruction* II = dyn_cast<Instruction>(*I)) {
       Function* F = II->getParent()->getParent();
       if (F->hasGC()) F->clearGC();
       F->setGC("ocaml");
