@@ -90,12 +90,12 @@ JavaObjectMethod* Meth) {
   return res;
 }
 
-static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
-                                 ArrayObject* args, JavaObject* Cl, jint index) 
+JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
+                          ArrayObject* args, JavaObject* Cl, jint index) 
   __attribute__((noinline));
 
-static JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
-                                 ArrayObject* args, JavaObject* Cl, jint index) {
+JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
+                          ArrayObject* args, JavaObject* Cl, jint index) {
 
   JavaObject* res = 0;
   JavaObject* exc = 0;

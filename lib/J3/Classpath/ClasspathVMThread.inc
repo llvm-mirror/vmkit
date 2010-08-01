@@ -32,7 +32,7 @@ jclass clazz
   return JavaThread::get()->currentThread();
 }
 
-static void start(JavaThread* thread) {
+void start(JavaThread* thread) {
 
   JavaObjectVMThread* vmThread = NULL;
   JavaObject* javaThread = NULL;

@@ -1901,10 +1901,10 @@ void JavaAOTCompiler::compileClass(Class* cl) {
 
 
 
-static void extractFiles(ArrayUInt8* bytes,
-                         JavaAOTCompiler* M,
-                         JnjvmBootstrapLoader* bootstrapLoader,
-                         std::vector<Class*>& classes) {
+void extractFiles(ArrayUInt8* bytes,
+                  JavaAOTCompiler* M,
+                  JnjvmBootstrapLoader* bootstrapLoader,
+                  std::vector<Class*>& classes) {
   ZipArchive archive(bytes, bootstrapLoader->allocator);
    
   mvm::ThreadAllocator allocator; 

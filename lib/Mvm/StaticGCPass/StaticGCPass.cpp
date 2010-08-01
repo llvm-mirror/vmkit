@@ -14,6 +14,8 @@
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <cstdio>
+
 using namespace llvm;
 
 namespace {
@@ -47,6 +49,7 @@ bool StaticGCPass::runOnModule(Module& M) {
     F->eraseFromParent();
   }
 
+  bool error = false;
   for (Value::use_iterator I = gcrootFun->use_begin(),
        E = gcrootFun->use_end(); I != E; ++I) {
     if (Instruction* II = dyn_cast<Instruction>(I)) {
@@ -57,8 +60,16 @@ bool StaticGCPass::runOnModule(Module& M) {
   }
 
   for (Module::iterator I = M.begin(), E = M.end(); I != E; ++I) {
+    if (I->hasGC() && I->hasInternalLinkage()) {
+      error = true;
+      fprintf(stderr, "Method %s has static linkage but uses gc_root. "
+                      "Functions using gc_root should not have static linkage.\n",
+                      I->getName().data());
+    }
     if (I->hasGC() && !strcmp(I->getGC(), "vmkit")) I->setGC("ocaml");
   }
+
+  if (error) abort();
 
   return true;
 }

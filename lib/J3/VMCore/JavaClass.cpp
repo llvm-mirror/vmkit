@@ -716,7 +716,7 @@ void UserClass::loadParents() {
 }
 
 
-static void internalLoadExceptions(JavaMethod& meth) {
+void internalLoadExceptions(JavaMethod& meth) {
   
   Attribut* codeAtt = meth.lookupAttribut(Attribut::codeAttribut);
    

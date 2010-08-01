@@ -69,14 +69,14 @@ JavaObjectConstructor* cons) {
   return res;
 }
 
-static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
-                                      ArrayObject* args,
-                                      JavaObject* Clazz, jint index) 
+JavaObject* proceedConstructor(JavaObjectConstructor* cons,
+                               ArrayObject* args,
+                               JavaObject* Clazz, jint index) 
   __attribute__ ((noinline));
  
-static JavaObject* proceedConstructor(JavaObjectConstructor* cons,
-                                      ArrayObject* args,
-                                      JavaObject* Clazz, jint index) {
+JavaObject* proceedConstructor(JavaObjectConstructor* cons,
+                               ArrayObject* args,
+                               JavaObject* Clazz, jint index) {
   JavaObject* res = 0;
   JavaObject* excp = 0;
 

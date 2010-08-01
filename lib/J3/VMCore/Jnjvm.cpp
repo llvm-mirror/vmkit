@@ -487,8 +487,8 @@ void Jnjvm::instantiationError(UserCommonClass* cl) {
 }
   
 
-static JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
-                                   Jnjvm* vm) {
+JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
+                            Jnjvm* vm) {
   ArrayUInt16* msg = NULL;
   JavaString* str = NULL;
   llvm_gcroot(msg, 0);
@@ -564,7 +564,7 @@ void Jnjvm::abstractMethodError(CommonClass* cl, const UTF8* name) {
         upcalls->InitAbstractMethodError, str);
 }
 
-static JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
+JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
   ArrayUInt16* msg = NULL;
   JavaString* str = NULL;
   llvm_gcroot(msg, 0);
@@ -603,7 +603,7 @@ static JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
   return str;
 }
 
-static JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
+JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
   JavaString* str = NULL;
   ArrayUInt16* msg = NULL;
   llvm_gcroot(msg, 0);
@@ -828,8 +828,8 @@ extern "C" int sys_strnstr(const char *haystack, const char *needle) {
 }
 
 
-static char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
-                             uint32 len) {
+char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
+                      uint32 len) {
   llvm_gcroot(manifest, 0);
   sint32 index = sys_strnstr((char*)ArrayUInt8::getElements(manifest), entry);
   if (index != -1) {
