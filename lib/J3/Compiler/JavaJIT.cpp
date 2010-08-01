@@ -204,7 +204,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
       Args.push_back(GV);
       Value* targetObject = getTarget(virtualType->param_end(),
                                       signature->nbArguments + 1);
-      Args.push_back(new LoadInst(targetObject, "", false, currentBlock));
+      Args.push_back(new LoadInst(targetObject, "", true, currentBlock));
       load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
       node->addIncoming(load, currentBlock);
       BranchInst::Create(endResolveVirtual, currentBlock);
@@ -494,7 +494,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     BranchInst::Create(endBlock, loadBlock, cmp, currentBlock);
 
     currentBlock = loadBlock;
-    result = new LoadInst(result, "", currentBlock);
+    result = new LoadInst(result, "", true, currentBlock);
     new StoreInst(result, ResultObject, "", currentBlock);
     endNode->addIncoming(result, currentBlock);
 
@@ -730,7 +730,7 @@ void JavaJIT::beginSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
     assert(thisObject != NULL && "beginSynchronize without this");
-    obj = new LoadInst(thisObject, "", false, currentBlock);
+    obj = new LoadInst(thisObject, "", true, currentBlock);
   } else {
     obj = TheCompiler->getJavaClassPtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
@@ -742,7 +742,7 @@ void JavaJIT::endSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
     assert(thisObject != NULL && "endSynchronize without this");
-    obj = new LoadInst(thisObject, "", false, currentBlock);
+    obj = new LoadInst(thisObject, "", true, currentBlock);
   } else {
     obj = TheCompiler->getJavaClassPtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
@@ -1038,6 +1038,19 @@ llvm::Function* JavaJIT::javaCompile() {
     opcodeInfos[i].exceptionBlock = endExceptionBlock;
   }
 
+  Instruction* returnValue = NULL;
+  if (returnType == intrinsics->JavaObjectType &&
+      TheCompiler->useCooperativeGC()) {
+    returnValue = new AllocaInst(intrinsics->JavaObjectType, "",
+                                 currentBlock);
+    Instruction* cast = 
+        new BitCastInst(returnValue, intrinsics->ptrPtrType, "", currentBlock);
+    Value* GCArgs[2] = { cast, intrinsics->constantPtrNull };
+        
+    CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+        currentBlock);
+  }
+
   for (int i = 0; i < maxLocals; i++) {
     intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", currentBlock));
     new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, currentBlock);
@@ -1208,8 +1221,9 @@ llvm::Function* JavaJIT::javaCompile() {
     endNode = llvm::PHINode::Create(returnType, "", endBlock);
   }
   
-  if (isSynchro(compilingMethod->access))
+  if (isSynchro(compilingMethod->access)) {
     beginSynchronize();
+  }
   
   if (TheCompiler->useCooperativeGC()) {
     Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
@@ -1280,26 +1294,14 @@ llvm::Function* JavaJIT::javaCompile() {
 
   }
   currentBlock = endBlock;
-  
-  Instruction* returnValue = NULL;
-  if (returnType == intrinsics->JavaObjectType &&
-      TheCompiler->useCooperativeGC()) {
-    returnValue = new AllocaInst(intrinsics->JavaObjectType, "",
-                                 func->begin()->begin());
-    Instruction* cast = 
-        new BitCastInst(returnValue, intrinsics->ptrPtrType, "");
-    cast->insertAfter(returnValue);
-    Value* GCArgs[2] = { cast, intrinsics->constantPtrNull };
-        
-    Instruction* call =
-      CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "");
-    call->insertAfter(cast);
 
+  if (returnValue != NULL) {
     new StoreInst(endNode, returnValue, currentBlock);
   }
-
-  if (isSynchro(compilingMethod->access))
+  
+  if (isSynchro(compilingMethod->access)) {
     endSynchronize();
+  }
 
 #if JNJVM_EXECUTE > 0
     {
@@ -1336,10 +1338,8 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock->eraseFromParent();
   } else {
     if (returnType != Type::getVoidTy(*llvmContext)) {
-      if (returnType == intrinsics->JavaObjectType &&
-          TheCompiler->useCooperativeGC()) {
-        assert(returnValue && "No return value set");
-        Value* obj = new LoadInst(returnValue, "", false, currentBlock);
+      if (returnValue != NULL) {
+        Value* obj = new LoadInst(returnValue, "", true, currentBlock);
         ReturnInst::Create(*llvmContext, obj, currentBlock);
       } else {
         ReturnInst::Create(*llvmContext, endNode, currentBlock);
@@ -1388,7 +1388,7 @@ llvm::Function* JavaJIT::javaCompile() {
       const UTF8* name =
         compilingClass->ctpInfo->UTF8At(AR.AnnotationNameIndex);
       if (name->equals(TheCompiler->InlinePragma)) {
-        llvmFunction->addFnAttr(Attribute::AlwaysInline);
+        llvmFunction->addFnAttr(Attribute::NoInline);
       } else if (name->equals(TheCompiler->NoInlinePragma)) {
         llvmFunction->addFnAttr(Attribute::NoInline);
       }
@@ -2057,7 +2057,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
                                 currentBlock); 
 #endif
     } else {
-      object = new LoadInst(object, false, currentBlock);
+      object = new LoadInst(object, "", true, currentBlock);
       JITVerifyNull(object);
       type = LCI->getVirtualType();
     }
@@ -2086,7 +2086,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
 
   Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
   if (!stat) {
-    object = new LoadInst(object, false, currentBlock);
+    object = new LoadInst(object, "", true, currentBlock);
     Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
     Value* args[2] = { zero, ptr };
     ptr = GetElementPtrInst::Create(tmp, args, args + 2, "", currentBlock);
@@ -2194,9 +2194,9 @@ void JavaJIT::getStaticField(uint16 index) {
               JavaObject::getClass(val) : NULL;
           push(V, false, cl);
         } else {
-          Value* V = CallInst::Create(intrinsics->GetFinalObjectFieldFunction, ptr,
-                                      "", currentBlock);
-
+          // Do not call getFinalObject, as the object may move in-between two
+          // loads of this static.
+          Value* V = new LoadInst(ptr, "", currentBlock);
           JnjvmClassLoader* JCL = compilingClass->classLoader;
           push(V, false, sign->findAssocClass(JCL));
         } 
@@ -2260,32 +2260,31 @@ void JavaJIT::getVirtualField(uint16 index) {
   // In init methods, the fields have not been set yet.
   if (!compilingMethod->name->equals(JBL->initName)) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, false);
-    if (field) final = isFinal(field->access);
+    if (field) {
+      final = isFinal(field->access) && sign->isPrimitive();
+    }
     if (final) {
       Function* F = 0;
-      if (sign->isPrimitive()) {
-        const PrimitiveTypedef* prim = (PrimitiveTypedef*)sign;
-        if (prim->isInt()) {
-          F = intrinsics->GetFinalInt32FieldFunction;
-        } else if (prim->isByte()) {
-          F = intrinsics->GetFinalInt8FieldFunction;
-        } else if (prim->isBool()) {
-          F = intrinsics->GetFinalInt8FieldFunction;
-        } else if (prim->isShort()) {
-          F = intrinsics->GetFinalInt16FieldFunction;
-        } else if (prim->isChar()) {
-          F = intrinsics->GetFinalInt16FieldFunction;
-        } else if (prim->isLong()) {
-          F = intrinsics->GetFinalLongFieldFunction;
-        } else if (prim->isFloat()) {
-          F = intrinsics->GetFinalFloatFieldFunction;
-        } else if (prim->isDouble()) {
-          F = intrinsics->GetFinalDoubleFieldFunction;
-        } else {
-          abort();
-        }
+      assert(sign->isPrimitive());
+      const PrimitiveTypedef* prim = (PrimitiveTypedef*)sign;
+      if (prim->isInt()) {
+        F = intrinsics->GetFinalInt32FieldFunction;
+      } else if (prim->isByte()) {
+        F = intrinsics->GetFinalInt8FieldFunction;
+      } else if (prim->isBool()) {
+        F = intrinsics->GetFinalInt8FieldFunction;
+      } else if (prim->isShort()) {
+        F = intrinsics->GetFinalInt16FieldFunction;
+      } else if (prim->isChar()) {
+        F = intrinsics->GetFinalInt16FieldFunction;
+      } else if (prim->isLong()) {
+        F = intrinsics->GetFinalLongFieldFunction;
+      } else if (prim->isFloat()) {
+        F = intrinsics->GetFinalFloatFieldFunction;
+      } else if (prim->isDouble()) {
+        F = intrinsics->GetFinalDoubleFieldFunction;
       } else {
-        F = intrinsics->GetFinalObjectFieldFunction;
+        abort();
       }
       push(CallInst::Create(F, ptr, "", currentBlock), sign->isUnsigned(), cl);
     }

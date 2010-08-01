@@ -314,19 +314,19 @@ private:
   llvm::Value* top() {
     CommonClass* cl = stack.back();
     if (cl == upcalls->OfInt) {
-      return new llvm::LoadInst(intStack[currentStackIndex - 1], false,
+      return new llvm::LoadInst(intStack[currentStackIndex - 1], "", false,
                                 currentBlock);
     } else if (cl == upcalls->OfFloat) {
-      return new llvm::LoadInst(floatStack[currentStackIndex - 1], false,
+      return new llvm::LoadInst(floatStack[currentStackIndex - 1], "", false,
                                 currentBlock);
     } else if (cl == upcalls->OfDouble) {
-      return new llvm::LoadInst(doubleStack[currentStackIndex - 1], false,
+      return new llvm::LoadInst(doubleStack[currentStackIndex - 1], "", false,
                                 currentBlock);
     } else if (cl == upcalls->OfLong) {
-      return new llvm::LoadInst(longStack[currentStackIndex - 1], false,
+      return new llvm::LoadInst(longStack[currentStackIndex - 1], "", false,
                                 currentBlock);
     } else {
-      return new llvm::LoadInst(objectStack[currentStackIndex - 1], false,
+      return new llvm::LoadInst(objectStack[currentStackIndex - 1], "", true,
                                 currentBlock);
     }
   }

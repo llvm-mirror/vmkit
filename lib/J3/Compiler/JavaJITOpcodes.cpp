@@ -274,133 +274,133 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         break;
 
       case ILOAD :
-        push(new LoadInst(intLocals[WREAD_U1(reader, false, i, wide)], "",
+        push(new LoadInst(intLocals[WREAD_U1(reader, false, i, wide)], "", false,
                           currentBlock), false);
         break;
 
       case LLOAD :
-        push(new LoadInst(longLocals[WREAD_U1(reader, false, i, wide)], "",
+        push(new LoadInst(longLocals[WREAD_U1(reader, false, i, wide)], "", false,
                           currentBlock), false);
         push(intrinsics->constantZero, false);
         break;
 
       case FLOAD :
-        push(new LoadInst(floatLocals[WREAD_U1(reader, false, i, wide)], "",
+        push(new LoadInst(floatLocals[WREAD_U1(reader, false, i, wide)], "", false,
                           currentBlock), false);
         break;
 
       case DLOAD :
-        push(new LoadInst(doubleLocals[WREAD_U1(reader, false, i, wide)], "",
+        push(new LoadInst(doubleLocals[WREAD_U1(reader, false, i, wide)], "", false,
                           currentBlock), false);
         push(intrinsics->constantZero, false);
         break;
 
       case ALOAD :
-        push(new LoadInst(objectLocals[WREAD_U1(reader, false, i, wide)], "",
+        push(new LoadInst(objectLocals[WREAD_U1(reader, false, i, wide)], "", true,
                           currentBlock), false);
         break;
       
       case ILOAD_0 :
-        push(new LoadInst(intLocals[0], "", currentBlock), false);
+        push(new LoadInst(intLocals[0], "", false, currentBlock), false);
         break;
       
       case ILOAD_1 :
-        push(new LoadInst(intLocals[1], "", currentBlock), false);
+        push(new LoadInst(intLocals[1], "", false, currentBlock), false);
         break;
 
       case ILOAD_2 :
-        push(new LoadInst(intLocals[2], "", currentBlock), false);
+        push(new LoadInst(intLocals[2], "", false, currentBlock), false);
         break;
 
       case ILOAD_3 :
-        push(new LoadInst(intLocals[3], "", currentBlock), false);
+        push(new LoadInst(intLocals[3], "", false, currentBlock), false);
         break;
       
       case LLOAD_0 :
-        push(new LoadInst(longLocals[0], "", currentBlock),
+        push(new LoadInst(longLocals[0], "", false, currentBlock),
              false);
         push(intrinsics->constantZero, false);
         break;
 
       case LLOAD_1 :
-        push(new LoadInst(longLocals[1], "", currentBlock),
+        push(new LoadInst(longLocals[1], "", false, currentBlock),
              false);
         push(intrinsics->constantZero, false);
         break;
       
       case LLOAD_2 :
-        push(new LoadInst(longLocals[2], "", currentBlock),
+        push(new LoadInst(longLocals[2], "", false, currentBlock),
              false);
         push(intrinsics->constantZero, false);
         break;
       
       case LLOAD_3 :
-        push(new LoadInst(longLocals[3], "", currentBlock),
+        push(new LoadInst(longLocals[3], "", false, currentBlock),
              false);
         push(intrinsics->constantZero, false);
         break;
       
       case FLOAD_0 :
-        push(new LoadInst(floatLocals[0], "", currentBlock),
+        push(new LoadInst(floatLocals[0], "", false, currentBlock),
              false);
         break;
       
       case FLOAD_1 :
-        push(new LoadInst(floatLocals[1], "", currentBlock),
+        push(new LoadInst(floatLocals[1], "", false, currentBlock),
              false);
         break;
 
       case FLOAD_2 :
-        push(new LoadInst(floatLocals[2], "", currentBlock),
+        push(new LoadInst(floatLocals[2], "", false, currentBlock),
              false);
         break;
 
       case FLOAD_3 :
-        push(new LoadInst(floatLocals[3], "", currentBlock),
+        push(new LoadInst(floatLocals[3], "", false, currentBlock),
              false);
         break;
       
       case DLOAD_0 :
-        push(new LoadInst(doubleLocals[0], "", currentBlock),
+        push(new LoadInst(doubleLocals[0], "", false, currentBlock),
              false);
         push(intrinsics->constantZero, false);
         break;
 
       case DLOAD_1 :
-        push(new LoadInst(doubleLocals[1], "", currentBlock),
+        push(new LoadInst(doubleLocals[1], "", false, currentBlock),
              false);
         push(intrinsics->constantZero, false);
         break;
       
       case DLOAD_2 :
-        push(new LoadInst(doubleLocals[2], "", currentBlock),
+        push(new LoadInst(doubleLocals[2], "", false, currentBlock),
              false);
         push(intrinsics->constantZero, false);
         break;
       
       case DLOAD_3 :
-        push(new LoadInst(doubleLocals[3], "", currentBlock),
+        push(new LoadInst(doubleLocals[3], "", false, currentBlock),
              false);
         push(intrinsics->constantZero, false);
         break;
       
       case ALOAD_0 :
-        push(new LoadInst(objectLocals[0], "", currentBlock),
+        push(new LoadInst(objectLocals[0], "", true, currentBlock),
              false);
         break;
       
       case ALOAD_1 :
-        push(new LoadInst(objectLocals[1], "", currentBlock),
+        push(new LoadInst(objectLocals[1], "", true, currentBlock),
              false);
         break;
 
       case ALOAD_2 :
-        push(new LoadInst(objectLocals[2], "", currentBlock),
+        push(new LoadInst(objectLocals[2], "", true, currentBlock),
              false);
         break;
 
       case ALOAD_3 :
-        push(new LoadInst(objectLocals[3], "", currentBlock),
+        push(new LoadInst(objectLocals[3], "", true, currentBlock),
              false);
         break;
       
@@ -686,10 +686,10 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           // Get val and object and don't pop them: IsAssignableFromFunction
           // may go into runtime and we don't want values in registers at that
           // point.
-          Value* val = new LoadInst(objectStack[currentStackIndex - 1], false,
-                                    currentBlock);
-          Value* obj = new LoadInst(objectStack[currentStackIndex - 3], false,
-                                    currentBlock);
+          Value* val = new LoadInst(objectStack[currentStackIndex - 1], "",
+                                    true, currentBlock);
+          Value* obj = new LoadInst(objectStack[currentStackIndex - 3], "",
+                                    true, currentBlock);
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
                                     intrinsics->JavaObjectNullConstant, "");
 
@@ -1868,7 +1868,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case RET : {
         uint8 local = reader.readU1();
         i += 1;
-        Value* _val = new LoadInst(objectLocals[local], "", currentBlock);
+        Value* _val = new LoadInst(objectLocals[local], "", true, currentBlock);
         Value* val = new PtrToIntInst(_val, Type::getInt32Ty(*llvmContext), "", currentBlock);
         SwitchInst* inst = SwitchInst::Create(val, jsrs[0], jsrs.size(),
                                           currentBlock);
