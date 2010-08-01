@@ -150,8 +150,7 @@ declare i8* @j3VirtualFieldLookup(%JavaClass*, i32, ...)
 ;;; j3StaticFieldLookup - Look up a specific static field.
 declare i8* @j3StaticFieldLookup(%JavaClass*, i32, ...)
 
-;;; j3StringLookup - Find the isolate-specific string at the given offset in
-;;; the constant pool.
+;;; j3StringLookup - Get a pointer on a string.
 declare i8* @j3StringLookup(%JavaClass*, i32, ...) readnone
 
 ;;; j3JavaObjectAquire - This function is called when starting a synchronized
@@ -176,12 +175,12 @@ declare i1 @isSecondaryClass(%VT*, %VT*) readnone
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
 ;;; class. This method is lowered to the GEP to the class delegatee in
 ;;; the common class.
-declare %JavaObject* @getClassDelegatee(%JavaCommonClass*) readnone 
+declare %JavaObject* @getClassDelegatee(%JavaCommonClass*)
 
 ;;; j3RuntimeDelegatee - Returns the java/lang/Class representation of the
 ;;; class. This method is called if the class delegatee has not been created
 ;;; yet.
-declare %JavaObject* @j3RuntimeDelegatee(%JavaCommonClass*) readnone 
+declare %JavaObject* @j3RuntimeDelegatee(%JavaCommonClass*)
 
 ;;; j3GetArrayClass - Get the array user class of the user class.
 declare %VT* @j3GetArrayClass(%JavaClass*, i32, %VT**) readnone
@@ -192,7 +191,6 @@ declare i32 @getFinalInt32Field(i32*) readnone
 declare i64 @getFinalLongField(i64*) readnone
 declare double @getFinalDoubleField(double*) readnone
 declare float @getFinalFloatField(float*) readnone
-declare %JavaObject* @getFinalObjectField(%JavaObject**) readnone
 
 declare i8* @j3ResolveVirtualStub(%JavaObject*)
 declare i8* @j3ResolveSpecialStub()
