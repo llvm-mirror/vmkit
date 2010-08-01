@@ -25,12 +25,12 @@ extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_GC_1HEADER_1OFFSET__ (JavaObjec
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_readAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
-  return ((uintptr_t*)obj)[1];
+  return obj->lock.lock;
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2 (
     JavaObject* OM, JavaObject* obj, uintptr_t val) {
-  ((uintptr_t*)obj)[1] = val;
+  obj->lock.lock = val;
 }
 
 extern "C" JavaObject* Java_org_j3_mmtk_ObjectModel_objectStartRef__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
@@ -43,20 +43,17 @@ extern "C" JavaObject* Java_org_j3_mmtk_ObjectModel_refToAddress__Lorg_vmmagic_u
 
 extern "C" uint8_t Java_org_j3_mmtk_ObjectModel_readAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
 #if defined(__PPC__)
-  return ((uint8_t*)obj)[7] & mvm::GCBitMask;
+  return ((uint8_t*)obj)[7];
 #else
-  return ((uint8_t*)obj)[4] & mvm::GCBitMask;
+  return ((uint8_t*)obj)[4];
 #endif
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2B (JavaObject* OM, JavaObject* obj, uint8_t val) {
-  assert((val & mvm::NonLockBitsMask) == val && "GC bits do not fit");
 #if defined(__PPC__)
-  ((uint8_t*)obj)[7] &= ~mvm::GCBitMask;
-  ((uint8_t*)obj)[7] |= val;
+  ((uint8_t*)obj)[7] = val;
 #else
-  ((uint8_t*)obj)[4] &= ~mvm::GCBitMask;
-  ((uint8_t*)obj)[4] |= val;
+  ((uint8_t*)obj)[4] = val;
 #endif
 }
 
@@ -65,13 +62,13 @@ extern "C" JavaObject* Java_org_j3_mmtk_ObjectModel_getObjectFromStartAddress__L
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_prepareAvailableBits__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
-  return ((uintptr_t*)obj)[1];
+  return obj->lock.lock;
 }
 
 extern "C" uint8_t
 Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Word_2(
     JavaObject* OM, JavaObject* obj, intptr_t oldValue, intptr_t newValue) { 
-  return __sync_bool_compare_and_swap(((intptr_t*)obj) + 1, oldValue, newValue);
+  return __sync_bool_compare_and_swap(&(obj->lock.lock), oldValue, newValue);
 }
 
 extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(
@@ -110,7 +107,9 @@ extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_Obj
     }
   }
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
-  return JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(src, VT, size, allocator);
+  uintptr_t res = JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(src, VT, size, allocator);
+  assert((((uintptr_t*)res)[1] & ~mvm::GCBitMask) == (((uintptr_t*)src)[1] & ~mvm::GCBitMask));
+  return res;
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_copyTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 (
