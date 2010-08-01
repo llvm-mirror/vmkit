@@ -225,7 +225,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   GetFinalLongFieldFunction = module->getFunction("getFinalLongField");
   GetFinalFloatFieldFunction = module->getFunction("getFinalFloatField");
   GetFinalDoubleFieldFunction = module->getFunction("getFinalDoubleField");
-  GetFinalObjectFieldFunction = module->getFunction("getFinalObjectField");
 
 #ifdef ISOLATE_SHARING
   GetCtpClassFunction = module->getFunction("getCtpClass");

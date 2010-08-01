@@ -116,7 +116,6 @@ public:
   llvm::Function* GetFinalLongFieldFunction;
   llvm::Function* GetFinalFloatFieldFunction;
   llvm::Function* GetFinalDoubleFieldFunction;
-  llvm::Function* GetFinalObjectFieldFunction;
   
   llvm::Constant* JavaArraySizeOffsetConstant;
   llvm::Constant* JavaArrayElementsOffsetConstant;

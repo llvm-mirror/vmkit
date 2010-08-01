@@ -197,6 +197,13 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         }
         continue;
       }
+      // Make sure all Loads on objects are volatile to cooperate with the GC.
+      if (LoadInst* LI = dyn_cast<LoadInst>(I)) {
+        if (LI->getType() == intrinsics->JavaObjectType &&
+            dyn_cast<AllocaInst>(LI->getPointerOperand()) != NULL) {
+          assert(LI->isVolatile());
+        }
+      }
 
       CallSite Call = CallSite::get(I);
       Instruction* CI = Call.getInstruction();
@@ -577,8 +584,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                    V == intrinsics->GetFinalInt32FieldFunction ||
                    V == intrinsics->GetFinalLongFieldFunction ||
                    V == intrinsics->GetFinalFloatFieldFunction ||
-                   V == intrinsics->GetFinalDoubleFieldFunction ||
-                   V == intrinsics->GetFinalObjectFieldFunction) {
+                   V == intrinsics->GetFinalDoubleFieldFunction) {
           Changed = true;
           Value* val = Call.getArgument(0);
           Value* res = new LoadInst(val, "", CI);
