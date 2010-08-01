@@ -83,7 +83,7 @@ JavaObject* throwable) {
 }
 
 
-static JavaObject* consStackElement(JavaMethod* meth, void* ip) {
+JavaObject* consStackElement(JavaMethod* meth, void* ip) {
 
   JavaString* methodName = 0;
   JavaString* className = 0;

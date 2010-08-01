@@ -24,8 +24,8 @@ using namespace j3;
 
 extern "C" {
 
-static void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
-                        const char* val) {
+void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
+                 const char* val) {
 
   JavaString* Val = 0; 
   JavaString* Key = 0; 
@@ -40,7 +40,7 @@ static void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
       vm, (UserClass*)JavaObject::getClass(prop), prop, &Key, &Val);
 }
 
-static void setUnameProp(Jnjvm* vm, JavaObject* prop) {
+void setUnameProp(Jnjvm* vm, JavaObject* prop) {
 
   llvm_gcroot(prop, 0);
 
