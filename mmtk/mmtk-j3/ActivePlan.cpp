@@ -34,6 +34,9 @@ extern "C" JavaObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__ (ActivePlan*
     A->current = (mvm::MutatorThread*)A->current->next();
   }
 
+  if (A->current->MutatorContext == 0) {
+    return Java_org_j3_mmtk_ActivePlan_getNextMutator__(A);
+  }
   return (JavaObject*)A->current->MutatorContext;
 }
 

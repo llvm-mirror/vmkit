@@ -18,7 +18,9 @@ namespace mvm {
 
 class MutatorThread : public mvm::Thread {
 public:
-  MutatorThread() : mvm::Thread() {}
+  MutatorThread() : mvm::Thread() {
+    MutatorContext = 0;
+  }
   mvm::BumpPtrAllocator Allocator;
   uintptr_t MutatorContext;
   

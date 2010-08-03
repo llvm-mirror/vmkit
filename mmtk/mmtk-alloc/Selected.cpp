@@ -74,7 +74,9 @@ void MutatorThread::init(Thread* _th) {
   th->MutatorContext =
     JnJVM_org_j3_bindings_Bindings_allocateMutator__I((int32_t)_th->getThreadID());
   th->realRoutine(_th);
-  JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(th->MutatorContext);
+  uintptr_t context = th->MutatorContext;
+  th->MutatorContext = 0;
+  JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(context);
 }
 
 bool Collector::isLive(gc* ptr, uintptr_t closure) {
