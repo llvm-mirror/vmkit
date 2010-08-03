@@ -47,7 +47,7 @@ void StaticCamlMethodInfo::print(void* ip, void* addr) {
 void DefaultMethodInfo::print(void* ip, void* addr) {
   Dl_info info;
   int res = dladdr(ip, &info);
-  if (res != 0) {
+  if (res != 0 && info.dli_sname != NULL) {
     fprintf(stderr, "; %p (%p) in %s\n",  ip, addr, info.dli_sname);
   } else {
     fprintf(stderr, "; %p in Unknown method\n",  ip);
