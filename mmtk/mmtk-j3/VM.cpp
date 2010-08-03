@@ -37,7 +37,7 @@ extern "C" void Java_org_j3_runtime_VM_sysFail__Ljava_lang_String_2 (JavaString*
   abort();
 }
 
-extern "C" void Java_org_j3_runtime_VM__1assert__Z (bool cond) {
+extern "C" void Java_org_j3_runtime_VM__1assert__Z (uint8_t cond) {
   ASSERT(cond);
 }
 
