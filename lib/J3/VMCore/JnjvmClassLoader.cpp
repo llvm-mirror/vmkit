@@ -535,14 +535,13 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
                                                        bool doResolve,
                                                        bool doThrow) {
   const UTF8* name = hashUTF8->lookupAsciiz(asciiz);
+  mvm::ThreadAllocator threadAllocator;
   if (!name) name = bootstrapLoader->hashUTF8->lookupAsciiz(asciiz);
   if (!name) {
-    mvm::ThreadAllocator threadAllocator;
     uint32 size = strlen(asciiz);
     UTF8* temp = (UTF8*)threadAllocator.Allocate(
         sizeof(UTF8) + size * sizeof(uint16));
     temp->size = size;
-    if (!temp) return 0;
 
     for (uint32 i = 0; i < size; ++i) {
       temp->elements[i] = asciiz[i];
