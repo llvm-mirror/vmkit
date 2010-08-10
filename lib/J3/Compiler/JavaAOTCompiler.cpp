@@ -1561,8 +1561,11 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
                                                   Array, "");
      
           Constant* CI =
-            ConstantExpr::getPtrToInt(GV, Type::getInt32Ty(getLLVMContext()));
-          CI = ConstantExpr::getAdd(CI, JavaIntrinsics.constantOne);
+            ConstantExpr::getPtrToInt(GV, JavaIntrinsics.pointerSizeType);
+          CI = ConstantExpr::getAdd(CI,
+            ConstantExpr::getIntegerCast(JavaIntrinsics.constantOne,
+                                         JavaIntrinsics.pointerSizeType,
+                                         false));
           CI = ConstantExpr::getIntToPtr(CI, PTy);
           IElemts.push_back(CI);
         }
