@@ -10,19 +10,17 @@
  *  See the COPYRIGHT.txt file distributed with this work for information
  *  regarding copyright ownership.
  */
-package org.mmtk.plan.semispace.gctrace;
+package org.mmtk.plan.semispace.usePrimitiveWriteBarriers;
 
-import org.mmtk.plan.semispace.SSConstraints;
+import org.mmtk.plan.semispace.SS;
 
 import org.vmmagic.pragma.*;
 
 /**
- * GCTrace constants.
+ * This class exercises primitive write barriers The write barriers contain no
+ * payloads but merely perform a write to the heap
  */
 @Uninterruptible
-public class GCTraceConstraints extends SSConstraints {
-  @Override
-  public boolean needsObjectReferenceWriteBarrier() { return true; }
-  @Override
-  public boolean generateGCTrace() { return true; }
+public class UsePrimitiveWriteBarriers extends SS {
+
 }

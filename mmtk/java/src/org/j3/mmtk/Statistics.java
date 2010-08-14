@@ -63,27 +63,14 @@ public final class Statistics extends org.mmtk.vm.Statistics {
   }
 
   /**
-   * Initialize performance counters
-   *
-   * @param metric An integer identifying the metric being read
+   * Initialize performance events
    */
-  public native void perfCtrInit(int metric);
+  @Interruptible
+  public native void perfEventInit(String events);
 
   /**
-   * Read the current cycle count from the perfctr libraries
-   *
-   * @return the current cycle count from the perfctr libraries
+   * Read a performance event
    */
-  public native long perfCtrReadCycles();
-
-  /**
-   * Read the current event count for the metric being measured by the
-   * perfctr libraries
-   *
-   * @return the current event count for the metric being measured by the
-   * perfctr libraries
-   */
-  public native long perfCtrReadMetric();
-
+  public native void perfEventRead(int id, long[] values);
 }
 
