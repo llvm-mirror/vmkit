@@ -25,7 +25,7 @@ namespace {
   class LowerJavaRT : public ModulePass {
   public:
     static char ID;
-    LowerJavaRT() : ModulePass((intptr_t)&ID) { }
+    LowerJavaRT() : ModulePass(ID) { }
 
     virtual bool runOnModule(Module &M);
   private:

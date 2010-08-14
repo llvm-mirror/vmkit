@@ -22,7 +22,7 @@ namespace {
   public:
     static char ID;
     
-    JITGCPass() : ModulePass((intptr_t)&ID) {}
+    JITGCPass() : ModulePass(ID) {}
 
     virtual bool runOnModule(Module& M);
 

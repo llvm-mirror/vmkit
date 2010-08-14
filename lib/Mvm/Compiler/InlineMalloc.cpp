@@ -27,7 +27,7 @@ namespace mvm {
   class InlineMalloc : public FunctionPass {
   public:
     static char ID;
-    InlineMalloc() : FunctionPass((intptr_t)&ID) {}
+    InlineMalloc() : FunctionPass(ID) {}
 
     virtual bool runOnFunction(Function &F);
   private:

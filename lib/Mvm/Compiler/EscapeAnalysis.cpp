@@ -33,7 +33,7 @@ namespace {
   public:
     static char ID;
     uint64_t pageSize;
-    EscapeAnalysis() : FunctionPass((intptr_t)&ID) {
+    EscapeAnalysis() : FunctionPass(ID) {
       pageSize = getpagesize();
     }
 

@@ -21,7 +21,7 @@ namespace {
   public:
     static char ID;
     
-    LoopSafePoints() : LoopPass((intptr_t)&ID) {}
+    LoopSafePoints() : LoopPass(ID) {}
 
     virtual bool runOnLoop(Loop* L, LPPassManager& LPM);
 

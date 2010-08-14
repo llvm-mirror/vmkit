@@ -28,7 +28,7 @@ namespace j3 {
   public:
     static char ID;
     JavaLLVMCompiler* TheCompiler;
-    LowerConstantCalls(JavaLLVMCompiler* Compiler) : FunctionPass((intptr_t)&ID),
+    LowerConstantCalls(JavaLLVMCompiler* Compiler) : FunctionPass(ID),
       TheCompiler(Compiler) { }
 
     virtual bool runOnFunction(Function &F);

@@ -24,7 +24,7 @@ namespace {
   public:
     static char ID;
     
-    StaticGCPass() : ModulePass((intptr_t)&ID) {}
+    StaticGCPass() : ModulePass(ID) {}
 
     virtual bool runOnModule(Module& M);
 
