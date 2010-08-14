@@ -284,13 +284,6 @@ static void siggcHandler(int) {
 void Thread::internalThreadStart(mvm::Thread* th) {
   th->baseSP  = (void*)&th;
 
-  // Set an alternate stack for handling stack overflows from VM code.
-  stack_t sigsegvStack;
-  sigsegvStack.ss_size = getpagesize();
-  sigsegvStack.ss_flags = 0;
-  sigsegvStack.ss_sp = (void*)th;
-  sigaltstack(&sigsegvStack, NULL);
-
   // Set the SIGSEGV handler to diagnose errors.
   struct sigaction sa;
   sigset_t mask;
