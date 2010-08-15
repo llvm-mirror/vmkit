@@ -50,25 +50,7 @@ public:
 
   /// acquire - Acquires the internalLock.
   ///
-  bool acquire(JavaObject* obj) {
-    llvm_gcroot(obj, 0);
-    
-    spinLock.lock();
-    lockingThreads++;
-    spinLock.unlock();
-    
-    internalLock.lock();
-    
-    spinLock.lock();
-    lockingThreads--;
-    spinLock.unlock();
-
-    if (associatedObject != obj) {
-      internalLock.unlock();
-      return false;
-    }
-    return true;
-  }
+  bool acquire(JavaObject* obj);
  
   /// tryAcquire - Tries to acquire the lock.
   ///
@@ -106,6 +88,7 @@ public:
     associatedObject = a;
     waitingThreads = 0;
     lockingThreads = 0;
+    nextFreeLock = NULL;
   }
 
   static JavaLock* allocate(JavaObject*);
@@ -159,13 +142,7 @@ public:
  
   /// deallocate - Put a lock in the free list lock.
   ///
-  void deallocate(JavaLock* lock) {
-    lock->associatedObject = NULL;
-    threadLock.lock();
-    lock->nextFreeLock = freeLock;
-    freeLock = lock;
-    threadLock.unlock();
-  }
+  void deallocate(JavaLock* lock);
 
   /// LockSystem - Default constructor. Initialize the table.
   ///
