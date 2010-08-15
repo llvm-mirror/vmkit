@@ -60,10 +60,11 @@ public:
 void JavaJITMethodInfo::print(void* ip, void* addr) {
   void* new_ip = NULL;
   if (ip) new_ip = isStub(ip, addr);
-  uint16 line = meth->lookupLineNumber((uintptr_t)ip);
-  fprintf(stderr, "; %p in %s.%s (line %d)", new_ip,
+  CodeLineInfo* info = meth->lookupCodeLineInfo((uintptr_t)ip);
+  fprintf(stderr, "; %p in %s.%s (line %d, bytecode %d, code start %p)", new_ip,
           UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString(), line);
+          UTF8Buffer(meth->name).cString(), info->lineNumber,
+          info->bytecodeIndex, meth->code);
   if (ip != new_ip) fprintf(stderr, " (from stub)");
   fprintf(stderr, "\n");
 }
