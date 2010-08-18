@@ -1043,9 +1043,6 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   TempElts.clear();
   ClassElts.push_back(ConstantArray::get(ATy, CStr, 1));
 
-  // thinlock
-  ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
-
   if (cl->nbVirtualFields + cl->nbStaticFields) {
     ATy = ArrayType::get(JavaIntrinsics.JavaFieldType->getContainedType(0),
                          cl->nbVirtualFields + cl->nbStaticFields);

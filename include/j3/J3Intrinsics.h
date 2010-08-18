@@ -128,7 +128,6 @@ public:
   llvm::Constant* OffsetObjectSizeInClassConstant;
   llvm::Constant* OffsetVTInClassConstant;
   llvm::Constant* OffsetTaskClassMirrorInClassConstant;
-  llvm::Constant* OffsetVirtualMethodsInClassConstant;
   llvm::Constant* OffsetStaticInstanceInTaskClassMirrorConstant;
   llvm::Constant* OffsetInitializedInTaskClassMirrorConstant;
   llvm::Constant* OffsetStatusInTaskClassMirrorConstant;

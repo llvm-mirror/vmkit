@@ -404,67 +404,6 @@ public:
 ///
 class Class : public CommonClass {
 
-private:
- 
-  /// FatLock - This class is the inflated lock of Class instances. It should
-  /// be very rare that such locks are allocated.
-  class FatLock : public mvm::PermanentObject {
-  public:
-    /// lockVar - When multiple threads want to load/resolve/initialize a class,
-    /// they must be synchronized so that these steps are only performed once
-    /// for a given class.
-    mvm::LockRecursive lockVar;
-
-    /// condVar - Used to wake threads waiting on the load/resolve/initialize
-    /// process of this class, done by another thread.
-    mvm::Cond condVar;
-  
-    bool owner() {
-      return lockVar.selfOwner();
-    }
-
-    mvm::Thread* getOwner() {
-      return lockVar.getOwner();
-    }
-
-    static FatLock* allocate(UserCommonClass* cl) {
-      return new(cl->classLoader->allocator, "Class fat lock") FatLock();
-    }
-   
-    uintptr_t getID() {
-      return (((uintptr_t)this) >> 1) | mvm::FatMask;
-    }
-
-    static FatLock* getFromID(uintptr_t id) {
-      return (FatLock*)(id << 1);
-    }
-    
-    void deallocate() {
-      // Too bad, I can't deallocate it because it is in permanent memory.
-    }
-
-    bool acquire(CommonClass* cl) {
-      lockVar.lock();
-      return true;
-    }
-
-    void acquireAll(uint32 nb) {
-      lockVar.lockAll(nb);
-    }
-
-    void release(CommonClass* cl) {
-      lockVar.unlock();
-    }
-
-    void broadcast() {
-      condVar.broadcast();
-    }
-
-    void wait() {
-      condVar.wait(&lockVar);
-    }
-  };
-
 public:
   
   /// virtualSize - The size of instances of this class.
@@ -480,11 +419,6 @@ public:
   ///
   TaskClassMirror IsolateInfo[NR_ISOLATES];
    
-  /// lock - The lock of this class. It should be very rare that this lock
-  /// inflates.
-  ///
-  mvm::ThinLock<FatLock, CommonClass, mvm::FatLockNoGC> lock;
-  
   /// virtualFields - List of all the virtual fields defined in this class.
   /// This does not contain non-redefined super fields.
   JavaField* virtualFields;
@@ -568,6 +502,10 @@ public:
   /// staticSize - The size of the static instance of this class.
   ///
   uint32 staticSize;
+
+  /// lock - The lock of this class.
+  mvm::LockRecursive lock;
+  mvm::Cond condition;
   
   /// getVirtualSize - Get the virtual size of instances of this class.
   ///
@@ -751,27 +689,26 @@ public:
   /// acquire - Acquire this class lock.
   ///
   void acquire() {
-    lock.acquire(this);
+    lock.lock();
   }
   
   /// release - Release this class lock.
   ///
   void release() {
-    lock.release(this);
+    lock.unlock();
   }
 
   /// waitClass - Wait for the class to be loaded/initialized/resolved.
   ///
   void waitClass() {
-    FatLock* FL = lock.changeToFatlock(this);
-    FL->wait();
+    condition.wait(&lock);
   }
   
   /// broadcastClass - Unblock threads that were waiting on the class being
   /// loaded/initialized/resolved.
   ///
   void broadcastClass() {
-    lock.broadcast();  
+    condition.broadcast();  
   }
   
 #ifndef ISOLATE

@@ -138,8 +138,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   OffsetObjectSizeInClassConstant = constantOne;
   OffsetVTInClassConstant = ConstantInt::get(Type::getInt32Ty(Context), 7);
   OffsetTaskClassMirrorInClassConstant = constantThree;
-  OffsetVirtualMethodsInClassConstant =
-    ConstantInt::get(Type::getInt32Ty(Context), 9);
   OffsetStaticInstanceInTaskClassMirrorConstant = constantThree;
   OffsetStatusInTaskClassMirrorConstant = constantZero;
   OffsetInitializedInTaskClassMirrorConstant = constantOne;
