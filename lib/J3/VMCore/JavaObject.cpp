@@ -28,7 +28,7 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
   llvm_gcroot(self, 0);
   if (!mvm::MovesObject) return (uint32_t)(long)self;
 
-  uintptr_t header = self->lock.lock;
+  uintptr_t header = self->header;
   uintptr_t GCBits = header & mvm::GCBitMask;
   uintptr_t val = header & mvm::HashMask;
   if (val != 0) {
@@ -48,16 +48,16 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
   assert(val != hashCodeGenerator);
 
   do {
-    header = self->lock.lock;
+    header = self->header;
     if ((header & mvm::HashMask) != 0) break;
     uintptr_t newHeader = header | val;
     assert((newHeader & ~mvm::HashMask) == header);
-    __sync_val_compare_and_swap(&(self->lock.lock), header, newHeader);
+    __sync_val_compare_and_swap(&(self->header), header, newHeader);
   } while (true);
 
-  assert((self->lock.lock & mvm::HashMask) != 0);
-  assert(GCBits == (self->lock.lock & mvm::GCBitMask));
-  return (self->lock.lock & mvm::HashMask) ^ (uintptr_t)getClass(self);
+  assert((self->header & mvm::HashMask) != 0);
+  assert(GCBits == (self->header & mvm::GCBitMask));
+  return (self->header & mvm::HashMask) ^ (uintptr_t)getClass(self);
 }
 
 
@@ -67,7 +67,7 @@ void JavaObject::waitIntern(
   JavaLock* l = 0;
 
   if (owner(self)) {
-    l = self->lock.changeToFatlock(self);
+    l = (JavaLock*)mvm::ThinLock::changeToFatlock(self);
     JavaThread* thread = JavaThread::get();
     thread->waitsOn = l;
     mvm::Cond& varcondThread = thread->varcond;
@@ -178,7 +178,7 @@ void JavaObject::notify(JavaObject* self) {
   JavaLock* l = 0;
 
   if (owner(self)) {
-    l = self->lock.getFatLock();
+    l = (JavaLock*)mvm::ThinLock::getFatLock(self);
     if (l) {
       JavaThread* cur = l->firstThread;
       if (cur) {
@@ -222,7 +222,7 @@ void JavaObject::notifyAll(JavaObject* self) {
   JavaLock* l = 0;
   
   if (owner(self)) {
-    l = self->lock.getFatLock();
+    l = (JavaLock*)mvm::ThinLock::getFatLock(self);
     if (l) {
       JavaThread* cur = l->firstThread;
       if (cur) {

@@ -24,6 +24,8 @@ extern "C" void __llvm_gcroot(void**, void*) __attribute__((nothrow));
 #define llvm_gcroot(a, b)
 #endif
 
+class gc;
+
 namespace mvm {
 
 extern "C" uint8  llvm_atomic_cmp_swap_i8(uint8* ptr,  uint8 cmp,
@@ -71,6 +73,7 @@ extern "C" uint64 llvm_atomic_cmp_swap_i64(uint64* ptr, uint64 cmp,
 #endif
 
 class Cond;
+class FatLock;
 class LockNormal;
 class LockRecursive;
 class Thread;
@@ -185,195 +188,35 @@ public:
   void lockAll(int count);
 };
 
-class FatLockNoGC {
-public:
-  static void gcroot(void* val, void* unused) 
-    __attribute__ ((always_inline)) {}
-
-  static uintptr_t mask() {
-    return 0;
-  }
-};
-  
-class FatLockWithGC {
-public:
-  static void gcroot(void* val, void* unused) 
-    __attribute__ ((always_inline)) {
-    llvm_gcroot(val, unused);
-  }
-    
-  static uintptr_t mask() {
-    return NonLockBitsMask;
-  }
-};
-
-/// ThinLock - This class is an implementation of thin locks. The template class
-/// TFatLock is a virtual machine specific fat lock.
-///
-template <class TFatLock, class Owner, class IsGC>
 class ThinLock {
 public:
-  uintptr_t lock;
+
+  /// initialise - Initialise the value of the lock.
+  ///
+  static void initialise(gc* object);
 
   /// overflowThinlock - Change the lock of this object to a fat lock because
   /// we have reached 0xFF locks.
-  void overflowThinLock(Owner* O) {
-    IsGC::gcroot(O, 0);
-    TFatLock* obj = TFatLock::allocate(O);
-    obj->acquireAll((ThinCountMask >> ThinCountShift) + 1);
-    uintptr_t oldLock = lock;
-    lock = obj->getID() | (oldLock & IsGC::mask());
-  }
- 
-  /// initialise - Initialise the value of the lock.
-  ///
-  void initialise() {
-    lock = lock & IsGC::mask();
-  }
-  
-  /// ThinLock - Calls initialize.
-  ThinLock() {
-    initialise();
-  }
+  static void overflowThinLock(gc* object);
  
   /// changeToFatlock - Change the lock of this object to a fat lock. The lock
   /// may be in a thin lock or fat lock state.
-  TFatLock* changeToFatlock(Owner* O) {
-    IsGC::gcroot(O, 0);
-    if (!(lock & FatMask)) {
-      TFatLock* obj = TFatLock::allocate(O);
-      uint32 count = (lock & ThinCountMask) >> ThinCountShift;
-      obj->acquireAll(count + 1);
-      uintptr_t oldLock = lock;
-      lock = obj->getID() | (oldLock & IsGC::mask());
-      return obj;
-    } else {
-      TFatLock* res = TFatLock::getFromID(lock);
-      assert(res && "Lock deallocated while held.");
-      return res;
-    }
-  }
+  static FatLock* changeToFatlock(gc* object);
 
   /// acquire - Acquire the lock.
-  void acquire(Owner* O) {
-    IsGC::gcroot(O, 0);
-start:
-    uint64_t id = mvm::Thread::get()->getThreadID();
-    uintptr_t oldValue = lock;
-    uintptr_t newValue = id | (lock & IsGC::mask());
-    uintptr_t val = __sync_val_compare_and_swap(&lock, oldValue & IsGC::mask(),
-                                                newValue);
-
-    if (val != (oldValue & IsGC::mask())) {
-      //fat!
-      if (!(val & FatMask)) {
-        if ((val & Thread::IDMask) == id) {
-          if ((val & ThinCountMask) != ThinCountMask) {
-            lock += ThinCountAdd;
-          } else {
-            overflowThinLock(O);
-          }
-        } else {
-          TFatLock* obj = TFatLock::allocate(O);
-          uintptr_t val = obj->getID();
-loop:
-          while (lock & ~IsGC::mask()) {
-            if (lock & FatMask) {
-              obj->deallocate();
-              goto end;
-            }
-            else mvm::Thread::yield();
-          }
-        
-          oldValue = lock;
-          newValue = val | (lock & IsGC::mask());
-          uintptr_t test = __sync_val_compare_and_swap(&lock,
-                                                       oldValue & IsGC::mask(),
-                                                       newValue);
-          if (test != (oldValue & IsGC::mask())) goto loop;
-          if (!obj->acquire(O)) goto start;
-        }
-      } else {
-
-end:
-        TFatLock* obj = TFatLock::getFromID(lock);
-        if (obj) {
-          if (!obj->acquire(O)) goto start;
-        } else {
-          goto start;
-        }
-      }
-    }
-
-    assert(owner() && "Not owner after quitting acquire!");
-  }
+  static void acquire(gc* object);
 
   /// release - Release the lock.
-  void release(Owner* O) {
-    IsGC::gcroot(O, 0);
-    assert(owner() && "Not owner when entering release!");
-    uint64 id = mvm::Thread::get()->getThreadID();
-    if ((lock & ~IsGC::mask()) == id) {
-      lock = lock & IsGC::mask();
-    } else if (lock & FatMask) {
-      TFatLock* obj = TFatLock::getFromID(lock);
-      assert(obj && "Lock deallocated while held.");
-      obj->release(O);
-    } else {
-      lock -= ThinCountAdd;
-    }
-  }
+  static void release(gc* object);
 
-  /// broadcast - Wakes up all threads waiting for this lock.
-  ///
-  void broadcast() {
-    if (lock & FatMask) {
-      TFatLock* obj = TFatLock::getFromID(lock);
-      assert(obj && "Lock deallocated while held.");
-      obj->broadcast();
-    }
-  }
-  
-  /// signal - Wakes up one thread waiting for this lock.
-  void signal() {
-    if (lock & FatMask) {
-      TFatLock* obj = TFatLock::getFromID(lock);
-      assert(obj && "Lock deallocated while held.");
-      obj->signal();
-    }
-  }
-  
   /// owner - Returns true if the curren thread is the owner of this object's
   /// lock.
-  bool owner() {
-    if (lock & FatMask) {
-      TFatLock* obj = TFatLock::getFromID(lock);
-      if (obj) return obj->owner();
-    } else {
-      uint64 id = mvm::Thread::get()->getThreadID();
-      if ((lock & Thread::IDMask) == id) return true;
-    }
-    return false;
-  }
+  static bool owner(gc* object);
 
-  mvm::Thread* getOwner() {
-    if (lock & FatMask) {
-      TFatLock* obj = TFatLock::getFromID(lock);
-      if (obj) return obj->getOwner();
-      return 0;
-    } else {
-      return (mvm::Thread*)(lock & mvm::Thread::IDMask);
-    }
-  }
+  static mvm::Thread* getOwner(gc* object);
 
   /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.
-  TFatLock* getFatLock() {
-    if (lock & FatMask) {
-      return TFatLock::getFromID(lock);
-    } else {
-      return 0;
-    }
-  }
+  static FatLock* getFatLock(gc* object);
 };
 
 

@@ -13,10 +13,9 @@
 
 using namespace j3;
 
-JavaLock* JavaLock::allocate(JavaObject* obj) {
+JavaLock* Jnjvm::allocateFatLock(gc* obj) {
   llvm_gcroot(obj, 0);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaLock* res = vm->lockSystem.allocate(obj);  
+  JavaLock* res = lockSystem.allocate((JavaObject*)obj);  
   return res;
 }
 
@@ -89,24 +88,23 @@ uintptr_t JavaLock::getID() {
   return (index << mvm::NonLockBits) | mvm::FatMask;
 }
 
-JavaLock* JavaLock::getFromID(uintptr_t ID) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
+JavaLock* Jnjvm::getFatLockFromID(uintptr_t ID) {
   if (ID & mvm::FatMask) {
     uint32_t index = (ID & ~mvm::FatMask) >> mvm::NonLockBits;
-    JavaLock* res = vm->lockSystem.getLock(index);
+    JavaLock* res = lockSystem.getLock(index);
     return res;
   } else {
-    return 0;
+    return NULL;
   }
 }
 
-void JavaLock::release(JavaObject* obj) {
+void JavaLock::release(gc* obj) {
   llvm_gcroot(obj, 0);
   assert(associatedObject && "No associated object when releasing");
   assert(associatedObject == obj && "Mismatch object in lock");
   if (!waitingThreads && !lockingThreads &&
       internalLock.recursionCount() == 1) {
-    associatedObject->lock.initialise();
+    mvm::ThinLock::initialise(associatedObject);
     deallocate();
   }
   internalLock.unlock();
@@ -114,7 +112,7 @@ void JavaLock::release(JavaObject* obj) {
 
 /// acquire - Acquires the internalLock.
 ///
-bool JavaLock::acquire(JavaObject* obj) {
+bool JavaLock::acquire(gc* obj) {
   llvm_gcroot(obj, 0);
     
   spinLock.lock();
@@ -131,5 +129,5 @@ bool JavaLock::acquire(JavaObject* obj) {
     internalLock.unlock();
     return false;
   }
-    return true;
-  }
+  return true;
+}

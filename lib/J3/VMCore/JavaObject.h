@@ -245,10 +245,6 @@ public:
     return ((JavaVirtualTable*)self->getVirtualTable())->cl;
   }
 
-  /// lock - The monitor of this object. Most of the time null.
-  ///
-  mvm::ThinLock<JavaLock, JavaObject, mvm::FatLockWithGC> lock;
-
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///
   static void wait(JavaObject* self);
@@ -268,11 +264,11 @@ public:
   ///
   static void notifyAll(JavaObject* self);
  
-  /// overflowThinLock - Notify that the thin lock has overflowed.
+  /// overflowmvm::ThinLock - Notify that the thin lock has overflowed.
   ///
   static void overflowThinLock(JavaObject* self) {
     llvm_gcroot(self, 0);
-    self->lock.overflowThinLock(self);
+    mvm::ThinLock::overflowThinLock(self);
   }
 
   /// instanceOf - Is this object's class of type the given class?
@@ -282,20 +278,20 @@ public:
   /// acquire - Acquire the lock on this object.
   static void acquire(JavaObject* self) {
     llvm_gcroot(self, 0);
-    self->lock.acquire(self);
+    mvm::ThinLock::acquire(self);
   }
 
   /// release - Release the lock on this object
   static void release(JavaObject* self) {
     llvm_gcroot(self, 0);
-    self->lock.release(self);
+    mvm::ThinLock::release(self);
   }
 
   /// owner - Returns true if the current thread is the owner of this object's
   /// lock.
   static bool owner(JavaObject* self) {
     llvm_gcroot(self, 0);
-    return self->lock.owner();
+    return mvm::ThinLock::owner(self);
   }
 
 #ifdef SIGSEGV_THROW_NULL
@@ -308,7 +304,7 @@ public:
   /// lockObj - Get the LockObj if the lock is a fat lock.
   static JavaLock* lockObj(JavaObject* self) {
     llvm_gcroot(self, 0);
-    return self->lock.getFatLock();
+    return (JavaLock*)mvm::ThinLock::getFatLock(self);
   }
 
   /// decapsulePrimitive - Based on the signature argument, decapsule

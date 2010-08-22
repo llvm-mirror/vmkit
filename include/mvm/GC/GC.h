@@ -19,6 +19,7 @@ class gcRoot {
 public:
   virtual           ~gcRoot() {}
   virtual void      tracer(uintptr_t closure) {}
+  uintptr_t header;
   
   /// getVirtualTable - Returns the virtual table of this object.
   ///

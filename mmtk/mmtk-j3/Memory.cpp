@@ -43,12 +43,12 @@ Java_org_j3_mmtk_Memory_dzmmap__Lorg_vmmagic_unboxed_Address_2I(JavaObject* M,
 
 extern "C" void
 Java_org_j3_mmtk_Memory_mprotect__Lorg_vmmagic_unboxed_Address_2I (JavaObject* M, uintptr_t address, sint32 size) {
-  UNIMPLEMENTED();
+  mprotect((void*)address, size, PROT_NONE);
 }
 
 extern "C" void
 Java_org_j3_mmtk_Memory_munprotect__Lorg_vmmagic_unboxed_Address_2I (JavaObject* M, uintptr_t address, sint32 size) {
-  UNIMPLEMENTED();
+  mprotect((void*)address, size, PROT_READ | PROT_WRITE);
 }
 
 extern "C" void

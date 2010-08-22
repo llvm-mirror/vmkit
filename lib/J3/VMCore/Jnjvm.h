@@ -341,6 +341,9 @@ public:
   ///
   virtual void waitForExit();
 
+  virtual JavaLock* allocateFatLock(gc*);
+  virtual JavaLock* getFatLockFromID(uintptr_t val);
+
 private:
   /// internalRemoveMethodsInFunctionMap - Removes all methods compiled by this
   /// class loader from the function map.

@@ -25,12 +25,12 @@ extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_GC_1HEADER_1OFFSET__ (JavaObjec
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_readAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
-  return obj->lock.lock;
+  return obj->header;
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2 (
     JavaObject* OM, JavaObject* obj, uintptr_t val) {
-  obj->lock.lock = val;
+  obj->header = val;
 }
 
 extern "C" JavaObject* Java_org_j3_mmtk_ObjectModel_objectStartRef__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
@@ -62,13 +62,14 @@ extern "C" JavaObject* Java_org_j3_mmtk_ObjectModel_getObjectFromStartAddress__L
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_prepareAvailableBits__Lorg_vmmagic_unboxed_ObjectReference_2 (JavaObject* OM, JavaObject* obj) {
-  return obj->lock.lock;
+  return obj->header;
 }
 
 extern "C" uint8_t
 Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Word_2(
     JavaObject* OM, JavaObject* obj, intptr_t oldValue, intptr_t newValue) { 
-  return __sync_bool_compare_and_swap(&(obj->lock.lock), oldValue, newValue);
+  intptr_t val = __sync_val_compare_and_swap(&(obj->header), oldValue, newValue);
+  return (val == oldValue);
 }
 
 extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(

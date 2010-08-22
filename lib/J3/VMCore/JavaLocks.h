@@ -12,6 +12,7 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/VirtualMachine.h"
 
 namespace mvm {
   class Thread;
@@ -23,7 +24,7 @@ class JavaObject;
 class JavaThread;
 class Jnjvm;
 
-class JavaLock : public mvm::PermanentObject {
+class JavaLock : public mvm::FatLock {
 
 friend class JavaObject;
 friend class LockSystem;
@@ -50,7 +51,7 @@ public:
 
   /// acquire - Acquires the internalLock.
   ///
-  bool acquire(JavaObject* obj);
+  bool acquire(gc* obj);
  
   /// tryAcquire - Tries to acquire the lock.
   ///
@@ -60,13 +61,13 @@ public:
 
  
   /// acquireAll - Acquires the lock nb times.
-  void acquireAll(uint32 nb) {
+  void acquireAll(gc* obj, uint32 nb) {
     internalLock.lockAll(nb);
   }
 
   /// release - Releases the internalLock.
   ///
-  void release(JavaObject* obj);
+  void release(gc* obj);
   
   /// owner - Returns if the current thread owns this internalLock.
   ///
@@ -91,11 +92,9 @@ public:
     nextFreeLock = NULL;
   }
 
-  static JavaLock* allocate(JavaObject*);
   void deallocate();
   
   uintptr_t getID();
-  static JavaLock* getFromID(uintptr_t val);
 };
 
 /// LockSystem - This class manages all Java locks used by the applications.
