@@ -213,8 +213,6 @@ public:
   /// lock.
   static bool owner(gc* object);
 
-  static mvm::Thread* getOwner(gc* object);
-
   /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.
   static FatLock* getFatLock(gc* object);
 };

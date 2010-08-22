@@ -189,13 +189,18 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
   return res;
 }
 
-
 void ThinLock::overflowThinLock(gc* object) {
   llvm_gcroot(object, 0);
   FatLock* obj = Thread::get()->MyVM->allocateFatLock(object);
   obj->acquireAll(object, (ThinCountMask >> ThinCountShift) + 1);
-  uintptr_t oldLock = object->header;
-  object->header = obj->getID() | (oldLock & NonLockBitsMask);
+  uintptr_t oldValue = 0;
+  uintptr_t newValue = 0;
+  uintptr_t yieldedValue = 0;
+  do {
+    oldValue = object->header;
+    newValue = obj->getID() | (oldValue & NonLockBitsMask);
+    yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
+  } while (yieldedValue != oldValue);
 }
  
 /// initialise - Initialise the value of the lock.
@@ -218,8 +223,14 @@ FatLock* ThinLock::changeToFatlock(gc* object) {
     FatLock* obj = Thread::get()->MyVM->allocateFatLock(object);
     uint32 count = (object->header & ThinCountMask) >> ThinCountShift;
     obj->acquireAll(object, count + 1);
-    uintptr_t oldLock = object->header;
-    object->header = obj->getID() | (oldLock & NonLockBitsMask);
+    uintptr_t oldValue = 0;
+    uintptr_t newValue = 0;
+    uintptr_t yieldedValue = 0;
+    do {
+      oldValue = object->header;
+      newValue = obj->getID() | (oldValue & NonLockBitsMask);
+      yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
+    } while (yieldedValue != oldValue);
     return obj;
   } else {
     FatLock* res = Thread::get()->MyVM->getFatLockFromID(object->header);
@@ -230,50 +241,69 @@ FatLock* ThinLock::changeToFatlock(gc* object) {
 
 void ThinLock::acquire(gc* object) {
   llvm_gcroot(object, 0);
-start:
   uint64_t id = mvm::Thread::get()->getThreadID();
-  uintptr_t oldValue = object->header;
-  uintptr_t newValue = id | (oldValue & NonLockBitsMask);
-  uintptr_t val = __sync_val_compare_and_swap(&object->header, oldValue & NonLockBitsMask,
-                                              newValue);
+  uintptr_t oldValue = 0;
+  uintptr_t newValue = 0;
+  uintptr_t yieldedValue = 0;
+  do {
+    oldValue = object->header & NonLockBitsMask;
+    newValue = oldValue | id;
+    yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
+  } while ((object->header & ~NonLockBitsMask) == 0);
 
-  if (val != (oldValue & NonLockBitsMask)) {
-    //fat!
-    if (!(val & FatMask)) {
-      if ((val & Thread::IDMask) == id) {
-        if ((val & ThinCountMask) != ThinCountMask) {
-          object->header += ThinCountAdd;
-        } else {
-          overflowThinLock(object);
-        }
-      } else {
-        FatLock* obj = Thread::get()->MyVM->allocateFatLock(object);
-        uintptr_t val = obj->getID();
-loop:
-        while (object->header & ~NonLockBitsMask) {
-          if (object->header & FatMask) {
-            obj->deallocate();
-            goto end;
-          }
-          else mvm::Thread::yield();
-        }
-        
+  if (yieldedValue == oldValue) {
+    assert(owner(object) && "Not owner after quitting acquire!");
+    return;
+  }
+  
+  if ((yieldedValue & Thread::IDMask) == id) {
+    assert(owner(object) && "Inconsistent lock");
+    if ((yieldedValue & ThinCountMask) != ThinCountMask) {
+      do {
         oldValue = object->header;
-        newValue = val | (oldValue & NonLockBitsMask);
-        uintptr_t test = __sync_val_compare_and_swap(&object->header,
-                                                     oldValue & NonLockBitsMask,
-                                                      newValue);
-        if (test != (oldValue & NonLockBitsMask)) goto loop;
-        if (!obj->acquire(object)) goto start;
-      }
+        newValue = oldValue + ThinCountAdd;
+        yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
+      } while (oldValue != yieldedValue);
     } else {
-end:
+      overflowThinLock(object);
+    }
+    assert(owner(object) && "Not owner after quitting acquire!");
+    return;
+  }
+      
+  while (true) {
+    if (object->header & FatMask) {
       FatLock* obj = Thread::get()->MyVM->getFatLockFromID(object->header);
-      if (obj) {
-        if (!obj->acquire(object)) goto start;
-      } else {
-        goto start;
+      if (obj != NULL) {
+        if (obj->acquire(object)) {
+          break;
+        }
       }
+    }
+    
+    while (object->header & ~NonLockBitsMask) {
+      if (object->header & FatMask) {
+        break;
+      } else {
+        mvm::Thread::yield();
+      }
+    }
+    
+    if ((object->header & ~NonLockBitsMask) == 0) {
+      FatLock* obj = Thread::get()->MyVM->allocateFatLock(object);
+      do {
+        oldValue = object->header & NonLockBitsMask;
+        newValue = oldValue | obj->getID();
+        yieldedValue = __sync_val_compare_and_swap(&object->header, oldValue, newValue);
+      } while ((object->header & ~NonLockBitsMask) == 0);
+
+      if (oldValue != yieldedValue) {
+        assert((getFatLock(object) != obj) && "Inconsistent lock");
+        obj->deallocate();
+      } else {
+        assert((getFatLock(object) == obj) && "Inconsistent lock");
+      }
+      assert(!owner(object) && "Inconsistent lock");
     }
   }
 
@@ -285,14 +315,26 @@ void ThinLock::release(gc* object) {
   llvm_gcroot(object, 0);
   assert(owner(object) && "Not owner when entering release!");
   uint64 id = mvm::Thread::get()->getThreadID();
+  uintptr_t oldValue = 0;
+  uintptr_t newValue = 0;
+  uintptr_t yieldedValue = 0;
   if ((object->header & ~NonLockBitsMask) == id) {
-    object->header = object->header & NonLockBitsMask;
+    do {
+      oldValue = object->header;
+      newValue = oldValue & NonLockBitsMask;
+      yieldedValue = __sync_val_compare_and_swap(&object->header, oldValue, newValue);
+    } while (yieldedValue != oldValue);
   } else if (object->header & FatMask) {
     FatLock* obj = Thread::get()->MyVM->getFatLockFromID(object->header);
     assert(obj && "Lock deallocated while held.");
     obj->release(object);
   } else {
-    object->header -= ThinCountAdd;
+    assert(((object->header & ThinCountMask) > 0) && "Inconsistent state");    
+    do {
+      oldValue = object->header;
+      newValue = oldValue - ThinCountAdd;
+      yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
+    } while (yieldedValue != oldValue);
   }
 }
 
@@ -302,23 +344,12 @@ bool ThinLock::owner(gc* object) {
   llvm_gcroot(object, 0);
   if (object->header & FatMask) {
     FatLock* obj = Thread::get()->MyVM->getFatLockFromID(object->header);
-    if (obj) return obj->owner();
+    if (obj != NULL) return obj->owner();
   } else {
     uint64 id = mvm::Thread::get()->getThreadID();
     if ((object->header & Thread::IDMask) == id) return true;
   }
   return false;
-}
-
-mvm::Thread* ThinLock::getOwner(gc* object) {
-  llvm_gcroot(object, 0);
-  if (object->header & FatMask) {
-    FatLock* obj = Thread::get()->MyVM->getFatLockFromID(object->header);
-    if (obj) return obj->getOwner();
-    return 0;
-  } else {
-    return (mvm::Thread*)(object->header & mvm::Thread::IDMask);
-  }
 }
 
 /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.
