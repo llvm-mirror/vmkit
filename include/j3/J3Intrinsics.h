@@ -108,7 +108,6 @@ public:
   llvm::Function* GetBaseClassVTFromVTFunction;
 
   llvm::Function* GetLockFunction;
-  llvm::Function* OverflowThinLockFunction;
   
   llvm::Function* GetFinalInt8FieldFunction;
   llvm::Function* GetFinalInt16FieldFunction;

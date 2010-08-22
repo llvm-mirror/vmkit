@@ -161,10 +161,6 @@ declare void @j3JavaObjectAquire(%JavaObject*)
 ;;; block or method.
 declare void @j3JavaObjectRelease(%JavaObject*)
 
-;;; j3OverflowThinLock - Change a thin lock to a fat lock when the thin lock
-;;; overflows
-declare void @j3OverflowThinLock(%JavaObject*)
-
 ;;; isAssignableFrom - Returns if a type is a subtype of another type.
 declare i1 @isAssignableFrom(%VT*, %VT*) readnone
 

@@ -577,62 +577,14 @@ void JavaJIT::monitorEnter(Value* obj) {
   
   BasicBlock* OK = createBasicBlock("synchronize passed");
   BasicBlock* NotOK = createBasicBlock("synchronize did not pass");
-  BasicBlock* FatLockBB = createBasicBlock("fat lock");
-  BasicBlock* ThinLockBB = createBasicBlock("thin lock");
 
   BranchInst::Create(OK, NotOK, cmp, currentBlock);
 
+  // The atomic cas did not work.
   currentBlock = NotOK;
-  
-  // The compare and swap did not pass, look if it's a thin lock
-  Value* isThin = BinaryOperator::CreateAnd(atomic, intrinsics->constantFatMask, "",
-                                            currentBlock);
-  cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, isThin,
-                     intrinsics->constantPtrZero, "");
-  
-  BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
-
-  // It's a thin lock. Look if we're the owner of this lock.
-  currentBlock = ThinLockBB;
-  Value* idMask = ConstantInt::get(intrinsics->pointerSizeType, mvm::Thread::IDMask);
-  Value* cptMask = ConstantInt::get(intrinsics->pointerSizeType, mvm::ThinCountMask);
-  Value* IdInLock = BinaryOperator::CreateAnd(atomic, idMask, "", currentBlock);
-  Value* owner = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, threadId,
-                              IdInLock, "");
-
-  BasicBlock* OwnerBB = createBasicBlock("owner thread");
-
-  BranchInst::Create(OwnerBB, FatLockBB, owner, currentBlock);
-  currentBlock = OwnerBB;
-
-  // OK, we are the owner, now check if the counter will overflow.
-  Value* count = BinaryOperator::CreateAnd(atomic, cptMask, "", currentBlock);
-  cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_ULT, count, cptMask, "");
-
-  BasicBlock* IncCounterBB = createBasicBlock("Increment counter");
-  BasicBlock* OverflowCounterBB = createBasicBlock("Overflow counter");
-
-  BranchInst::Create(IncCounterBB, OverflowCounterBB, cmp, currentBlock);
-  currentBlock = IncCounterBB;
-  
-  // The counter will not overflow, increment it.
-  Value* One = ConstantInt::get(intrinsics->pointerSizeType, mvm::ThinCountAdd);
-  Value* Add = BinaryOperator::CreateAdd(One, atomic, "", currentBlock);
-  new StoreInst(Add, lockPtr, false, currentBlock);
-  BranchInst::Create(OK, currentBlock);
-
-  currentBlock = OverflowCounterBB;
-
-  // The counter will overflow, call this function to create a new lock,
-  // lock it 0x101 times, and pass.
-  CallInst::Create(intrinsics->OverflowThinLockFunction, obj, "",
-                   currentBlock);
-  BranchInst::Create(OK, currentBlock);
-  
-  currentBlock = FatLockBB;
-  // Either it's a fat lock or there is contention.
   CallInst::Create(intrinsics->AquireObjectFunction, obj, "", currentBlock);
   BranchInst::Create(OK, currentBlock);
+
   currentBlock = OK;
 }
 
@@ -647,7 +599,7 @@ void JavaJIT::monitorExit(Value* obj) {
                             "", currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
   Value* NonLockBitsMask = ConstantInt::get(
-      intrinsics->pointerSizeType, ~mvm::NonLockBitsMask);
+      intrinsics->pointerSizeType, mvm::NonLockBitsMask);
 
   Value* lockedMask = BinaryOperator::CreateAnd(
       lock, NonLockBitsMask, "", currentBlock);
@@ -656,54 +608,34 @@ void JavaJIT::monitorExit(Value* obj) {
   threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "",
                               currentBlock);
   
-  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, lockedMask,
-                            threadId, "");
-  
-  
-  BasicBlock* EndUnlock = createBasicBlock("end unlock");
-  BasicBlock* LockedOnceBB = createBasicBlock("desynchronize thin lock");
-  BasicBlock* NotLockedOnceBB = 
-    createBasicBlock("simple desynchronize did not pass");
-  BasicBlock* FatLockBB = createBasicBlock("fat lock");
-  BasicBlock* ThinLockBB = createBasicBlock("thin lock");
-  
-  BranchInst::Create(LockedOnceBB, NotLockedOnceBB, cmp, currentBlock);
-  
-  // Locked once, set zero
-  currentBlock = LockedOnceBB;
-  NonLockBitsMask = ConstantInt::get(
-      intrinsics->pointerSizeType, mvm::NonLockBitsMask);
-  lockedMask = BinaryOperator::CreateAnd(
-      lock, NonLockBitsMask, "", currentBlock);
-  new StoreInst(lockedMask, lockPtr, false, currentBlock);
-  BranchInst::Create(EndUnlock, currentBlock);
+  Value* oldValMask = BinaryOperator::CreateOr(threadId, lockedMask, "",
+                                               currentBlock);
 
-  currentBlock = NotLockedOnceBB;
-  // Look if the lock is thin.
-  Value* isThin = BinaryOperator::CreateAnd(lock, intrinsics->constantFatMask, "",
-                                            currentBlock);
-  cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, isThin,
-                     intrinsics->constantPtrZero, "");
+  std::vector<Value*> atomicArgs;
+  atomicArgs.push_back(lockPtr);
+  atomicArgs.push_back(oldValMask);
+  atomicArgs.push_back(lockedMask);
+
+  // Do the atomic compare and swap.
+  Value* atomic = CallInst::Create(intrinsics->llvm_atomic_lcs_ptr,
+                                   atomicArgs.begin(), atomicArgs.end(), "",
+                                   currentBlock);
   
-  BranchInst::Create(ThinLockBB, FatLockBB, cmp, currentBlock);
+  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
+                            oldValMask, "");
   
-  currentBlock = ThinLockBB;
+  BasicBlock* OK = createBasicBlock("unsynchronize passed");
+  BasicBlock* NotOK = createBasicBlock("unsynchronize did not pass");
 
-  // Decrement the counter.
-  Value* One = ConstantInt::get(intrinsics->pointerSizeType, mvm::ThinCountAdd);
-  Value* Sub = BinaryOperator::CreateSub(lock, One, "", currentBlock);
-  new StoreInst(Sub, lockPtr, false, currentBlock);
-  BranchInst::Create(EndUnlock, currentBlock);
+  BranchInst::Create(OK, NotOK, cmp, currentBlock);
 
-  currentBlock = FatLockBB;
-
-  // Either it's a fat lock or there is contention.
+  // The atomic cas did not work.
+  currentBlock = NotOK;
   CallInst::Create(intrinsics->ReleaseObjectFunction, obj, "", currentBlock);
-  BranchInst::Create(EndUnlock, currentBlock);
-  currentBlock = EndUnlock;
+  BranchInst::Create(OK, currentBlock);
+
+  currentBlock = OK;
 }
-
-
 
 #ifdef ISOLATE_SHARING
 Value* JavaJIT::getStaticInstanceCtp() {

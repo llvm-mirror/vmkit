@@ -185,7 +185,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   GetVTInDisplayFunction = module->getFunction("getVTInDisplay");
   AquireObjectFunction = module->getFunction("j3JavaObjectAquire");
   ReleaseObjectFunction = module->getFunction("j3JavaObjectRelease");
-  OverflowThinLockFunction = module->getFunction("j3OverflowThinLock");
 
   VirtualFieldLookupFunction = module->getFunction("j3VirtualFieldLookup");
   StaticFieldLookupFunction = module->getFunction("j3StaticFieldLookup");

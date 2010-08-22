@@ -385,12 +385,6 @@ extern "C" void j3ThrowException(JavaObject* obj) {
   return JavaThread::get()->throwException(obj);
 }
 
-// Never throws.
-extern "C" void j3OverflowThinLock(JavaObject* obj) {
-  llvm_gcroot(obj, 0);
-  JavaObject::overflowThinLock(obj);
-}
-
 // Creates a Java object and then throws it.
 extern "C" JavaObject* j3NullPointerException() {
   JavaObject *exc = 0;
