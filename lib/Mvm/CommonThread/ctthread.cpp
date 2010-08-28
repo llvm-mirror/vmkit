@@ -288,7 +288,7 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   struct sigaction sa;
   sigset_t mask;
   sigfillset(&mask);
-  sa.sa_flags = SA_ONSTACK | SA_SIGINFO;
+  sa.sa_flags = SA_SIGINFO;
   sa.sa_mask = mask;
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
