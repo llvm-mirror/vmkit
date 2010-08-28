@@ -212,12 +212,11 @@ public:
 };
 
 class MvmJITMethodInfo : public JITMethodInfo {
-  const llvm::Function* Func;
 public:
   virtual void print(void* ip, void* addr);
   MvmJITMethodInfo(llvm::GCFunctionInfo* GFI, const llvm::Function* F) :
     JITMethodInfo(GFI) {
-      Func = F;
+      MetaInfo = const_cast<llvm::Function*>(F);
       MethodType = 0;
   }
 };

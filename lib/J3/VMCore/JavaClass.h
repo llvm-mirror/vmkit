@@ -898,21 +898,15 @@ public:
 };
 
 class JavaStaticMethodInfo : public mvm::CamlMethodInfo {
-protected:
-  JavaMethod* meth;
-
 public:
   virtual void print(void* ip, void* addr);
   
   JavaStaticMethodInfo(mvm::CamlMethodInfo* super, void* ip, JavaMethod* M) :
     mvm::CamlMethodInfo(super != NULL ? super->CF : NULL, ip) {
-    meth = M;
+    MetaInfo = M;
     MethodType = 1;
   }
 
-  virtual void* getMetaInfo() {
-    return meth;
-  }
 };
 
 class CodeLineInfo : public mvm::PermanentObject {

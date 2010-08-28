@@ -40,26 +40,20 @@ using namespace llvm;
 
 
 class JavaJITMethodInfo : public mvm::JITMethodInfo {
-protected:
-  JavaMethod* meth;
 public:
   virtual void print(void* ip, void* addr);
   
   JavaJITMethodInfo(llvm::GCFunctionInfo* GFI, JavaMethod* m) : 
     mvm::JITMethodInfo(GFI) {
-    meth = m;
+    MetaInfo = m;
     MethodType = 1;
   }
-  
-  virtual void* getMetaInfo() {
-    return meth;
-  }
-
 };
 
 void JavaJITMethodInfo::print(void* ip, void* addr) {
   void* new_ip = NULL;
   if (ip) new_ip = isStub(ip, addr);
+  JavaMethod* meth = (JavaMethod*)MetaInfo;
   CodeLineInfo* info = meth->lookupCodeLineInfo((uintptr_t)ip);
   fprintf(stderr, "; %p in %s.%s (line %d, bytecode %d, code start %p)", new_ip,
           UTF8Buffer(meth->classDef->name).cString(),

@@ -83,7 +83,8 @@ const char* MvmModule::getHostTriple() {
 }
 
 void MvmJITMethodInfo::print(void* ip, void* addr) {
-  fprintf(stderr, "; %p in %s LLVM method\n", ip, Func->getName().data());
+  fprintf(stderr, "; %p in %s LLVM method\n", ip,
+      ((llvm::Function*)MetaInfo)->getName().data());
 }
 
 class MvmJITListener : public llvm::JITEventListener {

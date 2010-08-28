@@ -25,14 +25,12 @@ public:
     if (isStub) ip = ((void**)addr)[2];
     return ip;
   }
-  
-  virtual void* getMetaInfo() {
-    abort();
-    return NULL;
-  }
 
+  void* getMetaInfo() const { return MetaInfo; }
+  
   unsigned MethodType;
   void* InstructionPointer;
+  void* MetaInfo;
 };
 
 class CamlFrame {
