@@ -15,4 +15,4 @@
 
 using namespace j3;
 
-extern "C" void Java_org_j3_mmtk_Assert_dumpStack__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Assert_dumpStack__ (JavaObject* self) { UNIMPLEMENTED(); }

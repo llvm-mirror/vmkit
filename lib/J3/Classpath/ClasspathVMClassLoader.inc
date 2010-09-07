@@ -351,7 +351,7 @@ static const char* bootPackages[NUM_BOOT_PACKAGES] = {
 				"org.xml.sax.helpers"
 };
 
-extern "C" ArrayObject* nativeGetBootPackages() {
+extern "C" ArrayObject* Java_java_lang_VMClassLoader_getBootPackages__() {
   ArrayObject* obj = 0;
   llvm_gcroot(obj, 0);
   

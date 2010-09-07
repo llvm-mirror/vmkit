@@ -1062,7 +1062,6 @@ intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
 }
 
 void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
-  JavaCompiler* M = getCompiler();
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i != e; ++i) {
     CommonClass* cl = i->second;
@@ -1075,7 +1074,6 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
           JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
             JavaStaticMethodInfo(0, meth.code, &meth);
           vm->StaticFunctions.addMethodInfo(MI, meth.code);
-          M->setMethod(&meth, meth.code, "");
         }
       }
       
@@ -1085,7 +1083,6 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
           JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
             JavaStaticMethodInfo(0, meth.code, &meth);
           vm->StaticFunctions.addMethodInfo(MI, meth.code);
-          M->setMethod(&meth, meth.code, "");
         }
       }
     }

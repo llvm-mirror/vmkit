@@ -157,10 +157,8 @@ Function* LLVMMethodInfo::getMethod() {
         JCL->nativeLookup(methodDef, j3, buf);
       }
 
-      if (!j3) {
-        methodDef->jniConsFromMethOverloaded(buf + 1);
-        memcpy(buf, "JnJVM", 5);
-      }
+      methodDef->jniConsFromMethOverloaded(buf + 1);
+      memcpy(buf, "JnJVM", 5);
 
       methodFunction = Function::Create(getFunctionType(), 
                                         GlobalValue::ExternalWeakLinkage, buf,
@@ -177,7 +175,7 @@ Function* LLVMMethodInfo::getMethod() {
     
     Compiler->functions.insert(std::make_pair(methodFunction, methodDef));
     if (Compiler != JCL->getCompiler() && methodDef->code) {
-      Compiler->setMethod(methodDef, methodDef->code, methodFunction->getName().data());
+      Compiler->setMethod(methodFunction, methodDef->code, methodFunction->getName().data());
     }
   }
   return methodFunction;

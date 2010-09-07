@@ -386,12 +386,11 @@ void JavaJITCompiler::makeIMT(Class* cl) {
   }
 }
 
-void JavaJITCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
-  Function* func = getMethodInfo(meth)->getMethod();
+void JavaJITCompiler::setMethod(Function* func, void* ptr, const char* name) {
+  func->setLinkage(GlobalValue::ExternalLinkage);
   func->setName(name);
   assert(ptr && "No value given");
   executionEngine->updateGlobalMapping(func, ptr);
-  func->setLinkage(GlobalValue::ExternalLinkage);
 }
 
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {

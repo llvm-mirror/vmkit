@@ -295,8 +295,9 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   sint32 mnlen = jniConsName->size;
   sint32 mtlen = jniConsType->size;
 
-  char* functionName = (char*)alloca(3 + JNI_NAME_PRE_LEN + 
-                            ((mnlen + clen + mtlen) << 3));
+  mvm::ThreadAllocator allocator;
+  char* functionName = (char*)allocator.Allocate(
+      3 + JNI_NAME_PRE_LEN + ((mnlen + clen + mtlen) << 3));
   
   if (!natPtr)
     natPtr = compilingClass->classLoader->nativeLookup(compilingMethod, j3,
@@ -305,10 +306,11 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   if (!natPtr && !TheCompiler->isStaticCompiling()) {
     currentBlock = createBasicBlock("start");
     CallInst::Create(intrinsics->ThrowExceptionFromJITFunction, "", currentBlock);
-    if (returnType != Type::getVoidTy(*llvmContext))
+    if (returnType != Type::getVoidTy(*llvmContext)) {
       ReturnInst::Create(*llvmContext, Constant::getNullValue(returnType), currentBlock);
-    else
+    } else {
       ReturnInst::Create(*llvmContext, currentBlock);
+    }
   
     PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "end native compile %s.%s\n",
                 UTF8Buffer(compilingClass->name).cString(),
@@ -320,8 +322,25 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   Function* func = llvmFunction;
   if (j3) {
-    compilingMethod->setCompiledPtr((void*)natPtr, functionName);
-    llvmFunction->clearGC();
+    Function* callee = Function::Create(llvmFunction->getFunctionType(),
+                                        GlobalValue::ExternalLinkage,
+                                        functionName,
+                                        llvmFunction->getParent());
+    TheCompiler->setMethod(callee, (void*)natPtr, functionName);
+    currentBlock = createBasicBlock("start");
+    std::vector<Value*> args;
+    for (Function::arg_iterator i = func->arg_begin(), e = func->arg_end();
+         i != e;
+         i++) {
+      args.push_back(i);
+    }
+    Value* res = CallInst::Create(
+        callee, args.begin(), args.end(), "", currentBlock);
+    if (returnType != Type::getVoidTy(*llvmContext)) {
+      ReturnInst::Create(*llvmContext, res, currentBlock);
+    } else {
+      ReturnInst::Create(*llvmContext, currentBlock);
+    }
     return llvmFunction;
   }
 

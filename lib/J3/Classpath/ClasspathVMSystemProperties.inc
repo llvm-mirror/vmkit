@@ -136,7 +136,7 @@ JavaObject* prop) {
   END_NATIVE_EXCEPTION
 }
 
-extern "C" void nativePropertiesPostInit(JavaObject* prop) {
+extern "C" void Java_gnu_classpath_VMSystemProperties_postInit__Ljava_util_Properties_2(JavaObject* prop) {
 
   llvm_gcroot(prop, 0);
 

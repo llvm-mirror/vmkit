@@ -949,9 +949,9 @@ public:
   ///
   void* compiledPtr();
 
-  /// setCompiledPtr - Set the pointer function to the method.
+  /// setNative - Set the method as native.
   ///
-  void setCompiledPtr(void*, const char*);
+  void setNative();
   
   /// JavaMethod - Delete the method as well as the cache enveloppes and
   /// attributes of the method.

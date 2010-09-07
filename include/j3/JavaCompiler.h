@@ -46,9 +46,6 @@ public:
     return 0;
   }
 
-  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) {
-  }
-  
   virtual bool isStaticCompiling() {
     return false;
   }

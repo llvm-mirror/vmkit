@@ -1849,8 +1849,7 @@ void JavaAOTCompiler::makeVT(Class* cl) {
 void JavaAOTCompiler::makeIMT(Class* cl) {
 }
 
-void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
-  Function* func = getMethodInfo(meth)->getMethod();
+void JavaAOTCompiler::setMethod(Function* func, void* ptr, const char* name) {
   func->setName(name);
   func->setLinkage(GlobalValue::ExternalLinkage);
 }

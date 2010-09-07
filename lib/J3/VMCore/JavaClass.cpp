@@ -298,20 +298,8 @@ void JavaStaticMethodInfo::print(void* ip, void* addr) {
   fprintf(stderr, "\n");
 }
 
-void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
-  classDef->acquire();
-  if (code == 0) {
-    code = ptr;
-    Jnjvm* vm = JavaThread::get()->getJVM();
-    mvm::MethodInfo* MI = vm->SharedStaticFunctions.CodeStartToMethodInfo(ptr);
-    JavaStaticMethodInfo* JMI =
-      new (classDef->classLoader->allocator, "JavaStaticMethodInfo")
-        JavaStaticMethodInfo((mvm::CamlMethodInfo*)MI, code, this);
-    vm->StaticFunctions.addMethodInfo(JMI, code);
-    classDef->classLoader->getCompiler()->setMethod(this, ptr, name);
-  }
+void JavaMethod::setNative() {
   access |= ACC_NATIVE;
-  classDef->release();
 }
 
 void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
@@ -1216,19 +1204,35 @@ void JavaMethod::jniConsFromMeth(char* buf, const UTF8* jniConsClName,
   
   for (sint32 i =0; i < mnlen; ++i) {
     cur = jniConsName->elements[i];
-    if (cur == '/') ptr[0] = '_';
-    else if (cur == '_') {
+    if (cur == '/') {
+      ptr[0] = '_';
+      ++ptr;
+    } else if (cur == '_') {
       ptr[0] = '_';
       ptr[1] = '1';
+      ptr += 2;
+    } else if (cur == '<') {
+      ptr[0] = '_';
+      ptr[1] = '0';
+      ptr[2] = '0';
+      ptr[3] = '0';
+      ptr[4] = '3';
+      ptr[5] = 'C';
+      ptr += 6;
+    } else if (cur == '>') {
+      ptr[0] = '_';
+      ptr[1] = '0';
+      ptr[2] = '0';
+      ptr[3] = '0';
+      ptr[4] = '3';
+      ptr[5] = 'E';
+      ptr += 6;
+    } else {
+      ptr[0] = (uint8)cur;
       ++ptr;
     }
-    else ptr[0] = (uint8)cur;
-    ++ptr;
-  }
-  
+  } 
   ptr[0] = 0;
-
-
 }
 
 void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,

@@ -27,7 +27,7 @@ struct Lock {
 extern "C" void Java_org_j3_mmtk_Lock_acquire__(Lock* l) {
   l->spin.acquire();
 }
-extern "C" void Java_org_j3_mmtk_Lock_check__I () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Lock_check__I (Lock* l, int i) { UNIMPLEMENTED(); }
 
 extern "C" void Java_org_j3_mmtk_Lock_release__(Lock* l) {
   l->spin.release();
