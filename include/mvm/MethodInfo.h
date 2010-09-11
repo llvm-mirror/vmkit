@@ -29,7 +29,6 @@ public:
   void* getMetaInfo() const { return MetaInfo; }
   
   unsigned MethodType;
-  void* InstructionPointer;
   void* MetaInfo;
 };
 
@@ -45,15 +44,15 @@ class CamlMethodInfo : public MethodInfo {
 public:
   CamlFrame* CF;
   virtual void scan(uintptr_t closure, void* ip, void* addr);
-  CamlMethodInfo(CamlFrame* C, void* ip);
+  CamlMethodInfo(CamlFrame* C) : CF(C) { }
 };
 
 class StaticCamlMethodInfo : public CamlMethodInfo {
   const char* name;
 public:
   virtual void print(void* ip, void* addr);
-  StaticCamlMethodInfo(CamlFrame* CF, void* ip, const char* n) :
-    CamlMethodInfo(CF, ip) {
+  StaticCamlMethodInfo(CamlFrame* CF, const char* n) :
+    CamlMethodInfo(CF) {
     name = n;
     MethodType = 0;
   }

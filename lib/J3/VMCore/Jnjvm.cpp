@@ -1487,8 +1487,7 @@ void Jnjvm::internalRemoveMethods(JnjvmClassLoader* loader, mvm::FunctionMap& Ma
 }
 
 void Jnjvm::removeMethodsInFunctionMaps(JnjvmClassLoader* loader) {
-  internalRemoveMethods(loader, RuntimeFunctions);
-  internalRemoveMethods(loader, StaticFunctions);
+  internalRemoveMethods(loader, FunctionsCache);
 }
 
 

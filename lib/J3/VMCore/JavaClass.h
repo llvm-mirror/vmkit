@@ -902,7 +902,7 @@ public:
   virtual void print(void* ip, void* addr);
   
   JavaStaticMethodInfo(mvm::CamlMethodInfo* super, void* ip, JavaMethod* M) :
-    mvm::CamlMethodInfo(super != NULL ? super->CF : NULL, ip) {
+    mvm::CamlMethodInfo(super->CF) {
     MetaInfo = M;
     MethodType = 1;
   }

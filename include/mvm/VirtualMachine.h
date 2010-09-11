@@ -48,77 +48,14 @@ public:
 
   /// IPToMethodInfo - Map a code start instruction instruction to the MethodInfo.
   ///
-  MethodInfo* CodeStartToMethodInfo(void* ip) {
-    FunctionMapLock.acquire();
-    std::map<void*, MethodInfo*>::iterator I = Functions.find(ip);
-    MethodInfo* res = NULL;
-    if (I != Functions.end()) {
-      res = I->second;
-    }
-    FunctionMapLock.release();
-    return res;
-  }
-};
-
-/// StartEndFunctionMap - This map is for functions for which we have
-/// a start and end address.
-///
-class StartEndFunctionMap : public FunctionMap {
-public:
-  /// addMethodInFunctionMap - A new method pointer in the function map.
-  ///
-  void addMethodInfo(MethodInfo* meth, void* start, void* end) {
-    FunctionMapLock.acquire();
-    Functions.insert(std::make_pair(start, meth));
-    Functions.insert(std::make_pair(end, meth));
-    FunctionMapLock.release();
-  }
-  
-  /// IPToMethodInfo - Map an instruction pointer to the MethodInfo.
-  ///
-  MethodInfo* IPToMethodInfo(void* ip) {
-    FunctionMapLock.acquire();
-    std::map<void*, MethodInfo*>::iterator I = Functions.upper_bound(ip);
-    MethodInfo* res = 0;
-    if (I != Functions.end() && I != Functions.begin()) {
-      res = I->second;
-      if ((--I)->second != res) res = 0;
-    }
-    FunctionMapLock.release();
-    return res;
-  }
-};
-
-/// StartFunctionMap - This map is for static functions where getting an end
-/// address is cumbersome.
-///
-class StartFunctionMap : public FunctionMap {
-public: 
-  /// addMethodInFunctionMap - A new method pointer in the function map.
-  ///
-  void addMethodInfo(MethodInfo* meth, void* addr) {
-    FunctionMapLock.acquire();
-    Functions.insert(std::make_pair((void*)addr, meth));
-    FunctionMapLock.release();
-  }
-  
-  /// IPToMethodInfo - Map an instruction pointer to the MethodInfo.
-  ///
   MethodInfo* IPToMethodInfo(void* ip);
- 
+
+  /// addMethodInfo - A new instruction pointer in the function map.
+  ///
+  void addMethodInfo(MethodInfo* meth, void* ip);
+
+  FunctionMap();
 };
-
-class SharedStartFunctionMap : public StartFunctionMap {
-public: 
-  BumpPtrAllocator* StaticAllocator;
-  bool initialized;
-  SharedStartFunctionMap() {
-    initialized = false;
-  }
-
-  void initialize();
-};
-
 
 
 // Same values than JikesRVM
@@ -232,7 +169,6 @@ protected:
     
     mainThread = 0;
     NumberOfThreads = 0;
-    if (!SharedStaticFunctions.initialized) SharedStaticFunctions.initialize();
   }
 public:
 
@@ -529,13 +465,10 @@ public:
   UncooperativeCollectionRV rendezvous;
 #endif
 
-
-  StartEndFunctionMap RuntimeFunctions;
-  static StartEndFunctionMap SharedRuntimeFunctions;
-  StartFunctionMap StaticFunctions;
-  static SharedStartFunctionMap SharedStaticFunctions;
-
-  MethodInfo* IPToMethodInfo(void* ip);
+  FunctionMap FunctionsCache;
+  MethodInfo* IPToMethodInfo(void* ip) {
+    return FunctionsCache.IPToMethodInfo(ip);
+  }
 
 #ifdef ISOLATE
   size_t IsolateID;

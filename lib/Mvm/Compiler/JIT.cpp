@@ -22,6 +22,7 @@
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/Assembly/Parser.h>
 #include <llvm/CodeGen/GCStrategy.h>
+#include <llvm/CodeGen/JITCodeEmitter.h>
 #include <llvm/Config/config.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include "llvm/ExecutionEngine/JITEventListener.h"
@@ -35,6 +36,7 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Target/TargetSelect.h>
+#include <../lib/ExecutionEngine/JIT/JIT.h>
 
 #include "mvm/JIT.h"
 #include "mvm/Threads/Locks.h"
@@ -93,23 +95,32 @@ public:
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
     assert(F.getParent() == MvmModule::globalModule);
-    llvm::GCFunctionInfo* GFI = 0;
+    assert(F.hasGC());
     // We know the last GC info is for this method.
-    if (F.hasGC()) {
-      GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
-      I--;
-      DEBUG(errs() << (*I)->getFunction().getName() << '\n');
-      DEBUG(errs() << F.getName() << '\n');
-      assert(&(*I)->getFunction() == &F &&
+    GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
+    I--;
+    DEBUG(errs() << (*I)->getFunction().getName() << '\n');
+    DEBUG(errs() << F.getName() << '\n');
+    assert(&(*I)->getFunction() == &F &&
         "GC Info and method do not correspond");
-      GFI = *I;
-    }
-    MethodInfo* MI =
+    llvm::GCFunctionInfo* GFI = *I;
+    JITMethodInfo* MI =
       new(*MvmModule::Allocator, "MvmJITMethodInfo") MvmJITMethodInfo(GFI, &F);
-    VirtualMachine::SharedRuntimeFunctions.addMethodInfo(MI, Code,
-                                            (void*)((uintptr_t)Code + Size));
+    MI->addToVM(mvm::Thread::get()->MyVM, (JIT*)MvmModule::executionEngine);
   }
 };
+
+void JITMethodInfo::addToVM(VirtualMachine* VM, JIT* jit) {
+  JITCodeEmitter* JCE = jit->getCodeEmitter();
+  assert(GCInfo != NULL);
+  for (GCFunctionInfo::iterator I = GCInfo->begin(), E = GCInfo->end();
+       I != E;
+       I++) {
+    uintptr_t address = JCE->getLabelAddress(I->Label);
+    assert(address != 0);
+    VM->FunctionsCache.addMethodInfo(this, (void*)address);
+  }
+}
 
 static MvmJITListener JITListener;
 
@@ -317,6 +328,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   unconditionalSafePoint = module->getFunction("unconditionalSafePoint");
   conditionalSafePoint = module->getFunction("conditionalSafePoint");
   AllocateFunction = module->getFunction("gcmalloc");
+  AllocateFunction->setGC("vmkit");
   assert(AllocateFunction && "No allocate function");
   AllocateUnresolvedFunction = module->getFunction("gcmallocUnresolved");
   assert(AllocateUnresolvedFunction && "No allocateUnresolved function");

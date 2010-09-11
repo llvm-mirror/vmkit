@@ -55,10 +55,16 @@ void JavaJITMethodInfo::print(void* ip, void* addr) {
   if (ip) new_ip = isStub(ip, addr);
   JavaMethod* meth = (JavaMethod*)MetaInfo;
   CodeLineInfo* info = meth->lookupCodeLineInfo((uintptr_t)ip);
-  fprintf(stderr, "; %p in %s.%s (line %d, bytecode %d, code start %p)", new_ip,
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString(), info->lineNumber,
-          info->bytecodeIndex, meth->code);
+  if (info != NULL) {
+    fprintf(stderr, "; %p in %s.%s (line %d, bytecode %d, code start %p)", new_ip,
+            UTF8Buffer(meth->classDef->name).cString(),
+            UTF8Buffer(meth->name).cString(), info->lineNumber,
+            info->bytecodeIndex, meth->code);
+  } else {
+    fprintf(stderr, "; %p in %s.%s (native method, code start %p)", new_ip,
+            UTF8Buffer(meth->classDef->name).cString(),
+            UTF8Buffer(meth->name).cString(), meth->code);
+  }
   if (ip != new_ip) fprintf(stderr, " (from stub)");
   fprintf(stderr, "\n");
 }
@@ -71,41 +77,39 @@ void JavaJITListener::NotifyFunctionEmitted(const Function &F,
   // The following could be changed to an assert when -load-bc supports
   // the verifier.
   if (F.getParent() != TheCompiler->getLLVMModule()) return;
+  assert(F.hasGC());
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   mvm::BumpPtrAllocator& Alloc = TheCompiler->allocator;
-  llvm::GCFunctionInfo* GFI = 0;
 
-  if (F.hasGC()) {
-    if (TheCompiler->TheGCStrategy == NULL) {
-      assert(mvm::MvmModule::TheGCStrategy != NULL && "No GC strategy");
-      TheCompiler->TheGCStrategy = mvm::MvmModule::TheGCStrategy;
-      mvm::MvmModule::TheGCStrategy = NULL;
-    }
-    GCStrategy::iterator I = TheCompiler->TheGCStrategy->end();
-    I--;
-    while (&(*I)->getFunction() != &F) {
-      // This happens when the compilation of a function was post-poned.
-      assert(I != TheCompiler->TheGCStrategy->begin() && "No GC info");
-      I--;
-    }
-    assert(&(*I)->getFunction() == &F &&
-        "GC Info and method do not correspond");
-    GFI = *I;
+  // Fetch the GCStrategy if it wasn't created before.
+  if (TheCompiler->TheGCStrategy == NULL) {
+    assert(mvm::MvmModule::TheGCStrategy != NULL && "No GC strategy");
+    TheCompiler->TheGCStrategy = mvm::MvmModule::TheGCStrategy;
+    mvm::MvmModule::TheGCStrategy = NULL;
   }
+  
+  GCStrategy::iterator I = TheCompiler->TheGCStrategy->end();
+  I--;
+  while (&(*I)->getFunction() != &F) {
+    // This happens when the compilation of a function was post-poned.
+    assert(I != TheCompiler->TheGCStrategy->begin() && "No GC info");
+    I--;
+  }
+  assert(&(*I)->getFunction() == &F && "GC Info and method do not correspond");
+  llvm::GCFunctionInfo* GFI = *I;
 
   JavaMethod* meth = TheCompiler->getJavaMethod(F);
+  mvm::JITMethodInfo* MI = NULL;
   if (meth == NULL) {
     // This is a stub.
-    mvm::MvmJITMethodInfo* MI = new(Alloc, "JITMethodInfo")
-      mvm::MvmJITMethodInfo(GFI, &F);
-    vm->RuntimeFunctions.addMethodInfo(MI, Code,
-                                       (void*)((uintptr_t)Code + Size));
+    MI = new(Alloc, "JITMethodInfo") mvm::MvmJITMethodInfo(GFI, &F);
   } else {
-    JavaJITMethodInfo* MI = new(Alloc, "JavaJITMethodInfo")
-      JavaJITMethodInfo(GFI, meth);
-    vm->RuntimeFunctions.addMethodInfo(MI, Code,
-                                       (void*)((uintptr_t)Code + Size));
+    MI = new(Alloc, "JavaJITMethodInfo") JavaJITMethodInfo(GFI, meth);
+  }
+  MI->addToVM(vm, (JIT*)TheCompiler->executionEngine);
+
+  if (meth != NULL) {
     uint32 infoLength = Details.LineStarts.size();
     meth->codeInfoLength = infoLength;
     if (infoLength > 0) {

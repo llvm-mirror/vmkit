@@ -30,6 +30,7 @@ namespace llvm {
   class FunctionPassManager;
   class GCFunctionInfo;
   class GCStrategy;
+  class JIT;
   class Module;
   class PointerType;
   class TargetData;
@@ -176,15 +177,13 @@ public:
 
 
 class MvmModule {
-private:
-   static llvm::ExecutionEngine* executionEngine;
-
 public:
    static llvm::GCStrategy* TheGCStrategy;
    static mvm::LockRecursive protectEngine;
    static llvm::Module *globalModule;
    static const llvm::TargetData* TheTargetData;
    static mvm::BumpPtrAllocator* Allocator;
+   static llvm::ExecutionEngine* executionEngine;
    //static unsigned MetadataTypeKind;
 
    static uint64 getTypeSize(const llvm::Type* type);
@@ -209,6 +208,7 @@ class JITMethodInfo : public MethodInfo {
 public:
   virtual void scan(uintptr_t closure, void* ip, void* addr);
   JITMethodInfo(llvm::GCFunctionInfo* GFI) : GCInfo(GFI) {}
+  void addToVM(VirtualMachine* vm, llvm::JIT* jit);
 };
 
 class MvmJITMethodInfo : public JITMethodInfo {

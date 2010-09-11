@@ -24,19 +24,11 @@
 using namespace mvm;
 
 void CamlMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
-  if (!CF && InstructionPointer) {
-    MethodInfo* MI = VirtualMachine::SharedStaticFunctions.IPToMethodInfo(ip);
-    if (MI != &DefaultMethodInfo::DM) {
-      CF = ((CamlMethodInfo*)MI)->CF;
-    }
-  }
-
-  if (CF) {
-    //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
-    uintptr_t spaddr = ((uintptr_t*)addr)[0];
-    for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
-      Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]), closure);
-    }
+  assert(CF != NULL);
+  //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
+  uintptr_t spaddr = ((uintptr_t*)addr)[0];
+  for (uint16 i = 0; i < CF->NumLiveOffsets; ++i) {
+    Collector::scanObject((void**)(spaddr + CF->LiveOffsets[i]), closure);
   }
 }
 
@@ -59,52 +51,6 @@ DefaultMethodInfo DefaultMethodInfo::DM;
 void DefaultMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
 }
 
-
-MethodInfo* StartFunctionMap::IPToMethodInfo(void* ip) {
-  FunctionMapLock.acquire();
-  std::map<void*, MethodInfo*>::iterator E = Functions.end();
-  std::map<void*, MethodInfo*>::iterator I = Functions.find(ip);
-  MethodInfo* MI = 0;
-  if (I == E) {
-    Dl_info info;
-    int res = dladdr(ip, &info);
-    if (res != 0) {
-      I = Functions.find(info.dli_saddr);
-      if (I == E) {
-        // The method is static, and we have no information for it.
-        // Just return the Default MethodInfo object.
-        MI = &DefaultMethodInfo::DM;
-      } else {
-        MI = I->second;
-      }
-    } else {
-      // The method is jitted, and no-one has intercepted its compilation.
-      // Just return the Default MethodInfo object.
-      MI = &DefaultMethodInfo::DM;
-    }
-    // Add it to the map, so that we don't need to call dladdr again.
-    Functions.insert(std::make_pair(ip, MI));
-  } else {
-    MI = I->second;
-  }
-  FunctionMapLock.release();
-  return MI;
-}
-
-MethodInfo* VirtualMachine::IPToMethodInfo(void* ip) {
-  MethodInfo* MI = RuntimeFunctions.IPToMethodInfo(ip);
-  if (MI) return MI;
-  
-  MI = SharedRuntimeFunctions.IPToMethodInfo(ip);
-  if (MI) return MI;
-
-  MI = StaticFunctions.IPToMethodInfo(ip);
-  if (MI != &DefaultMethodInfo::DM) return MI;
-
-  MI = SharedStaticFunctions.IPToMethodInfo(ip);
-  return MI;
-}
-
 struct CamlFrames {
   uint16_t NumDescriptors;
   CamlFrame frames[1];
@@ -114,14 +60,11 @@ struct CamlFrameDecoder {
   CamlFrames* frames ;
   uint32 currentDescriptor;
   CamlFrame* currentFrame;
-  Dl_info info;
 
   CamlFrameDecoder(CamlFrames* frames) {
     this->frames = frames;
     currentDescriptor = 0;
     currentFrame = &(frames->frames[0]);
-    int res = dladdr(currentFrame->ReturnAddress, &info);
-    assert(res != 0 && "No frame");
   }
 
   bool hasNext() {
@@ -135,55 +78,51 @@ struct CamlFrameDecoder {
       (currentFrame->NumLiveOffsets % 2) * sizeof(uint16_t) +
       currentFrame->NumLiveOffsets * sizeof(uint16_t) +
       sizeof(void*) + sizeof(uint16_t) + sizeof(uint16_t));
-    int res = dladdr(currentFrame->ReturnAddress, &info);
-    assert(res != 0 && "No frame");
   }
 
-  CamlFrame* next(void** funcAddress, const char** funcName) {
+  CamlFrame* next() {
     assert(hasNext());
     CamlFrame* result = currentFrame;
-    *funcAddress = info.dli_saddr;
-    *funcName = info.dli_sname;
-
-    // Skip the remaining ones.
-    do {
-      advance();
-    } while (hasNext() && (info.dli_saddr == *funcAddress));
-
-    // Skip the entries that start at another method.
-    while (hasNext() && (info.dli_saddr == currentFrame->ReturnAddress)) {
-      advance();
-    }
-
-    while (hasNext() && (info.dli_saddr == NULL)) {
-      advance();
-    }
+    advance();
     return result;
   }
 };
 
-void SharedStartFunctionMap::initialize() {
+static BumpPtrAllocator* StaticAllocator = NULL;
+
+FunctionMap::FunctionMap() {
   CamlFrames* frames =
     (CamlFrames*)dlsym(SELF_HANDLE, "camlVmkitoptimized__frametable");
+  if (frames == NULL) return;
+  
   StaticAllocator = new BumpPtrAllocator();
-  const char* name = NULL;
-  void* address = NULL;
-
-  if (frames != NULL) {
-    CamlFrameDecoder decoder(frames);
-    while (decoder.hasNext()) {
-      CamlFrame* frame = decoder.next(&address, &name);
-      StaticCamlMethodInfo* MI = new(*StaticAllocator, "StaticCamlMethodInfo")
-          StaticCamlMethodInfo(frame, address, name);
-      addMethodInfo(MI, address);
-    }
+  CamlFrameDecoder decoder(frames);
+  Dl_info info;
+  while (decoder.hasNext()) {
+    CamlFrame* frame = decoder.next();
+    int res = dladdr(frame->ReturnAddress, &info);
+    assert(res != 0 && "No frame");
+    StaticCamlMethodInfo* MI = new(*StaticAllocator, "StaticCamlMethodInfo")
+        StaticCamlMethodInfo(frame, info.dli_sname);
+    addMethodInfo(MI, frame->ReturnAddress);
   }
 }
 
-CamlMethodInfo::CamlMethodInfo(CamlFrame* C, void* ip) {
-  InstructionPointer = ip;
-  CF = C;
+MethodInfo* FunctionMap::IPToMethodInfo(void* ip) {
+  FunctionMapLock.acquire();
+  std::map<void*, MethodInfo*>::iterator I = Functions.find(ip);
+  MethodInfo* res = NULL;
+  if (I != Functions.end()) {
+    res = I->second;
+  } else {
+    res = &DefaultMethodInfo::DM;
+  }
+  FunctionMapLock.release();
+  return res;
 }
 
-StartEndFunctionMap VirtualMachine::SharedRuntimeFunctions;
-SharedStartFunctionMap VirtualMachine::SharedStaticFunctions;
+void FunctionMap::addMethodInfo(MethodInfo* meth, void* ip) {
+  FunctionMapLock.acquire();
+  Functions.insert(std::make_pair(ip, meth));
+  FunctionMapLock.release();
+}

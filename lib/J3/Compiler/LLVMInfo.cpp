@@ -169,9 +169,7 @@ Function* LLVMMethodInfo::getMethod() {
                                         "", Compiler->getLLVMModule());
     }
     
-    if (Compiler->useCooperativeGC()) {
-      methodFunction->setGC("vmkit");
-    }
+    methodFunction->setGC("vmkit");
     
     Compiler->functions.insert(std::make_pair(methodFunction, methodDef));
     if (Compiler != JCL->getCompiler() && methodDef->code) {
@@ -404,10 +402,13 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
 
   Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
                                 currentBlock);
-  if (!signature->getReturnType()->isVoid())
+  if (!signature->getReturnType()->isVoid()) {
     ReturnInst::Create(context, val, currentBlock);
-  else
+  } else {
     ReturnInst::Create(context, currentBlock);
+  }
+  
+  res->setGC("vmkit");
 
   return res;
 }
@@ -481,14 +482,13 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
 
   Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
                                 currentBlock);
-  if (!signature->getReturnType()->isVoid())
+  if (!signature->getReturnType()->isVoid()) {
     ReturnInst::Create(context, val, currentBlock);
-  else
+  } else {
     ReturnInst::Create(context, currentBlock);
-  
-  if (Compiler->useCooperativeGC()) {
-    res->setGC("vmkit");
   }
+  
+  res->setGC("vmkit");
   
   return res;
 }
@@ -545,7 +545,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   if (virt) {
     if (Compiler->useCooperativeGC()) {
       Args.push_back(new LoadInst(TempArgs[0], "", false, currentBlock));
-    }else {
+    } else {
       Args.push_back(TempArgs[0]);
     }
   }
@@ -587,9 +587,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
     ReturnInst::Create(context, currentBlock);
   }
   
-  if (Compiler->useCooperativeGC()) {
-    stub->setGC("vmkit");
-  }
+  stub->setGC("vmkit");
   
   return stub;
 }
