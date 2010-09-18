@@ -383,7 +383,7 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
       strName = JavaString::internalToJava(name, isolate);
     }
     obj = loadClassMethod->invokeJavaObjectVirtual(isolate, forCtp, javaLoader,
-                                                   &strName, doResolve);
+                                                   &strName);
     cl = JavaObjectClass::getClass(((JavaObjectClass*)obj));
   }
   
