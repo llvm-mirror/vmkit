@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "debug.h"
+
 #include "MvmGC.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
@@ -336,9 +338,13 @@ void* Thread::operator new(size_t sz) {
   assert(sz < (size_t)getpagesize() && "Thread local data too big");
   void* res = (void*)TheStackManager.allocate();
   // Give it a second chance.
-  if (!res) {
+  if (res == NULL) {
     Collector::collect();
-    res = (void*)TheStackManager.allocate();
+    // Wait for the finalizer to have cleaned up the threads.
+    while (res == NULL) {
+      mvm::Thread::yield();
+      res = (void*)TheStackManager.allocate();
+    }
   }
   return res;
 }
