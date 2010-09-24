@@ -299,9 +299,10 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   char* functionName = (char*)allocator.Allocate(
       3 + JNI_NAME_PRE_LEN + ((mnlen + clen + mtlen) << 3));
   
-  if (!natPtr)
+  if (!natPtr) {
     natPtr = compilingClass->classLoader->nativeLookup(compilingMethod, j3,
                                                        functionName);
+  }
   
   if (!natPtr && !TheCompiler->isStaticCompiling()) {
     currentBlock = createBasicBlock("start");
@@ -543,18 +544,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
   
-  if (codeInfo.size()) { 
-    compilingMethod->codeInfo = new CodeLineInfo[codeInfo.size()];
-    for (uint32 i = 0; i < codeInfo.size(); i++) {
-      compilingMethod->codeInfo[i].lineNumber = codeInfo[i].lineNumber;
-      compilingMethod->codeInfo[i].ctpIndex = codeInfo[i].ctpIndex;
-      compilingMethod->codeInfo[i].bytecodeIndex = codeInfo[i].bytecodeIndex;
-      compilingMethod->codeInfo[i].bytecode = codeInfo[i].bytecode;
-    }
-  } else {
-    compilingMethod->codeInfo = NULL;
-  }
- 
   return llvmFunction;
 }
 
@@ -896,23 +885,6 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   
   readExceptionTable(reader, codeLen);
   
-  // Lookup line number table attribute.
-  uint16 nba = reader.readU2();
-  for (uint16 i = 0; i < nba; ++i) {
-    const UTF8* attName = compilingClass->ctpInfo->UTF8At(reader.readU2());
-    uint32 attLen = reader.readU4();
-    if (attName->equals(Attribut::lineNumberTableAttribut)) {
-      uint16 lineLength = reader.readU2();
-      for (uint16 i = 0; i < lineLength; ++i) {
-        uint16 pc = reader.readU2();
-        uint16 ln = reader.readU2();
-        opcodeInfos[pc].lineNumber = ln;
-      }
-    } else {
-      reader.seek(attLen, Reader::SeekCur);      
-    }
-  }
-   
   reader.cursor = start;
   exploreOpcodes(reader, codeLen);
 
@@ -1146,23 +1118,6 @@ llvm::Function* JavaJIT::javaCompile() {
 
   readExceptionTable(reader, codeLen);
   
-  // Lookup line number table attribute.
-  uint16 nba = reader.readU2();
-  for (uint16 i = 0; i < nba; ++i) {
-    const UTF8* attName = compilingClass->ctpInfo->UTF8At(reader.readU2());
-    uint32 attLen = reader.readU4();
-    if (attName->equals(Attribut::lineNumberTableAttribut)) {
-      uint16 lineLength = reader.readU2();
-      for (uint16 i = 0; i < lineLength; ++i) {
-        uint16 pc = reader.readU2();
-        uint16 ln = reader.readU2();
-        opcodeInfos[pc].lineNumber = ln;
-      }
-    } else {
-      reader.seek(attLen, Reader::SeekCur);      
-    }
-  }
-  
   reader.cursor = start;
   exploreOpcodes(reader, codeLen);
  
@@ -1346,18 +1301,6 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
  
-  if (codeInfo.size()) { 
-    compilingMethod->codeInfo = new CodeLineInfo[codeInfo.size()];
-    for (uint32 i = 0; i < codeInfo.size(); i++) {
-      compilingMethod->codeInfo[i].lineNumber = codeInfo[i].lineNumber;
-      compilingMethod->codeInfo[i].ctpIndex = codeInfo[i].ctpIndex;
-      compilingMethod->codeInfo[i].bytecodeIndex = codeInfo[i].bytecodeIndex;
-      compilingMethod->codeInfo[i].bytecode = codeInfo[i].bytecode;
-    }
-  } else {
-    compilingMethod->codeInfo = NULL;
-  }
-
   return llvmFunction;
 }
 
@@ -2137,7 +2080,7 @@ void JavaJIT::getStaticField(uint16 index) {
           abort();
         }
       } else {
-        if (TheCompiler->isStaticCompiling()) {
+        if (TheCompiler->isStaticCompiling() && !TheCompiler->useCooperativeGC()) {
           JavaObject* val = field->getStaticObjectField();
           JnjvmClassLoader* JCL = field->classDef->classLoader;
           Value* V = TheCompiler->getFinalObject(val, sign->assocClass(JCL));
@@ -2630,10 +2573,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
 }
 
 DebugLoc JavaJIT::CreateLocation() {
-  LineInfo LI = { currentLineNumber, currentCtpIndex, currentBytecodeIndex,
-                  currentBytecode };
-  codeInfo.push_back(LI);
-  DebugLoc DL = DebugLoc::get(callNumber++, 0, DbgSubprogram);
+  DebugLoc DL = DebugLoc::get(currentBytecodeIndex, 0, DbgSubprogram);
   return DL;
 }
 

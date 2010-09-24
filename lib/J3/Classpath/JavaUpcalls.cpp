@@ -742,7 +742,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   loadInClassLoader =
     UPCALL_METHOD(loader, "java/lang/ClassLoader", "loadClass",
-                  "(Ljava/lang/String;Z)Ljava/lang/Class;", ACC_VIRTUAL);
+                  "(Ljava/lang/String;)Ljava/lang/Class;", ACC_VIRTUAL);
 
   JavaMethod* internString =
     UPCALL_METHOD(loader, "java/lang/VMString", "intern",

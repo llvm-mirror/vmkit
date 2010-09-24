@@ -422,9 +422,13 @@ bool LowerMagic::runOnFunction(Function& F) {
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
       II++;
-      CallSite Call = CallSite::get(I);
-      Instruction* CI = Call.getInstruction();
-      if (CI) {
+      if (I->getOpcode() != Instruction::Call &&
+          I->getOpcode() != Instruction::Invoke) {
+        continue;
+      }
+
+      CallSite Call(I);
+      Instruction* CI = I;
         Value* V = Call.getCalledValue();
         if (Function* FCur = dyn_cast<Function>(V)) {
           const char* name = FCur->getName().data();
@@ -1250,7 +1254,6 @@ bool LowerMagic::runOnFunction(Function& F) {
             }
           }
         }
-      }
     }
   }
   return Changed;

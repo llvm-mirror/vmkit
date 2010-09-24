@@ -1830,31 +1830,54 @@ void AnnotationReader::readElementValue() {
 
 CodeLineInfo* JavaMethod::lookupCodeLineInfo(uintptr_t ip) {
   for(uint16 i = 0; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address > ip) {
-      assert(i > 0 && "Wrong ip address for method");
-      return &(codeInfo[i - 1]);
+    if (codeInfo[i].address == ip) {
+      return &(codeInfo[i]);
     }
   }
-  if (codeInfoLength) return &(codeInfo[codeInfoLength - 1]);
   return NULL;
 }
 
 uint16 JavaMethod::lookupLineNumber(uintptr_t ip) {
-  for(uint16 i = 1; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address > ip) {
-      return codeInfo[i - 1].lineNumber;
+  for(uint16 i = 0; i < codeInfoLength; ++i) {
+    if (codeInfo[i].address == ip) {
+      Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);      
+      Reader reader(codeAtt, &(classDef->bytes));
+      reader.readU2(); // max_stack
+      reader.readU2(); // max_locals;
+      uint32_t codeLength = reader.readU4();
+      reader.seek(codeLength, Reader::SeekCur);
+      uint16_t exceptionTableLength = reader.readU2();
+      reader.seek(8 * exceptionTableLength, Reader::SeekCur);
+      uint16_t nba = reader.readU2();
+      for (uint16 att = 0; att < nba; ++att) {
+        const UTF8* attName = classDef->ctpInfo->UTF8At(reader.readU2());
+        uint32 attLen = reader.readU4();
+        if (attName->equals(Attribut::lineNumberTableAttribut)) {
+          uint16_t lineLength = reader.readU2();
+          uint16_t currentLine = 0;
+          for (uint16 j = 0; j < lineLength; ++j) {
+            uint16 pc = reader.readU2();
+            if (pc > codeInfo[i].bytecodeIndex + 1) return currentLine;
+            currentLine = reader.readU2();
+          }
+          return currentLine;
+        } else {
+          reader.seek(attLen, Reader::SeekCur);      
+        }
+      }
     }
   }
-  if (codeInfoLength) return codeInfo[codeInfoLength - 1].lineNumber;
   return 0;
 }
 
 uint16 JavaMethod::lookupCtpIndex(uintptr_t ip) {
-  for(uint16 i = 1; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address > ip) {
-      return codeInfo[i - 1].ctpIndex;
+  for(uint16 i = 0; i < codeInfoLength; ++i) {
+    if (codeInfo[i].address == ip) {
+      Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);
+      Reader reader(codeAtt, &(classDef->bytes));
+      reader.cursor = reader.cursor + 2 + 2 + 4 + codeInfo[i].bytecodeIndex + 1;
+      return reader.readU2();
     }
   }
-  if (codeInfoLength) return codeInfo[codeInfoLength - 1].ctpIndex;
   return 0;
 }

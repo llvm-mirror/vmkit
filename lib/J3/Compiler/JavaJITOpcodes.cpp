@@ -148,13 +148,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
     currentExceptionBlock = opinfo->exceptionBlock;
     
-    // Update the line number information.
-    if (opinfo->lineNumber)
-      currentLineNumber = opinfo->lineNumber;
-   
-    currentCtpIndex = -1;
     currentBytecodeIndex = i;
-    currentBytecode = bytecode;
 
     // To prevent a gcj bug with useless goto
     if (currentBlock->getTerminator() != 0) { 
@@ -2013,7 +2007,6 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case INVOKEVIRTUAL : {
         uint16 index = reader.readU2();
         i += 2;
-        currentCtpIndex = index;
         invokeVirtual(index);
         break;
       }
@@ -2021,7 +2014,6 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case INVOKESPECIAL : {
         uint16 index = reader.readU2();
         i += 2;
-        currentCtpIndex = index;
         invokeSpecial(index);
         break;
       }
@@ -2029,7 +2021,6 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case INVOKESTATIC : {
         uint16 index = reader.readU2();
         i += 2;
-        currentCtpIndex = index;
         invokeStatic(index);
         break;
       }
@@ -2037,7 +2028,6 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case INVOKEINTERFACE : {
         uint16 index = reader.readU2();
         i += 2;
-        currentCtpIndex = index;
         invokeInterface(index);
         i += 2;
         break;

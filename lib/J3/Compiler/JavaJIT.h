@@ -58,18 +58,8 @@ struct Opinfo {
   /// stack - The stack at this location if there is a new block
   ///
   std::vector<CommonClass*> stack;
-
-  /// lineNumber - The line number of this bytecode.
-  uint16 lineNumber;
 };
 
-
-struct LineInfo {
-  uint16 lineNumber;
-  uint16 ctpIndex;
-  uint16 bytecodeIndex;
-  uint16 bytecode;
-};
 
 /// JavaJIT - The compilation engine of J3. Parses the bycode and returns
 /// its LLVM representation.
@@ -90,11 +80,7 @@ public:
     callsStackWalker = false;
     endNode = 0;
     currentStackIndex = 0;
-    currentLineNumber = 0;
     currentBytecodeIndex = 0;
-    currentCtpIndex = -1;
-    currentBytecode = -1;
-    callNumber = 0;
     thisObject = NULL;
   }
 
@@ -158,26 +144,11 @@ private:
   
   llvm::MDNode* DbgSubprogram;
   
-  /// currentLineIndex - The current line being processed.
-  uint16 currentLineNumber;
-
   /// currentBytecodeIndex - The current bytecode being processed.
   uint16 currentBytecodeIndex;
   
-  /// currentCtpIndex - The constant pool index being processed.
-  uint16 currentCtpIndex;
-  
-  /// currentBytecode - The bytecode being processed.
-  uint16 currentBytecode;
-  
-  /// callNumber - The number of a call for a single opcode. 
-  uint16 callNumber;
-
   /// CreateLocation - Create debug information for a call.
   llvm::DebugLoc CreateLocation();
-
-  // codeInfo - List of LineInfo for this method.
-  std::vector<LineInfo> codeInfo;
 
 //===--------------------------- Inline support ---------------------------===//
 

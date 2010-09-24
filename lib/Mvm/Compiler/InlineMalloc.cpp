@@ -49,16 +49,17 @@ bool InlineMalloc::runOnFunction(Function& F) {
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
       II++;
-      CallSite Call = CallSite::get(I);
-      Instruction* CI = Call.getInstruction();
-      if (CI) {
-        Function* Temp = Call.getCalledFunction();
-        if (Temp == Malloc) {
-          if (dyn_cast<Constant>(Call.getArgument(0))) {
-            InlineFunctionInfo IFI(NULL, mvm::MvmModule::TheTargetData);
-            Changed |= InlineFunction(Call, IFI);
-            break;
-          }
+      if (I->getOpcode() != Instruction::Call &&
+          I->getOpcode() != Instruction::Invoke) {
+        continue;
+      }
+      CallSite Call(I);
+      Function* Temp = Call.getCalledFunction();
+      if (Temp == Malloc) {
+        if (dyn_cast<Constant>(Call.getArgument(0))) {
+          InlineFunctionInfo IFI(NULL, mvm::MvmModule::TheTargetData);
+          Changed |= InlineFunction(Call, IFI);
+          break;
         }
       }
     }

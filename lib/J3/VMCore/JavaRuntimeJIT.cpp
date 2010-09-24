@@ -614,9 +614,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   void* ip = *Walker;
 
   // Lookup the method info in the constant pool of the caller.
-  CodeLineInfo* CLInfo =
-    meth->lookupCodeLineInfo(reinterpret_cast<uintptr_t>(ip));
-  uint16 ctpIndex = CLInfo->ctpIndex;
+  uint16 ctpIndex = meth->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
   assert(ctpIndex && "No constant pool index");
   JavaConstantPool* ctpInfo = meth->classDef->getConstantPool();
   CommonClass* ctpCl = 0;

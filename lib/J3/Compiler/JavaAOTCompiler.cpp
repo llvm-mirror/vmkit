@@ -167,6 +167,7 @@ Constant* JavaAOTCompiler::getMethodInClass(JavaMethod* meth) {
 }
 
 Constant* JavaAOTCompiler::getString(JavaString* str) {
+  assert(!useCooperativeGC());
   string_iterator SI = strings.find(str);
   if (SI != strings.end()) {
     return SI->second;
@@ -304,6 +305,7 @@ Constant* JavaAOTCompiler::HandleMagic(JavaObject* obj, CommonClass* objCl) {
 
 
 Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
+  assert(!useCooperativeGC());
   llvm::GlobalVariable* varGV = 0;
   final_object_iterator End = finalObjects.end();
   final_object_iterator I = finalObjects.find(obj);

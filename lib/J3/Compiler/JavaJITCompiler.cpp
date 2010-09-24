@@ -15,12 +15,14 @@
 #include "llvm/Module.h"
 #include "llvm/Analysis/DebugInfo.h"
 #include "llvm/CodeGen/GCStrategy.h"
+#include <llvm/CodeGen/JITCodeEmitter.h>
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
+#include <../lib/ExecutionEngine/JIT/JIT.h>
 
 #include "MvmGC.h"
 #include "mvm/VirtualMachine.h"
@@ -58,7 +60,8 @@ void JavaJITMethodInfo::print(void* ip, void* addr) {
   if (info != NULL) {
     fprintf(stderr, "; %p in %s.%s (line %d, bytecode %d, code start %p)", new_ip,
             UTF8Buffer(meth->classDef->name).cString(),
-            UTF8Buffer(meth->name).cString(), info->lineNumber,
+            UTF8Buffer(meth->name).cString(),
+            meth->lookupLineNumber((uintptr_t)ip),
             info->bytecodeIndex, meth->code);
   } else {
     fprintf(stderr, "; %p in %s.%s (native method, code start %p)", new_ip,
@@ -74,8 +77,7 @@ void JavaJITListener::NotifyFunctionEmitted(const Function &F,
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
 
-  // The following could be changed to an assert when -load-bc supports
-  // the verifier.
+  // The following is necessary for -load-bc.
   if (F.getParent() != TheCompiler->getLLVMModule()) return;
   assert(F.hasGC());
 
@@ -107,35 +109,34 @@ void JavaJITListener::NotifyFunctionEmitted(const Function &F,
   } else {
     MI = new(Alloc, "JavaJITMethodInfo") JavaJITMethodInfo(GFI, meth);
   }
-  MI->addToVM(vm, (JIT*)TheCompiler->executionEngine);
+  JIT* jit = (JIT*)TheCompiler->executionEngine;
+  MI->addToVM(vm, jit);
 
-  if (meth != NULL) {
-    uint32 infoLength = Details.LineStarts.size();
-    meth->codeInfoLength = infoLength;
-    if (infoLength > 0) {
-      mvm::BumpPtrAllocator& JavaAlloc = meth->classDef->classLoader->allocator;
-      CodeLineInfo* infoTable =
-        new(JavaAlloc, "CodeLineInfo") CodeLineInfo[infoLength];
-      for (uint32 i = 0; i < infoLength; ++i) {
-        DebugLoc DL = Details.LineStarts[i].Loc;
-        uint32_t first = DL.getLine();
-        uint32_t second = DL.getCol();
-        assert(second == 0 && "Wrong column number");
-        infoTable[i].address = Details.LineStarts[i].Address;
-        infoTable[i].lineNumber = meth->codeInfo[first].lineNumber;
-        infoTable[i].bytecodeIndex = meth->codeInfo[first].bytecodeIndex;
-        infoTable[i].ctpIndex = meth->codeInfo[first].ctpIndex;
-        infoTable[i].bytecode = meth->codeInfo[first].bytecode;
-      }
-      delete[] meth->codeInfo;
-      meth->codeInfo = infoTable;
-    } else {
-      if (meth->codeInfo != NULL) {
-        delete[] meth->codeInfo;
-        meth->codeInfo = NULL;
-      }
-    }
+  if (meth == NULL) return;
+
+  uint32_t infoLength = GFI->size();
+  meth->codeInfoLength = infoLength;
+  if (infoLength == 0) {
+    meth->codeInfo = NULL;
+    return;
   }
+
+  mvm::BumpPtrAllocator& JavaAlloc = meth->classDef->classLoader->allocator;
+  CodeLineInfo* infoTable =
+    new(JavaAlloc, "CodeLineInfo") CodeLineInfo[infoLength];
+  uint32_t index = 0;
+  for (GCFunctionInfo::iterator I = GFI->begin(), E = GFI->end();
+       I != E;
+       I++, index++) {
+    DebugLoc DL = I->Loc;
+    uint32_t bytecodeIndex = DL.getLine();
+    uint32_t second = DL.getCol();
+    assert(second == 0 && "Wrong column number");
+    uintptr_t address = jit->getCodeEmitter()->getLabelAddress(I->Label);
+    infoTable[index].address = address;
+    infoTable[index].bytecodeIndex = bytecodeIndex;
+  }
+  meth->codeInfo = infoTable;
 }
 
 Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {

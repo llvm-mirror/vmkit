@@ -76,9 +76,12 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
       II++;
-      CallSite Call = CallSite::get(I);
-      if (Call.getInstruction() && Call.getCalledValue() == Allocator) {
-
+      if (I->getOpcode() != Instruction::Call &&
+          I->getOpcode() != Instruction::Invoke) {
+        continue;
+      }
+      CallSite Call(I);
+      if (Call.getCalledValue() == Allocator) {
         if (CurLoop) {
           bool escapesLoop = false;
           for (Value::use_iterator U = I->use_begin(), E = I->use_end();
@@ -118,7 +121,7 @@ static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
       if (II->getOpcode() == Instruction::Call || 
           II->getOpcode() == Instruction::Invoke) {
         
-        CallSite CS = CallSite::get(II);
+        CallSite CS(II);
         if (!CS.onlyReadsMemory()) return true;
         
         CallSite::arg_iterator B = CS.arg_begin(), E = CS.arg_end();

@@ -912,10 +912,7 @@ public:
 class CodeLineInfo : public mvm::PermanentObject {
 public:
   uintptr_t address;
-  uint16 lineNumber;
-  uint16 ctpIndex;
   uint16 bytecodeIndex;
-  uint16 bytecode;
   // TODO: Use these fields when inlining.
   JavaMethod* executingMethod;
   // The code where the inlined method starts.

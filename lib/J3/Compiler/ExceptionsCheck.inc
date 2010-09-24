@@ -541,7 +541,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
   // Restore currentBlock.
   currentBlock = temp;
   return nbe;
-
 }
 
 void JavaJIT::finishExceptions() {

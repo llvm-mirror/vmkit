@@ -45,7 +45,6 @@ extern "C" void* j3StartJNI(uint32*, uint32**, mvm::KnownFrame*);
 extern "C" void j3JavaObjectAquire(JavaObject* obj);
 extern "C" void j3JavaObjectRelease(JavaObject* obj);
 extern "C" void j3ThrowException(JavaObject* obj);
-extern "C" void j3OverflowThinLock(JavaObject* obj);
 extern "C" JavaObject* j3NullPointerException();
 extern "C" JavaObject* j3NegativeArraySizeException(sint32 val);
 extern "C" JavaObject* j3OutOfMemoryError(sint32 val);
@@ -105,7 +104,6 @@ namespace {
       (void) j3JavaObjectAquire(0);
       (void) j3JavaObjectRelease(0);
       (void) j3ThrowException(0);
-      (void) j3OverflowThinLock(0);
       (void) j3NullPointerException();
       (void) j3NegativeArraySizeException(0);
       (void) j3OutOfMemoryError(0);
