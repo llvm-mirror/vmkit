@@ -82,8 +82,13 @@ bool LoopSafePoints::runOnLoop(Loop* L, LPPassManager& LPM) {
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
       Instruction *I = II;
       II++;
-      CallSite Call = CallSite::get(I);
-      if (Call.getInstruction() && Call.getCalledValue() == SafeFunction) {
+      if (I->getOpcode() != Instruction::Call &&
+          I->getOpcode() != Instruction::Invoke) {
+        continue;
+      }
+
+      CallSite Call(I);
+      if (Call.getCalledValue() == SafeFunction) {
         if (BasicBlock* Incoming = Cur->getSinglePredecessor()) {
           if (BranchInst* T = dyn_cast<BranchInst>(Incoming->getTerminator())) {
             if (LoadInst* LI = dyn_cast<LoadInst>(T->getCondition())) {

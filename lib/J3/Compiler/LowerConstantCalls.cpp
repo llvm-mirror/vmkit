@@ -143,14 +143,18 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             Cmp->eraseFromParent();
             break;
           }
-          
-          CallSite Ca = CallSite::get(Arg);
-          Instruction* CI = Ca.getInstruction();
-          if (CI && Ca.getCalledValue() == intrinsics->AllocateFunction) {
-            Changed = true;
-            Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
-            Cmp->eraseFromParent();
-            break;
+         
+          Instruction* InsArg = dyn_cast<Instruction>(Arg); 
+          if (InsArg != NULL &&
+              (InsArg->getOpcode() == Instruction::Call ||
+               InsArg->getOpcode() == Instruction::Invoke)) { 
+            CallSite Ca(Arg);
+            if (Ca.getCalledValue() == intrinsics->AllocateFunction) {
+              Changed = true;
+              Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
+              Cmp->eraseFromParent();
+              break;
+            }
           }
         }
       }
@@ -164,10 +168,15 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           if (dyn_cast<StoreInst>(*UI)) continue;
           if (BitCastInst* BI = dyn_cast<BitCastInst>(*UI)) {
             if (BI->hasOneUse()) {
-              CallSite Call = CallSite::get(*(BI->use_begin()));
-              Instruction* CI = Call.getInstruction();
-              if (CI && Call.getCalledFunction() == intrinsics->llvm_gc_gcroot)
-                continue;
+              Instruction* use = dyn_cast<Instruction>(*(BI->use_begin()));
+              if (use != NULL &&
+                  (use->getOpcode() == Instruction::Call ||
+                   use->getOpcode() == Instruction::Invoke)) { 
+                CallSite Call(use);
+                if (Call.getCalledFunction() == intrinsics->llvm_gc_gcroot) {
+                  continue;
+                }
+              }
             }
           }
           
@@ -185,7 +194,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               if (dyn_cast<Instruction>(II) == SI) ++II;
               SI->eraseFromParent();
             } else if (BitCastInst* BI = dyn_cast<BitCastInst>(Temp)) {
-              CallSite Call = CallSite::get(*(BI->use_begin()));
+              CallSite Call(*(BI->use_begin()));
               Instruction* CI = Call.getInstruction();
               if (dyn_cast<Instruction>(II) == CI) ++II;
               CI->eraseFromParent();
@@ -205,9 +214,10 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         }
       }
 
-      CallSite Call = CallSite::get(I);
-      Instruction* CI = Call.getInstruction();
-      if (CI) {
+      if ((I->getOpcode() == Instruction::Call ||
+           I->getOpcode() == Instruction::Invoke)) { 
+        Instruction* CI = I;
+        CallSite Call(I);
         Value* V = Call.getCalledValue();
         if (V == intrinsics->ArrayLengthFunction) {
           Changed = true;
