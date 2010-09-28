@@ -503,10 +503,6 @@ public:
   ///
   uint32 staticSize;
 
-  /// lock - The lock of this class.
-  mvm::LockRecursive lock;
-  mvm::Cond condition;
-  
   /// getVirtualSize - Get the virtual size of instances of this class.
   ///
   uint32 getVirtualSize() const { return virtualSize; }
@@ -688,28 +684,20 @@ public:
   
   /// acquire - Acquire this class lock.
   ///
-  void acquire() {
-    lock.lock();
-  }
+  void acquire();
   
   /// release - Release this class lock.
   ///
-  void release() {
-    lock.unlock();
-  }
+  void release();
 
   /// waitClass - Wait for the class to be loaded/initialized/resolved.
   ///
-  void waitClass() {
-    condition.wait(&lock);
-  }
+  void waitClass();
   
   /// broadcastClass - Unblock threads that were waiting on the class being
   /// loaded/initialized/resolved.
   ///
-  void broadcastClass() {
-    condition.broadcast();  
-  }
+  void broadcastClass();
   
 #ifndef ISOLATE
   

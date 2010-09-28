@@ -105,6 +105,10 @@ protected:
   ///
   SignMap* javaSignatures;
 
+  /// lock - Lock when loading classes.
+  ///
+  mvm::LockRecursive lock;
+
 public:
   
   /// allocator - Reference to the memory allocator, which will allocate UTF8s,
