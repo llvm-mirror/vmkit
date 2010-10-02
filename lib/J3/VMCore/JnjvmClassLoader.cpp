@@ -528,7 +528,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
     return loadName(name, doResolve, doThrow, strName);
   }
 
-  return 0;
+  return NULL;
 }
 
 UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
@@ -536,6 +536,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
                                                        bool doThrow) {
   const UTF8* name = hashUTF8->lookupAsciiz(asciiz);
   mvm::ThreadAllocator threadAllocator;
+  UserCommonClass* result = NULL;
   if (!name) name = bootstrapLoader->hashUTF8->lookupAsciiz(asciiz);
   if (!name) {
     uint32 size = strlen(asciiz);
@@ -549,12 +550,15 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
     name = temp;
   }
   
-  UserCommonClass* temp = lookupClass(name);
-  if (temp) return temp;
-  
-  if (this != bootstrapLoader) {
-    temp = bootstrapLoader->lookupClassOrArray(name);
-    if (temp) return temp;
+  result = lookupClass(name);
+  if ((result == NULL) && (this != bootstrapLoader)) {
+    result = bootstrapLoader->lookupClassOrArray(name);
+    if (result != NULL) {
+      if (result->isClass() && doResolve) {
+        result->asClass()->resolveClass();
+      }
+      return result;
+    }
   }
  
   return loadClassFromUserUTF8(name, doResolve, doThrow, NULL);
@@ -679,7 +683,10 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
     TRY {
       const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
       res = new(allocator, "Class") UserClass(this, internalName, bytes);
-      res->resolveClass();
+      res->readClass();
+      res->makeVT();
+      getCompiler()->resolveVirtualClass(res);
+      getCompiler()->resolveStaticClass(res);
       classes->lock.lock();
       bool success = classes->map.insert(std::make_pair(internalName, res)).second;
       classes->lock.unlock();

@@ -705,19 +705,6 @@ void Class::readParents(Reader& reader) {
 
 }
 
-void UserClass::loadParents() {
-  if (super == 0) {
-    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
-  } else  {
-    super->resolveClass();
-    virtualTableSize = super->virtualTableSize;
-  }
-
-  for (unsigned i = 0; i < nbInterfaces; i++)
-    interfaces[i]->resolveClass(); 
-}
-
-
 void internalLoadExceptions(JavaMethod& meth) {
   
   Attribut* codeAtt = meth.lookupAttribut(Attribut::codeAttribut);
@@ -742,7 +729,7 @@ void internalLoadExceptions(JavaMethod& meth) {
       reader.readU2();
 
       uint16 catche = reader.readU2();
-      if (catche) meth.classDef->ctpInfo->loadClass(catche);
+      if (catche) meth.classDef->ctpInfo->loadClass(catche, false);
     }
   }
 }
@@ -815,6 +802,11 @@ void Class::fillIMT(std::set<JavaMethod*>* meths) {
 }
 
 void Class::makeVT() {
+  if (super == NULL) {
+    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
+  } else  {
+    virtualTableSize = super->virtualTableSize;
+  }
   
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod& meth = virtualMethods[i];
@@ -835,11 +827,6 @@ void Class::makeVT() {
         meth.offset = parent->offset;
       }
     }
-  }
-
-  if (super) {
-    assert(virtualTableSize >= super->virtualTableSize &&
-           "Size of virtual table less than super!");
   }
 
   mvm::BumpPtrAllocator& allocator = classLoader->allocator;
@@ -948,24 +935,24 @@ void Class::readClass() {
   readFields(reader);
   readMethods(reader);
   attributs = readAttributs(reader, nbAttributs);
-  setIsRead();
 }
+
+void UserClass::resolveParents() {
+  if (super != NULL) {
+    super->resolveClass();
+  }
+
+  for (unsigned i = 0; i < nbInterfaces; i++)
+    interfaces[i]->resolveClass(); 
+}
+
 
 #ifndef ISOLATE_SHARING
 void Class::resolveClass() {
   if (isResolved() || isErroneous()) return;
-  readClass();
-  loadParents();
-  makeVT();
-  JavaCompiler *Comp = classLoader->getCompiler();
-  Comp->resolveVirtualClass(this);
-  Comp->resolveStaticClass(this);
+  resolveParents();
   loadExceptions();
   setResolved();
-  if (!needsInitialisationCheck()) {
-    setInitializationState(ready);
-  }
-  assert(virtualVT && "No virtual VT after resolution");
 }
 #else
 void Class::resolveClass() {
@@ -1339,8 +1326,6 @@ ArrayUInt16* JavaMethod::toString() const {
 
 bool UserClass::needsInitialisationCheck() {
   
-  if (!isClassRead()) return true;
-
   if (isReady()) return false;
 
   if (super && super->needsInitialisationCheck())

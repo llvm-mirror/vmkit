@@ -302,6 +302,7 @@ public:
   ///
   Class* loadClassFromSelf(Jnjvm* vm, const char* name);
 
+  friend class Class;
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which

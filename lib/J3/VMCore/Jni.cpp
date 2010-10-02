@@ -73,7 +73,10 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   else loader = vm->appClassLoader;
 
   UserCommonClass* cl = loader->loadClassFromAsciiz(asciiz, true, true);
-  if (cl && cl->asClass()) cl->asClass()->initialiseClass(vm);
+  if (cl && cl->asClass()) {
+    assert(cl->asClass()->isResolved());
+    cl->asClass()->initialiseClass(vm);
+  }
   jclass res = (jclass)cl->getClassDelegateePtr(vm);
   RETURN_FROM_JNI(res);
 

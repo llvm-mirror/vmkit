@@ -50,7 +50,7 @@ class Typedef;
 /// and accessing static fields of the class) when it is in the ready state.
 ///
 #define loaded 0       /// The .class file has been found.
-#define classRead 1    /// The .class file has been read.
+#define resolving 1    /// The .class file is being resolved.
 #define resolved 2     /// The class has been resolved.
 #define vmjc 3         /// The class is defined in a shared library.
 #define inClinit 4     /// The class is cliniting.
@@ -627,11 +627,6 @@ public:
   ///
   void readParents(Reader& reader);
 
-  /// loadParents - Loads and resolves the parents, i.e. super and interfarces,
-  /// of the class.
-  ///
-  void loadParents();
-  
   /// loadExceptions - Loads and resolves the exception classes used in catch 
   /// clauses of methods defined in this class.
   ///
@@ -676,6 +671,7 @@ public:
   /// resolveClass - If the class has not been resolved yet, resolve it.
   ///
   void resolveClass();
+  void resolveParents();
 
   /// initialiseClass - If the class has not been initialized yet,
   /// initialize it.
@@ -726,10 +722,10 @@ public:
     getCurrentTaskClassMirror().status = erroneous;
   }
   
-  /// setIsRead - The class file has been read.
+  /// setIsResolving - The class file is being resolved.
   ///
-  void setIsRead() {
-    getCurrentTaskClassMirror().status = classRead;
+  void setIsResolving() {
+    getCurrentTaskClassMirror().status = resolving;
   }
   
 
@@ -747,9 +743,9 @@ public:
     }
   }
   
-  void setIsRead() {
+  void setIsResolving() {
     for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-      IsolateInfo[i].status = classRead;
+      IsolateInfo[i].status = resolving;
     }
   }
   
@@ -815,15 +811,9 @@ public:
   /// isResolving - Is the class currently being resolved?
   ///
   bool isResolving() {
-    return getCurrentTaskClassMirror().status == classRead;
+    return getCurrentTaskClassMirror().status == resolving;
   }
 
-  /// isClassRead - Has the .class file been read?
-  ///
-  bool isClassRead() {
-    return getCurrentTaskClassMirror().status >= classRead;
-  }
- 
   /// isNativeOverloaded - Is the method overloaded with a native function?
   ///
   bool isNativeOverloaded(JavaMethod* meth);
@@ -836,8 +826,6 @@ public:
   /// index.
   ///
   void fillIMT(std::set<JavaMethod*>* meths);
-
-private:
 
   /// makeVT - Create the virtual table of this class.
   ///
