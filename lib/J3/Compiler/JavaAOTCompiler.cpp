@@ -176,9 +176,11 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
     const llvm::Type* Ty = LCI->getVirtualType();
     Module& Mod = *getLLVMModule();
     
+    const char* name = JavaString::strToAsciiz(str);
     GlobalVariable* varGV = 
       new GlobalVariable(Mod, Ty->getContainedType(0), false,
-                         GlobalValue::InternalLinkage, 0, "");
+                         GlobalValue::ExternalLinkage, 0, "str");
+    delete[] name;
     Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                           JavaIntrinsics.JavaObjectType);
     strings.insert(std::make_pair(str, res));

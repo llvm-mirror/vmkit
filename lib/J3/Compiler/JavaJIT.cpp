@@ -204,7 +204,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
       Args.push_back(GV);
       Value* targetObject = getTarget(virtualType->param_end(),
                                       signature->nbArguments + 1);
-      Args.push_back(new LoadInst(targetObject, "", true, currentBlock));
+      Args.push_back(new LoadInst(
+          targetObject, "", TheCompiler->useCooperativeGC(), currentBlock));
       load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
       node->addIncoming(load, currentBlock);
       BranchInst::Create(endResolveVirtual, currentBlock);
@@ -494,7 +495,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     BranchInst::Create(endBlock, loadBlock, cmp, currentBlock);
 
     currentBlock = loadBlock;
-    result = new LoadInst(result, "", true, currentBlock);
+    result = new LoadInst(
+        result, "", TheCompiler->useCooperativeGC(), currentBlock);
     new StoreInst(result, ResultObject, "", currentBlock);
     endNode->addIncoming(result, currentBlock);
 
@@ -662,7 +664,8 @@ void JavaJIT::beginSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
     assert(thisObject != NULL && "beginSynchronize without this");
-    obj = new LoadInst(thisObject, "", true, currentBlock);
+    obj = new LoadInst(
+        thisObject, "", TheCompiler->useCooperativeGC(), currentBlock);
   } else {
     obj = TheCompiler->getJavaClassPtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
@@ -674,7 +677,8 @@ void JavaJIT::endSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
     assert(thisObject != NULL && "endSynchronize without this");
-    obj = new LoadInst(thisObject, "", true, currentBlock);
+    obj = new LoadInst(
+        thisObject, "", TheCompiler->useCooperativeGC(), currentBlock);
   } else {
     obj = TheCompiler->getJavaClassPtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
@@ -1271,7 +1275,8 @@ llvm::Function* JavaJIT::javaCompile() {
   } else {
     if (returnType != Type::getVoidTy(*llvmContext)) {
       if (returnValue != NULL) {
-        Value* obj = new LoadInst(returnValue, "", true, currentBlock);
+        Value* obj = new LoadInst(
+            returnValue, "", TheCompiler->useCooperativeGC(), currentBlock);
         ReturnInst::Create(*llvmContext, obj, currentBlock);
       } else {
         ReturnInst::Create(*llvmContext, endNode, currentBlock);
@@ -1320,7 +1325,7 @@ llvm::Function* JavaJIT::javaCompile() {
       const UTF8* name =
         compilingClass->ctpInfo->UTF8At(AR.AnnotationNameIndex);
       if (name->equals(TheCompiler->InlinePragma)) {
-        llvmFunction->addFnAttr(Attribute::NoInline);
+        llvmFunction->addFnAttr(Attribute::AlwaysInline);
       } else if (name->equals(TheCompiler->NoInlinePragma)) {
         llvmFunction->addFnAttr(Attribute::NoInline);
       }
@@ -1989,7 +1994,8 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
                                 currentBlock); 
 #endif
     } else {
-      object = new LoadInst(object, "", true, currentBlock);
+      object = new LoadInst(
+          object, "", TheCompiler->useCooperativeGC(), currentBlock);
       JITVerifyNull(object);
       type = LCI->getVirtualType();
     }
@@ -2018,7 +2024,8 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
 
   Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
   if (!stat) {
-    object = new LoadInst(object, "", true, currentBlock);
+    object = new LoadInst(
+        object, "", TheCompiler->useCooperativeGC(), currentBlock);
     Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
     Value* args[2] = { zero, ptr };
     ptr = GetElementPtrInst::Create(tmp, args, args + 2, "", currentBlock);

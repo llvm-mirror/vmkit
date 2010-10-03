@@ -34,7 +34,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
       // Make the load volatile to force the instruction after the call.
       // Otherwise, LLVM will merge the load with a previous load because
       // the function is readnone.
-      obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
+      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
@@ -86,7 +86,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
+      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
@@ -139,7 +139,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
+      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
@@ -189,7 +189,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", true, currentBlock);
+      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");

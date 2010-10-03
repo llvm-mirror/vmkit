@@ -210,7 +210,11 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
       if (LoadInst* LI = dyn_cast<LoadInst>(I)) {
         if (LI->getType() == intrinsics->JavaObjectType &&
             dyn_cast<AllocaInst>(LI->getPointerOperand()) != NULL) {
-          assert(LI->isVolatile());
+          if (TheCompiler->useCooperativeGC()) {
+            assert(LI->isVolatile());
+          } else {
+            assert(!LI->isVolatile());
+          }
         }
       }
 

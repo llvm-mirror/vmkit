@@ -326,8 +326,8 @@ private:
       return new llvm::LoadInst(longStack[currentStackIndex - 1], "", false,
                                 currentBlock);
     } else {
-      return new llvm::LoadInst(objectStack[currentStackIndex - 1], "", true,
-                                currentBlock);
+      return new llvm::LoadInst(objectStack[currentStackIndex - 1], "",
+                                TheCompiler->useCooperativeGC(), currentBlock);
     }
   }
   
