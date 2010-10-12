@@ -80,7 +80,7 @@ extern "C" UserConstantPool* j3SpecialCtpLookup(UserConstantPool* ctpInfo,
 #endif
 
 
-namespace {
+namespace force_linker {
   struct ForceRuntimeLinking {
     ForceRuntimeLinking() {
       // We must reference the passes in such a way that compilers will not

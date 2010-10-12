@@ -31,7 +31,7 @@ dnl===
 dnl===-----------------------------------------------------------------------===
 dnl Initialize autoconf and define the package name, version number and
 dnl email address for reporting bugs.
-AC_INIT([vmkit],[0.28svn],[nicolas.geoffray@gmail.com])
+AC_INIT([vmkit],[0.29svn],[nicolas.geoffray@gmail.com])
 
 dnl Provide a copyright substitution and ensure the copyright notice is included
 dnl in the output of --version option of the generated configure script.
@@ -624,8 +624,6 @@ dnl Configure a common Makefile
 AC_CONFIG_FILES(Makefile.common)
 AC_CONFIG_FILES(Makefile.config)
 AC_CONFIG_FILES([lib/J3/Classpath/Classpath.h])
-AC_CONFIG_FILES([lib/N3/PNetLib/PNetPath.inc])
-AC_CONFIG_FILES([lib/N3/Mono/MonoPath.inc])
 AC_CONFIG_FILES([tools/llcj/LinkPaths.h])
 AC_CONFIG_FILES([mmtk/java/build.xml])
 

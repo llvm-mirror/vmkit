@@ -61,6 +61,21 @@ void Object::default_print(const gc *o, PrintBuffer *buf) {
 
 typedef void (*destructor_t)(void*);
 
+void invokeFinalize(mvm::Thread* th, gc* res) {
+  llvm_gcroot(res, 0);
+  TRY {
+    th->MyVM->invokeFinalizer(res);
+  } IGNORE;
+  th->clearException();
+}
+
+void invokeEnqueue(mvm::Thread* th, gc* res) {
+  llvm_gcroot(res, 0);
+  TRY {
+    th->MyVM->enqueueReference(res);
+  } IGNORE;
+  th->clearException();
+}
 
 void VirtualMachine::finalizerStart(mvm::Thread* th) {
   VirtualMachine* vm = th->MyVM;
@@ -83,17 +98,14 @@ void VirtualMachine::finalizerStart(mvm::Thread* th) {
       vm->FinalizationQueueLock.release();
       if (!res) break;
 
-      TRY {
-        VirtualTable* VT = res->getVirtualTable();
-        if (VT->operatorDelete) {
-          destructor_t dest = (destructor_t)VT->destructor;
-          dest(res);
-        } else {
-          vm->invokeFinalizer(res);
-        }
-      } IGNORE;
+      VirtualTable* VT = res->getVirtualTable();
+      if (VT->operatorDelete) {
+        destructor_t dest = (destructor_t)VT->destructor;
+        dest(res);
+      } else {
+        invokeFinalize(th, res);
+      }
       res = 0;
-      th->clearException();
     }
   }
 }
@@ -119,11 +131,8 @@ void VirtualMachine::enqueueStart(mvm::Thread* th) {
       vm->ToEnqueueLock.release();
       if (!res) break;
 
-      TRY {
-        vm->enqueueReference(res);
-      } IGNORE;
+      invokeEnqueue(th, res);
       res = 0;
-      th->clearException();
     }
   }
 }
