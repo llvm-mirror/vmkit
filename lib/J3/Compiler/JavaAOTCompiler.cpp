@@ -177,9 +177,11 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
     const llvm::Type* Ty = LCI->getVirtualType();
     Module& Mod = *getLLVMModule();
     
+    const char* name = JavaString::strToAsciiz(str);
     GlobalVariable* varGV = 
       new GlobalVariable(Mod, Ty->getContainedType(0), false,
-                         GlobalValue::InternalLinkage, 0, "");
+                         GlobalValue::ExternalLinkage, 0, "str");
+    delete[] name;
     Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
                                           JavaIntrinsics.JavaObjectType);
     strings.insert(std::make_pair(str, res));
@@ -1917,16 +1919,11 @@ void extractFiles(ArrayUInt8* bytes,
     char* name = file->filename;
     uint32 size = strlen(name);
     if (size > 6 && !strcmp(&(name[size - 6]), ".class")) {
-      UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
-      ArrayUInt8* res = 
-        (ArrayUInt8*)array->doNew(file->ucsize, JavaThread::get()->getJVM());
-      int ok = archive.readFile(res, file);
-      if (!ok) return;
-      
       memcpy(realName, name, size);
       realName[size - 6] = 0;
       const UTF8* utf8 = bootstrapLoader->asciizConstructUTF8(realName);
-      Class* cl = bootstrapLoader->constructClass(utf8, res);
+      Class* cl = bootstrapLoader->loadName(utf8, true, false, NULL);
+      assert(cl && "Class not created");
       if (cl == ClassArray::SuperArray) M->compileRT = true;
       classes.push_back(cl);  
     } else if (size > 4 && (!strcmp(&name[size - 4], ".jar") || 
@@ -1953,6 +1950,12 @@ void mainCompilerStart(JavaThread* th) {
   JavaJITCompiler* Comp = 0;
   mvm::ThreadAllocator allocator;
   bootstrapLoader->analyseClasspathEnv(vm->bootstrapLoader->bootClasspathEnv);
+  uint32 size = strlen(name);
+  if (size > 4 && 
+      (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
+    bootstrapLoader->analyseClasspathEnv(name);
+  }
+
   if (!M->clinits->empty()) {
     Comp = JavaJITCompiler::CreateCompiler("JIT");
     Comp->EmitFunctionName = true;
@@ -1963,7 +1966,6 @@ void mainCompilerStart(JavaThread* th) {
     bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
   }
   
-  uint32 size = strlen(name);
     
   if (size > 4 && 
       (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {

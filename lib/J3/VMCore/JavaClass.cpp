@@ -464,7 +464,8 @@ JavaObject* UserClass::doNew(Jnjvm* vm) {
   llvm_gcroot(res, 0);
   assert(this && "No class when allocating.");
   assert((this->isInitializing() || 
-          classLoader->getCompiler()->isStaticCompiling())
+          classLoader->getCompiler()->isStaticCompiling() ||
+          this == classLoader->bootstrapLoader->upcalls->newClass)
          && "Uninitialized class when allocating.");
   assert(getVirtualVT() && "No VT\n");
   res = (JavaObject*)gc::operator new(getVirtualSize(), getVirtualVT());
@@ -692,19 +693,6 @@ void Class::readParents(Reader& reader) {
 
 }
 
-void UserClass::loadParents() {
-  if (super == 0) {
-    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
-  } else  {
-    super->resolveClass();
-    virtualTableSize = super->virtualTableSize;
-  }
-
-  for (unsigned i = 0; i < nbInterfaces; i++)
-    interfaces[i]->resolveClass(); 
-}
-
-
 void internalLoadExceptions(JavaMethod& meth) {
   
   Attribut* codeAtt = meth.lookupAttribut(Attribut::codeAttribut);
@@ -729,7 +717,7 @@ void internalLoadExceptions(JavaMethod& meth) {
       reader.readU2();
 
       uint16 catche = reader.readU2();
-      if (catche) meth.classDef->ctpInfo->loadClass(catche);
+      if (catche) meth.classDef->ctpInfo->loadClass(catche, false);
     }
   }
 }
@@ -802,6 +790,11 @@ void Class::fillIMT(std::set<JavaMethod*>* meths) {
 }
 
 void Class::makeVT() {
+  if (super == NULL) {
+    virtualTableSize = JavaVirtualTable::getFirstJavaMethodIndex();
+  } else  {
+    virtualTableSize = super->virtualTableSize;
+  }
   
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod& meth = virtualMethods[i];
@@ -822,11 +815,6 @@ void Class::makeVT() {
         meth.offset = parent->offset;
       }
     }
-  }
-
-  if (super) {
-    assert(virtualTableSize >= super->virtualTableSize &&
-           "Size of virtual table less than super!");
   }
 
   mvm::BumpPtrAllocator& allocator = classLoader->allocator;
@@ -935,84 +923,24 @@ void Class::readClass() {
   readFields(reader);
   readMethods(reader);
   attributs = readAttributs(reader, nbAttributs);
-  setIsRead();
 }
+
+void UserClass::resolveParents() {
+  if (super != NULL) {
+    super->resolveClass();
+  }
+
+  for (unsigned i = 0; i < nbInterfaces; i++)
+    interfaces[i]->resolveClass(); 
+}
+
 
 #ifndef ISOLATE_SHARING
 void Class::resolveClass() {
-  JavaObject* exc = 0;
-  llvm_gcroot(exc, 0);
-  if (!isResolved() && !isErroneous()) {
-    acquire();
-    if (isResolved() || isErroneous()) {
-      release();
-    } else if (!isResolving()) {
-      setOwnerClass(JavaThread::get());
-      TRY {
-        readClass();
-      } CATCH {
-        exc = JavaThread::get()->pendingException;
-        JavaThread::get()->clearException();
-      } END_CATCH;
-
-      if (exc != NULL) {
-        setErroneous();        
-        setOwnerClass(0);
-        broadcastClass();
-        release();
-        JavaThread::get()->throwException(exc);
-      }
- 
-      release();
-      
-      TRY {
-        loadParents();
-      } CATCH {
-        setInitializationState(loaded);
-        exc = JavaThread::get()->pendingException;
-        JavaThread::get()->clearException();
-      } END_CATCH;
-      
-      if (exc != NULL) {
-        setErroneous();        
-        setOwnerClass(0);
-        JavaThread::get()->throwException(exc);
-      }
-      
-      makeVT();
-      JavaCompiler *Comp = classLoader->getCompiler();
-      Comp->resolveVirtualClass(this);
-      Comp->resolveStaticClass(this);
-      loadExceptions();
-      setResolved();
-      if (!needsInitialisationCheck()) {
-        setInitializationState(ready);
-      }
-      if (!super) ClassArray::initialiseVT(this);
-      
-      bool needInit = needsInitialisationCheck();
-      
-      acquire();
-      if (needInit) setResolved();
-      setOwnerClass(0);
-      broadcastClass();
-      release();
-    } else if (JavaThread::get() != getOwnerClass()) {
-      while (!isResolved()) {
-        waitClass();
-        if (isErroneous()) break;
-      }
-      release();
-
-    }
-  }
-  
-  if (isErroneous()) {
-    JavaThread* th = JavaThread::get();
-    th->getJVM()->noClassDefFoundError(name);
-  }
-  
-  assert(virtualVT && "No virtual VT after resolution");
+  if (isResolved() || isErroneous()) return;
+  resolveParents();
+  loadExceptions();
+  setResolved();
 }
 #else
 void Class::resolveClass() {
@@ -1402,8 +1330,6 @@ ArrayUInt16* JavaMethod::toString() const {
 
 bool UserClass::needsInitialisationCheck() {
   
-  if (!isClassRead()) return true;
-
   if (isReady()) return false;
 
   if (super && super->needsInitialisationCheck())
@@ -1880,4 +1806,32 @@ uint16 JavaMethod::lookupCtpIndex(uintptr_t ip) {
     }
   }
   return 0;
+}
+
+void Class::acquire() {
+  JavaObject* delegatee = NULL;
+  llvm_gcroot(delegatee, 0);
+  delegatee = getClassDelegatee(JavaThread::get()->getJVM());
+  JavaObject::acquire(delegatee);
+}
+  
+void Class::release() {
+  JavaObject* delegatee = NULL;
+  llvm_gcroot(delegatee, 0);
+  delegatee = getClassDelegatee(JavaThread::get()->getJVM());
+  JavaObject::release(delegatee);
+}
+
+void Class::waitClass() {
+  JavaObject* delegatee = NULL;
+  llvm_gcroot(delegatee, 0);
+  delegatee = getClassDelegatee(JavaThread::get()->getJVM());
+  JavaObject::wait(delegatee);
+}
+  
+void Class::broadcastClass() {
+  JavaObject* delegatee = NULL;
+  llvm_gcroot(delegatee, 0);
+  delegatee = getClassDelegatee(JavaThread::get()->getJVM());
+  JavaObject::notifyAll(delegatee);
 }

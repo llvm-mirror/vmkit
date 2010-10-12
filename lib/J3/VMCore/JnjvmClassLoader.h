@@ -105,6 +105,10 @@ protected:
   ///
   SignMap* javaSignatures;
 
+  /// lock - Lock when loading classes.
+  ///
+  mvm::LockRecursive lock;
+
 public:
   
   /// allocator - Reference to the memory allocator, which will allocate UTF8s,
@@ -298,6 +302,7 @@ public:
   ///
   Class* loadClassFromSelf(Jnjvm* vm, const char* name);
 
+  friend class Class;
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which

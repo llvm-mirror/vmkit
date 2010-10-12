@@ -12,6 +12,6 @@ include $(LEVEL)/Makefile.config
 
 RUN_ANT = 1
 JARNAME = mmtk-vmkit
-EXTRA_DIST = vmkit.properties build.xml src
+EXTRA_DIST = vmkit.properties build.xml.in src
 
 include $(LEVEL)/Makefile.common

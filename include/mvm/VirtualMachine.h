@@ -336,14 +336,17 @@ private:
     ToEnqueue[ToEnqueueIndex++] = obj;
   }
 
-protected:
+public:
   /// invokeFinalizer - Invoke the finalizer of the object. This may involve
   /// changing the environment, e.g. going to native to Java.
   ///
   virtual void invokeFinalizer(gc*) {}
-
-
-public:
+  
+  /// enqueueReference - Calls the enqueue method. Should be overriden
+  /// by the VM.
+  ///
+  virtual bool enqueueReference(gc*) { return false; }
+  
   /// finalizerStart - The start function of a finalizer. Will poll the
   /// finalizationQueue.
   ///
@@ -440,12 +443,6 @@ public:
   /// setReferent - Set the referent of the reference. Should be overriden
   /// by the VM.
   virtual void setReferent(gc* reference, gc* referent) { }
-
-  /// enqueueReference - Calls the enqueue method. Should be overriden
-  /// by the VM.
-  ///
-  virtual bool enqueueReference(gc*) { return false; }
-
 
 public:
 

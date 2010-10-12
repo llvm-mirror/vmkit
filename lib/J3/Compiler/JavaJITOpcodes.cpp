@@ -290,8 +290,8 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         break;
 
       case ALOAD :
-        push(new LoadInst(objectLocals[WREAD_U1(reader, false, i, wide)], "", true,
-                          currentBlock), false);
+        push(new LoadInst(objectLocals[WREAD_U1(reader, false, i, wide)], "",
+                          TheCompiler->useCooperativeGC(), currentBlock), false);
         break;
       
       case ILOAD_0 :
@@ -379,22 +379,22 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         break;
       
       case ALOAD_0 :
-        push(new LoadInst(objectLocals[0], "", true, currentBlock),
+        push(new LoadInst(objectLocals[0], "", TheCompiler->useCooperativeGC(), currentBlock),
              false);
         break;
       
       case ALOAD_1 :
-        push(new LoadInst(objectLocals[1], "", true, currentBlock),
+        push(new LoadInst(objectLocals[1], "", TheCompiler->useCooperativeGC(), currentBlock),
              false);
         break;
 
       case ALOAD_2 :
-        push(new LoadInst(objectLocals[2], "", true, currentBlock),
+        push(new LoadInst(objectLocals[2], "", TheCompiler->useCooperativeGC(), currentBlock),
              false);
         break;
 
       case ALOAD_3 :
-        push(new LoadInst(objectLocals[3], "", true, currentBlock),
+        push(new LoadInst(objectLocals[3], "", TheCompiler->useCooperativeGC(), currentBlock),
              false);
         break;
       
@@ -681,9 +681,11 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           // may go into runtime and we don't want values in registers at that
           // point.
           Value* val = new LoadInst(objectStack[currentStackIndex - 1], "",
-                                    true, currentBlock);
+                                    TheCompiler->useCooperativeGC(),
+                                    currentBlock);
           Value* obj = new LoadInst(objectStack[currentStackIndex - 3], "",
-                                    true, currentBlock);
+                                    TheCompiler->useCooperativeGC(),
+                                    currentBlock);
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
                                     intrinsics->JavaObjectNullConstant, "");
 
@@ -1862,7 +1864,8 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case RET : {
         uint8 local = reader.readU1();
         i += 1;
-        Value* _val = new LoadInst(objectLocals[local], "", true, currentBlock);
+        Value* _val = new LoadInst(
+            objectLocals[local], "", TheCompiler->useCooperativeGC(), currentBlock);
         Value* val = new PtrToIntInst(_val, Type::getInt32Ty(*llvmContext), "", currentBlock);
         SwitchInst* inst = SwitchInst::Create(val, jsrs[0], jsrs.size(),
                                           currentBlock);

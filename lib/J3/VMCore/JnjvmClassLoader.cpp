@@ -528,7 +528,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
     return loadName(name, doResolve, doThrow, strName);
   }
 
-  return 0;
+  return NULL;
 }
 
 UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
@@ -536,6 +536,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
                                                        bool doThrow) {
   const UTF8* name = hashUTF8->lookupAsciiz(asciiz);
   mvm::ThreadAllocator threadAllocator;
+  UserCommonClass* result = NULL;
   if (!name) name = bootstrapLoader->hashUTF8->lookupAsciiz(asciiz);
   if (!name) {
     uint32 size = strlen(asciiz);
@@ -549,12 +550,15 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
     name = temp;
   }
   
-  UserCommonClass* temp = lookupClass(name);
-  if (temp) return temp;
-  
-  if (this != bootstrapLoader) {
-    temp = bootstrapLoader->lookupClassOrArray(name);
-    if (temp) return temp;
+  result = lookupClass(name);
+  if ((result == NULL) && (this != bootstrapLoader)) {
+    result = bootstrapLoader->lookupClassOrArray(name);
+    if (result != NULL) {
+      if (result->isClass() && doResolve) {
+        result->asClass()->resolveClass();
+      }
+      return result;
+    }
   }
  
   return loadClassFromUserUTF8(name, doResolve, doThrow, NULL);
@@ -664,21 +668,43 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
                                             ArrayUInt8* bytes) {
-  llvm_gcroot(bytes, 0); 
-  assert(bytes && "constructing a class without bytes");
+  JavaObject* excp = NULL;
+  llvm_gcroot(bytes, 0);
+  llvm_gcroot(excp, 0);
+  UserClass* res = NULL;
+  lock.lock();
   classes->lock.lock();
   ClassMap::iterator End = classes->map.end();
   ClassMap::iterator I = classes->map.find(name);
-  UserClass* res = 0;
-  if (I == End) {
-    const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
-    res = new(allocator, "Class") UserClass(this, internalName, bytes);
-    bool success = classes->map.insert(std::make_pair(internalName, res)).second;
-    assert(success && "Could not add class in map");
-  } else {
-    res = ((UserClass*)(I->second));
-  }
   classes->lock.unlock();
+  if (I != End) {
+    res = ((UserClass*)(I->second));
+  } else {
+    TRY {
+      const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
+      res = new(allocator, "Class") UserClass(this, internalName, bytes);
+      res->readClass();
+      res->makeVT();
+      getCompiler()->resolveVirtualClass(res);
+      getCompiler()->resolveStaticClass(res);
+      classes->lock.lock();
+      bool success = classes->map.insert(std::make_pair(internalName, res)).second;
+      classes->lock.unlock();
+      assert(success && "Could not add class in map");
+    } CATCH {
+      excp = JavaThread::get()->pendingException;
+      JavaThread::get()->clearException();    
+    } END_CATCH;
+  }
+  if (excp != NULL) {
+    JavaThread::get()->throwException(excp);
+  }
+  lock.unlock();
+
+  if (res->super == NULL) {
+    // java.lang.Object just got created, initialise VTs of arrays.
+    ClassArray::initialiseVT(res);
+  }
   return res;
 }
 
