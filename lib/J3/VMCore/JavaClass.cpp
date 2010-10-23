@@ -1767,6 +1767,7 @@ uint16 JavaMethod::lookupLineNumber(uintptr_t ip) {
   for(uint16 i = 0; i < codeInfoLength; ++i) {
     if (codeInfo[i].address == ip) {
       Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);      
+      if (codeAtt == NULL) return 0;
       Reader reader(codeAtt, &(classDef->bytes));
       reader.readU2(); // max_stack
       reader.readU2(); // max_locals;

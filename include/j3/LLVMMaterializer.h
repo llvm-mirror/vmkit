@@ -41,10 +41,10 @@ public:
   virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);
   
   virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaLLVMLazyJITCompiler(ModuleID, false);
+    return new JavaLLVMLazyJITCompiler(ModuleID);
   }
 
-  JavaLLVMLazyJITCompiler(const std::string& ModuleID, bool trusted);
+  JavaLLVMLazyJITCompiler(const std::string& ModuleID);
   
   virtual ~JavaLLVMLazyJITCompiler();
   

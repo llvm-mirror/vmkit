@@ -40,7 +40,7 @@ public:
   llvm::ExecutionEngine* executionEngine;
   llvm::GCStrategy* TheGCStrategy;
 
-  JavaJITCompiler(const std::string &ModuleID, bool trusted = false);
+  JavaJITCompiler(const std::string &ModuleID);
   ~JavaJITCompiler();
   
   virtual bool isStaticCompiling() {
@@ -104,10 +104,10 @@ public:
   virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);
   
   virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaJ3LazyJITCompiler(ModuleID, false);
+    return new JavaJ3LazyJITCompiler(ModuleID);
   }
 
-  JavaJ3LazyJITCompiler(const std::string& ModuleID, bool trusted);
+  JavaJ3LazyJITCompiler(const std::string& ModuleID);
 };
 
 } // end namespace j3

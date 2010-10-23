@@ -243,7 +243,7 @@ Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
   return ConstantExpr::getIntToPtr(CI, valPtrType);
 }
 
-JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID, bool trusted) :
+JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   JavaLLVMCompiler(ModuleID), listener(this) {
 
   EmitFunctionName = false;
@@ -258,7 +258,7 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID, bool trusted) :
  
   executionEngine->RegisterJITEventListener(&listener);
 
-  addJavaPasses(trusted);
+  addJavaPasses();
 }
 
 JavaJITCompiler::~JavaJITCompiler() {
@@ -482,9 +482,8 @@ bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth, bool* needsInit) {
   return (meth == NULL || meth->code == NULL);
 }
 
-JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID,
-                                             bool trusted)
-    : JavaJITCompiler(ModuleID, trusted) {}
+JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)
+    : JavaJITCompiler(ModuleID) {}
 
 
 static llvm::cl::opt<bool> LLVMLazy("llvm-lazy", 
@@ -494,7 +493,7 @@ static llvm::cl::opt<bool> LLVMLazy("llvm-lazy",
 JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID) {
   // This is called for the first compiler.
   if (LLVMLazy) {
-    return new JavaLLVMLazyJITCompiler(ModuleID, true);
+    return new JavaLLVMLazyJITCompiler(ModuleID);
   }
-  return new JavaJ3LazyJITCompiler(ModuleID, true);
+  return new JavaJ3LazyJITCompiler(ModuleID);
 }

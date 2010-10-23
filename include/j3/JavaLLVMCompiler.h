@@ -80,7 +80,7 @@ public:
   virtual bool isStaticCompiling() = 0;
   virtual bool emitFunctionName() = 0;
   virtual void* GenerateStub(llvm::Function* F) = 0;
-  void addJavaPasses(bool trusted);
+  void addJavaPasses();
   
   llvm::DIFactory* getDebugFactory() {
     return DebugFactory;

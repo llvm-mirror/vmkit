@@ -1959,6 +1959,9 @@ void mainCompilerStart(JavaThread* th) {
   if (!M->clinits->empty()) {
     Comp = JavaJITCompiler::CreateCompiler("JIT");
     Comp->EmitFunctionName = true;
+    if (!M->useCooperativeGC()) {
+      Comp->disableCooperativeGC();
+    }
     bootstrapLoader->setCompiler(Comp);
     bootstrapLoader->analyseClasspathEnv(vm->classpath);
   } else {
@@ -1980,7 +1983,7 @@ void mainCompilerStart(JavaThread* th) {
 
     extractFiles(bytes, M, bootstrapLoader, classes);
     // Now that we know if we can trust this compiler, add the Java passes.
-    M->addJavaPasses(M->compileRT);
+    M->addJavaPasses();
 
 
       // First resolve everyone so that there can not be unknown references in
@@ -2058,7 +2061,7 @@ void mainCompilerStart(JavaThread* th) {
       }
 
     } else {
-      M->addJavaPasses(false);
+      M->addJavaPasses();
       char* realName = (char*)allocator.Allocate(size + 1);
       if (size > 6 && !strcmp(&name[size - 6], ".class")) {
         memcpy(realName, name, size - 6);
