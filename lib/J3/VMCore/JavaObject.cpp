@@ -45,7 +45,6 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
   }
   assert(val > mvm::GCBitMask);
   assert(val <= mvm::HashMask);
-  assert(val != hashCodeGenerator);
 
   do {
     header = self->header;
