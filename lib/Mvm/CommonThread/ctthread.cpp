@@ -10,13 +10,14 @@
 #include "debug.h"
 
 #include "MvmGC.h"
+#include "mvm/MethodInfo.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
 #include <cassert>
-#include <signal.h>
+#include <csetjmp>
 #include <cstdio>
 #include <ctime>
 #include <dlfcn.h>
@@ -24,6 +25,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sched.h>
+#include <signal.h>
 #include <unistd.h>
 
 using namespace mvm;
@@ -361,3 +363,30 @@ void Thread::killForRendezvous() {
   int res = kill(SIGGC);
   assert(!res && "Error on kill");
 }
+
+
+#ifdef WITH_LLVM_GCC
+void Thread::scanStack(uintptr_t closure) {
+  StackWalker Walker(this);
+
+  while (MethodInfo* MI = Walker.get()) {
+    MI->scan(closure, Walker.ip, Walker.addr);
+    ++Walker;
+  }
+}
+
+#else
+
+void Thread::scanStack(uintptr_t closure) {
+  register unsigned int  **max = (unsigned int**)(void*)this->baseSP;
+  if (mvm::Thread::get() != this) {
+    register unsigned int  **cur = (unsigned int**)this->waitOnSP();
+    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
+  } else {
+    jmp_buf buf;
+    setjmp(buf);
+    register unsigned int  **cur = (unsigned int**)&buf;
+    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
+  }
+}
+#endif

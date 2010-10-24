@@ -9,14 +9,10 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <csetjmp>
 
 #include "MvmGC.h"
-#include "mvm/Allocator.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
-#include "mvm/VirtualMachine.h"
-#include "mvm/Threads/Thread.h"
 
 using namespace mvm;
 
@@ -57,27 +53,4 @@ void Object::default_print(const gc *o, PrintBuffer *buf) {
   buf->write("<Object@");
   buf->writePtr((void*)o);
   buf->write(">");
-}
-
-void PreciseStackScanner::scanStack(mvm::Thread* th, uintptr_t closure) {
-  StackWalker Walker(th);
-
-  while (MethodInfo* MI = Walker.get()) {
-    MI->scan(closure, Walker.ip, Walker.addr);
-    ++Walker;
-  }
-}
-
-
-void UnpreciseStackScanner::scanStack(mvm::Thread* th, uintptr_t closure) {
-  register unsigned int  **max = (unsigned int**)(void*)th->baseSP;
-  if (mvm::Thread::get() != th) {
-    register unsigned int  **cur = (unsigned int**)th->waitOnSP();
-    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
-  } else {
-    jmp_buf buf;
-    setjmp(buf);
-    register unsigned int  **cur = (unsigned int**)&buf;
-    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
-  }
 }

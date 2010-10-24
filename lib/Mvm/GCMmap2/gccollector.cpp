@@ -40,7 +40,6 @@ void Collector::do_collect() {
   unused_nodes->attrape(used_nodes);
 
   mvm::Thread* th = mvm::Thread::get();
-  mvm::StackScanner& sc = th->MyVM->scanner;
   th->MyVM->rendezvous.startRV();
   th->MyVM->startCollection();
 
@@ -53,7 +52,7 @@ void Collector::do_collect() {
 
   // (2) Trace the threads.
   do {
-    sc.scanStack(tcur, 0);
+    tcur->scanStack(0);
     tcur->tracer(0);
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);

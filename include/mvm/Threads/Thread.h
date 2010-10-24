@@ -237,6 +237,7 @@ public:
   /// a tracer.
   ///
   virtual void tracer(uintptr_t closure) {}
+  void scanStack(uintptr_t closure);
   
   void* getLastSP() { return lastSP; }
   void  setLastSP(void* V) { lastSP = V; }

@@ -31,6 +31,7 @@
 namespace j3 {
 
 class JavaString;
+class JnjvmClassLoader;
 class Signdef;
 class Typedef;
 class UserCommonClass;

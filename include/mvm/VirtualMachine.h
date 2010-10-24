@@ -11,21 +11,16 @@
 #define MVM_VIRTUALMACHINE_H
 
 #include "mvm/Allocator.h"
-#include "mvm/MethodInfo.h"
 #include "mvm/Threads/CollectionRV.h"
-#include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/GC/GC.h"
 
 #include <cassert>
 #include <map>
 
-namespace j3 {
-  class JavaCompiler;
-  class JnjvmClassLoader;
-}
-
 namespace mvm {
+
+class MethodInfo;
 
 class FunctionMap {
 public:
@@ -162,14 +157,10 @@ public:
 
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
-  /// scanner - Scanner of threads' stacks.
-  ///
 #ifdef WITH_LLVM_GCC
   CooperativeCollectionRV rendezvous;
-  PreciseStackScanner scanner;
 #else
   UncooperativeCollectionRV rendezvous;
-  UnpreciseStackScanner scanner;
 #endif
 
 //===----------------------------------------------------------------------===//
