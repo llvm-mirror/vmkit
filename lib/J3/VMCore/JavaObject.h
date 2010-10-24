@@ -18,7 +18,6 @@
 
 #include "types.h"
 
-#include "JavaLocks.h"
 #include "JnjvmConfig.h"
 
 union jvalue;
