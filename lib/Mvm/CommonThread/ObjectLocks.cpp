@@ -332,97 +332,96 @@ FatLock* LockSystem::getFatLockFromID(uintptr_t ID) {
 bool LockingThread::wait(
     gc* self, LockSystem& table, struct timeval* info, bool timed) {
   llvm_gcroot(self, 0);
-  FatLock* l = 0;
-
   assert(mvm::ThinLock::owner(self, table));
-    l = mvm::ThinLock::changeToFatlock(self, table);
-    this->waitsOn = l;
-    mvm::Cond& varcondThread = this->varcond;
 
-    if (this->interruptFlag != 0) {
-      this->interruptFlag = 0;
-      this->waitsOn = 0;
-      return true;
-    } else { 
-      this->state = LockingThread::StateWaiting;
-      if (l->firstThread) {
-        assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
-               "Inconsistent list");
-        if (l->firstThread->nextWaiting == l->firstThread) {
-          l->firstThread->nextWaiting = this;
-        } else {
-          l->firstThread->prevWaiting->nextWaiting = this;
-        } 
-        this->prevWaiting = l->firstThread->prevWaiting;
-        this->nextWaiting = l->firstThread;
-        l->firstThread->prevWaiting = this;
-      } else {
-        l->firstThread = this;
-        this->nextWaiting = this;
-        this->prevWaiting = this;
-      }
-      assert(this->prevWaiting && this->nextWaiting && "Inconsistent list");
-      assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
-             "Inconsistent list");
+  FatLock* l = mvm::ThinLock::changeToFatlock(self, table);
+  this->waitsOn = l;
+  mvm::Cond& varcondThread = this->varcond;
+
+  if (this->interruptFlag != 0) {
+    this->interruptFlag = 0;
+    this->waitsOn = 0;
+    return true;
+  }
+  
+  this->state = LockingThread::StateWaiting;
+  if (l->firstThread) {
+    assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
+           "Inconsistent list");
+    if (l->firstThread->nextWaiting == l->firstThread) {
+      l->firstThread->nextWaiting = this;
+    } else {
+      l->firstThread->prevWaiting->nextWaiting = this;
+    } 
+    this->prevWaiting = l->firstThread->prevWaiting;
+    this->nextWaiting = l->firstThread;
+    l->firstThread->prevWaiting = this;
+  } else {
+    l->firstThread = this;
+    this->nextWaiting = this;
+    this->prevWaiting = this;
+  }
+  
+  assert(this->prevWaiting && this->nextWaiting && "Inconsistent list");
+  assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
+         "Inconsistent list");
       
-      bool timeout = false;
+  bool timeout = false;
 
-      l->waitingThreads++;
+  l->waitingThreads++;
 
-      while (!this->interruptFlag && this->nextWaiting) {
-        if (timed) {
-          timeout = varcondThread.timedWait(&l->internalLock, info);
-          if (timeout) break;
-        } else {
-          varcondThread.wait(&l->internalLock);
-        }
-      }
-      
-      l->waitingThreads--;
-     
-      assert((!l->firstThread || (l->firstThread->prevWaiting && 
-             l->firstThread->nextWaiting)) && "Inconsistent list");
- 
-      bool interrupted = (this->interruptFlag != 0);
-
-      if (interrupted || timeout) {
-        
-        if (this->nextWaiting) {
-          assert(this->prevWaiting && "Inconsistent list");
-          if (l->firstThread != this) {
-            this->nextWaiting->prevWaiting = this->prevWaiting;
-            this->prevWaiting->nextWaiting = this->nextWaiting;
-            assert(l->firstThread->prevWaiting && 
-                   l->firstThread->nextWaiting && "Inconsistent list");
-          } else if (this->nextWaiting == this) {
-            l->firstThread = NULL;
-          } else {
-            l->firstThread = this->nextWaiting;
-            l->firstThread->prevWaiting = this->prevWaiting;
-            this->prevWaiting->nextWaiting = l->firstThread;
-            assert(l->firstThread->prevWaiting && 
-                   l->firstThread->nextWaiting && "Inconsistent list");
-          }
-          this->nextWaiting = NULL;
-          this->prevWaiting = NULL;
-        } else {
-          assert(!this->prevWaiting && "Inconstitent state");
-          // Notify lost, notify someone else.
-          notify(self, table);
-        }
-      } else {
-        assert(!this->prevWaiting && !this->nextWaiting &&
-               "Inconsistent state");
-      }
-      
-      this->state = LockingThread::StateRunning;
-      this->waitsOn = 0;
-
-      if (interrupted) {
-        this->interruptFlag = 0;
-        return true;
-      }
+  while (!this->interruptFlag && this->nextWaiting) {
+    if (timed) {
+      timeout = varcondThread.timedWait(&l->internalLock, info);
+      if (timeout) break;
+    } else {
+      varcondThread.wait(&l->internalLock);
     }
+  }
+      
+  l->waitingThreads--;
+     
+  assert((!l->firstThread || (l->firstThread->prevWaiting && 
+         l->firstThread->nextWaiting)) && "Inconsistent list");
+ 
+  bool interrupted = (this->interruptFlag != 0);
+
+  if (interrupted || timeout) {
+    if (this->nextWaiting) {
+      assert(this->prevWaiting && "Inconsistent list");
+      if (l->firstThread != this) {
+        this->nextWaiting->prevWaiting = this->prevWaiting;
+        this->prevWaiting->nextWaiting = this->nextWaiting;
+        assert(l->firstThread->prevWaiting && 
+               l->firstThread->nextWaiting && "Inconsistent list");
+      } else if (this->nextWaiting == this) {
+        l->firstThread = NULL;
+      } else {
+        l->firstThread = this->nextWaiting;
+        l->firstThread->prevWaiting = this->prevWaiting;
+        this->prevWaiting->nextWaiting = l->firstThread;
+        assert(l->firstThread->prevWaiting && 
+               l->firstThread->nextWaiting && "Inconsistent list");
+      }
+      this->nextWaiting = NULL;
+      this->prevWaiting = NULL;
+    } else {
+      assert(!this->prevWaiting && "Inconstitent state");
+      // Notify lost, notify someone else.
+      notify(self, table);
+    }
+  } else {
+    assert(!this->prevWaiting && !this->nextWaiting &&
+           "Inconsistent state");
+  }
+      
+  this->state = LockingThread::StateRunning;
+  this->waitsOn = NULL;
+
+  if (interrupted) {
+    this->interruptFlag = 0;
+    return true;
+  }
   
   assert(mvm::ThinLock::owner(self, table) && "Not owner after wait");
   return false;
@@ -432,37 +431,37 @@ void LockingThread::notify(gc* self, LockSystem& table) {
   llvm_gcroot(self, 0);
   assert(mvm::ThinLock::owner(self, table));
   FatLock* l = mvm::ThinLock::getFatLock(self, table);
-    if (l) {
-      LockingThread* cur = l->firstThread;
-      if (cur) {
-        do {
-          if (cur->interruptFlag != 0) {
-            cur = cur->nextWaiting;
-          } else {
-            assert(cur->prevWaiting && cur->nextWaiting &&
-                   "Inconsistent list");
-            if (cur != l->firstThread) {
-              cur->prevWaiting->nextWaiting = cur->nextWaiting;
-              cur->nextWaiting->prevWaiting = cur->prevWaiting;
-              assert(l->firstThread->prevWaiting &&
-                     l->firstThread->nextWaiting && "Inconsistent list");
-            } else if (cur->nextWaiting == cur) {
-              l->firstThread = 0;
-            } else {
-              l->firstThread = cur->nextWaiting;
-              l->firstThread->prevWaiting = cur->prevWaiting;
-              cur->prevWaiting->nextWaiting = l->firstThread;
-              assert(l->firstThread->prevWaiting && 
-                     l->firstThread->nextWaiting && "Inconsistent list");
-            }
-            cur->prevWaiting = 0;
-            cur->nextWaiting = 0;
-            cur->varcond.signal();
-            break;
-          }
-        } while (cur != l->firstThread);
+  
+  if (l == NULL) return;
+  LockingThread* cur = l->firstThread;
+  if (cur == NULL) return;
+  
+  do {
+    if (cur->interruptFlag != 0) {
+      cur = cur->nextWaiting;
+    } else {
+      assert(cur->prevWaiting && cur->nextWaiting &&
+             "Inconsistent list");
+      if (cur != l->firstThread) {
+        cur->prevWaiting->nextWaiting = cur->nextWaiting;
+        cur->nextWaiting->prevWaiting = cur->prevWaiting;
+        assert(l->firstThread->prevWaiting &&
+               l->firstThread->nextWaiting && "Inconsistent list");
+      } else if (cur->nextWaiting == cur) {
+        l->firstThread = NULL;
+      } else {
+        l->firstThread = cur->nextWaiting;
+        l->firstThread->prevWaiting = cur->prevWaiting;
+        cur->prevWaiting->nextWaiting = l->firstThread;
+        assert(l->firstThread->prevWaiting && 
+               l->firstThread->nextWaiting && "Inconsistent list");
       }
+      cur->prevWaiting = NULL;
+      cur->nextWaiting = NULL;
+      cur->varcond.signal();
+      break;
     }
+  } while (cur != l->firstThread);
 
   assert(mvm::ThinLock::owner(self, table) && "Not owner after notify");
 }
@@ -471,19 +470,16 @@ void LockingThread::notifyAll(gc* self, LockSystem& table) {
   llvm_gcroot(self, 0);
   assert(mvm::ThinLock::owner(self, table));
   FatLock* l = mvm::ThinLock::getFatLock(self, table);
-    if (l) {
-      LockingThread* cur = l->firstThread;
-      if (cur) {
-        do {
-          LockingThread* temp = cur->nextWaiting;
-          cur->prevWaiting = 0;
-          cur->nextWaiting = 0;
-          cur->varcond.signal();
-          cur = temp;
-        } while (cur != l->firstThread);
-        l->firstThread = 0;
-      }
-    }
-
+  if (l == NULL) return;
+  LockingThread* cur = l->firstThread;
+  if (cur == NULL) return;
+  do {
+    LockingThread* temp = cur->nextWaiting;
+    cur->prevWaiting = NULL;
+    cur->nextWaiting = NULL;
+    cur->varcond.signal();
+    cur = temp;
+  } while (cur != l->firstThread);
+  l->firstThread = NULL;
   assert(mvm::ThinLock::owner(self, table) && "Not owner after notifyAll");
 }
