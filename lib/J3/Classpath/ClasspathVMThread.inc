@@ -112,13 +112,13 @@ JavaObject* vmthread) {
     mvm::Thread::yield();
   
   JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
-  th->interruptFlag = 1;
-  JavaLock* lock = th->waitsOn;
+  th->lockingThread.interruptFlag = 1;
+  mvm::FatLock* lock = th->lockingThread.waitsOn;
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
   // the thread has been notified.
-  if (lock && th->nextWaiting) {
-    th->state = JavaThread::StateInterrupted;
+  if (lock && th->lockingThread.nextWaiting) {
+    th->lockingThread.state = mvm::LockingThread::StateInterrupted;
   
     // Make sure the thread is waiting.
     uint32 locked = 0;
@@ -130,10 +130,10 @@ JavaObject* vmthread) {
     }
     
     // Interrupt the thread.
-    th->varcond.signal();
+    th->lockingThread.varcond.signal();
 
     // Release the lock if we acquired it.
-    if (locked) lock->release(lock->getAssociatedObject());
+    if (locked) lock->release(lock->getAssociatedObject(), vm->lockSystem);
   }
 
   // Here we could also raise a signal for interrupting I/O
@@ -150,8 +150,8 @@ jclass clazz,
 #endif
 ) {
   JavaThread* th = JavaThread::get();
-  uint32 interrupt = th->interruptFlag;
-  th->interruptFlag = 0;
+  uint32 interrupt = th->lockingThread.interruptFlag;
+  th->lockingThread.interruptFlag = 0;
   return (jboolean)interrupt;
 }
 
@@ -168,7 +168,7 @@ JavaObject* vmthread) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaField* field = vm->upcalls->vmdataVMThread;
   JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
-  return (jboolean)th->interruptFlag;
+  return (jboolean)th->lockingThread.interruptFlag;
 }
 
 // Never throws.

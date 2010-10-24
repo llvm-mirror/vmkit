@@ -19,8 +19,8 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/ObjectLocks.h"
 
-#include "JavaLocks.h"
 #include "JnjvmConfig.h"
 #include "JNIReferences.h"
 #include "LockedMap.h"
@@ -202,7 +202,7 @@ public:
   
   /// lockSystem - The lock system to allocate and manage Java locks.
   ///
-  LockSystem lockSystem;
+  mvm::LockSystem lockSystem;
   
   /// argumentsInfo - The command line arguments given to the vm
   ///
@@ -341,9 +341,6 @@ public:
   ///
   virtual void waitForExit();
 
-  virtual JavaLock* allocateFatLock(gc*);
-  virtual JavaLock* getFatLockFromID(uintptr_t val);
-
 private:
   /// internalRemoveMethodsInFunctionMap - Removes all methods compiled by this
   /// class loader from the function map.
@@ -357,7 +354,7 @@ public:
   void removeMethodsInFunctionMaps(JnjvmClassLoader* loader);
   
   /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
-  /// bootstrap classes (e.g. java/lang/Class, java/lang/*Exception) and
+  /// bootstrap classes (e.g. java/lang/Class, java/lang/Exception) and
   /// mapping the initial thread.
   ///
   void loadBootstrap();

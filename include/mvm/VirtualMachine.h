@@ -122,17 +122,6 @@ public:
   void scan(VirtualMachine* vm, uintptr_t closure);
 };
 
-class FatLock : public mvm::PermanentObject {
-public:
-  virtual void deallocate() = 0;
-  virtual uintptr_t getID() = 0;
-  virtual bool acquire(gc* object) = 0;
-  virtual void acquireAll(gc* object, uint32_t count) = 0;
-  virtual void release(gc* object) = 0;
-  virtual mvm::Thread* getOwner() = 0;
-  virtual bool owner() = 0;
-};
-
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
 ///
@@ -236,9 +225,6 @@ public:
   
   /// waitForExit - Wait until the virtual machine stops its execution.
   virtual void waitForExit() = 0;
-
-  virtual FatLock* allocateFatLock(gc* object) = 0;
-  virtual FatLock* getFatLockFromID(uintptr_t header) = 0;
 
   static j3::JnjvmClassLoader* initialiseJVM(j3::JavaCompiler* C,
                                                 bool dlLoad = true);

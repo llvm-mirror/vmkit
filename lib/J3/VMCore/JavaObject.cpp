@@ -17,6 +17,7 @@
 #include "Jnjvm.h"
 
 #include <jni.h>
+#include "debug.h"
 
 using namespace j3;
 
@@ -63,103 +64,20 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
 void JavaObject::waitIntern(
     JavaObject* self, struct timeval* info, bool timed) {
   llvm_gcroot(self, 0);
-  JavaLock* l = 0;
+  JavaThread* thread = JavaThread::get();
+  mvm::LockSystem& table = thread->getJVM()->lockSystem;
 
-  if (owner(self)) {
-    l = (JavaLock*)mvm::ThinLock::changeToFatlock(self);
-    JavaThread* thread = JavaThread::get();
-    thread->waitsOn = l;
-    mvm::Cond& varcondThread = thread->varcond;
-
-    if (thread->interruptFlag != 0) {
-      thread->interruptFlag = 0;
-      thread->waitsOn = 0;
-      thread->getJVM()->interruptedException(self);
-    } else { 
-      thread->state = JavaThread::StateWaiting;
-      if (l->firstThread) {
-        assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
-               "Inconsistent list");
-        if (l->firstThread->nextWaiting == l->firstThread) {
-          l->firstThread->nextWaiting = thread;
-        } else {
-          l->firstThread->prevWaiting->nextWaiting = thread;
-        } 
-        thread->prevWaiting = l->firstThread->prevWaiting;
-        thread->nextWaiting = l->firstThread;
-        l->firstThread->prevWaiting = thread;
-      } else {
-        l->firstThread = thread;
-        thread->nextWaiting = thread;
-        thread->prevWaiting = thread;
-      }
-      assert(thread->prevWaiting && thread->nextWaiting && "Inconsistent list");
-      assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
-             "Inconsistent list");
-      
-      bool timeout = false;
-
-      l->waitingThreads++;
-
-      while (!thread->interruptFlag && thread->nextWaiting) {
-        if (timed) {
-          timeout = varcondThread.timedWait(&l->internalLock, info);
-          if (timeout) break;
-        } else {
-          varcondThread.wait(&l->internalLock);
-        }
-      }
-      
-      l->waitingThreads--;
-     
-      assert((!l->firstThread || (l->firstThread->prevWaiting && 
-             l->firstThread->nextWaiting)) && "Inconsistent list");
- 
-      bool interrupted = (thread->interruptFlag != 0);
-
-      if (interrupted || timeout) {
-        
-        if (thread->nextWaiting) {
-          assert(thread->prevWaiting && "Inconsistent list");
-          if (l->firstThread != thread) {
-            thread->nextWaiting->prevWaiting = thread->prevWaiting;
-            thread->prevWaiting->nextWaiting = thread->nextWaiting;
-            assert(l->firstThread->prevWaiting && 
-                   l->firstThread->nextWaiting && "Inconsistent list");
-          } else if (thread->nextWaiting == thread) {
-            l->firstThread = 0;
-          } else {
-            l->firstThread = thread->nextWaiting;
-            l->firstThread->prevWaiting = thread->prevWaiting;
-            thread->prevWaiting->nextWaiting = l->firstThread;
-            assert(l->firstThread->prevWaiting && 
-                   l->firstThread->nextWaiting && "Inconsistent list");
-          }
-          thread->nextWaiting = 0;
-          thread->prevWaiting = 0;
-        } else {
-          assert(!thread->prevWaiting && "Inconstitent state");
-          // Notify lost, notify someone else.
-          notify(self);
-        }
-      } else {
-        assert(!thread->prevWaiting && !thread->nextWaiting &&
-               "Inconsistent state");
-      }
-      
-      thread->state = JavaThread::StateRunning;
-      thread->waitsOn = 0;
-
-      if (interrupted) {
-        thread->interruptFlag = 0;
-        thread->getJVM()->interruptedException(self);
-      }
-    }
-  } else {
-    JavaThread::get()->getJVM()->illegalMonitorStateException(self);
+  if (!owner(self)) {
+    thread->getJVM()->illegalMonitorStateException(self);
+    UNREACHABLE();
   }
-  
-  assert(owner(self) && "Not owner after wait");
+
+  bool interrupted = thread->lockingThread.wait(self, table, info, timed);
+
+  if (interrupted) {
+    thread->getJVM()->interruptedException(self);
+    UNREACHABLE();
+  }
 }
 
 void JavaObject::wait(JavaObject* self) {
@@ -174,72 +92,46 @@ void JavaObject::timedWait(JavaObject* self, struct timeval& info) {
 
 void JavaObject::notify(JavaObject* self) {
   llvm_gcroot(self, 0);
-  JavaLock* l = 0;
+  JavaThread* thread = JavaThread::get();
+  mvm::LockSystem& table = thread->getJVM()->lockSystem;
 
-  if (owner(self)) {
-    l = (JavaLock*)mvm::ThinLock::getFatLock(self);
-    if (l) {
-      JavaThread* cur = l->firstThread;
-      if (cur) {
-        do {
-          if (cur->interruptFlag != 0) {
-            cur = cur->nextWaiting;
-          } else {
-            assert(cur->javaThread && "No java thread");
-            assert(cur->prevWaiting && cur->nextWaiting &&
-                   "Inconsistent list");
-            if (cur != l->firstThread) {
-              cur->prevWaiting->nextWaiting = cur->nextWaiting;
-              cur->nextWaiting->prevWaiting = cur->prevWaiting;
-              assert(l->firstThread->prevWaiting &&
-                     l->firstThread->nextWaiting && "Inconsistent list");
-            } else if (cur->nextWaiting == cur) {
-              l->firstThread = 0;
-            } else {
-              l->firstThread = cur->nextWaiting;
-              l->firstThread->prevWaiting = cur->prevWaiting;
-              cur->prevWaiting->nextWaiting = l->firstThread;
-              assert(l->firstThread->prevWaiting && 
-                     l->firstThread->nextWaiting && "Inconsistent list");
-            }
-            cur->prevWaiting = 0;
-            cur->nextWaiting = 0;
-            cur->varcond.signal();
-            break;
-          }
-        } while (cur != l->firstThread);
-      }
-    }
-  } else {
-    JavaThread::get()->getJVM()->illegalMonitorStateException(self);
+  if (!owner(self)) {
+    thread->getJVM()->illegalMonitorStateException(self);
+    UNREACHABLE();
   }
-  assert(owner(self) && "Not owner after notify");
+  thread->lockingThread.notify(self, table);
 }
 
 void JavaObject::notifyAll(JavaObject* self) {
   llvm_gcroot(self, 0);
-  JavaLock* l = 0;
-  
-  if (owner(self)) {
-    l = (JavaLock*)mvm::ThinLock::getFatLock(self);
-    if (l) {
-      JavaThread* cur = l->firstThread;
-      if (cur) {
-        do {
-          JavaThread* temp = cur->nextWaiting;
-          cur->prevWaiting = 0;
-          cur->nextWaiting = 0;
-          cur->varcond.signal();
-          cur = temp;
-        } while (cur != l->firstThread);
-        l->firstThread = 0;
-      }
-    }
-  } else {
-    JavaThread::get()->getJVM()->illegalMonitorStateException(self);
-  }
+  JavaThread* thread = JavaThread::get();
+  mvm::LockSystem& table = thread->getJVM()->lockSystem;
 
-  assert(owner(self) && "Not owner after notifyAll");
+  if (!owner(self)) {
+    thread->getJVM()->illegalMonitorStateException(self);
+    UNREACHABLE();
+  }
+  thread->lockingThread.notifyAll(self, table);
+}
+
+void JavaObject::overflowThinLock(JavaObject* self) {
+  llvm_gcroot(self, 0);
+  mvm::ThinLock::overflowThinLock(self, JavaThread::get()->getJVM()->lockSystem);
+}
+
+void JavaObject::acquire(JavaObject* self) {
+  llvm_gcroot(self, 0);
+  mvm::ThinLock::acquire(self, JavaThread::get()->getJVM()->lockSystem);
+}
+
+void JavaObject::release(JavaObject* self) {
+  llvm_gcroot(self, 0);
+  mvm::ThinLock::release(self, JavaThread::get()->getJVM()->lockSystem);
+}
+
+bool JavaObject::owner(JavaObject* self) {
+  llvm_gcroot(self, 0);
+  return mvm::ThinLock::owner(self, JavaThread::get()->getJVM()->lockSystem);
 }
 
 void JavaObject::decapsulePrimitive(JavaObject* obj, Jnjvm *vm, jvalue* buf,

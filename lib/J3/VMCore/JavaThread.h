@@ -13,6 +13,7 @@
 #include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/ObjectLocks.h"
 #include "mvm/Threads/Thread.h"
 
 #include "MutatorThread.h"
@@ -84,33 +85,7 @@ public:
   ///
   JavaObject* vmThread;
 
-  /// varcond - Condition variable when the thread needs to be awaken from
-  /// a wait.
-  ///
-  mvm::Cond varcond;
-
-  /// interruptFlag - Has this thread been interrupted?
-  ///
-  uint32 interruptFlag;
-
-  /// nextWaiting - Next thread waiting on the same monitor.
-  ///
-  JavaThread* nextWaiting;
-  
-  /// prevWaiting - Previous thread waiting on the same monitor.
-  ///
-  JavaThread* prevWaiting;
-
-  /// waitsOn - The monitor on which the thread is waiting on.
-  ///
-  JavaLock* waitsOn;
-
-  static const unsigned int StateRunning;
-  static const unsigned int StateWaiting;
-  static const unsigned int StateInterrupted;
-
-  /// state - The current state of this thread: Running, Waiting or Interrupted.
-  uint32 state;
+  mvm::LockingThread lockingThread;
   
   /// currentAddedReferences - Current number of added local references.
   ///

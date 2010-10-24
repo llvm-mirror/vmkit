@@ -1402,7 +1402,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) : 
-  VirtualMachine(Alloc), lockSystem(this) {
+  VirtualMachine(Alloc), lockSystem(Alloc) {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";

@@ -244,6 +244,10 @@ public:
     llvm_gcroot(self, 0);
     return ((JavaVirtualTable*)self->getVirtualTable())->cl;
   }
+  
+  /// instanceOf - Is this object's class of type the given class?
+  ///
+  static bool instanceOf(JavaObject* self, UserCommonClass* cl);
 
   /// wait - Java wait. Makes the current thread waiting on a monitor.
   ///
@@ -264,35 +268,19 @@ public:
   ///
   static void notifyAll(JavaObject* self);
  
-  /// overflowmvm::ThinLock - Notify that the thin lock has overflowed.
+  /// overflowThinLock - Notify that the thin lock has overflowed.
   ///
-  static void overflowThinLock(JavaObject* self) {
-    llvm_gcroot(self, 0);
-    mvm::ThinLock::overflowThinLock(self);
-  }
-
-  /// instanceOf - Is this object's class of type the given class?
-  ///
-  static bool instanceOf(JavaObject* self, UserCommonClass* cl);
+  static void overflowThinLock(JavaObject* self);
 
   /// acquire - Acquire the lock on this object.
-  static void acquire(JavaObject* self) {
-    llvm_gcroot(self, 0);
-    mvm::ThinLock::acquire(self);
-  }
+  static void acquire(JavaObject* self);
 
   /// release - Release the lock on this object
-  static void release(JavaObject* self) {
-    llvm_gcroot(self, 0);
-    mvm::ThinLock::release(self);
-  }
+  static void release(JavaObject* self);
 
   /// owner - Returns true if the current thread is the owner of this object's
   /// lock.
-  static bool owner(JavaObject* self) {
-    llvm_gcroot(self, 0);
-    return mvm::ThinLock::owner(self);
-  }
+  static bool owner(JavaObject* self);
 
 #ifdef SIGSEGV_THROW_NULL
   #define verifyNull(obj) {}
@@ -301,12 +289,6 @@ public:
     if (obj == NULL) JavaThread::get()->getJVM()->nullPointerException();
 #endif
   
-  /// lockObj - Get the LockObj if the lock is a fat lock.
-  static JavaLock* lockObj(JavaObject* self) {
-    llvm_gcroot(self, 0);
-    return (JavaLock*)mvm::ThinLock::getFatLock(self);
-  }
-
   /// decapsulePrimitive - Based on the signature argument, decapsule
   /// obj as a primitive and put it in the buffer.
   ///

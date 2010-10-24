@@ -19,10 +19,6 @@
 
 using namespace j3;
 
-const unsigned int JavaThread::StateRunning = 0;
-const unsigned int JavaThread::StateWaiting = 1;
-const unsigned int JavaThread::StateInterrupted = 2;
-
 JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
     : MutatorThread() {
   llvm_gcroot(thread, 0);
@@ -31,8 +27,6 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
   javaThread = thread;
   vmThread = vmth;
   MyVM = isolate;
-  interruptFlag = 0;
-  state = StateRunning;
   pendingException = 0;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
