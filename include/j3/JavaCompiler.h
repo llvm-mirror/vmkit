@@ -102,10 +102,6 @@ public:
 
   virtual ~JavaCompiler() {}
 
-  virtual mvm::StackScanner* createStackScanner() {
-    return new mvm::UnpreciseStackScanner();
-  }
-
   virtual void* loadMethod(void* handle, const char* symbol) {
     return dlsym(handle, symbol);
   }

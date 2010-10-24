@@ -20,11 +20,11 @@ extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_Tra
   // When entering this function, all threads are waiting on the rendezvous to
   // finish.
   mvm::Thread* th = mvm::Thread::get();
-  mvm::StackScanner* sc = th->MyVM->getScanner();  
+  mvm::StackScanner& sc = th->MyVM->scanner;
   mvm::Thread* tcur = th;
   
   do {
-    sc->scanStack(tcur, reinterpret_cast<uintptr_t>(TL));
+    sc.scanStack(tcur, reinterpret_cast<uintptr_t>(TL));
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 }

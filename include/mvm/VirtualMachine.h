@@ -62,7 +62,6 @@ protected:
   }
 
   virtual ~VirtualMachine() {
-    if (scanner) delete scanner;
   }
 
 public:
@@ -161,20 +160,16 @@ public:
   ///
   virtual void tracer(uintptr_t closure) {}
 
-  /// scanner - Scanner of threads' stacks.
-  ///
-  mvm::StackScanner* scanner;
-
-  mvm::StackScanner* getScanner() {
-    return scanner;
-  }
-
   /// rendezvous - The rendezvous implementation for garbage collection.
+  ///
+  /// scanner - Scanner of threads' stacks.
   ///
 #ifdef WITH_LLVM_GCC
   CooperativeCollectionRV rendezvous;
+  PreciseStackScanner scanner;
 #else
   UncooperativeCollectionRV rendezvous;
+  UnpreciseStackScanner scanner;
 #endif
 
 //===----------------------------------------------------------------------===//

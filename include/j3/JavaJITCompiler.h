@@ -74,26 +74,11 @@ public:
   
   virtual void setMethod(llvm::Function* func, void* ptr, const char* name);
   
-
-#ifdef SERVICE
-  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
-#endif
- 
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert) = 0;
   virtual uintptr_t getPointerOrStub(JavaMethod& meth, int type) = 0;
 
-#ifdef WITH_LLVM_GCC
-  virtual mvm::StackScanner* createStackScanner() {
-    if (useCooperativeGC())
-      return new mvm::PreciseStackScanner();
-    
-    return new mvm::UnpreciseStackScanner();
-  }
-#endif
-  
   static JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
-
 };
 
 class JavaJ3LazyJITCompiler : public JavaJITCompiler {
