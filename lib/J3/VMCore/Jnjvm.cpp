@@ -34,6 +34,7 @@
 #include "LinkJavaRuntime.h"
 #include "LockedMap.h"
 #include "Reader.h"
+#include "ReferenceQueue.h"
 #include "Zip.h"
 
 using namespace j3;
@@ -1088,11 +1089,13 @@ void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = bootstrapLoader;
   
   // First create system threads.
-  finalizerThread = new JavaThread(0, 0, this);
-  finalizerThread->start((void (*)(mvm::Thread*))finalizerStart);
+  finalizerThread = new FinalizerThread(this);
+  finalizerThread->start(
+      (void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
     
-  enqueueThread = new JavaThread(0, 0, this);
-  enqueueThread->start((void (*)(mvm::Thread*))enqueueStart);
+  referenceThread = new ReferenceThread(this);
+  referenceThread->start(
+      (void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
   
   // Initialise the bootstrap class loader if it's not
   // done already.
@@ -1490,6 +1493,45 @@ void Jnjvm::removeMethodsInFunctionMaps(JnjvmClassLoader* loader) {
   internalRemoveMethods(loader, FunctionsCache);
 }
 
+
+void Jnjvm::startCollection() {
+  finalizerThread->FinalizationQueueLock.acquire();
+  referenceThread->ToEnqueueLock.acquire();
+  referenceThread->SoftReferencesQueue.acquire();
+  referenceThread->WeakReferencesQueue.acquire();
+  referenceThread->PhantomReferencesQueue.acquire();
+}
+  
+void Jnjvm::endCollection() {
+  finalizerThread->FinalizationQueueLock.release();
+  referenceThread->ToEnqueueLock.release();
+  referenceThread->SoftReferencesQueue.release();
+  referenceThread->WeakReferencesQueue.release();
+  referenceThread->PhantomReferencesQueue.release();
+  finalizerThread->FinalizationCond.broadcast();
+  referenceThread->EnqueueCond.broadcast();
+}
+  
+void Jnjvm::scanWeakReferencesQueue(uintptr_t closure) {
+  referenceThread->WeakReferencesQueue.scan(referenceThread, closure);
+}
+  
+void Jnjvm::scanSoftReferencesQueue(uintptr_t closure) {
+  referenceThread->SoftReferencesQueue.scan(referenceThread, closure);
+}
+  
+void Jnjvm::scanPhantomReferencesQueue(uintptr_t closure) {
+  referenceThread->PhantomReferencesQueue.scan(referenceThread, closure);
+}
+
+void Jnjvm::scanFinalizationQueue(uintptr_t closure) {
+  finalizerThread->scanFinalizationQueue(closure);
+}
+
+void Jnjvm::addFinalizationCandidate(gc* object) {
+  llvm_gcroot(object, 0);
+  finalizerThread->addFinalizationCandidate(object);
+}
 
 /// JavaStaticCompiler - Compiler for AOT-compiled programs that
 /// do not use the JIT.

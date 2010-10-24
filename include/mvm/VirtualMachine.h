@@ -6,11 +6,6 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-//
-// Ultimately, this would be like a generic way of defining a VM. But we're not
-// quite there yet.
-//
-//===----------------------------------------------------------------------===//
 
 #ifndef MVM_VIRTUALMACHINE_H
 #define MVM_VIRTUALMACHINE_H
@@ -29,8 +24,6 @@ namespace j3 {
   class JavaCompiler;
   class JnjvmClassLoader;
 }
-
-class gc;
 
 namespace mvm {
 
@@ -57,84 +50,16 @@ public:
   FunctionMap();
 };
 
-
-// Same values than JikesRVM
-#define INITIAL_QUEUE_SIZE 256
-#define GROW_FACTOR 2
-
 class CompilationUnit;
-class VirtualMachine;
 
-class ReferenceQueue {
-private:
-  gc** References;
-  uint32 QueueLength;
-  uint32 CurrentIndex;
-  mvm::SpinLock QueueLock;
-  uint8_t semantics;
-
-  gc* processReference(gc*, VirtualMachine*, uintptr_t closure);
-public:
-
-  static const uint8_t WEAK = 1;
-  static const uint8_t SOFT = 2;
-  static const uint8_t PHANTOM = 3;
-
-
-
-  ReferenceQueue(uint8_t s) {
-    References = new gc*[INITIAL_QUEUE_SIZE];
-    QueueLength = INITIAL_QUEUE_SIZE;
-    CurrentIndex = 0;
-    semantics = s;
-  }
-
-  ~ReferenceQueue() {
-    delete[] References;
-  }
- 
-  void addReference(gc* ref) {
-    QueueLock.acquire();
-    if (CurrentIndex >= QueueLength) {
-      uint32 newLength = QueueLength * GROW_FACTOR;
-      gc** newQueue = new gc*[newLength];
-      if (!newQueue) {
-        fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
-        abort();
-      }
-      for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = References[i];
-      delete[] References;
-      References = newQueue;
-      QueueLength = newLength;
-    }
-    References[CurrentIndex++] = ref;
-    QueueLock.release();
-  }
-  
-  void acquire() {
-    QueueLock.acquire();
-  }
-
-  void release() {
-    QueueLock.release();
-  }
-
-  void scan(VirtualMachine* vm, uintptr_t closure);
-};
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
 ///
 class VirtualMachine : public mvm::PermanentObject {
-  friend class ReferenceQueue;
-
 protected:
-
   VirtualMachine(mvm::BumpPtrAllocator &Alloc) :
-		allocator(Alloc),
-    WeakReferencesQueue(ReferenceQueue::WEAK),
-    SoftReferencesQueue(ReferenceQueue::SOFT), 
-    PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
+		allocator(Alloc) {
 #ifdef SERVICE
     memoryLimit = ~0;
     executionLimit = ~0;
@@ -144,27 +69,24 @@ protected:
     status = 1;
     _since_last_collection = 4*1024*1024;
 #endif
-    FinalizationQueue = new gc*[INITIAL_QUEUE_SIZE];
-    QueueLength = INITIAL_QUEUE_SIZE;
-    CurrentIndex = 0;
-
-    ToBeFinalized = new gc*[INITIAL_QUEUE_SIZE];
-    ToBeFinalizedLength = INITIAL_QUEUE_SIZE;
-    CurrentFinalizedIndex = 0;
-    
-    ToEnqueue = new gc*[INITIAL_QUEUE_SIZE];
-    ToEnqueueLength = INITIAL_QUEUE_SIZE;
-    ToEnqueueIndex = 0;
-    
     mainThread = 0;
     NumberOfThreads = 0;
   }
+
+  virtual ~VirtualMachine() {
+    if (scanner) delete scanner;
+  }
+
 public:
 
   /// allocator - Bump pointer allocator to allocate permanent memory
   /// related to this VM.
   ///
   mvm::BumpPtrAllocator& allocator;
+
+//===----------------------------------------------------------------------===//
+// (1) Thread-related methods.
+//===----------------------------------------------------------------------===//
 
   /// mainThread - The main thread of this VM.
   ///
@@ -210,227 +132,46 @@ public:
   }
 
 
-  virtual void tracer(uintptr_t closure);
+//===----------------------------------------------------------------------===//
+// (2) GC-related methods.
+//===----------------------------------------------------------------------===//
 
-  virtual ~VirtualMachine() {
-    if (scanner) delete scanner;
-    delete[] FinalizationQueue;
-    delete[] ToBeFinalized;
-    delete[] ToEnqueue;
-  }
-
-  /// runApplication - Run an application. The application name is in
-  /// the arguments, hence it is the virtual machine's job to parse them.
-  virtual void runApplication(int argc, char** argv) = 0;
+  /// startCollection - Preliminary code before starting a GC.
+  ///
+  virtual void startCollection() {}
   
-  /// waitForExit - Wait until the virtual machine stops its execution.
-  virtual void waitForExit() = 0;
-
-  static j3::JnjvmClassLoader* initialiseJVM(j3::JavaCompiler* C,
-                                                bool dlLoad = true);
-  static VirtualMachine* createJVM(j3::JnjvmClassLoader* C = 0);
-  
-  static CompilationUnit* initialiseCLIVM();
-  static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
-
-private:
-  /// WeakReferencesQueue - The queue of weak references.
+  /// endCollection - Code after running a GC.
   ///
-  ReferenceQueue WeakReferencesQueue;
-
-  /// SoftReferencesQueue - The queue of soft references.
-  ///
-  ReferenceQueue SoftReferencesQueue;
-
-  /// PhantomReferencesQueue - The queue of phantom references.
-  ///
-  ReferenceQueue PhantomReferencesQueue;
-
-  
-  /// FinalizationQueueLock - A lock to protect access to the queue.
-  ///
-  mvm::SpinLock FinalizationQueueLock;
-
-  /// finalizationQueue - A list of allocated objets that contain a finalize
-  /// method.
-  ///
-  gc** FinalizationQueue;
-
-  /// CurrentIndex - Current index in the queue of finalizable objects.
-  ///
-  uint32 CurrentIndex;
-
-  /// QueueLength - Current length of the queue of finalizable objects.
-  ///
-  uint32 QueueLength;
-
-  /// growFinalizationQueue - Grow the queue of finalizable objects.
-  ///
-  void growFinalizationQueue();
-  
-  /// ToBeFinalized - List of objects that are scheduled to be finalized.
-  ///
-  gc** ToBeFinalized;
-  
-  /// ToBeFinalizedLength - Current length of the queue of objects scheduled
-  /// for finalization.
-  ///
-  uint32 ToBeFinalizedLength;
-
-  /// CurrentFinalizedIndex - The current index in the ToBeFinalized queue
-  /// that will be sceduled for finalization.
-  ///
-  uint32 CurrentFinalizedIndex;
-  
-  /// growToBeFinalizedQueue - Grow the queue of the to-be finalized objects.
-  ///
-  void growToBeFinalizedQueue();
-  
-  /// finalizationCond - Condition variable to wake up finalization threads.
-  ///
-  mvm::Cond FinalizationCond;
-
-  /// finalizationLock - Lock for the condition variable.
-  ///
-  mvm::LockNormal FinalizationLock;
-  
-  gc** ToEnqueue;
-  uint32 ToEnqueueLength;
-  uint32 ToEnqueueIndex;
-  
-  /// ToEnqueueLock - A lock to protect access to the queue.
-  ///
-  mvm::LockNormal EnqueueLock;
-  mvm::Cond EnqueueCond;
-  mvm::SpinLock ToEnqueueLock;
-  
-  void addToEnqueue(gc* obj) {
-    if (ToEnqueueIndex >= ToEnqueueLength) {
-      uint32 newLength = ToEnqueueLength * GROW_FACTOR;
-      gc** newQueue = new gc*[newLength];
-      if (!newQueue) {
-        fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
-        abort();
-      }
-      for (uint32 i = 0; i < ToEnqueueLength; ++i) {
-        newQueue[i] = ToEnqueue[i];
-      }
-      delete[] ToEnqueue;
-      ToEnqueue = newQueue;
-      ToEnqueueLength = newLength;
-    }
-    ToEnqueue[ToEnqueueIndex++] = obj;
-  }
-
-public:
-  /// invokeFinalizer - Invoke the finalizer of the object. This may involve
-  /// changing the environment, e.g. going to native to Java.
-  ///
-  virtual void invokeFinalizer(gc*) {}
-  
-  /// enqueueReference - Calls the enqueue method. Should be overriden
-  /// by the VM.
-  ///
-  virtual bool enqueueReference(gc*) { return false; }
-  
-  /// finalizerStart - The start function of a finalizer. Will poll the
-  /// finalizationQueue.
-  ///
-  static void finalizerStart(mvm::Thread*);
-  
-  /// enqueueStart - The start function of a thread for references. Will poll
-  /// ToEnqueue.
-  ///
-  static void enqueueStart(mvm::Thread*);
-
-  /// addFinalizationCandidate - Add an object to the queue of objects with
-  /// a finalization method.
-  ///
-  void addFinalizationCandidate(gc*);
-  
-  /// scanFinalizationQueue - Scan objets with a finalized method and schedule
-  /// them for finalization if they are not live.
-  ///
-  void scanFinalizationQueue(uintptr_t closure);
-
-  /// wakeUpFinalizers - Wake the finalizers.
-  ///
-  void wakeUpFinalizers() { FinalizationCond.broadcast(); }
-  
-  /// wakeUpEnqueue - Wake the threads for enqueueing.
-  ///
-  void wakeUpEnqueue() { EnqueueCond.broadcast(); }
-
-  virtual void startCollection() {
-    FinalizationQueueLock.acquire();
-    ToEnqueueLock.acquire();
-    SoftReferencesQueue.acquire();
-    WeakReferencesQueue.acquire();
-    PhantomReferencesQueue.acquire();
-  }
-  
-  virtual void endCollection() {
-    FinalizationQueueLock.release();
-    ToEnqueueLock.release();
-    SoftReferencesQueue.release();
-    WeakReferencesQueue.release();
-    PhantomReferencesQueue.release();
-  }
+  virtual void endCollection() {}
   
   /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
   /// before scanning the finalization queue.
   /// 
-  void scanWeakReferencesQueue(uintptr_t closure) {
-    WeakReferencesQueue.scan(this, closure);
-  }
+  virtual void scanWeakReferencesQueue(uintptr_t closure) {}
   
   /// scanSoftReferencesQueue - Scan all soft references. Called by the GC
   /// before scanning the finalization queue.
   ///
-  void scanSoftReferencesQueue(uintptr_t closure) {
-    SoftReferencesQueue.scan(this, closure);
-  }
+  virtual void scanSoftReferencesQueue(uintptr_t closure) {}
   
   /// scanPhantomReferencesQueue - Scan all phantom references. Called by the GC
   /// after the finalization queue.
   ///
-  void scanPhantomReferencesQueue(uintptr_t closure) {
-    PhantomReferencesQueue.scan(this, closure);
-  }
-  
-  /// addWeakReference - Add a weak reference to the queue.
-  ///
-  void addWeakReference(gc* ref) {
-    WeakReferencesQueue.addReference(ref);
-  }
-  
-  /// addSoftReference - Add a weak reference to the queue.
-  ///
-  void addSoftReference(gc* ref) {
-    SoftReferencesQueue.addReference(ref);
-  }
-  
-  /// addPhantomReference - Add a weak reference to the queue.
-  ///
-  void addPhantomReference(gc* ref) {
-    PhantomReferencesQueue.addReference(ref);
-  }
+  virtual void scanPhantomReferencesQueue(uintptr_t closure) {}
 
-  /// clearReferent - Clear the referent in a reference. Should be overriden
-  /// by the VM.
+  /// scanFinalizationQueue - Scan objets with a finalized method and schedule
+  /// them for finalization if they are not live.
+  /// 
+  virtual void scanFinalizationQueue(uintptr_t closure) {}
+
+  /// addFinalizationCandidate - Add an object to the queue of objects with
+  /// a finalization method.
   ///
-  virtual void clearReferent(gc*) {}
+  virtual void addFinalizationCandidate(gc* object) {}
 
-  /// getReferent - Get the referent of the reference. Should be overriden
-  /// by the VM.
-  //
-  virtual gc** getReferentPtr(gc*) { return 0; }
-  
-  /// setReferent - Set the referent of the reference. Should be overriden
-  /// by the VM.
-  virtual void setReferent(gc* reference, gc* referent) { }
-
-public:
+  /// tracer - Trace this virtual machine's GC-objects.
+  ///
+  virtual void tracer(uintptr_t closure) {}
 
   /// scanner - Scanner of threads' stacks.
   ///
@@ -448,10 +189,32 @@ public:
   UncooperativeCollectionRV rendezvous;
 #endif
 
+//===----------------------------------------------------------------------===//
+// (3) Backtrace-related methods.
+//===----------------------------------------------------------------------===//
+
   FunctionMap FunctionsCache;
   MethodInfo* IPToMethodInfo(void* ip) {
     return FunctionsCache.IPToMethodInfo(ip);
   }
+  
+//===----------------------------------------------------------------------===//
+// (4) Launch-related methods.
+//===----------------------------------------------------------------------===//
+
+  /// runApplication - Run an application. The application name is in
+  /// the arguments, hence it is the virtual machine's job to parse them.
+  virtual void runApplication(int argc, char** argv) = 0;
+  
+  /// waitForExit - Wait until the virtual machine stops its execution.
+  virtual void waitForExit() = 0;
+
+  static j3::JnjvmClassLoader* initialiseJVM(j3::JavaCompiler* C,
+                                                bool dlLoad = true);
+  static VirtualMachine* createJVM(j3::JnjvmClassLoader* C = 0);
+  
+  static CompilationUnit* initialiseCLIVM();
+  static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
 
 #ifdef ISOLATE
   size_t IsolateID;
@@ -476,7 +239,6 @@ public:
 #endif
 
 };
-
 
 } // end namespace mvm
 #endif // MVM_VIRTUALMACHINE_H

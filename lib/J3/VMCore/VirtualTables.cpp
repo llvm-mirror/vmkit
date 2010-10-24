@@ -30,6 +30,7 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
+#include "ReferenceQueue.h"
 #include "Zip.h"
 
 using namespace j3;
@@ -264,15 +265,16 @@ void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
 
 
 void Jnjvm::tracer(uintptr_t closure) {
-  
-  VirtualMachine::tracer(closure);
+  // (1) Trace the bootrap loader.
   bootstrapLoader->tracer(closure);
   
+  // (2) Trace the application class loader.
   if (appClassLoader != NULL) {
     mvm::Collector::markAndTraceRoot(
         appClassLoader->getJavaClassLoaderPtr(), closure);
   }
   
+  // (3) Trace JNI global references.
   JNIGlobalReferences* start = &globalRefs;
   while (start != NULL) {
     for (uint32 i = 0; i < start->length; ++i) {
@@ -282,6 +284,7 @@ void Jnjvm::tracer(uintptr_t closure) {
     start = start->next;
   }
   
+  // (4) Trace the interned strings.
   for (StringMap::iterator i = hashStr.map.begin(), e = hashStr.map.end();
        i!= e; ++i) {
     JavaString** str = &(i->second);
@@ -289,7 +292,13 @@ void Jnjvm::tracer(uintptr_t closure) {
     ArrayUInt16** key = const_cast<ArrayUInt16**>(&(i->first));
     mvm::Collector::markAndTraceRoot(key, closure);
   }
+
+  // (5) Trace the finalization queue.
+  for (uint32 i = 0; i < finalizerThread->CurrentFinalizedIndex; ++i) {
+    mvm::Collector::markAndTraceRoot(finalizerThread->ToBeFinalized + i, closure);
+  }
  
+  // (6) Trace the locks and their associated object.
   uint32 i = 0;
   for (; i < mvm::LockSystem::GlobalSize; i++) {
     mvm::FatLock** array = lockSystem.LockTable[i];
@@ -307,6 +316,8 @@ void Jnjvm::tracer(uintptr_t closure) {
   for (i = i + 1; i < mvm::LockSystem::GlobalSize; i++) {
     assert(lockSystem.LockTable[i] == NULL);
   }
+
+
 #if defined(ISOLATE_SHARING)
   mvm::Collector::markAndTraceRoot(&JnjvmSharedLoader::sharedLoader, closure);
 #endif

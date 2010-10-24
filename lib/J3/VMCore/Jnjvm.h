@@ -30,6 +30,7 @@ namespace j3 {
 class ArrayObject;
 class Classpath;
 class CommonClass;
+class FinalizerThread;
 class JavaField;
 class JavaMethod;
 class JavaObject;
@@ -38,6 +39,7 @@ class JavaThread;
 class JavaVirtualTable;
 class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
+class ReferenceThread;
 class UserClass;
 class UserClassArray;
 class UserClassPrimitive;
@@ -120,11 +122,19 @@ private:
   
   /// finalizerThread - The thread that finalizes Java objects.
   ///
-  JavaThread* finalizerThread;
+  FinalizerThread* finalizerThread;
  
   /// enqueueThread - The thread that enqueue Java references.
   ///
-  JavaThread* enqueueThread;
+  ReferenceThread* referenceThread;
+
+  virtual void startCollection();
+  virtual void endCollection();
+  virtual void scanWeakReferencesQueue(uintptr_t closure);
+  virtual void scanSoftReferencesQueue(uintptr_t closure);
+  virtual void scanPhantomReferencesQueue(uintptr_t closure);
+  virtual void scanFinalizationQueue(uintptr_t closure);
+  virtual void addFinalizationCandidate(gc* obj);
 
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
@@ -300,19 +310,19 @@ public:
   
   /// setFinalizerThread - Set the finalizer thread of this VM.
   ///
-  void setFinalizerThread(JavaThread* th) { finalizerThread = th; }
+  void setFinalizerThread(FinalizerThread* th) { finalizerThread = th; }
   
   /// getFinalizerThread - Get the finalizer thread of this VM.
   ///
-  JavaThread* getFinalizerThread() const { return finalizerThread; }
+  FinalizerThread* getFinalizerThread() const { return finalizerThread; }
   
-  /// setEnqueueThread - Set the enqueue thread of this VM.
+  /// setReferenceThread - Set the enqueue thread of this VM.
   ///
-  void setEnqueueThread(JavaThread* th) { enqueueThread = th; }
+  void setReferenceThread(ReferenceThread* th) { referenceThread = th; }
   
-  /// getEnqueueThread - Get the enqueue thread of this VM.
+  /// getReferenceThread - Get the enqueue thread of this VM.
   ///
-  JavaThread* getEnqueueThread() const { return enqueueThread; }
+  ReferenceThread* getReferenceThread() const { return referenceThread; }
 
   /// ~Jnjvm - Destroy the JVM.
   ///
@@ -367,15 +377,6 @@ public:
 #ifdef SERVICE
   virtual void stopService();
 #endif
-
-  virtual void clearReferent(gc*);
-  virtual gc** getReferentPtr(gc*);
-  virtual void setReferent(gc*, gc*);
-  virtual bool enqueueReference(gc*);
-
-protected:
-  virtual void invokeFinalizer(gc*);
-
 };
 
 } // end namespace j3

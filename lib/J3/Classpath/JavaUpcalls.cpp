@@ -15,6 +15,7 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "ReferenceQueue.h"
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
@@ -292,8 +293,8 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   CreateJavaThread(vm, vm->getFinalizerThread(), "Finalizer", SystemGroup);
   
   // Create the enqueue thread.
-  assert(vm->getEnqueueThread() && "VM did not set its enqueue thread");
-  CreateJavaThread(vm, vm->getEnqueueThread(), "Reference", SystemGroup);
+  assert(vm->getReferenceThread() && "VM did not set its enqueue thread");
+  CreateJavaThread(vm, vm->getReferenceThread(), "Reference", SystemGroup);
 }
 
 extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Object_2(
@@ -304,7 +305,7 @@ extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, 0);
-  JavaThread::get()->getJVM()->addWeakReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addWeakReference(reference);
 
   END_NATIVE_EXCEPTION
 
@@ -321,7 +322,7 @@ extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->addWeakReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addWeakReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -335,7 +336,7 @@ extern "C" void Java_java_lang_ref_SoftReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, 0);
-  JavaThread::get()->getJVM()->addSoftReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -352,7 +353,7 @@ extern "C" void Java_java_lang_ref_SoftReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
 
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->addSoftReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -369,7 +370,7 @@ extern "C" void Java_java_lang_ref_PhantomReference__0003Cinit_0003E__Ljava_lang
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->addPhantomReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addPhantomReference(reference);
 
   END_NATIVE_EXCEPTION
 }
@@ -1057,25 +1058,6 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                   "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
                   ACC_VIRTUAL);
   initPhantomReference->setNative();
-}
-
-gc** Jnjvm::getReferentPtr(gc* _obj) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  return (gc**)JavaObjectReference::getReferentPtr(obj);
-}
-
-void Jnjvm::setReferent(gc* _obj, gc* val) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  llvm_gcroot(val, 0);
-  JavaObjectReference::setReferent(obj, (JavaObject*)val);
-}
- 
-void Jnjvm::clearReferent(gc* _obj) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  JavaObjectReference::setReferent(obj, NULL);
 }
 
 #include "ClasspathConstructor.inc"

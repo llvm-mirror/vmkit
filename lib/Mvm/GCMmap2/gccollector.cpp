@@ -94,10 +94,8 @@ void Collector::do_collect() {
   status = stat_alloc;
   
   // Wake up all threads.
-  th->MyVM->endCollection();
   th->MyVM->rendezvous.finishRV();
-  th->MyVM->wakeUpFinalizers();
-  th->MyVM->wakeUpEnqueue();
+  th->MyVM->endCollection();
   
   // Kill unreachable objects.
   GCChunkNode *next = 0;
