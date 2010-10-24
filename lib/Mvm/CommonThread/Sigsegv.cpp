@@ -54,8 +54,8 @@ void sigsegvHandler(int n, siginfo_t *_info, void *context) {
                     "the bottom of the stack is always available when entering"
                     "\nthe VM.\n");
   } else {
-    fprintf(stderr, "I received a SIGSEGV: either the VM code or an external\n"
-                    "native method is bogus. Aborting...\n");
+    fprintf(stderr, "Thread %p received a SIGSEGV: either the VM code or an external\n"
+                    "native method is bogus. Aborting...\n", th);
   }
   th->printBacktrace();
   abort();

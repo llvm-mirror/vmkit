@@ -134,9 +134,9 @@ void FunctionMap::removeMethodInfos(void* owner) {
   for (std::map<void*, mvm::MethodInfo*>::iterator i = Functions.begin(),
        e = Functions.end(); i != e;) {
     mvm::MethodInfo* MI = i->second;
+    temp = i;
+    i++;
     if (MI->Owner == owner) {
-      temp = i;
-      i++;
       Functions.erase(temp);
     }
   }
