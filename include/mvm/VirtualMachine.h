@@ -42,6 +42,9 @@ public:
   ///
   void addMethodInfo(MethodInfo* meth, void* ip);
 
+  /// removeMethodInfos - Remove all MethodInfo owned by the given owner.
+  void removeMethodInfos(void* owner);
+
   FunctionMap();
 };
 
@@ -170,6 +173,9 @@ public:
   FunctionMap FunctionsCache;
   MethodInfo* IPToMethodInfo(void* ip) {
     return FunctionsCache.IPToMethodInfo(ip);
+  }
+  void removeMethodInfos(void* owner) {
+    FunctionsCache.removeMethodInfos(owner);
   }
   
 //===----------------------------------------------------------------------===//

@@ -1383,35 +1383,6 @@ ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
   return tmp;
 }
 
-void Jnjvm::internalRemoveMethods(JnjvmClassLoader* loader, mvm::FunctionMap& Map) {
-  // Loop over all methods in the map to find which ones belong
-  // to this class loader.
-  Map.FunctionMapLock.acquire();
-  std::map<void*, mvm::MethodInfo*>::iterator temp;
-  for (std::map<void*, mvm::MethodInfo*>::iterator i = Map.Functions.begin(), 
-       e = Map.Functions.end(); i != e;) {
-    mvm::MethodInfo* MI = i->second;
-    if (MI->MethodType == 1) {
-      JavaMethod* meth = (JavaMethod*)i->second->getMetaInfo();
-      if (meth->classDef->classLoader == loader) {
-        temp = i;
-        ++i;
-        Map.Functions.erase(temp);
-      } else {
-        ++i;
-      }
-    } else {
-      ++i;
-    }
-  }
-  Map.FunctionMapLock.release();
-}
-
-void Jnjvm::removeMethodsInFunctionMaps(JnjvmClassLoader* loader) {
-  internalRemoveMethods(loader, FunctionsCache);
-}
-
-
 void Jnjvm::startCollection() {
   finalizerThread->FinalizationQueueLock.acquire();
   referenceThread->ToEnqueueLock.acquire();

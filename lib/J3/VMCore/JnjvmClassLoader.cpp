@@ -912,8 +912,9 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 
 JnjvmClassLoader::~JnjvmClassLoader() {
 
-  if (isolate)
-    isolate->removeMethodsInFunctionMaps(this);
+  if (isolate) {
+    isolate->removeMethodInfos(TheCompiler);
+  }
 
   if (classes) {
     classes->~ClassMap();
@@ -1085,6 +1086,31 @@ intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
     res = loadInLib(buf, j3);
   }
   return res;
+}
+
+class JavaStaticMethodInfo : public mvm::CamlMethodInfo {
+public:
+  virtual void print(void* ip, void* addr);
+  virtual bool isHighLevelMethod() {
+    return true;
+  }
+  
+  JavaStaticMethodInfo(mvm::CamlMethodInfo* super, void* ip, JavaMethod* M) :
+    mvm::CamlMethodInfo(super->CF) {
+    MetaInfo = M;
+    Owner = M->classDef->classLoader->getCompiler();
+  }
+};
+
+void JavaStaticMethodInfo::print(void* ip, void* addr) {
+  void* new_ip = NULL;
+  if (ip) new_ip = mvm::MethodInfo::isStub(ip, addr);
+  JavaMethod* meth = (JavaMethod*)MetaInfo;
+  fprintf(stderr, "; %p in %s.%s", new_ip,
+          UTF8Buffer(meth->classDef->name).cString(),
+          UTF8Buffer(meth->name).cString());
+  if (ip != new_ip) fprintf(stderr, " (from stub)");
+  fprintf(stderr, "\n");
 }
 
 void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {

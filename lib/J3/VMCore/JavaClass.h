@@ -873,18 +873,6 @@ public:
   
 };
 
-class JavaStaticMethodInfo : public mvm::CamlMethodInfo {
-public:
-  virtual void print(void* ip, void* addr);
-  
-  JavaStaticMethodInfo(mvm::CamlMethodInfo* super, void* ip, JavaMethod* M) :
-    mvm::CamlMethodInfo(super->CF) {
-    MetaInfo = M;
-    MethodType = 1;
-  }
-
-};
-
 class CodeLineInfo : public mvm::PermanentObject {
 public:
   uintptr_t address;

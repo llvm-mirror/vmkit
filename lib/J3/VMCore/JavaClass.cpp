@@ -287,17 +287,6 @@ void* JavaMethod::compiledPtr() {
   return code;
 }
 
-void JavaStaticMethodInfo::print(void* ip, void* addr) {
-  void* new_ip = NULL;
-  if (ip) new_ip = mvm::MethodInfo::isStub(ip, addr);
-  JavaMethod* meth = (JavaMethod*)MetaInfo;
-  fprintf(stderr, "; %p in %s.%s", new_ip,
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
-  if (ip != new_ip) fprintf(stderr, " (from stub)");
-  fprintf(stderr, "\n");
-}
-
 void JavaMethod::setNative() {
   access |= ACC_NATIVE;
 }

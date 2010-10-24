@@ -126,3 +126,19 @@ void FunctionMap::addMethodInfo(MethodInfo* meth, void* ip) {
   Functions.insert(std::make_pair(ip, meth));
   FunctionMapLock.release();
 }
+
+
+void FunctionMap::removeMethodInfos(void* owner) {
+  FunctionMapLock.acquire();
+  std::map<void*, mvm::MethodInfo*>::iterator temp;
+  for (std::map<void*, mvm::MethodInfo*>::iterator i = Functions.begin(),
+       e = Functions.end(); i != e;) {
+    mvm::MethodInfo* MI = i->second;
+    if (MI->Owner == owner) {
+      temp = i;
+      i++;
+      Functions.erase(temp);
+    }
+  }
+  FunctionMapLock.release();
+}

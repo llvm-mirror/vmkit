@@ -351,32 +351,11 @@ public:
   ///
   virtual void waitForExit();
 
-private:
-  /// internalRemoveMethodsInFunctionMap - Removes all methods compiled by this
-  /// class loader from the function map.
-  ///
-  void internalRemoveMethods(JnjvmClassLoader* loader, mvm::FunctionMap& Map);
-
-public:
-  /// removeMethodsInFunctionMaps - Removes all methods compiled by this
-  /// class loader from the function maps.
-  ///
-  void removeMethodsInFunctionMaps(JnjvmClassLoader* loader);
-  
   /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
   /// bootstrap classes (e.g. java/lang/Class, java/lang/Exception) and
   /// mapping the initial thread.
   ///
   void loadBootstrap();
-
-#ifdef ISOLATE
-  static Jnjvm* RunningIsolates[NR_ISOLATES];
-  static mvm::LockNormal IsolateLock;
-#endif
-
-#ifdef SERVICE
-  virtual void stopService();
-#endif
 };
 
 } // end namespace j3

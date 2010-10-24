@@ -104,8 +104,8 @@ public:
     assert(&(*I)->getFunction() == &F &&
         "GC Info and method do not correspond");
     llvm::GCFunctionInfo* GFI = *I;
-    JITMethodInfo* MI =
-      new(*MvmModule::Allocator, "MvmJITMethodInfo") MvmJITMethodInfo(GFI, &F);
+    JITMethodInfo* MI = new(*MvmModule::Allocator, "MvmJITMethodInfo")
+        MvmJITMethodInfo(GFI, &F, MvmModule::executionEngine);
     MI->addToVM(mvm::Thread::get()->MyVM, (JIT*)MvmModule::executionEngine);
   }
 };

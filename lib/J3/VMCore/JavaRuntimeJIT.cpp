@@ -608,9 +608,10 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  while (Walker.get()->MethodType != 1) ++Walker;
+  ++Walker; // Remove the stub.
   mvm::MethodInfo* MI = Walker.get();
-  JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+  assert(MI->isHighLevelMethod() && "Wrong stack trace");
+  JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
   void* ip = *Walker;
 
   // Lookup the method info in the constant pool of the caller.
@@ -671,10 +672,10 @@ extern "C" void* j3ResolveStaticStub() {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  while (Walker.get()->MethodType != 1) ++Walker;
+  ++Walker; // Remove the stub.
   mvm::MethodInfo* MI = Walker.get();
-  assert(MI->MethodType == 1 && "Wrong call to stub");
-  JavaMethod* caller = (JavaMethod*)MI->getMetaInfo();
+  assert(MI->isHighLevelMethod() && "Wrong stack trace");
+  JavaMethod* caller = (JavaMethod*)MI->MetaInfo;
   void* ip = *Walker;
 
   // Lookup the method info in the constant pool of the caller.
@@ -709,10 +710,10 @@ extern "C" void* j3ResolveSpecialStub() {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  while (Walker.get()->MethodType != 1) ++Walker;
+  ++Walker; // Remove the stub.
   mvm::MethodInfo* MI = Walker.get();
-  assert(MI->MethodType == 1 && "Wrong call to stub");
-  JavaMethod* caller = (JavaMethod*)MI->getMetaInfo();
+  assert(MI->isHighLevelMethod() && "Wrong stack trace");
+  JavaMethod* caller = (JavaMethod*)MI->MetaInfo;
   void* ip = *Walker;
 
   // Lookup the method info in the constant pool of the caller.

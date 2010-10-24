@@ -144,9 +144,9 @@ JavaObject* vmthrow, JavaObject* throwable) {
   sint32 index = 2;;
   while (index != JavaArray::getSize(stack)) {
     mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
-    if (MI->MethodType != 1) ++index;
+    if (!MI->isHighLevelMethod()) ++index;
     else {
-      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+      JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
       assert(meth && "Wrong stack trace");
       if (meth->classDef->isAssignableFrom(vm->upcalls->newThrowable)) {
         ++index;
@@ -159,7 +159,7 @@ JavaObject* vmthrow, JavaObject* throwable) {
   while (cur < JavaArray::getSize(stack)) {
     mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
     ++cur;
-    if (MI->MethodType == 1) ++size;
+    if (MI->isHighLevelMethod()) ++size;
   }
 
   result = (ArrayObject*)
@@ -168,8 +168,8 @@ JavaObject* vmthrow, JavaObject* throwable) {
   cur = 0;
   for (sint32 i = index; i < JavaArray::getSize(stack); ++i) {
     mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, i));
-    if (MI->MethodType == 1) {
-      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+    if (MI->isHighLevelMethod()) {
+      JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
       ArrayObject::setElement(result, consStackElement(meth, ArrayPtr::getElement((ArrayPtr*)stack, i)), cur);
       cur++;
     }

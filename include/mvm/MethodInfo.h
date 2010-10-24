@@ -19,6 +19,9 @@ class MethodInfo : public PermanentObject {
 public:
   virtual void print(void* ip, void* addr) = 0;
   virtual void scan(uintptr_t closure, void* ip, void* addr) = 0;
+  virtual bool isHighLevelMethod() {
+    return false;
+  }
 
   static void* isStub(void* ip, void* addr) {
     bool isStub = ((unsigned char*)ip)[0] == 0xCE;
@@ -26,10 +29,8 @@ public:
     return ip;
   }
 
-  void* getMetaInfo() const { return MetaInfo; }
-  
-  unsigned MethodType;
   void* MetaInfo;
+  void* Owner;
 };
 
 class CamlFrame {
@@ -44,7 +45,10 @@ class CamlMethodInfo : public MethodInfo {
 public:
   CamlFrame* CF;
   virtual void scan(uintptr_t closure, void* ip, void* addr);
-  CamlMethodInfo(CamlFrame* C) : CF(C) { }
+  CamlMethodInfo(CamlFrame* C) : CF(C) {
+    Owner = NULL;
+    MetaInfo = NULL;
+  }
 };
 
 class StaticCamlMethodInfo : public CamlMethodInfo {
@@ -53,8 +57,9 @@ public:
   virtual void print(void* ip, void* addr);
   StaticCamlMethodInfo(CamlFrame* CF, const char* n) :
     CamlMethodInfo(CF) {
+    Owner = NULL;
+    MetaInfo = NULL;
     name = n;
-    MethodType = 0;
   }
 };
 
@@ -65,7 +70,8 @@ public:
   static DefaultMethodInfo DM;
     
   DefaultMethodInfo() {
-    MethodType = -1;
+    Owner = NULL;
+    MetaInfo = NULL;
   }
 };
 

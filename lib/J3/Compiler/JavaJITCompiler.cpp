@@ -40,15 +40,18 @@
 using namespace j3;
 using namespace llvm;
 
-
 class JavaJITMethodInfo : public mvm::JITMethodInfo {
 public:
   virtual void print(void* ip, void* addr);
+  virtual bool isHighLevelMethod() {
+    return true;
+  }
   
-  JavaJITMethodInfo(llvm::GCFunctionInfo* GFI, JavaMethod* m) : 
-    mvm::JITMethodInfo(GFI) {
+  JavaJITMethodInfo(llvm::GCFunctionInfo* GFI,
+                    JavaMethod* m) :
+      mvm::JITMethodInfo(GFI) {
     MetaInfo = m;
-    MethodType = 1;
+    Owner = m->classDef->classLoader->getCompiler();
   }
 };
 
@@ -105,7 +108,7 @@ void JavaJITListener::NotifyFunctionEmitted(const Function &F,
   mvm::JITMethodInfo* MI = NULL;
   if (meth == NULL) {
     // This is a stub.
-    MI = new(Alloc, "JITMethodInfo") mvm::MvmJITMethodInfo(GFI, &F);
+    MI = new(Alloc, "JITMethodInfo") mvm::MvmJITMethodInfo(GFI, &F, TheCompiler);
   } else {
     MI = new(Alloc, "JavaJITMethodInfo") JavaJITMethodInfo(GFI, meth);
   }
