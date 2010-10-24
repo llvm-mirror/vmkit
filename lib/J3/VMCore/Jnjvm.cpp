@@ -1545,7 +1545,7 @@ public:
 };
 
 
-// Helper function to run Jnjvm without JIT.
+// Helper function to run J3 without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   mvm::Collector::initialise();
  
@@ -1555,9 +1555,12 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;
  
+  mvm::BumpPtrAllocator Allocator;
   JavaCompiler* Comp = new JavaStaticCompiler();
-  JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
-  mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
+  JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
+    JnjvmBootstrapLoader(Allocator, Comp, true);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, loader);
+
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();
   

@@ -50,25 +50,13 @@ public:
   FunctionMap();
 };
 
-class CompilationUnit;
-
-
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
 ///
 class VirtualMachine : public mvm::PermanentObject {
 protected:
   VirtualMachine(mvm::BumpPtrAllocator &Alloc) :
-		allocator(Alloc) {
-#ifdef SERVICE
-    memoryLimit = ~0;
-    executionLimit = ~0;
-    GCLimit = ~0;
-    threadLimit = ~0;
-    parent = this;
-    status = 1;
-    _since_last_collection = 4*1024*1024;
-#endif
+		  allocator(Alloc) {
     mainThread = 0;
     NumberOfThreads = 0;
   }
@@ -208,36 +196,6 @@ public:
   
   /// waitForExit - Wait until the virtual machine stops its execution.
   virtual void waitForExit() = 0;
-
-  static j3::JnjvmClassLoader* initialiseJVM(j3::JavaCompiler* C,
-                                                bool dlLoad = true);
-  static VirtualMachine* createJVM(j3::JnjvmClassLoader* C = 0);
-  
-  static CompilationUnit* initialiseCLIVM();
-  static VirtualMachine* createCLIVM(CompilationUnit* C = 0);
-
-#ifdef ISOLATE
-  size_t IsolateID;
-#endif
-
-#ifdef SERVICE
-  uint64_t memoryUsed;
-  uint64_t gcTriggered;
-  uint64_t executionTime;
-  uint64_t numThreads;
-  CompilationUnit* CU;
-  virtual void stopService() {}
-
-  uint64_t memoryLimit;
-  uint64_t executionLimit;
-  uint64_t threadLimit;
-  uint64_t GCLimit;
-
-  int _since_last_collection;
-  VirtualMachine* parent;
-  uint32 status; 
-#endif
-
 };
 
 } // end namespace mvm
