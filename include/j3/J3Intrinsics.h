@@ -132,7 +132,8 @@ public:
   llvm::Constant* OffsetStatusInTaskClassMirrorConstant;
   
   llvm::Constant* OffsetDoYieldInThreadConstant;
-  llvm::Constant* OffsetIsolateInThreadConstant;
+  llvm::Constant* OffsetIsolateIDInThreadConstant;
+  llvm::Constant* OffsetVMInThreadConstant;
   llvm::Constant* OffsetCXXExceptionInThreadConstant;
 	llvm::Constant* OffsetThreadInMutatorThreadConstant;
   llvm::Constant* OffsetJNIInJavaThreadConstant;

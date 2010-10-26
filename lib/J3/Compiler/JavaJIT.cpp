@@ -274,6 +274,69 @@ llvm::Value* JavaJIT::getCurrentThread(const llvm::Type* Ty) {
   return threadId;
 }
 
+llvm::Value* JavaJIT::genGetMutatorThreadPtr() {
+  Value* FrameAddr = CallInst::Create(intrinsics->llvm_frameaddress,
+                                     	intrinsics->constantZero, "", currentBlock);
+  Value* threadId = new PtrToIntInst(FrameAddr, intrinsics->pointerSizeType, "",
+                              			 currentBlock);
+  threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
+                                       "", currentBlock);
+  threadId = new IntToPtrInst(threadId, intrinsics->MutatorThreadType, "", currentBlock);
+
+  return threadId;
+}
+
+llvm::Value* JavaJIT::genGetJavaThreadPtr(llvm::Value* mutatorThreadPtr) {
+  return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "", currentBlock);
+}
+
+llvm::Value* JavaJIT::genGetIsolateIDPtr(llvm::Value* mutatorThreadPtr) { 
+	Value* GEP[3] = { intrinsics->constantZero,
+										intrinsics->OffsetThreadInMutatorThreadConstant,
+										intrinsics->OffsetIsolateIDInThreadConstant };
+    
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+}
+
+llvm::Value* JavaJIT::genGetVMPtr(llvm::Value* mutatorThreadPtr) { 
+	Value* GEP[3] = { intrinsics->constantZero,
+										intrinsics->OffsetThreadInMutatorThreadConstant,
+										intrinsics->OffsetVMInThreadConstant };
+    
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+}
+
+llvm::Value* JavaJIT::genGetDoYieldPtr(llvm::Value* mutatorThreadPtr) { 
+	Value* GEP[3] = { intrinsics->constantZero,
+										intrinsics->OffsetThreadInMutatorThreadConstant,
+										intrinsics->OffsetDoYieldInThreadConstant };
+    
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+}
+
+llvm::Value* JavaJIT::genGetCXXExceptionPtr(llvm::Value* mutatorThreadPtr) { 
+	Value* GEP[3] = { intrinsics->constantZero,
+										intrinsics->OffsetThreadInMutatorThreadConstant,
+										intrinsics->OffsetCXXExceptionInThreadConstant };
+    
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+}
+
+llvm::Value* JavaJIT::genGetJNIEnvPtr(llvm::Value* javaThreadPtr) { 
+	Value* GEP[2] = { intrinsics->constantZero,
+										intrinsics->OffsetJNIInJavaThreadConstant };
+    
+	return GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
+}
+
+llvm::Value* JavaJIT::genGetJavaExceptionPtr(llvm::Value* javaThreadPtr) { 
+	Value* GEP[2] = { intrinsics->constantZero,
+										intrinsics->OffsetJavaExceptionInJavaThreadConstant };
+    
+	return GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
+}
+
+
 extern "C" void j3ThrowExceptionFromJIT();
 
 llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
@@ -351,13 +414,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   std::vector<Value*> nativeArgs;
   
   
-  Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
-
-  Value* geps[2] = { intrinsics->constantZero,
-                     intrinsics->OffsetJNIInJavaThreadConstant };
-
-  Value* jniEnv = GetElementPtrInst::Create(threadId, geps, geps + 2, "",
-                                            currentBlock);
+  Value* jniEnv = genGetJNIEnvPtr(genGetJavaThreadPtr(genGetMutatorThreadPtr()));
  
   jniEnv = new BitCastInst(jniEnv, intrinsics->ptrType, "", currentBlock);
 
@@ -1162,14 +1219,7 @@ llvm::Function* JavaJIT::javaCompile() {
   }
   
   if (TheCompiler->useCooperativeGC()) {
-    Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
-    
-    Value* GEP[3] = { intrinsics->constantZero,
-											intrinsics->OffsetThreadInMutatorThreadConstant,
-                      intrinsics->OffsetDoYieldInThreadConstant };
-    
-    Value* YieldPtr = GetElementPtrInst::Create(threadId, GEP, GEP + 3, "",
-                                                currentBlock);
+    Value* YieldPtr = genGetDoYieldPtr(genGetMutatorThreadPtr());
 
     Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
 

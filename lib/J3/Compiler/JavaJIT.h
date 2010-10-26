@@ -154,6 +154,17 @@ private:
   /// getCurrentThread - Emit code to get the current thread.
   llvm::Value* getCurrentThread(const llvm::Type* Ty);
 
+	llvm::Value* genGetMutatorThreadPtr();
+	llvm::Value* genGetIsolateIDPtr(llvm::Value* mutatorThreadPtr);
+	llvm::Value* genGetVMPtr(llvm::Value* mutatorThreadPtr);
+	llvm::Value* genGetDoYieldPtr(llvm::Value* mutatorThreadPtr);
+	llvm::Value* genGetCXXExceptionPtr(llvm::Value* mutatorThreadPtr);
+
+	llvm::Value* genGetJavaThreadPtr(llvm::Value* mutatorThreadPtr);
+	llvm::Value* genGetJNIEnvPtr(llvm::Value* javaThreadPtr);
+	llvm::Value* genGetJavaExceptionPtr(llvm::Value* javaThreadPtr);
+	
+
 //===------------------------- Debugging support --------------------------===//
   
   llvm::MDNode* DbgSubprogram;
