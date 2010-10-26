@@ -8,13 +8,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
-    Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
-
-    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                        geps + 2, "",
-                                                        currentBlock);
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
     
     // Get the Java exception.
     Value* obj = 0;
@@ -67,13 +61,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
   res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
-    Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
-
-    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                        geps + 2, "",
-                                                        currentBlock);
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
     
     // Get the Java exception.
     Value* obj = 0;
@@ -120,13 +108,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
-    Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
-
-    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                        geps + 2, "",
-                                                        currentBlock);
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
     
     // Get the Java exception.
     Value* obj = 0;
@@ -170,13 +152,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
   res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
-    Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
-
-    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                        geps + 2, "",
-                                                        currentBlock);
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
     
     // Get the Java exception.
     Value* obj = 0;
@@ -234,13 +210,8 @@ void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
 
 void JavaJIT::throwException(Value* obj) {
   JITVerifyNull(obj);
-  Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
-  Value* geps[2] = { intrinsics->constantZero,
-                     intrinsics->OffsetJavaExceptionInJavaThreadConstant };
+	Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
 
-  Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                      geps + 2, "",
-                                                      currentBlock);
   new StoreInst(obj, javaExceptionPtr, currentBlock);
   if (currentExceptionBlock != endExceptionBlock) {
     Instruction* insn = currentExceptionBlock->begin();
@@ -417,10 +388,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // catch the exception but resume unwinding.
     JnjvmClassLoader* loader = compilingClass->classLoader;;
     if (loader != loader->bootstrapLoader) {
-      Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
-      Value* Isolate = GetElementPtrInst::Create(threadId,
-                                                 intrinsics->constantFour, "",
-                                                 currentBlock);
+      Value* Isolate = getVMPtr(getMutatorThread());
      
       Isolate = new LoadInst(Isolate, "", currentBlock);
       Isolate = new BitCastInst(Isolate, intrinsics->ptrPtrType, "", currentBlock);
@@ -490,22 +458,17 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     currentBlock = cur->javaHandler;
 
     // First thing in the handler: clear the exception.
-    Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
-    Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
-    Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
-                                                        geps + 2, "",
-                                                        currentBlock);
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
     
     // Clear exceptions.
     new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr,
                   currentBlock);
 
 #if defined(SERVICE)
-  
+
     // Change the isolate we are currently running, now that we have catched
     // the exception: the exception may have been thrown by another isolate.
-    Value* threadId = 0;
+    Value* mutatorThreadId = 0;
     Value* OldIsolateID = 0;
     Value* IsolateIDPtr = 0;
     Value* OldIsolate = 0;
@@ -513,25 +476,22 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* IsolatePtr = 0;
     currentBlock = cur->javaHandler;
     if (loader != loader->bootstrapLoader) {
-      threadId = getCurrentThread(intrinsics->MutatorThreadType);
-     
-      IsolateIDPtr = GetElementPtrInst::Create(threadId, intrinsics->constantThree,
-                                               "", cur->javaHandler);
+      mutatorThreadId = getGetMutatorThreadPtr();
+      IsolateIDPtr = getIsolateIDPtr(mutatorThreadId);
       const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
       IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
-                                     cur->javaHandler);
-      OldIsolateID = new LoadInst(IsolateIDPtr, "", cur->javaHandler);
+                                     currentBlock);
+      OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
 
       Value* MyID = ConstantInt::get(intrinsics->pointerSizeType,
                                      loader->getIsolate()->IsolateID);
 
-      new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
-      IsolatePtr = GetElementPtrInst::Create(threadId, intrinsics->constantFour, "",
-                                             cur->javaHandler);
+      new StoreInst(MyID, IsolateIDPtr, currentBlock);
+      IsolatePtr = getVMPtr(mutatorThreadPtr);
      
-      OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
+      OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
       NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
-      new StoreInst(NewIsolate, IsolatePtr, cur->javaHandler);
+      new StoreInst(NewIsolate, IsolatePtr, currentBlock);
 
     }
 #endif

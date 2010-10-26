@@ -390,7 +390,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // catch the exception but resume unwinding.
     JnjvmClassLoader* loader = compilingClass->classLoader;;
     if (loader != loader->bootstrapLoader) {
-      Value* Isolate = genGetVMPtr(genGetMutatorThreadPtr());
+      Value* Isolate = getVMPtr(getMutatorThreadPtr());
      
       Isolate = new LoadInst(Isolate, "", currentBlock);
       Isolate = new BitCastInst(Isolate, module->ptrPtrType, "", currentBlock);
@@ -412,8 +412,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     }
 #endif
    
-		Value* mutatorThreadId = genGetMutatorThreadPtr();
-		Value* javaThreadId = genGetJavaThreadPtr(mutatorThreadId);
+		Value* mutatorThreadId = getMutatorThreadPtr();
+		Value* javaThreadId = getJavaThreadPtr(mutatorThreadId);
     Value* javaExceptionPtr = getGetJavaExceptionPtr(javaThreadId);
     
     // Get the Java exception.
@@ -460,13 +460,13 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     
     currentBlock = cur->nativeHandler;
  
-		mutatorThreadId = genGetMutatorThreadPtr();
-		javaThreadId = genGetJavaThreadPtr(mutatorThreadId);
+		mutatorThreadId = getMutatorThreadPtr();
+		javaThreadId = getJavaThreadPtr(mutatorThreadId);
     javaExceptionPtr = getGetJavaExceptionPtr(javaThreadId);
     
     // Get the Java exception.
     Value* exc = new LoadInst(javaExceptionPtr, "", currentBlock);
-    Value* cxxExceptionPtr = genGetCXXExceptionPtr(mutatorThreadId);
+    Value* cxxExceptionPtr = getCXXExceptionPtr(mutatorThreadId);
 
     // Clear exceptions.
     new StoreInst(module->constantPtrNull, cxxExceptionPtr, currentBlock);
@@ -499,7 +499,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
 
 #if defined(SERVICE)
-  
+
     // Change the isolate we are currently running, now that we have catched
     // the exception: the exception may have been thrown by another isolate.
     Value* mutatorThreadId = 0;
@@ -510,24 +510,22 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* IsolatePtr = 0;
     currentBlock = cur->javaHandler;
     if (loader != loader->bootstrapLoader) {
-      mutatorThreadId = genGetMutatorThreadPtr();
-     
-      IsolateIDPtr = genGetIsolateIDPtr(mutatorThreadId);
-
-      const Type* realType = PointerType::getUnqual(module->pointerSizeType);
+      mutatorThreadId = getGetMutatorThreadPtr();
+      IsolateIDPtr = getIsolateIDPtr(mutatorThreadId);
+      const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
       IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
-                                     cur->javaHandler);
-      OldIsolateID = new LoadInst(IsolateIDPtr, "", cur->javaHandler);
+                                     currentBlock);
+      OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
 
-      Value* MyID = ConstantInt::get(module->pointerSizeType,
+      Value* MyID = ConstantInt::get(intrinsics->pointerSizeType,
                                      loader->getIsolate()->IsolateID);
 
-      new StoreInst(MyID, IsolateIDPtr, cur->javaHandler);
-      IsolatePtr = genGetVMPtr(mutatorThreadId);
+      new StoreInst(MyID, IsolateIDPtr, currentBlock);
+      IsolatePtr = getVMPtr(mutatorThreadPtr);
      
-      OldIsolate = new LoadInst(IsolatePtr, "", cur->javaHandler);
-      NewIsolate = module->getIsolate(loader->getIsolate(), currentBlock);
-      new StoreInst(NewIsolate, IsolatePtr, cur->javaHandler);
+      OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
+      NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
+      new StoreInst(NewIsolate, IsolatePtr, currentBlock);
 
     }
 #endif
@@ -546,7 +544,7 @@ void JavaJIT::finishExceptions() {
   if (PI == PE) {
     endExceptionBlock->eraseFromParent();
   } else {
-    Value* cxxExceptionPtr = genGetCXXExceptionPtr(genGetMutatorThreadPtr());
+    Value* cxxExceptionPtr = getCXXExceptionPtr(getMutatorThreadPtr());
     Value* cxxException = new LoadInst(cxxExceptionPtr, "", currentBlock);
     llvm::CallInst::Create(module->unwindResume, cxxException, "", currentBlock);
     new UnreachableInst(currentBlock);

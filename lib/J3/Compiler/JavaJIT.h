@@ -151,18 +151,29 @@ private:
   void convertValue(llvm::Value*& val, const llvm::Type* t1,
                     llvm::BasicBlock* currentBlock, bool usign);
  
-  /// getCurrentThread - Emit code to get the current thread.
-  llvm::Value* getCurrentThread(const llvm::Type* Ty);
+  /// getMutatorThreadPtr - Emit code to get a pointer to the current MutatorThread.
+	llvm::Value* getMutatorThreadPtr();
 
-	llvm::Value* genGetMutatorThreadPtr();
-	llvm::Value* genGetIsolateIDPtr(llvm::Value* mutatorThreadPtr);
-	llvm::Value* genGetVMPtr(llvm::Value* mutatorThreadPtr);
-	llvm::Value* genGetDoYieldPtr(llvm::Value* mutatorThreadPtr);
-	llvm::Value* genGetCXXExceptionPtr(llvm::Value* mutatorThreadPtr);
+  /// getIsolateIDPtr - Emit code to get a pointer to IsolateID.
+	llvm::Value* getIsolateIDPtr(llvm::Value* mutatorThreadPtr);
 
-	llvm::Value* genGetJavaThreadPtr(llvm::Value* mutatorThreadPtr);
-	llvm::Value* genGetJNIEnvPtr(llvm::Value* javaThreadPtr);
-	llvm::Value* genGetJavaExceptionPtr(llvm::Value* javaThreadPtr);
+  /// getVMPtr - Emit code to get a pointer to MyVM.
+	llvm::Value* getVMPtr(llvm::Value* mutatorThreadPtr);
+
+  /// getDoYieldPtr - Emit code to get a pointer to doYield.
+	llvm::Value* getDoYieldPtr(llvm::Value* mutatorThreadPtr);
+
+  /// getCXXExceptionPtr - Emit code to get a pointer to internalPendingException.
+	llvm::Value* getCXXExceptionPtr(llvm::Value* mutatorThreadPtr);
+
+  /// getJavaThreadPtr - Emit code to get a pointer to the current JavaThread.
+	llvm::Value* getJavaThreadPtr(llvm::Value* mutatorThreadPtr);
+
+  /// getJNIEnvPtr - Emit code to get a pointer to JNIEnv
+	llvm::Value* getJNIEnvPtr(llvm::Value* javaThreadPtr);
+
+  /// getJavaExceptionPtr - Emit code to get a pointer to the Java pending exception
+	llvm::Value* getJavaExceptionPtr(llvm::Value* javaThreadPtr);
 	
 
 //===------------------------- Debugging support --------------------------===//

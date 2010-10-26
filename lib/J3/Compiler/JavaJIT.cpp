@@ -262,19 +262,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   }
 }
 
-llvm::Value* JavaJIT::getCurrentThread(const llvm::Type* Ty) {
-  Value* FrameAddr = CallInst::Create(intrinsics->llvm_frameaddress,
-                                     	intrinsics->constantZero, "", currentBlock);
-  Value* threadId = new PtrToIntInst(FrameAddr, intrinsics->pointerSizeType, "",
-                              			 currentBlock);
-  threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
-                                       "", currentBlock);
-  threadId = new IntToPtrInst(threadId, Ty, "", currentBlock);
-
-  return threadId;
-}
-
-llvm::Value* JavaJIT::genGetMutatorThreadPtr() {
+llvm::Value* JavaJIT::getMutatorThreadPtr() {
   Value* FrameAddr = CallInst::Create(intrinsics->llvm_frameaddress,
                                      	intrinsics->constantZero, "", currentBlock);
   Value* threadId = new PtrToIntInst(FrameAddr, intrinsics->pointerSizeType, "",
@@ -286,11 +274,11 @@ llvm::Value* JavaJIT::genGetMutatorThreadPtr() {
   return threadId;
 }
 
-llvm::Value* JavaJIT::genGetJavaThreadPtr(llvm::Value* mutatorThreadPtr) {
+llvm::Value* JavaJIT::getJavaThreadPtr(llvm::Value* mutatorThreadPtr) {
   return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "", currentBlock);
 }
 
-llvm::Value* JavaJIT::genGetIsolateIDPtr(llvm::Value* mutatorThreadPtr) { 
+llvm::Value* JavaJIT::getIsolateIDPtr(llvm::Value* mutatorThreadPtr) { 
 	Value* GEP[3] = { intrinsics->constantZero,
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetIsolateIDInThreadConstant };
@@ -298,7 +286,7 @@ llvm::Value* JavaJIT::genGetIsolateIDPtr(llvm::Value* mutatorThreadPtr) {
 	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
 }
 
-llvm::Value* JavaJIT::genGetVMPtr(llvm::Value* mutatorThreadPtr) { 
+llvm::Value* JavaJIT::getVMPtr(llvm::Value* mutatorThreadPtr) { 
 	Value* GEP[3] = { intrinsics->constantZero,
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetVMInThreadConstant };
@@ -306,7 +294,7 @@ llvm::Value* JavaJIT::genGetVMPtr(llvm::Value* mutatorThreadPtr) {
 	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
 }
 
-llvm::Value* JavaJIT::genGetDoYieldPtr(llvm::Value* mutatorThreadPtr) { 
+llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) { 
 	Value* GEP[3] = { intrinsics->constantZero,
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetDoYieldInThreadConstant };
@@ -314,7 +302,7 @@ llvm::Value* JavaJIT::genGetDoYieldPtr(llvm::Value* mutatorThreadPtr) {
 	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
 }
 
-llvm::Value* JavaJIT::genGetCXXExceptionPtr(llvm::Value* mutatorThreadPtr) { 
+llvm::Value* JavaJIT::getCXXExceptionPtr(llvm::Value* mutatorThreadPtr) { 
 	Value* GEP[3] = { intrinsics->constantZero,
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetCXXExceptionInThreadConstant };
@@ -322,14 +310,14 @@ llvm::Value* JavaJIT::genGetCXXExceptionPtr(llvm::Value* mutatorThreadPtr) {
 	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
 }
 
-llvm::Value* JavaJIT::genGetJNIEnvPtr(llvm::Value* javaThreadPtr) { 
+llvm::Value* JavaJIT::getJNIEnvPtr(llvm::Value* javaThreadPtr) { 
 	Value* GEP[2] = { intrinsics->constantZero,
 										intrinsics->OffsetJNIInJavaThreadConstant };
     
 	return GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
 }
 
-llvm::Value* JavaJIT::genGetJavaExceptionPtr(llvm::Value* javaThreadPtr) { 
+llvm::Value* JavaJIT::getJavaExceptionPtr(llvm::Value* javaThreadPtr) { 
 	Value* GEP[2] = { intrinsics->constantZero,
 										intrinsics->OffsetJavaExceptionInJavaThreadConstant };
     
@@ -414,7 +402,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   std::vector<Value*> nativeArgs;
   
   
-  Value* jniEnv = genGetJNIEnvPtr(genGetJavaThreadPtr(genGetMutatorThreadPtr()));
+  Value* jniEnv = getJNIEnvPtr(getJavaThreadPtr(getMutatorThreadPtr()));
  
   jniEnv = new BitCastInst(jniEnv, intrinsics->ptrType, "", currentBlock);
 
@@ -615,7 +603,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   lockPtr = new BitCastInst(lockPtr, 
                             PointerType::getUnqual(intrinsics->pointerSizeType),
                             "", currentBlock);
-  Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
+  Value* threadId = getMutatorThreadPtr();
   threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "",
                               currentBlock);
   Value* newValMask = BinaryOperator::CreateOr(threadId, lock, "",
@@ -663,7 +651,7 @@ void JavaJIT::monitorExit(Value* obj) {
   Value* lockedMask = BinaryOperator::CreateAnd(
       lock, NonLockBitsMask, "", currentBlock);
   
-  Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
+  Value* threadId = getMutatorThreadPtr();
   threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "",
                               currentBlock);
   
@@ -1140,17 +1128,16 @@ llvm::Function* JavaJIT::javaCompile() {
 #if defined(SERVICE)
   JnjvmClassLoader* loader = compilingClass->classLoader;
   Value* Cmp = 0;
-  Value* threadId = 0;
+  Value* mutatorThreadId = 0;
   Value* OldIsolateID = 0;
   Value* IsolateIDPtr = 0;
   Value* OldIsolate = 0;
   Value* NewIsolate = 0;
   Value* IsolatePtr = 0;
   if (loader != loader->bootstrapLoader && isPublic(compilingMethod->access)) {
-    threadId = getCurrentThread(intrinsics->MutatorThreadType);
+    mutatorThreadId = getMutatorThreadPtr();
      
-    IsolateIDPtr = GetElementPtrInst::Create(threadId, intrinsics->constantThree,
-                                             "", currentBlock);
+    IsolateIDPtr = getIsolateIDPtr(mutatorThreadPtr);
     const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
     IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
                                    currentBlock);
@@ -1169,8 +1156,7 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock = ServiceBB;
   
     new StoreInst(MyID, IsolateIDPtr, currentBlock);
-    IsolatePtr = GetElementPtrInst::Create(threadId, intrinsics->constantFour, "",
-                                           currentBlock);
+    IsolatePtr = getVMPtr(mutatorThreadId);
      
     OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
     NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
@@ -1219,7 +1205,7 @@ llvm::Function* JavaJIT::javaCompile() {
   }
   
   if (TheCompiler->useCooperativeGC()) {
-    Value* YieldPtr = genGetDoYieldPtr(genGetMutatorThreadPtr());
+    Value* YieldPtr = getDoYieldPtr(getMutatorThreadPtr());
 
     Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
 
