@@ -354,7 +354,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
 
   Value* geps[2] = { intrinsics->constantZero,
-                     intrinsics->OffsetJNIInThreadConstant };
+                     intrinsics->OffsetJNIInJavaThreadConstant };
 
   Value* jniEnv = GetElementPtrInst::Create(threadId, geps, geps + 2, "",
                                             currentBlock);
@@ -1164,10 +1164,11 @@ llvm::Function* JavaJIT::javaCompile() {
   if (TheCompiler->useCooperativeGC()) {
     Value* threadId = getCurrentThread(intrinsics->MutatorThreadType);
     
-    Value* GEP[2] = { intrinsics->constantZero, 
+    Value* GEP[3] = { intrinsics->constantZero,
+											intrinsics->OffsetThreadInMutatorThreadConstant,
                       intrinsics->OffsetDoYieldInThreadConstant };
     
-    Value* YieldPtr = GetElementPtrInst::Create(threadId, GEP, GEP + 2, "",
+    Value* YieldPtr = GetElementPtrInst::Create(threadId, GEP, GEP + 3, "",
                                                 currentBlock);
 
     Value* Yield = new LoadInst(YieldPtr, "", currentBlock);

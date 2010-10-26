@@ -55,9 +55,9 @@ static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
                                        "", CI);
   
   threadId = new IntToPtrInst(threadId, intrinsics->ptr32Type, "", CI);
-  
-  Value* IsolateID = GetElementPtrInst::Create(threadId,
-      intrinsics->OffsetIsolateInThreadConstant, "", CI);
+
+  Value* GEP1[2] = { intrinsics->OffsetThreadInMutatorThreadConstant, intrinsics->OffsetIsolateInThreadConstant }
+  Value* IsolateID = GetElementPtrInst::Create(threadId, GEP1, GEP1 + 2, "", CI);
 
   IsolateID = new LoadInst(IsolateID, "", CI);
 
@@ -81,8 +81,8 @@ static Value* getDelegatee(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI
   
   threadId = new IntToPtrInst(threadId, intrinsics->ptr32Type, "", CI);
   
-  Value* IsolateID = GetElementPtrInst::Create(threadId, 
-      intrinsics->OffsetIsolateInThreadConstant, "", CI);
+  Value* GEP1[2] = { intrinsics->OffsetThreadInMutatorThreadConstant, intrinsics->OffsetIsolateInThreadConstant }
+  Value* IsolateID = GetElementPtrInst::Create(threadId, GEP1, GEP1 + 2, "", CI);
 
   IsolateID = new LoadInst(IsolateID, "", CI);
 

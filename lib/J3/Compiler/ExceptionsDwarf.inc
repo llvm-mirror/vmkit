@@ -417,7 +417,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
    
     Value* threadId = getCurrentThread(module->JavaThreadType);
     Value* geps[2] = { module->constantZero,
-                       module->OffsetJavaExceptionInThreadConstant };
+                       module->OffsetJavaExceptionInJavaThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -474,12 +474,13 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // Get the Java exception.
     Value* exc = new LoadInst(javaExceptionPtr, "", currentBlock);
     
-    Value* geps2[3] = { module->constantZero,
+    Value* geps2[4] = { module->constantZero,
                         module->constantZero,
+												module->OffsetThreadInMutatorThreadConstant,
                         module->OffsetCXXExceptionInThreadConstant };
     
     Value* cxxExceptionPtr = GetElementPtrInst::Create(threadId, geps2,
-                                                       geps2 + 3, "",
+                                                       geps2 + 4, "",
                                                        currentBlock);
 
     // Clear exceptions.
@@ -562,12 +563,13 @@ void JavaJIT::finishExceptions() {
     endExceptionBlock->eraseFromParent();
   } else {
     Value* threadId = getCurrentThread(module->JavaThreadType);
-    Value* geps2[3] = { module->constantZero,
+    Value* geps2[4] = { module->constantZero,
                         module->constantZero,
+												module->OffsetThreadInMutatorThreadConstant,
                         module->OffsetCXXExceptionInThreadConstant };
     
     Value* cxxExceptionPtr = GetElementPtrInst::Create(threadId, geps2,
-                                                       geps2 + 3, "",
+                                                       geps2 + 4, "",
                                                        currentBlock);
     cxxExceptionPtr = new LoadInst(cxxExceptionPtr, "", currentBlock);
     llvm::CallInst::Create(module->unwindResume, cxxExceptionPtr, "",

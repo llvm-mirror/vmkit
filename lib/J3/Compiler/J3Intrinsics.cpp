@@ -142,15 +142,12 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   OffsetStatusInTaskClassMirrorConstant = constantZero;
   OffsetInitializedInTaskClassMirrorConstant = constantOne;
   
-  OffsetIsolateInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(Context), 3);
-  OffsetDoYieldInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(Context), 6);
-  OffsetJNIInThreadConstant = ConstantInt::get(Type::getInt32Ty(Context), 1);
-  OffsetJavaExceptionInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(Context), 2);
-  OffsetCXXExceptionInThreadConstant =
-    ConstantInt::get(Type::getInt32Ty(Context), 13);
+  OffsetIsolateInThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 1);
+  OffsetDoYieldInThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 4);
+  OffsetCXXExceptionInThreadConstant =      ConstantInt::get(Type::getInt32Ty(Context), 11);
+	OffsetThreadInMutatorThreadConstant =     ConstantInt::get(Type::getInt32Ty(Context), 0);
+  OffsetJNIInJavaThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 1);
+  OffsetJavaExceptionInJavaThreadConstant = ConstantInt::get(Type::getInt32Ty(Context), 2);
   
   ClassReadyConstant = ConstantInt::get(Type::getInt8Ty(Context), ready);
   

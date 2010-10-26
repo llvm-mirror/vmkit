@@ -27,6 +27,22 @@
 ;;; Field 3: The static instance
 %TaskClassMirror = type { i8, i1, i8* }
 
+%CircularBase = type { %VT*, %CircularBase*, %CircularBase* }
+
+;;; Field 0: the parent (circular base)
+;;; Field 1: IsolateID
+;;; Field 2: MyVM
+;;; Field 3: baseSP
+;;; Field 4: doYield
+;;; Field 5: inGC
+;;; Field 6: stackScanned
+;;; Field 7: lastSP
+;;; Field 8: internalThreadID
+;;; field 9: routine
+;;; field 10: lastKnownFrame
+;;; field 11: lastExceptionBuffer
+%Thread = type { %CircularBase, i8*, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*}
+
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 
 

@@ -133,9 +133,10 @@ public:
   
   llvm::Constant* OffsetDoYieldInThreadConstant;
   llvm::Constant* OffsetIsolateInThreadConstant;
-  llvm::Constant* OffsetJNIInThreadConstant;
-  llvm::Constant* OffsetJavaExceptionInThreadConstant;
   llvm::Constant* OffsetCXXExceptionInThreadConstant;
+	llvm::Constant* OffsetThreadInMutatorThreadConstant;
+  llvm::Constant* OffsetJNIInJavaThreadConstant;
+  llvm::Constant* OffsetJavaExceptionInJavaThreadConstant;
   
   llvm::Constant* OffsetClassInVTConstant;
   llvm::Constant* OffsetDepthInVTConstant;

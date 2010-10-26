@@ -10,7 +10,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
     Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInThreadConstant };
+                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -69,7 +69,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
     Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInThreadConstant };
+                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -122,7 +122,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
     Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInThreadConstant };
+                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -172,7 +172,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
   if (TheCompiler->hasExceptionsEnabled()) {
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
     Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInThreadConstant };
+                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
 
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
@@ -236,7 +236,7 @@ void JavaJIT::throwException(Value* obj) {
   JITVerifyNull(obj);
   Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
   Value* geps[2] = { intrinsics->constantZero,
-                     intrinsics->OffsetJavaExceptionInThreadConstant };
+                     intrinsics->OffsetJavaExceptionInJavaThreadConstant };
 
   Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                       geps + 2, "",
@@ -491,7 +491,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     // First thing in the handler: clear the exception.
     Value* geps[2] = { intrinsics->constantZero,
-                       intrinsics->OffsetJavaExceptionInThreadConstant };
+                       intrinsics->OffsetJavaExceptionInJavaThreadConstant };
     Value* threadId = getCurrentThread(intrinsics->JavaThreadType);
     Value* javaExceptionPtr = GetElementPtrInst::Create(threadId, geps,
                                                         geps + 2, "",
