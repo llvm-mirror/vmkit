@@ -10,6 +10,7 @@
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
+#include "JavaString.h"
 #include "JavaThread.h"
 
 #include "debug.h"
@@ -137,8 +138,42 @@ extern "C" void Java_org_j3_mmtk_ObjectModel_getCurrentSize__Lorg_vmmagic_unboxe
 extern "C" void Java_org_j3_mmtk_ObjectModel_getNextObject__Lorg_vmmagic_unboxed_ObjectReference_2 (
     JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
 
-extern "C" void Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 (
-    JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+
+class FakeByteArray {
+ public:
+  void* operator new(size_t size, int length) {
+    return new char[size + length];
+  }
+
+  FakeByteArray(const char* name) {
+    length = strlen(name);
+    for (uint32 i = 0; i < length; i++) {
+      elements[i] = name[i];
+    }
+  }
+  
+  FakeByteArray(const UTF8* name) {
+    length = name->size;
+    for (uint32 i = 0; i < length; i++) {
+      elements[i] = name->elements[i];
+    }
+  }
+ private:
+  JavaObject header;
+  size_t length;
+  uint8_t elements[1];
+};
+
+extern "C" FakeByteArray* Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    JavaObject* OM, JavaObject* src) {
+  if (VMClassLoader::isVMClassLoader(src)) {
+    return new (14) FakeByteArray("VMClassLoader");
+  } else {
+    CommonClass* cl = JavaObject::getClass(src);
+    return new (cl->name->size) FakeByteArray(cl->name);
+  }
+}
+
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_getArrayLength__Lorg_vmmagic_unboxed_ObjectReference_2 (
     JavaObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
