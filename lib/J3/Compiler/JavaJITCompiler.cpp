@@ -375,13 +375,13 @@ void JavaJITCompiler::makeIMT(Class* cl) {
       
         IMT->contents[i] = (uintptr_t)table | 1;
 
-        int j = 0;
+        uint32_t j = 0;
         std::set<JavaMethod*>::iterator Interf = atIndex.begin();
         for (std::vector<JavaMethod*>::iterator it = methods.begin(),
              et = methods.end(); it != et; ++it, j += 2, ++Interf) {
           JavaMethod* Imeth = *Interf;
           JavaMethod* Cmeth = *it;
-         
+          assert(j < 2 * size - 1);
           table[j] = (uintptr_t)Imeth;
           if (Cmeth) {
              table[j + 1] = getPointerOrStub(*Cmeth, JavaMethod::Interface);
