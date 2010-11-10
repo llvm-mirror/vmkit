@@ -58,7 +58,7 @@ extern "C" bool Java_org_j3_runtime_VM_buildForIA32__ () {
 }
 
 extern "C" bool Java_org_j3_runtime_VM_verifyAssertions__ () {
-#if 1//def DEBUG
+#ifdef DEBUG
   return true;
 #else
   return false;
