@@ -142,8 +142,7 @@ extern "C" void ReferenceObjectTracer(
 // (2) The delegatee object (java.lang.Class) if it exists.
 //
 // Additionaly, non-primitive and non-array classes must trace:
-// (3) The bytes that represent the class file.
-// (4) The static instance.
+// (3) The static instance.
 //===----------------------------------------------------------------------===//
 
 void CommonClass::tracer(uintptr_t closure) {
@@ -174,7 +173,6 @@ void CommonClass::tracer(uintptr_t closure) {
 
 void Class::tracer(uintptr_t closure) {
   CommonClass::tracer(closure);
-  mvm::Collector::markAndTraceRoot(&bytes, closure);
   
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
@@ -243,11 +241,6 @@ void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
-  
-  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
-       e = bootArchives.end(); i != e; i++) {
-    mvm::Collector::markAndTraceRoot(&((*i)->bytes), closure);
-  }
 }
 
 //===----------------------------------------------------------------------===//

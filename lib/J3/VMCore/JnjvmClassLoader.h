@@ -26,9 +26,9 @@
 
 namespace j3 {
 
-class ArrayUInt8;
 class UserClass;
 class UserClassArray;
+class ClassBytes;
 class ClassMap;
 class Classpath;
 class UserCommonClass;
@@ -209,7 +209,7 @@ public:
   /// constructClass - Hashes a runtime representation of a class with
   /// the given name.
   ///
-  UserClass* constructClass(const UTF8* name, ArrayUInt8* bytes);
+  UserClass* constructClass(const UTF8* name, ClassBytes* bytes);
   
   /// constructType - Hashes a Typedef, an internal representation of a class
   /// still not loaded.
@@ -326,7 +326,7 @@ private:
   /// openName - Opens a file of the given name and returns it as an array
   /// of byte.
   ///
-  ArrayUInt8* openName(const UTF8* utf8);
+  ClassBytes* openName(const UTF8* utf8);
   
 public:
   

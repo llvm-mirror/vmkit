@@ -85,7 +85,7 @@ const char* MvmModule::getHostTriple() {
 }
 
 void MvmJITMethodInfo::print(void* ip, void* addr) {
-  fprintf(stderr, "; %p in %s LLVM method\n", ip,
+  fprintf(stderr, "; %p (%p) in %s LLVM method\n", ip, addr,
       ((llvm::Function*)MetaInfo)->getName().data());
 }
 
@@ -200,7 +200,8 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
     "ILorg_vmmagic_unboxed_ObjectReference_2";
   if (dlsym(SELF_HANDLE, MMTkSymbol)) {
     // If we have found MMTk, read the gcmalloc function.
-    mvm::mmtk_runtime::makeLLVMFunction(module);
+    // TODO: re-enable this.
+    //mvm::mmtk_runtime::makeLLVMFunction(module);
   }
 #endif
   mvm::llvm_runtime::makeLLVMModuleContents(module);

@@ -110,7 +110,7 @@ public:
   
   /// lock - Acquire the lock.
   ///
-  virtual void lock() = 0;
+  virtual void lock() __attribute__ ((noinline)) = 0;
 
   /// unlock - Release the lock.
   ///
@@ -141,7 +141,7 @@ private:
 public:
   LockNormal() : Lock() {}
 
-  virtual void lock();
+  virtual void lock() __attribute__ ((noinline));
   virtual void unlock();
 
 };
@@ -170,7 +170,7 @@ private:
 public:
   LockRecursive() : Lock() { n = 0; }
   
-  virtual void lock();
+  virtual void lock() __attribute__ ((noinline));
   virtual void unlock();
   virtual int tryLock();
 
@@ -185,7 +185,7 @@ public:
 
   /// lockAll - Acquire the lock count times.
   ///
-  void lockAll(int count);
+  void lockAll(int count) __attribute__ ((noinline));
 };
 
 /// SpinLock - This class implements a spin lock. A spin lock is OK to use

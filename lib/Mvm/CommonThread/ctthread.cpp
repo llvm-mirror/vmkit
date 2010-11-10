@@ -56,8 +56,8 @@ void Thread::joinRVBeforeEnter() {
   MyVM->rendezvous.joinBeforeUncooperative(); 
 }
 
-void Thread::joinRVAfterLeave() {
-  MyVM->rendezvous.joinAfterUncooperative(); 
+void Thread::joinRVAfterLeave(void* savedSP) {
+  MyVM->rendezvous.joinAfterUncooperative(savedSP); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {
@@ -67,10 +67,29 @@ void Thread::startKnownFrame(KnownFrame& F) {
   cur = (void**)cur[0];
   F.previousFrame = lastKnownFrame;
   F.currentFP = cur;
+  // This is used as a marker.
+  F.currentIP = NULL;
   lastKnownFrame = &F;
 }
 
 void Thread::endKnownFrame() {
+  assert(lastKnownFrame->currentIP == NULL);
+  lastKnownFrame = lastKnownFrame->previousFrame;
+}
+
+void Thread::startUnknownFrame(KnownFrame& F) {
+  // Get the caller of this function
+  void** cur = (void**)FRAME_PTR();
+  // Get the caller of the caller.
+  cur = (void**)cur[0];
+  F.previousFrame = lastKnownFrame;
+  F.currentFP = cur;
+  F.currentIP = FRAME_IP(cur);
+  lastKnownFrame = &F;
+}
+
+void Thread::endUnknownFrame() {
+  assert(lastKnownFrame->currentIP != NULL);
   lastKnownFrame = lastKnownFrame->previousFrame;
 }
 
@@ -155,23 +174,40 @@ void* StackWalker::operator*() {
 }
 
 void StackWalker::operator++() {
-  if (addr < thread->baseSP && addr < addr[0]) {
-    if (frame && addr == frame->currentFP) {
+  if (addr != thread->baseSP) {
+    assert((addr < thread->baseSP) && "Corrupted stack");
+    assert((addr < addr[0]) && "Corrupted stack");
+    if ((frame != NULL) && (addr == frame->currentFP)) {
+      assert(frame->currentIP == NULL);
       frame = frame->previousFrame;
-      if  (frame) {
-        addr = (void**)frame->currentFP;
-        frame = frame->previousFrame;
-      } else {
-        addr = (void**)addr[0];
-      }
+      assert(frame != NULL);
+      assert(frame->currentIP != NULL);
+      addr = (void**)frame->currentFP;
+      frame = frame->previousFrame;
     } else {
       addr = (void**)addr[0];
     }
-  } else {
-    addr = (void**)thread->baseSP;
   }
 }
 
+StackWalker::StackWalker(mvm::Thread* th) {
+  thread = th;
+  frame = th->lastKnownFrame;
+  if (mvm::Thread::get() == th) {
+    addr = (void**)FRAME_PTR();
+    addr = (void**)addr[0];
+  } else {
+    addr = (void**)th->waitOnSP();
+    if (frame) {
+      assert(frame->currentFP >= addr);
+    }
+    if (frame && (addr == frame->currentFP)) {
+      frame = frame->previousFrame;
+      assert((frame == NULL) || (frame->currentIP == NULL));
+    }
+  }
+  assert(addr && "No address to start with");
+}
 
 uintptr_t Thread::baseAddr = 0;
 
@@ -286,7 +322,7 @@ static void siggcHandler(int) {
 /// given routine of th.
 ///
 void Thread::internalThreadStart(mvm::Thread* th) {
-  th->baseSP  = (void*)&th;
+  th->baseSP  = FRAME_PTR();
 
   // Set the SIGSEGV handler to diagnose errors.
   struct sigaction sa;
@@ -368,7 +404,6 @@ void Thread::killForRendezvous() {
 #ifdef WITH_LLVM_GCC
 void Thread::scanStack(uintptr_t closure) {
   StackWalker Walker(this);
-
   while (MethodInfo* MI = Walker.get()) {
     MI->scan(closure, Walker.ip, Walker.addr);
     ++Walker;
@@ -390,3 +425,64 @@ void Thread::scanStack(uintptr_t closure) {
   }
 }
 #endif
+
+void Thread::enterUncooperativeCode(unsigned level) {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(!lastSP && "SP already set when entering uncooperative code");
+      // Get the caller.
+      void* temp = FRAME_PTR();
+      // Make sure to at least get the caller of the caller.
+      ++level;
+      while (level--) temp = ((void**)temp)[0];
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, 0, temp);
+      if (doYield) joinRVBeforeEnter();
+      assert(lastSP && "No last SP when entering uncooperative code");
+    }
+  }
+}
+
+void Thread::enterUncooperativeCode(void* SP) {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(!lastSP && "SP already set when entering uncooperative code");
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, 0, SP);
+      if (doYield) joinRVBeforeEnter();
+      assert(lastSP && "No last SP when entering uncooperative code");
+    }
+  }
+}
+
+void Thread::leaveUncooperativeCode() {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(lastSP && "No last SP when leaving uncooperative code");
+      void* savedSP = lastSP;
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
+      // A rendezvous has just been initiated, join it.
+      if (doYield) joinRVAfterLeave(savedSP);
+      assert(!lastSP && "SP has a value after leaving uncooperative code");
+    }
+  }
+}
+
+void* Thread::waitOnSP() {
+  // First see if we can get lastSP directly.
+  void* sp = lastSP;
+  if (sp) return sp;
+  
+  // Then loop a fixed number of iterations to get lastSP.
+  for (uint32 count = 0; count < 1000; ++count) {
+    sp = lastSP;
+    if (sp) return sp;
+  }
+  
+  // Finally, yield until lastSP is not set.
+  while ((sp = lastSP) == NULL) mvm::Thread::yield();
+
+  assert(sp != NULL && "Still no sp");
+  return sp;
+}

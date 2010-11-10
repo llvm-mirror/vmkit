@@ -154,7 +154,7 @@ void CooperativeCollectionRV::joinBeforeUncooperative() {
   th->inRV = false;
 }
 
-void CooperativeCollectionRV::joinAfterUncooperative() {
+void CooperativeCollectionRV::joinAfterUncooperative(void* SP) {
   mvm::Thread* th = mvm::Thread::get();
   assert((th->getLastSP() == NULL) &&
          "SP set after entering uncooperative code");
@@ -163,7 +163,7 @@ void CooperativeCollectionRV::joinAfterUncooperative() {
 
   lockRV();
   if (th->doYield) {
-    th->setLastSP(FRAME_PTR());
+    th->setLastSP(SP);
     if (!th->joinedRV) {
       th->joinedRV = true;
       another_mark();
@@ -213,7 +213,7 @@ void UncooperativeCollectionRV::finishRV() {
   initiator->inRV = false;
 }
 
-void UncooperativeCollectionRV::joinAfterUncooperative() {
+void UncooperativeCollectionRV::joinAfterUncooperative(void* SP) {
   UNREACHABLE();
 }
 

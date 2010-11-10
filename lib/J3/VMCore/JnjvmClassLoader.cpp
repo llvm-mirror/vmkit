@@ -308,9 +308,8 @@ void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
   TheCompiler = Comp;
 }
 
-ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
-  ArrayUInt8* res = 0;
-  llvm_gcroot(res, 0);
+ClassBytes* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
+  ClassBytes* res = 0;
   mvm::ThreadAllocator threadAllocator;
 
   char* asciiz = (char*)threadAllocator.Allocate(utf8->size + 1);
@@ -348,8 +347,7 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
                                               bool doResolve,
                                               JavaString* strName) {
-  ArrayUInt8* bytes = NULL;
-  llvm_gcroot(bytes, 0);
+  ClassBytes* bytes = NULL;
   llvm_gcroot(strName, 0);
 
   UserCommonClass* cl = lookupClass(name);
@@ -667,9 +665,8 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 }
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
-                                            ArrayUInt8* bytes) {
+                                            ClassBytes* bytes) {
   JavaObject* excp = NULL;
-  llvm_gcroot(bytes, 0);
   llvm_gcroot(excp, 0);
   UserClass* res = NULL;
   lock.lock();
@@ -688,6 +685,8 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
       getCompiler()->resolveVirtualClass(res);
       getCompiler()->resolveStaticClass(res);
       classes->lock.lock();
+      assert(res->getDelegatee() == NULL);
+      assert(res->getStaticInstance() == NULL);
       bool success = classes->map.insert(std::make_pair(internalName, res)).second;
       classes->lock.unlock();
       assert(success && "Could not add class in map");
@@ -967,8 +966,7 @@ JavaString** JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
 }
 
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
-  ArrayUInt8* bytes = NULL;
-  llvm_gcroot(bytes, 0);
+  ClassBytes* bytes = NULL;
   mvm::ThreadAllocator threadAllocator;
   if (str != 0) {
     unsigned int len = strlen(str);

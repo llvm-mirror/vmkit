@@ -62,9 +62,16 @@ void JavaThread::throwPendingException() {
   th->internalThrowException();
 }
 
-void JavaThread::startJNI(int level) {
-  // Start uncooperative mode.
-  enterUncooperativeCode(level);
+void JavaThread::startJNI() {
+  // Interesting, but no need to do anything.
+}
+
+void JavaThread::endJNI() {
+  localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
+  endUnknownFrame();
+   
+  // Go back to cooperative mode.
+  leaveUncooperativeCode();
 }
 
 uint32 JavaThread::getJavaFrameContext(void** buffer) {

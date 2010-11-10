@@ -216,9 +216,8 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
   logSize = nb;
 }
 
-Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) : 
+Class::Class(JnjvmClassLoader* loader, const UTF8* n, ClassBytes* B) : 
     CommonClass(loader, n) {
-  llvm_gcroot(B, 0);
   virtualVT = 0;
   bytes = B;
   super = 0;
@@ -601,7 +600,7 @@ void JavaField::InitStaticField(Jnjvm* vm) {
   if (!attribut) {
     InitNullStaticField();
   } else {
-    Reader reader(attribut, &(classDef->bytes));
+    Reader reader(attribut, classDef->bytes);
     JavaConstantPool * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader.readU2();
     if (type->isPrimitive()) {
@@ -687,7 +686,7 @@ void internalLoadExceptions(JavaMethod& meth) {
   Attribut* codeAtt = meth.lookupAttribut(Attribut::codeAttribut);
    
   if (codeAtt) {
-    Reader reader(codeAtt, &(meth.classDef->bytes));
+    Reader reader(codeAtt, meth.classDef->bytes);
     //uint16 maxStack =
     reader.readU2();
     //uint16 maxLocals = 
@@ -888,7 +887,7 @@ void Class::readClass() {
   PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ", 0);
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", mvm::PrintBuffer(this).cString());
 
-  Reader reader(&bytes);
+  Reader reader(bytes);
   uint32 magic = reader.readU4();
   assert(magic == Jnjvm::Magic && "I've created a class but magic is no good!");
 
@@ -942,7 +941,7 @@ void UserClass::resolveInnerOuterClasses() {
   if (!innerOuterResolved) {
     Attribut* attribut = lookupAttribut(Attribut::innerClassesAttribut);
     if (attribut != 0) {
-      Reader reader(attribut, getBytesPtr());
+      Reader reader(attribut, bytes);
       uint16 nbi = reader.readU2();
       for (uint16 i = 0; i < nbi; ++i) {
         uint16 inner = reader.readU2();
@@ -1019,7 +1018,7 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
     return (ArrayObject*)vm->upcalls->classArrayClass->doNew(0, vm);
   } else {
     UserConstantPool* ctp = classDef->getConstantPool();
-    Reader reader(exceptionAtt, classDef->getBytesPtr());
+    Reader reader(exceptionAtt, classDef->bytes);
     uint16 nbe = reader.readU2();
     res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(nbe, vm);
 
@@ -1757,7 +1756,7 @@ uint16 JavaMethod::lookupLineNumber(uintptr_t ip) {
     if (codeInfo[i].address == ip) {
       Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);      
       if (codeAtt == NULL) return 0;
-      Reader reader(codeAtt, &(classDef->bytes));
+      Reader reader(codeAtt, classDef->bytes);
       reader.readU2(); // max_stack
       reader.readU2(); // max_locals;
       uint32_t codeLength = reader.readU4();
@@ -1790,7 +1789,7 @@ uint16 JavaMethod::lookupCtpIndex(uintptr_t ip) {
   for(uint16 i = 0; i < codeInfoLength; ++i) {
     if (codeInfo[i].address == ip) {
       Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);
-      Reader reader(codeAtt, &(classDef->bytes));
+      Reader reader(codeAtt, classDef->bytes);
       reader.cursor = reader.cursor + 2 + 2 + 4 + codeInfo[i].bytecodeIndex + 1;
       return reader.readU2();
     }

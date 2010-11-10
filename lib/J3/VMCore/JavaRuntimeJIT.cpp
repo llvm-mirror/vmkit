@@ -360,9 +360,10 @@ extern "C" void* j3StartJNI(uint32* localReferencesNumber,
  
   *oldLocalReferencesNumber = th->currentAddedReferences;
   th->currentAddedReferences = localReferencesNumber;
-  th->startKnownFrame(*Frame);
-
-  th->startJNI(1);
+  th->startJNI();
+  th->startUnknownFrame(*Frame);
+  th->enterUncooperativeCode();
+  assert(th->getLastSP() == th->lastKnownFrame->currentFP);
 
   return Frame->currentFP;
 }

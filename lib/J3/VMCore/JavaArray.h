@@ -98,6 +98,7 @@ public:
   static void setElement(ArrayObject* self, JavaObject* value, uint32_t i) {
     llvm_gcroot(self, 0);
     llvm_gcroot(value, 0);
+    if (value != NULL) assert(value->getVirtualTable());
     self->elements[i] = value;
   }
 

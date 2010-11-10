@@ -103,7 +103,7 @@ JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   
   // We don't have the bytes if the class was vmjc'ed.
   if (sourceAtt && cl->getBytes()) {
-    Reader reader(sourceAtt, cl->getBytesPtr());
+    Reader reader(sourceAtt, cl->bytes);
     uint16 index = reader.readU2();
     sourceName = vm->internalUTF8ToStr(cl->getConstantPool()->UTF8At(index));
   }

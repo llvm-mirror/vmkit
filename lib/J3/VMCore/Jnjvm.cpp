@@ -811,19 +811,18 @@ extern "C" int sys_strnstr(const char *haystack, const char *needle) {
 }
 
 
-char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
-                      uint32 len) {
-  llvm_gcroot(manifest, 0);
-  sint32 index = sys_strnstr((char*)ArrayUInt8::getElements(manifest), entry);
+static char* findInformation(Jnjvm* vm, ClassBytes* manifest, const char* entry,
+                             uint32 len) {
+  sint32 index = sys_strnstr((char*)manifest->elements, entry);
   if (index != -1) {
     index += len;
-    sint32 end = sys_strnstr((char*)ArrayUInt8::getElements(manifest) + index, "\n");
-    if (end == -1) end = ArrayUInt8::getSize(manifest);
+    sint32 end = sys_strnstr((char*)manifest->elements + index, "\n");
+    if (end == -1) end = manifest->size;
     else end += index;
 
     sint32 length = end - index - 1;
     char* name = (char*)vm->allocator.Allocate(length + 1, "class name");
-    memcpy(name, ArrayUInt8::getElements(manifest) + index, length);
+    memcpy(name, manifest->elements + index, length);
     name[length] = 0;
     return name;
   } else {
@@ -833,10 +832,8 @@ char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
 
 void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv, 
                                           int i) {
-  ArrayUInt8* bytes = NULL;
-  ArrayUInt8* res = NULL;
-  llvm_gcroot(bytes, 0);
-  llvm_gcroot(res, 0);
+  ClassBytes* bytes = NULL;
+  ClassBytes* res = NULL;
   jarFile = argv[i];
 
   vm->setClasspath(jarFile);
@@ -851,13 +848,10 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   mvm::BumpPtrAllocator allocator;
   ZipArchive* archive = new(allocator, "TempZipArchive")
       ZipArchive(bytes, allocator);
-  // Make sure it gets GC'd.
-  vm->bootstrapLoader->bootArchives.push_back(archive);
   if (archive->getOfscd() != -1) {
     ZipFile* file = archive->getFile(PATH_MANIFEST);
     if (file != NULL) {
-      UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
-      res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
+      res = new (allocator, file->ucsize) ClassBytes(file->ucsize);
       int ok = archive->readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(vm, res, MAIN_CLASS,
@@ -880,8 +874,6 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   } else {
     printf("Can't find archive %s\n", jarFile);
   }
-  // We don't need this archive anymore.
-  vm->bootstrapLoader->bootArchives.pop_back();
 }
 
 void ClArgumentsInfo::nyi() {

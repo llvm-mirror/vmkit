@@ -186,16 +186,9 @@ public:
 
   /// startJNI - Record that we are entering native code.
   ///
-  void startJNI(int level) __attribute__ ((noinline));
+  void startJNI();
 
-  void endJNI() {
-    localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
-   
-    // Go back to cooperative mode.
-    leaveUncooperativeCode();
-   
-    endKnownFrame();
-  }
+  void endJNI();
 
   /// getCallingMethod - Get the Java method in the stack at the specified
   /// level.

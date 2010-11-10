@@ -34,6 +34,7 @@ class ArrayUInt8;
 class ArrayUInt16;
 class Class;
 class ClassArray;
+class ClassBytes;
 class JavaArray;
 class JavaConstantPool;
 class JavaField;
@@ -457,7 +458,7 @@ public:
   
   /// bytes - The .class file of this class.
   ///
-  ArrayUInt8* bytes;
+  ClassBytes* bytes;
 
   /// ctpInfo - The constant pool info of this class.
   ///
@@ -621,7 +622,7 @@ public:
   
   /// Class - Create a class in the given virtual machine and with the given
   /// name.
-  Class(JnjvmClassLoader* loader, const UTF8* name, ArrayUInt8* bytes);
+  Class(JnjvmClassLoader* loader, const UTF8* name, ClassBytes* bytes);
   
   /// readParents - Reads the parents, i.e. super and interfaces, of the class.
   ///
@@ -656,12 +657,8 @@ public:
 
   /// getBytes - Get the bytes of the class file.
   ///
-  ArrayUInt8* getBytes() const {
+  ClassBytes* getBytes() const {
     return bytes;
-  }
-  
-  ArrayUInt8** getBytesPtr() {
-    return &bytes;
   }
   
   /// resolveInnerOuterClasses - Resolve the inner/outer information.
@@ -1300,6 +1297,7 @@ public:
 
   void setStaticObjectField(JavaObject* val) {
     llvm_gcroot(val, 0);
+    if (val != NULL) assert(val->getVirtualTable());
     assert(classDef->isResolved());
     void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset);
     ((JavaObject**)ptr)[0] = val;
@@ -1315,6 +1313,7 @@ public:
   void setInstanceObjectField(JavaObject* obj, JavaObject* val) {
     llvm_gcroot(obj, 0);
     llvm_gcroot(val, 0);
+    if (val != NULL) assert(val->getVirtualTable());
     assert(classDef->isResolved());
     void* ptr = (void*)((uint64)obj + ptrOffset);
     ((JavaObject**)ptr)[0] = val;

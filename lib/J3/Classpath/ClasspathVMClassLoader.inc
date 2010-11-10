@@ -131,22 +131,27 @@ JavaObject* pd) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+
+  JnjvmClassLoader* JCL = 
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
  
+  int32_t size = JavaArray::getSize(bytes);
+  ClassBytes* classBytes = new (JCL->allocator, size) ClassBytes(size);
+  memcpy(classBytes->elements, JavaArray::getElements(bytes), size);
+   
   // Before creating a class, do a check on the bytes.  
-  Reader reader(&bytes);
+  Reader reader(classBytes);
   uint32 magic = reader.readU4();
   if (magic != Jnjvm::Magic) {
     JavaThread::get()->getJVM()->classFormatError("bad magic number");
   }
 
-  JnjvmClassLoader* JCL = 
-    JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
   
   const UTF8* name = JavaString::javaToInternal(str, JCL->hashUTF8);
   UserCommonClass* cl = JCL->lookupClass(name);
   
   if (!cl) {
-    UserClass* cl = JCL->constructClass(name, bytes);
+    UserClass* cl = JCL->constructClass(name, classBytes);
     cl->resolveClass();
 
     res = cl->getClassDelegatee(vm, pd);

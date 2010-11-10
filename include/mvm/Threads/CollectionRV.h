@@ -57,7 +57,7 @@ public:
   virtual void synchronize() = 0;
 
   virtual void join() = 0;
-  virtual void joinAfterUncooperative() = 0;
+  virtual void joinAfterUncooperative(void* SP) = 0;
   virtual void joinBeforeUncooperative() = 0;
 };
 
@@ -67,7 +67,7 @@ public:
   void synchronize();
 
   void join();
-  void joinAfterUncooperative();
+  void joinAfterUncooperative(void* SP);
   void joinBeforeUncooperative();
 };
 
@@ -77,7 +77,7 @@ public:
   void synchronize();
 
   void join();
-  void joinAfterUncooperative();
+  void joinAfterUncooperative(void* SP);
   void joinBeforeUncooperative();
 };
 

@@ -364,7 +364,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::getInt32Ty(*llvmContext)), "",
                                   currentBlock);
   
-  Constant* sizeF = ConstantInt::get(Type::getInt32Ty(*llvmContext), 2 * sizeof(void*));
+  Constant* sizeF = ConstantInt::get(Type::getInt32Ty(*llvmContext), sizeof(mvm::KnownFrame));
   Value* Frame = new AllocaInst(Type::getInt8Ty(*llvmContext), sizeF, "", currentBlock);
   
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
@@ -752,7 +752,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     abort();
   }
 
-  Reader reader(codeAtt, &(compilingClass->bytes));
+  Reader reader(codeAtt, compilingClass->bytes);
   uint16 maxStack = reader.readU2();
   uint16 maxLocals = reader.readU2();
   uint32 codeLen = reader.readU4();
@@ -942,7 +942,7 @@ llvm::Function* JavaJIT::javaCompile() {
     abort();
   } 
 
-  Reader reader(codeAtt, &(compilingClass->bytes));
+  Reader reader(codeAtt, compilingClass->bytes);
   uint16 maxStack = reader.readU2();
   uint16 maxLocals = reader.readU2();
   uint32 codeLen = reader.readU4();
@@ -1291,7 +1291,7 @@ llvm::Function* JavaJIT::javaCompile() {
     compilingMethod->lookupAttribut(Attribut::annotationsAttribut);
   
   if (annotationsAtt) {
-    Reader reader(annotationsAtt, &(compilingClass->bytes));
+    Reader reader(annotationsAtt, compilingClass->bytes);
     AnnotationReader AR(reader, compilingClass);
     uint16 numAnnotations = reader.readU2();
     for (uint16 i = 0; i < numAnnotations; ++i) {
@@ -1473,25 +1473,7 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
 }
 
 Value* JavaJIT::getTarget(FunctionType::param_iterator it, uint32 nb) {
-#if defined(ISOLATE_SHARING)
-  nb += 1;
-#endif
-#if defined(ISOLATE_SHARING)
-  sint32 start = nb - 2;
-  it--;
-  it--;
-#else
-  sint32 start = nb - 1;
-#endif
-  uint32 nbObjects = 0;
-  for (sint32 i = start; i >= 0; --i) {
-    it--;
-    if (it->get() == intrinsics->JavaObjectType) {
-      nbObjects++;
-    }
-  }
-  assert(nbObjects > 0 && "No this");
-  return objectStack[currentStackIndex - nbObjects];
+  return objectStack[currentStackIndex - nb];
 }
 
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
@@ -2212,12 +2194,8 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
  
   const llvm::Type* retType = virtualType->getReturnType();
   BasicBlock* endBlock = createBasicBlock("end interface invoke");
-  PHINode * node = 0;
-  if (retType != Type::getVoidTy(*llvmContext)) {
-    node = PHINode::Create(retType, "", endBlock);
-  }
-  
- 
+  PHINode * node = PHINode::Create(virtualPtrType, "", endBlock);
+   
   CommonClass* cl = 0;
   JavaMethod* meth = 0;
   ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
@@ -2230,13 +2208,11 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
                              intrinsics->JavaMethodType, 0, true);
   }
 
-  // Compute the arguments after calling getConstantPoolAt because the
-  // arguments will be loaded and the runtime may trigger GC.
-  std::vector<Value*> args; // size = [signature->nbIn + 3];
-
-  FunctionType::param_iterator it  = virtualType->param_end();
-  makeArgs(it, index, args, signature->nbArguments + 1);
-  JITVerifyNull(args[0]);
+  Value* targetObject = getTarget(virtualType->param_end(),
+                                  signature->nbArguments + 1);
+  targetObject = new LoadInst(
+          targetObject, "", TheCompiler->useCooperativeGC(), currentBlock);
+  JITVerifyNull(targetObject);
 
   BasicBlock* label_bb = createBasicBlock("bb");
   BasicBlock* label_bb4 = createBasicBlock("bb4");
@@ -2244,7 +2220,7 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   BasicBlock* label_bb7 = createBasicBlock("bb7");
     
   // Block entry (label_entry)
-  Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
+  Value* VT = CallInst::Create(intrinsics->GetVTFunction, targetObject, "",
                                currentBlock);
   Value* IMT = CallInst::Create(intrinsics->GetIMTFunction, VT, "",
                                 currentBlock);
@@ -2270,8 +2246,8 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   // Block bb (label_bb)
   currentBlock = label_bb;
   CastInst* ptr_22 = new IntToPtrInst(int32_19, virtualPtrType, "", currentBlock);
-  Value* ret = invoke(ptr_22, args, "", currentBlock);
-  if (node) node->addIncoming(ret, currentBlock);
+  
+  node->addIncoming(ptr_22, currentBlock);
   BranchInst::Create(endBlock, currentBlock);
     
   // Block bb4 (label_bb4)
@@ -2300,8 +2276,8 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   LoadInst* int32_32 = new LoadInst(ptr_31, "", false, currentBlock);
   CastInst* ptr_33 = new BitCastInst(int32_32, virtualPtrType, "",
                                      currentBlock);
-  ret = invoke(ptr_33, args, "", currentBlock);
-  if (node) node->addIncoming(ret, currentBlock);
+  node->addIncoming(ptr_33, currentBlock);
+
   BranchInst::Create(endBlock, currentBlock);
     
   // Block bb7 (label_bb7)
@@ -2332,12 +2308,17 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   ptr_table_0_lcssa->addIncoming(ptr_37, currentBlock);
       
   currentBlock = endBlock;
-  if (node) {
-    if (node->getType() == intrinsics->JavaObjectType) {
+
+  std::vector<Value*> args; // size = [signature->nbIn + 3];
+  FunctionType::param_iterator it  = virtualType->param_end();
+  makeArgs(it, index, args, signature->nbArguments + 1);
+  Value* ret = invoke(node, args, "", currentBlock);
+  if (retType != Type::getVoidTy(*llvmContext)) {
+    if (ret->getType() == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
-      push(node, false, signature->getReturnType()->findAssocClass(JCL));
+      push(ret, false, signature->getReturnType()->findAssocClass(JCL));
     } else {
-      push(node, signature->getReturnType()->isUnsigned());
+      push(ret, signature->getReturnType()->isUnsigned());
       if (retType == Type::getDoubleTy(*llvmContext) ||
           retType == Type::getInt64Ty(*llvmContext)) {
         push(intrinsics->constantZero, false);

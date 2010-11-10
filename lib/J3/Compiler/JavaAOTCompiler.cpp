@@ -446,7 +446,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
         Elts.push_back(Constant::getNullValue(Ty));
       }
     } else {
-      Reader reader(attribut, &(cl->bytes));
+      Reader reader(attribut, cl->bytes);
       JavaConstantPool * ctpInfo = cl->ctpInfo;
       uint16 idx = reader.readU2();
       if (type->isPrimitive()) {
@@ -1904,14 +1904,14 @@ void JavaAOTCompiler::compileClass(Class* cl) {
 
 
 
-void extractFiles(ArrayUInt8* bytes,
+void extractFiles(ClassBytes* bytes,
                   JavaAOTCompiler* M,
                   JnjvmBootstrapLoader* bootstrapLoader,
                   std::vector<Class*>& classes) {
   ZipArchive archive(bytes, bootstrapLoader->allocator);
    
-  mvm::ThreadAllocator allocator; 
-  char* realName = (char*)allocator.Allocate(4096);
+  mvm::BumpPtrAllocator allocator; 
+  char* realName = (char*)allocator.Allocate(4096, "temp");
   for (ZipArchive::table_iterator i = archive.filetable.begin(), 
        e = archive.filetable.end(); i != e; ++i) {
     ZipFile* file = i->second;
@@ -1928,9 +1928,7 @@ void extractFiles(ArrayUInt8* bytes,
       classes.push_back(cl);  
     } else if (size > 4 && (!strcmp(&name[size - 4], ".jar") || 
                             !strcmp(&name[size - 4], ".zip"))) {
-      UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
-      ArrayUInt8* res = 
-        (ArrayUInt8*)array->doNew(file->ucsize, JavaThread::get()->getJVM());
+      ClassBytes* res = new (allocator, file->ucsize) ClassBytes(file->ucsize);
       int ok = archive.readFile(res, file);
       if (!ok) return;
       
@@ -1974,7 +1972,7 @@ void mainCompilerStart(JavaThread* th) {
       (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
   
     std::vector<Class*> classes;
-    ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
+    ClassBytes* bytes = Reader::openFile(bootstrapLoader, name);
       
     if (!bytes) {
       fprintf(stderr, "Can't find zip file.\n");

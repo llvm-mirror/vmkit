@@ -10,6 +10,7 @@
 #ifndef J3_JIT_COMPILER_H
 #define J3_JIT_COMPILER_H
 
+#include "llvm/CodeGen/GCMetadata.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/JITEventListener.h"
 #include "j3/JavaLLVMCompiler.h"
@@ -38,7 +39,7 @@ public:
   bool EmitFunctionName;
   JavaJITListener listener;
   llvm::ExecutionEngine* executionEngine;
-  llvm::GCStrategy* TheGCStrategy;
+  llvm::GCModuleInfo* GCInfo;
 
   JavaJITCompiler(const std::string &ModuleID);
   ~JavaJITCompiler();

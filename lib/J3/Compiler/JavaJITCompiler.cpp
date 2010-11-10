@@ -61,13 +61,13 @@ void JavaJITMethodInfo::print(void* ip, void* addr) {
   JavaMethod* meth = (JavaMethod*)MetaInfo;
   CodeLineInfo* info = meth->lookupCodeLineInfo((uintptr_t)ip);
   if (info != NULL) {
-    fprintf(stderr, "; %p in %s.%s (line %d, bytecode %d, code start %p)", new_ip,
+    fprintf(stderr, "; %p (%p) in %s.%s (line %d, bytecode %d, code start %p)", new_ip, addr,
             UTF8Buffer(meth->classDef->name).cString(),
             UTF8Buffer(meth->name).cString(),
             meth->lookupLineNumber((uintptr_t)ip),
             info->bytecodeIndex, meth->code);
   } else {
-    fprintf(stderr, "; %p in %s.%s (native method, code start %p)", new_ip,
+    fprintf(stderr, "; %p (%p) in %s.%s (native method, code start %p)", new_ip, addr,
             UTF8Buffer(meth->classDef->name).cString(),
             UTF8Buffer(meth->name).cString(), meth->code);
   }
@@ -83,64 +83,13 @@ void JavaJITListener::NotifyFunctionEmitted(const Function &F,
   // The following is necessary for -load-bc.
   if (F.getParent() != TheCompiler->getLLVMModule()) return;
   assert(F.hasGC());
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  mvm::BumpPtrAllocator& Alloc = TheCompiler->allocator;
-
-  // Fetch the GCStrategy if it wasn't created before.
-  if (TheCompiler->TheGCStrategy == NULL) {
-    assert(mvm::MvmModule::TheGCStrategy != NULL && "No GC strategy");
-    TheCompiler->TheGCStrategy = mvm::MvmModule::TheGCStrategy;
-    mvm::MvmModule::TheGCStrategy = NULL;
-  }
-  
-  GCStrategy::iterator I = TheCompiler->TheGCStrategy->end();
-  I--;
-  while (&(*I)->getFunction() != &F) {
-    // This happens when the compilation of a function was post-poned.
-    assert(I != TheCompiler->TheGCStrategy->begin() && "No GC info");
-    I--;
-  }
-  assert(&(*I)->getFunction() == &F && "GC Info and method do not correspond");
-  llvm::GCFunctionInfo* GFI = *I;
-
-  JavaMethod* meth = TheCompiler->getJavaMethod(F);
-  mvm::JITMethodInfo* MI = NULL;
-  if (meth == NULL) {
-    // This is a stub.
-    MI = new(Alloc, "JITMethodInfo") mvm::MvmJITMethodInfo(GFI, &F, TheCompiler);
-  } else {
-    MI = new(Alloc, "JavaJITMethodInfo") JavaJITMethodInfo(GFI, meth);
-  }
-  JIT* jit = (JIT*)TheCompiler->executionEngine;
-  MI->addToVM(vm, jit);
-
-  if (meth == NULL) return;
-
-  uint32_t infoLength = GFI->size();
-  meth->codeInfoLength = infoLength;
-  if (infoLength == 0) {
-    meth->codeInfo = NULL;
+  if (TheCompiler->GCInfo != NULL) {
+    assert(TheCompiler->GCInfo == Details.MF->getGMI());
     return;
   }
-
-  mvm::BumpPtrAllocator& JavaAlloc = meth->classDef->classLoader->allocator;
-  CodeLineInfo* infoTable =
-    new(JavaAlloc, "CodeLineInfo") CodeLineInfo[infoLength];
-  uint32_t index = 0;
-  for (GCFunctionInfo::iterator I = GFI->begin(), E = GFI->end();
-       I != E;
-       I++, index++) {
-    DebugLoc DL = I->Loc;
-    uint32_t bytecodeIndex = DL.getLine();
-    uint32_t second = DL.getCol();
-    assert(second == 0 && "Wrong column number");
-    uintptr_t address = jit->getCodeEmitter()->getLabelAddress(I->Label);
-    infoTable[index].address = address;
-    infoTable[index].bytecodeIndex = bytecodeIndex;
-  }
-  meth->codeInfo = infoTable;
+  TheCompiler->GCInfo = Details.MF->getGMI();
 }
+
 
 Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
   const llvm::Type* Ty = classDef->isClass() ? JavaIntrinsics.JavaClassType :
@@ -250,15 +199,10 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   JavaLLVMCompiler(ModuleID), listener(this) {
 
   EmitFunctionName = false;
+  GCInfo = NULL;
 
-  // Protect IR for the GC.
-  mvm::MvmModule::protectIR();
   executionEngine = ExecutionEngine::createJIT(TheModule, 0,
                                                0, llvm::CodeGenOpt::Default, false);
-  TheGCStrategy = mvm::MvmModule::TheGCStrategy;
-  mvm::MvmModule::TheGCStrategy = NULL;
-  mvm::MvmModule::unprotectIR();
- 
   executionEngine->RegisterJITEventListener(&listener);
 
   addJavaPasses();
@@ -405,7 +349,41 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   mvm::MvmModule::protectIR();
   Function* func = parseFunction(meth);
   void* res = executionEngine->getPointerToGlobal(func);
-  // Now that it's compiled, we don't need the IR anymore
+ 
+  if (!func->isDeclaration()) {
+    llvm::GCFunctionInfo* GFI = &(GCInfo->getFunctionInfo(*func));
+    assert((GFI != NULL) && "No GC information");
+  
+    Jnjvm* vm = JavaThread::get()->getJVM();
+    mvm::JITMethodInfo* MI = 
+      new(allocator, "JavaJITMethodInfo") JavaJITMethodInfo(GFI, meth);
+    MI->addToVM(vm, (JIT*)executionEngine);
+
+    uint32_t infoLength = GFI->size();
+    meth->codeInfoLength = infoLength;
+    if (infoLength == 0) {
+      meth->codeInfo = NULL;
+    } else {
+      mvm::BumpPtrAllocator& JavaAlloc = meth->classDef->classLoader->allocator;
+      CodeLineInfo* infoTable =
+        new(JavaAlloc, "CodeLineInfo") CodeLineInfo[infoLength];
+      uint32_t index = 0;
+      for (GCFunctionInfo::iterator I = GFI->begin(), E = GFI->end();
+           I != E;
+           I++, index++) {
+        DebugLoc DL = I->Loc;
+        uint32_t bytecodeIndex = DL.getLine();
+        uint32_t second = DL.getCol();
+        assert(second == 0 && "Wrong column number");
+        uintptr_t address =
+            ((JIT*)executionEngine)->getCodeEmitter()->getLabelAddress(I->Label);
+        infoTable[index].address = address;
+        infoTable[index].bytecodeIndex = bytecodeIndex;
+      }
+      meth->codeInfo = infoTable;
+    }
+  }
+    // Now that it's compiled, we don't need the IR anymore
   func->deleteBody();
   mvm::MvmModule::unprotectIR();
   return res;
@@ -414,6 +392,15 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
 void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
   mvm::MvmModule::protectIR();
   void* res = executionEngine->getPointerToGlobal(F);
+  
+  llvm::GCFunctionInfo* GFI = &(GCInfo->getFunctionInfo(*F));
+  assert((GFI != NULL) && "No GC information");
+  
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  mvm::JITMethodInfo* MI = 
+    new(allocator, "JITMethodInfo") mvm::MvmJITMethodInfo(GFI, F, this);
+  MI->addToVM(vm, (JIT*)executionEngine);
+  
   // Now that it's compiled, we don't need the IR anymore
   F->deleteBody();
   mvm::MvmModule::unprotectIR();

@@ -22,7 +22,7 @@ extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ (JavaObject*
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapEndConstant__ (JavaObject* M) {
-  return (uintptr_t)0x70000000;
+  return (uintptr_t)0x60000000;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (JavaObject* M) {
@@ -30,7 +30,7 @@ extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (JavaOb
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableEndConstant__ (JavaObject* M) {
-  return (uintptr_t)0x70000000;
+  return (uintptr_t)0x60000000;
 }
 
 extern "C" sint32
@@ -41,14 +41,16 @@ Java_org_j3_mmtk_Memory_dzmmap__Lorg_vmmagic_unboxed_Address_2I(JavaObject* M,
   return 0;
 }
 
-extern "C" void
+extern "C" uint8_t
 Java_org_j3_mmtk_Memory_mprotect__Lorg_vmmagic_unboxed_Address_2I (JavaObject* M, uintptr_t address, sint32 size) {
-  mprotect((void*)address, size, PROT_NONE);
+  int val = mprotect((void*)address, size, PROT_NONE);
+  return (val == 0);
 }
 
-extern "C" void
+extern "C" uint8_t
 Java_org_j3_mmtk_Memory_munprotect__Lorg_vmmagic_unboxed_Address_2I (JavaObject* M, uintptr_t address, sint32 size) {
-  mprotect((void*)address, size, PROT_READ | PROT_WRITE);
+  int val = mprotect((void*)address, size, PROT_READ | PROT_WRITE);
+  return (val == 0);
 }
 
 extern "C" void

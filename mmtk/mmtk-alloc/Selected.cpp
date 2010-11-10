@@ -51,7 +51,10 @@ extern "C" void* JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_
 
 extern "C" void* gcmalloc(uint32_t sz, void* VT) {
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
-  return JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, VT);
+  gc* res = (gc*)JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, VT);
+  assert(VT != NULL);
+  assert(res->getVirtualTable() == VT);
+  return res;
 }
 
 extern "C" void addFinalizationCandidate(void* obj) __attribute__((always_inline));
@@ -84,14 +87,26 @@ bool Collector::isLive(gc* ptr, uintptr_t closure) {
 }
 
 void Collector::scanObject(void** ptr, uintptr_t closure) {
+  if ((*ptr) != NULL) {
+    assert(((gc*)(*ptr))->getVirtualTable());
+  }
   JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(closure, ptr);
 }
  
 void Collector::markAndTrace(void* source, void* ptr, uintptr_t closure) {
+  void** ptr_ = (void**)ptr;
+  if ((*ptr_) != NULL) {
+    assert(((gc*)(*ptr_))->getVirtualTable());
+  }
+  if ((*(void**)ptr) != NULL) assert(((gc*)(*(void**)ptr))->getVirtualTable());
   JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
 }
   
 void Collector::markAndTraceRoot(void* ptr, uintptr_t closure) {
+  void** ptr_ = (void**)ptr;
+  if ((*ptr_) != NULL) {
+    assert(((gc*)(*ptr_))->getVirtualTable());
+  }
   JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(closure, ptr, true);
 }
 
@@ -127,7 +142,7 @@ void Collector::initialise() {
 #else
   uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
 #endif
-  void* baseAddr = mmap((void*)0x30000000, 0x40000000, PROT_READ | PROT_WRITE,
+  void* baseAddr = mmap((void*)0x30000000, 0x30000000, PROT_READ | PROT_WRITE,
                         flags, -1, 0);
   if (baseAddr == MAP_FAILED) {
     perror("mmap");
@@ -138,7 +153,7 @@ void Collector::initialise() {
 }
 
 extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {
-  void* val = MutatorThread::get()->Allocator.Allocate(size, "MMTk");
+  void* val = MutatorThread::get()->Allocator.Allocate(size);
   ((void**)val)[0] = VT;
   return val;
 }
