@@ -325,6 +325,7 @@ void JavaThread::tracer(uintptr_t closure) {
     mvm::Collector::markAndTraceRoot(&pendingException, closure);
   }
   mvm::Collector::markAndTraceRoot(&javaThread, closure);
+  mvm::Collector::markAndTraceRoot(&vmThread, closure);
 #ifdef SERVICE
   mvm::Collector::markAndTraceRoot(&ServiceException, closure);
 #endif
