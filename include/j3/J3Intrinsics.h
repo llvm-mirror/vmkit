@@ -66,6 +66,7 @@ public:
   llvm::Function* ResolveVirtualStubFunction;
   llvm::Function* ResolveSpecialStubFunction;
   llvm::Function* ResolveStaticStubFunction;
+  llvm::Function* ResolveInterfaceFunction;
 
 #ifndef WITHOUT_VTABLE
   llvm::Function* VirtualLookupFunction;

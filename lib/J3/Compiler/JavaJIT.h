@@ -443,7 +443,7 @@ private:
                 uint32 index, std::vector<llvm::Value*>& result, uint32 nb);
 
   /// getTarget - Get the target object for invocation.
-  llvm::Value* getTarget(llvm::FunctionType::param_iterator it, uint32 nb);
+  llvm::Value* getTarget(Signdef* signature);
 
   /// invokeVirtual - Invoke a Java virtual method.
   void invokeVirtual(uint16 index);

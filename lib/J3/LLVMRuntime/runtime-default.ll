@@ -192,6 +192,7 @@ declare float @getFinalFloatField(float*) readnone
 declare i8* @j3ResolveVirtualStub(%JavaObject*)
 declare i8* @j3ResolveSpecialStub()
 declare i8* @j3ResolveStaticStub()
+declare i8* @j3ResolveInterface(%JavaObject*, %JavaMethod*, i32)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -648,8 +648,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
     uint32_t index = InterfaceMethodTable::getIndex(Virt->name, Virt->type);
     if ((IMT->contents[index] & 1) == 0) {
       IMT->contents[index] = (uintptr_t)result;
-    } else {
-      
+    } else { 
       JavaMethod* Imeth = 
         ctpCl->asClass()->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
       assert(Imeth && "Method not in hierarchy?");
@@ -744,6 +743,23 @@ extern "C" void* j3ResolveSpecialStub() {
   END_NATIVE_EXCEPTION
 
   return result;
+}
+
+// Does not throw an exception.
+extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t index) {
+  uintptr_t result = NULL;
+  InterfaceMethodTable* IMT = JavaObject::getClass(obj)->virtualVT->IMT;
+  assert(JavaObject::instanceOf(obj, meth->classDef));
+  if ((IMT->contents[index] & 1) == 0) {
+    result = IMT->contents[index];
+  } else { 
+    uintptr_t* table = (uintptr_t*)(IMT->contents[index] & ~1);
+    uint32 i = 0;
+    while (table[i] != (uintptr_t)meth) { i += 2; }
+    result = table[i + 1];
+  }
+  assert((result != NULL) && "Bad IMT");
+  return (void*)result;
 }
 
 extern "C" void j3PrintMethodStart(JavaMethod* meth) {

@@ -202,8 +202,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
       Args.push_back(TheCompiler->getNativeClass(compilingClass));
       Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
       Args.push_back(GV);
-      Value* targetObject = getTarget(virtualType->param_end(),
-                                      signature->nbArguments + 1);
+      Value* targetObject = getTarget(signature);
       Args.push_back(new LoadInst(
           targetObject, "", TheCompiler->useCooperativeGC(), currentBlock));
       load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
@@ -1472,8 +1471,16 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
   }
 }
 
-Value* JavaJIT::getTarget(FunctionType::param_iterator it, uint32 nb) {
-  return objectStack[currentStackIndex - nb];
+Value* JavaJIT::getTarget(Signdef* signature) {
+  int offset = 0;
+  Typedef* const* arguments = signature->getArgumentsType();
+  for (uint32 i = 0; i < signature->nbArguments; i++) {
+    if (arguments[i]->isDouble() || arguments[i]->isLong()) {
+      offset++;
+    }
+    offset++;
+  }
+  return objectStack[currentStackIndex - 1 - offset];
 }
 
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
@@ -2193,8 +2200,6 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   const llvm::PointerType* virtualPtrType = LSI->getVirtualPtrType();
  
   const llvm::Type* retType = virtualType->getReturnType();
-  BasicBlock* endBlock = createBasicBlock("end interface invoke");
-  PHINode * node = PHINode::Create(virtualPtrType, "", endBlock);
    
   CommonClass* cl = 0;
   JavaMethod* meth = 0;
@@ -2208,11 +2213,16 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
                              intrinsics->JavaMethodType, 0, true);
   }
 
-  Value* targetObject = getTarget(virtualType->param_end(),
-                                  signature->nbArguments + 1);
+  uint32_t tableIndex = InterfaceMethodTable::getIndex(name, signature->keyName);
+  Constant* Index = ConstantInt::get(Type::getInt32Ty(*llvmContext),
+                                     tableIndex);
+  Value* targetObject = getTarget(signature);
   targetObject = new LoadInst(
           targetObject, "", TheCompiler->useCooperativeGC(), currentBlock);
   JITVerifyNull(targetObject);
+#if 1
+  BasicBlock* endBlock = createBasicBlock("end interface invoke");
+  PHINode * node = PHINode::Create(virtualPtrType, "", endBlock);
 
   BasicBlock* label_bb = createBasicBlock("bb");
   BasicBlock* label_bb4 = createBasicBlock("bb4");
@@ -2225,9 +2235,6 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   Value* IMT = CallInst::Create(intrinsics->GetIMTFunction, VT, "",
                                 currentBlock);
 
-  uint32_t tableIndex = InterfaceMethodTable::getIndex(name, signature->keyName);
-  Constant* Index = ConstantInt::get(Type::getInt32Ty(*llvmContext),
-                                     tableIndex);
 
   Value* indices[2] = { intrinsics->constantZero, Index };
   Instruction* ptr_18 = GetElementPtrInst::Create(IMT, indices, indices + 2, "",
@@ -2308,10 +2315,17 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   ptr_table_0_lcssa->addIncoming(ptr_37, currentBlock);
       
   currentBlock = endBlock;
+#else
+  Value* Args[3] = { targetObject, Meth, Index };
+  Value* node = CallInst::Create(
+      intrinsics->ResolveInterfaceFunction, Args, Args + 3, "", currentBlock);
+  node = new BitCastInst(node, virtualPtrType, "", currentBlock);
+#endif
 
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
+  JITVerifyNull(args[0]);
   Value* ret = invoke(node, args, "", currentBlock);
   if (retType != Type::getVoidTy(*llvmContext)) {
     if (ret->getType() == intrinsics->JavaObjectType) {
