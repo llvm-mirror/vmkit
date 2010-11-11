@@ -758,7 +758,7 @@ extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t 
     while (table[i] != (uintptr_t)meth) { i += 2; }
     result = table[i + 1];
   }
-  assert((result != NULL) && "Bad IMT");
+  assert((result != 0) && "Bad IMT");
   return (void*)result;
 }
 

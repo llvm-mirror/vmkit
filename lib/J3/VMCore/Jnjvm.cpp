@@ -1328,7 +1328,7 @@ void ThreadSystem::enter() {
 void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;
-  mainThread = new JavaThread(0, 0, this);
+  mainThread = new JavaThread(this);
   mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 

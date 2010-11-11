@@ -1905,14 +1905,15 @@ void JavaJIT::invokeNew(uint16 index) {
                            intrinsics->AllocateUnresolvedFunction,
                            Size, VT, "", currentBlock);
 
+  addHighLevelType(val, cl ? cl : upcalls->OfObject);
+  Instruction* res = new BitCastInst(val, intrinsics->JavaObjectType, "", currentBlock);
+  push(res, false, cl ? cl : upcalls->OfObject);
+
+  // Make sure to add the object to the finalization list after it has been
+  // pushed.
   if (cl && cl->virtualVT->destructor) {
     CallInst::Create(intrinsics->AddFinalizationCandidate, val, "", currentBlock);
   }
-
-
-  addHighLevelType(val, cl ? cl : upcalls->OfObject);
-  val = new BitCastInst(val, intrinsics->JavaObjectType, "", currentBlock);
-  push(val, false, cl ? cl : upcalls->OfObject);
 }
 
 Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object, 

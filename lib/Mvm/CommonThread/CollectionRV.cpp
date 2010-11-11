@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <cassert>
+#include <signal.h>
 #include "MvmGC.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/CollectionRV.h"
@@ -80,6 +81,13 @@ void CooperativeCollectionRV::synchronize() {
   unlockRV();
 }
 
+
+#if defined(__MACH__)
+# define SIGGC  SIGXCPU
+#else
+# define SIGGC  SIGPWR
+#endif
+
 void UncooperativeCollectionRV::synchronize() { 
   assert(nbJoined == 0);
   mvm::Thread* self = mvm::Thread::get();
@@ -89,7 +97,8 @@ void UncooperativeCollectionRV::synchronize() {
   
   for (mvm::Thread* cur = (mvm::Thread*)self->next(); cur != self; 
        cur = (mvm::Thread*)cur->next()) {
-    cur->killForRendezvous();
+    int res = cur->kill(SIGGC);
+    assert(!res && "Error on kill");
   }
   
   // And wait for other threads to finish.
@@ -219,4 +228,30 @@ void UncooperativeCollectionRV::joinAfterUncooperative(void* SP) {
 
 void UncooperativeCollectionRV::joinBeforeUncooperative() {
   UNREACHABLE();
+}
+
+void CooperativeCollectionRV::addThread(Thread* th) {
+  // Nothing to do.
+}
+
+static void siggcHandler(int) {
+  mvm::Thread* th = mvm::Thread::get();
+  th->MyVM->rendezvous.join();
+}
+
+void UncooperativeCollectionRV::addThread(Thread* th) {
+  // Set the SIGGC handler for uncooperative rendezvous.
+  struct sigaction sa;
+  sigset_t mask;
+  sigaction(SIGGC, 0, &sa);
+  sigfillset(&mask);
+  sa.sa_mask = mask;
+  sa.sa_handler = siggcHandler;
+  sa.sa_flags |= SA_RESTART;
+  sigaction(SIGGC, &sa, NULL);
+  
+  if (nbJoined != 0) {
+    // In uncooperative mode, we may have missed a signal.
+    join();
+  }
 }

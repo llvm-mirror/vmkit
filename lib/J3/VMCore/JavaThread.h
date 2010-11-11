@@ -123,15 +123,17 @@ public:
   
   /// JavaThread - Creates a Java thread.
   ///
-  JavaThread(JavaObject* thread, JavaObject* vmThread, Jnjvm* isolate);
+  JavaThread(Jnjvm* isolate);
 
-  /// get - Get the current thread as a JnJVM object.
+  void initialise(JavaObject* thread, JavaObject* vmth);
+  
+  /// get - Get the current thread as a J3 object.
   ///
   static JavaThread* get() {
     return (JavaThread*)mvm::Thread::get();
   }
 
-  /// getJVM - Get the JnJVM in which this thread executes.
+  /// getJVM - Get the Java VM in which this thread executes.
   ///
   Jnjvm* getJVM() {
     return (Jnjvm*)MyVM;

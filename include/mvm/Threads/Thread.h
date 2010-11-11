@@ -165,10 +165,6 @@ public:
   ///
   int kill(int signo);
   
-  /// killForRendezvous - Kill the given thread for a rendezvous.
-  ///
-  void killForRendezvous();
-
   /// exit - Exit the current thread.
   ///
   static void exit(int value);

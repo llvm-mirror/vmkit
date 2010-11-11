@@ -45,6 +45,7 @@ void start(JavaThread* thread) {
   // which is the JavaThread object.
   vmThread = (JavaObjectVMThread*)thread->vmThread;
   assert(vmThread && "Didn't fix the vmThread of a j3 thread");
+  assert(vmThread->getVirtualTable());
   JavaObjectVMThread::setVmdata(vmThread, thread);
   
   UserClass* vmthClass = (UserClass*)JavaObject::getClass(vmThread); 
@@ -58,7 +59,9 @@ void start(JavaThread* thread) {
   if (!isDaemon) {
     vm->threadSystem.enter();
   }
-  
+ 
+  assert(vmThread->getVirtualTable());
+  assert(javaThread->getVirtualTable());
   // Run the VMThread::run function
   vm->upcalls->runVMThread->invokeIntSpecial(vm, vmthClass, vmThread);
  
@@ -86,7 +89,8 @@ JavaObject* vmThread, sint64 stackSize) {
   javaThread = vm->upcalls->assocThread->getInstanceObjectField(vmThread);
   assert(javaThread && "VMThread with no Java equivalent");
  
-  JavaThread* th = new JavaThread(javaThread, vmThread, vm);
+  JavaThread* th = new JavaThread(vm);
+  th->initialise(javaThread, vmThread);
   if (!th) vm->outOfMemoryError();
   th->start((void (*)(mvm::Thread*))start);
 

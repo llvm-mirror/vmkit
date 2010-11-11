@@ -305,18 +305,6 @@ StackThreadManager TheStackManager;
 
 extern void sigsegvHandler(int, siginfo_t*, void*);
 
-
-#if defined(__MACH__)
-# define SIGGC  SIGXCPU
-#else
-# define SIGGC  SIGPWR
-#endif
-
-static void siggcHandler(int) {
-  mvm::Thread* th = mvm::Thread::get();
-  th->MyVM->rendezvous.join();
-}
-
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
 /// given routine of th.
@@ -333,19 +321,12 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
 
-  // Set the SIGGC handler for uncooperative rendezvous.
-  sigaction(SIGGC, 0, &sa);
-  sigfillset(&mask);
-  sa.sa_mask = mask;
-  sa.sa_handler = siggcHandler;
-  sa.sa_flags |= SA_RESTART;
-  sigaction(SIGGC, &sa, NULL);
+  th->MyVM->rendezvous.addThread(th);
 
   assert(th->MyVM && "VM not set in a thread");
 #ifdef ISOLATE
   th->IsolateID = th->MyVM->IsolateID;
 #endif
-  th->MyVM->addThread(th); 
   th->routine(th);
   th->MyVM->removeThread(th);
   delete th;
@@ -361,6 +342,7 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   pthread_attr_init(&attributs);
   pthread_attr_setstack(&attributs, this, STACK_SIZE);
   routine = fct;
+  MyVM->addThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
   pthread_detach((pthread_t)internalThreadID);
@@ -394,12 +376,6 @@ void Thread::releaseThread(void* th) {
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
 }
-
-void Thread::killForRendezvous() {
-  int res = kill(SIGGC);
-  assert(!res && "Error on kill");
-}
-
 
 #ifdef WITH_LLVM_GCC
 void Thread::scanStack(uintptr_t closure) {

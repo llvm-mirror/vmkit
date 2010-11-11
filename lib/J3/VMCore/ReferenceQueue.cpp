@@ -15,7 +15,7 @@
 
 using namespace j3;
 
-ReferenceThread::ReferenceThread(Jnjvm* vm) : JavaThread(NULL, NULL, vm),
+ReferenceThread::ReferenceThread(Jnjvm* vm) : JavaThread(vm),
     WeakReferencesQueue(ReferenceQueue::WEAK),
     SoftReferencesQueue(ReferenceQueue::SOFT), 
     PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
@@ -155,7 +155,7 @@ void ReferenceQueue::scan(ReferenceThread* th, uintptr_t closure) {
 }
 
 
-FinalizerThread::FinalizerThread(Jnjvm* vm) : JavaThread(NULL, NULL, vm) {
+FinalizerThread::FinalizerThread(Jnjvm* vm) : JavaThread(vm) {
   FinalizationQueue = new gc*[INITIAL_QUEUE_SIZE];
   QueueLength = INITIAL_QUEUE_SIZE;
   CurrentIndex = 0;
@@ -197,6 +197,7 @@ void FinalizerThread::growToBeFinalizedQueue() {
 
 
 void FinalizerThread::addFinalizationCandidate(gc* obj) {
+  llvm_gcroot(obj, 0);
   FinalizationQueueLock.acquire();
  
   if (CurrentIndex >= QueueLength) {

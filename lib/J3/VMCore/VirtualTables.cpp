@@ -321,9 +321,7 @@ void Jnjvm::tracer(uintptr_t closure) {
 }
 
 void JavaThread::tracer(uintptr_t closure) {
-  if (pendingException != NULL) {
-    mvm::Collector::markAndTraceRoot(&pendingException, closure);
-  }
+  mvm::Collector::markAndTraceRoot(&pendingException, closure);
   mvm::Collector::markAndTraceRoot(&javaThread, closure);
   mvm::Collector::markAndTraceRoot(&vmThread, closure);
 #ifdef SERVICE

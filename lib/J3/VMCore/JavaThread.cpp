@@ -19,18 +19,14 @@
 
 using namespace j3;
 
-JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
-    : MutatorThread() {
-  llvm_gcroot(thread, 0);
-  llvm_gcroot(vmth, 0);
-  
-  javaThread = thread;
-  vmThread = vmth;
+JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() { 
   MyVM = isolate;
-  pendingException = 0;
+  pendingException = NULL;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
-  currentAddedReferences = 0;
+  currentAddedReferences = NULL;
+  javaThread = NULL;
+  vmThread = NULL;
 
 #ifdef SERVICE
   eipIndex = 0;
@@ -39,6 +35,13 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
     ServiceException = isolate->upcalls->newThrowable->doNew(isolate);
   }
 #endif
+}
+
+void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
+  llvm_gcroot(thread, 0);
+  llvm_gcroot(vmth, 0);
+  javaThread = thread;
+  vmThread = vmth;
 }
 
 JavaThread::~JavaThread() {

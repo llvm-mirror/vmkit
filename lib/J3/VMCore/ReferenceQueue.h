@@ -51,6 +51,7 @@ public:
   }
  
   void addReference(gc* ref) {
+    llvm_gcroot(ref, 0);
     QueueLock.acquire();
     if (CurrentIndex >= QueueLength) {
       uint32 newLength = QueueLength * GROW_FACTOR;
@@ -110,18 +111,21 @@ public:
   /// addWeakReference - Add a weak reference to the queue.
   ///
   void addWeakReference(gc* ref) {
+    llvm_gcroot(ref, 0);
     WeakReferencesQueue.addReference(ref);
   }
   
   /// addSoftReference - Add a weak reference to the queue.
   ///
   void addSoftReference(gc* ref) {
+    llvm_gcroot(ref, 0);
     SoftReferencesQueue.addReference(ref);
   }
   
   /// addPhantomReference - Add a weak reference to the queue.
   ///
   void addPhantomReference(gc* ref) {
+    llvm_gcroot(ref, 0);
     PhantomReferencesQueue.addReference(ref);
   }
 
