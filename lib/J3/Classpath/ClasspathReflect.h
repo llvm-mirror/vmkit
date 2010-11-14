@@ -12,8 +12,8 @@
 
 #include "MvmGC.h"
 
-#include <JavaClass.h>
-#include <JavaObject.h>
+#include "JavaClass.h"
+#include "JavaObject.h"
 
 extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
 

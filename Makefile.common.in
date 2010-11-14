@@ -38,3 +38,9 @@ ifeq ($(GCLIB), BoehmGC)
 endif
 
 include $(PROJ_SRC_ROOT)/Makefile.rules
+
+ifndef DISABLE_AUTO_DEPENDENCIES
+ifndef IS_CLEANING_TARGET
+-include $(DependSourceFiles:%=$(PROJ_OBJ_DIR)/$(BuildMode)/%.bc.d)
+endif
+endif

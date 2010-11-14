@@ -12,7 +12,7 @@
 
 #include <llvm/GVMaterializer.h>
 
-#include <j3/JavaJITCompiler.h>
+#include "j3/JavaJITCompiler.h"
 
 namespace j3 {
 
