@@ -1208,6 +1208,7 @@ llvm::Function* JavaJIT::javaCompile() {
     Value* YieldPtr = getDoYieldPtr(getMutatorThreadPtr());
 
     Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
+		Yield =        new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, Yield, intrinsics->constantInt8Zero, "");
 
     BasicBlock* continueBlock = createBasicBlock("After safe point");
     BasicBlock* yieldBlock = createBasicBlock("In safe point");

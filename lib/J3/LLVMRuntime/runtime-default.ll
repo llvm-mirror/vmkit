@@ -29,19 +29,20 @@
 
 %CircularBase = type { %VT*, %CircularBase*, %CircularBase* }
 
-;;; Field 0: the parent (circular base)
-;;; Field 1: IsolateID
-;;; Field 2: MyVM
-;;; Field 3: baseSP
-;;; Field 4: doYield
-;;; Field 5: inRV
-;;; Field 6: joinedRV
-;;; Field 7: lastSP
-;;; Field 8: internalThreadID
-;;; field 9: routine
-;;; field 10: lastKnownFrame
-;;; field 11: lastExceptionBuffer
-%Thread = type { %CircularBase, i8*, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*}
+;;; Field 0:  the parent (circular base)
+;;; Field 1:  size_t IsolateID
+;;; Field 2:  void*  MyVM
+;;; Field 3:  void*  baseSP
+;;; Field 4:  char   doYield
+;;; field 5:  void*  vmData
+;;; Field 6:  char   inRV
+;;; Field 7:  char   joinedRV
+;;; Field 8:  void*  lastSP
+;;; Field 9:  void*  internalThreadID
+;;; field 10: void*  routine
+;;; field 11: void*  lastKnownFrame
+;;; field 12: void*  lastExceptionBuffer
+%Thread = type { %CircularBase, i32, i8*, i8*, i8, i8*, i8, i8, i8*, i8*, i8*, i8*, i8* }
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 

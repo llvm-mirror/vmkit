@@ -194,15 +194,19 @@ public:
  
   /// doYield - Flag to tell the thread to yield for GC reasons.
   ///
-  bool doYield;
+  char doYield;
+
+  /// vmData - vm specific data
+  ///
+  void* vmData;
 
   /// inRV - Flag to tell that the thread is being part of a rendezvous.
   ///
-  bool inRV;
+  char inRV;
 
   /// joinedRV - Flag to tell that the thread has joined a rendezvous.
   ///
-  bool joinedRV;
+  char joinedRV;
 
   /// get - Get the thread specific data of the current thread.
   ///
