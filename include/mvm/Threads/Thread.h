@@ -198,7 +198,7 @@ public:
 
   /// vmData - vm specific data
   ///
-  void* vmData;
+	//  void* vmData;
 
   /// inRV - Flag to tell that the thread is being part of a rendezvous.
   ///

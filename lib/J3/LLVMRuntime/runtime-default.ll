@@ -42,7 +42,7 @@
 ;;; field 10: void*  routine
 ;;; field 11: void*  lastKnownFrame
 ;;; field 12: void*  lastExceptionBuffer
-%Thread = type { %CircularBase, i32, i8*, i8*, i8, i8*, i8, i8, i8*, i8*, i8*, i8*, i8* }
+%Thread = type { %CircularBase, i32, i8*, i8*, i8, i8, i8, i8*, i8*, i8*, i8*, i8* }
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 
