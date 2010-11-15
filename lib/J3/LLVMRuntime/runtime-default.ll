@@ -34,14 +34,15 @@
 ;;; Field 2:  void*  MyVM
 ;;; Field 3:  void*  baseSP
 ;;; Field 4:  char   doYield
-;;; field 5:  void*  vmData
-;;; Field 6:  char   inRV
-;;; Field 7:  char   joinedRV
-;;; Field 8:  void*  lastSP
-;;; Field 9:  void*  internalThreadID
-;;; field 10: void*  routine
-;;; field 11: void*  lastKnownFrame
-;;; field 12: void*  lastExceptionBuffer
+;;; Field 5:  char   inRV
+;;; Field 6:  char   joinedRV
+;;; Field 7:  void*  lastSP
+;;; Field 8:  void*  internalThreadID
+;;; field 9:  void*  routine
+;;; field 10: void*  lastKnownFrame
+;;; field 11: void*  lastExceptionBuffer
+;;; field 12: void*  vmData
+;;; %Thread = type { %CircularBase, i32, i8*, i8*, i8, i8, i8, i8*, i8*, i8*, i8*, i8*, i8* } TEST ME
 %Thread = type { %CircularBase, i32, i8*, i8*, i8, i8, i8, i8*, i8*, i8*, i8*, i8* }
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }

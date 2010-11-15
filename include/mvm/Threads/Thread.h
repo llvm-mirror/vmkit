@@ -196,10 +196,6 @@ public:
   ///
   char doYield;
 
-  /// vmData - vm specific data
-  ///
-	//  void* vmData;
-
   /// inRV - Flag to tell that the thread is being part of a rendezvous.
   ///
   char inRV;
@@ -395,6 +391,11 @@ public:
 
   void startKnownFrame(KnownFrame& F) __attribute__ ((noinline));
   void endKnownFrame();
+
+
+  /// vmData - vm specific data
+  ///
+	//	void* vmData;  TEST ME
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS
