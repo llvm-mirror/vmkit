@@ -322,6 +322,9 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   assert(AllocateUnresolvedFunction && "No allocateUnresolved function");
   AddFinalizationCandidate = module->getFunction("addFinalizationCandidate");
   assert(AddFinalizationCandidate && "No addFinalizationCandidate function");
+
+  VTType            = PointerType::getUnqual(module->getTypeByName("VT"));
+  MutatorThreadType = PointerType::getUnqual(module->getTypeByName("MutatorThread"));
 }
 
 const llvm::TargetData* MvmModule::TheTargetData;

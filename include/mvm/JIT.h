@@ -172,6 +172,9 @@ public:
   const llvm::PointerType* ptrPtrType;
   const llvm::Type* arrayPtrType;
   const llvm::Type* pointerSizeType;
+
+  const llvm::Type* MutatorThreadType;
+  const llvm::Type* VTType;
 };
 
 
