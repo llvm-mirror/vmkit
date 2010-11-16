@@ -2,5 +2,541 @@
 
 
 Function* makeLLVMFunction(Module *mod) {
-return 0;
+
+// Type Definitions
+PointerType* PointerTy_0 = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
+
+std::vector<const Type*>FuncTy_1_args;
+FuncTy_1_args.push_back(IntegerType::get(mod->getContext(), 32));
+FuncTy_1_args.push_back(PointerTy_0);
+FunctionType* FuncTy_1 = FunctionType::get(
+ /*Result=*/PointerTy_0,
+ /*Params=*/FuncTy_1_args,
+ /*isVarArg=*/false);
+
+std::vector<const Type*>FuncTy_3_args;
+FuncTy_3_args.push_back(IntegerType::get(mod->getContext(), 32));
+FunctionType* FuncTy_3 = FunctionType::get(
+ /*Result=*/PointerTy_0,
+ /*Params=*/FuncTy_3_args,
+ /*isVarArg=*/false);
+
+PointerType* PointerTy_2 = PointerType::get(FuncTy_3, 0);
+
+std::vector<const Type*>StructTy_struct_mvm__MutatorThread_fields;
+std::vector<const Type*>StructTy_struct_mvm__Thread_fields;
+std::vector<const Type*>StructTy_struct_mvm__CircularBase_fields;
+std::vector<const Type*>FuncTy_7_args;
+FunctionType* FuncTy_7 = FunctionType::get(
+ /*Result=*/IntegerType::get(mod->getContext(), 32),
+ /*Params=*/FuncTy_7_args,
+ /*isVarArg=*/true);
+
+PointerType* PointerTy_6 = PointerType::get(FuncTy_7, 0);
+
+PointerType* PointerTy_5 = PointerType::get(PointerTy_6, 0);
+
+StructTy_struct_mvm__CircularBase_fields.push_back(PointerTy_5);
+PATypeHolder StructTy_struct_mvm__CircularBase_fwd = OpaqueType::get(mod->getContext());
+PointerType* PointerTy_8 = PointerType::get(StructTy_struct_mvm__CircularBase_fwd, 0);
+
+StructTy_struct_mvm__CircularBase_fields.push_back(PointerTy_8);
+StructTy_struct_mvm__CircularBase_fields.push_back(PointerTy_8);
+StructType* StructTy_struct_mvm__CircularBase = StructType::get(mod->getContext(), StructTy_struct_mvm__CircularBase_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::CircularBase", StructTy_struct_mvm__CircularBase);
+cast<OpaqueType>(StructTy_struct_mvm__CircularBase_fwd.get())->refineAbstractTypeTo(StructTy_struct_mvm__CircularBase);
+StructTy_struct_mvm__CircularBase = cast<StructType>(StructTy_struct_mvm__CircularBase_fwd.get());
+
+
+StructTy_struct_mvm__Thread_fields.push_back(StructTy_struct_mvm__CircularBase);
+StructTy_struct_mvm__Thread_fields.push_back(IntegerType::get(mod->getContext(), 32));
+std::vector<const Type*>StructTy_struct_mvm__VirtualMachine_fields;
+StructTy_struct_mvm__VirtualMachine_fields.push_back(PointerTy_5);
+std::vector<const Type*>StructTy_struct_mvm__BumpPtrAllocator_fields;
+std::vector<const Type*>StructTy_struct_mvm__SpinLock_fields;
+StructTy_struct_mvm__SpinLock_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructType* StructTy_struct_mvm__SpinLock = StructType::get(mod->getContext(), StructTy_struct_mvm__SpinLock_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::SpinLock", StructTy_struct_mvm__SpinLock);
+
+StructTy_struct_mvm__BumpPtrAllocator_fields.push_back(StructTy_struct_mvm__SpinLock);
+std::vector<const Type*>StructTy_struct_llvm__BumpPtrAllocator_fields;
+StructTy_struct_llvm__BumpPtrAllocator_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_llvm__BumpPtrAllocator_fields.push_back(IntegerType::get(mod->getContext(), 32));
+std::vector<const Type*>StructTy_struct_gcRoot_fields;
+StructTy_struct_gcRoot_fields.push_back(PointerTy_5);
+StructType* StructTy_struct_gcRoot = StructType::get(mod->getContext(), StructTy_struct_gcRoot_fields, /*isPacked=*/false);
+mod->addTypeName("struct.gcRoot", StructTy_struct_gcRoot);
+
+PointerType* PointerTy_11 = PointerType::get(StructTy_struct_gcRoot, 0);
+
+StructTy_struct_llvm__BumpPtrAllocator_fields.push_back(PointerTy_11);
+std::vector<const Type*>StructTy_struct_llvm__MemSlab_fields;
+StructTy_struct_llvm__MemSlab_fields.push_back(IntegerType::get(mod->getContext(), 32));
+PATypeHolder PointerTy_12_fwd = OpaqueType::get(mod->getContext());
+StructTy_struct_llvm__MemSlab_fields.push_back(PointerTy_12_fwd);
+StructType* StructTy_struct_llvm__MemSlab = StructType::get(mod->getContext(), StructTy_struct_llvm__MemSlab_fields, /*isPacked=*/false);
+mod->addTypeName("struct.llvm::MemSlab", StructTy_struct_llvm__MemSlab);
+
+PointerType* PointerTy_12 = PointerType::get(StructTy_struct_llvm__MemSlab, 0);
+cast<OpaqueType>(PointerTy_12_fwd.get())->refineAbstractTypeTo(PointerTy_12);
+PointerTy_12 = cast<PointerType>(PointerTy_12_fwd.get());
+
+
+StructTy_struct_llvm__BumpPtrAllocator_fields.push_back(PointerTy_12);
+StructTy_struct_llvm__BumpPtrAllocator_fields.push_back(PointerTy_0);
+StructTy_struct_llvm__BumpPtrAllocator_fields.push_back(PointerTy_0);
+StructTy_struct_llvm__BumpPtrAllocator_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructType* StructTy_struct_llvm__BumpPtrAllocator = StructType::get(mod->getContext(), StructTy_struct_llvm__BumpPtrAllocator_fields, /*isPacked=*/false);
+mod->addTypeName("struct.llvm::BumpPtrAllocator", StructTy_struct_llvm__BumpPtrAllocator);
+
+StructTy_struct_mvm__BumpPtrAllocator_fields.push_back(StructTy_struct_llvm__BumpPtrAllocator);
+StructType* StructTy_struct_mvm__BumpPtrAllocator = StructType::get(mod->getContext(), StructTy_struct_mvm__BumpPtrAllocator_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::BumpPtrAllocator", StructTy_struct_mvm__BumpPtrAllocator);
+
+PointerType* PointerTy_10 = PointerType::get(StructTy_struct_mvm__BumpPtrAllocator, 0);
+
+StructTy_struct_mvm__VirtualMachine_fields.push_back(PointerTy_10);
+PATypeHolder StructTy_struct_mvm__Thread_fwd = OpaqueType::get(mod->getContext());
+PointerType* PointerTy_13 = PointerType::get(StructTy_struct_mvm__Thread_fwd, 0);
+
+StructTy_struct_mvm__VirtualMachine_fields.push_back(PointerTy_13);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__SpinLock);
+std::vector<const Type*>StructTy_struct_mvm__ReferenceQueue_fields;
+std::vector<const Type*>StructTy_struct_gc_fields;
+StructTy_struct_gc_fields.push_back(StructTy_struct_gcRoot);
+StructType* StructTy_struct_gc = StructType::get(mod->getContext(), StructTy_struct_gc_fields, /*isPacked=*/false);
+mod->addTypeName("struct.gc", StructTy_struct_gc);
+
+PointerType* PointerTy_15 = PointerType::get(StructTy_struct_gc, 0);
+
+PointerType* PointerTy_14 = PointerType::get(PointerTy_15, 0);
+
+StructTy_struct_mvm__ReferenceQueue_fields.push_back(PointerTy_14);
+StructTy_struct_mvm__ReferenceQueue_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__ReferenceQueue_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__ReferenceQueue_fields.push_back(StructTy_struct_mvm__SpinLock);
+StructTy_struct_mvm__ReferenceQueue_fields.push_back(IntegerType::get(mod->getContext(), 8));
+StructType* StructTy_struct_mvm__ReferenceQueue = StructType::get(mod->getContext(), StructTy_struct_mvm__ReferenceQueue_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::ReferenceQueue", StructTy_struct_mvm__ReferenceQueue);
+
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__ReferenceQueue);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__ReferenceQueue);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__ReferenceQueue);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__SpinLock);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(PointerTy_14);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__VirtualMachine_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__VirtualMachine_fields.push_back(PointerTy_14);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__VirtualMachine_fields.push_back(IntegerType::get(mod->getContext(), 32));
+std::vector<const Type*>StructTy_struct_mvm__Cond_fields;
+std::vector<const Type*>StructTy_union_pthread_cond_t_fields;
+std::vector<const Type*>StructTy_struct__2__13_fields;
+StructTy_struct__2__13_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct__2__13_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct__2__13_fields.push_back(IntegerType::get(mod->getContext(), 64));
+StructTy_struct__2__13_fields.push_back(IntegerType::get(mod->getContext(), 64));
+StructTy_struct__2__13_fields.push_back(IntegerType::get(mod->getContext(), 64));
+StructTy_struct__2__13_fields.push_back(PointerTy_0);
+StructTy_struct__2__13_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct__2__13_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructType* StructTy_struct__2__13 = StructType::get(mod->getContext(), StructTy_struct__2__13_fields, /*isPacked=*/false);
+mod->addTypeName("struct..2._13", StructTy_struct__2__13);
+
+StructTy_union_pthread_cond_t_fields.push_back(StructTy_struct__2__13);
+ArrayType* ArrayTy_16 = ArrayType::get(IntegerType::get(mod->getContext(), 32), 1);
+
+StructTy_union_pthread_cond_t_fields.push_back(ArrayTy_16);
+StructType* StructTy_union_pthread_cond_t = StructType::get(mod->getContext(), StructTy_union_pthread_cond_t_fields, /*isPacked=*/false);
+mod->addTypeName("union.pthread_cond_t", StructTy_union_pthread_cond_t);
+
+StructTy_struct_mvm__Cond_fields.push_back(StructTy_union_pthread_cond_t);
+StructType* StructTy_struct_mvm__Cond = StructType::get(mod->getContext(), StructTy_struct_mvm__Cond_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::Cond", StructTy_struct_mvm__Cond);
+
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__Cond);
+std::vector<const Type*>StructTy_struct_mvm__LockNormal_fields;
+std::vector<const Type*>StructTy_struct_mvm__Lock_fields;
+StructTy_struct_mvm__Lock_fields.push_back(PointerTy_5);
+StructTy_struct_mvm__Lock_fields.push_back(PointerTy_13);
+std::vector<const Type*>StructTy_union_pthread_mutex_t_fields;
+std::vector<const Type*>StructTy_struct__1__pthread_mutex_s_fields;
+StructTy_struct__1__pthread_mutex_s_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct__1__pthread_mutex_s_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct__1__pthread_mutex_s_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct__1__pthread_mutex_s_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct__1__pthread_mutex_s_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct__1__pthread_mutex_s_fields.push_back(StructTy_struct_mvm__SpinLock);
+StructType* StructTy_struct__1__pthread_mutex_s = StructType::get(mod->getContext(), StructTy_struct__1__pthread_mutex_s_fields, /*isPacked=*/false);
+mod->addTypeName("struct..1__pthread_mutex_s", StructTy_struct__1__pthread_mutex_s);
+
+StructTy_union_pthread_mutex_t_fields.push_back(StructTy_struct__1__pthread_mutex_s);
+StructType* StructTy_union_pthread_mutex_t = StructType::get(mod->getContext(), StructTy_union_pthread_mutex_t_fields, /*isPacked=*/false);
+mod->addTypeName("union.pthread_mutex_t", StructTy_union_pthread_mutex_t);
+
+StructTy_struct_mvm__Lock_fields.push_back(StructTy_union_pthread_mutex_t);
+StructType* StructTy_struct_mvm__Lock = StructType::get(mod->getContext(), StructTy_struct_mvm__Lock_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::Lock", StructTy_struct_mvm__Lock);
+
+StructTy_struct_mvm__LockNormal_fields.push_back(StructTy_struct_mvm__Lock);
+StructType* StructTy_struct_mvm__LockNormal = StructType::get(mod->getContext(), StructTy_struct_mvm__LockNormal_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::LockNormal", StructTy_struct_mvm__LockNormal);
+
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__LockNormal);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(PointerTy_14);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__VirtualMachine_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__LockNormal);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__Cond);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__SpinLock);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(PointerTy_11);
+std::vector<const Type*>StructTy_struct_mvm__CollectionRV_fields;
+StructTy_struct_mvm__CollectionRV_fields.push_back(StructTy_struct_mvm__LockNormal);
+StructTy_struct_mvm__CollectionRV_fields.push_back(StructTy_struct_mvm__Cond);
+StructTy_struct_mvm__CollectionRV_fields.push_back(StructTy_struct_mvm__Cond);
+StructTy_struct_mvm__CollectionRV_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__CollectionRV_fields.push_back(IntegerType::get(mod->getContext(), 8));
+StructTy_struct_mvm__CollectionRV_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructType* StructTy_struct_mvm__CollectionRV = StructType::get(mod->getContext(), StructTy_struct_mvm__CollectionRV_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::CollectionRV", StructTy_struct_mvm__CollectionRV);
+
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__CollectionRV);
+std::vector<const Type*>StructTy_struct_mvm__StartEndFunctionMap_fields;
+std::vector<const Type*>StructTy_struct_mvm__FunctionMap_fields;
+std::vector<const Type*>StructTy_struct_std__map_const_char_j3__ClassPrimitive__std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_______fields;
+std::vector<const Type*>StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_______fields;
+std::vector<const Type*>StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_________Rb_tree_impl_std__less_const_char__false__fields;
+std::vector<const Type*>StructTy_struct___gnu_cxx__new_allocator_gc___fields;
+StructTy_struct___gnu_cxx__new_allocator_gc___fields.push_back(IntegerType::get(mod->getContext(), 8));
+StructType* StructTy_struct___gnu_cxx__new_allocator_gc__ = StructType::get(mod->getContext(), StructTy_struct___gnu_cxx__new_allocator_gc___fields, /*isPacked=*/true);
+mod->addTypeName("struct.__gnu_cxx::new_allocator<gc*>", StructTy_struct___gnu_cxx__new_allocator_gc__);
+
+StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_________Rb_tree_impl_std__less_const_char__false__fields.push_back(StructTy_struct___gnu_cxx__new_allocator_gc__);
+std::vector<const Type*>StructTy_struct_std___Rb_tree_node_base_fields;
+StructTy_struct_std___Rb_tree_node_base_fields.push_back(IntegerType::get(mod->getContext(), 32));
+PATypeHolder StructTy_struct_std___Rb_tree_node_base_fwd = OpaqueType::get(mod->getContext());
+PointerType* PointerTy_17 = PointerType::get(StructTy_struct_std___Rb_tree_node_base_fwd, 0);
+
+StructTy_struct_std___Rb_tree_node_base_fields.push_back(PointerTy_17);
+StructTy_struct_std___Rb_tree_node_base_fields.push_back(PointerTy_17);
+StructTy_struct_std___Rb_tree_node_base_fields.push_back(PointerTy_17);
+StructType* StructTy_struct_std___Rb_tree_node_base = StructType::get(mod->getContext(), StructTy_struct_std___Rb_tree_node_base_fields, /*isPacked=*/false);
+mod->addTypeName("struct.std::_Rb_tree_node_base", StructTy_struct_std___Rb_tree_node_base);
+cast<OpaqueType>(StructTy_struct_std___Rb_tree_node_base_fwd.get())->refineAbstractTypeTo(StructTy_struct_std___Rb_tree_node_base);
+StructTy_struct_std___Rb_tree_node_base = cast<StructType>(StructTy_struct_std___Rb_tree_node_base_fwd.get());
+
+
+StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_________Rb_tree_impl_std__less_const_char__false__fields.push_back(StructTy_struct_std___Rb_tree_node_base);
+StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_________Rb_tree_impl_std__less_const_char__false__fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructType* StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_________Rb_tree_impl_std__less_const_char__false_ = StructType::get(mod->getContext(), StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_________Rb_tree_impl_std__less_const_char__false__fields, /*isPacked=*/false);
+mod->addTypeName("struct.std::_Rb_tree<const char,std::pair<const char, j3::ClassPrimitive*>,std::_Select1st<std::pair<const char, j3::ClassPrimitive*> >,std::less<const char>,std::allocator<std::pair<const char, j3::ClassPrimitive*> > >::_Rb_tree_impl<std::less<const char>,false>", StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_________Rb_tree_impl_std__less_const_char__false_);
+
+StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_______fields.push_back(StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_________Rb_tree_impl_std__less_const_char__false_);
+StructType* StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive______ = StructType::get(mod->getContext(), StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_______fields, /*isPacked=*/false);
+mod->addTypeName("struct.std::_Rb_tree<const char,std::pair<const char, j3::ClassPrimitive*>,std::_Select1st<std::pair<const char, j3::ClassPrimitive*> >,std::less<const char>,std::allocator<std::pair<const char, j3::ClassPrimitive*> > >", StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive______);
+
+StructTy_struct_std__map_const_char_j3__ClassPrimitive__std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_______fields.push_back(StructTy_struct_std___Rb_tree_const_char_std__pair_const_char__j3__ClassPrimitive___std___Select1st_std__pair_const_char__j3__ClassPrimitive_____std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive______);
+StructType* StructTy_struct_std__map_const_char_j3__ClassPrimitive__std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive______ = StructType::get(mod->getContext(), StructTy_struct_std__map_const_char_j3__ClassPrimitive__std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive_______fields, /*isPacked=*/false);
+mod->addTypeName("struct.std::map<const char,j3::ClassPrimitive*,std::less<const char>,std::allocator<std::pair<const char, j3::ClassPrimitive*> > >", StructTy_struct_std__map_const_char_j3__ClassPrimitive__std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive______);
+
+StructTy_struct_mvm__FunctionMap_fields.push_back(StructTy_struct_std__map_const_char_j3__ClassPrimitive__std__less_const_char__std__allocator_std__pair_const_char__j3__ClassPrimitive______);
+StructTy_struct_mvm__FunctionMap_fields.push_back(StructTy_struct_mvm__SpinLock);
+StructType* StructTy_struct_mvm__FunctionMap = StructType::get(mod->getContext(), StructTy_struct_mvm__FunctionMap_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::FunctionMap", StructTy_struct_mvm__FunctionMap);
+
+StructTy_struct_mvm__StartEndFunctionMap_fields.push_back(StructTy_struct_mvm__FunctionMap);
+StructType* StructTy_struct_mvm__StartEndFunctionMap = StructType::get(mod->getContext(), StructTy_struct_mvm__StartEndFunctionMap_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::StartEndFunctionMap", StructTy_struct_mvm__StartEndFunctionMap);
+
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__StartEndFunctionMap);
+StructTy_struct_mvm__VirtualMachine_fields.push_back(StructTy_struct_mvm__StartEndFunctionMap);
+StructType* StructTy_struct_mvm__VirtualMachine = StructType::get(mod->getContext(), StructTy_struct_mvm__VirtualMachine_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::VirtualMachine", StructTy_struct_mvm__VirtualMachine);
+
+PointerType* PointerTy_9 = PointerType::get(StructTy_struct_mvm__VirtualMachine, 0);
+
+StructTy_struct_mvm__Thread_fields.push_back(PointerTy_9);
+StructTy_struct_mvm__Thread_fields.push_back(PointerTy_0);
+StructTy_struct_mvm__Thread_fields.push_back(IntegerType::get(mod->getContext(), 8));
+StructTy_struct_mvm__Thread_fields.push_back(IntegerType::get(mod->getContext(), 8));
+StructTy_struct_mvm__Thread_fields.push_back(IntegerType::get(mod->getContext(), 8));
+StructTy_struct_mvm__Thread_fields.push_back(PointerTy_0);
+StructTy_struct_mvm__Thread_fields.push_back(PointerTy_0);
+std::vector<const Type*>FuncTy_19_args;
+FuncTy_19_args.push_back(PointerTy_13);
+FunctionType* FuncTy_19 = FunctionType::get(
+ /*Result=*/Type::getVoidTy(mod->getContext()),
+ /*Params=*/FuncTy_19_args,
+ /*isVarArg=*/false);
+
+PointerType* PointerTy_18 = PointerType::get(FuncTy_19, 0);
+
+StructTy_struct_mvm__Thread_fields.push_back(PointerTy_18);
+std::vector<const Type*>StructTy_struct_mvm__KnownFrame_fields;
+PATypeHolder PointerTy_20_fwd = OpaqueType::get(mod->getContext());
+StructTy_struct_mvm__KnownFrame_fields.push_back(PointerTy_20_fwd);
+StructTy_struct_mvm__KnownFrame_fields.push_back(PointerTy_0);
+StructType* StructTy_struct_mvm__KnownFrame = StructType::get(mod->getContext(), StructTy_struct_mvm__KnownFrame_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::KnownFrame", StructTy_struct_mvm__KnownFrame);
+
+PointerType* PointerTy_20 = PointerType::get(StructTy_struct_mvm__KnownFrame, 0);
+cast<OpaqueType>(PointerTy_20_fwd.get())->refineAbstractTypeTo(PointerTy_20);
+PointerTy_20 = cast<PointerType>(PointerTy_20_fwd.get());
+
+
+StructTy_struct_mvm__Thread_fields.push_back(PointerTy_20);
+std::vector<const Type*>StructTy_struct_mvm__ExceptionBuffer_fields;
+PATypeHolder PointerTy_21_fwd = OpaqueType::get(mod->getContext());
+StructTy_struct_mvm__ExceptionBuffer_fields.push_back(PointerTy_21_fwd);
+std::vector<const Type*>StructTy_struct___jmp_buf_tag_fields;
+ArrayType* ArrayTy_23 = ArrayType::get(IntegerType::get(mod->getContext(), 32), 6);
+
+StructTy_struct___jmp_buf_tag_fields.push_back(ArrayTy_23);
+StructTy_struct___jmp_buf_tag_fields.push_back(IntegerType::get(mod->getContext(), 32));
+std::vector<const Type*>StructTy_struct___sigset_t_fields;
+ArrayType* ArrayTy_24 = ArrayType::get(IntegerType::get(mod->getContext(), 32), 32);
+
+StructTy_struct___sigset_t_fields.push_back(ArrayTy_24);
+StructType* StructTy_struct___sigset_t = StructType::get(mod->getContext(), StructTy_struct___sigset_t_fields, /*isPacked=*/false);
+mod->addTypeName("struct.__sigset_t", StructTy_struct___sigset_t);
+
+StructTy_struct___jmp_buf_tag_fields.push_back(StructTy_struct___sigset_t);
+StructType* StructTy_struct___jmp_buf_tag = StructType::get(mod->getContext(), StructTy_struct___jmp_buf_tag_fields, /*isPacked=*/false);
+mod->addTypeName("struct.__jmp_buf_tag", StructTy_struct___jmp_buf_tag);
+
+ArrayType* ArrayTy_22 = ArrayType::get(StructTy_struct___jmp_buf_tag, 1);
+
+StructTy_struct_mvm__ExceptionBuffer_fields.push_back(ArrayTy_22);
+StructType* StructTy_struct_mvm__ExceptionBuffer = StructType::get(mod->getContext(), StructTy_struct_mvm__ExceptionBuffer_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::ExceptionBuffer", StructTy_struct_mvm__ExceptionBuffer);
+
+PointerType* PointerTy_21 = PointerType::get(StructTy_struct_mvm__ExceptionBuffer, 0);
+cast<OpaqueType>(PointerTy_21_fwd.get())->refineAbstractTypeTo(PointerTy_21);
+PointerTy_21 = cast<PointerType>(PointerTy_21_fwd.get());
+
+
+StructTy_struct_mvm__Thread_fields.push_back(PointerTy_21);
+StructType* StructTy_struct_mvm__Thread = StructType::get(mod->getContext(), StructTy_struct_mvm__Thread_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::Thread", StructTy_struct_mvm__Thread);
+cast<OpaqueType>(StructTy_struct_mvm__Thread_fwd.get())->refineAbstractTypeTo(StructTy_struct_mvm__Thread);
+StructTy_struct_mvm__Thread = cast<StructType>(StructTy_struct_mvm__Thread_fwd.get());
+
+
+StructTy_struct_mvm__MutatorThread_fields.push_back(StructTy_struct_mvm__Thread);
+StructTy_struct_mvm__MutatorThread_fields.push_back(StructTy_struct_mvm__BumpPtrAllocator);
+StructTy_struct_mvm__MutatorThread_fields.push_back(IntegerType::get(mod->getContext(), 32));
+StructTy_struct_mvm__MutatorThread_fields.push_back(PointerTy_18);
+StructType* StructTy_struct_mvm__MutatorThread = StructType::get(mod->getContext(), StructTy_struct_mvm__MutatorThread_fields, /*isPacked=*/false);
+mod->addTypeName("struct.mvm::MutatorThread", StructTy_struct_mvm__MutatorThread);
+
+PointerType* PointerTy_4 = PointerType::get(StructTy_struct_mvm__MutatorThread, 0);
+
+PointerType* PointerTy_25 = PointerType::get(IntegerType::get(mod->getContext(), 32), 0);
+
+std::vector<const Type*>StructTy_struct_j3__JavaObject_fields;
+StructTy_struct_j3__JavaObject_fields.push_back(StructTy_struct_gc);
+StructTy_struct_j3__JavaObject_fields.push_back(StructTy_struct_mvm__SpinLock);
+StructType* StructTy_struct_j3__JavaObject = StructType::get(mod->getContext(), StructTy_struct_j3__JavaObject_fields, /*isPacked=*/false);
+mod->addTypeName("struct.j3::JavaObject", StructTy_struct_j3__JavaObject);
+
+PointerType* PointerTy_26 = PointerType::get(StructTy_struct_j3__JavaObject, 0);
+
+std::vector<const Type*>StructTy_JavaObject_fields;
+ArrayType* ArrayTy_VT = ArrayType::get(PointerTy_6, 0);
+mod->addTypeName("VT", ArrayTy_VT);
+
+PointerType* PointerTy_29 = PointerType::get(ArrayTy_VT, 0);
+
+StructTy_JavaObject_fields.push_back(PointerTy_29);
+StructTy_JavaObject_fields.push_back(PointerTy_0);
+StructType* StructTy_JavaObject = StructType::get(mod->getContext(), StructTy_JavaObject_fields, /*isPacked=*/false);
+mod->addTypeName("JavaObject", StructTy_JavaObject);
+
+PointerType* PointerTy_28 = PointerType::get(StructTy_JavaObject, 0);
+
+PointerType* PointerTy_27 = PointerType::get(PointerTy_28, 0);
+
+PointerType* PointerTy_30 = PointerType::get(PointerTy_0, 0);
+
+PointerType* PointerTy_31 = PointerType::get(PointerTy_29, 0);
+
+std::vector<const Type*>FuncTy_33_args;
+FuncTy_33_args.push_back(PointerTy_28);
+FuncTy_33_args.push_back(PointerTy_28);
+FuncTy_33_args.push_back(PointerTy_28);
+FuncTy_33_args.push_back(IntegerType::get(mod->getContext(), 32));
+FuncTy_33_args.push_back(IntegerType::get(mod->getContext(), 32));
+FunctionType* FuncTy_33 = FunctionType::get(
+ /*Result=*/PointerTy_28,
+ /*Params=*/FuncTy_33_args,
+ /*isVarArg=*/false);
+
+PointerType* PointerTy_32 = PointerType::get(FuncTy_33, 0);
+
+
+// Function Declarations
+
+Function* func_llvm_frameaddress = Function::Create(
+ /*Type=*/FuncTy_3,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"llvm.frameaddress", mod); // (external, no body)
+func_llvm_frameaddress->setCallingConv(CallingConv::C);
+AttrListPtr func_llvm_frameaddress_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind | Attribute::ReadNone;
+ Attrs.push_back(PAWI);
+ func_llvm_frameaddress_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+func_llvm_frameaddress->setAttributes(func_llvm_frameaddress_PAL);
+
+Function* func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II = Function::Create(
+ /*Type=*/FuncTy_33,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II", mod); 
+func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II->setCallingConv(CallingConv::C);
+AttrListPtr func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoInline;
+ Attrs.push_back(PAWI);
+ func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II->setAttributes(func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II_PAL);
+
+// Global Variable Declarations
+
+// Constant Definitions
+ConstantInt* const_int32_34 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("3"), 10));
+ConstantInt* const_int32_35 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("-4"), 10));
+ConstantInt* const_int32_36 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("0"), 10));
+ConstantInt* const_int32_37 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("2146435072"), 10));
+ConstantInt* const_int32_38 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("2"), 10));
+ConstantInt* const_int32_39 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("5"), 10));
+ConstantInt* const_int32_40 = ConstantInt::get(mod->getContext(), APInt(32, StringRef("1"), 10));
+
+// Global Variable Definitions
+
+Function* func_gcmalloc = Function::Create(
+ /*Type=*/FuncTy_1,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Name=*/"gcmalloc", mod); 
+func_gcmalloc->setCallingConv(CallingConv::C);
+AttrListPtr func_gcmalloc_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ func_gcmalloc_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+func_gcmalloc->setAttributes(func_gcmalloc_PAL);
+Function::arg_iterator args = func_gcmalloc->arg_begin();
+Value* int32_sz = args++;
+int32_sz->setName("sz");
+Value* ptr_VT = args++;
+ptr_VT->setName("VT");
+
+BasicBlock* label_entry = BasicBlock::Create(mod->getContext(), "entry",func_gcmalloc,0);
+BasicBlock* label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i = BasicBlock::Create(mod->getContext(), "JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2.exit.i.i.i",func_gcmalloc,0);
+BasicBlock* label_false_IFEQ_i_i_i = BasicBlock::Create(mod->getContext(), "false IFEQ.i.i.i",func_gcmalloc,0);
+BasicBlock* label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit = BasicBlock::Create(mod->getContext(), "JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2.exit",func_gcmalloc,0);
+
+// Block entry (label_entry)
+BinaryOperator* int32_41 = BinaryOperator::Create(Instruction::Add, int32_sz, const_int32_34, "", label_entry);
+BinaryOperator* int32_42 = BinaryOperator::Create(Instruction::And, int32_41, const_int32_35, "", label_entry);
+CallInst* ptr_43 = CallInst::Create(func_llvm_frameaddress, const_int32_36, "", label_entry);
+ptr_43->setCallingConv(CallingConv::C);
+ptr_43->setTailCall(true);
+AttrListPtr ptr_43_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_43_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+ptr_43->setAttributes(ptr_43_PAL);
+
+CastInst* int32_44 = new PtrToIntInst(ptr_43, IntegerType::get(mod->getContext(), 32), "", label_entry);
+BinaryOperator* int32_45 = BinaryOperator::Create(Instruction::And, int32_44, const_int32_37, "", label_entry);
+CastInst* ptr_46 = new IntToPtrInst(int32_45, PointerTy_4, "", label_entry);
+std::vector<Value*> ptr_47_indices;
+ptr_47_indices.push_back(const_int32_36);
+ptr_47_indices.push_back(const_int32_38);
+Instruction* ptr_47 = GetElementPtrInst::Create(ptr_46, ptr_47_indices.begin(), ptr_47_indices.end(), "", label_entry);
+LoadInst* int32_48 = new LoadInst(ptr_47, "", false, label_entry);
+CastInst* ptr_49 = new IntToPtrInst(int32_48, PointerTy_26, "", label_entry);
+GetElementPtrInst* ptr_50 = GetElementPtrInst::Create(ptr_49, const_int32_39, "", label_entry);
+CastInst* ptr_51 = new BitCastInst(ptr_50, PointerTy_27, "", label_entry);
+LoadInst* ptr_52 = new LoadInst(ptr_51, "", false, label_entry);
+GetElementPtrInst* ptr_53 = GetElementPtrInst::Create(ptr_52, const_int32_40, "", label_entry);
+CastInst* ptr_54 = new BitCastInst(ptr_53, PointerTy_27, "", label_entry);
+LoadInst* ptr_55 = new LoadInst(ptr_54, "", false, label_entry);
+CastInst* int32_56 = new PtrToIntInst(ptr_55, IntegerType::get(mod->getContext(), 32), "", label_entry);
+BinaryOperator* int32_57 = BinaryOperator::Create(Instruction::Add, int32_56, int32_42, "", label_entry);
+CastInst* ptr_58 = new IntToPtrInst(int32_57, PointerTy_28, "", label_entry);
+std::vector<Value*> ptr_59_indices;
+ptr_59_indices.push_back(const_int32_40);
+ptr_59_indices.push_back(const_int32_40);
+Instruction* ptr_59 = GetElementPtrInst::Create(ptr_52, ptr_59_indices.begin(), ptr_59_indices.end(), "", label_entry);
+LoadInst* ptr_60 = new LoadInst(ptr_59, "", false, label_entry);
+CastInst* ptr_61 = new BitCastInst(ptr_60, PointerTy_28, "", label_entry);
+ICmpInst* int1_62 = new ICmpInst(*label_entry, ICmpInst::ICMP_UGT, ptr_58, ptr_61, "");
+BranchInst::Create(label_false_IFEQ_i_i_i, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i, int1_62, label_entry);
+
+// Block JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2.exit.i.i.i (label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i)
+std::vector<Value*> ptr_64_indices;
+ptr_64_indices.push_back(const_int32_40);
+ptr_64_indices.push_back(const_int32_36);
+Instruction* ptr_64 = GetElementPtrInst::Create(ptr_52, ptr_64_indices.begin(), ptr_64_indices.end(), "", label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i);
+CastInst* ptr__c_i_i_i = new IntToPtrInst(int32_57, PointerTy_29, ".c.i.i.i", label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i);
+ new StoreInst(ptr__c_i_i_i, ptr_64, false, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i);
+BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i);
+
+// Block false IFEQ.i.i.i (label_false_IFEQ_i_i_i)
+std::vector<Value*> ptr_67_params;
+ptr_67_params.push_back(ptr_52);
+ptr_67_params.push_back(ptr_55);
+ptr_67_params.push_back(ptr_58);
+ptr_67_params.push_back(const_int32_36);
+ptr_67_params.push_back(const_int32_36);
+CallInst* ptr_67 = CallInst::Create(func_JnJVM_org_mmtk_utility_alloc_BumpPointer_allocSlow__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2II, ptr_67_params.begin(), ptr_67_params.end(), "", label_false_IFEQ_i_i_i);
+ptr_67->setCallingConv(CallingConv::C);
+ptr_67->setTailCall(true);
+AttrListPtr ptr_67_PAL;
+{
+ SmallVector<AttributeWithIndex, 4> Attrs;
+ AttributeWithIndex PAWI;
+ PAWI.Index = 4294967295U; PAWI.Attrs = 0  | Attribute::NoUnwind;
+ Attrs.push_back(PAWI);
+ ptr_67_PAL = AttrListPtr::get(Attrs.begin(), Attrs.end());
+ 
+}
+ptr_67->setAttributes(ptr_67_PAL);
+
+BranchInst::Create(label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit, label_false_IFEQ_i_i_i);
+
+// Block JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2.exit (label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit)
+PHINode* ptr_69 = PHINode::Create(PointerTy_28, "", label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
+ptr_69->reserveOperandSpace(2);
+ptr_69->addIncoming(ptr_55, label_JnJVM_org_mmtk_utility_alloc_Allocator_fillAlignmentGap__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2_exit_i_i_i);
+ptr_69->addIncoming(ptr_67, label_false_IFEQ_i_i_i);
+
+std::vector<Value*> ptr_70_indices;
+ptr_70_indices.push_back(const_int32_36);
+ptr_70_indices.push_back(const_int32_36);
+Instruction* ptr_70 = GetElementPtrInst::Create(ptr_69, ptr_70_indices.begin(), ptr_70_indices.end(), "", label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
+CastInst* ptr__c_i = new BitCastInst(ptr_VT, PointerTy_29, ".c.i", label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
+ new StoreInst(ptr__c_i, ptr_70, false, label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
+CastInst* ptr_tmp1 = new BitCastInst(ptr_69, PointerTy_0, "tmp1", label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
+ReturnInst::Create(mod->getContext(), ptr_tmp1, label_JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2_exit);
+return func_gcmalloc;
 }

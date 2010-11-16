@@ -35,6 +35,7 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   BaseIntrinsics(module) {
   j3::llvm_runtime::makeLLVMModuleContents(module);
   
+  VTType = PointerType::getUnqual(module->getTypeByName("VT"));
   LLVMContext& Context = module->getContext();
 
 #ifdef ISOLATE_SHARING
@@ -89,6 +90,8 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
     PointerType::getUnqual(module->getTypeByName("Attribut"));
   JavaThreadType =
     PointerType::getUnqual(module->getTypeByName("JavaThread"));
+  MutatorThreadType =
+    PointerType::getUnqual(module->getTypeByName("MutatorThread"));
   
   CodeLineInfoType =
     PointerType::getUnqual(module->getTypeByName("CodeLineInfo"));

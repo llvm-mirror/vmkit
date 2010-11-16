@@ -2,6 +2,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Type definitions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;; A virtual table is an array of function pointers.
+%VT = type [0 x i32 (...)*]
+
 ;;; The root of all Java Objects: a VT and a lock.
 %JavaObject = type { %VT*, i8* }
 
@@ -23,6 +26,23 @@
 ;;; Field 2: The initialization state
 ;;; Field 3: The static instance
 %TaskClassMirror = type { i8, i1, i8* }
+
+%CircularBase = type { %VT*, %CircularBase*, %CircularBase* }
+
+;;; Field 0:  the parent (circular base)
+;;; Field 1:  size_t IsolateID
+;;; Field 2:  void*  MyVM
+;;; Field 3:  void*  baseSP
+;;; Field 4:  char   doYield
+;;; field 5:  void*  vmData
+;;; Field 6:  char   inRV
+;;; Field 7:  char   joinedRV
+;;; Field 8:  void*  lastSP
+;;; Field 9:  void*  internalThreadID
+;;; field 10: void*  routine
+;;; field 11: void*  lastKnownFrame
+;;; field 12: void*  lastExceptionBuffer
+%Thread = type { %CircularBase, i32, i8*, i8*, i8, i8, i8, i8*, i8*, i8*, i8*, i8* }
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 
