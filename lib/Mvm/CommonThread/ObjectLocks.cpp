@@ -143,6 +143,8 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
       FatLock* obj = table.getFatLockFromID(object->header);
       if (obj != NULL) {
         if (obj->acquire(object)) {
+          assert((object->header & FatMask) && "Inconsistent lock");
+          assert((table.getFatLockFromID(object->header) == obj) && "Inconsistent lock");
           assert(owner(object, table) && "Not owner after acquring fat lock!");
           break;
         }
