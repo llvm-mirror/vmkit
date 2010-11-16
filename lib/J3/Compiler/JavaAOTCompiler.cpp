@@ -1484,6 +1484,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   if (!VT->IMT) {
     Elemts.push_back(Constant::getNullValue(PTy));
   } else {
+    // TODO: add a null element at the end to diagnose errors.
     Class* cl = classDef->asClass();
     assert(cl && "Not a class");
     std::set<JavaMethod*> contents[InterfaceMethodTable::NumIndexes];

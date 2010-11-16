@@ -89,6 +89,7 @@ public:
 
   friend class LockSystem;
   friend class LockingThread;
+  friend class ThinLock;
 };
 
 
@@ -154,7 +155,7 @@ public:
 
   /// initialise - Initialise the value of the lock.
   ///
-  static void initialise(gc* object, LockSystem& table);
+  static void removeFatLock(FatLock* fatLock, LockSystem& table);
 
   /// overflowThinlock - Change the lock of this object to a fat lock because
   /// we have reached 0xFF locks.

@@ -71,6 +71,7 @@ void ReferenceThread::enqueueStart(ReferenceThread* th) {
 
 
 void ReferenceThread::addToEnqueue(gc* obj) {
+  llvm_gcroot(obj, 0);
   if (ToEnqueueIndex >= ToEnqueueLength) {
     uint32 newLength = ToEnqueueLength * GROW_FACTOR;
     gc** newQueue = new gc*[newLength];

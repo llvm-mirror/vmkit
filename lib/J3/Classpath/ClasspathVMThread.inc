@@ -40,6 +40,10 @@ void start(JavaThread* thread) {
   llvm_gcroot(javaThread, 0);
 
   Jnjvm* vm = thread->getJVM();
+  // Wait some time to let the creator initialise these fields.
+  while ((thread->javaThread == NULL) || (thread->vmThread == NULL)) {
+    mvm::Thread::yield();
+  }
 
   // Ok, now that the thread is created we can set the the value of vmdata,
   // which is the JavaThread object.
@@ -90,9 +94,10 @@ JavaObject* vmThread, sint64 stackSize) {
   assert(javaThread && "VMThread with no Java equivalent");
  
   JavaThread* th = new JavaThread(vm);
-  th->initialise(javaThread, vmThread);
   if (!th) vm->outOfMemoryError();
   th->start((void (*)(mvm::Thread*))start);
+  // Now that the thread has been created, initialise its object fields.
+  th->initialise(javaThread, vmThread);
 
   END_NATIVE_EXCEPTION
 }

@@ -16,6 +16,7 @@
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
 #include "j3/OpcodeNames.def"
@@ -750,12 +751,16 @@ extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t 
   uintptr_t result = NULL;
   InterfaceMethodTable* IMT = JavaObject::getClass(obj)->virtualVT->IMT;
   assert(JavaObject::instanceOf(obj, meth->classDef));
+  assert(meth->classDef->isInterface() ||
+      (meth->classDef == meth->classDef->classLoader->bootstrapLoader->upcalls->OfObject));
+  assert(index == InterfaceMethodTable::getIndex(meth->name, meth->type));
   if ((IMT->contents[index] & 1) == 0) {
     result = IMT->contents[index];
-  } else { 
+  } else {
     uintptr_t* table = (uintptr_t*)(IMT->contents[index] & ~1);
     uint32 i = 0;
-    while (table[i] != (uintptr_t)meth) { i += 2; }
+    while (table[i] != (uintptr_t)meth && table[i] != 0) { i += 2; }
+    assert(table[i] != 0);
     result = table[i + 1];
   }
   assert((result != 0) && "Bad IMT");

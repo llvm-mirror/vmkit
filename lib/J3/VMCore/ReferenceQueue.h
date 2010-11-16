@@ -41,6 +41,7 @@ public:
 
   ReferenceQueue(uint8_t s) {
     References = new gc*[INITIAL_QUEUE_SIZE];
+    memset(References, 0, INITIAL_QUEUE_SIZE * sizeof(gc*));
     QueueLength = INITIAL_QUEUE_SIZE;
     CurrentIndex = 0;
     semantics = s;
@@ -56,6 +57,7 @@ public:
     if (CurrentIndex >= QueueLength) {
       uint32 newLength = QueueLength * GROW_FACTOR;
       gc** newQueue = new gc*[newLength];
+      memset(newQueue, 0, newLength * sizeof(gc*));
       if (!newQueue) {
         fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
         abort();

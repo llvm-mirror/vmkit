@@ -209,6 +209,94 @@ StackWalker::StackWalker(mvm::Thread* th) {
   assert(addr && "No address to start with");
 }
 
+
+#ifdef WITH_LLVM_GCC
+void Thread::scanStack(uintptr_t closure) {
+  StackWalker Walker(this);
+  while (MethodInfo* MI = Walker.get()) {
+    MI->scan(closure, Walker.ip, Walker.addr);
+    ++Walker;
+  }
+}
+
+#else
+
+void Thread::scanStack(uintptr_t closure) {
+  register unsigned int  **max = (unsigned int**)(void*)this->baseSP;
+  if (mvm::Thread::get() != this) {
+    register unsigned int  **cur = (unsigned int**)this->waitOnSP();
+    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
+  } else {
+    jmp_buf buf;
+    setjmp(buf);
+    register unsigned int  **cur = (unsigned int**)&buf;
+    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
+  }
+}
+#endif
+
+void Thread::enterUncooperativeCode(unsigned level) {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(!lastSP && "SP already set when entering uncooperative code");
+      // Get the caller.
+      void* temp = FRAME_PTR();
+      // Make sure to at least get the caller of the caller.
+      ++level;
+      while (level--) temp = ((void**)temp)[0];
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, 0, temp);
+      if (doYield) joinRVBeforeEnter();
+      assert(lastSP && "No last SP when entering uncooperative code");
+    }
+  }
+}
+
+void Thread::enterUncooperativeCode(void* SP) {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(!lastSP && "SP already set when entering uncooperative code");
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, 0, SP);
+      if (doYield) joinRVBeforeEnter();
+      assert(lastSP && "No last SP when entering uncooperative code");
+    }
+  }
+}
+
+void Thread::leaveUncooperativeCode() {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(lastSP && "No last SP when leaving uncooperative code");
+      void* savedSP = lastSP;
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
+      // A rendezvous has just been initiated, join it.
+      if (doYield) joinRVAfterLeave(savedSP);
+      assert(!lastSP && "SP has a value after leaving uncooperative code");
+    }
+  }
+}
+
+void* Thread::waitOnSP() {
+  // First see if we can get lastSP directly.
+  void* sp = lastSP;
+  if (sp) return sp;
+  
+  // Then loop a fixed number of iterations to get lastSP.
+  for (uint32 count = 0; count < 1000; ++count) {
+    sp = lastSP;
+    if (sp) return sp;
+  }
+  
+  // Finally, yield until lastSP is not set.
+  while ((sp = lastSP) == NULL) mvm::Thread::yield();
+
+  assert(sp != NULL && "Still no sp");
+  return sp;
+}
+
+
 uintptr_t Thread::baseAddr = 0;
 
 // These could be set at runtime.
@@ -321,12 +409,12 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
 
-  th->MyVM->rendezvous.addThread(th);
 
   assert(th->MyVM && "VM not set in a thread");
 #ifdef ISOLATE
   th->IsolateID = th->MyVM->IsolateID;
 #endif
+  th->MyVM->rendezvous.addThread(th);
   th->routine(th);
   th->MyVM->removeThread(th);
   delete th;
@@ -342,6 +430,8 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   pthread_attr_init(&attributs);
   pthread_attr_setstack(&attributs, this, STACK_SIZE);
   routine = fct;
+  // Make sure to add it in the list of threads before leaving this function:
+  // the garbage collector wants to trace this thread.
   MyVM->addThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
@@ -375,90 +465,4 @@ void Thread::releaseThread(void* th) {
   uintptr_t index = ((uintptr_t)th & Thread::IDMask);
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
-}
-
-#ifdef WITH_LLVM_GCC
-void Thread::scanStack(uintptr_t closure) {
-  StackWalker Walker(this);
-  while (MethodInfo* MI = Walker.get()) {
-    MI->scan(closure, Walker.ip, Walker.addr);
-    ++Walker;
-  }
-}
-
-#else
-
-void Thread::scanStack(uintptr_t closure) {
-  register unsigned int  **max = (unsigned int**)(void*)this->baseSP;
-  if (mvm::Thread::get() != this) {
-    register unsigned int  **cur = (unsigned int**)this->waitOnSP();
-    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
-  } else {
-    jmp_buf buf;
-    setjmp(buf);
-    register unsigned int  **cur = (unsigned int**)&buf;
-    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
-  }
-}
-#endif
-
-void Thread::enterUncooperativeCode(unsigned level) {
-  if (isMvmThread()) {
-    if (!inRV) {
-      assert(!lastSP && "SP already set when entering uncooperative code");
-      // Get the caller.
-      void* temp = FRAME_PTR();
-      // Make sure to at least get the caller of the caller.
-      ++level;
-      while (level--) temp = ((void**)temp)[0];
-      // The cas is not necessary, but it does a memory barrier.
-      __sync_bool_compare_and_swap(&lastSP, 0, temp);
-      if (doYield) joinRVBeforeEnter();
-      assert(lastSP && "No last SP when entering uncooperative code");
-    }
-  }
-}
-
-void Thread::enterUncooperativeCode(void* SP) {
-  if (isMvmThread()) {
-    if (!inRV) {
-      assert(!lastSP && "SP already set when entering uncooperative code");
-      // The cas is not necessary, but it does a memory barrier.
-      __sync_bool_compare_and_swap(&lastSP, 0, SP);
-      if (doYield) joinRVBeforeEnter();
-      assert(lastSP && "No last SP when entering uncooperative code");
-    }
-  }
-}
-
-void Thread::leaveUncooperativeCode() {
-  if (isMvmThread()) {
-    if (!inRV) {
-      assert(lastSP && "No last SP when leaving uncooperative code");
-      void* savedSP = lastSP;
-      // The cas is not necessary, but it does a memory barrier.
-      __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
-      // A rendezvous has just been initiated, join it.
-      if (doYield) joinRVAfterLeave(savedSP);
-      assert(!lastSP && "SP has a value after leaving uncooperative code");
-    }
-  }
-}
-
-void* Thread::waitOnSP() {
-  // First see if we can get lastSP directly.
-  void* sp = lastSP;
-  if (sp) return sp;
-  
-  // Then loop a fixed number of iterations to get lastSP.
-  for (uint32 count = 0; count < 1000; ++count) {
-    sp = lastSP;
-    if (sp) return sp;
-  }
-  
-  // Finally, yield until lastSP is not set.
-  while ((sp = lastSP) == NULL) mvm::Thread::yield();
-
-  assert(sp != NULL && "Still no sp");
-  return sp;
 }

@@ -2189,7 +2189,7 @@ void JavaJIT::getVirtualField(uint16 index) {
 }
 
 
-void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
+void JavaJIT::invokeInterface(uint16 index) {
   
   // Do the usual
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
@@ -2221,7 +2221,8 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
   targetObject = new LoadInst(
           targetObject, "", TheCompiler->useCooperativeGC(), currentBlock);
   JITVerifyNull(targetObject);
-#if 1
+  // TODO: The following code needs more testing.
+#if 0
   BasicBlock* endBlock = createBasicBlock("end interface invoke");
   PHINode * node = PHINode::Create(virtualPtrType, "", endBlock);
 
@@ -2317,9 +2318,12 @@ void JavaJIT::invokeInterface(uint16 index, bool buggyVirtual) {
       
   currentBlock = endBlock;
 #else
-  Value* Args[3] = { targetObject, Meth, Index };
-  Value* node = CallInst::Create(
-      intrinsics->ResolveInterfaceFunction, Args, Args + 3, "", currentBlock);
+  std::vector<Value*> Args;
+  Args.push_back(targetObject);
+  Args.push_back(Meth);
+  Args.push_back(Index);
+  Value* node =
+      invoke(intrinsics->ResolveInterfaceFunction, Args, "", currentBlock);
   node = new BitCastInst(node, virtualPtrType, "", currentBlock);
 #endif
 

@@ -765,14 +765,16 @@ void Class::fillIMT(std::set<JavaMethod*>* meths) {
     interfaces[i]->fillIMT(meths);
   }
 
-  if (super) super->fillIMT(meths);
+  if (super != NULL) {
+    super->fillIMT(meths);
+  }
 
-  if (isInterface()) {
+  // Specification says that an invokeinterface also looks at j.l.Object.
+  if (isInterface() || (super == NULL)) {
     for (uint32 i = 0; i < nbVirtualMethods; ++i) {
       JavaMethod& meth = virtualMethods[i];
       uint32_t index = InterfaceMethodTable::getIndex(meth.name, meth.type);
-      if (meths[index].find(&meth) == meths[index].end())
-        meths[index].insert(&meth);
+      meths[index].insert(&meth);
     }
   }
 }
@@ -924,12 +926,21 @@ void UserClass::resolveParents() {
 
 
 #ifndef ISOLATE_SHARING
+#ifdef ISOLATE
+void Class::resolveClass() {
+  UNIMPLEMENTED();
+}
+#else
 void Class::resolveClass() {
   if (isResolved() || isErroneous()) return;
   resolveParents();
   loadExceptions();
-  setResolved();
+  // Do a compare and swap in case another thread initialized the class.
+  __sync_val_compare_and_swap(
+      &(getCurrentTaskClassMirror().status), loaded, resolved);
+  assert(isResolved() || isErroneous());
 }
+#endif
 #else
 void Class::resolveClass() {
   assert(status >= resolved && 

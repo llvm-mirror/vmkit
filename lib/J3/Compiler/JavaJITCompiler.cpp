@@ -272,6 +272,7 @@ void JavaJITCompiler::makeIMT(Class* cl) {
  
   std::set<JavaMethod*> contents[InterfaceMethodTable::NumIndexes];
   cl->fillIMT(contents);
+
   
   for (uint32_t i = 0; i < InterfaceMethodTable::NumIndexes; ++i) {
     std::set<JavaMethod*>& atIndex = contents[i];
@@ -300,7 +301,7 @@ void JavaJITCompiler::makeIMT(Class* cl) {
         if (OldMethod && OldMethod != Cmeth) SameMethod = false;
         else OldMethod = Cmeth;
        
-        if (Cmeth) methods.push_back(Cmeth);
+        methods.push_back(Cmeth);
       }
 
       if (SameMethod) {
@@ -312,7 +313,8 @@ void JavaJITCompiler::makeIMT(Class* cl) {
         }
       } else {
 
-        uint32_t length = 2 * size * sizeof(uintptr_t);
+        // Add one to have a NULL-terminated table.
+        uint32_t length = (2 * size + 1) * sizeof(uintptr_t);
       
         uintptr_t* table = (uintptr_t*)
           cl->classLoader->allocator.Allocate(length, "IMT");
@@ -325,14 +327,16 @@ void JavaJITCompiler::makeIMT(Class* cl) {
              et = methods.end(); it != et; ++it, j += 2, ++Interf) {
           JavaMethod* Imeth = *Interf;
           JavaMethod* Cmeth = *it;
+          assert(Imeth != NULL);
           assert(j < 2 * size - 1);
           table[j] = (uintptr_t)Imeth;
           if (Cmeth) {
-             table[j + 1] = getPointerOrStub(*Cmeth, JavaMethod::Interface);
+            table[j + 1] = getPointerOrStub(*Cmeth, JavaMethod::Interface);
           } else {
             table[j + 1] = (uintptr_t)ThrowUnfoundInterface;
           }
         }
+        assert(Interf == atIndex.end());
       }
     }
   }

@@ -448,10 +448,8 @@ private:
   /// invokeVirtual - Invoke a Java virtual method.
   void invokeVirtual(uint16 index);
 
-  /// invokeInterface - Invoke a Java interface method. The buggyVirtual
-  /// argument is for buggy java to bytecode compilers which emit a virtual
-  /// call instead of an interface call in some occasions.
-  void invokeInterface(uint16 index, bool buggyVirtual = false);
+  /// invokeInterface - Invoke a Java interface method.
+  void invokeInterface(uint16 index);
 
   /// invokeSpecial - Invoke an instance Java method directly.
   void invokeSpecial(uint16 index);

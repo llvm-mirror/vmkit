@@ -26,6 +26,7 @@ using namespace mvm;
 void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   FatLock* obj = table.allocate(object);
+  uintptr_t ID = obj->getID();
   obj->acquireAll(object, (ThinCountMask >> ThinCountShift) + 1);
   uintptr_t oldValue = 0;
   uintptr_t newValue = 0;
@@ -33,14 +34,18 @@ void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
   do {
     oldValue = object->header;
     newValue = obj->getID() | (oldValue & NonLockBitsMask);
+    assert(obj->associatedObject == object);
     yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-  } while (yieldedValue != oldValue);
+  } while (((object->header) & ~NonLockBitsMask) != ID);
+  assert(obj->associatedObject == object);
 }
  
 /// initialise - Initialise the value of the lock.
 ///
-void ThinLock::initialise(gc* object, LockSystem& table) {
+void ThinLock::removeFatLock(FatLock* fatLock, LockSystem& table) {
+  gc* object = fatLock->associatedObject;
   llvm_gcroot(object, 0);
+  uintptr_t ID = fatLock->getID();
   uintptr_t oldValue = 0;
   uintptr_t newValue = 0;
   uintptr_t yieldedValue = 0;
@@ -48,7 +53,9 @@ void ThinLock::initialise(gc* object, LockSystem& table) {
     oldValue = object->header;
     newValue = oldValue & NonLockBitsMask;
     yieldedValue = __sync_val_compare_and_swap(&object->header, oldValue, newValue);
-  } while (yieldedValue != oldValue);
+  } while (oldValue != yieldedValue);
+  assert((oldValue & NonLockBitsMask) != ID);
+  fatLock->associatedObject = NULL;
 }
   
 FatLock* ThinLock::changeToFatlock(gc* object, LockSystem& table) {
@@ -60,16 +67,38 @@ FatLock* ThinLock::changeToFatlock(gc* object, LockSystem& table) {
     uintptr_t oldValue = 0;
     uintptr_t newValue = 0;
     uintptr_t yieldedValue = 0;
+    uintptr_t ID = obj->getID();
     do {
       oldValue = object->header;
-      newValue = obj->getID() | (oldValue & NonLockBitsMask);
+      newValue = ID | (oldValue & NonLockBitsMask);
+      assert(obj->associatedObject == object);
       yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-    } while (yieldedValue != oldValue);
+    } while (((object->header) & ~NonLockBitsMask) != ID);
     return obj;
   } else {
     FatLock* res = table.getFatLockFromID(object->header);
     assert(res && "Lock deallocated while held.");
+    assert(res->associatedObject == object);
     return res;
+  }
+}
+
+void printDebugMessage(gc* object, LockSystem& table) {
+  llvm_gcroot(object, 0);
+  fprintf(stderr,
+      "WARNING: [%p] has been waiting really long for %p (header = %x)\n",
+      (void*)mvm::Thread::get(),
+      (void*)object,
+      object->header);
+  FatLock* obj = table.getFatLockFromID(object->header);
+  if (obj != NULL) {
+    fprintf(stderr,
+        "WARNING: [%p] is waiting on fatlock %p. "
+        "Its associated object is %p. The owner is %p\n",
+        (void*)mvm::Thread::get(),
+        (void*)obj,
+        (void*)obj->getAssociatedObject(),
+        (void*)obj->owner());
   }
 }
 
@@ -79,42 +108,50 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
   uintptr_t oldValue = 0;
   uintptr_t newValue = 0;
   uintptr_t yieldedValue = 0;
-  do {
-    oldValue = object->header & NonLockBitsMask;
-    newValue = oldValue | id;
-    yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-  } while ((object->header & ~NonLockBitsMask) == 0);
 
-  if (yieldedValue == oldValue) {
-    assert(owner(object, table) && "Not owner after quitting acquire!");
-    return;
-  }
-  
-  if ((yieldedValue & Thread::IDMask) == id) {
+  if ((object->header & Thread::IDMask) == id) {
     assert(owner(object, table) && "Inconsistent lock");
-    if ((yieldedValue & ThinCountMask) != ThinCountMask) {
+    if ((object->header & ThinCountMask) != ThinCountMask) {
+      uint32 count = object->header & ThinCountMask;
       do {
         oldValue = object->header;
         newValue = oldValue + ThinCountAdd;
         yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-      } while (oldValue != yieldedValue);
+      } while ((object->header & ThinCountMask) == count);
     } else {
       overflowThinLock(object, table);
     }
     assert(owner(object, table) && "Not owner after quitting acquire!");
     return;
   }
-      
+
+  do {
+    oldValue = object->header & NonLockBitsMask;
+    newValue = oldValue | id;
+    yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
+  } while ((object->header & ~NonLockBitsMask) == 0);
+
+  if (((object->header) & ~NonLockBitsMask) == id) {
+    assert(owner(object, table) && "Not owner after quitting acquire!");
+    return;
+  }
+
+  // Simple counter to lively diagnose possible dead locks in this code.
+  int counter = 0;  
   while (true) {
     if (object->header & FatMask) {
       FatLock* obj = table.getFatLockFromID(object->header);
       if (obj != NULL) {
         if (obj->acquire(object)) {
+          assert(owner(object, table) && "Not owner after acquring fat lock!");
           break;
         }
       }
     }
-    
+   
+    counter++;
+    if (counter == 1000) printDebugMessage(object, table);
+
     while (object->header & ~NonLockBitsMask) {
       if (object->header & FatMask) {
         break;
@@ -125,19 +162,22 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
     
     if ((object->header & ~NonLockBitsMask) == 0) {
       FatLock* obj = table.allocate(object);
+      obj->acquire(object);
       do {
         oldValue = object->header & NonLockBitsMask;
         newValue = oldValue | obj->getID();
+        assert(obj->associatedObject == object);
         yieldedValue = __sync_val_compare_and_swap(&object->header, oldValue, newValue);
       } while ((object->header & ~NonLockBitsMask) == 0);
 
-      if (oldValue != yieldedValue) {
-        assert((getFatLock(object, table) != obj) && "Inconsistent lock");
+      if ((getFatLock(object, table) != obj)) {
+        assert((object->header & ~NonLockBitsMask) != obj->getID());
+        obj->internalLock.unlock();
         table.deallocate(obj);
       } else {
-        assert((getFatLock(object, table) == obj) && "Inconsistent lock");
+        assert(owner(object, table) && "Inconsistent lock");
+        break;
       }
-      assert(!owner(object, table) && "Inconsistent lock");
     }
   }
 
@@ -157,18 +197,19 @@ void ThinLock::release(gc* object, LockSystem& table) {
       oldValue = object->header;
       newValue = oldValue & NonLockBitsMask;
       yieldedValue = __sync_val_compare_and_swap(&object->header, oldValue, newValue);
-    } while (yieldedValue != oldValue);
+    } while ((object->header & ~NonLockBitsMask) == id);
   } else if (object->header & FatMask) {
     FatLock* obj = table.getFatLockFromID(object->header);
     assert(obj && "Lock deallocated while held.");
     obj->release(object, table);
   } else {
     assert(((object->header & ThinCountMask) > 0) && "Inconsistent state");    
+    uint32 count = (object->header & ThinCountMask);
     do {
       oldValue = object->header;
       newValue = oldValue - ThinCountAdd;
       yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-    } while (yieldedValue != oldValue);
+    } while ((object->header & ThinCountMask) == count);
   }
 }
 
@@ -196,7 +237,9 @@ FatLock* ThinLock::getFatLock(gc* object, LockSystem& table) {
   }
 }
 
-void FatLock::acquireAll(gc* obj, uint32 nb) {
+void FatLock::acquireAll(gc* object, uint32 nb) {
+  assert(associatedObject == object);
+  llvm_gcroot(object, 0);
   internalLock.lockAll(nb);
 }
 
@@ -210,6 +253,7 @@ mvm::Thread* FatLock::getOwner() {
   
 FatLock::FatLock(uint32_t i, gc* a) {
   llvm_gcroot(a, 0);
+  assert(a != NULL);
   firstThread = NULL;
   index = i;
   associatedObject = a;
@@ -228,7 +272,7 @@ void FatLock::release(gc* obj, LockSystem& table) {
   assert(associatedObject == obj && "Mismatch object in lock");
   if (!waitingThreads && !lockingThreads &&
       internalLock.recursionCount() == 1) {
-    mvm::ThinLock::initialise(associatedObject, table);
+    mvm::ThinLock::removeFatLock(this, table);
     table.deallocate(this);
   }
   internalLock.unlock();
@@ -312,6 +356,7 @@ FatLock* LockSystem::allocate(gc* obj) {
     tab[internalIndex] = res;
   }
    
+  assert(res->associatedObject == obj);
   // Return the lock.
   return res;
 }
