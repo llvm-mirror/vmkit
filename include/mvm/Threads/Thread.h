@@ -395,7 +395,7 @@ public:
 
   /// vmData - vm specific data
   ///
-	//	void* vmData;  TEST ME
+	void* vmData;
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS
