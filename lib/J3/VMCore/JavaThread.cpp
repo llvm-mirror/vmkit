@@ -47,6 +47,16 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
 #endif
 }
 
+JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
+	return (JavaThread*)mut->vmData;
+}
+
+mvm::MutatorThread *JavaThread::create(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
+	mvm::MutatorThread *res = (mvm::MutatorThread*)new JavaThread(thread, vmth, isolate);
+	res->vmData = (mvm::VMThreadData*)res;
+	return res;
+}
+
 JavaThread::~JavaThread() {
   delete localJNIRefs;
 #ifdef SERVICE

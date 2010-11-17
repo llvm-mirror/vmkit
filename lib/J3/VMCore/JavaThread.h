@@ -145,10 +145,15 @@ public:
   /// ~JavaThread - Delete any potential malloc'ed objects used by this thread.
   ///
   ~JavaThread();
-  
+
+private:  
   /// JavaThread - Creates a Java thread.
   ///
   JavaThread(JavaObject* thread, JavaObject* vmThread, Jnjvm* isolate);
+
+public:
+	static mvm::MutatorThread* create(JavaObject* thread, JavaObject* vmThread, Jnjvm* isolate);
+	static JavaThread* j3Thread(mvm::Thread* mut);
 
   /// get - Get the current thread as a JnJVM object.
   ///

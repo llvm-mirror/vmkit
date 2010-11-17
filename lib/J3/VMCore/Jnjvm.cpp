@@ -1088,11 +1088,11 @@ void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = bootstrapLoader;
   
   // First create system threads.
-  finalizerThread = new JavaThread(0, 0, this);
-  finalizerThread->start((void (*)(mvm::Thread*))finalizerStart);
+  finalizerThread = JavaThread::j3Thread(JavaThread::create(0, 0, this));
+  finalizerThread->start(finalizerStart);
     
-  enqueueThread = new JavaThread(0, 0, this);
-  enqueueThread->start((void (*)(mvm::Thread*))enqueueStart);
+  enqueueThread = JavaThread::j3Thread(JavaThread::create(0, 0, this));
+  enqueueThread->start(enqueueStart);
   
   // Initialise the bootstrap class loader if it's not
   // done already.
@@ -1132,7 +1132,7 @@ void Jnjvm::loadBootstrap() {
 #endif
   // The initialization code of the classes initialized below may require
   // to get the Java thread, so we create the Java thread object first.
-  upcalls->InitializeThreading(this);
+	upcalls->InitializeThreading(this);
   
   LOAD_CLASS(upcalls->newClass);
   LOAD_CLASS(upcalls->newConstructor);
@@ -1282,7 +1282,7 @@ void Jnjvm::waitForExit() {
   return;
 }
 
-void Jnjvm::mainJavaStart(JavaThread* thread) {
+void Jnjvm::mainJavaStart(mvm::Thread* thread) {
 
   JavaString* str = NULL;
   JavaObject* instrumenter = NULL;
@@ -1294,7 +1294,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   llvm_gcroot(args, 0);
   llvm_gcroot(exc, 0);
 
-  Jnjvm* vm = thread->getJVM();
+  Jnjvm* vm = JavaThread::j3Thread(thread)->getJVM();
   vm->bootstrapLoader->analyseClasspathEnv(vm->bootstrapLoader->bootClasspathEnv);
   vm->argumentsInfo.readArgs(vm);
   if (vm->argumentsInfo.className == NULL) {
@@ -1306,7 +1306,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   vm->argumentsInfo.argv = vm->argumentsInfo.argv + pos - 1;
   vm->argumentsInfo.argc = vm->argumentsInfo.argc - pos + 1;
 
-  vm->mainThread = thread;
+	//  vm->mainThread = thread;
 
   TRY {
     vm->loadBootstrap();
@@ -1393,12 +1393,13 @@ void Jnjvm::runApplication(int argc, char** argv) {
   sa.sa_flags |= SA_RESTART;
   sigaction(SIGUSR1, &sa, NULL);
 
-  mvm::Thread* th = new JavaThread(0, 0, this);
+  mvm::Thread* th = JavaThread::create(0, 0, this);
   th->start(serviceCPUMonitor);
 #endif
    
-  mainThread = new JavaThread(0, 0, this);
-  mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
+	mainThread = JavaThread::create(0, 0, this);
+	mainJ3Thread = JavaThread::j3Thread(mainThread);
+  mainThread->start(mainJavaStart);
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) : 

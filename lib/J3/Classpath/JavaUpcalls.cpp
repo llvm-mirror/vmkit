@@ -279,7 +279,7 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   RG = rootGroup->getStaticObjectField();
   assert(RG && "No root group");
   assert(vm->getMainThread() && "VM did not set its main thread");
-  CreateJavaThread(vm, (JavaThread*)vm->getMainThread(), "main", RG);
+  CreateJavaThread(vm, JavaThread::j3Thread(vm->getMainThread()), "main", RG);
 
   // Create the "system" group.
   SystemGroup = threadGroup->doNew(vm);
@@ -289,11 +289,11 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
 
   // Create the finalizer thread.
   assert(vm->getFinalizerThread() && "VM did not set its finalizer thread");
-  CreateJavaThread(vm, vm->getFinalizerThread(), "Finalizer", SystemGroup);
+  CreateJavaThread(vm, JavaThread::j3Thread(vm->getFinalizerThread()), "Finalizer", SystemGroup);
   
   // Create the enqueue thread.
   assert(vm->getEnqueueThread() && "VM did not set its enqueue thread");
-  CreateJavaThread(vm, vm->getEnqueueThread(), "Reference", SystemGroup);
+  CreateJavaThread(vm, JavaThread::j3Thread(vm->getEnqueueThread()), "Reference", SystemGroup);
 }
 
 extern "C" void nativeInitWeakReference(JavaObjectReference* reference,

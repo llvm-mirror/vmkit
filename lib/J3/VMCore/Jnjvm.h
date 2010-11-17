@@ -25,6 +25,10 @@
 #include "JNIReferences.h"
 #include "LockedMap.h"
 
+namespace mvm {
+	class MutatorThread;
+}
+
 namespace j3 {
 
 class ArrayObject;
@@ -120,11 +124,11 @@ private:
   
   /// finalizerThread - The thread that finalizes Java objects.
   ///
-  JavaThread* finalizerThread;
+	JavaThread* finalizerThread;
  
   /// enqueueThread - The thread that enqueue Java references.
   ///
-  JavaThread* enqueueThread;
+	JavaThread* enqueueThread;
 
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
@@ -160,7 +164,7 @@ private:
    
   /// mainJavaStart - Starts the execution of the application in a Java thread.
   ///
-  static void mainJavaStart(JavaThread* thread);
+  static void mainJavaStart(mvm::Thread* thread);
   
   /// mainCompileStart - Starts the static compilation of classes in a Java
   /// thread.
@@ -239,6 +243,12 @@ public:
   /// hashStr - Hash map of java/lang/String objects allocated by this JVM.
   ///
   StringMap hashStr;
+
+  /// hashStr - Hash map of java/lang/String objects allocated by this JVM.
+	/// mainJ3Thread - the main j3 thread
+	JavaThread* mainJ3Thread;
+
+	JavaThread *getMainJ3Thread() { return mainJ3Thread; }
  
 public:
   
@@ -304,7 +314,7 @@ public:
   
   /// getFinalizerThread - Get the finalizer thread of this VM.
   ///
-  JavaThread* getFinalizerThread() const { return finalizerThread; }
+	JavaThread* getFinalizerThread() const { return finalizerThread; }
   
   /// setEnqueueThread - Set the enqueue thread of this VM.
   ///
@@ -312,7 +322,7 @@ public:
   
   /// getEnqueueThread - Get the enqueue thread of this VM.
   ///
-  JavaThread* getEnqueueThread() const { return enqueueThread; }
+	JavaThread* getEnqueueThread() const { return enqueueThread; }
 
   /// ~Jnjvm - Destroy the JVM.
   ///

@@ -138,6 +138,8 @@ public:
 
 class ExceptionBuffer;
 
+class VMThreadData {};
+
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.
@@ -395,7 +397,7 @@ public:
 
   /// vmData - vm specific data
   ///
-	void* vmData;
+	VMThreadData* vmData;
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS
