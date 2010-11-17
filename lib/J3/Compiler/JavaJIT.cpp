@@ -274,10 +274,6 @@ llvm::Value* JavaJIT::getMutatorThreadPtr() {
   return threadId;
 }
 
-llvm::Value* JavaJIT::getJavaThreadPtr(llvm::Value* mutatorThreadPtr) {
-  return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "", currentBlock);
-}
-
 llvm::Value* JavaJIT::getIsolateIDPtr(llvm::Value* mutatorThreadPtr) { 
 	Value* GEP[3] = { intrinsics->constantZero,
 										intrinsics->OffsetThreadInMutatorThreadConstant,
@@ -308,6 +304,17 @@ llvm::Value* JavaJIT::getCXXExceptionPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetCXXExceptionInThreadConstant };
     
 	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+}
+
+llvm::Value* JavaJIT::getJavaThreadPtr(llvm::Value* mutatorThreadPtr) { 
+	Value* GEP[3] = { intrinsics->constantZero,
+										intrinsics->OffsetThreadInMutatorThreadConstant,
+										intrinsics->OffsetVMDataInThreadConstant };
+    
+	Value *res = GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+
+  //return new BitCastInst(res, intrinsics->JavaThreadType, "", currentBlock);
+  return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getJNIEnvPtr(llvm::Value* javaThreadPtr) { 

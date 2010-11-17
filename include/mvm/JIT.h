@@ -175,6 +175,13 @@ public:
 
   const llvm::Type* MutatorThreadType;
   const llvm::Type* VTType;
+
+  llvm::Constant* OffsetDoYieldInThreadConstant;
+  llvm::Constant* OffsetIsolateIDInThreadConstant;
+  llvm::Constant* OffsetVMInThreadConstant;
+  llvm::Constant* OffsetCXXExceptionInThreadConstant;
+  llvm::Constant* OffsetVMDataInThreadConstant;
+	llvm::Constant* OffsetThreadInMutatorThreadConstant;
 };
 
 
