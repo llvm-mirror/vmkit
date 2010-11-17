@@ -28,7 +28,6 @@ public:
   const llvm::Type* JavaArrayDoubleType;
   const llvm::Type* JavaArrayObjectType;
   
-  const llvm::Type* VTType;
   const llvm::Type* JavaObjectType;
   const llvm::Type* JavaArrayType;
   const llvm::Type* JavaCommonClassType;
@@ -42,7 +41,6 @@ public:
   const llvm::Type* JavaFieldType;
   const llvm::Type* AttributType;
   const llvm::Type* JavaThreadType;
-  const llvm::Type* MutatorThreadType;
   
 #ifdef ISOLATE_SHARING
   const llvm::Type* JnjvmType;
