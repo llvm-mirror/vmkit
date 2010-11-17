@@ -312,9 +312,8 @@ llvm::Value* JavaJIT::getJavaThreadPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetVMDataInThreadConstant };
     
 	Value *res = GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
-
-  //return new BitCastInst(res, intrinsics->JavaThreadType, "", currentBlock);
-  return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "", currentBlock);
+	res = new LoadInst(res, "", currentBlock);
+  return new BitCastInst(res, intrinsics->JavaThreadType, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getJNIEnvPtr(llvm::Value* javaThreadPtr) { 
