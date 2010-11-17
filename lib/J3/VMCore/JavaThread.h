@@ -120,6 +120,9 @@ public:
   ///
   JNILocalReferences* localJNIRefs;
 
+  /// jnjvm - my vm
+  ///
+	Jnjvm *jnjvm;
 
   JavaObject** pushJNIRef(JavaObject* obj) {
     llvm_gcroot(obj, 0);
@@ -158,13 +161,13 @@ public:
   /// get - Get the current thread as a JnJVM object.
   ///
   static JavaThread* get() {
-    return (JavaThread*)mvm::Thread::get();
+    return j3Thread(mvm::Thread::get());
   }
 
   /// getJVM - Get the JnJVM in which this thread executes.
   ///
   Jnjvm* getJVM() {
-    return (Jnjvm*)MyVM;
+    return jnjvm;
   }
 
   /// currentThread - Return the current thread as a Java object.
