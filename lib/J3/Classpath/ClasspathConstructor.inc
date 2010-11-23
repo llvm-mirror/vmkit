@@ -117,15 +117,16 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
         }
       }
       
-      JavaThread* th = JavaThread::get();
       TRY {
         meth->invokeIntSpecialBuf(vm, cl, res, buf);
       } CATCH {
-        excp = th->getJavaException();
+        excp = JavaThread::get()->getJavaException();
       } END_CATCH;
+			mvm::Thread* mut = mvm::Thread::get();
+      JavaThread* th = JavaThread::j3Thread(mut);
       if (excp) {
         if (JavaObject::getClass(excp)->isAssignableFrom(vm->upcalls->newException)) {
-          th->clearException();
+          mut->clearException();
           // If it's an exception, we encapsule it in an
           // invocationTargetException
           vm->invocationTargetException(excp);

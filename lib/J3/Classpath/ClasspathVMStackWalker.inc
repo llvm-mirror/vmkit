@@ -37,9 +37,10 @@ jclass clazz,
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaThread* th = JavaThread::get();
+	mvm::Thread* mut = mvm::Thread::get();
+	JavaThread*  th = JavaThread::j3Thread(mut);
   Jnjvm* vm = th->getJVM();
-  uint32 length = th->getFrameContextLength();
+  uint32 length = mut->getFrameContextLength();
   
   mvm::ThreadAllocator allocator;  
   uintptr_t* buffer = (uintptr_t*)allocator.Allocate(length * sizeof(uintptr_t));

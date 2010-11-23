@@ -693,7 +693,7 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
       assert(success && "Could not add class in map");
     } CATCH {
       excp = JavaThread::get()->pendingException;
-      JavaThread::get()->clearException();    
+      mvm::Thread::get()->clearException();    
     } END_CATCH;
   }
   if (excp != NULL) {

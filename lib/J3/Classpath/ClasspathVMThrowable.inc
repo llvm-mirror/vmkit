@@ -33,10 +33,12 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   llvm_gcroot(vmThrowable, 0);
   llvm_gcroot(result, 0);
 
-  JavaThread* th = JavaThread::get();
+	mvm::Thread* mut = mvm::Thread::get();
+  uint32 length = mut->getFrameContextLength();
+
+  JavaThread* th = JavaThread::j3Thread(mut);
   Jnjvm* vm = th->getJVM();
  
-  uint32 length = th->getFrameContextLength();
 
   if (sizeof(void*) == 4) {
     ClassArray* cl = vm->upcalls->ArrayOfInt;
@@ -47,7 +49,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   }
   
   // Don't call th->getFrameContext because it is not GC-safe.
-  mvm::StackWalker Walker(th);
+  mvm::StackWalker Walker(mut);
   uint32_t i = 0;
 
   while (void* ip = *Walker) {
