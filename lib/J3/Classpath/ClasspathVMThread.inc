@@ -86,7 +86,7 @@ JavaObject* vmThread, sint64 stackSize) {
   javaThread = vm->upcalls->assocThread->getInstanceObjectField(vmThread);
   assert(javaThread && "VMThread with no Java equivalent");
  
-	mvm::MutatorThread* th = JavaThread::create(javaThread, vmThread, vm);
+	mvm::Thread* th = JavaThread::create(javaThread, vmThread, vm);
   if (!th) vm->outOfMemoryError();
   th->start((void (*)(mvm::Thread*))start);
 

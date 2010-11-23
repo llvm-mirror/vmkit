@@ -320,7 +320,8 @@ llvm::Value* JavaJIT::getJNIEnvPtr(llvm::Value* javaThreadPtr) {
 	Value* GEP[2] = { intrinsics->constantZero,
 										intrinsics->OffsetJNIInJavaThreadConstant };
     
-	return GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
+	Value* res = GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
+	return new BitCastInst(res, intrinsics->ptrType, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getJavaExceptionPtr(llvm::Value* javaThreadPtr) { 
@@ -410,8 +411,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   Value* jniEnv = getJNIEnvPtr(getJavaThreadPtr(getMutatorThreadPtr()));
  
-  jniEnv = new BitCastInst(jniEnv, intrinsics->ptrType, "", currentBlock);
-
   nativeArgs.push_back(jniEnv);
 
   uint32 index = 0;

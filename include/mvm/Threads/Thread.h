@@ -137,8 +137,18 @@ public:
 
 
 class ExceptionBuffer;
+class Thread;
 
-class VMThreadData {};
+class VMThreadData {
+public:
+	Thread* mut;
+
+	VMThreadData(Thread* m) {
+		this->mut = m;
+	}
+
+	~VMThreadData() {} // force the construction of a VT
+};
 
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class

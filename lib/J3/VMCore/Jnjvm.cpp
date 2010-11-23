@@ -1398,7 +1398,6 @@ void Jnjvm::runApplication(int argc, char** argv) {
 #endif
    
 	mainThread = JavaThread::create(0, 0, this);
-	mainJ3Thread = JavaThread::j3Thread(mainThread);
   mainThread->start(mainJavaStart);
 }
 

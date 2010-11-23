@@ -289,7 +289,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     const llvm::Type* Ty =
       PointerType::getUnqual(Compiler->getIntrinsics()->JavaObjectType);
 
-    llvmArgs.push_back(Compiler->getIntrinsics()->ptrType); // JNIEnv
+    llvmArgs.push_back(Compiler->getIntrinsics()->ptrType);
     llvmArgs.push_back(Ty); // Class
 
     for (uint32 i = 0; i < size; ++i) {
