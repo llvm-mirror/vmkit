@@ -60,23 +60,11 @@ class Jnjvm;
 		mut->enterUncooperativeCode(SP);							\
 		return; }																			\
 
-
-class ZZZ : private mvm::MutatorThread {
-public:
-	void* operator new(size_t sz) { 
-		return mvm::MutatorThread::operator new(sz); 
-	}
-
-  void operator delete(void* th) {
-		mvm::MutatorThread::operator delete(th); 
-	}
-};
-
 /// JavaThread - This class is the internal representation of a Java thread.
 /// It maintains thread-specific information such as its state, the current
 /// exception if there is one, the layout of the stack, etc.
 ///
-class JavaThread : public ZZZ {
+class JavaThread : public mvm::VMThreadData {
 public:
   
   /// jniEnv - The JNI environment of the thread.
@@ -90,9 +78,6 @@ public:
   /// javaThread - The Java representation of this thread.
   ///
   JavaObject* javaThread;
-
-  /// mut - The associated mutator. Should be removed
-	mvm::Thread* mut;
 
   /// vmThread - The VMThread object of this thread.
   ///
@@ -153,7 +138,7 @@ public:
 
   /// JavaThread - Empty constructor, used to get the VT.
   ///
-  JavaThread() {
+  JavaThread() : mvm::VMThreadData(0) {
 #ifdef SERVICE
     replacedEIPs = 0;
 #endif
@@ -163,13 +148,16 @@ public:
   ///
   ~JavaThread();
 
-private:  
-  /// JavaThread - Creates a Java thread.
+  /// JavaThread - Creates a Java thread. Link the JavaThread to the mutator thread.
   ///
-  JavaThread(JavaObject* thread, JavaObject* vmThread, Jnjvm* isolate);
+  JavaThread(mvm::Thread* mut, JavaObject* thread, JavaObject* vmThread, Jnjvm* isolate);
 
-public:
+  /// create - Creates a Java thread and a mutator thread.
+  ///
 	static mvm::Thread* create(JavaObject* thread, JavaObject* vmThread, Jnjvm* isolate);
+
+  /// j3Thread - gives the JavaThread associated with the mutator thread
+  ///
 	static JavaThread*  j3Thread(mvm::Thread* mut);
 
   /// get - Get the current thread as a JnJVM object.

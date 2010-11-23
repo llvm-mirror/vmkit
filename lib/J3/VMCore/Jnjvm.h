@@ -166,11 +166,6 @@ private:
   ///
   static void mainJavaStart(mvm::Thread* thread);
   
-  /// mainCompileStart - Starts the static compilation of classes in a Java
-  /// thread.
-  ///
-  static void mainCompilerStart(mvm::Thread* thread);
-
 public:
   
   /// tracer - Traces instances of this class.

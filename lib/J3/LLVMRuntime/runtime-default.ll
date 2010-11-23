@@ -24,7 +24,7 @@
 ;;; Field 3: The static instance
 %TaskClassMirror = type { i8, i1, i8* }
 
-%JavaThread = type { %MutatorThread, i8*, %JavaObject* }
+%JavaThread = type { %VMThreadData, i8*, %JavaObject* }
 
 
 %Attribut = type { %UTF8*, i32, i32 }

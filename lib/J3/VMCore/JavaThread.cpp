@@ -23,8 +23,8 @@ const unsigned int JavaThread::StateRunning = 0;
 const unsigned int JavaThread::StateWaiting = 1;
 const unsigned int JavaThread::StateInterrupted = 2;
 
-JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
-    : ZZZ() {
+JavaThread::JavaThread(mvm::Thread* mut, JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
+	: mvm::VMThreadData(mut) {
   llvm_gcroot(thread, 0);
   llvm_gcroot(vmth, 0);
   
@@ -52,11 +52,10 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 }
 
 mvm::Thread *JavaThread::create(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
-	JavaThread *th   = new JavaThread(thread, vmth, isolate);
-	mvm::Thread *mut = (mvm::Thread*)th;
+	mvm::Thread *mut = new mvm::MutatorThread();
+	JavaThread *th   = new JavaThread(mut, thread, vmth, isolate);
   mut->MyVM   = isolate;
-	mut->vmData = (mvm::VMThreadData*)th;
-	th->mut     = mut;
+	mut->vmData = th;
 	return mut;
 }
 

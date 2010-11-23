@@ -1941,8 +1941,8 @@ void extractFiles(ArrayUInt8* bytes,
 
 static const char* name;
 
-void mainCompilerStart(JavaThread* th) {
-  
+void mainCompilerStart(mvm::Thread* mut) {
+  JavaThread* th = JavaThread::j3Thread(mut);
   Jnjvm* vm = th->getJVM();
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
   JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
@@ -2132,7 +2132,7 @@ void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {
   name = n;
 	mvm::Thread* th = JavaThread::create(0, 0, vm);
   vm->setMainThread(th);
-  th->start((void (*)(mvm::Thread*))mainCompilerStart);
+  th->start(mainCompilerStart);
   vm->waitForExit();
 }
 

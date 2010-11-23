@@ -148,7 +148,7 @@ public:
 		this->mut = m;
 	}
 
-	~VMThreadData() {} // force the construction of a VT
+	virtual ~VMThreadData() {} // force the construction of a VT
 };
 
 /// Thread - This class is the base of custom virtual machines' Thread classes.
