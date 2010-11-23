@@ -24,13 +24,12 @@ const unsigned int JavaThread::StateWaiting = 1;
 const unsigned int JavaThread::StateInterrupted = 2;
 
 JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
-    : MutatorThread() {
+    : ZZZ() {
   llvm_gcroot(thread, 0);
   llvm_gcroot(vmth, 0);
   
   javaThread = thread;
   vmThread = vmth;
-  MyVM = isolate;
   interruptFlag = 0;
   state = StateRunning;
   pendingException = 0;
@@ -53,10 +52,12 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 }
 
 mvm::Thread *JavaThread::create(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
-	JavaThread *res = new JavaThread(thread, vmth, isolate);
-	res->vmData = (mvm::VMThreadData*)res;
-	res->mut    = res;
-	return res;
+	JavaThread *th   = new JavaThread(thread, vmth, isolate);
+	mvm::Thread *mut = (mvm::Thread*)th;
+  mut->MyVM   = isolate;
+	mut->vmData = (mvm::VMThreadData*)th;
+	th->mut     = mut;
+	return mut;
 }
 
 JavaThread::~JavaThread() {
@@ -68,25 +69,24 @@ JavaThread::~JavaThread() {
 
 void JavaThread::throwException(JavaObject* obj) {
   llvm_gcroot(obj, 0);
-  JavaThread* th = JavaThread::get();
-  assert(th->pendingException == 0 && "pending exception already there?");
-  th->pendingException = obj;
-  th->internalThrowException();
+  assert(JavaThread::get()->pendingException == 0 && "pending exception already there?");
+	mvm::Thread* mut = mvm::Thread::get();
+  j3Thread(mut)->pendingException = obj;
+  mut->internalThrowException();
 }
 
 void JavaThread::throwPendingException() {
-  JavaThread* th = JavaThread::get();
-  assert(th->pendingException);
-  th->internalThrowException();
+  assert(JavaThread::get()->pendingException);
+	mvm::Thread::get()->internalThrowException();
 }
 
 void JavaThread::startJNI(int level) {
   // Start uncooperative mode.
-  enterUncooperativeCode(level);
+  mut->enterUncooperativeCode(level);
 }
 
 uint32 JavaThread::getJavaFrameContext(void** buffer) {
-  mvm::StackWalker Walker(this);
+  mvm::StackWalker Walker(mut);
   uint32 i = 0;
 
   while (mvm::MethodInfo* MI = Walker.get()) {
@@ -100,7 +100,7 @@ uint32 JavaThread::getJavaFrameContext(void** buffer) {
 }
 
 JavaMethod* JavaThread::getCallingMethodLevel(uint32 level) {
-  mvm::StackWalker Walker(this);
+  mvm::StackWalker Walker(mut);
   uint32 index = 0;
 
   while (mvm::MethodInfo* MI = Walker.get()) {
@@ -126,7 +126,7 @@ JavaObject* JavaThread::getNonNullClassLoader() {
   JavaObject* obj = 0;
   llvm_gcroot(obj, 0);
   
-  mvm::StackWalker Walker(this);
+  mvm::StackWalker Walker(mut);
 
   while (mvm::MethodInfo* MI = Walker.get()) {
     if (MI->MethodType == 1) {
@@ -142,7 +142,7 @@ JavaObject* JavaThread::getNonNullClassLoader() {
 
 
 void JavaThread::printJavaBacktrace() {
-  mvm::StackWalker Walker(this);
+  mvm::StackWalker Walker(mut);
 
   while (mvm::MethodInfo* MI = Walker.get()) {
     if (MI->MethodType == 1)

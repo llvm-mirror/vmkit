@@ -61,11 +61,22 @@ class Jnjvm;
 		return; }																			\
 
 
+class ZZZ : private mvm::MutatorThread {
+public:
+	void* operator new(size_t sz) { 
+		return mvm::MutatorThread::operator new(sz); 
+	}
+
+  void operator delete(void* th) {
+		mvm::MutatorThread::operator delete(th); 
+	}
+};
+
 /// JavaThread - This class is the internal representation of a Java thread.
 /// It maintains thread-specific information such as its state, the current
 /// exception if there is one, the layout of the stack, etc.
 ///
-class JavaThread : private mvm::MutatorThread {
+class JavaThread : public ZZZ {
 public:
   
   /// jniEnv - The JNI environment of the thread.
@@ -196,8 +207,8 @@ public:
   /// throwFromJNI - Throw an exception after executing JNI code.
   ///
   void throwFromJNI(void* SP) {
-    endKnownFrame();
-    enterUncooperativeCode(SP);
+    mut->endKnownFrame();
+    mut->enterUncooperativeCode(SP);
   }
   
   /// throwFromNative - Throw an exception after executing Native code.
@@ -228,9 +239,8 @@ public:
     localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
    
     // Go back to cooperative mode.
-    leaveUncooperativeCode();
-   
-    endKnownFrame();
+    mut->leaveUncooperativeCode();
+    mut->endKnownFrame();
   }
 
   /// getCallingMethod - Get the Java method in the stack at the specified
