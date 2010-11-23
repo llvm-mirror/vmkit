@@ -1988,7 +1988,7 @@ void mainCompilerStart(JavaThread* th) {
            e = classes.end(); i != e; ++i) {
         Class* cl = *i;
         cl->resolveClass();
-        cl->setOwnerClass(JavaThread::get());
+        cl->setOwnerClass(mvm::Thread::get());
         
         for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
           LLVMMethodInfo* LMI = M->getMethodInfo(&cl->virtualMethods[i]);
@@ -2047,7 +2047,7 @@ void mainCompilerStart(JavaThread* th) {
       for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
            i != e; ++i) {
         Class* cl = *i;
-        cl->setOwnerClass(JavaThread::get());
+        cl->setOwnerClass(mvm::Thread::get());
       }
       
       for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
@@ -2075,10 +2075,10 @@ void mainCompilerStart(JavaThread* th) {
         bootstrapLoader->setCompiler(M);
       }
       
-      cl->setOwnerClass(JavaThread::get());
+      cl->setOwnerClass(mvm::Thread::get());
       cl->resolveInnerOuterClasses();
       for (uint32 i = 0; i < cl->nbInnerClasses; ++i) {
-        cl->innerClasses[i]->setOwnerClass(JavaThread::get());
+        cl->innerClasses[i]->setOwnerClass(mvm::Thread::get());
         M->compileClass(cl->innerClasses[i]);
       }
       M->compileClass(cl);

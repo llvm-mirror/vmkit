@@ -65,7 +65,7 @@ class Jnjvm;
 /// It maintains thread-specific information such as its state, the current
 /// exception if there is one, the layout of the stack, etc.
 ///
-class JavaThread : public mvm::MutatorThread {
+class JavaThread : private mvm::MutatorThread {
 public:
   
   /// jniEnv - The JNI environment of the thread.

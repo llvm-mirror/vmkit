@@ -111,7 +111,7 @@ JavaObject* vmthread) {
   while (field->getInstanceObjectField(vmthread) == 0)
     mvm::Thread::yield();
   
-  JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
+  JavaThread*  th = (JavaThread*)field->getInstanceObjectField(vmthread);
   th->interruptFlag = 1;
   JavaLock* lock = th->waitsOn;
 
@@ -124,7 +124,7 @@ JavaObject* vmthread) {
     uint32 locked = 0;
     while (true) {
       locked = (lock->tryAcquire() == 0);
-      if (locked || (lock->getOwner() != th && lock->getOwner() != 0))
+      if (locked || (lock->getOwner() != th->mut && lock->getOwner() != 0))
         break;
       else mvm::Thread::yield();
     }
