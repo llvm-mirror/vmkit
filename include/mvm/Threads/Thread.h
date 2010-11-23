@@ -141,6 +141,7 @@ class Thread;
 
 class VMThreadData {
 public:
+  /// mut - The associated thread mutator
 	Thread* mut;
 
 	VMThreadData(Thread* m) {

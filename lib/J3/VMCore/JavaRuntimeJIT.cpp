@@ -355,12 +355,13 @@ extern "C" void* j3StartJNI(uint32* localReferencesNumber,
 extern "C" void* j3StartJNI(uint32* localReferencesNumber,
                             uint32** oldLocalReferencesNumber,
                             mvm::KnownFrame* Frame) {
-  
-  JavaThread* th = JavaThread::get();
+
+	mvm::Thread* mut = mvm::Thread::get();
+  JavaThread* th   = JavaThread::j3Thread(mut);
  
   *oldLocalReferencesNumber = th->currentAddedReferences;
   th->currentAddedReferences = localReferencesNumber;
-  th->startKnownFrame(*Frame);
+  mut->startKnownFrame(*Frame);
 
   th->startJNI(1);
 
@@ -600,14 +601,14 @@ extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {
 
 extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   llvm_gcroot(obj, 0);
-  JavaThread *th = JavaThread::get();
+	mvm::Thread *mut = mvm::Thread::get();
   UserCommonClass* cl = JavaObject::getClass(obj);
   void* result = NULL;
   
   BEGIN_NATIVE_EXCEPTION(1)
 
   // Lookup the caller of this class.
-  mvm::StackWalker Walker(th);
+  mvm::StackWalker Walker(mut);
   while (Walker.get()->MethodType != 1) ++Walker;
   mvm::MethodInfo* MI = Walker.get();
   JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
@@ -666,13 +667,13 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
 }
 
 extern "C" void* j3ResolveStaticStub() {
-  JavaThread *th = JavaThread::get();
+	mvm::Thread *mut = mvm::Thread::get();
   void* result = NULL;
   
   BEGIN_NATIVE_EXCEPTION(1)
 
   // Lookup the caller of this class.
-  mvm::StackWalker Walker(th);
+  mvm::StackWalker Walker(mut);
   while (Walker.get()->MethodType != 1) ++Walker;
   mvm::MethodInfo* MI = Walker.get();
   assert(MI->MethodType == 1 && "Wrong call to stub");
@@ -704,13 +705,13 @@ extern "C" void* j3ResolveStaticStub() {
 }
 
 extern "C" void* j3ResolveSpecialStub() {
-  JavaThread *th = JavaThread::get();
+	mvm::Thread *mut = mvm::Thread::get();
   void* result = NULL;
   
   BEGIN_NATIVE_EXCEPTION(1)
 
   // Lookup the caller of this class.
-  mvm::StackWalker Walker(th);
+  mvm::StackWalker Walker(mut);
   while (Walker.get()->MethodType != 1) ++Walker;
   mvm::MethodInfo* MI = Walker.get();
   assert(MI->MethodType == 1 && "Wrong call to stub");
@@ -732,7 +733,7 @@ extern "C" void* j3ResolveSpecialStub() {
     lookup->lookupSpecialMethodDontThrow(utf8, sign->keyName, caller->classDef);
   
   if (!callee) {
-    th->getJVM()->noSuchMethodError(lookup, utf8);
+		JavaThread::j3Thread(mut)->getJVM()->noSuchMethodError(lookup, utf8);
   }
 
   // Compile the found method.

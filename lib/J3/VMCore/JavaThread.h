@@ -28,37 +28,37 @@ class JavaObject;
 class Jnjvm;
 
 
-#define BEGIN_NATIVE_EXCEPTION(level) \
-  JavaThread* __th = JavaThread::get(); \
+#define BEGIN_NATIVE_EXCEPTION(level)						\
+  JavaThread* __th = JavaThread::get();					\
   TRY {
 
-#define END_NATIVE_EXCEPTION \
-  } CATCH { \
-    __th->throwFromNative(); \
+#define END_NATIVE_EXCEPTION										\
+  } CATCH {																			\
+    __th->throwFromNative();										\
   } END_CATCH;
 
-#define BEGIN_JNI_EXCEPTION \
-  JavaThread* th = JavaThread::get(); \
-  void* SP = th->getLastSP(); \
-  th->leaveUncooperativeCode(); \
-  mvm::KnownFrame Frame; \
-  th->startKnownFrame(Frame); \
+#define BEGIN_JNI_EXCEPTION														\
+  mvm::Thread* mut = mvm::Thread::get();							\
+  void* SP = mut->getLastSP();												\
+  mut->leaveUncooperativeCode();											\
+  mvm::KnownFrame Frame;															\
+  mut->startKnownFrame(Frame);												\
   TRY {
 
-#define END_JNI_EXCEPTION \
-  } CATCH { \
-    th->throwFromJNI(SP); \
+#define END_JNI_EXCEPTION													\
+  } CATCH {																				\
+		JavaThread::j3Thread(mut)->throwFromJNI(SP);	\
   } END_CATCH;
 
-#define RETURN_FROM_JNI(a) {\
-  th->endKnownFrame(); \
-  th->enterUncooperativeCode(SP); \
-  return (a); } \
+#define RETURN_FROM_JNI(a) {											\
+		mut->endKnownFrame();													\
+		mut->enterUncooperativeCode(SP);							\
+		return (a); }																	\
 
-#define RETURN_VOID_FROM_JNI {\
-  th->endKnownFrame(); \
-  th->enterUncooperativeCode(SP); \
-  return; } \
+#define RETURN_VOID_FROM_JNI {										\
+		mut->endKnownFrame();													\
+		mut->enterUncooperativeCode(SP);							\
+		return; }																			\
 
 
 /// JavaThread - This class is the internal representation of a Java thread.
@@ -79,6 +79,9 @@ public:
   /// javaThread - The Java representation of this thread.
   ///
   JavaObject* javaThread;
+
+  /// mut - The associated mutator. Should be removed
+	mvm::Thread* mut;
 
   /// vmThread - The VMThread object of this thread.
   ///

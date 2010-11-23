@@ -79,14 +79,14 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //    current thread can obtain the lock for that object
     //    (Java specification §8.13).
     acquire();
-    JavaThread* self = JavaThread::get();
+		mvm::Thread* mut = mvm::Thread::get();
 
     if (getInitializationState() == inClinit) {
       // 2. If initialization by some other thread is in progress for the
       //    class or interface, then wait on this Class object (which 
       //    temporarily releases the lock). When the current thread awakens
       //    from the wait, repeat this step.
-      if (getOwnerClass() != self) {
+      if (getOwnerClass() != mut) {
         while (getOwnerClass()) {
           waitClass();
         }
@@ -119,7 +119,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     // 6. Otherwise, record the fact that initialization of the Class object is
     //    now in progress by the current thread and release the lock on the
     //    Class object.
-    setOwnerClass(self);
+    setOwnerClass(mut);
     bool vmjced = (getInitializationState() == vmjc);
     setInitializationState(inClinit);
     UserClass* cl = (UserClass*)this;
@@ -155,8 +155,10 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         broadcastClass();
         release();
       } END_CATCH;
-      if (self->pendingException != NULL) {
-        self->throwPendingException();
+
+			JavaThread* th = JavaThread::get();
+      if (th->pendingException != NULL) {
+        th->throwPendingException();
         return;
       }
     }
@@ -195,9 +197,9 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       TRY {
         meth->invokeIntStatic(vm, cl);
       } CATCH {
-        exc = self->getJavaException();
+        exc = JavaThread::get()->getJavaException();
         assert(exc && "no exception?");
-        self->clearException();
+				mvm::Thread::get()->clearException();
       } END_CATCH;
     }
 #ifdef SERVICE
@@ -224,10 +226,11 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //     ExceptionInInitializerError cannot be created because an
     //     OutOfMemoryError occurs, then instead use an OutOfMemoryError object
     //     in place of E in the following step.
+		JavaThread* th = JavaThread::get();
     if (JavaObject::getClass(exc)->isAssignableFrom(vm->upcalls->newException)) {
       Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
-      Jnjvm* vm = self->getJVM();
+      Jnjvm* vm = th->getJVM();
       obj = clExcp->doNew(vm);
       if (obj == NULL) {
         fprintf(stderr, "implement me");
@@ -246,7 +249,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     setOwnerClass(0);
     broadcastClass();
     release();
-    self->throwException(exc);
+    th->throwException(exc);
     return;
   }
 }
@@ -1088,10 +1091,10 @@ void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = bootstrapLoader;
   
   // First create system threads.
-  finalizerThread = JavaThread::j3Thread(JavaThread::create(0, 0, this));
+  finalizerThread = JavaThread::create(0, 0, this);
   finalizerThread->start(finalizerStart);
     
-  enqueueThread = JavaThread::j3Thread(JavaThread::create(0, 0, this));
+  enqueueThread = JavaThread::create(0, 0, this);
   enqueueThread->start(enqueueStart);
   
   // Initialise the bootstrap class loader if it's not
@@ -1236,8 +1239,9 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
 
   exc = JavaThread::get()->pendingException;
   if (exc != NULL) {
-    JavaThread* th = JavaThread::get();
-    th->clearException();
+		mvm::Thread* mut = mvm::Thread::get();
+    mut->clearException();
+    JavaThread* th   = JavaThread::j3Thread(mut);
     obj = th->currentThread();
     group = upcalls->group->getInstanceObjectField(obj);
     TRY {

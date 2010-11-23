@@ -53,8 +53,9 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 }
 
 mvm::Thread *JavaThread::create(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
-	mvm::MutatorThread *res = (mvm::MutatorThread*)new JavaThread(thread, vmth, isolate);
+	JavaThread *res = new JavaThread(thread, vmth, isolate);
 	res->vmData = (mvm::VMThreadData*)res;
+	res->mut    = res;
 	return res;
 }
 

@@ -173,7 +173,7 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
                                           false, true, 0);
   str = vm->asciizToStr(msg);
   init->invokeIntSpecial(vm, realCl, res, &str);
-  th->pendingException = res;
+	JavaThread::j3Thread(mut)->pendingException = res;
   
   RETURN_FROM_JNI(1);
   
@@ -190,7 +190,7 @@ jthrowable ExceptionOccurred(JNIEnv *env) {
   JavaObject* obj = JavaThread::get()->pendingException;
   llvm_gcroot(obj, 0);
   if (obj == NULL) RETURN_FROM_JNI(NULL);
-  jthrowable res = (jthrowable)th->pushJNIRef(obj);
+  jthrowable res = (jthrowable)JavaThread::j3Thread(mut)->pushJNIRef(obj);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
