@@ -85,7 +85,7 @@ void ReferenceThread::addToEnqueue(gc* obj) {
     delete[] ToEnqueue;
     ToEnqueue = newQueue;
     ToEnqueueLength = newLength;
-  }   
+  }
   ToEnqueue[ToEnqueueIndex++] = obj;
 }
 
