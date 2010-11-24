@@ -36,7 +36,7 @@ class Jnjvm;
 ///  {JavaObject, size, [0 * T]}.
 template <class T>
 class TJavaArray : public JavaObject {
-private:
+public:
   /// size - The (constant) size of the array.
   ssize_t size;
 
@@ -75,7 +75,7 @@ public:
 };
 
 class ArrayObject : public JavaObject {
-private:
+public:
   /// size - The (constant) size of the array.
   ssize_t size;
 
