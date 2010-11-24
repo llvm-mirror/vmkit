@@ -51,10 +51,7 @@ extern "C" void* JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_
 
 extern "C" void* gcmalloc(uint32_t sz, void* VT) {
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
-  gc* res = (gc*)JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, VT);
-  assert(VT != NULL);
-  assert(res->getVirtualTable() == VT);
-  return res;
+  return (gc*)JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, VT);
 }
 
 extern "C" void addFinalizationCandidate(void* obj) __attribute__((always_inline));
