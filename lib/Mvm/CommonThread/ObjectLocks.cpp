@@ -164,7 +164,7 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
     
     if ((object->header & ~NonLockBitsMask) == 0) {
       FatLock* obj = table.allocate(object);
-      obj->acquire(object);
+      obj->internalLock.lock();
       do {
         oldValue = object->header & NonLockBitsMask;
         newValue = oldValue | obj->getID();
@@ -177,6 +177,7 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
         obj->internalLock.unlock();
         table.deallocate(obj);
       } else {
+        assert((object->header & ~NonLockBitsMask) == obj->getID());
         assert(owner(object, table) && "Inconsistent lock");
         break;
       }
@@ -299,6 +300,8 @@ bool FatLock::acquire(gc* obj) {
     internalLock.unlock();
     return false;
   }
+  assert(obj->header & FatMask);
+  assert((obj->header & ~NonLockBitsMask) == getID());
   return true;
 }
 
