@@ -290,8 +290,13 @@ void Jnjvm::tracer(uintptr_t closure) {
   for (uint32 i = 0; i < finalizerThread->CurrentFinalizedIndex; ++i) {
     mvm::Collector::markAndTraceRoot(finalizerThread->ToBeFinalized + i, closure);
   }
+  
+  // (6) Trace the reference queue
+  for (uint32 i = 0; i < referenceThread->ToEnqueueIndex; ++i) {
+    mvm::Collector::markAndTraceRoot(referenceThread->ToEnqueue + i, closure);
+  }
  
-  // (6) Trace the locks and their associated object.
+  // (7) Trace the locks and their associated object.
   uint32 i = 0;
   for (; i < mvm::LockSystem::GlobalSize; i++) {
     mvm::FatLock** array = lockSystem.LockTable[i];
