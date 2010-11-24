@@ -200,8 +200,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
     "ILorg_vmmagic_unboxed_ObjectReference_2";
   if (dlsym(SELF_HANDLE, MMTkSymbol)) {
     // If we have found MMTk, read the gcmalloc function.
-    // TODO: re-enable this.
-    //mvm::mmtk_runtime::makeLLVMFunction(module);
+    mvm::mmtk_runtime::makeLLVMFunction(module);
   }
 #endif
   mvm::llvm_runtime::makeLLVMModuleContents(module);
