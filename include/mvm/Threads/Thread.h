@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <stdlib.h>
 
+#include "debug.h"
 #include "types.h"
 
 #ifdef RUNTIME_DWARF_EXCEPTIONS
@@ -292,11 +293,11 @@ public:
   /// Thread. The thread object is inlined in the stack.
   ///
   void* operator new(size_t sz);
-  void operator delete(void* th) {}
+  void operator delete(void* th) { UNREACHABLE(); }
   
   /// releaseThread - Free the stack so that another thread can use it.
   ///
-  static void releaseThread(void* th);
+  static void releaseThread(mvm::Thread* th);
 
   /// routine - The function to invoke when the thread starts.
   ///

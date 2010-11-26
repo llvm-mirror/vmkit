@@ -417,7 +417,6 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   th->MyVM->rendezvous.addThread(th);
   th->routine(th);
   th->MyVM->removeThread(th);
-  delete th;
 }
 
 
@@ -456,12 +455,22 @@ void* Thread::operator new(size_t sz) {
       res = (void*)TheStackManager.allocate();
     }
   }
+  // Make sure the thread information is cleared.
+  memset(res, 0, sz);
   return res;
 }
 
 /// releaseThread - Remove the stack of the thread from the list of stacks
 /// in use.
-void Thread::releaseThread(void* th) {
+void Thread::releaseThread(mvm::Thread* th) {
+  // It seems like the pthread implementation in Linux is clearing with NULL
+  // the stack of the thread. So we have to get the thread id before
+  // calling pthread_join.
+  void* thread_id = th->internalThreadID;
+  if (thread_id != NULL) {
+    // Wait for the thread to die.
+    pthread_join((pthread_t)thread_id, NULL);
+  }
   uintptr_t index = ((uintptr_t)th & Thread::IDMask);
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
