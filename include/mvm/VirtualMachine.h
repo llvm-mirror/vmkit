@@ -157,6 +157,15 @@ public:
   ///
   virtual void tracer(uintptr_t closure) {}
 
+  /// getObjectSize - Get the size of this object. Used by copying collectors.
+  ///
+  virtual size_t getObjectSize(gc* object) = 0;
+
+  /// getObjectTypeName - Get the type of this object. Used by the GC for
+  /// debugging purposes.
+  ///
+  virtual const char* getObjectTypeName(gc* object) { return "An object"; }
+
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
 #ifdef WITH_LLVM_GCC

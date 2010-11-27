@@ -12,11 +12,22 @@
 
 #include <stdint.h>
 #include "MutatorThread.h"
+#include "MvmGC.h"
 
 namespace mmtk {
 
+class MMTkObject;
+
+struct MMTkClass {
+  MMTkObject* delegatee;
+};
+
+struct MMTkVirtualTable : public VirtualTable {
+  MMTkClass* cl;
+};
+
 struct MMTkObject {
-  uintptr_t virtual_table;
+  MMTkVirtualTable* virtualTable;
   uintptr_t header;
 };
 

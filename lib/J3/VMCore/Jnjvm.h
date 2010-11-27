@@ -135,6 +135,8 @@ private:
   virtual void scanPhantomReferencesQueue(uintptr_t closure);
   virtual void scanFinalizationQueue(uintptr_t closure);
   virtual void addFinalizationCandidate(gc* obj);
+  virtual size_t getObjectSize(gc* obj);
+  virtual const char* getObjectTypeName(gc* obj);
 
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.

@@ -1414,6 +1414,45 @@ void Jnjvm::addFinalizationCandidate(gc* object) {
   finalizerThread->addFinalizationCandidate(object);
 }
 
+size_t Jnjvm::getObjectSize(gc* object) {
+  // TODO: because this is called during GC, there is no need to do
+  // llvm_gcroot. For clarity, it may be useful to have a special type
+  // in this case.
+  size_t size = 0;
+  JavaObject* src = (JavaObject*)object;
+  VirtualTable* VT = src->getVirtualTable();
+  if (VMClassLoader::isVMClassLoader(src)) {
+    size = sizeof(VMClassLoader);
+  } else {
+    CommonClass* cl = JavaObject::getClass(src);
+    if (cl->isArray()) {
+      UserClassArray* array = cl->asArrayClass();
+      UserCommonClass* base = array->baseClass();
+      uint32 logSize = base->isPrimitive() ? 
+        base->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2); 
+
+      size = sizeof(JavaObject) + sizeof(ssize_t) + 
+                    (JavaArray::getSize(src) << logSize);
+    } else {
+      assert(cl->isClass() && "Not a class!");
+      size = cl->asClass()->getVirtualSize();
+    }
+  }
+  return size;
+}
+
+const char* Jnjvm::getObjectTypeName(gc* object) {
+  JavaObject* src = (JavaObject*)object;
+  if (VMClassLoader::isVMClassLoader(src)) {
+    return "VMClassLoader";
+  } else {
+    CommonClass* cl = JavaObject::getClass(src);
+    // This code is only used for debugging on a fatal error. It is fine to
+    // allocate in the C++ heap.
+    return (new UTF8Buffer(cl->name))->cString();
+  }
+}
+
 // Helper function to run J3 without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   mvm::Collector::initialise();

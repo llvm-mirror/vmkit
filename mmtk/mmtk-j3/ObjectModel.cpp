@@ -7,18 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "JavaArray.h"
-#include "JavaClass.h"
-#include "JavaObject.h"
-
+#include "mvm/VirtualMachine.h"
 #include "MMTkObject.h"
-
 #include "debug.h"
 
 namespace mmtk {
 
 extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_getArrayBaseOffset__ (MMTkObject* OM) {
-  return sizeof(j3::JavaObject) + sizeof(ssize_t);
+  return sizeof(MMTkObject) + sizeof(ssize_t);
 }
 
 extern "C" intptr_t Java_org_j3_mmtk_ObjectModel_GC_1HEADER_1OFFSET__ (MMTkObject* OM) {
@@ -89,27 +85,10 @@ extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_Obj
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
     MMTkObject* OM, gc* src, int allocator) {
-  size_t size = 0;
-  VirtualTable* VT = src->getVirtualTable();
-  if (j3::VMClassLoader::isVMClassLoader((j3::JavaObject*)src)) {
-    size = sizeof(j3::VMClassLoader);
-  } else {
-    j3::CommonClass* cl = j3::JavaObject::getClass((j3::JavaObject*)src);
-    if (cl->isArray()) {
-      j3::UserClassArray* array = cl->asArrayClass();
-      j3::UserCommonClass* base = array->baseClass();
-      uint32 logSize = base->isPrimitive() ? 
-        base->asPrimitiveClass()->logSize : (sizeof(j3::JavaObject*) == 8 ? 3 : 2); 
-
-      size = sizeof(j3::JavaObject) + sizeof(ssize_t) + 
-                    (j3::JavaArray::getSize((j3::JavaObject*)src) << logSize);
-    } else {
-      assert(cl->isClass() && "Not a class!");
-      size = cl->asClass()->getVirtualSize();
-    }
-  }
+  size_t size = mvm::Thread::get()->MyVM->getObjectSize(src);
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
-  uintptr_t res = JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(src, VT, size, allocator);
+  uintptr_t res = JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
+      src, src->getVirtualTable(), size, allocator);
   assert((((uintptr_t*)res)[1] & ~mvm::GCBitMask) == (((uintptr_t*)src)[1] & ~mvm::GCBitMask));
   return res;
 }
@@ -151,13 +130,6 @@ class FakeByteArray : public MMTkObject {
       elements[i] = name[i];
     }
   }
-  
-  FakeByteArray(const j3::UTF8* name) {
-    length = name->size;
-    for (uint32 i = 0; i < length; i++) {
-      elements[i] = name->elements[i];
-    }
-  }
  private:
   size_t length;
   uint8_t elements[1];
@@ -165,14 +137,11 @@ class FakeByteArray : public MMTkObject {
 
 extern "C" FakeByteArray* Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* OM, gc* src) {
-  if (j3::VMClassLoader::isVMClassLoader((j3::JavaObject*)src)) {
-    return new (14) FakeByteArray("VMClassLoader");
-  } else {
-    j3::CommonClass* cl = j3::JavaObject::getClass((j3::JavaObject*)src);
-    return new (cl->name->size) FakeByteArray(cl->name);
-  }
+  const char* name = mvm::Thread::get()->MyVM->getObjectTypeName(src);
+  // This code is only used for debugging on a fatal error. It is fine to
+  // allocate in the C++ heap.
+  return new (strlen(name)) FakeByteArray(name);
 }
-
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_getArrayLength__Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
