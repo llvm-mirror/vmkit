@@ -8,13 +8,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "JavaObject.h"
-#include "JavaThread.h"
-
+#include "MMTkObject.h"
 #include "debug.h"
 
-using namespace j3;
+namespace mmtk {
 
-extern "C" void Java_org_j3_mmtk_SynchronizedCounter_reset__ (JavaObject* self) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_SynchronizedCounter_increment__ (JavaObject* self) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_SynchronizedCounter_reset__ (MMTkObject* self) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_SynchronizedCounter_increment__ (MMTkObject* self) { UNIMPLEMENTED(); }
 
+} // end namespace mmtk

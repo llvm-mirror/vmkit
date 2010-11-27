@@ -7,14 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "JavaArray.h"
-#include "JavaClass.h"
-#include "JavaObject.h"
-#include "JavaThread.h"
 #include "MutatorThread.h"
+#include "MMTkObject.h"
 
-using namespace j3;
+namespace mmtk {
 
-extern "C" JavaObject* Java_org_j3_config_Selected_00024Mutator_get__() {
-  return (JavaObject*)mvm::MutatorThread::get()->MutatorContext;
+extern "C" MMTkObject* Java_org_j3_config_Selected_00024Mutator_get__() {
+  return (MMTkObject*)mvm::MutatorThread::get()->MutatorContext;
+}
+
 }

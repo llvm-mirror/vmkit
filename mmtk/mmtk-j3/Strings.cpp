@@ -7,25 +7,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "JavaArray.h"
-#include "JavaObject.h"
-#include "JavaString.h"
-#include "JavaThread.h"
+#include "mvm/Threads/Thread.h"
 
-using namespace j3;
+#include "MMTkObject.h"
 
-extern "C" void Java_org_j3_mmtk_Strings_write___3CI(JavaObject* str,
-                                                     ArrayUInt16* msg,
+namespace mmtk {
+
+extern "C" void Java_org_j3_mmtk_Strings_write___3CI(MMTkObject* str,
+                                                     MMTkArray* msg,
                                                      sint32 len) {
   for (sint32 i = 0; i < len; ++i) {
     fprintf(stderr, "%c", msg->elements[i]);
   }
 }
 
-extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(JavaObject* str,
-                                                             ArrayUInt16* msg,
+extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(MMTkObject* str,
+                                                             MMTkArray* msg,
                                                              sint32 len) {
-  fprintf(stderr, "[%p] ", (void*)JavaThread::get());
+  fprintf(stderr, "[%p] ", (void*)mvm::Thread::get());
   
   for (sint32 i = 0; i < len; ++i) {
     fprintf(stderr, "%c", msg->elements[i]);
@@ -35,7 +34,7 @@ extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(JavaObject* str,
 
 extern "C" sint32
 Java_org_j3_mmtk_Strings_copyStringToChars__Ljava_lang_String_2_3CII(
-    JavaObject* obj, JavaString* str, ArrayUInt16* dst, uint32 dstBegin,
+    MMTkObject* obj, MMTkString* str, MMTkArray* dst, uint32 dstBegin,
     uint32 dstEnd) {
 
   sint32 len = str->count;
@@ -49,3 +48,4 @@ Java_org_j3_mmtk_Strings_copyStringToChars__Ljava_lang_String_2_3CII(
  
 }
 
+} // end namespace mmtk

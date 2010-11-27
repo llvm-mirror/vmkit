@@ -7,19 +7,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "JavaObject.h"
-#include "JavaThread.h"
+#include "MMTkObject.h"
 
 #include <sys/time.h>
 #include <ctime>
 
-using namespace j3;
+namespace mmtk {
 
-extern "C" int64_t Java_org_j3_mmtk_Statistics_cycles__ (JavaObject* S) {
+extern "C" int64_t Java_org_j3_mmtk_Statistics_cycles__ (MMTkObject* S) {
   return 0;
 }
 
-extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ (JavaObject* S) {
+extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ (MMTkObject* S) {
   int64_t result;
   struct timeval tp; 
 
@@ -35,12 +34,14 @@ extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ (JavaObject* S) {
 }
 
 
-extern "C" int32_t Java_org_j3_mmtk_Statistics_getCollectionCount__ (JavaObject* S) {
+extern "C" int32_t Java_org_j3_mmtk_Statistics_getCollectionCount__ (MMTkObject* S) {
   return 0;
 }
 
-extern "C" void Java_org_j3_mmtk_Statistics_perfEventInit__Ljava_lang_String_2(JavaObject* S, JavaObject* Str) {
+extern "C" void Java_org_j3_mmtk_Statistics_perfEventInit__Ljava_lang_String_2(MMTkObject* S, MMTkObject* Str) {
 }
 
-extern "C" void Java_org_j3_mmtk_Statistics_perfEventRead__I_3J(JavaObject* S, int id, int64_t* values) {
+extern "C" void Java_org_j3_mmtk_Statistics_perfEventRead__I_3J(MMTkObject* S, int id, int64_t* values) {
 }
+
+} // namespace mmtk

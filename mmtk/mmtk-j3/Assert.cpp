@@ -7,12 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/VirtualMachine.h"
-#include "JavaObject.h"
-#include "JavaThread.h"
-
 #include "debug.h"
+#include "MMTkObject.h"
 
-using namespace j3;
+namespace mmtk {
 
-extern "C" void Java_org_j3_mmtk_Assert_dumpStack__ (JavaObject* self) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Assert_dumpStack__ (MMTkObject* self) { UNIMPLEMENTED(); }
+
+}
