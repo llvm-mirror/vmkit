@@ -12,10 +12,7 @@
 
 #include "types.h"
 
-#include "Jnjvm.h"
-#include "JavaArray.h"
-#include "JavaThread.h"
-#include "JavaUpcalls.h"
+#include "JnjvmClassLoader.h"
 #include "Reader.h"
 #include "Zip.h"
 
@@ -25,17 +22,15 @@ const int Reader::SeekSet = SEEK_SET;
 const int Reader::SeekCur = SEEK_CUR;
 const int Reader::SeekEnd = SEEK_END;
 
-ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path) {
-  ArrayUInt8* res = NULL;
-  llvm_gcroot(res, 0);
+ClassBytes* Reader::openFile(JnjvmClassLoader* loader, const char* path) {
+  ClassBytes* res = NULL;
   FILE* fp = fopen(path, "r");
   if (fp != 0) {
     fseek(fp, 0, SeekEnd);
     long nbb = ftell(fp);
     fseek(fp, 0, SeekSet);
-    UserClassArray* array = loader->upcalls->ArrayOfByte;
-    res = (ArrayUInt8*)array->doNew((sint32)nbb, JavaThread::get()->getJVM());
-    if (fread(ArrayUInt8::getElements(res), nbb, 1, fp) == 0) {
+    res = new (loader->allocator, nbb) ClassBytes(nbb);
+    if (fread(res->elements, nbb, 1, fp) == 0) {
       fprintf(stderr, "fread error\n");
       abort();  
     }
@@ -44,14 +39,12 @@ ArrayUInt8* Reader::openFile(JnjvmBootstrapLoader* loader, const char* path) {
   return res;
 }
 
-ArrayUInt8* Reader::openZip(JnjvmBootstrapLoader* loader, ZipArchive* archive,
+ClassBytes* Reader::openZip(JnjvmClassLoader* loader, ZipArchive* archive,
                             const char* filename) {
-  ArrayUInt8* res = 0;
-  llvm_gcroot(res, 0);
+  ClassBytes* res = 0;
   ZipFile* file = archive->getFile(filename);
   if (file != 0) {
-    UserClassArray* array = loader->upcalls->ArrayOfByte;
-    res = (ArrayUInt8*)array->doNew((sint32)file->ucsize, JavaThread::get()->getJVM());
+    res = new (loader->allocator, file->ucsize) ClassBytes(file->ucsize);
     if (archive->readFile(res, file) != 0) {
       return res;
     }

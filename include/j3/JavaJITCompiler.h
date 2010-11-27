@@ -10,6 +10,7 @@
 #ifndef J3_JIT_COMPILER_H
 #define J3_JIT_COMPILER_H
 
+#include "llvm/CodeGen/GCMetadata.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/JITEventListener.h"
 #include "j3/JavaLLVMCompiler.h"
@@ -38,9 +39,9 @@ public:
   bool EmitFunctionName;
   JavaJITListener listener;
   llvm::ExecutionEngine* executionEngine;
-  llvm::GCStrategy* TheGCStrategy;
+  llvm::GCModuleInfo* GCInfo;
 
-  JavaJITCompiler(const std::string &ModuleID, bool trusted = false);
+  JavaJITCompiler(const std::string &ModuleID);
   ~JavaJITCompiler();
   
   virtual bool isStaticCompiling() {
@@ -72,28 +73,13 @@ public:
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   
-  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name);
+  virtual void setMethod(llvm::Function* func, void* ptr, const char* name);
   
-
-#ifdef SERVICE
-  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
-#endif
- 
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert) = 0;
   virtual uintptr_t getPointerOrStub(JavaMethod& meth, int type) = 0;
 
-#ifdef WITH_LLVM_GCC
-  virtual mvm::StackScanner* createStackScanner() {
-    if (useCooperativeGC())
-      return new mvm::PreciseStackScanner();
-    
-    return new mvm::UnpreciseStackScanner();
-  }
-#endif
-  
   static JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
-
 };
 
 class JavaJ3LazyJITCompiler : public JavaJITCompiler {
@@ -104,10 +90,10 @@ public:
   virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);
   
   virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaJ3LazyJITCompiler(ModuleID, false);
+    return new JavaJ3LazyJITCompiler(ModuleID);
   }
 
-  JavaJ3LazyJITCompiler(const std::string& ModuleID, bool trusted);
+  JavaJ3LazyJITCompiler(const std::string& ModuleID);
 };
 
 } // end namespace j3

@@ -16,6 +16,7 @@
 #include "JavaString.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
+#include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
 #include "j3/OpcodeNames.def"
@@ -360,9 +361,10 @@ extern "C" void* j3StartJNI(uint32* localReferencesNumber,
  
   *oldLocalReferencesNumber = th->currentAddedReferences;
   th->currentAddedReferences = localReferencesNumber;
-  th->startKnownFrame(*Frame);
-
-  th->startJNI(1);
+  th->startJNI();
+  th->startUnknownFrame(*Frame);
+  th->enterUncooperativeCode();
+  assert(th->getLastSP() == th->lastKnownFrame->currentFP);
 
   return Frame->currentFP;
 }
@@ -608,15 +610,14 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  while (Walker.get()->MethodType != 1) ++Walker;
+  ++Walker; // Remove the stub.
   mvm::MethodInfo* MI = Walker.get();
-  JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+  assert(MI->isHighLevelMethod() && "Wrong stack trace");
+  JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
   void* ip = *Walker;
 
   // Lookup the method info in the constant pool of the caller.
-  CodeLineInfo* CLInfo =
-    meth->lookupCodeLineInfo(reinterpret_cast<uintptr_t>(ip));
-  uint16 ctpIndex = CLInfo->ctpIndex;
+  uint16 ctpIndex = meth->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
   assert(ctpIndex && "No constant pool index");
   JavaConstantPool* ctpInfo = meth->classDef->getConstantPool();
   CommonClass* ctpCl = 0;
@@ -648,8 +649,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
     uint32_t index = InterfaceMethodTable::getIndex(Virt->name, Virt->type);
     if ((IMT->contents[index] & 1) == 0) {
       IMT->contents[index] = (uintptr_t)result;
-    } else {
-      
+    } else { 
       JavaMethod* Imeth = 
         ctpCl->asClass()->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
       assert(Imeth && "Method not in hierarchy?");
@@ -673,10 +673,10 @@ extern "C" void* j3ResolveStaticStub() {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  while (Walker.get()->MethodType != 1) ++Walker;
+  ++Walker; // Remove the stub.
   mvm::MethodInfo* MI = Walker.get();
-  assert(MI->MethodType == 1 && "Wrong call to stub");
-  JavaMethod* caller = (JavaMethod*)MI->getMetaInfo();
+  assert(MI->isHighLevelMethod() && "Wrong stack trace");
+  JavaMethod* caller = (JavaMethod*)MI->MetaInfo;
   void* ip = *Walker;
 
   // Lookup the method info in the constant pool of the caller.
@@ -711,10 +711,10 @@ extern "C" void* j3ResolveSpecialStub() {
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
-  while (Walker.get()->MethodType != 1) ++Walker;
+  ++Walker; // Remove the stub.
   mvm::MethodInfo* MI = Walker.get();
-  assert(MI->MethodType == 1 && "Wrong call to stub");
-  JavaMethod* caller = (JavaMethod*)MI->getMetaInfo();
+  assert(MI->isHighLevelMethod() && "Wrong stack trace");
+  JavaMethod* caller = (JavaMethod*)MI->MetaInfo;
   void* ip = *Walker;
 
   // Lookup the method info in the constant pool of the caller.
@@ -744,6 +744,27 @@ extern "C" void* j3ResolveSpecialStub() {
   END_NATIVE_EXCEPTION
 
   return result;
+}
+
+// Does not throw an exception.
+extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t index) {
+  uintptr_t result = NULL;
+  InterfaceMethodTable* IMT = JavaObject::getClass(obj)->virtualVT->IMT;
+  assert(JavaObject::instanceOf(obj, meth->classDef));
+  assert(meth->classDef->isInterface() ||
+      (meth->classDef == meth->classDef->classLoader->bootstrapLoader->upcalls->OfObject));
+  assert(index == InterfaceMethodTable::getIndex(meth->name, meth->type));
+  if ((IMT->contents[index] & 1) == 0) {
+    result = IMT->contents[index];
+  } else {
+    uintptr_t* table = (uintptr_t*)(IMT->contents[index] & ~1);
+    uint32 i = 0;
+    while (table[i] != (uintptr_t)meth && table[i] != 0) { i += 2; }
+    assert(table[i] != 0);
+    result = table[i + 1];
+  }
+  assert((result != 0) && "Bad IMT");
+  return (void*)result;
 }
 
 extern "C" void j3PrintMethodStart(JavaMethod* meth) {

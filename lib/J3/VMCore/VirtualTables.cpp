@@ -30,6 +30,7 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
+#include "ReferenceQueue.h"
 #include "Zip.h"
 
 using namespace j3;
@@ -141,8 +142,7 @@ extern "C" void ReferenceObjectTracer(
 // (2) The delegatee object (java.lang.Class) if it exists.
 //
 // Additionaly, non-primitive and non-array classes must trace:
-// (3) The bytes that represent the class file.
-// (4) The static instance.
+// (3) The static instance.
 //===----------------------------------------------------------------------===//
 
 void CommonClass::tracer(uintptr_t closure) {
@@ -173,7 +173,6 @@ void CommonClass::tracer(uintptr_t closure) {
 
 void Class::tracer(uintptr_t closure) {
   CommonClass::tracer(closure);
-  mvm::Collector::markAndTraceRoot(&bytes, closure);
   
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
@@ -242,11 +241,6 @@ void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
   TRACE_DELEGATEE(upcalls->OfLong);
   TRACE_DELEGATEE(upcalls->OfDouble);
 #undef TRACE_DELEGATEE
-  
-  for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
-       e = bootArchives.end(); i != e; i++) {
-    mvm::Collector::markAndTraceRoot(&((*i)->bytes), closure);
-  }
 }
 
 //===----------------------------------------------------------------------===//
@@ -264,15 +258,16 @@ void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
 
 
 void Jnjvm::tracer(uintptr_t closure) {
-  
-  VirtualMachine::tracer(closure);
+  // (1) Trace the bootrap loader.
   bootstrapLoader->tracer(closure);
   
+  // (2) Trace the application class loader.
   if (appClassLoader != NULL) {
     mvm::Collector::markAndTraceRoot(
         appClassLoader->getJavaClassLoaderPtr(), closure);
   }
   
+  // (3) Trace JNI global references.
   JNIGlobalReferences* start = &globalRefs;
   while (start != NULL) {
     for (uint32 i = 0; i < start->length; ++i) {
@@ -282,6 +277,7 @@ void Jnjvm::tracer(uintptr_t closure) {
     start = start->next;
   }
   
+  // (4) Trace the interned strings.
   for (StringMap::iterator i = hashStr.map.begin(), e = hashStr.map.end();
        i!= e; ++i) {
     JavaString** str = &(i->second);
@@ -289,24 +285,37 @@ void Jnjvm::tracer(uintptr_t closure) {
     ArrayUInt16** key = const_cast<ArrayUInt16**>(&(i->first));
     mvm::Collector::markAndTraceRoot(key, closure);
   }
+
+  // (5) Trace the finalization queue.
+  for (uint32 i = 0; i < finalizerThread->CurrentFinalizedIndex; ++i) {
+    mvm::Collector::markAndTraceRoot(finalizerThread->ToBeFinalized + i, closure);
+  }
+  
+  // (6) Trace the reference queue
+  for (uint32 i = 0; i < referenceThread->ToEnqueueIndex; ++i) {
+    mvm::Collector::markAndTraceRoot(referenceThread->ToEnqueue + i, closure);
+  }
  
+  // (7) Trace the locks and their associated object.
   uint32 i = 0;
-  for (; i < LockSystem::GlobalSize; i++) {
-    JavaLock** array = lockSystem.LockTable[i];
+  for (; i < mvm::LockSystem::GlobalSize; i++) {
+    mvm::FatLock** array = lockSystem.LockTable[i];
     if (array == NULL) break;
     uint32 j = 0;
-    for (; j < LockSystem::IndexSize; j++) {
+    for (; j < mvm::LockSystem::IndexSize; j++) {
       if (array[j] == NULL) break;
-      JavaLock* lock = array[j];
+      mvm::FatLock* lock = array[j];
       mvm::Collector::markAndTraceRoot(lock->getAssociatedObjectPtr(), closure);
     }
-    for (j = j + 1; j < LockSystem::IndexSize; j++) {
+    for (j = j + 1; j < mvm::LockSystem::IndexSize; j++) {
       assert(array[j] == NULL);
     }
   }
-  for (i = i + 1; i < LockSystem::GlobalSize; i++) {
+  for (i = i + 1; i < mvm::LockSystem::GlobalSize; i++) {
     assert(lockSystem.LockTable[i] == NULL);
   }
+
+
 #if defined(ISOLATE_SHARING)
   mvm::Collector::markAndTraceRoot(&JnjvmSharedLoader::sharedLoader, closure);
 #endif
@@ -317,10 +326,9 @@ void Jnjvm::tracer(uintptr_t closure) {
 }
 
 void JavaThread::tracer(uintptr_t closure) {
-  if (pendingException != NULL) {
-    mvm::Collector::markAndTraceRoot(&pendingException, closure);
-  }
+  mvm::Collector::markAndTraceRoot(&pendingException, closure);
   mvm::Collector::markAndTraceRoot(&javaThread, closure);
+  mvm::Collector::markAndTraceRoot(&vmThread, closure);
 #ifdef SERVICE
   mvm::Collector::markAndTraceRoot(&ServiceException, closure);
 #endif

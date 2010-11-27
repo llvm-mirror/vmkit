@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <stdlib.h>
 
+#include "debug.h"
 #include "types.h"
 
 #ifdef RUNTIME_DWARF_EXCEPTIONS
@@ -131,8 +132,9 @@ public:
 
 class KnownFrame {
 public:
-  KnownFrame* previousFrame;
   void* currentFP;
+  void* currentIP;
+  KnownFrame* previousFrame;
 };
 
 
@@ -164,10 +166,6 @@ public:
   ///
   int kill(int signo);
   
-  /// killForRendezvous - Kill the given thread for a rendezvous.
-  ///
-  void killForRendezvous();
-
   /// exit - Exit the current thread.
   ///
   static void exit(int value);
@@ -241,70 +239,18 @@ public:
   /// a tracer.
   ///
   virtual void tracer(uintptr_t closure) {}
+  void scanStack(uintptr_t closure);
   
   void* getLastSP() { return lastSP; }
   void  setLastSP(void* V) { lastSP = V; }
   
   void joinRVBeforeEnter();
-  void joinRVAfterLeave();
+  void joinRVAfterLeave(void* savedSP);
 
-  void enterUncooperativeCode(unsigned level = 0) __attribute__ ((noinline)) {
-    if (isMvmThread()) {
-      if (!inRV) {
-        assert(!lastSP && "SP already set when entering uncooperative code");
-        ++level;
-        void* temp = __builtin_frame_address(0);
-        while (level--) temp = ((void**)temp)[0];
-        // The cas is not necessary, but it does a memory barrier.
-        __sync_bool_compare_and_swap(&lastSP, 0, temp);
-        if (doYield) joinRVBeforeEnter();
-        assert(lastSP && "No last SP when entering uncooperative code");
-      }
-    }
-  }
-  
-  void enterUncooperativeCode(void* SP) {
-    if (isMvmThread()) {
-      if (!inRV) {
-        assert(!lastSP && "SP already set when entering uncooperative code");
-        // The cas is not necessary, but it does a memory barrier.
-        __sync_bool_compare_and_swap(&lastSP, 0, SP);
-        if (doYield) joinRVBeforeEnter();
-        assert(lastSP && "No last SP when entering uncooperative code");
-      }
-    }
-  }
-
-  void leaveUncooperativeCode() {
-    if (isMvmThread()) {
-      if (!inRV) {
-        assert(lastSP && "No last SP when leaving uncooperative code");
-        // The cas is not necessary, but it does a memory barrier.
-        __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
-        // A rendezvous has just been initiated, join it.
-        if (doYield) joinRVAfterLeave();
-        assert(!lastSP && "SP has a value after leaving uncooperative code");
-      }
-    }
-  }
-
-  void* waitOnSP() {
-    // First see if we can get lastSP directly.
-    void* sp = lastSP;
-    if (sp) return sp;
-    
-    // Then loop a fixed number of iterations to get lastSP.
-    for (uint32 count = 0; count < 1000; ++count) {
-      sp = lastSP;
-      if (sp) return sp;
-    }
-    
-    // Finally, yield until lastSP is not set.
-    while ((sp = lastSP) == NULL) mvm::Thread::yield();
-
-    assert(sp != NULL && "Still no sp");
-    return sp;
-  }
+  void enterUncooperativeCode(unsigned level = 0) __attribute__ ((noinline));
+  void enterUncooperativeCode(void* SP);
+  void leaveUncooperativeCode();
+  void* waitOnSP();
 
 
   /// clearException - Clear any pending exception of the current thread.
@@ -351,11 +297,11 @@ public:
   /// Thread. The thread object is inlined in the stack.
   ///
   void* operator new(size_t sz);
-  void operator delete(void* th) {}
+  void operator delete(void* th) { UNREACHABLE(); }
   
   /// releaseThread - Free the stack so that another thread can use it.
   ///
-  static void releaseThread(void* th);
+  static void releaseThread(mvm::Thread* th);
 
   /// routine - The function to invoke when the thread starts.
   ///
@@ -395,6 +341,8 @@ public:
 
   void startKnownFrame(KnownFrame& F) __attribute__ ((noinline));
   void endKnownFrame();
+  void startUnknownFrame(KnownFrame& F) __attribute__ ((noinline));
+  void endUnknownFrame();
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS
@@ -426,17 +374,9 @@ public:
   KnownFrame* frame;
   mvm::Thread* thread;
 
-  StackWalker(mvm::Thread* th) {
-    thread = th;
-    addr = mvm::Thread::get() == th ? (void**)FRAME_PTR() :
-                                      (void**)th->waitOnSP();
-    frame = th->lastKnownFrame;
-    assert(addr && "No address to start with");
-  }
-
+  StackWalker(mvm::Thread* th) __attribute__ ((noinline));
   void operator++();
   void* operator*();
-
   MethodInfo* get();
 
 };

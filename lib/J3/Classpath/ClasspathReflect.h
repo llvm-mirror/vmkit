@@ -14,6 +14,7 @@
 
 #include "JavaClass.h"
 #include "JavaObject.h"
+#include <JavaThread.h>
 
 extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
 

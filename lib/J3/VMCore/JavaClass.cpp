@@ -216,9 +216,8 @@ ClassPrimitive::ClassPrimitive(JnjvmClassLoader* loader, const UTF8* n,
   logSize = nb;
 }
 
-Class::Class(JnjvmClassLoader* loader, const UTF8* n, ArrayUInt8* B) : 
+Class::Class(JnjvmClassLoader* loader, const UTF8* n, ClassBytes* B) : 
     CommonClass(loader, n) {
-  llvm_gcroot(B, 0);
   virtualVT = 0;
   bytes = B;
   super = 0;
@@ -287,31 +286,8 @@ void* JavaMethod::compiledPtr() {
   return code;
 }
 
-void JavaStaticMethodInfo::print(void* ip, void* addr) {
-  void* new_ip = NULL;
-  if (ip) new_ip = mvm::MethodInfo::isStub(ip, addr);
-  JavaMethod* meth = (JavaMethod*)MetaInfo;
-  fprintf(stderr, "; %p in %s.%s", new_ip,
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
-  if (ip != new_ip) fprintf(stderr, " (from stub)");
-  fprintf(stderr, "\n");
-}
-
-void JavaMethod::setCompiledPtr(void* ptr, const char* name) {
-  classDef->acquire();
-  if (code == 0) {
-    code = ptr;
-    Jnjvm* vm = JavaThread::get()->getJVM();
-    mvm::MethodInfo* MI = vm->SharedStaticFunctions.CodeStartToMethodInfo(ptr);
-    JavaStaticMethodInfo* JMI =
-      new (classDef->classLoader->allocator, "JavaStaticMethodInfo")
-        JavaStaticMethodInfo((mvm::CamlMethodInfo*)MI, code, this);
-    vm->StaticFunctions.addMethodInfo(JMI, code);
-    classDef->classLoader->getCompiler()->setMethod(this, ptr, name);
-  }
+void JavaMethod::setNative() {
   access |= ACC_NATIVE;
-  classDef->release();
 }
 
 void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
@@ -624,7 +600,7 @@ void JavaField::InitStaticField(Jnjvm* vm) {
   if (!attribut) {
     InitNullStaticField();
   } else {
-    Reader reader(attribut, &(classDef->bytes));
+    Reader reader(attribut, classDef->bytes);
     JavaConstantPool * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader.readU2();
     if (type->isPrimitive()) {
@@ -710,7 +686,7 @@ void internalLoadExceptions(JavaMethod& meth) {
   Attribut* codeAtt = meth.lookupAttribut(Attribut::codeAttribut);
    
   if (codeAtt) {
-    Reader reader(codeAtt, &(meth.classDef->bytes));
+    Reader reader(codeAtt, meth.classDef->bytes);
     //uint16 maxStack =
     reader.readU2();
     //uint16 maxLocals = 
@@ -789,14 +765,16 @@ void Class::fillIMT(std::set<JavaMethod*>* meths) {
     interfaces[i]->fillIMT(meths);
   }
 
-  if (super) super->fillIMT(meths);
+  if (super != NULL) {
+    super->fillIMT(meths);
+  }
 
-  if (isInterface()) {
+  // Specification says that an invokeinterface also looks at j.l.Object.
+  if (isInterface() || (super == NULL)) {
     for (uint32 i = 0; i < nbVirtualMethods; ++i) {
       JavaMethod& meth = virtualMethods[i];
       uint32_t index = InterfaceMethodTable::getIndex(meth.name, meth.type);
-      if (meths[index].find(&meth) == meths[index].end())
-        meths[index].insert(&meth);
+      meths[index].insert(&meth);
     }
   }
 }
@@ -911,7 +889,7 @@ void Class::readClass() {
   PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ", 0);
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", mvm::PrintBuffer(this).cString());
 
-  Reader reader(&bytes);
+  Reader reader(bytes);
   uint32 magic = reader.readU4();
   assert(magic == Jnjvm::Magic && "I've created a class but magic is no good!");
 
@@ -946,14 +924,22 @@ void UserClass::resolveParents() {
     interfaces[i]->resolveClass(); 
 }
 
-
 #ifndef ISOLATE_SHARING
+#ifdef ISOLATE
+void Class::resolveClass() {
+  UNIMPLEMENTED();
+}
+#else
 void Class::resolveClass() {
   if (isResolved() || isErroneous()) return;
   resolveParents();
   loadExceptions();
-  setResolved();
+  // Do a compare and swap in case another thread initialized the class.
+  __sync_val_compare_and_swap(
+      &(getCurrentTaskClassMirror().status), loaded, resolved);
+  assert(isResolved() || isErroneous());
 }
+#endif
 #else
 void Class::resolveClass() {
   assert(status >= resolved && 
@@ -965,7 +951,7 @@ void UserClass::resolveInnerOuterClasses() {
   if (!innerOuterResolved) {
     Attribut* attribut = lookupAttribut(Attribut::innerClassesAttribut);
     if (attribut != 0) {
-      Reader reader(attribut, getBytesPtr());
+      Reader reader(attribut, bytes);
       uint16 nbi = reader.readU2();
       for (uint16 i = 0; i < nbi; ++i) {
         uint16 inner = reader.readU2();
@@ -1042,7 +1028,7 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
     return (ArrayObject*)vm->upcalls->classArrayClass->doNew(0, vm);
   } else {
     UserConstantPool* ctp = classDef->getConstantPool();
-    Reader reader(exceptionAtt, classDef->getBytesPtr());
+    Reader reader(exceptionAtt, classDef->bytes);
     uint16 nbe = reader.readU2();
     res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(nbe, vm);
 
@@ -1144,19 +1130,35 @@ void JavaMethod::jniConsFromMeth(char* buf, const UTF8* jniConsClName,
   
   for (sint32 i =0; i < mnlen; ++i) {
     cur = jniConsName->elements[i];
-    if (cur == '/') ptr[0] = '_';
-    else if (cur == '_') {
+    if (cur == '/') {
+      ptr[0] = '_';
+      ++ptr;
+    } else if (cur == '_') {
       ptr[0] = '_';
       ptr[1] = '1';
+      ptr += 2;
+    } else if (cur == '<') {
+      ptr[0] = '_';
+      ptr[1] = '0';
+      ptr[2] = '0';
+      ptr[3] = '0';
+      ptr[4] = '3';
+      ptr[5] = 'C';
+      ptr += 6;
+    } else if (cur == '>') {
+      ptr[0] = '_';
+      ptr[1] = '0';
+      ptr[2] = '0';
+      ptr[3] = '0';
+      ptr[4] = '3';
+      ptr[5] = 'E';
+      ptr += 6;
+    } else {
+      ptr[0] = (uint8)cur;
       ++ptr;
     }
-    else ptr[0] = (uint8)cur;
-    ++ptr;
-  }
-  
+  } 
   ptr[0] = 0;
-
-
 }
 
 void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
@@ -1752,32 +1754,56 @@ void AnnotationReader::readElementValue() {
 
 CodeLineInfo* JavaMethod::lookupCodeLineInfo(uintptr_t ip) {
   for(uint16 i = 0; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address > ip) {
-      assert(i > 0 && "Wrong ip address for method");
-      return &(codeInfo[i - 1]);
+    if (codeInfo[i].address == ip) {
+      return &(codeInfo[i]);
     }
   }
-  if (codeInfoLength) return &(codeInfo[codeInfoLength - 1]);
   return NULL;
 }
 
 uint16 JavaMethod::lookupLineNumber(uintptr_t ip) {
-  for(uint16 i = 1; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address > ip) {
-      return codeInfo[i - 1].lineNumber;
+  for(uint16 i = 0; i < codeInfoLength; ++i) {
+    if (codeInfo[i].address == ip) {
+      Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);      
+      if (codeAtt == NULL) return 0;
+      Reader reader(codeAtt, classDef->bytes);
+      reader.readU2(); // max_stack
+      reader.readU2(); // max_locals;
+      uint32_t codeLength = reader.readU4();
+      reader.seek(codeLength, Reader::SeekCur);
+      uint16_t exceptionTableLength = reader.readU2();
+      reader.seek(8 * exceptionTableLength, Reader::SeekCur);
+      uint16_t nba = reader.readU2();
+      for (uint16 att = 0; att < nba; ++att) {
+        const UTF8* attName = classDef->ctpInfo->UTF8At(reader.readU2());
+        uint32 attLen = reader.readU4();
+        if (attName->equals(Attribut::lineNumberTableAttribut)) {
+          uint16_t lineLength = reader.readU2();
+          uint16_t currentLine = 0;
+          for (uint16 j = 0; j < lineLength; ++j) {
+            uint16 pc = reader.readU2();
+            if (pc > codeInfo[i].bytecodeIndex + 1) return currentLine;
+            currentLine = reader.readU2();
+          }
+          return currentLine;
+        } else {
+          reader.seek(attLen, Reader::SeekCur);      
+        }
+      }
     }
   }
-  if (codeInfoLength) return codeInfo[codeInfoLength - 1].lineNumber;
   return 0;
 }
 
 uint16 JavaMethod::lookupCtpIndex(uintptr_t ip) {
-  for(uint16 i = 1; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address > ip) {
-      return codeInfo[i - 1].ctpIndex;
+  for(uint16 i = 0; i < codeInfoLength; ++i) {
+    if (codeInfo[i].address == ip) {
+      Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);
+      Reader reader(codeAtt, classDef->bytes);
+      reader.cursor = reader.cursor + 2 + 2 + 4 + codeInfo[i].bytecodeIndex + 1;
+      return reader.readU2();
     }
   }
-  if (codeInfoLength) return codeInfo[codeInfoLength - 1].ctpIndex;
   return 0;
 }
 

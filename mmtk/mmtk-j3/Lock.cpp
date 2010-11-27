@@ -25,10 +25,16 @@ struct Lock {
 
 
 extern "C" void Java_org_j3_mmtk_Lock_acquire__(Lock* l) {
+  bool saved = mvm::Thread::get()->inRV;
+  mvm::Thread::get()->inRV = true;
   l->spin.acquire();
+  mvm::Thread::get()->inRV = saved;
 }
-extern "C" void Java_org_j3_mmtk_Lock_check__I () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Lock_check__I (Lock* l, int i) { UNIMPLEMENTED(); }
 
 extern "C" void Java_org_j3_mmtk_Lock_release__(Lock* l) {
+  bool saved = mvm::Thread::get()->inRV;
+  mvm::Thread::get()->inRV = true;
   l->spin.release();
+  mvm::Thread::get()->inRV = saved;
 }

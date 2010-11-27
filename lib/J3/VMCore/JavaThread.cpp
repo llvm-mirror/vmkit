@@ -19,24 +19,14 @@
 
 using namespace j3;
 
-const unsigned int JavaThread::StateRunning = 0;
-const unsigned int JavaThread::StateWaiting = 1;
-const unsigned int JavaThread::StateInterrupted = 2;
-
-JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
-    : MutatorThread() {
-  llvm_gcroot(thread, 0);
-  llvm_gcroot(vmth, 0);
-  
-  javaThread = thread;
-  vmThread = vmth;
+JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() { 
   MyVM = isolate;
-  interruptFlag = 0;
-  state = StateRunning;
-  pendingException = 0;
+  pendingException = NULL;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
-  currentAddedReferences = 0;
+  currentAddedReferences = NULL;
+  javaThread = NULL;
+  vmThread = NULL;
 
 #ifdef SERVICE
   eipIndex = 0;
@@ -45,6 +35,13 @@ JavaThread::JavaThread(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
     ServiceException = isolate->upcalls->newThrowable->doNew(isolate);
   }
 #endif
+}
+
+void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
+  llvm_gcroot(thread, 0);
+  llvm_gcroot(vmth, 0);
+  javaThread = thread;
+  vmThread = vmth;
 }
 
 JavaThread::~JavaThread() {
@@ -68,9 +65,16 @@ void JavaThread::throwPendingException() {
   th->internalThrowException();
 }
 
-void JavaThread::startJNI(int level) {
-  // Start uncooperative mode.
-  enterUncooperativeCode(level);
+void JavaThread::startJNI() {
+  // Interesting, but no need to do anything.
+}
+
+void JavaThread::endJNI() {
+  localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
+  endUnknownFrame();
+   
+  // Go back to cooperative mode.
+  leaveUncooperativeCode();
 }
 
 uint32 JavaThread::getJavaFrameContext(void** buffer) {
@@ -78,8 +82,8 @@ uint32 JavaThread::getJavaFrameContext(void** buffer) {
   uint32 i = 0;
 
   while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1) {
-      JavaMethod* M = (JavaMethod*)MI->getMetaInfo();
+    if (MI->isHighLevelMethod()) {
+      JavaMethod* M = (JavaMethod*)MI->MetaInfo;
       buffer[i++] = M;
     }
     ++Walker;
@@ -92,9 +96,9 @@ JavaMethod* JavaThread::getCallingMethodLevel(uint32 level) {
   uint32 index = 0;
 
   while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1) {
+    if (MI->isHighLevelMethod()) {
       if (index == level) {
-        return (JavaMethod*)MI->getMetaInfo();
+        return (JavaMethod*)MI->MetaInfo;
       }
       ++index;
     }
@@ -117,8 +121,8 @@ JavaObject* JavaThread::getNonNullClassLoader() {
   mvm::StackWalker Walker(this);
 
   while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1) {
-      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+    if (MI->isHighLevelMethod() == 1) {
+      JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
       JnjvmClassLoader* loader = meth->classDef->classLoader;
       obj = loader->getJavaClassLoader();
       if (obj) return obj;
@@ -133,7 +137,7 @@ void JavaThread::printJavaBacktrace() {
   mvm::StackWalker Walker(this);
 
   while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1)
+    if (MI->isHighLevelMethod())
       MI->print(Walker.ip, Walker.addr);
     ++Walker;
   }

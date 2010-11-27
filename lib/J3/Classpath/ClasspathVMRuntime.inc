@@ -150,8 +150,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  vm->wakeUpFinalizers();
+  mvm::Collector::collect();
   // Sleep a bit.
   sleep(1);
   return;

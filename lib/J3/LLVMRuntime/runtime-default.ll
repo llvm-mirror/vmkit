@@ -34,18 +34,18 @@
 ;;; Field 2:  void*  MyVM
 ;;; Field 3:  void*  baseSP
 ;;; Field 4:  char   doYield
-;;; field 5:  void*  vmData
-;;; Field 6:  char   inRV
-;;; Field 7:  char   joinedRV
-;;; Field 8:  void*  lastSP
-;;; Field 9:  void*  internalThreadID
-;;; field 10: void*  routine
-;;; field 11: void*  lastKnownFrame
-;;; field 12: void*  lastExceptionBuffer
-%Thread = type { %CircularBase, i32, i8*, i8*, i8, i8, i8, i8*, i8*, i8*, i8*, i8* }
+;;; Field 5:  char   inRV
+;;; Field 6:  char   joinedRV
+;;; Field 7:  void*  lastSP
+;;; Field 8:  void*  internalThreadID
+;;; field 9:  void*  routine
+;;; field 10: void*  lastKnownFrame
+;;; field 11: void*  lastExceptionBuffer
+%Thread = type { %CircularBase, i8*, i8*, i8*, i8, i8, i8, i8*, i8*, i8*, i8*, i8* }
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 
+%JavaConstantPool = type { %JavaClass*, i32, i8*, i32*, i8** }
 
 %Attribut = type { %UTF8*, i32, i32 }
 
@@ -55,7 +55,7 @@
 %JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i32,
                     i16 }
 
-%CodeLineInfo = type { i8*, i16, i16, %JavaMethod*, %CodeLineInfo* }
+%CodeLineInfo = type { i8*, %JavaMethod*, %CodeLineInfo* }
 
 %JavaMethod = type { i8*, i16, %Attribut*, i16, %JavaClass*,
                      %UTF8*, %UTF8*, i8, i8*, %CodeLineInfo*, i16, i32 }
@@ -208,6 +208,7 @@ declare float @getFinalFloatField(float*) readnone
 declare i8* @j3ResolveVirtualStub(%JavaObject*)
 declare i8* @j3ResolveSpecialStub()
 declare i8* @j3ResolveStaticStub()
+declare i8* @j3ResolveInterface(%JavaObject*, %JavaMethod*, i32)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

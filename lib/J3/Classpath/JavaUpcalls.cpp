@@ -15,6 +15,7 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "ReferenceQueue.h"
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
@@ -292,28 +293,28 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   CreateJavaThread(vm, vm->getFinalizerThread(), "Finalizer", SystemGroup);
   
   // Create the enqueue thread.
-  assert(vm->getEnqueueThread() && "VM did not set its enqueue thread");
-  CreateJavaThread(vm, vm->getEnqueueThread(), "Reference", SystemGroup);
+  assert(vm->getReferenceThread() && "VM did not set its enqueue thread");
+  CreateJavaThread(vm, vm->getReferenceThread(), "Reference", SystemGroup);
 }
 
-extern "C" void nativeInitWeakReference(JavaObjectReference* reference,
-                                        JavaObject* referent) {
-  
+extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Object_2(
+    JavaObjectReference* reference, JavaObject* referent) {
   llvm_gcroot(reference, 0);
   llvm_gcroot(referent, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, 0);
-  JavaThread::get()->getJVM()->addWeakReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addWeakReference(reference);
 
   END_NATIVE_EXCEPTION
 
 }
 
-extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
-                                         JavaObject* referent,
-                                         JavaObject* queue) {
+extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Object_2Ljava_lang_ref_ReferenceQueue_2(
+    JavaObjectReference* reference,
+    JavaObject* referent,
+    JavaObject* queue) {
   llvm_gcroot(reference, 0);
   llvm_gcroot(referent, 0);
   llvm_gcroot(queue, 0);
@@ -321,29 +322,30 @@ extern "C" void nativeInitWeakReferenceQ(JavaObjectReference* reference,
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->addWeakReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addWeakReference(reference);
   
   END_NATIVE_EXCEPTION
 
 }
 
-extern "C" void nativeInitSoftReference(JavaObjectReference* reference,
-                                        JavaObject* referent) {
+extern "C" void Java_java_lang_ref_SoftReference__0003Cinit_0003E__Ljava_lang_Object_2(
+    JavaObjectReference* reference, JavaObject* referent) {
   llvm_gcroot(reference, 0);
   llvm_gcroot(referent, 0);
   
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, 0);
-  JavaThread::get()->getJVM()->addSoftReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
 
 }
 
-extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
-                                         JavaObject* referent,
-                                         JavaObject* queue) {
+extern "C" void Java_java_lang_ref_SoftReference__0003Cinit_0003E__Ljava_lang_Object_2Ljava_lang_ref_ReferenceQueue_2(
+    JavaObjectReference* reference,
+    JavaObject* referent,
+    JavaObject* queue) {
   llvm_gcroot(reference, 0);
   llvm_gcroot(referent, 0);
   llvm_gcroot(queue, 0);
@@ -351,15 +353,16 @@ extern "C" void nativeInitSoftReferenceQ(JavaObjectReference* reference,
   BEGIN_NATIVE_EXCEPTION(0)
 
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->addSoftReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
 
 }
 
-extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
-                                            JavaObject* referent,
-                                            JavaObject* queue) {
+extern "C" void Java_java_lang_ref_PhantomReference__0003Cinit_0003E__Ljava_lang_Object_2Ljava_lang_ref_ReferenceQueue_2(
+    JavaObjectReference* reference,
+    JavaObject* referent,
+    JavaObject* queue) {
   llvm_gcroot(reference, 0);
   llvm_gcroot(referent, 0);
   llvm_gcroot(queue, 0);
@@ -367,12 +370,13 @@ extern "C" void nativeInitPhantomReferenceQ(JavaObjectReference* reference,
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->addPhantomReference(reference);
+  JavaThread::get()->getJVM()->getReferenceThread()->addPhantomReference(reference);
 
   END_NATIVE_EXCEPTION
 }
 
-extern "C" JavaString* nativeInternString(JavaString* obj) {
+extern "C" JavaString* Java_java_lang_VMString_intern__Ljava_lang_String_2(
+    JavaString* obj) {
   const ArrayUInt16* array = 0;
   JavaString* res = 0;
   llvm_gcroot(obj, 0);
@@ -392,7 +396,7 @@ extern "C" JavaString* nativeInternString(JavaString* obj) {
   return res;
 }
 
-extern "C" uint8 nativeIsArray(JavaObjectClass* klass) {
+extern "C" uint8 Java_java_lang_Class_isArray__(JavaObjectClass* klass) {
   llvm_gcroot(klass, 0);
   UserCommonClass* cl = 0;
 
@@ -405,7 +409,7 @@ extern "C" uint8 nativeIsArray(JavaObjectClass* klass) {
   return (uint8)cl->isArray();
 }
 
-extern "C" JavaObject* nativeGetCallingClass() {
+extern "C" JavaObject* Java_gnu_classpath_VMStackWalker_getCallingClass__() {
   
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
@@ -421,7 +425,7 @@ extern "C" JavaObject* nativeGetCallingClass() {
   return res;
 }
 
-extern "C" JavaObject* nativeGetCallingClassLoader() {
+extern "C" JavaObject* Java_gnu_classpath_VMStackWalker_getCallingClassLoader__() {
   
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
@@ -437,7 +441,7 @@ extern "C" JavaObject* nativeGetCallingClassLoader() {
   return res;
 }
 
-extern "C" JavaObject* nativeFirstNonNullClassLoader() {
+extern "C" JavaObject* Java_gnu_classpath_VMStackWalker_firstNonNullClassLoader__() {
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
   
@@ -451,7 +455,7 @@ extern "C" JavaObject* nativeFirstNonNullClassLoader() {
   return res;
 }
 
-extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
+extern "C" JavaObject* Java_sun_reflect_Reflection_getCallerClass__I(uint32 index) {
   
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
@@ -468,12 +472,13 @@ extern "C" JavaObject* nativeGetCallerClass(uint32 index) {
   return res;
 }
 
-extern "C" JavaObject* nativeGetAnnotation(JavaObject* obj) {
+extern "C" JavaObject* Java_java_lang_reflect_AccessibleObject_getAnnotation__Ljava_lang_Class_2(
+    JavaObject* obj) {
   llvm_gcroot(obj, 0);
   return 0;
 }
 
-extern "C" JavaObject* nativeGetDeclaredAnnotations() {
+extern "C" JavaObject* Java_java_lang_reflect_AccessibleObject_getDeclaredAnnotations__() {
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
   
@@ -487,8 +492,6 @@ extern "C" JavaObject* nativeGetDeclaredAnnotations() {
 
   return res;
 }
-
-extern "C" void nativePropertiesPostInit(JavaObject* prop);
 
 extern "C" void nativeJavaObjectClassTracer(
     JavaObjectClass* obj, uintptr_t closure) {
@@ -520,10 +523,7 @@ extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
   JavaObjectVMThread::staticDestructor(obj);
 }
 
-// Defined in Classpath/ClasspathVMClassLoader.cpp
-extern "C" ArrayObject* nativeGetBootPackages();
-
-extern "C" JavaString* nativeGetenv(JavaString* str) {
+extern "C" JavaString* Java_java_lang_VMSystem_getenv__Ljava_lang_String_2(JavaString* str) {
   JavaString* ret = 0;
   llvm_gcroot(str, 0);
   llvm_gcroot(ret, 0);
@@ -748,12 +748,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   JavaMethod* internString =
     UPCALL_METHOD(loader, "java/lang/VMString", "intern",
                   "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC); 
-  internString->setCompiledPtr((void*)(intptr_t)nativeInternString,
-                               "nativeInternString");
+  internString->setNative();
   
   JavaMethod* isArray =
     UPCALL_METHOD(loader, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
-  isArray->setCompiledPtr((void*)(intptr_t)nativeIsArray, "nativeIsArray");
+  isArray->setNative();
 
 
   UPCALL_REFLECT_CLASS_EXCEPTION(loader, InvocationTargetException);
@@ -944,61 +943,51 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   JavaMethod* getEnv =
     UPCALL_METHOD(loader, "java/lang/VMSystem", "getenv",
                   "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC);
-  getEnv->setCompiledPtr((void*)(intptr_t)nativeGetenv, "nativeGetenv");
+  getEnv->setNative();
 
   JavaMethod* getCallingClass =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClass",
                   "()Ljava/lang/Class;", ACC_STATIC);
-  getCallingClass->setCompiledPtr((void*)(intptr_t)nativeGetCallingClass,
-                                  "nativeGetCallingClass");
+  getCallingClass->setNative();
   
   JavaMethod* getCallingClassLoader =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  getCallingClassLoader->setCompiledPtr((void*)(intptr_t)
-                                        nativeGetCallingClassLoader,
-                                        "nativeGetCallingClassLoader");
+  getCallingClassLoader->setNative();
   
   JavaMethod* firstNonNullClassLoader =
     UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "firstNonNullClassLoader",
                   "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  firstNonNullClassLoader->setCompiledPtr((void*)(intptr_t)
-                                          nativeFirstNonNullClassLoader,
-                                          "nativeFirstNonNullClassLoader");
+  firstNonNullClassLoader->setNative();
   
   JavaMethod* getCallerClass =
     UPCALL_METHOD(loader, "sun/reflect/Reflection", "getCallerClass",
                   "(I)Ljava/lang/Class;", ACC_STATIC);
-  getCallerClass->setCompiledPtr((void*)(intptr_t)nativeGetCallerClass,
-                                 "nativeGetCallerClass");
+  getCallerClass->setNative();
   
   JavaMethod* postProperties =
     UPCALL_METHOD(loader, "gnu/classpath/VMSystemProperties", "postInit",
                   "(Ljava/util/Properties;)V", ACC_STATIC);
-  postProperties->setCompiledPtr((void*)(intptr_t)nativePropertiesPostInit,
-                                 "nativePropertiesPostInit");
+  postProperties->setNative();
 
   // Also implement these twos, implementation in GNU Classpath 0.97.2 is buggy.
   JavaMethod* getAnnotation =
     UPCALL_METHOD(loader, "java/lang/reflect/AccessibleObject", "getAnnotation",
                   "(Ljava/lang/Class;)Ljava/lang/annotation/Annotation;",
                   ACC_VIRTUAL);
-  getAnnotation->setCompiledPtr((void*)(intptr_t)nativeGetAnnotation,
-                                "nativeGetAnnotation");
+  getAnnotation->setNative();
   
   JavaMethod* getAnnotations =
     UPCALL_METHOD(loader, "java/lang/reflect/AccessibleObject",
                   "getDeclaredAnnotations",
                   "()[Ljava/lang/annotation/Annotation;",
                   ACC_VIRTUAL);
-  getAnnotations->setCompiledPtr((void*)(intptr_t)nativeGetDeclaredAnnotations,
-                                 "nativeGetDeclaredAnnotations");
+  getAnnotations->setNative();
   
   JavaMethod* getBootPackages =
     UPCALL_METHOD(loader, "java/lang/VMClassLoader", "getBootPackages",
                   "()[Ljava/lang/String;", ACC_STATIC);
-  getBootPackages->setCompiledPtr((void*)(intptr_t)nativeGetBootPackages,
-                                  "nativeGetBootPackages");
+  getBootPackages->setNative();
   
   //===----------------------------------------------------------------------===//
   //
@@ -1044,58 +1033,31 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
                   "(Ljava/lang/Object;)V",
                   ACC_VIRTUAL);
-  initWeakReference->setCompiledPtr((void*)(intptr_t)nativeInitWeakReference,
-                                    "nativeInitWeakReference");
+  initWeakReference->setNative();
   
   initWeakReference =
     UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
                   "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
                   ACC_VIRTUAL);
-  initWeakReference->setCompiledPtr((void*)(intptr_t)nativeInitWeakReferenceQ,
-                                    "nativeInitWeakReferenceQ");
+  initWeakReference->setNative();
   
   JavaMethod* initSoftReference =
     UPCALL_METHOD(loader, "java/lang/ref/SoftReference", "<init>",
                   "(Ljava/lang/Object;)V",
                   ACC_VIRTUAL);
-  initSoftReference->setCompiledPtr((void*)(intptr_t)nativeInitSoftReference,
-                                    "nativeInitSoftReference");
+  initSoftReference->setNative();
   
   initSoftReference =
-    UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",
+    UPCALL_METHOD(loader, "java/lang/ref/SoftReference", "<init>",
                   "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
                   ACC_VIRTUAL);
-  initSoftReference->setCompiledPtr((void*)(intptr_t)nativeInitSoftReferenceQ,
-                                    "nativeInitSoftReferenceQ");
+  initSoftReference->setNative();
   
   JavaMethod* initPhantomReference =
     UPCALL_METHOD(loader, "java/lang/ref/PhantomReference", "<init>",
                   "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
                   ACC_VIRTUAL);
-  initPhantomReference->setCompiledPtr(
-      (void*)(intptr_t)nativeInitPhantomReferenceQ,
-      "nativeInitPhantomReferenceQ");
-  
-
-}
-
-gc** Jnjvm::getReferentPtr(gc* _obj) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  return (gc**)JavaObjectReference::getReferentPtr(obj);
-}
-
-void Jnjvm::setReferent(gc* _obj, gc* val) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  llvm_gcroot(val, 0);
-  JavaObjectReference::setReferent(obj, (JavaObject*)val);
-}
- 
-void Jnjvm::clearReferent(gc* _obj) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  JavaObjectReference::setReferent(obj, NULL);
+  initPhantomReference->setNative();
 }
 
 #include "ClasspathConstructor.inc"

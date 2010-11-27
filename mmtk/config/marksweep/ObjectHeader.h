@@ -24,12 +24,12 @@ namespace mvm {
   static const uint64_t ThinCountAdd = 0x1000;
 
   static const uint64_t NonLockBitsMask = 0xFFF;
-  static const uint64_t HashMask = 0xFF0;
-  static const uint64_t GCBitMask = 0xF;
+  static const uint64_t HashMask = 0xF00;
+  static const uint64_t GCBitMask = 0xFF;
 
   static const uint32_t NonLockBits = 12;
   static const uint32_t HashBits = 0;
-  static const uint32_t GCBits = 4;
+  static const uint32_t GCBits = 8;
 
   static const bool MovesObject = false;
 }

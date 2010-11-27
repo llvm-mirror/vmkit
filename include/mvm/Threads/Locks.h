@@ -110,7 +110,7 @@ public:
   
   /// lock - Acquire the lock.
   ///
-  virtual void lock() = 0;
+  virtual void lock() __attribute__ ((noinline)) = 0;
 
   /// unlock - Release the lock.
   ///
@@ -141,7 +141,7 @@ private:
 public:
   LockNormal() : Lock() {}
 
-  virtual void lock();
+  virtual void lock() __attribute__ ((noinline));
   virtual void unlock();
 
 };
@@ -170,7 +170,7 @@ private:
 public:
   LockRecursive() : Lock() { n = 0; }
   
-  virtual void lock();
+  virtual void lock() __attribute__ ((noinline));
   virtual void unlock();
   virtual int tryLock();
 
@@ -185,38 +185,8 @@ public:
 
   /// lockAll - Acquire the lock count times.
   ///
-  void lockAll(int count);
+  void lockAll(int count) __attribute__ ((noinline));
 };
-
-class ThinLock {
-public:
-
-  /// initialise - Initialise the value of the lock.
-  ///
-  static void initialise(gc* object);
-
-  /// overflowThinlock - Change the lock of this object to a fat lock because
-  /// we have reached 0xFF locks.
-  static void overflowThinLock(gc* object);
- 
-  /// changeToFatlock - Change the lock of this object to a fat lock. The lock
-  /// may be in a thin lock or fat lock state.
-  static FatLock* changeToFatlock(gc* object);
-
-  /// acquire - Acquire the lock.
-  static void acquire(gc* object);
-
-  /// release - Release the lock.
-  static void release(gc* object);
-
-  /// owner - Returns true if the curren thread is the owner of this object's
-  /// lock.
-  static bool owner(gc* object);
-
-  /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.
-  static FatLock* getFatLock(gc* object);
-};
-
 
 /// SpinLock - This class implements a spin lock. A spin lock is OK to use
 /// when it is held during short period of times. It is CPU expensive

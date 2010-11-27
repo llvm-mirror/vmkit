@@ -27,9 +27,8 @@ using namespace llvm;
 using namespace j3;
 
 
-JavaLLVMLazyJITCompiler::JavaLLVMLazyJITCompiler(const std::string& ModuleID,
-                                                 bool trusted)
-    : JavaJITCompiler(ModuleID, trusted) {
+JavaLLVMLazyJITCompiler::JavaLLVMLazyJITCompiler(const std::string& ModuleID)
+    : JavaJITCompiler(ModuleID) {
   TheMaterializer = new LLVMMaterializer(TheModule, this);
   executionEngine->DisableLazyCompilation(false);   
 }

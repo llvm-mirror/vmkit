@@ -52,7 +52,7 @@ public:
   /// ctpRes - Objects resolved dynamically, e.g. UTF8s, classes, methods,
   /// fields, string pointers.
   ///
-  void**  ctpRes; 
+  void**  ctpRes;
   
   /// operator new - Redefine the operator to allocate the arrays of a
   /// constant pool inline.

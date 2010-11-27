@@ -16,7 +16,7 @@
 
 namespace j3 {
 
-class ArrayUInt8;
+class classBytes;
 class JnjvmBootstrapLoader;
 
 struct ZipFile : public mvm::PermanentObject {
@@ -49,7 +49,7 @@ class ZipArchive : public mvm::PermanentObject {
 public:
   std::map<const char*, ZipFile*, ltstr> filetable;
   typedef std::map<const char*, ZipFile*, ltstr>::iterator table_iterator;
-  ArrayUInt8* bytes;
+  ClassBytes* bytes;
 
 private:
   
@@ -70,9 +70,9 @@ public:
   }
 
   int getOfscd() { return ofscd; }
-  ZipArchive(ArrayUInt8* bytes, mvm::BumpPtrAllocator& allocator);
+  ZipArchive(ClassBytes* bytes, mvm::BumpPtrAllocator& allocator);
   ZipFile* getFile(const char* filename);
-  int readFile(ArrayUInt8* array, const ZipFile* file);
+  int readFile(ClassBytes* array, const ZipFile* file);
 
 };
 

@@ -46,9 +46,6 @@ public:
     return 0;
   }
 
-  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) {
-  }
-  
   virtual bool isStaticCompiling() {
     return false;
   }
@@ -104,10 +101,6 @@ public:
   }
 
   virtual ~JavaCompiler() {}
-
-  virtual mvm::StackScanner* createStackScanner() {
-    return new mvm::UnpreciseStackScanner();
-  }
 
   virtual void* loadMethod(void* handle, const char* symbol) {
     return dlsym(handle, symbol);

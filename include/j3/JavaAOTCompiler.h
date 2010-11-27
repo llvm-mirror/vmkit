@@ -67,7 +67,7 @@ public:
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   
-  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name);
+  virtual void setMethod(llvm::Function* func, void* ptr, const char* name);
   
 
 #ifdef SERVICE

@@ -167,6 +167,7 @@ Constant* JavaAOTCompiler::getMethodInClass(JavaMethod* meth) {
 }
 
 Constant* JavaAOTCompiler::getString(JavaString* str) {
+  assert(!useCooperativeGC());
   string_iterator SI = strings.find(str);
   if (SI != strings.end()) {
     return SI->second;
@@ -306,6 +307,7 @@ Constant* JavaAOTCompiler::HandleMagic(JavaObject* obj, CommonClass* objCl) {
 
 
 Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
+  assert(!useCooperativeGC());
   llvm::GlobalVariable* varGV = 0;
   final_object_iterator End = finalObjects.end();
   final_object_iterator I = finalObjects.find(obj);
@@ -444,7 +446,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
         Elts.push_back(Constant::getNullValue(Ty));
       }
     } else {
-      Reader reader(attribut, &(cl->bytes));
+      Reader reader(attribut, cl->bytes);
       JavaConstantPool * ctpInfo = cl->ctpInfo;
       uint16 idx = reader.readU2();
       if (type->isPrimitive()) {
@@ -1482,6 +1484,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   if (!VT->IMT) {
     Elemts.push_back(Constant::getNullValue(PTy));
   } else {
+    // TODO: add a null element at the end to diagnose errors.
     Class* cl = classDef->asClass();
     assert(cl && "Not a class");
     std::set<JavaMethod*> contents[InterfaceMethodTable::NumIndexes];
@@ -1851,8 +1854,7 @@ void JavaAOTCompiler::makeVT(Class* cl) {
 void JavaAOTCompiler::makeIMT(Class* cl) {
 }
 
-void JavaAOTCompiler::setMethod(JavaMethod* meth, void* ptr, const char* name) {
-  Function* func = getMethodInfo(meth)->getMethod();
+void JavaAOTCompiler::setMethod(Function* func, void* ptr, const char* name) {
   func->setName(name);
   func->setLinkage(GlobalValue::ExternalLinkage);
 }
@@ -1903,14 +1905,14 @@ void JavaAOTCompiler::compileClass(Class* cl) {
 
 
 
-void extractFiles(ArrayUInt8* bytes,
+void extractFiles(ClassBytes* bytes,
                   JavaAOTCompiler* M,
                   JnjvmBootstrapLoader* bootstrapLoader,
                   std::vector<Class*>& classes) {
   ZipArchive archive(bytes, bootstrapLoader->allocator);
    
-  mvm::ThreadAllocator allocator; 
-  char* realName = (char*)allocator.Allocate(4096);
+  mvm::BumpPtrAllocator allocator; 
+  char* realName = (char*)allocator.Allocate(4096, "temp");
   for (ZipArchive::table_iterator i = archive.filetable.begin(), 
        e = archive.filetable.end(); i != e; ++i) {
     ZipFile* file = i->second;
@@ -1927,9 +1929,7 @@ void extractFiles(ArrayUInt8* bytes,
       classes.push_back(cl);  
     } else if (size > 4 && (!strcmp(&name[size - 4], ".jar") || 
                             !strcmp(&name[size - 4], ".zip"))) {
-      UserClassArray* array = bootstrapLoader->upcalls->ArrayOfByte;
-      ArrayUInt8* res = 
-        (ArrayUInt8*)array->doNew(file->ucsize, JavaThread::get()->getJVM());
+      ClassBytes* res = new (allocator, file->ucsize) ClassBytes(file->ucsize);
       int ok = archive.readFile(res, file);
       if (!ok) return;
       
@@ -1958,6 +1958,9 @@ void mainCompilerStart(JavaThread* th) {
   if (!M->clinits->empty()) {
     Comp = JavaJITCompiler::CreateCompiler("JIT");
     Comp->EmitFunctionName = true;
+    if (!M->useCooperativeGC()) {
+      Comp->disableCooperativeGC();
+    }
     bootstrapLoader->setCompiler(Comp);
     bootstrapLoader->analyseClasspathEnv(vm->classpath);
   } else {
@@ -1970,7 +1973,7 @@ void mainCompilerStart(JavaThread* th) {
       (!strcmp(&name[size - 4], ".jar") || !strcmp(&name[size - 4], ".zip"))) {
   
     std::vector<Class*> classes;
-    ArrayUInt8* bytes = Reader::openFile(bootstrapLoader, name);
+    ClassBytes* bytes = Reader::openFile(bootstrapLoader, name);
       
     if (!bytes) {
       fprintf(stderr, "Can't find zip file.\n");
@@ -1979,7 +1982,7 @@ void mainCompilerStart(JavaThread* th) {
 
     extractFiles(bytes, M, bootstrapLoader, classes);
     // Now that we know if we can trust this compiler, add the Java passes.
-    M->addJavaPasses(M->compileRT);
+    M->addJavaPasses();
 
 
       // First resolve everyone so that there can not be unknown references in
@@ -2057,7 +2060,7 @@ void mainCompilerStart(JavaThread* th) {
       }
 
     } else {
-      M->addJavaPasses(false);
+      M->addJavaPasses();
       char* realName = (char*)allocator.Allocate(size + 1);
       if (size > 6 && !strcmp(&name[size - 6], ".class")) {
         memcpy(realName, name, size - 6);
@@ -2130,7 +2133,7 @@ end:
 
 void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {
   name = n;
-  JavaThread* th = new JavaThread(0, 0, vm);
+  JavaThread* th = new JavaThread(vm);
   vm->setMainThread(th);
   th->start((void (*)(mvm::Thread*))mainCompilerStart);
   vm->waitForExit();

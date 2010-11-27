@@ -36,7 +36,7 @@ class Jnjvm;
 ///  {JavaObject, size, [0 * T]}.
 template <class T>
 class TJavaArray : public JavaObject {
-private:
+public:
   /// size - The (constant) size of the array.
   ssize_t size;
 
@@ -75,7 +75,7 @@ public:
 };
 
 class ArrayObject : public JavaObject {
-private:
+public:
   /// size - The (constant) size of the array.
   ssize_t size;
 
@@ -98,6 +98,7 @@ public:
   static void setElement(ArrayObject* self, JavaObject* value, uint32_t i) {
     llvm_gcroot(self, 0);
     llvm_gcroot(value, 0);
+    if (value != NULL) assert(value->getVirtualTable());
     self->elements[i] = value;
   }
 

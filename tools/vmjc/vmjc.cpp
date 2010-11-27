@@ -178,15 +178,16 @@ int main(int argc, char **argv) {
 
   mvm::Collector::initialise();
 
-  JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp, false);
+  mvm::BumpPtrAllocator allocator;
+  JnjvmBootstrapLoader* loader = new(allocator, "Bootstrap loader")
+    JnjvmBootstrapLoader(allocator, Comp, false);
 
   if (DisableExceptions) Comp->disableExceptions();
   if (DisableStubs) Comp->generateStubs = false;
   if (AssumeCompiled) Comp->assumeCompiled = true;
   if (DisableCooperativeGC) Comp->disableCooperativeGC();
     
-  mvm::BumpPtrAllocator A;
-  Jnjvm* vm = new(A, "Bootstrap loader") Jnjvm(A, (JnjvmBootstrapLoader*)JCL);
+  Jnjvm* vm = new(allocator, "Bootstrap loader") Jnjvm(allocator, loader);
   
   for (std::vector<std::string>::iterator i = Properties.begin(),
        e = Properties.end(); i != e; ++i) {

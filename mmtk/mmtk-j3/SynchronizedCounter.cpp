@@ -15,6 +15,6 @@
 
 using namespace j3;
 
-extern "C" void Java_org_j3_mmtk_SynchronizedCounter_reset__ () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_SynchronizedCounter_increment__ () { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_SynchronizedCounter_reset__ (JavaObject* self) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_SynchronizedCounter_increment__ (JavaObject* self) { UNIMPLEMENTED(); }
 

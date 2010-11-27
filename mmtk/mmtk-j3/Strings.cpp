@@ -17,23 +17,18 @@ using namespace j3;
 extern "C" void Java_org_j3_mmtk_Strings_write___3CI(JavaObject* str,
                                                      ArrayUInt16* msg,
                                                      sint32 len) {
-  llvm_gcroot(str, 0);
-  llvm_gcroot(msg, 0);
   for (sint32 i = 0; i < len; ++i) {
-    fprintf(stderr, "%c", ArrayUInt16::getElement(msg, i));
+    fprintf(stderr, "%c", msg->elements[i]);
   }
 }
 
 extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(JavaObject* str,
                                                              ArrayUInt16* msg,
                                                              sint32 len) {
-  llvm_gcroot(str, 0);
-  llvm_gcroot(msg, 0);
-  
   fprintf(stderr, "[%p] ", (void*)JavaThread::get());
   
   for (sint32 i = 0; i < len; ++i) {
-    fprintf(stderr, "%c", ArrayUInt16::getElement(msg, i));
+    fprintf(stderr, "%c", msg->elements[i]);
   }
 }
 
@@ -42,16 +37,12 @@ extern "C" sint32
 Java_org_j3_mmtk_Strings_copyStringToChars__Ljava_lang_String_2_3CII(
     JavaObject* obj, JavaString* str, ArrayUInt16* dst, uint32 dstBegin,
     uint32 dstEnd) {
-  llvm_gcroot(str, 0);
-  llvm_gcroot(obj, 0);
-  llvm_gcroot(dst, 0);
 
   sint32 len = str->count;
   sint32 n = (dstBegin + len <= dstEnd) ? len : (dstEnd - dstBegin);
 
   for (sint32 i = 0; i < n; i++) {
-    ArrayUInt16::setElement(dst,
-        ArrayUInt16::getElement(JavaString::getValue(str), str->offset + i), dstBegin + i);
+    dst->elements[dstBegin + i] = str->value->elements[str->offset + i];
   }
   
   return n;

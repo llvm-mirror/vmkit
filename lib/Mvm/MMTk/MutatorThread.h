@@ -21,7 +21,7 @@ public:
   MutatorThread() : mvm::Thread() {
     MutatorContext = 0;
   }
-  mvm::BumpPtrAllocator Allocator;
+  mvm::ThreadAllocator Allocator;
   uintptr_t MutatorContext;
   
   /// realRoutine - The function to invoke when the thread starts.

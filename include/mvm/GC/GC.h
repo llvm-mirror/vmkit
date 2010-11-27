@@ -34,26 +34,4 @@ public:
   }
 };
 
-namespace mvm {
-
-class Thread;
-
-class StackScanner {
-public:
-  virtual void scanStack(mvm::Thread* th, uintptr_t closure) = 0;
-  virtual ~StackScanner() {}
-};
-
-class UnpreciseStackScanner : public StackScanner {
-public:
-  virtual void scanStack(mvm::Thread* th, uintptr_t closure);
-};
-
-class PreciseStackScanner : public StackScanner {
-public:
-  virtual void scanStack(mvm::Thread* th, uintptr_t closure);
-};
-
-}
-
 #endif

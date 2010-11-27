@@ -81,10 +81,6 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
     }
 
     th->MyVM->rendezvous.finishRV();
-  
-    th->MyVM->wakeUpFinalizers();
-    th->MyVM->wakeUpEnqueue();
-    
     th->MyVM->endCollection();
   }
 

@@ -10,13 +10,14 @@
 #include "debug.h"
 
 #include "MvmGC.h"
+#include "mvm/MethodInfo.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 
 #include <cassert>
-#include <signal.h>
+#include <csetjmp>
 #include <cstdio>
 #include <ctime>
 #include <dlfcn.h>
@@ -24,6 +25,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <sched.h>
+#include <signal.h>
 #include <unistd.h>
 
 using namespace mvm;
@@ -54,8 +56,8 @@ void Thread::joinRVBeforeEnter() {
   MyVM->rendezvous.joinBeforeUncooperative(); 
 }
 
-void Thread::joinRVAfterLeave() {
-  MyVM->rendezvous.joinAfterUncooperative(); 
+void Thread::joinRVAfterLeave(void* savedSP) {
+  MyVM->rendezvous.joinAfterUncooperative(savedSP); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {
@@ -65,10 +67,29 @@ void Thread::startKnownFrame(KnownFrame& F) {
   cur = (void**)cur[0];
   F.previousFrame = lastKnownFrame;
   F.currentFP = cur;
+  // This is used as a marker.
+  F.currentIP = NULL;
   lastKnownFrame = &F;
 }
 
 void Thread::endKnownFrame() {
+  assert(lastKnownFrame->currentIP == NULL);
+  lastKnownFrame = lastKnownFrame->previousFrame;
+}
+
+void Thread::startUnknownFrame(KnownFrame& F) {
+  // Get the caller of this function
+  void** cur = (void**)FRAME_PTR();
+  // Get the caller of the caller.
+  cur = (void**)cur[0];
+  F.previousFrame = lastKnownFrame;
+  F.currentFP = cur;
+  F.currentIP = FRAME_IP(cur);
+  lastKnownFrame = &F;
+}
+
+void Thread::endUnknownFrame() {
+  assert(lastKnownFrame->currentIP != NULL);
   lastKnownFrame = lastKnownFrame->previousFrame;
 }
 
@@ -153,21 +174,126 @@ void* StackWalker::operator*() {
 }
 
 void StackWalker::operator++() {
-  if (addr < thread->baseSP && addr < addr[0]) {
-    if (frame && addr == frame->currentFP) {
+  if (addr != thread->baseSP) {
+    assert((addr < thread->baseSP) && "Corrupted stack");
+    assert((addr < addr[0]) && "Corrupted stack");
+    if ((frame != NULL) && (addr == frame->currentFP)) {
+      assert(frame->currentIP == NULL);
       frame = frame->previousFrame;
-      if  (frame) {
-        addr = (void**)frame->currentFP;
-        frame = frame->previousFrame;
-      } else {
-        addr = (void**)addr[0];
-      }
+      assert(frame != NULL);
+      assert(frame->currentIP != NULL);
+      addr = (void**)frame->currentFP;
+      frame = frame->previousFrame;
     } else {
       addr = (void**)addr[0];
     }
-  } else {
-    addr = (void**)thread->baseSP;
   }
+}
+
+StackWalker::StackWalker(mvm::Thread* th) {
+  thread = th;
+  frame = th->lastKnownFrame;
+  if (mvm::Thread::get() == th) {
+    addr = (void**)FRAME_PTR();
+    addr = (void**)addr[0];
+  } else {
+    addr = (void**)th->waitOnSP();
+    if (frame) {
+      assert(frame->currentFP >= addr);
+    }
+    if (frame && (addr == frame->currentFP)) {
+      frame = frame->previousFrame;
+      assert((frame == NULL) || (frame->currentIP == NULL));
+    }
+  }
+  assert(addr && "No address to start with");
+}
+
+
+#ifdef WITH_LLVM_GCC
+void Thread::scanStack(uintptr_t closure) {
+  StackWalker Walker(this);
+  while (MethodInfo* MI = Walker.get()) {
+    MI->scan(closure, Walker.ip, Walker.addr);
+    ++Walker;
+  }
+}
+
+#else
+
+void Thread::scanStack(uintptr_t closure) {
+  register unsigned int  **max = (unsigned int**)(void*)this->baseSP;
+  if (mvm::Thread::get() != this) {
+    register unsigned int  **cur = (unsigned int**)this->waitOnSP();
+    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
+  } else {
+    jmp_buf buf;
+    setjmp(buf);
+    register unsigned int  **cur = (unsigned int**)&buf;
+    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
+  }
+}
+#endif
+
+void Thread::enterUncooperativeCode(unsigned level) {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(!lastSP && "SP already set when entering uncooperative code");
+      // Get the caller.
+      void* temp = FRAME_PTR();
+      // Make sure to at least get the caller of the caller.
+      ++level;
+      while (level--) temp = ((void**)temp)[0];
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, 0, temp);
+      if (doYield) joinRVBeforeEnter();
+      assert(lastSP && "No last SP when entering uncooperative code");
+    }
+  }
+}
+
+void Thread::enterUncooperativeCode(void* SP) {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(!lastSP && "SP already set when entering uncooperative code");
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, 0, SP);
+      if (doYield) joinRVBeforeEnter();
+      assert(lastSP && "No last SP when entering uncooperative code");
+    }
+  }
+}
+
+void Thread::leaveUncooperativeCode() {
+  if (isMvmThread()) {
+    if (!inRV) {
+      assert(lastSP && "No last SP when leaving uncooperative code");
+      void* savedSP = lastSP;
+      // The cas is not necessary, but it does a memory barrier.
+      __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
+      // A rendezvous has just been initiated, join it.
+      if (doYield) joinRVAfterLeave(savedSP);
+      assert(!lastSP && "SP has a value after leaving uncooperative code");
+    }
+  }
+}
+
+void* Thread::waitOnSP() {
+  // First see if we can get lastSP directly.
+  void* sp = lastSP;
+  if (sp) return sp;
+  
+  // Then loop a fixed number of iterations to get lastSP.
+  for (uint32 count = 0; count < 1000; ++count) {
+    sp = lastSP;
+    if (sp) return sp;
+  }
+  
+  // Finally, yield until lastSP is not set.
+  while ((sp = lastSP) == NULL) mvm::Thread::yield();
+
+  assert(sp != NULL && "Still no sp");
+  return sp;
 }
 
 
@@ -267,24 +393,12 @@ StackThreadManager TheStackManager;
 
 extern void sigsegvHandler(int, siginfo_t*, void*);
 
-
-#if defined(__MACH__)
-# define SIGGC  SIGXCPU
-#else
-# define SIGGC  SIGPWR
-#endif
-
-static void siggcHandler(int) {
-  mvm::Thread* th = mvm::Thread::get();
-  th->MyVM->rendezvous.join();
-}
-
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
 /// given routine of th.
 ///
 void Thread::internalThreadStart(mvm::Thread* th) {
-  th->baseSP  = (void*)&th;
+  th->baseSP  = FRAME_PTR();
 
   // Set the SIGSEGV handler to diagnose errors.
   struct sigaction sa;
@@ -295,22 +409,14 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
 
-  // Set the SIGGC handler for uncooperative rendezvous.
-  sigaction(SIGGC, 0, &sa);
-  sigfillset(&mask);
-  sa.sa_mask = mask;
-  sa.sa_handler = siggcHandler;
-  sa.sa_flags |= SA_RESTART;
-  sigaction(SIGGC, &sa, NULL);
 
   assert(th->MyVM && "VM not set in a thread");
 #ifdef ISOLATE
   th->IsolateID = th->MyVM->IsolateID;
 #endif
-  th->MyVM->addThread(th); 
+  th->MyVM->rendezvous.addThread(th);
   th->routine(th);
   th->MyVM->removeThread(th);
-  delete th;
 }
 
 
@@ -323,6 +429,9 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   pthread_attr_init(&attributs);
   pthread_attr_setstack(&attributs, this, STACK_SIZE);
   routine = fct;
+  // Make sure to add it in the list of threads before leaving this function:
+  // the garbage collector wants to trace this thread.
+  MyVM->addThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
   pthread_detach((pthread_t)internalThreadID);
@@ -346,18 +455,23 @@ void* Thread::operator new(size_t sz) {
       res = (void*)TheStackManager.allocate();
     }
   }
+  // Make sure the thread information is cleared.
+  memset(res, 0, sz);
   return res;
 }
 
 /// releaseThread - Remove the stack of the thread from the list of stacks
 /// in use.
-void Thread::releaseThread(void* th) {
+void Thread::releaseThread(mvm::Thread* th) {
+  // It seems like the pthread implementation in Linux is clearing with NULL
+  // the stack of the thread. So we have to get the thread id before
+  // calling pthread_join.
+  void* thread_id = th->internalThreadID;
+  if (thread_id != NULL) {
+    // Wait for the thread to die.
+    pthread_join((pthread_t)thread_id, NULL);
+  }
   uintptr_t index = ((uintptr_t)th & Thread::IDMask);
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
-}
-
-void Thread::killForRendezvous() {
-  int res = kill(SIGGC);
-  assert(!res && "Error on kill");
 }

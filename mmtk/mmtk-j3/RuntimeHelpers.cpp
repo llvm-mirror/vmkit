@@ -14,11 +14,9 @@
 using namespace j3;
 
 extern "C" uint16_t MMTkCharAt(JavaString* str, uint32_t index) {
-  llvm_gcroot(str, 0);
-  return ArrayUInt16::getElement(JavaString::getValue(str), index);
+  return str->value->elements[index];
 }
 
 extern "C" JavaObject* MMTkGetClass(JavaObject* obj) {
-  llvm_gcroot(obj, 0);
-  return JavaObject::getClass(obj)->delegatee[0];
+  return ((JavaVirtualTable*)obj->getVirtualTable())->cl->delegatee[0];
 }
