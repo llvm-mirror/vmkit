@@ -60,7 +60,6 @@ void LoopSafePoints::insertSafePoint(BasicBlock* BB, Function* SafeFunction,
   BranchInst::Create(SU, yield);
 
   L->addBasicBlockToLoop(yield, LI->getBase());
-
 }
 
 

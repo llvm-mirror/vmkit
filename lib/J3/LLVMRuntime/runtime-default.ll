@@ -33,15 +33,15 @@
 ;;; Field 1:  size_t IsolateID
 ;;; Field 2:  void*  MyVM
 ;;; Field 3:  void*  baseSP
-;;; Field 4:  char   doYield
-;;; Field 5:  char   inRV
-;;; Field 6:  char   joinedRV
+;;; Field 4:  bool   doYield
+;;; Field 5:  bool   inRV
+;;; Field 6:  bool   joinedRV
 ;;; Field 7:  void*  lastSP
 ;;; Field 8:  void*  internalThreadID
 ;;; field 9:  void*  routine
 ;;; field 10: void*  lastKnownFrame
 ;;; field 11: void*  lastExceptionBuffer
-%Thread = type { %CircularBase, i8*, i8*, i8*, i8, i8, i8, i8*, i8*, i8*, i8*, i8* }
+%Thread = type { %CircularBase, i8*, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8* }
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 
