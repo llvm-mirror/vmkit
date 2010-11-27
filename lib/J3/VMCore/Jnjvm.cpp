@@ -1420,7 +1420,6 @@ size_t Jnjvm::getObjectSize(gc* object) {
   // in this case.
   size_t size = 0;
   JavaObject* src = (JavaObject*)object;
-  VirtualTable* VT = src->getVirtualTable();
   if (VMClassLoader::isVMClassLoader(src)) {
     size = sizeof(VMClassLoader);
   } else {
