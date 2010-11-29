@@ -641,6 +641,7 @@ VM_FLAGS
 ISOLATE_BUILD
 SERVICE_BUILD
 SINGLE_BUILD
+MMTK_PLAN_HEADER
 MMTK_PLAN
 GC_LIBS
 GC_FLAGS
@@ -3860,9 +3861,9 @@ fi
 
 # Check whether --with-mmtk-plan was given.
 if test "${with_mmtk_plan+set}" = set; then :
-  withval=$with_mmtk_plan; MMTK_PLAN=$withval
+  withval=$with_mmtk_plan; MMTK_PLAN_HEADER=$withval
 else
-  MMTK_PLAN=marksweep
+  MMTK_PLAN_HEADER=marksweep
 
 fi
 
@@ -3897,7 +3898,7 @@ else
     GC_MMTK=1
 
     GC_LIBS=MMTk
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK -I\$(PROJ_SRC_ROOT)/mmtk/config/\$(MMTK_PLAN)"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK -I\$(PROJ_SRC_ROOT)/mmtk/config/\$(MMTK_PLAN_HEADER)"
   else
     GC_LIBS=GCMmap2
     if test "x$gc" = "xmulti-mmap"; then
@@ -3924,6 +3925,20 @@ $as_echo "#define USE_GC_MMAP2 1" >>confdefs.h
 
   fi
 fi
+
+
+if test "x$MMTK_PLAN_HEADER" = "xmarksweep";  then
+  MMTK_PLAN=org.mmtk.plan.marksweep.MS
+else
+  if test "x$MMTK_PLAN_HEADER" = "xcopyms";  then
+  MMTK_PLAN=org.mmtk.plan.copyms.CopyMS
+  else
+    if test "x$MMTK_PLAN_HEADER" != "x";  then
+      error Unknown or unsupported MMTK plan
+    fi
+  fi
+fi
+
 
 
 
@@ -6133,7 +6148,7 @@ ac_config_files="$ac_config_files lib/J3/Classpath/Classpath.h"
 
 ac_config_files="$ac_config_files tools/llcj/LinkPaths.h"
 
-ac_config_files="$ac_config_files mmtk/java/build.xml"
+ac_config_files="$ac_config_files mmtk/java/src/org/j3/config/Selected.java"
 
 
 ac_config_commands="$ac_config_commands Makefile"
@@ -6842,7 +6857,7 @@ do
     "Makefile.config") CONFIG_FILES="$CONFIG_FILES Makefile.config" ;;
     "lib/J3/Classpath/Classpath.h") CONFIG_FILES="$CONFIG_FILES lib/J3/Classpath/Classpath.h" ;;
     "tools/llcj/LinkPaths.h") CONFIG_FILES="$CONFIG_FILES tools/llcj/LinkPaths.h" ;;
-    "mmtk/java/build.xml") CONFIG_FILES="$CONFIG_FILES mmtk/java/build.xml" ;;
+    "mmtk/java/src/org/j3/config/Selected.java") CONFIG_FILES="$CONFIG_FILES mmtk/java/src/org/j3/config/Selected.java" ;;
     "Makefile") CONFIG_COMMANDS="$CONFIG_COMMANDS Makefile" ;;
     "lib/Makefile") CONFIG_COMMANDS="$CONFIG_COMMANDS lib/Makefile" ;;
 

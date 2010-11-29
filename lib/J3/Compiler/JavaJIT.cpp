@@ -603,7 +603,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
   lock = new PtrToIntInst(lock, intrinsics->pointerSizeType, "", currentBlock);
   Value* NonLockBitsMask = ConstantInt::get(intrinsics->pointerSizeType,
-                                            mvm::NonLockBitsMask);
+                                            mvm::ThinLock::NonLockBitsMask);
 
   lock = BinaryOperator::CreateAnd(lock, NonLockBitsMask, "", currentBlock);
 
@@ -653,7 +653,7 @@ void JavaJIT::monitorExit(Value* obj) {
                             "", currentBlock);
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
   Value* NonLockBitsMask = ConstantInt::get(
-      intrinsics->pointerSizeType, mvm::NonLockBitsMask);
+      intrinsics->pointerSizeType, mvm::ThinLock::NonLockBitsMask);
 
   Value* lockedMask = BinaryOperator::CreateAnd(
       lock, NonLockBitsMask, "", currentBlock);

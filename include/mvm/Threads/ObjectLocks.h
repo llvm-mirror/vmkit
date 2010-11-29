@@ -12,6 +12,7 @@
 
 #include "ObjectHeader.h"
 #include "mvm/Allocator.h"
+#include "mvm/GC/GC.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
@@ -152,13 +153,30 @@ public:
 
 class ThinLock {
 public:
+  
+  // The header of an object that has a thin lock implementation is like the
+  // following:
+  //
+  //    x      xxx xxxx xxxx        xxxx xxxx xxxx        xxxx xxxx
+  //    ^      ^^^ ^^^^ ^^^^        ^^^^ ^^^^ ^^^^        ^^^^ ^^^^
+  //    1           11                    12                  8
+  // fat lock    thread id       thin lock count + hash     GC bits
+
+  static const uint64_t FatMask = 1 << ((sizeof(size_t) << 3) - 1);
+
+  static const uint32_t NonLockBits = HashBits + GCBits;
+  static const uint64_t NonLockBitsMask = ((1 << NonLockBits) - 1);
+
+  static const uint64_t ThinCountMask = ~(FatMask + Thread::IDMask + NonLockBitsMask);
+  static const uint64_t ThinCountShift = NonLockBits;
+  static const uint64_t ThinCountAdd = 1 << NonLockBits;
 
   /// initialise - Initialise the value of the lock.
   ///
   static void removeFatLock(FatLock* fatLock, LockSystem& table);
 
   /// overflowThinlock - Change the lock of this object to a fat lock because
-  /// we have reached 0xFF locks.
+  /// we have reached the maximum number of locks.
   static void overflowThinLock(gc* object, LockSystem& table);
  
   /// changeToFatlock - Change the lock of this object to a fat lock. The lock

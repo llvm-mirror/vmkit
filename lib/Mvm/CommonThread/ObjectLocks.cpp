@@ -27,7 +27,8 @@ void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   FatLock* obj = table.allocate(object);
   uintptr_t ID = obj->getID();
-  obj->acquireAll(object, (ThinCountMask >> ThinCountShift) + 1);
+  // 1 because we start at 0, and 1 for this lock request.
+  obj->acquireAll(object, (ThinCountMask >> ThinCountShift) + 2);
   uintptr_t oldValue = 0;
   uintptr_t newValue = 0;
   uintptr_t yieldedValue = 0;
@@ -266,7 +267,7 @@ FatLock::FatLock(uint32_t i, gc* a) {
 }
 
 uintptr_t FatLock::getID() {
-  return (index << mvm::NonLockBits) | mvm::FatMask;
+  return (index << ThinLock::NonLockBits) | ThinLock::FatMask;
 }
 
 void FatLock::release(gc* obj, LockSystem& table) {
@@ -300,8 +301,8 @@ bool FatLock::acquire(gc* obj) {
     internalLock.unlock();
     return false;
   }
-  assert(obj->header & FatMask);
-  assert((obj->header & ~NonLockBitsMask) == getID());
+  assert(obj->header & ThinLock::FatMask);
+  assert((obj->header & ~ThinLock::NonLockBitsMask) == getID());
   return true;
 }
 
@@ -315,6 +316,7 @@ void LockSystem::deallocate(FatLock* lock) {
 }
   
 LockSystem::LockSystem(mvm::BumpPtrAllocator& all) : allocator(all) {
+  assert(ThinLock::ThinCountMask > 0);
   LockTable = (FatLock* **)
     allocator.Allocate(GlobalSize * sizeof(FatLock**), "Global LockTable");
   LockTable[0] = (FatLock**)
@@ -368,8 +370,8 @@ FatLock* LockSystem::allocate(gc* obj) {
 
 
 FatLock* LockSystem::getFatLockFromID(uintptr_t ID) {
-  if (ID & mvm::FatMask) {
-    uint32_t index = (ID & ~mvm::FatMask) >> mvm::NonLockBits;
+  if (ID & ThinLock::FatMask) {
+    uint32_t index = (ID & ~ThinLock::FatMask) >> ThinLock::NonLockBits;
     FatLock* res = getLock(index);
     return res;
   } else {

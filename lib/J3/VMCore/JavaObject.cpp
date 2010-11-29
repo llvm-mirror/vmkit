@@ -23,21 +23,25 @@ using namespace j3;
 
 static const int hashCodeIncrement = mvm::GCBitMask + 1;
 uint16_t JavaObject::hashCodeGenerator = hashCodeIncrement;
+static const uint64_t HashMask = ((1 << mvm::HashBits) - 1) << mvm::GCBits;
+
 
 /// hashCode - Return the hash code of this object.
 uint32_t JavaObject::hashCode(JavaObject* self) {
   llvm_gcroot(self, 0);
   if (!mvm::MovesObject) return (uint32_t)(long)self;
+  assert(HashMask != 0);
+  assert(mvm::HashBits != 0);
 
   uintptr_t header = self->header;
   uintptr_t GCBits = header & mvm::GCBitMask;
-  uintptr_t val = header & mvm::HashMask;
+  uintptr_t val = header & HashMask;
   if (val != 0) {
     return val ^ (uintptr_t)getClass(self);
   }
   val = hashCodeGenerator;
   hashCodeGenerator += hashCodeIncrement;
-  val = val % mvm::HashMask;
+  val = val & HashMask;
   if (val == 0) {
     // It is possible that in the same time, a thread is in this method and
     // gets the same hash code value than this thread. This is fine.
@@ -45,19 +49,19 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
     hashCodeGenerator += hashCodeIncrement;
   }
   assert(val > mvm::GCBitMask);
-  assert(val <= mvm::HashMask);
+  assert(val <= HashMask);
 
   do {
     header = self->header;
-    if ((header & mvm::HashMask) != 0) break;
+    if ((header & HashMask) != 0) break;
     uintptr_t newHeader = header | val;
-    assert((newHeader & ~mvm::HashMask) == header);
+    assert((newHeader & ~HashMask) == header);
     __sync_val_compare_and_swap(&(self->header), header, newHeader);
   } while (true);
 
-  assert((self->header & mvm::HashMask) != 0);
+  assert((self->header & HashMask) != 0);
   assert(GCBits == (self->header & mvm::GCBitMask));
-  return (self->header & mvm::HashMask) ^ (uintptr_t)getClass(self);
+  return (self->header & HashMask) ^ (uintptr_t)getClass(self);
 }
 
 

@@ -13,24 +13,8 @@
 #include <stdint.h>
 
 namespace mvm {
-#if (__WORDSIZE == 64)
-  static const uint64_t FatMask = 0x8000000000000000;
-#else
-  static const uint64_t FatMask = 0x80000000;
-#endif
-
-  static const uint64_t ThinCountMask = 0xFF000;
-  static const uint64_t ThinCountShift = 12;
-  static const uint64_t ThinCountAdd = 0x1000;
-
-  static const uint64_t NonLockBitsMask = 0xFFF;
-  static const uint64_t HashMask = 0xFFC;
-  static const uint64_t GCBitMask = 0x3;
-
   static const uint32_t GCBits = 2;
-  static const uint32_t HashBits = 10;
-  static const uint32_t NonLockBits = 12;
-
+  static const uint64_t GCBitMask = 0x3;
   static const bool MovesObject = false;
 }
 

@@ -12,6 +12,7 @@
 #define MVM_GC_H
 
 #include <stdint.h>
+#include "ObjectHeader.h"
 
 struct VirtualTable;
 
@@ -33,5 +34,10 @@ public:
     ((VirtualTable**)(this))[0] = VT;
   }
 };
+
+namespace mvm {
+  static const uint32_t HashBits = 8;
+  static const uint64_t GCBitMask = ((1 << GCBits) - 1);
+}
 
 #endif

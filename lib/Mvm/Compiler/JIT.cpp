@@ -71,12 +71,6 @@ namespace mvm {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
   }
-  
-#ifdef WITH_MMTK
-  namespace mmtk_runtime {
-    #include "MMTkInline.inc"
-  }
-#endif
   void linkVmkitGC();
 }
 
@@ -193,26 +187,22 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   module->setDataLayout(MvmModule::globalModule->getDataLayout());
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
-  
-#ifdef WITH_MMTK
-  static const char* MMTkSymbol =
-    "JnJVM_org_j3_bindings_Bindings_gcmalloc__"
-    "ILorg_vmmagic_unboxed_ObjectReference_2";
-  if (dlsym(SELF_HANDLE, MMTkSymbol)) {
-    // If we have found MMTk, read the gcmalloc function.
-    mvm::mmtk_runtime::makeLLVMFunction(module);
-  }
-#endif
+
+  typedef void (*init_inline_t)(llvm::Module* module); 
+  static const char* MMTkSymbol = "MMTk_InlineMethods";
+  init_inline_t init_inline =
+      (init_inline_t)(uintptr_t)dlsym(SELF_HANDLE, MMTkSymbol);
+  if (init_inline != NULL) init_inline(module);
+
   mvm::llvm_runtime::makeLLVMModuleContents(module);
-  
-  
+
   // Type declaration
   ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
   ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
   ptrPtrType = PointerType::getUnqual(ptrType);
   pointerSizeType = module->getPointerSize() == Module::Pointer32 ?
     Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
-  
+
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
   constantLongZero = ConstantInt::get(Type::getInt64Ty(Context), 0);
@@ -264,9 +254,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   constantPtrLogSize = 
     ConstantInt::get(Type::getInt32Ty(Context), sizeof(void*) == 8 ? 3 : 2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::getInt8Ty(Context), 0));
-
-
-    
+  
   printFloatLLVM = module->getFunction("printFloat");
   printDoubleLLVM = module->getFunction("printDouble");
   printLongLLVM = module->getFunction("printLong");

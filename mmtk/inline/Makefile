@@ -1,4 +1,4 @@
-##===- mmtk/Makefile ---------------------------------------*- Makefile -*-===##
+##===- lib/Mvm/CommonThread/Makefile -----------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -6,12 +6,11 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ..
-
-DIRS = magic mmtk-j3 mmtk-alloc java inline
-EXTRA_DIST = config/marksweep
+LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
+
+MODULE_NAME = InlineMMTk
 
 include $(LEVEL)/Makefile.common
 

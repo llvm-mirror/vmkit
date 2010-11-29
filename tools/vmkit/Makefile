@@ -32,7 +32,7 @@ ifeq ($(WITH_LLVM_GCC), 1)
   USEDMODULES += Allocator.bc CommonThread.bc Mvm.bc MvmCompiler.bc
 
   ifeq ($(GC_MMTK), 1)
-    USEDMODULES += FinalMMTk.bc
+    USEDMODULES += FinalMMTk.bc InlineMMTk.bc
   else
     USEDMODULES += $(GCLIB).bc
   endif
