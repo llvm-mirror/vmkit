@@ -599,9 +599,13 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @UninterruptibleNoWarn
   @Override
   public final void objectArrayStoreNoGCBarrier(Object[] dst, int index, Object value) {
-    Address base = ObjectReference.fromObject(dst).toAddress();
+    dst[index] = value;
+    // TODO(ngeoffray): I don't think this is needed, the previous statement should not have
+    // had a GC barrier.
+    //
+    // Address base = ObjectReference.fromObject(dst).toAddress();
     // Add 3 for the header, the class, and the length.
-    Address slot = base.plus(Offset.fromIntZeroExtend((index + 3) << LOG_BYTES_IN_ADDRESS));
-    VM.activePlan.global().storeObjectReference(slot, ObjectReference.fromObject(value));
+    // Address slot = base.plus(Offset.fromIntZeroExtend((index + 3) << LOG_BYTES_IN_ADDRESS));
+    // VM.activePlan.global().storeObjectReference(slot, ObjectReference.fromObject(value));
   }
 }

@@ -99,8 +99,12 @@ extern "C" void Java_org_j3_mmtk_ObjectModel_copyTo__Lorg_vmmagic_unboxed_Object
 extern "C" void Java_org_j3_mmtk_ObjectModel_getReferenceWhenCopiedTo__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2 (
     MMTkObject* OM, uintptr_t from, uintptr_t to) { UNIMPLEMENTED(); }
 
-extern "C" void Java_org_j3_mmtk_ObjectModel_getObjectEndAddress__Lorg_vmmagic_unboxed_ObjectReference_2 (
-    MMTkObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
+extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_getObjectEndAddress__Lorg_vmmagic_unboxed_ObjectReference_2 (
+    MMTkObject* OM, gc* object) {
+  size_t size = mvm::Thread::get()->MyVM->getObjectSize(object);
+  size = llvm::RoundUpToAlignment(size, sizeof(void*));
+  return reinterpret_cast<uintptr_t>(object) + size;
+}
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_getSizeWhenCopied__Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* OM, uintptr_t object) { UNIMPLEMENTED(); }
