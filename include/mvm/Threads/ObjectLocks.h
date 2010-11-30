@@ -10,7 +10,6 @@
 #ifndef MVM_OBJECT_LOCKS_H
 #define MVM_OBJECT_LOCKS_H
 
-#include "ObjectHeader.h"
 #include "mvm/Allocator.h"
 #include "mvm/GC/GC.h"
 #include "mvm/Threads/Cond.h"

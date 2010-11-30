@@ -14,7 +14,6 @@
 #include <cassert>
 #include <cstdio>
 
-#include "ObjectHeader.h"
 #include "mvm/Threads/Thread.h"
 
 #ifdef WITH_LLVM_GCC

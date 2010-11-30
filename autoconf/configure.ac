@@ -222,9 +222,9 @@ AC_ARG_WITH(gc,
 
 AC_ARG_WITH(mmtk-plan,
        [AS_HELP_STRING(--with-mmtk-plan=something,
-           [MMTk plan type ('marksweep')])],
-       [[MMTK_PLAN_HEADER=$withval]],
-       [[MMTK_PLAN_HEADER=marksweep]]
+           [MMTk plan type ('org.mmtk.plan.marksweep.MS')])],
+       [[MMTK_PLAN=$withval]],
+       [[MMTK_PLAN=org.mmtk.plan.marksweep.MS]]
 )
 
 if test "x$gc" = "xboehm";  then
@@ -247,7 +247,7 @@ else
     AC_SUBST(GC_BOEHM, [0])
     AC_SUBST(GC_MMTK, [1])
     GC_LIBS=MMTk
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK -I\$(PROJ_SRC_ROOT)/mmtk/config/\$(MMTK_PLAN_HEADER)"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK"
   else
     GC_LIBS=GCMmap2
     if test "x$gc" = "xmulti-mmap"; then
@@ -266,23 +266,9 @@ else
   fi
 fi
 
-
-if test "x$MMTK_PLAN_HEADER" = "xmarksweep";  then
-  MMTK_PLAN=org.mmtk.plan.marksweep.MS
-else
-  if test "x$MMTK_PLAN_HEADER" = "xcopyms";  then
-  MMTK_PLAN=org.mmtk.plan.copyms.CopyMS
-  else 
-    if test "x$MMTK_PLAN_HEADER" != "x";  then
-      error Unknown or unsupported MMTK plan
-    fi
-  fi
-fi
-  
 AC_SUBST([GC_FLAGS])
 AC_SUBST([GC_LIBS])
 AC_SUBST([MMTK_PLAN])
-AC_SUBST([MMTK_PLAN_HEADER])
 
 dnl **************************************************************************
 dnl Virtual Machine type

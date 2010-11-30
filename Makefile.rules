@@ -1,3 +1,5 @@
+LTO_OPTS = -std-compile-opts
+
 ifdef VMKIT_RUNTIME
 
 

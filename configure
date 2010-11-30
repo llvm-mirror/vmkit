@@ -641,7 +641,6 @@ VM_FLAGS
 ISOLATE_BUILD
 SERVICE_BUILD
 SINGLE_BUILD
-MMTK_PLAN_HEADER
 MMTK_PLAN
 GC_LIBS
 GC_FLAGS
@@ -1371,7 +1370,7 @@ Optional Packages:
   --with-gc=something     GC type ('mmtk' (requires llvm-gcc) 'single-mmap'
                           'multi-mmap' or 'boehm')
   --with-mmtk-plan=something
-                          MMTk plan type ('marksweep')
+                          MMTk plan type ('org.mmtk.plan.marksweep.MS')
   --with-vm-type=something
                           VM type ('single' 'isolate' 'isolate-sharing' or
                           'service')
@@ -3861,9 +3860,9 @@ fi
 
 # Check whether --with-mmtk-plan was given.
 if test "${with_mmtk_plan+set}" = set; then :
-  withval=$with_mmtk_plan; MMTK_PLAN_HEADER=$withval
+  withval=$with_mmtk_plan; MMTK_PLAN=$withval
 else
-  MMTK_PLAN_HEADER=marksweep
+  MMTK_PLAN=org.mmtk.plan.marksweep.MS
 
 fi
 
@@ -3898,7 +3897,7 @@ else
     GC_MMTK=1
 
     GC_LIBS=MMTk
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK -I\$(PROJ_SRC_ROOT)/mmtk/config/\$(MMTK_PLAN_HEADER)"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK"
   else
     GC_LIBS=GCMmap2
     if test "x$gc" = "xmulti-mmap"; then
@@ -3925,20 +3924,6 @@ $as_echo "#define USE_GC_MMAP2 1" >>confdefs.h
 
   fi
 fi
-
-
-if test "x$MMTK_PLAN_HEADER" = "xmarksweep";  then
-  MMTK_PLAN=org.mmtk.plan.marksweep.MS
-else
-  if test "x$MMTK_PLAN_HEADER" = "xcopyms";  then
-  MMTK_PLAN=org.mmtk.plan.copyms.CopyMS
-  else
-    if test "x$MMTK_PLAN_HEADER" != "x";  then
-      error Unknown or unsupported MMTK plan
-    fi
-  fi
-fi
-
 
 
 

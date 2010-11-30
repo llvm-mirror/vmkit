@@ -12,7 +12,6 @@
 #define MVM_GC_H
 
 #include <stdint.h>
-#include "ObjectHeader.h"
 
 struct VirtualTable;
 
@@ -36,6 +35,11 @@ public:
 };
 
 namespace mvm {
+  // TODO(ngeoffray): Make these two constants easily configurable. For now they
+  // work for all our supported GCs.
+  static const uint32_t GCBits = 8;
+  static const bool MovesObject = true;
+
   static const uint32_t HashBits = 8;
   static const uint64_t GCBitMask = ((1 << GCBits) - 1);
 }
