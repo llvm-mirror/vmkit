@@ -260,8 +260,10 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
 
 JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
                                    JnjvmClassLoader& JCL, JavaObject* loader,
+                                   VMClassLoader* vmdata,
                                    Jnjvm* I) : allocator(Alloc) {
   llvm_gcroot(loader, 0);
+  llvm_gcroot(vmdata, 0);
   bootstrapLoader = JCL.bootstrapLoader;
   TheCompiler = bootstrapLoader->getCompiler()->Create("Applicative loader");
   
@@ -271,6 +273,7 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
   javaSignatures = new(allocator, "SignMap") SignMap();
   strings = new(allocator, "StringList") StringList();
 
+  vmdata->JCL = this;
   javaLoader = loader;
   isolate = I;
 
@@ -886,15 +889,16 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
     vmdata = 
       (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
     if (!vmdata) {
-      mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();    
+      vmdata = VMClassLoader::allocate();
+      mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
       JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
-                                                     loader, vm);
-      vmdata = VMClassLoader::allocate(JCL);
+                                                     loader, vmdata, vm);
       upcalls->vmdataClassLoader->setInstanceObjectField(loader, (JavaObject*)vmdata);
     }
     JavaObject::release(loader);
   } else {
     JCL = vmdata->getClassLoader();
+    assert(JCL->javaLoader == loader);
   }
 
   return JCL;
