@@ -44,6 +44,7 @@ class SignMap;
 class StringList;
 class Typedef;
 class TypeMap;
+class VMClassLoader;
 class ZipArchive;
 
 
@@ -77,7 +78,7 @@ private:
   /// first use of a Java class loader.
   ///
   JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
-                   JavaObject* loader, Jnjvm* isolate);
+                   JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate);
 
   /// lookupComponentName - Try to find the component name of the given array
   /// name. If the component name is not in the table of UTF8s and holder
@@ -443,11 +444,10 @@ private:
 
 public:
 
-  static VMClassLoader* allocate(JnjvmClassLoader* J) {
+  static VMClassLoader* allocate() {
     VMClassLoader* res = 0;
     llvm_gcroot(res, 0);
     res = (VMClassLoader*)gc::operator new(sizeof(VMClassLoader), &VT);
-    res->JCL = J;
     return res;
   }
 
@@ -479,16 +479,13 @@ public:
     }
   }
 
-  /// VMClassLoader - Default constructors.
-  ///
-  VMClassLoader(JnjvmClassLoader* J) : JCL(J) {}
-
   /// getClassLoader - Get the internal class loader.
   ///
   JnjvmClassLoader* getClassLoader() {
     return JCL;
   }
 
+  friend class JnjvmClassLoader;
 };
 
 #define MAXIMUM_STRINGS 100

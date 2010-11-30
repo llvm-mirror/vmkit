@@ -222,6 +222,8 @@ void JnjvmClassLoader::tracer(uintptr_t closure) {
     }
     end = end->prev;
   }
+  
+  mvm::Collector::markAndTraceRoot(&javaLoader, closure);
 }
 
 void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
