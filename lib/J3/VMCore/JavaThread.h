@@ -125,7 +125,7 @@ public:
 
   /// JavaThread - Creates a Java thread. 
   ///
-  JavaThread(mvm::Thread*, Jnjvm* isolate);
+  JavaThread(mvm::MutatorThread*, Jnjvm* isolate);
 
   /// create - Creates a Java thread and a mutator thread.
   ///

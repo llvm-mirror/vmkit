@@ -19,7 +19,7 @@
 
 using namespace j3;
 
-JavaThread::JavaThread(mvm::Thread* mut, Jnjvm* isolate)
+JavaThread::JavaThread(mvm::MutatorThread* mut, Jnjvm* isolate)
 	: mvm::VMThreadData(mut) {
   pendingException = NULL;
   jniEnv = isolate->jniEnv;
@@ -43,7 +43,7 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 }
 
 mvm::Thread *JavaThread::create(Jnjvm* isolate) {
-	mvm::Thread *mut = new mvm::MutatorThread();
+	mvm::MutatorThread *mut = new mvm::MutatorThread();
 	JavaThread *th   = new JavaThread(mut, isolate);
   mut->MyVM   = isolate;
 	mut->vmData = th;

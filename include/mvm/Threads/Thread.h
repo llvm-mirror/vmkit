@@ -139,14 +139,14 @@ public:
 
 
 class ExceptionBuffer;
-class Thread;
+class MutatorThread;
 
 class VMThreadData {
 public:
   /// mut - The associated thread mutator
-	Thread* mut;
+	MutatorThread* mut;
 
-	VMThreadData(Thread* m) {
+	VMThreadData(MutatorThread* m) {
 		this->mut = m;
 	}
 

@@ -1,7 +1,7 @@
 <project name="MMTK-VMKit" default="main" basedir=".">
   <target name="main">
     <mkdir dir="classes"/>
-    <javac srcdir="/home/ngeoffray/projects/llvm-svn/vmkit/mmtk/java/src" destdir="classes" source="1.5"/>
+    <javac srcdir="src" destdir="classes" source="1.5"/>
     <jar jarfile="mmtk-vmkit.jar">
       <fileset dir="classes"/>
     </jar>

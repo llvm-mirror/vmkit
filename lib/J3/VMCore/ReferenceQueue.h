@@ -82,7 +82,7 @@ public:
   void scan(ReferenceThread* thread, uintptr_t closure);
 };
 
-class ReferenceThread : public mvm::Thread {
+class ReferenceThread : public mvm::MutatorThread {
 public:
   /// WeakReferencesQueue - The queue of weak references.
   ///
@@ -138,7 +138,7 @@ public:
   }
 };
 
-class FinalizerThread : public mvm::Thread {
+class FinalizerThread : public mvm::MutatorThread {
 public:
     /// FinalizationQueueLock - A lock to protect access to the queue.
   ///
