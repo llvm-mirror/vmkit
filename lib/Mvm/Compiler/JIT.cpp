@@ -22,6 +22,7 @@
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/Assembly/Parser.h>
 #include <llvm/CodeGen/GCStrategy.h>
+#include <llvm/CodeGen/JITCodeEmitter.h>
 #include <llvm/Config/config.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include "llvm/ExecutionEngine/JITEventListener.h"
@@ -35,6 +36,7 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Target/TargetSelect.h>
+#include <../lib/ExecutionEngine/JIT/JIT.h>
 
 #include "mvm/JIT.h"
 #include "mvm/Threads/Locks.h"
@@ -69,12 +71,6 @@ namespace mvm {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
   }
-  
-#ifdef WITH_MMTK
-  namespace mmtk_runtime {
-    #include "MMTkInline.inc"
-  }
-#endif
   void linkVmkitGC();
 }
 
@@ -83,7 +79,7 @@ const char* MvmModule::getHostTriple() {
 }
 
 void MvmJITMethodInfo::print(void* ip, void* addr) {
-  fprintf(stderr, "; %p in %s LLVM method\n", ip,
+  fprintf(stderr, "; %p (%p) in %s LLVM method\n", ip, addr,
       ((llvm::Function*)MetaInfo)->getName().data());
 }
 
@@ -93,23 +89,32 @@ public:
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
     assert(F.getParent() == MvmModule::globalModule);
-    llvm::GCFunctionInfo* GFI = 0;
+    assert(F.hasGC());
     // We know the last GC info is for this method.
-    if (F.hasGC()) {
-      GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
-      I--;
-      DEBUG(errs() << (*I)->getFunction().getName() << '\n');
-      DEBUG(errs() << F.getName() << '\n');
-      assert(&(*I)->getFunction() == &F &&
+    GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
+    I--;
+    DEBUG(errs() << (*I)->getFunction().getName() << '\n');
+    DEBUG(errs() << F.getName() << '\n');
+    assert(&(*I)->getFunction() == &F &&
         "GC Info and method do not correspond");
-      GFI = *I;
-    }
-    MethodInfo* MI =
-      new(*MvmModule::Allocator, "MvmJITMethodInfo") MvmJITMethodInfo(GFI, &F);
-    VirtualMachine::SharedRuntimeFunctions.addMethodInfo(MI, Code,
-                                            (void*)((uintptr_t)Code + Size));
+    llvm::GCFunctionInfo* GFI = *I;
+    JITMethodInfo* MI = new(*MvmModule::Allocator, "MvmJITMethodInfo")
+        MvmJITMethodInfo(GFI, &F, MvmModule::executionEngine);
+    MI->addToVM(mvm::Thread::get()->MyVM, (JIT*)MvmModule::executionEngine);
   }
 };
+
+void JITMethodInfo::addToVM(VirtualMachine* VM, JIT* jit) {
+  JITCodeEmitter* JCE = jit->getCodeEmitter();
+  assert(GCInfo != NULL);
+  for (GCFunctionInfo::iterator I = GCInfo->begin(), E = GCInfo->end();
+       I != E;
+       I++) {
+    uintptr_t address = JCE->getLabelAddress(I->Label);
+    assert(address != 0);
+    VM->FunctionsCache.addMethodInfo(this, (void*)address);
+  }
+}
 
 static MvmJITListener JITListener;
 
@@ -182,26 +187,22 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   module->setDataLayout(MvmModule::globalModule->getDataLayout());
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
-  
-#ifdef WITH_MMTK
-  static const char* MMTkSymbol =
-    "JnJVM_org_j3_bindings_Bindings_gcmalloc__"
-    "ILorg_vmmagic_unboxed_ObjectReference_2";
-  if (dlsym(SELF_HANDLE, MMTkSymbol)) {
-    // If we have found MMTk, read the gcmalloc function.
-    mvm::mmtk_runtime::makeLLVMFunction(module);
-  }
-#endif
+
+  typedef void (*init_inline_t)(llvm::Module* module); 
+  static const char* MMTkSymbol = "MMTk_InlineMethods";
+  init_inline_t init_inline =
+      (init_inline_t)(uintptr_t)dlsym(SELF_HANDLE, MMTkSymbol);
+  if (init_inline != NULL) init_inline(module);
+
   mvm::llvm_runtime::makeLLVMModuleContents(module);
-  
-  
+
   // Type declaration
   ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
   ptr32Type = PointerType::getUnqual(Type::getInt32Ty(Context));
   ptrPtrType = PointerType::getUnqual(ptrType);
   pointerSizeType = module->getPointerSize() == Module::Pointer32 ?
     Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
-  
+
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
   constantLongZero = ConstantInt::get(Type::getInt64Ty(Context), 0);
@@ -253,9 +254,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   constantPtrLogSize = 
     ConstantInt::get(Type::getInt32Ty(Context), sizeof(void*) == 8 ? 3 : 2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::getInt8Ty(Context), 0));
-
-
-    
+  
   printFloatLLVM = module->getFunction("printFloat");
   printDoubleLLVM = module->getFunction("printDouble");
   printLongLLVM = module->getFunction("printLong");
@@ -317,6 +316,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   unconditionalSafePoint = module->getFunction("unconditionalSafePoint");
   conditionalSafePoint = module->getFunction("conditionalSafePoint");
   AllocateFunction = module->getFunction("gcmalloc");
+  AllocateFunction->setGC("vmkit");
   assert(AllocateFunction && "No allocate function");
   AllocateUnresolvedFunction = module->getFunction("gcmallocUnresolved");
   assert(AllocateUnresolvedFunction && "No allocateUnresolved function");

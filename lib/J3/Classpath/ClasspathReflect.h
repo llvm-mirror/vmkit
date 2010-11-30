@@ -14,6 +14,7 @@
 
 #include "JavaClass.h"
 #include "JavaObject.h"
+#include <JavaThread.h>
 
 extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
 
@@ -150,7 +151,7 @@ private:
 public:
   static void staticDestructor(JavaObjectVMThread* obj) {
     llvm_gcroot(obj, 0);
-    mvm::Thread::releaseThread(obj->vmdata);
+    mvm::Thread::releaseThread(obj->vmdata->mut);
   }
   
   static void staticTracer(JavaObjectVMThread* obj, uintptr_t closure) {

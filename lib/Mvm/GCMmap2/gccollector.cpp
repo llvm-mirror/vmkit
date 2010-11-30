@@ -33,18 +33,13 @@ int Collector::verbose = 0;
 
 void Collector::do_collect() {
   GCChunkNode  *cur;
-#ifdef SERVICE
-  mvm::Thread::get()->MyVM->_since_last_collection = _collect_freq_auto;
-#else
   _since_last_collection = _collect_freq_auto;
-#endif
 
   current_mark++;
 
   unused_nodes->attrape(used_nodes);
 
   mvm::Thread* th = mvm::Thread::get();
-  mvm::StackScanner* sc = th->MyVM->getScanner();
   th->MyVM->rendezvous.startRV();
   th->MyVM->startCollection();
 
@@ -57,7 +52,7 @@ void Collector::do_collect() {
 
   // (2) Trace the threads.
   do {
-    sc->scanStack(tcur, 0);
+    tcur->scanStack(0);
     tcur->tracer(0);
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
@@ -94,10 +89,8 @@ void Collector::do_collect() {
   status = stat_alloc;
   
   // Wake up all threads.
-  th->MyVM->endCollection();
   th->MyVM->rendezvous.finishRV();
-  th->MyVM->wakeUpFinalizers();
-  th->MyVM->wakeUpEnqueue();
+  th->MyVM->endCollection();
   
   // Kill unreachable objects.
   GCChunkNode *next = 0;

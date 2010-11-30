@@ -164,14 +164,14 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
         VAR = meth->invoke##TYPE##StaticBuf(vm, cl, buf);								\
       }																																	\
     } CATCH {																														\
-      exc = JavaThread::get()->getJavaException();											\
+      exc = JavaThread::get()->getPendingException();										\
     } END_CATCH;																												\
 		mvm::Thread* mut = mvm::Thread::get();															\
 		JavaThread*  th = JavaThread::j3Thread(mut);												\
     if (exc) {																													\
       if (JavaObject::getClass(exc)->isAssignableFrom(									\
 																											vm->upcalls->newException)) {	\
-        mut->clearException();																					\
+        mut->clearPendingException();																		\
 				th->getJVM()->invocationTargetException(exc);										\
       } else {																													\
         th->throwPendingException();																		\

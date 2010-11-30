@@ -8,22 +8,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/VirtualMachine.h"
-
-#include "JavaObject.h"
-#include "JavaThread.h"
-
 #include "debug.h"
+#include "mvm/VirtualMachine.h"
+#include "MMTkObject.h"
 
-using namespace j3;
+namespace mmtk {
 
-struct ReferenceProcessor {
-  JavaObject obj;
-  JavaObject* semantics;
-  uint32_t ordinal;
-};
-
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (ReferenceProcessor* RP, uintptr_t TL, uint8_t nursery) {
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (MMTkReferenceProcessor* RP, uintptr_t TL, uint8_t nursery) {
   mvm::Thread* th = mvm::Thread::get();
   uint32_t val = RP->ordinal;
 
@@ -35,9 +26,10 @@ extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLo
     assert(val == 2);
     th->MyVM->scanPhantomReferencesQueue(TL);
   }
-
 }
 
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z (ReferenceProcessor* RP, uintptr_t TL, uint8_t nursery) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ (ReferenceProcessor* RP) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ (ReferenceProcessor* RP) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z (MMTkReferenceProcessor* RP, uintptr_t TL, uint8_t nursery) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ (MMTkReferenceProcessor* RP) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ (MMTkReferenceProcessor* RP) { UNIMPLEMENTED(); }
+
+}

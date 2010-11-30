@@ -80,7 +80,7 @@ public:
   virtual bool isStaticCompiling() = 0;
   virtual bool emitFunctionName() = 0;
   virtual void* GenerateStub(llvm::Function* F) = 0;
-  void addJavaPasses(bool trusted);
+  void addJavaPasses();
   
   llvm::DIFactory* getDebugFactory() {
     return DebugFactory;
@@ -195,7 +195,7 @@ public:
   virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp) = 0;
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr) = 0;
   
-  virtual void setMethod(JavaMethod* meth, void* ptr, const char* name) = 0;
+  virtual void setMethod(llvm::Function* func, void* ptr, const char* name) = 0;
   
 #ifdef SERVICE
   virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where) = 0;

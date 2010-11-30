@@ -16,8 +16,7 @@
 <h1>Getting Started: VMKit and MMTk</h1>
 
 
-<p>This page gives you the instructions on how to build VMKit with MMTk's Mark and
-Sweep Garbage Collector.</p>
+<p>This page gives you the instructions on how to build VMKit with a MMTk garbage collector.</p>
 
 
 <ol>
@@ -25,15 +24,12 @@ Sweep Garbage Collector.</p>
     and build LLVM-GCC</a> from SVN head.</li>
   <li> Update PATH to include the <tt>llvm-gcc</tt> binary. </li>
   <li> Re-configure LLVM. </li>
-  <li> Configure VMKit with two additional options: <tt>--with-gc=mmtk</tt> and <tt>--with-llvmgcc</tt>. </li>
-  <li> Clean and make VMKit (do that each time you change the source code of VMKit):</li>
-
+  <li> Configure VMKit with three additional options: <tt>--with-gc=mmtk</tt>, <tt>--with-llvmgcc</tt>, and <tt>--with-mmtk-plan={marksweep|copyms}</tt> </li>
+  <li> Build VMKit:</li>
   <ul>
-    <li><tt>make ENABLE_OPTIMIZED=1 clean</tt></li>
     <li><tt>make ENABLE_OPTIMIZED=1 </tt></li>
   </ul>
-  
-  <li>Run VMKit with MMTk:</li>
+  <li>Run VMKit:</li>
    <ul>
      <li><tt>Release/bin/j3 Foo </tt></li>
    </ul>

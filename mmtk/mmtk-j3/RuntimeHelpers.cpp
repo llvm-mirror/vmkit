@@ -7,18 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "JavaArray.h"
-#include "JavaClass.h"
-#include "JavaString.h"
+#include "MMTkObject.h"
 
-using namespace j3;
+namespace mmtk {
 
-extern "C" uint16_t MMTkCharAt(JavaString* str, uint32_t index) {
-  llvm_gcroot(str, 0);
-  return ArrayUInt16::getElement(JavaString::getValue(str), index);
+extern "C" uint16_t MMTkCharAt(MMTkString* str, uint32_t index) {
+  return str->value->elements[index];
 }
 
-extern "C" JavaObject* MMTkGetClass(JavaObject* obj) {
-  llvm_gcroot(obj, 0);
-  return JavaObject::getClass(obj)->delegatee[0];
+extern "C" MMTkObject* MMTkGetClass(MMTkObject* obj) {
+  return obj->virtualTable->cl->delegatee;
+}
+
 }

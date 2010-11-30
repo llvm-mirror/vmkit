@@ -19,23 +19,14 @@
 
 using namespace j3;
 
-const unsigned int JavaThread::StateRunning = 0;
-const unsigned int JavaThread::StateWaiting = 1;
-const unsigned int JavaThread::StateInterrupted = 2;
-
-JavaThread::JavaThread(mvm::Thread* mut, JavaObject* thread, JavaObject* vmth, Jnjvm* isolate)
+JavaThread::JavaThread(mvm::Thread* mut, Jnjvm* isolate)
 	: mvm::VMThreadData(mut) {
-  llvm_gcroot(thread, 0);
-  llvm_gcroot(vmth, 0);
-  
-  javaThread = thread;
-  vmThread = vmth;
-  interruptFlag = 0;
-  state = StateRunning;
-  pendingException = 0;
+  pendingException = NULL;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
-  currentAddedReferences = 0;
+  currentAddedReferences = NULL;
+  javaThread = NULL;
+  vmThread = NULL;
 	jnjvm = isolate;
 
 #ifdef SERVICE
@@ -51,12 +42,19 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 	return (JavaThread*)mut->vmData;
 }
 
-mvm::Thread *JavaThread::create(JavaObject* thread, JavaObject* vmth, Jnjvm* isolate) {
+mvm::Thread *JavaThread::create(Jnjvm* isolate) {
 	mvm::Thread *mut = new mvm::MutatorThread();
-	JavaThread *th   = new JavaThread(mut, thread, vmth, isolate);
+	JavaThread *th   = new JavaThread(mut, isolate);
   mut->MyVM   = isolate;
 	mut->vmData = th;
 	return mut;
+}
+
+void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
+  llvm_gcroot(thread, 0);
+  llvm_gcroot(vmth, 0);
+  javaThread = thread;
+  vmThread = vmth;
 }
 
 JavaThread::~JavaThread() {
@@ -66,12 +64,22 @@ JavaThread::~JavaThread() {
 #endif
 }
 
+void JavaThread::preparePendingException(JavaObject *obj) {
+	llvm_gcroot(obj, 0);
+  assert(JavaThread::get()->pendingException == 0 && "pending exception already there?");
+	mvm::Thread* mut = mvm::Thread::get();
+  j3Thread(mut)->pendingException = obj;	
+#ifdef DWARF_EXCEPTIONS
+	throwPendingException();
+#endif
+}
+
 void JavaThread::throwException(JavaObject* obj) {
   llvm_gcroot(obj, 0);
   assert(JavaThread::get()->pendingException == 0 && "pending exception already there?");
 	mvm::Thread* mut = mvm::Thread::get();
   j3Thread(mut)->pendingException = obj;
-  mut->internalThrowException();
+	throwPendingException();
 }
 
 void JavaThread::throwPendingException() {
@@ -79,9 +87,16 @@ void JavaThread::throwPendingException() {
 	mvm::Thread::get()->internalThrowException();
 }
 
-void JavaThread::startJNI(int level) {
-  // Start uncooperative mode.
-  mut->enterUncooperativeCode(level);
+void JavaThread::startJNI() {
+  // Interesting, but no need to do anything.
+}
+
+void JavaThread::endJNI() {
+  localJNIRefs->removeJNIReferences(this, *currentAddedReferences);
+  mut->endUnknownFrame();
+   
+  // Go back to cooperative mode.
+  mut->leaveUncooperativeCode();
 }
 
 uint32 JavaThread::getJavaFrameContext(void** buffer) {
@@ -89,8 +104,8 @@ uint32 JavaThread::getJavaFrameContext(void** buffer) {
   uint32 i = 0;
 
   while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1) {
-      JavaMethod* M = (JavaMethod*)MI->getMetaInfo();
+    if (MI->isHighLevelMethod()) {
+      JavaMethod* M = (JavaMethod*)MI->MetaInfo;
       buffer[i++] = M;
     }
     ++Walker;
@@ -103,9 +118,9 @@ JavaMethod* JavaThread::getCallingMethodLevel(uint32 level) {
   uint32 index = 0;
 
   while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1) {
+    if (MI->isHighLevelMethod()) {
       if (index == level) {
-        return (JavaMethod*)MI->getMetaInfo();
+        return (JavaMethod*)MI->MetaInfo;
       }
       ++index;
     }
@@ -128,8 +143,8 @@ JavaObject* JavaThread::getNonNullClassLoader() {
   mvm::StackWalker Walker(mut);
 
   while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1) {
-      JavaMethod* meth = (JavaMethod*)MI->getMetaInfo();
+    if (MI->isHighLevelMethod() == 1) {
+      JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
       JnjvmClassLoader* loader = meth->classDef->classLoader;
       obj = loader->getJavaClassLoader();
       if (obj) return obj;
@@ -144,7 +159,7 @@ void JavaThread::printJavaBacktrace() {
   mvm::StackWalker Walker(mut);
 
   while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->MethodType == 1)
+    if (MI->isHighLevelMethod())
       MI->print(Walker.ip, Walker.addr);
     ++Walker;
   }

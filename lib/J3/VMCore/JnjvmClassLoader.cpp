@@ -308,9 +308,8 @@ void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
   TheCompiler = Comp;
 }
 
-ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
-  ArrayUInt8* res = 0;
-  llvm_gcroot(res, 0);
+ClassBytes* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
+  ClassBytes* res = 0;
   mvm::ThreadAllocator threadAllocator;
 
   char* asciiz = (char*)threadAllocator.Allocate(utf8->size + 1);
@@ -348,8 +347,7 @@ ArrayUInt8* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
                                               bool doResolve,
                                               JavaString* strName) {
-  ArrayUInt8* bytes = NULL;
-  llvm_gcroot(bytes, 0);
+  ClassBytes* bytes = NULL;
   llvm_gcroot(strName, 0);
 
   UserCommonClass* cl = lookupClass(name);
@@ -667,9 +665,8 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 }
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
-                                            ArrayUInt8* bytes) {
+                                            ClassBytes* bytes) {
   JavaObject* excp = NULL;
-  llvm_gcroot(bytes, 0);
   llvm_gcroot(excp, 0);
   UserClass* res = NULL;
   lock.lock();
@@ -688,12 +685,14 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
       getCompiler()->resolveVirtualClass(res);
       getCompiler()->resolveStaticClass(res);
       classes->lock.lock();
+      assert(res->getDelegatee() == NULL);
+      assert(res->getStaticInstance() == NULL);
       bool success = classes->map.insert(std::make_pair(internalName, res)).second;
       classes->lock.unlock();
       assert(success && "Could not add class in map");
     } CATCH {
       excp = JavaThread::get()->pendingException;
-      mvm::Thread::get()->clearException();    
+      mvm::Thread::get()->clearPendingException();    
     } END_CATCH;
   }
   if (excp != NULL) {
@@ -912,8 +911,9 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 
 JnjvmClassLoader::~JnjvmClassLoader() {
 
-  if (isolate)
-    isolate->removeMethodsInFunctionMaps(this);
+  if (isolate) {
+    isolate->removeMethodInfos(TheCompiler);
+  }
 
   if (classes) {
     classes->~ClassMap();
@@ -966,8 +966,7 @@ JavaString** JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
 }
 
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
-  ArrayUInt8* bytes = NULL;
-  llvm_gcroot(bytes, 0);
+  ClassBytes* bytes = NULL;
   mvm::ThreadAllocator threadAllocator;
   if (str != 0) {
     unsigned int len = strlen(str);
@@ -1087,8 +1086,32 @@ intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
   return res;
 }
 
+class JavaStaticMethodInfo : public mvm::CamlMethodInfo {
+public:
+  virtual void print(void* ip, void* addr);
+  virtual bool isHighLevelMethod() {
+    return true;
+  }
+  
+  JavaStaticMethodInfo(mvm::CamlMethodInfo* super, void* ip, JavaMethod* M) :
+    mvm::CamlMethodInfo(super->CF) {
+    MetaInfo = M;
+    Owner = M->classDef->classLoader->getCompiler();
+  }
+};
+
+void JavaStaticMethodInfo::print(void* ip, void* addr) {
+  void* new_ip = NULL;
+  if (ip) new_ip = mvm::MethodInfo::isStub(ip, addr);
+  JavaMethod* meth = (JavaMethod*)MetaInfo;
+  fprintf(stderr, "; %p in %s.%s", new_ip,
+          UTF8Buffer(meth->classDef->name).cString(),
+          UTF8Buffer(meth->name).cString());
+  if (ip != new_ip) fprintf(stderr, " (from stub)");
+  fprintf(stderr, "\n");
+}
+
 void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
-  JavaCompiler* M = getCompiler();
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i != e; ++i) {
     CommonClass* cl = i->second;
@@ -1100,8 +1123,7 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
         if (!isAbstract(meth.access) && meth.code) {
           JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
             JavaStaticMethodInfo(0, meth.code, &meth);
-          vm->StaticFunctions.addMethodInfo(MI, meth.code);
-          M->setMethod(&meth, meth.code, "");
+          vm->FunctionsCache.addMethodInfo(MI, meth.code);
         }
       }
       
@@ -1110,8 +1132,7 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
         if (!isAbstract(meth.access) && meth.code) {
           JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
             JavaStaticMethodInfo(0, meth.code, &meth);
-          vm->StaticFunctions.addMethodInfo(MI, meth.code);
-          M->setMethod(&meth, meth.code, "");
+          vm->FunctionsCache.addMethodInfo(MI, meth.code);
         }
       }
     }

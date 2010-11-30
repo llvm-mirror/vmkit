@@ -18,6 +18,12 @@ PROJ_OBJ_ROOT := $(subst //,/,@abs_top_objdir@)
 # Set the root directory of this project's install prefix
 PROJ_INSTALL_ROOT := @prefix@
 
+# Define BYTECODE_LIBRARY before including LLVM's Makefile.common to get
+# dependencies right.
+ifeq ($(WITH_LLVM_GCC), 1)
+  BYTECODE_LIBRARY = 1
+endif
+
 # Include LLVM's Master Makefile.
 include $(LLVM_OBJ_ROOT)/Makefile.common
 
@@ -38,9 +44,3 @@ ifeq ($(GCLIB), BoehmGC)
 endif
 
 include $(PROJ_SRC_ROOT)/Makefile.rules
-
-ifndef DISABLE_AUTO_DEPENDENCIES
-ifndef IS_CLEANING_TARGET
--include $(DependSourceFiles:%=$(PROJ_OBJ_DIR)/$(BuildMode)/%.bc.d)
-endif
-endif

@@ -12,6 +12,7 @@
 #define MVM_GC_H
 
 #include <stdint.h>
+#include "ObjectHeader.h"
 
 struct VirtualTable;
 
@@ -35,25 +36,8 @@ public:
 };
 
 namespace mvm {
-
-class Thread;
-
-class StackScanner {
-public:
-  virtual void scanStack(mvm::Thread* th, uintptr_t closure) = 0;
-  virtual ~StackScanner() {}
-};
-
-class UnpreciseStackScanner : public StackScanner {
-public:
-  virtual void scanStack(mvm::Thread* th, uintptr_t closure);
-};
-
-class PreciseStackScanner : public StackScanner {
-public:
-  virtual void scanStack(mvm::Thread* th, uintptr_t closure);
-};
-
+  static const uint32_t HashBits = 8;
+  static const uint64_t GCBitMask = ((1 << GCBits) - 1);
 }
 
 #endif

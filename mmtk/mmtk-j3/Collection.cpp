@@ -7,39 +7,31 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/VirtualMachine.h"
-
-#include "JavaObject.h"
-#include "JavaThread.h"
-
 #include "debug.h"
+#include "mvm/VirtualMachine.h"
+#include "MMTkObject.h"
+#include "MvmGC.h"
 
-using namespace j3;
+namespace mmtk {
 
 extern "C" void JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
-
 extern "C" void JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
-
 extern "C" void JnJVM_org_mmtk_plan_Plan_collectionComplete__();
-
 extern "C" uint8_t JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
-  
 extern "C" void JnJVM_org_mmtk_utility_heap_HeapGrowthManager_reset__();
-
 extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ ();
-
 extern "C" void JnJVM_org_mmtk_utility_heap_HeapGrowthManager_recordGCTime__D(double);
 
-extern "C" bool Java_org_j3_mmtk_Collection_isEmergencyAllocation__ (JavaObject* C) {
+extern "C" bool Java_org_j3_mmtk_Collection_isEmergencyAllocation__ (MMTkObject* C) {
   // TODO: emergency when OOM.
   return false;
 }
 
-extern "C" void Java_org_j3_mmtk_Collection_reportAllocationSuccess__ (JavaObject* C) {
+extern "C" void Java_org_j3_mmtk_Collection_reportAllocationSuccess__ (MMTkObject* C) {
   // TODO: clear internal data.
 }
 
-extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C, int why) {
+extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C, int why) {
   mvm::Thread* th = mvm::Thread::get();
 
   // Verify that another collection is not happening.
@@ -81,40 +73,38 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (JavaObject* C,
     }
 
     th->MyVM->rendezvous.finishRV();
-  
-    th->MyVM->wakeUpFinalizers();
-    th->MyVM->wakeUpEnqueue();
-    
     th->MyVM->endCollection();
   }
 
 }
 
-extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ (JavaObject* C) {
+extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ (MMTkObject* C) {
   mvm::Thread* th = mvm::Thread::get();
   assert(th->inRV && "Joining collection without a rendezvous");
   th->MyVM->rendezvous.join();
 }
 
-extern "C" int Java_org_j3_mmtk_Collection_rendezvous__I (JavaObject* C, int where) {
+extern "C" int Java_org_j3_mmtk_Collection_rendezvous__I (MMTkObject* C, int where) {
   return 1;
 }
 
-extern "C" int Java_org_j3_mmtk_Collection_maximumCollectionAttempt__ (JavaObject* C) {
+extern "C" int Java_org_j3_mmtk_Collection_maximumCollectionAttempt__ (MMTkObject* C) {
   return 0;
 }
 
-extern "C" void Java_org_j3_mmtk_Collection_prepareCollector__Lorg_mmtk_plan_CollectorContext_2 (JavaObject* C, JavaObject* CC) {
+extern "C" void Java_org_j3_mmtk_Collection_prepareCollector__Lorg_mmtk_plan_CollectorContext_2 (MMTkObject* C, MMTkObject* CC) {
   // Nothing to do.
 }
 
-extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_MutatorContext_2 (JavaObject* C, JavaObject* MC) {
+extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_MutatorContext_2 (MMTkObject* C, MMTkObject* MC) {
 }
 
 
-extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ (JavaObject* C) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I (JavaObject* C, sint32 val) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ (JavaObject* C) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ (JavaObject* C) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ (JavaObject* C) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ (JavaObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ (MMTkObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I (MMTkObject* C, sint32 val) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ (MMTkObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_activeGCThreads__ (MMTkObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ (MMTkObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ (MMTkObject* C) { UNIMPLEMENTED(); }
+
+} // namespace mmtk

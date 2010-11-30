@@ -24,27 +24,19 @@ involved</a> with the vmkit community.</p>
 
 <h2>A word of warning</h2>
 
-<p>While this work aims to provide a fully functional JVM and CLI runtime, it
+<p>While this work aims to provide a fully functional JVM, it
 is <em>still early work</em> and is under heavy development. 
-<p>Some of the more notable missing pieces in the CLI runtime are:</p>
-
-<ol>
-  <li>Support for arithmetic overflow.</li>
-  <li>Support for CLI object finalization semantics.</li>
-  <li>Thread support.</li>
-</ol>
-
 <p>Some of the common missing pieces in vmkit/llvm are:</p>
 
 <ol>
-  <li>Hotspot-like virtual machine (e.g mixed interpretation/compilation).</li>
+  <li> Mixed interpretation/compilation.</li>
+  <li> Adaptive optimization.</li>
 </ol>
 
 <h2 id="build">Building vmkit / working with the code</h2>
 
 <p>If you would like to check out and build the project, the current scheme
-is (if you only want the JVM, you can skip the Pnet part. If you only want the CLI
-VM, you can skip the GNU Classpath part):</p>
+is:</p>
 
 <ol>
   <li><a href="http://www.llvm.org/docs/GettingStarted.html#checkout">Checkout
@@ -89,22 +81,6 @@ VM, you can skip the GNU Classpath part):</p>
     </ul>
   </ul>
   
-  <li><a href="http://download.savannah.gnu.org/releases/dotgnu-pnet/pnet-0.8.0.tar.gz">Download
-   PNet 0.8.0</a>:</li>
-   <ul>
-    <li><tt>tar zxvf pnet-0.8.0.tar.gz</tt></li>
-    <li><tt>cd pnet-0.8.0</tt></li>
-    <li><tt>./configure; make</tt></li>
-   </ul>
-  
-  <li><a href="http://download.savannah.gnu.org/releases/dotgnu-pnet/pnetlib-0.8.0.tar.gz">Download
-   PNetlib 0.8.0</a>:</li>
-   <ul>
-    <li><tt>tar zxvf pnetlib-0.8.0.tar.gz</tt></li>
-    <li><tt>cd pnetlib-0.8.0</tt></li>
-    <li><tt>./configure; make</tt></li>
-   </ul>
-
   <li>Checkout vmkit:</li>
   <ul>
      <li><tt>svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit</tt></li>
@@ -122,10 +98,6 @@ VM, you can skip the GNU Classpath part):</p>
     <dd>Tell vmkit where GNU Classpath glibj.zip is located.</dd>
     <dt><br/><tt>--with-gnu-classpath-libs=&lt;directory&gt;</tt></dt>
     <dd>Tell vmkit where GNU Classpath libs are located.</dd>
-    <dt><br/><tt>--with-pnet-local-prefix=&lt;directory&gt;</tt></dt>
-    <dd>Tell vmkit where PNet is located.</dd>
-    <dt><br/><tt>--with-pnetlib=&lt;directory&gt;</tt></dt>
-    <dd>Tell vmkit where pnetlib's mscorlib.dll is located.</dd>
   </dl>
 
   </ul>
@@ -140,8 +112,6 @@ VM, you can skip the GNU Classpath part):</p>
   <ul>
     <li><tt>j3 --help</tt></li>
     <li><tt>j3 HelloWorld</tt></li>
-    <li><tt>n3-pnetlib --help</tt></li>
-    <li><tt>n3-pnetlib HelloWorld.exe</tt></li>
   </ul>
 </ol>
 

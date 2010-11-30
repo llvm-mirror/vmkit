@@ -388,8 +388,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           PHINode* phi = PHINode::Create(intrinsics->JavaObjectType, "", DelegateeOK);
           phi->addIncoming(Del, CI->getParent());
           
-          Value* Res = CallInst::Create(intrinsics->RuntimeDelegateeFunction,
-                                        Call.getArgument(0), "", NoDelegatee);
+          Instruction* Res = CallInst::Create(intrinsics->RuntimeDelegateeFunction,
+                                              Call.getArgument(0), "", NoDelegatee);
+          Res->setDebugLoc(CI->getDebugLoc());
           BranchInst::Create(DelegateeOK, NoDelegatee);
           phi->addIncoming(Res, NoDelegatee);
 
@@ -428,7 +429,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BranchInst::Create(trueCl, falseCl, test, CI);
   
           
-          Value* res = 0;
+          Instruction* res = 0;
           if (InvokeInst* Invoke = dyn_cast<InvokeInst>(CI)) {
             Value* Args[1] = { Cl };
             BasicBlock* UI = Invoke->getUnwindDest();
@@ -462,6 +463,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                                    Cl, "", falseCl);
             BranchInst::Create(trueCl, falseCl);
           }
+          res->setDebugLoc(CI->getDebugLoc());
           
           node->addIncoming(res, falseCl);
 
@@ -512,7 +514,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             Args.push_back(Call.getArgument(i));
           }
           
-          Value* res = 0;
+          Instruction* res = 0;
           if (InvokeInst* Invoke = dyn_cast<InvokeInst>(CI)) {
             BasicBlock* UI = Invoke->getUnwindDest();
             res = InvokeInst::Create(resolver, trueCl, UI, Args.begin(),
@@ -544,8 +546,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BranchInst::Create(trueCl, falseCl);
           }
           
+          res->setDebugLoc(CI->getDebugLoc());
           node->addIncoming(res, falseCl);
-
 
           CI->replaceAllUsesWith(node);
           CI->eraseFromParent();
@@ -578,8 +580,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BranchInst::Create(NotOKBlock, OKBlock, cmp, CI);
 
             Value* args[3] = { Call.getArgument(0), Call.getArgument(1), GV };
-            Value* res = CallInst::Create(intrinsics->GetArrayClassFunction, args,
-                                          args + 3, "", NotOKBlock);
+            Instruction* res = CallInst::Create(intrinsics->GetArrayClassFunction, args,
+                                                args + 3, "", NotOKBlock);
+            res->setDebugLoc(CI->getDebugLoc());
             BranchInst::Create(OKBlock, NotOKBlock);
             node->addIncoming(res, NotOKBlock);
             
@@ -629,7 +632,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           CurVT = new LoadInst(CurVT, "", false, CI);
           CurVT = new BitCastInst(CurVT, intrinsics->VTType, "", CI);
              
-          Value* res = new ICmpInst(CI, ICmpInst::ICMP_EQ, CurVT, VT2, "");
+          Instruction* res =
+            new ICmpInst(CI, ICmpInst::ICMP_EQ, CurVT, VT2, "");
 
           node->addIncoming(ConstantInt::getTrue(*Context), CI->getParent());
           BranchInst::Create(CurEndBlock, FailedBlock, res, CI);
@@ -637,6 +641,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Args[2] = { VT1, VT2 };
           res = CallInst::Create(intrinsics->IsSecondaryClassFunction, Args,
                                  Args + 2, "", FailedBlock);
+          res->setDebugLoc(CI->getDebugLoc());
          
           node->addIncoming(res, FailedBlock);
           BranchInst::Create(CurEndBlock, FailedBlock);

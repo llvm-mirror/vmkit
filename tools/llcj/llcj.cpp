@@ -8,9 +8,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Support/ManagedStatic.h"
-#include "llvm/System/Path.h"
-#include "llvm/System/Program.h"
-#include "llvm/System/Signals.h"
+#include "llvm/Support/Path.h"
+#include "llvm/Support/Program.h"
+#include "llvm/Support/Signals.h"
 
 #include "LinkPaths.h"
 

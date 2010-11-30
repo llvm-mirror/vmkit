@@ -19,8 +19,8 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/ObjectLocks.h"
 
-#include "JavaLocks.h"
 #include "JnjvmConfig.h"
 #include "JNIReferences.h"
 #include "LockedMap.h"
@@ -34,6 +34,7 @@ namespace j3 {
 class ArrayObject;
 class Classpath;
 class CommonClass;
+class FinalizerThread;
 class JavaField;
 class JavaMethod;
 class JavaObject;
@@ -42,6 +43,7 @@ class JavaThread;
 class JavaVirtualTable;
 class JnjvmBootstrapLoader;
 class JnjvmClassLoader;
+class ReferenceThread;
 class UserClass;
 class UserClassArray;
 class UserClassPrimitive;
@@ -124,11 +126,21 @@ private:
   
   /// finalizerThread - The thread that finalizes Java objects.
   ///
-	mvm::Thread* finalizerThread;
+  FinalizerThread* finalizerThread;
  
   /// enqueueThread - The thread that enqueue Java references.
   ///
-	mvm::Thread* enqueueThread;
+  ReferenceThread* referenceThread;
+
+  virtual void startCollection();
+  virtual void endCollection();
+  virtual void scanWeakReferencesQueue(uintptr_t closure);
+  virtual void scanSoftReferencesQueue(uintptr_t closure);
+  virtual void scanPhantomReferencesQueue(uintptr_t closure);
+  virtual void scanFinalizationQueue(uintptr_t closure);
+  virtual void addFinalizationCandidate(gc* obj);
+  virtual size_t getObjectSize(gc* obj);
+  virtual const char* getObjectTypeName(gc* obj);
 
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
@@ -201,7 +213,7 @@ public:
   
   /// lockSystem - The lock system to allocate and manage Java locks.
   ///
-  LockSystem lockSystem;
+  mvm::LockSystem lockSystem;
   
   /// argumentsInfo - The command line arguments given to the vm
   ///
@@ -299,19 +311,19 @@ public:
   
   /// setFinalizerThread - Set the finalizer thread of this VM.
   ///
-  void setFinalizerThread(mvm::Thread* th) { finalizerThread = th; }
+  void setFinalizerThread(FinalizerThread* th) { finalizerThread = th; }
   
   /// getFinalizerThread - Get the finalizer thread of this VM.
   ///
-	mvm::Thread* getFinalizerThread() const { return finalizerThread; }
+  FinalizerThread* getFinalizerThread() const { return finalizerThread; }
   
-  /// setEnqueueThread - Set the enqueue thread of this VM.
+  /// setReferenceThread - Set the enqueue thread of this VM.
   ///
-  void setEnqueueThread(mvm::Thread* th) { enqueueThread = th; }
+  void setReferenceThread(ReferenceThread* th) { referenceThread = th; }
   
-  /// getEnqueueThread - Get the enqueue thread of this VM.
+  /// getReferenceThread - Get the enqueue thread of this VM.
   ///
-	mvm::Thread* getEnqueueThread() const { return enqueueThread; }
+  ReferenceThread* getReferenceThread() const { return referenceThread; }
 
   /// ~Jnjvm - Destroy the JVM.
   ///
@@ -340,44 +352,11 @@ public:
   ///
   virtual void waitForExit();
 
-  virtual JavaLock* allocateFatLock(gc*);
-  virtual JavaLock* getFatLockFromID(uintptr_t val);
-
-private:
-  /// internalRemoveMethodsInFunctionMap - Removes all methods compiled by this
-  /// class loader from the function map.
-  ///
-  void internalRemoveMethods(JnjvmClassLoader* loader, mvm::FunctionMap& Map);
-
-public:
-  /// removeMethodsInFunctionMaps - Removes all methods compiled by this
-  /// class loader from the function maps.
-  ///
-  void removeMethodsInFunctionMaps(JnjvmClassLoader* loader);
-  
   /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
-  /// bootstrap classes (e.g. java/lang/Class, java/lang/*Exception) and
+  /// bootstrap classes (e.g. java/lang/Class, java/lang/Exception) and
   /// mapping the initial thread.
   ///
   void loadBootstrap();
-
-#ifdef ISOLATE
-  static Jnjvm* RunningIsolates[NR_ISOLATES];
-  static mvm::LockNormal IsolateLock;
-#endif
-
-#ifdef SERVICE
-  virtual void stopService();
-#endif
-
-  virtual void clearReferent(gc*);
-  virtual gc** getReferentPtr(gc*);
-  virtual void setReferent(gc*, gc*);
-  virtual bool enqueueReference(gc*);
-
-protected:
-  virtual void invokeFinalizer(gc*);
-
 };
 
 } // end namespace j3

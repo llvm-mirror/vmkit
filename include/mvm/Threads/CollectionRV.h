@@ -34,7 +34,7 @@ public:
   CollectionRV() {
     nbJoined = 0;
   }
- 
+
   void lockRV() { _lockRV.lock(); }
   void unlockRV() { _lockRV.unlock(); }
 
@@ -57,8 +57,10 @@ public:
   virtual void synchronize() = 0;
 
   virtual void join() = 0;
-  virtual void joinAfterUncooperative() = 0;
+  virtual void joinAfterUncooperative(void* SP) = 0;
   virtual void joinBeforeUncooperative() = 0;
+
+  virtual void addThread(Thread* th) = 0;
 };
 
 class CooperativeCollectionRV : public CollectionRV {
@@ -67,8 +69,9 @@ public:
   void synchronize();
 
   void join();
-  void joinAfterUncooperative();
+  void joinAfterUncooperative(void* SP);
   void joinBeforeUncooperative();
+  void addThread(Thread* th);
 };
 
 class UncooperativeCollectionRV : public CollectionRV {
@@ -77,8 +80,9 @@ public:
   void synchronize();
 
   void join();
-  void joinAfterUncooperative();
+  void joinAfterUncooperative(void* SP);
   void joinBeforeUncooperative();
+  void addThread(Thread* th);
 };
 
 

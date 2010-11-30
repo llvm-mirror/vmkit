@@ -26,6 +26,7 @@
 
 %JavaThread = type { %VMThreadData, i8*, %JavaObject* }
 
+%JavaConstantPool = type { %JavaClass*, i32, i8*, i32*, i8** }
 
 %Attribut = type { %UTF8*, i32, i32 }
 
@@ -35,7 +36,7 @@
 %JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i32,
                     i16 }
 
-%CodeLineInfo = type { i8*, i16, i16, %JavaMethod*, %CodeLineInfo* }
+%CodeLineInfo = type { i8*, %JavaMethod*, %CodeLineInfo* }
 
 %JavaMethod = type { i8*, i16, %Attribut*, i16, %JavaClass*,
                      %UTF8*, %UTF8*, i8, i8*, %CodeLineInfo*, i16, i32 }
@@ -188,6 +189,7 @@ declare float @getFinalFloatField(float*) readnone
 declare i8* @j3ResolveVirtualStub(%JavaObject*)
 declare i8* @j3ResolveSpecialStub()
 declare i8* @j3ResolveStaticStub()
+declare i8* @j3ResolveInterface(%JavaObject*, %JavaMethod*, i32)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exception methods ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

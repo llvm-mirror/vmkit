@@ -35,6 +35,8 @@ jint len) {
   llvm_gcroot(src, 0);
   llvm_gcroot(dst, 0);
   llvm_gcroot(cur, 0);
+  assert(src->getVirtualTable());
+  assert(dst->getVirtualTable());
 
   JavaThread* th = JavaThread::get();
   Jnjvm *vm = th->getJVM();

@@ -20,18 +20,35 @@
 namespace j3 {
 
 class JnjvmBootstrapLoader;
+class JnjvmClassLoader;
 class ZipArchive;
+
+
+class ClassBytes {
+ public:
+  ClassBytes(int l) {
+    size = l;
+  }
+
+  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator, int n) {
+    return allocator.Allocate(sizeof(uint32_t) + n * sizeof(uint8_t),
+                              "Class bytes");
+  }
+
+  uint32_t size;
+  uint8_t elements[1];
+};
 
 class Reader {
 public:
   // bytes - Pointer to a reference array. The array is not manipulated directly
   // in order to support copying GC.
-  ArrayUInt8** bytes;
+  ClassBytes* bytes;
   uint32 min;
   uint32 cursor;
   uint32 max;
 
-  Reader(Attribut* attr, ArrayUInt8** bytes) {
+  Reader(Attribut* attr, ClassBytes* bytes) {
     this->bytes = bytes;
     this->cursor = attr->start;
     this->min = attr->start;
@@ -78,18 +95,18 @@ public:
   static const int SeekCur;
   static const int SeekEnd;
 
-  static ArrayUInt8* openFile(JnjvmBootstrapLoader* loader, const char* path);
-  static ArrayUInt8* openZip(JnjvmBootstrapLoader* loader, ZipArchive* archive,
+  static ClassBytes* openFile(JnjvmClassLoader* loader, const char* path);
+  static ClassBytes* openZip(JnjvmClassLoader* loader, ZipArchive* archive,
                              const char* filename);
   
   uint8 readU1() {
     ++cursor;
-    return ArrayUInt8::getElement(*bytes, cursor - 1);
+    return bytes->elements[cursor - 1];
   }
   
   sint8 readS1() {
     ++cursor;
-    return ArrayUInt8::getElement(*bytes, cursor - 1);
+    return bytes->elements[cursor - 1];
   }
   
   uint16 readU2() {
@@ -122,8 +139,8 @@ public:
     return tmp | ((sint64)(readU4()));
   }
 
-  Reader(ArrayUInt8** array, uint32 start = 0, uint32 end = 0) {
-    if (!end) end = ArrayUInt8::getSize(*array);
+  Reader(ClassBytes* array, uint32 start = 0, uint32 end = 0) {
+    if (!end) end = array->size;
     this->bytes = array;
     this->cursor = start;
     this->min = start;

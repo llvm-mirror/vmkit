@@ -34,6 +34,7 @@
 #include "LinkJavaRuntime.h"
 #include "LockedMap.h"
 #include "Reader.h"
+#include "ReferenceQueue.h"
 #include "Zip.h"
 
 using namespace j3;
@@ -41,12 +42,6 @@ using namespace j3;
 const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
-
-#ifdef ISOLATE
-Jnjvm* Jnjvm::RunningIsolates[NR_ISOLATES];
-mvm::LockNormal Jnjvm::IsolateLock;
-#endif
-
 
 /// initialiseClass - Java class initialisation. Java specification §2.17.5.
 
@@ -123,16 +118,12 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     bool vmjced = (getInitializationState() == vmjc);
     setInitializationState(inClinit);
     UserClass* cl = (UserClass*)this;
-#if defined(ISOLATE) || defined(ISOLATE_SHARING)
-    // Isolate environments allocate the static instance on their own, not when
-    // the class is being resolved.
-    cl->allocateStaticInstance(vm);
-#else
+    
     // Single environment allocates the static instance during resolution, so
     // that compiled code can access it directly (with an initialization
     // check just before the access)
     if (!cl->getStaticInstance()) cl->allocateStaticInstance(vm);
-#endif
+
     release();
   
 
@@ -157,17 +148,12 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       } END_CATCH;
 
 			JavaThread* th = JavaThread::get();
-      if (th->pendingException != NULL) {
+      if (th->getPendingException() != NULL) {
         th->throwPendingException();
         return;
       }
     }
  
-#ifdef SERVICE
-    if (classLoader == classLoader->bootstrapLoader || 
-        classLoader->getIsolate() == vm) {
-#endif
-
     // 8. Next, execute either the class variable initializers and static
     //    initializers of the class or the field initializers of the interface,
     //    in textual order, as though they were a single block, except that
@@ -197,14 +183,11 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       TRY {
         meth->invokeIntStatic(vm, cl);
       } CATCH {
-        exc = JavaThread::get()->getJavaException();
+        exc = JavaThread::get()->getPendingException();
         assert(exc && "no exception?");
-				mvm::Thread::get()->clearException();
+				mvm::Thread::get()->clearPendingException();
       } END_CATCH;
     }
-#ifdef SERVICE
-    }
-#endif
 
     // 9. If the execution of the initializers completes normally, then lock
     //    this Class object, label it fully initialized, notify all waiting 
@@ -831,19 +814,18 @@ extern "C" int sys_strnstr(const char *haystack, const char *needle) {
 }
 
 
-char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
-                      uint32 len) {
-  llvm_gcroot(manifest, 0);
-  sint32 index = sys_strnstr((char*)ArrayUInt8::getElements(manifest), entry);
+static char* findInformation(Jnjvm* vm, ClassBytes* manifest, const char* entry,
+                             uint32 len) {
+  sint32 index = sys_strnstr((char*)manifest->elements, entry);
   if (index != -1) {
     index += len;
-    sint32 end = sys_strnstr((char*)ArrayUInt8::getElements(manifest) + index, "\n");
-    if (end == -1) end = ArrayUInt8::getSize(manifest);
+    sint32 end = sys_strnstr((char*)manifest->elements + index, "\n");
+    if (end == -1) end = manifest->size;
     else end += index;
 
     sint32 length = end - index - 1;
     char* name = (char*)vm->allocator.Allocate(length + 1, "class name");
-    memcpy(name, ArrayUInt8::getElements(manifest) + index, length);
+    memcpy(name, manifest->elements + index, length);
     name[length] = 0;
     return name;
   } else {
@@ -853,10 +835,8 @@ char* findInformation(Jnjvm* vm, ArrayUInt8* manifest, const char* entry,
 
 void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv, 
                                           int i) {
-  ArrayUInt8* bytes = NULL;
-  ArrayUInt8* res = NULL;
-  llvm_gcroot(bytes, 0);
-  llvm_gcroot(res, 0);
+  ClassBytes* bytes = NULL;
+  ClassBytes* res = NULL;
   jarFile = argv[i];
 
   vm->setClasspath(jarFile);
@@ -871,13 +851,10 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   mvm::BumpPtrAllocator allocator;
   ZipArchive* archive = new(allocator, "TempZipArchive")
       ZipArchive(bytes, allocator);
-  // Make sure it gets GC'd.
-  vm->bootstrapLoader->bootArchives.push_back(archive);
   if (archive->getOfscd() != -1) {
     ZipFile* file = archive->getFile(PATH_MANIFEST);
     if (file != NULL) {
-      UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfByte;
-      res = (ArrayUInt8*)array->doNew(file->ucsize, vm);
+      res = new (allocator, file->ucsize) ClassBytes(file->ucsize);
       int ok = archive->readFile(res, file);
       if (ok) {
         char* mainClass = findInformation(vm, res, MAIN_CLASS,
@@ -900,8 +877,6 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
   } else {
     printf("Can't find archive %s\n", jarFile);
   }
-  // We don't need this archive anymore.
-  vm->bootstrapLoader->bootArchives.pop_back();
 }
 
 void ClArgumentsInfo::nyi() {
@@ -1091,11 +1066,13 @@ void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = bootstrapLoader;
   
   // First create system threads.
-  finalizerThread = JavaThread::create(0, 0, this);
-  finalizerThread->start(finalizerStart);
+  finalizerThread = new FinalizerThread(this);
+  finalizerThread->start(
+      (void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
     
-  enqueueThread = JavaThread::create(0, 0, this);
-  enqueueThread->start(enqueueStart);
+  referenceThread = new ReferenceThread(this);
+  referenceThread->start(
+      (void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
   
   // Initialise the bootstrap class loader if it's not
   // done already.
@@ -1130,9 +1107,6 @@ void Jnjvm::loadBootstrap() {
   }
   upcalls->newString->initialiseClass(this);
 
-#ifdef SERVICE
-  if (!IsolateID)
-#endif
   // The initialization code of the classes initialized below may require
   // to get the Java thread, so we create the Java thread object first.
 	upcalls->InitializeThreading(this);
@@ -1191,9 +1165,6 @@ void Jnjvm::loadBootstrap() {
   obj = JavaThread::get()->currentThread();
   javaLoader = appClassLoader->getJavaClassLoader();
 
-#ifdef SERVICE
-  if (!IsolateID)
-#endif
   upcalls->setContextClassLoader->invokeIntSpecial(this, upcalls->newThread,
                                                    obj, &javaLoader);
   // load and initialise math since it is responsible for dlopen'ing 
@@ -1240,7 +1211,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   exc = JavaThread::get()->pendingException;
   if (exc != NULL) {
 		mvm::Thread* mut = mvm::Thread::get();
-    mut->clearException();
+    mut->clearPendingException();
     JavaThread* th   = JavaThread::j3Thread(mut);
     obj = th->currentThread();
     group = upcalls->group->getInstanceObjectField(obj);
@@ -1322,10 +1293,6 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
     fprintf(stderr, "Exception %s while bootstrapping VM.",
         UTF8Buffer(JavaObject::getClass(exc)->name).cString());
   } else {
-#ifdef SERVICE
-    thread->ServiceException = vm->upcalls->newThrowable->doNew(vm);
-#endif
-
     ClArgumentsInfo& info = vm->argumentsInfo;
   
     if (info.agents.size()) {
@@ -1362,51 +1329,15 @@ void ThreadSystem::enter() {
   nonDaemonLock.unlock();  
 }
 
-#ifdef SERVICE
-
-#include <signal.h>
-
-extern void terminationHandler(int);
-
-static void serviceCPUMonitor(mvm::Thread* th) {
-  while (true) {
-    sleep(1);
-    for(JavaThread* cur = (Java*)th->next(); cur != th;
-        cur = (JavaThread*)cur->next()) {
-        JavaThread* th = (JavaThread*)cur;
-        if (!(th->StateWaiting)) {
-          mvm::VirtualMachine* executingVM = cur->MyVM;
-          assert(executingVM && "Thread with no VM!");
-          ++executingVM->executionTime;
-      }
-    }
-  }
-}
-#endif
-
 void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;
-#ifdef SERVICE
-  struct sigaction sa;
-  sigset_t mask;
-  sigfillset(&mask);
-  sigaction(SIGUSR1, 0, &sa);
-  sa.sa_mask = mask;
-  sa.sa_handler = terminationHandler;
-  sa.sa_flags |= SA_RESTART;
-  sigaction(SIGUSR1, &sa, NULL);
-
-  mvm::Thread* th = JavaThread::create(0, 0, this);
-  th->start(serviceCPUMonitor);
-#endif
-   
-	mainThread = JavaThread::create(0, 0, this);
-  mainThread->start(mainJavaStart);
+  mainThread = JavaThread::create(this);
+  mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) : 
-  VirtualMachine(Alloc), lockSystem(this) {
+  VirtualMachine(Alloc), lockSystem(Alloc) {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
@@ -1415,7 +1346,6 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) :
   jniEnv = &JNI_JNIEnvTable;
   javavmEnv = &JNI_JavaVMTable;
   
-
   bootstrapLoader = loader;
   upcalls = bootstrapLoader->upcalls;
 
@@ -1431,26 +1361,9 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) :
   }
 
   bootstrapLoader->insertAllMethodsInVM(this);  
-
-#ifdef ISOLATE
-  IsolateLock.lock();
-  for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-    if (RunningIsolates[i] == 0) {
-      RunningIsolates[i] = this;
-      IsolateID = i;
-      break;
-    }
-  }
-  IsolateLock.unlock();
-#endif
-
-  scanner = loader->getCompiler()->createStackScanner();
 }
 
 Jnjvm::~Jnjvm() {
-#ifdef ISOLATE
-  RunningIsolates[IsolateID] = 0;
-#endif
 }
 
 ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
@@ -1466,49 +1379,84 @@ ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
   return tmp;
 }
 
-void Jnjvm::internalRemoveMethods(JnjvmClassLoader* loader, mvm::FunctionMap& Map) {
-  // Loop over all methods in the map to find which ones belong
-  // to this class loader.
-  Map.FunctionMapLock.acquire();
-  std::map<void*, mvm::MethodInfo*>::iterator temp;
-  for (std::map<void*, mvm::MethodInfo*>::iterator i = Map.Functions.begin(), 
-       e = Map.Functions.end(); i != e;) {
-    mvm::MethodInfo* MI = i->second;
-    if (MI->MethodType == 1) {
-      JavaMethod* meth = (JavaMethod*)i->second->getMetaInfo();
-      if (meth->classDef->classLoader == loader) {
-        temp = i;
-        ++i;
-        Map.Functions.erase(temp);
-      } else {
-        ++i;
-      }
+void Jnjvm::startCollection() {
+  finalizerThread->FinalizationQueueLock.acquire();
+  referenceThread->ToEnqueueLock.acquire();
+  referenceThread->SoftReferencesQueue.acquire();
+  referenceThread->WeakReferencesQueue.acquire();
+  referenceThread->PhantomReferencesQueue.acquire();
+}
+  
+void Jnjvm::endCollection() {
+  finalizerThread->FinalizationQueueLock.release();
+  referenceThread->ToEnqueueLock.release();
+  referenceThread->SoftReferencesQueue.release();
+  referenceThread->WeakReferencesQueue.release();
+  referenceThread->PhantomReferencesQueue.release();
+  finalizerThread->FinalizationCond.broadcast();
+  referenceThread->EnqueueCond.broadcast();
+}
+  
+void Jnjvm::scanWeakReferencesQueue(uintptr_t closure) {
+  referenceThread->WeakReferencesQueue.scan(referenceThread, closure);
+}
+  
+void Jnjvm::scanSoftReferencesQueue(uintptr_t closure) {
+  referenceThread->SoftReferencesQueue.scan(referenceThread, closure);
+}
+  
+void Jnjvm::scanPhantomReferencesQueue(uintptr_t closure) {
+  referenceThread->PhantomReferencesQueue.scan(referenceThread, closure);
+}
+
+void Jnjvm::scanFinalizationQueue(uintptr_t closure) {
+  finalizerThread->scanFinalizationQueue(closure);
+}
+
+void Jnjvm::addFinalizationCandidate(gc* object) {
+  llvm_gcroot(object, 0);
+  finalizerThread->addFinalizationCandidate(object);
+}
+
+size_t Jnjvm::getObjectSize(gc* object) {
+  // TODO: because this is called during GC, there is no need to do
+  // llvm_gcroot. For clarity, it may be useful to have a special type
+  // in this case.
+  size_t size = 0;
+  JavaObject* src = (JavaObject*)object;
+  if (VMClassLoader::isVMClassLoader(src)) {
+    size = sizeof(VMClassLoader);
+  } else {
+    CommonClass* cl = JavaObject::getClass(src);
+    if (cl->isArray()) {
+      UserClassArray* array = cl->asArrayClass();
+      UserCommonClass* base = array->baseClass();
+      uint32 logSize = base->isPrimitive() ? 
+        base->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2); 
+
+      size = sizeof(JavaObject) + sizeof(ssize_t) + 
+                    (JavaArray::getSize(src) << logSize);
     } else {
-      ++i;
+      assert(cl->isClass() && "Not a class!");
+      size = cl->asClass()->getVirtualSize();
     }
   }
-  Map.FunctionMapLock.release();
+  return size;
 }
 
-void Jnjvm::removeMethodsInFunctionMaps(JnjvmClassLoader* loader) {
-  internalRemoveMethods(loader, RuntimeFunctions);
-  internalRemoveMethods(loader, StaticFunctions);
-}
-
-
-/// JavaStaticCompiler - Compiler for AOT-compiled programs that
-/// do not use the JIT.
-class JavaStaticCompiler : public JavaCompiler {
-public:
-#ifdef WITH_LLVM_GCC
-  virtual mvm::StackScanner* createStackScanner() {
-    return new mvm::PreciseStackScanner();
+const char* Jnjvm::getObjectTypeName(gc* object) {
+  JavaObject* src = (JavaObject*)object;
+  if (VMClassLoader::isVMClassLoader(src)) {
+    return "VMClassLoader";
+  } else {
+    CommonClass* cl = JavaObject::getClass(src);
+    // This code is only used for debugging on a fatal error. It is fine to
+    // allocate in the C++ heap.
+    return (new UTF8Buffer(cl->name))->cString();
   }
-#endif
-};
+}
 
-
-// Helper function to run Jnjvm without JIT.
+// Helper function to run J3 without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   mvm::Collector::initialise();
  
@@ -1518,9 +1466,12 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;
  
-  JavaCompiler* Comp = new JavaStaticCompiler();
-  JnjvmClassLoader* JCL = mvm::VirtualMachine::initialiseJVM(Comp);
-  mvm::VirtualMachine* vm = mvm::VirtualMachine::createJVM(JCL);
+  mvm::BumpPtrAllocator Allocator;
+  JavaCompiler* Comp = new JavaCompiler();
+  JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
+    JnjvmBootstrapLoader(Allocator, Comp, true);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, loader);
+
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();
   

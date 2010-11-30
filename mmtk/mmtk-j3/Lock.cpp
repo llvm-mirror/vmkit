@@ -7,28 +7,30 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "JavaObject.h"
-#include "JavaString.h"
-#include "JavaThread.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/VirtualMachine.h"
-
 #include "debug.h"
 
-using namespace j3;
+#include "MMTkObject.h"
 
-struct Lock {
-  JavaObject base;
-  mvm::SpinLock spin;
-  JavaString* name;
-};
+namespace mmtk {
 
-
-extern "C" void Java_org_j3_mmtk_Lock_acquire__(Lock* l) {
-  l->spin.acquire();
+extern "C" void Java_org_j3_mmtk_Lock_acquire__(MMTkLock* l) {
+  for (uint32 count = 0; count < 1000; ++count) {
+    uint32 res = __sync_val_compare_and_swap(&(l->state), 0, 1); 
+    if (!res) return;
+  }   
+    
+  while (__sync_val_compare_and_swap(&(l->state), 0, 1)) {
+    sched_yield();
+  }
 }
-extern "C" void Java_org_j3_mmtk_Lock_check__I () { UNIMPLEMENTED(); }
 
-extern "C" void Java_org_j3_mmtk_Lock_release__(Lock* l) {
-  l->spin.release();
+extern "C" void Java_org_j3_mmtk_Lock_release__(MMTkLock* l) {
+  l->state = 0;
+}
+
+
+extern "C" void Java_org_j3_mmtk_Lock_check__I (MMTkLock* l, int i) {
+  UNIMPLEMENTED();
+}
+
 }

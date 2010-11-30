@@ -21,10 +21,9 @@ class ArrayUInt16;
 class Jnjvm;
 
 class JavaString : public JavaObject {
-private:
+public:
   // CLASSPATH FIELDS!!
   const ArrayUInt16* value;
-public:
   sint32 count;
   sint32 cachedHashCode;
   sint32 offset;

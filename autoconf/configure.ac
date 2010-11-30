@@ -223,8 +223,8 @@ AC_ARG_WITH(gc,
 AC_ARG_WITH(mmtk-plan,
        [AS_HELP_STRING(--with-mmtk-plan=something,
            [MMTk plan type ('marksweep')])],
-       [[MMTK_PLAN=$withval]],
-       [[MMTK_PLAN=marksweep]]
+       [[MMTK_PLAN_HEADER=$withval]],
+       [[MMTK_PLAN_HEADER=marksweep]]
 )
 
 if test "x$gc" = "xboehm";  then
@@ -247,7 +247,7 @@ else
     AC_SUBST(GC_BOEHM, [0])
     AC_SUBST(GC_MMTK, [1])
     GC_LIBS=MMTk
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK -I\$(PROJ_SRC_ROOT)/mmtk/config/\$(MMTK_PLAN)"
+    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK -I\$(PROJ_SRC_ROOT)/mmtk/config/\$(MMTK_PLAN_HEADER)"
   else
     GC_LIBS=GCMmap2
     if test "x$gc" = "xmulti-mmap"; then
@@ -265,10 +265,24 @@ else
     AC_SUBST(GC_MMTK, [0])
   fi
 fi
+
+
+if test "x$MMTK_PLAN_HEADER" = "xmarksweep";  then
+  MMTK_PLAN=org.mmtk.plan.marksweep.MS
+else
+  if test "x$MMTK_PLAN_HEADER" = "xcopyms";  then
+  MMTK_PLAN=org.mmtk.plan.copyms.CopyMS
+  else 
+    if test "x$MMTK_PLAN_HEADER" != "x";  then
+      error Unknown or unsupported MMTK plan
+    fi
+  fi
+fi
   
 AC_SUBST([GC_FLAGS])
 AC_SUBST([GC_LIBS])
 AC_SUBST([MMTK_PLAN])
+AC_SUBST([MMTK_PLAN_HEADER])
 
 dnl **************************************************************************
 dnl Virtual Machine type
@@ -625,7 +639,7 @@ AC_CONFIG_FILES(Makefile.common)
 AC_CONFIG_FILES(Makefile.config)
 AC_CONFIG_FILES([lib/J3/Classpath/Classpath.h])
 AC_CONFIG_FILES([tools/llcj/LinkPaths.h])
-AC_CONFIG_FILES([mmtk/java/build.xml])
+AC_CONFIG_FILES([mmtk/java/src/org/j3/config/Selected.java])
 
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)

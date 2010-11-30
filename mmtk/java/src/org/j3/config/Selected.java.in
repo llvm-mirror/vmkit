@@ -14,9 +14,9 @@ import org.mmtk.utility.Log;
 import org.vmmagic.pragma.*;
 
 public class Selected {
-  public static final String name = "org.mmtk.plan.marksweep.MS";
+  public static final String name = "@MMTK_PLAN@";
   @Uninterruptible
-  public static final class Plan extends org.mmtk.plan.marksweep.MS
+  public static final class Plan extends @MMTK_PLAN@
   {
     private static final Plan plan = new Plan();
 
@@ -25,7 +25,7 @@ public class Selected {
   }
 
   @Uninterruptible
-  public static final class Constraints extends org.mmtk.plan.marksweep.MSConstraints
+  public static final class Constraints extends @MMTK_PLAN@Constraints
   {
     private static final Constraints constraints = new Constraints();
 
@@ -34,7 +34,7 @@ public class Selected {
   }
 
   @Uninterruptible
-  public static class Collector extends org.mmtk.plan.marksweep.MSCollector
+  public static class Collector extends @MMTK_PLAN@Collector
   {
     private static final Collector bootstrapCollector = new Collector();
     
@@ -50,7 +50,7 @@ public class Selected {
   }
 
   @Uninterruptible
-  public static class Mutator extends org.mmtk.plan.marksweep.MSMutator
+  public static class Mutator extends @MMTK_PLAN@Mutator
   {
    
     // Unused mutator used by the AOT compiler to know what instances

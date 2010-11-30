@@ -7,22 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/VirtualMachine.h"
-
-#include "JavaClass.h"
-#include "JavaObject.h"
-#include "JavaThread.h"
-
 #include "debug.h"
+#include "mvm/VirtualMachine.h"
+#include "MMTkObject.h"
+#include "MutatorThread.h"
 
-using namespace j3;
+namespace mmtk {
 
-struct ActivePlan {
-  JavaObject obj;
-  mvm::MutatorThread* current;
-};
-
-extern "C" JavaObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__ (ActivePlan* A) {
+extern "C" MMTkObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__(MMTkActivePlan* A) {
   assert(A && "No active plan");
   
   if (A->current == NULL) {
@@ -37,11 +29,15 @@ extern "C" JavaObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__ (ActivePlan*
   if (A->current->MutatorContext == 0) {
     return Java_org_j3_mmtk_ActivePlan_getNextMutator__(A);
   }
-  return (JavaObject*)A->current->MutatorContext;
+  return (MMTkObject*)A->current->MutatorContext;
 }
 
-extern "C" void Java_org_j3_mmtk_ActivePlan_resetMutatorIterator__ (ActivePlan* A) {
+extern "C" void Java_org_j3_mmtk_ActivePlan_resetMutatorIterator__(MMTkActivePlan* A) {
   A->current = NULL;
 }
 
-extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ (ActivePlan* A) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ (MMTkActivePlan* A) {
+  UNIMPLEMENTED();
+}
+
+}

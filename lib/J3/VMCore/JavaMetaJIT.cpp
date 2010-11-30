@@ -289,19 +289,3 @@ INVOKE(sint64, Long, sint64_virtual_ap, sint64_static_ap, sint64_virtual_buf, si
 INVOKE(float,  Float, float_virtual_ap,  float_static_ap,  float_virtual_buf,  float_static_buf)
 INVOKE(double, Double, double_virtual_ap, double_static_ap, double_virtual_buf, double_static_buf)
 INVOKE(JavaObject*, JavaObject, object_virtual_ap, object_static_ap, object_virtual_buf, object_static_buf)
-
-void Jnjvm::invokeFinalizer(gc* _obj) {
-  JavaObject* obj = (JavaObject*)_obj;
-  llvm_gcroot(obj, 0);
-  JavaMethod* meth = upcalls->FinalizeObject;
-  UserClass* cl = JavaObject::getClass(obj)->asClass();
-  meth->invokeIntVirtualBuf(this, cl, obj, 0);
-}
-
-bool Jnjvm::enqueueReference(gc* _obj) {
-  JavaObject* obj = (JavaObject*)_obj;
-  llvm_gcroot(obj, 0);
-  JavaMethod* meth = upcalls->EnqueueReference;
-  UserClass* cl = JavaObject::getClass(obj)->asClass();
-  return (bool)meth->invokeIntSpecialBuf(this, cl, obj, 0);
-}

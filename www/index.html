@@ -4,7 +4,7 @@
 <html>
 <head>
   <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
-  <title>"VMKit" JVM and .Net runtimes for LLVM</title>
+  <title>VMKit: a substrate for virtual machines</title>
   <link type="text/css" rel="stylesheet" href="menu.css" />
   <link type="text/css" rel="stylesheet" href="content.css" />
 </head>
@@ -12,16 +12,15 @@
 <!--#include virtual="menu.html.incl"-->
 <div id="content">
   <!--*********************************************************************-->
-  <h1>VMKit: JVM and .Net runtimes for LLVM</h1>
+  <h1>VMKit: a substrate for virtual machines</h1>
   <!--*********************************************************************-->
   
-  <p>The VMKit project is an implementation of a JVM and CLI virtual machine
-  (.Net is an implementation of the CLI). It translates Java bytecode and
-  MSIL in the LLVM IR and uses the <a href="http://llvm.org">LLVM framework</a>
-  for optimizations and compilation. For garbage collection, it uses
-  <a href="http://jikesrvm.org/MMTk">MMTk</a>.
-  You can <a href="get_started.html">get and build</a> the
-  source today.</p>
+  <p>The VMKit project is a framework for building virtual machines. It uses
+  <a href="http://llvm.org">LLVM</a> for compiling and optimizing high-level
+  languages to machine code, and <a href="http://jikesrvm.org/MMTk">MMTk</a>
+  to manage memory. J3 is an implementation of a JVM with VMKit.
+  You can <a href="get_started.html">get and build</a> the source of J3
+  today.</p>
   
   <!--=====================================================================-->
   <h2 id="goals">Features</h2>
@@ -32,7 +31,6 @@
   <p><b>End-User Features</a></b>:</p>
   
   <ul>
-  <li>Runs any Java and .Net applications on MacOSX and Unix-based systems.</li>
   <li>Precise garbage collection.</li>
   <li>Just-in-Time and Ahead-of-Time compilation.</li>
   <li>Portable on many architectures (x86, x64, ppc32, ppc64, arm).</li>
@@ -85,20 +83,14 @@
   <h2>Current Status</h2>
   <!--=====================================================================-->
   
-  <p>VMKit is still in its early development stages. If you are looking to
-     experiment virtual machine technologies, VMKit is probably a great solution
-     for you.  If you want to use it as a drop in JVM or .Net, it is not yet
-     ready.</p>
-
-  <p>VMKit currently has a decent implementation of the JVM. It executes
+  <p>VMKit currently has a decent implementation of a JVM. It executes
      large projects (e.g. OSGi Felix, Tomcat, Eclipse) and the
      <a href="http://dacapobench.org">DaCapo benchmarks</a>.
-     The CLI implementation is still in its early stages, but can execute
-     simple applications.</p>
+  </p>
      
   <p>The JVM has been tested on Linux/x64, Linux/x86, Linux/ppc32, MacOSX/x64,
      MacOSX/x86, MacOSX/ppc32. The JVM may work on ppc64. Support for
-     Windows has not been investigated
+     Windows has not been investigated.
   </p>
 
   

@@ -116,7 +116,7 @@ namespace j3 {
   llvm::FunctionPass* createLowerConstantCallsPass(JavaLLVMCompiler* I);
 }
 
-void JavaLLVMCompiler::addJavaPasses(bool trusted) {
+void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses = new FunctionPassManager(TheModule);
   JavaNativeFunctionPasses->add(new TargetData(TheModule));
   // Lower constant calls to lower things like getClass used
@@ -124,9 +124,7 @@ void JavaLLVMCompiler::addJavaPasses(bool trusted) {
   JavaNativeFunctionPasses->add(createLowerConstantCallsPass(this));
   
   JavaFunctionPasses = new FunctionPassManager(TheModule);
-  // Add safe points in loops if we don't trust the code (trusted code doesn't
-  // do infinite loops).
-  if (cooperativeGC && !trusted)
+  if (cooperativeGC)
     JavaFunctionPasses->add(mvm::createLoopSafePointsPass());
   // Add other passes after the loop pass, because safepoints may move objects.
   // Moving objects disable many optimizations.

@@ -185,6 +185,7 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   ResolveVirtualStubFunction = module->getFunction("j3ResolveVirtualStub");
   ResolveStaticStubFunction = module->getFunction("j3ResolveStaticStub");
   ResolveSpecialStubFunction = module->getFunction("j3ResolveSpecialStub");
+  ResolveInterfaceFunction = module->getFunction("j3ResolveInterface");
   
   NullPointerExceptionFunction =
     module->getFunction("j3NullPointerException");
