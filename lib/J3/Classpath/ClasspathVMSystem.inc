@@ -42,14 +42,13 @@ jint len) {
   Jnjvm *vm = th->getJVM();
 
   if (src == NULL || dst == NULL) {
-    th->pendingException = vm->CreateNullPointerException();
+    th->setPendingException(vm->CreateNullPointerException());
     return;
   }
   
   if (!(JavaObject::getClass(src)->isArray() &&
         JavaObject::getClass(dst)->isArray())) {
-    th->pendingException = vm->CreateArrayStoreException(
-      (JavaVirtualTable*)dst->getVirtualTable());
+    th->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
     return;
   }
   
@@ -62,25 +61,24 @@ jint len) {
   sint32 dstSize = JavaArray::getSize(dst);
 
   if (len > srcSize) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len);
+    th->setPendingException(vm->CreateIndexOutOfBoundsException(len));
   } else if (len > dstSize) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len);
+    th->setPendingException(vm->CreateIndexOutOfBoundsException(len));
   } else if (len + sstart > srcSize) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len + sstart);
+    th->setPendingException(vm->CreateIndexOutOfBoundsException(len + sstart));
   } else if (len + dstart > dstSize) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len + dstart);
+    th->setPendingException(vm->CreateIndexOutOfBoundsException(len + dstart));
   } else if (dstart < 0) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(dstart);
+    th->setPendingException(vm->CreateIndexOutOfBoundsException(dstart));
   } else if (sstart < 0) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(sstart);
+    th->setPendingException(vm->CreateIndexOutOfBoundsException(sstart));
   } else if (len < 0) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len);
+    th->setPendingException(vm->CreateIndexOutOfBoundsException(len));
   } else if ((dstType->isPrimitive() || srcType->isPrimitive()) &&
              srcType != dstType) {
-    th->pendingException = vm->CreateArrayStoreException(
-      (JavaVirtualTable*)dst->getVirtualTable());
+    th->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
   }
-  if (th->pendingException != NULL) return;
+  if (th->getPendingException() != NULL) return;
   
   jint i = sstart;
   jint length = len;
@@ -106,8 +104,7 @@ jint len) {
   memmove(ptrDst, ptrSrc, length << logSize);
 
   if (doThrow) {
-    th->pendingException = vm->CreateArrayStoreException(
-      (JavaVirtualTable*)dst->getVirtualTable());
+    th->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
   }
 }
 

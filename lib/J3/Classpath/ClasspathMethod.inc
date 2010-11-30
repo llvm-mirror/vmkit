@@ -174,7 +174,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
         mut->clearPendingException();																		\
 				th->getJVM()->invocationTargetException(exc);										\
       } else {																													\
-        th->throwPendingException();																		\
+        th->throwIt();																									\
       }																																	\
       return NULL;																											\
     }

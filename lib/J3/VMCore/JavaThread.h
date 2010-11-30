@@ -157,17 +157,17 @@ public:
     return javaThread;
   }
 
-  /// preparePendingException - set the pending exception and throw it if in dwarf
+  /// setException - only set the pending exception
 	///
-	void preparePendingException(JavaObject *obj);
+	JavaThread* setPendingException(JavaObject *obj);
  
   /// throwException - Throw the given exception in the current thread.
   ///
   void throwException(JavaObject* obj);
 
-  /// throwPendingException - Throw a pending exception.
+  /// throwIt - Throw a pending exception.
   ///
-  void throwPendingException();
+  void throwIt();
 
   /// clearPendingException - Clear the pending exception.
 	//
@@ -190,14 +190,14 @@ public:
   ///
   void throwFromNative() {
 #ifdef DWARF_EXCEPTIONS
-    throwPendingException();
+    throwIt();
 #endif
   }
   
   /// throwFromJava - Throw an exception after executing Java code.
   ///
   void throwFromJava() {
-    throwPendingException();
+    throwIt();
   }
 
   /// startJava - Interesting, but actually does nothing :)

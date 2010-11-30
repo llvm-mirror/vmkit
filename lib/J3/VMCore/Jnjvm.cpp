@@ -149,7 +149,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
 
 			JavaThread* th = JavaThread::get();
       if (th->getPendingException() != NULL) {
-        th->throwPendingException();
+        th->throwIt();
         return;
       }
     }
@@ -1208,11 +1208,11 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   } CATCH {
   } END_CATCH;
 
-  exc = JavaThread::get()->pendingException;
+  exc = JavaThread::get()->getPendingException();
+	printf("Exception: %p\n", exc);
   if (exc != NULL) {
-		mvm::Thread* mut = mvm::Thread::get();
-    mut->clearPendingException();
-    JavaThread* th   = JavaThread::j3Thread(mut);
+    JavaThread* th   = JavaThread::get();
+    th->clearPendingException();
     obj = th->currentThread();
     group = upcalls->group->getInstanceObjectField(obj);
     TRY {
@@ -1286,7 +1286,7 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   TRY {
     vm->loadBootstrap();
   } CATCH {
-    exc = JavaThread::get()->pendingException;
+    exc = JavaThread::get()->getPendingException();
   } END_CATCH;
 
   if (exc != NULL) {

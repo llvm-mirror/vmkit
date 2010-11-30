@@ -64,7 +64,7 @@ using namespace j3;
 #else
 
 #define DO_TRY
-#define DO_CATCH if (th->pendingException) { th->throwFromJava(); }
+#define DO_CATCH if (th->getPendingException()) { th->throwFromJava(); }
 
 #endif
 

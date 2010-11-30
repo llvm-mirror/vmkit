@@ -64,27 +64,22 @@ JavaThread::~JavaThread() {
 #endif
 }
 
-void JavaThread::preparePendingException(JavaObject *obj) {
+JavaThread* JavaThread::setPendingException(JavaObject *obj) {
 	llvm_gcroot(obj, 0);
   assert(JavaThread::get()->pendingException == 0 && "pending exception already there?");
 	mvm::Thread* mut = mvm::Thread::get();
   j3Thread(mut)->pendingException = obj;	
-#ifdef DWARF_EXCEPTIONS
-	throwPendingException();
-#endif
+}
+
+void JavaThread::throwIt() {
+  assert(JavaThread::get()->pendingException);
+	mvm::Thread::get()->internalThrowException();
 }
 
 void JavaThread::throwException(JavaObject* obj) {
   llvm_gcroot(obj, 0);
-  assert(JavaThread::get()->pendingException == 0 && "pending exception already there?");
-	mvm::Thread* mut = mvm::Thread::get();
-  j3Thread(mut)->pendingException = obj;
-	throwPendingException();
-}
-
-void JavaThread::throwPendingException() {
-  assert(JavaThread::get()->pendingException);
-	mvm::Thread::get()->internalThrowException();
+	setPendingException(obj);
+	throwIt();
 }
 
 void JavaThread::startJNI() {

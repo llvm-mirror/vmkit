@@ -132,7 +132,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
           vm->invocationTargetException(excp);
         } else {
           // If it's an error, throw it again.
-          th->throwPendingException();
+          th->throwIt();
         }
         return NULL;
       }

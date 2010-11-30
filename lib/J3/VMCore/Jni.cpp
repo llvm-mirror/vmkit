@@ -173,7 +173,7 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
                                           false, true, 0);
   str = vm->asciizToStr(msg);
   init->invokeIntSpecial(vm, realCl, res, &str);
-	JavaThread::j3Thread(mut)->pendingException = res;
+	JavaThread::j3Thread(mut)->setPendingException(res);
   
   RETURN_FROM_JNI(1);
   
@@ -187,7 +187,7 @@ jthrowable ExceptionOccurred(JNIEnv *env) {
   
   BEGIN_JNI_EXCEPTION
 
-  JavaObject* obj = JavaThread::get()->pendingException;
+	JavaObject* obj = JavaThread::get()->getPendingException();
   llvm_gcroot(obj, 0);
   if (obj == NULL) RETURN_FROM_JNI(NULL);
   jthrowable res = (jthrowable)JavaThread::j3Thread(mut)->pushJNIRef(obj);
@@ -3584,7 +3584,7 @@ void DeleteGlobalRef(JNIEnv* env, jobject globalRef) {
 jboolean ExceptionCheck(JNIEnv *env) {
   BEGIN_JNI_EXCEPTION
   
-  if (JavaThread::get()->pendingException) {
+	if (JavaThread::get()->getPendingException()) {
     RETURN_FROM_JNI(JNI_TRUE);
   } else {
     RETURN_FROM_JNI(JNI_FALSE);

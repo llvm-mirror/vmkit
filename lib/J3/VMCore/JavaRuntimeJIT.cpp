@@ -52,8 +52,12 @@ extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
   // Since the function is marked readnone, LLVM may move it after the
   // exception check. Therefore, we trick LLVM to check the return value of the
   // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (JavaMethod*)obj;
+#define hack_check(type)																				\
+		JavaObject* obj = JavaThread::get()->getPendingException(); \
+		if (obj) return (type)obj;
+
+	hack_check(void*);
+
   return res;
 }
 
@@ -85,11 +89,8 @@ extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index) {
 
   END_NATIVE_EXCEPTION
 
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (void*)obj;
+	hack_check(void*);
+
   return res;
 }
 
@@ -130,11 +131,8 @@ extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
 
   END_NATIVE_EXCEPTION
 
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (void*)obj;
+	hack_check(void*);
+
   return res;
 }
 
@@ -208,11 +206,9 @@ extern "C" void* j3ClassLookup(UserClass* caller, uint32 index) {
 
   END_NATIVE_EXCEPTION
   
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (void*)obj;
+
+	hack_check(void*);
+
   return res;
 }
 
@@ -226,11 +222,8 @@ extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass* cl) {
   
   END_NATIVE_EXCEPTION
 
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (UserCommonClass*)obj;
+	hack_check(UserCommonClass*);
+
   return cl;
 }
 
@@ -244,11 +237,8 @@ extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl) {
   res = cl->getClassDelegatee(vm);
   END_NATIVE_EXCEPTION
   
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return obj;
+	hack_check(JavaObject*);
+
   return res;
 }
 
@@ -328,11 +318,8 @@ extern "C" JavaVirtualTable* j3GetArrayClass(UserClass* caller,
 
   END_NATIVE_EXCEPTION
 
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (JavaVirtualTable*)obj;
+	hack_check(JavaVirtualTable*);
+
   return res;
 }
 
@@ -400,11 +387,7 @@ extern "C" JavaObject* j3NullPointerException() {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
 
   return exc;
 }
@@ -421,11 +404,7 @@ extern "C" JavaObject* j3NegativeArraySizeException(sint32 val) {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
 
   return exc;
 }
@@ -442,11 +421,7 @@ extern "C" JavaObject* j3OutOfMemoryError(sint32 val) {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
 
   return exc;
 }
@@ -463,11 +438,7 @@ extern "C" JavaObject* j3StackOverflowError() {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
 
   return exc;
 }
@@ -484,11 +455,7 @@ extern "C" JavaObject* j3ArithmeticException() {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
 
   return exc;
 }
@@ -508,11 +475,7 @@ extern "C" JavaObject* j3ClassCastException(JavaObject* obj,
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
 
   return exc;
 }
@@ -532,11 +495,7 @@ extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
   
   return exc;
 }
@@ -553,11 +512,7 @@ extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT,
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
   
   return exc;
 }
@@ -575,11 +530,7 @@ extern "C" void j3ThrowExceptionFromJIT() {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
-  th->pendingException = exc;
-#endif
+	th->setPendingException(exc)->throwFromNative();
   
 }
 
