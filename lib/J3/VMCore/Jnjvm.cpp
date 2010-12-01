@@ -1342,8 +1342,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;
   javaMainThread = JavaThread::create(this);
-	mainThread = javaMainThread->mut;
-  mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
+  javaMainThread->mut->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JnjvmBootstrapLoader* loader) : 

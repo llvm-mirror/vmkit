@@ -56,8 +56,6 @@ class VirtualMachine : public mvm::PermanentObject {
 protected:
   VirtualMachine(mvm::BumpPtrAllocator &Alloc, mvm::VMKit* vmk) :
 		  allocator(Alloc) {
-    mainThread = 0;
-    NumberOfThreads = 0;
 		vmkit = vmk;
   }
 
@@ -71,55 +69,13 @@ public:
   ///
   mvm::BumpPtrAllocator& allocator;
 
+	/// vmkit - a pointer to vmkit that contains information on all the vms
+	///
+	mvm::VMKit* vmkit;
+
 //===----------------------------------------------------------------------===//
 // (1) Thread-related methods.
 //===----------------------------------------------------------------------===//
-
-  /// mainThread - The main thread of this VM.
-  ///
-  mvm::Thread* mainThread;
-
-  /// NumberOfThreads - The number of threads that currently run under this VM.
-  ///
-  uint32_t NumberOfThreads;
-
-  /// ThreadLock - Lock to create or destroy a new thread.
-  ///
-  mvm::SpinLock ThreadLock;
-
-	/// vmkit - a pointer to vmkit that contains information on all the vms
-	mvm::VMKit* vmkit;
-  
-  /// setMainThread - Set the main thread of this VM.
-  ///
-  void setMainThread(mvm::Thread* th) { mainThread = th; }
-  
-  /// getMainThread - Get the main thread of this VM.
-  ///
-  mvm::Thread* getMainThread() const { return mainThread; }
-
-  /// addThread - Add a new thread to the list of threads.
-  ///
-  void addThread(mvm::Thread* th) {
-    ThreadLock.lock();
-    NumberOfThreads++;
-    if (th != mainThread) {
-      if (mainThread) th->append(mainThread);
-      else mainThread = th;
-    }
-    ThreadLock.unlock();
-  }
-  
-  /// removeThread - Remove the thread from the list of threads.
-  ///
-  void removeThread(mvm::Thread* th) {
-    ThreadLock.lock();
-    NumberOfThreads--;
-    if (mainThread == th) mainThread = (Thread*)th->next();
-    th->remove();
-    if (!NumberOfThreads) mainThread = 0;
-    ThreadLock.unlock();
-  }
 
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.

@@ -428,9 +428,9 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 #ifdef ISOLATE
   th->IsolateID = th->MyVM->IsolateID;
 #endif
-  th->MyVM->rendezvous.addThread(th);
+  th->MyVM->rendezvous.prepareForJoin();
   th->routine(th);
-  th->MyVM->removeThread(th);
+  th->MyVM->rendezvous.removeThread(th);
 }
 
 
@@ -445,7 +445,7 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   routine = fct;
   // Make sure to add it in the list of threads before leaving this function:
   // the garbage collector wants to trace this thread.
-  MyVM->addThread(this);
+  MyVM->rendezvous.addThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
   pthread_detach((pthread_t)internalThreadID);

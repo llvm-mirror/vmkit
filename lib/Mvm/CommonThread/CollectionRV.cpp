@@ -17,12 +17,30 @@
 
 using namespace mvm;
 
+void CollectionRV::addThread(mvm::Thread* th) {
+	threadLock.lock();
+	numberOfThreads++;
+	if (th != oneThread) {
+		if (oneThread) th->append(oneThread);
+		else oneThread = th;
+	}
+	threadLock.unlock();
+}
+  
+void CollectionRV::removeThread(mvm::Thread* th) {
+	threadLock.lock();
+	numberOfThreads--;
+	if (oneThread == th) oneThread = (Thread*)th->next();
+	th->remove();
+	if (!numberOfThreads) oneThread = 0;
+	threadLock.unlock();
+}
+
 void CollectionRV::another_mark() {
-  mvm::Thread* th = mvm::Thread::get();
   assert(th->getLastSP() != NULL);
   assert(nbJoined < th->MyVM->NumberOfThreads);
   nbJoined++;
-  if (nbJoined == th->MyVM->NumberOfThreads) {
+  if (nbJoined == numberOfThreads) {
     condInitiator.broadcast();
   }
 }
@@ -37,11 +55,10 @@ void CollectionRV::waitEndOfRV() {
 }
 
 void CollectionRV::waitRV() {
-  mvm::Thread* self = mvm::Thread::get(); 
   // Add myself.
   nbJoined++;
 
-  while (nbJoined != self->MyVM->NumberOfThreads) {
+  while (nbJoined != numberOfThreads) {
     condInitiator.wait(&_lockRV);
   } 
 }
@@ -51,7 +68,7 @@ void CooperativeCollectionRV::synchronize() {
   mvm::Thread* self = mvm::Thread::get();
   // Lock thread lock, so that we can traverse the thread list safely. This will
   // be released on finishRV.
-  self->MyVM->ThreadLock.lock();
+ threadLock.lock();
 
   mvm::Thread* cur = self;
   do {
@@ -93,7 +110,7 @@ void UncooperativeCollectionRV::synchronize() {
   mvm::Thread* self = mvm::Thread::get();
   // Lock thread lock, so that we can traverse the thread list safely. This will
   // be released on finishRV.
-  self->MyVM->ThreadLock.lock();
+  threadLock.lock();
   
   for (mvm::Thread* cur = (mvm::Thread*)self->next(); cur != self; 
        cur = (mvm::Thread*)cur->next()) {
@@ -205,10 +222,14 @@ void CooperativeCollectionRV::finishRV() {
 
   assert(nbJoined == initiator->MyVM->NumberOfThreads && "Inconsistent state");
   nbJoined = 0;
-  initiator->MyVM->ThreadLock.unlock();
+  threadLock.unlock();
   condEndRV.broadcast();
   unlockRV();
   initiator->inRV = false;
+}
+
+void CooperativeCollectionRV::prepareForJoin() {
+	/// nothing to do
 }
 
 void UncooperativeCollectionRV::finishRV() {
@@ -216,7 +237,7 @@ void UncooperativeCollectionRV::finishRV() {
   mvm::Thread* initiator = mvm::Thread::get();
   assert(nbJoined == initiator->MyVM->NumberOfThreads && "Inconsistent state");
   nbJoined = 0;
-  initiator->MyVM->ThreadLock.unlock();
+  threadLock.unlock();
   condEndRV.broadcast();
   unlockRV();
   initiator->inRV = false;
@@ -230,16 +251,12 @@ void UncooperativeCollectionRV::joinBeforeUncooperative() {
   UNREACHABLE();
 }
 
-void CooperativeCollectionRV::addThread(Thread* th) {
-  // Nothing to do.
-}
-
 static void siggcHandler(int) {
   mvm::Thread* th = mvm::Thread::get();
   th->MyVM->rendezvous.join();
 }
 
-void UncooperativeCollectionRV::addThread(Thread* th) {
+void UncooperativeCollectionRV::prepareForJoin() {
   // Set the SIGGC handler for uncooperative rendezvous.
   struct sigaction sa;
   sigset_t mask;
