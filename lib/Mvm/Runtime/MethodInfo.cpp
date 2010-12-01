@@ -10,7 +10,7 @@
 #include "mvm/Allocator.h"
 #include "mvm/MethodInfo.h"
 #include "mvm/VirtualMachine.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 
 #include <dlfcn.h>
 #include <map>

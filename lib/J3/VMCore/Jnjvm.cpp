@@ -20,7 +20,7 @@
 
 #include "mvm/Threads/Thread.h"
 #include "mvm/VMKit.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
@@ -47,7 +47,7 @@ const unsigned int Jnjvm::Magic = 0xcafebabe;
 /// initialiseClass - Java class initialisation. Java specification §2.17.5.
 
 void UserClass::initialiseClass(Jnjvm* vm) {
-  gc* exc = NULL;
+	mvm::gc* exc = NULL;
   JavaObject* obj = NULL;
 	JavaObject* jexc;
 	
@@ -1182,7 +1182,7 @@ void Jnjvm::loadBootstrap() {
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
-  gc* exc = NULL;
+	mvm::gc* exc = NULL;
   JavaObject* obj = NULL;
   JavaObject* group = NULL;
   
@@ -1270,7 +1270,7 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   JavaString* str = NULL;
   JavaObject* instrumenter = NULL;
   ArrayObject* args = NULL;
-  gc* exc = NULL;
+	mvm::gc* exc = NULL;
 	JavaObject *jexc;
 	
 	llvm_gcroot(jexc, 0);
@@ -1422,12 +1422,12 @@ void Jnjvm::scanFinalizationQueue(uintptr_t closure) {
   finalizerThread->scanFinalizationQueue(closure);
 }
 
-void Jnjvm::addFinalizationCandidate(gc* object) {
+void Jnjvm::addFinalizationCandidate(mvm::gc* object) {
   llvm_gcroot(object, 0);
   finalizerThread->addFinalizationCandidate(object);
 }
 
-size_t Jnjvm::getObjectSize(gc* object) {
+size_t Jnjvm::getObjectSize(mvm::gc* object) {
   // TODO: because this is called during GC, there is no need to do
   // llvm_gcroot. For clarity, it may be useful to have a special type
   // in this case.
@@ -1453,7 +1453,7 @@ size_t Jnjvm::getObjectSize(gc* object) {
   return size;
 }
 
-const char* Jnjvm::getObjectTypeName(gc* object) {
+const char* Jnjvm::getObjectTypeName(mvm::gc* object) {
   JavaObject* src = (JavaObject*)object;
   if (VMClassLoader::isVMClassLoader(src)) {
     return "VMClassLoader";

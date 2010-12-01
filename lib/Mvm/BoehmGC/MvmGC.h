@@ -29,12 +29,11 @@ namespace mvm {
 
 extern "C" void * GC_dlopen(const char *path, int mode) throw ();
 
-#include "mvm/GC/GC.h"
-
 #define  gc_new(Class)  __gc_new(Class::VT) Class
 #define __gc_new new
 
-class gc : public gcRoot {
+namespace mvm {
+class collectable : public gcRoot {
 public:
 
   void markAndTrace() const {}
@@ -141,6 +140,6 @@ public:
     return true;
   }
 };
-
+}
 
 #endif

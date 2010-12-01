@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "MutatorThread.h"
 #include "mvm/VirtualMachine.h"
 

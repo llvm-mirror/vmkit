@@ -89,7 +89,7 @@ public:
   ///
   JNILocalReferences* localJNIRefs;
 
-  gc** pushJNIRef(gc* obj) {
+	mvm::gc** pushJNIRef(mvm::gc* obj) {
     llvm_gcroot(obj, 0);
     if (!obj) return 0;
    

@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "mvm/Threads/Thread.h"
 
 using namespace mvm;

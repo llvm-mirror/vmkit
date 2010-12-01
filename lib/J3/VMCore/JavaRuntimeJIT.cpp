@@ -53,7 +53,7 @@ extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
   // exception check. Therefore, we trick LLVM to check the return value of the
   // function.
 #define hack_check(type)																							\
-		gc* obj = mvm::Thread::get()->getPendingException();							\
+		mvm::gc* obj = mvm::Thread::get()->getPendingException();					\
 		if (obj) return (type)obj;
 
 	hack_check(void*);

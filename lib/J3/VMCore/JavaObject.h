@@ -11,7 +11,7 @@
 #define JNJVM_JAVA_OBJECT_H
 
 #include "mvm/Allocator.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "mvm/UTF8.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
@@ -46,7 +46,7 @@ public:
 /// These are placed here for fast access of information from a Java object
 /// (that only points to the VT, not the class).
 ///
-class JavaVirtualTable : public VirtualTable {
+class JavaVirtualTable : public mvm::VirtualTable {
 public:
 
   /// cl - The class which defined this virtual table.
@@ -228,7 +228,7 @@ public:
 
 /// JavaObject - This class represents a Java object.
 ///
-class JavaObject : public gc {
+class JavaObject : public mvm::gc {
 private:
   
   /// waitIntern - internal wait on a monitor

@@ -18,7 +18,7 @@
 #include "llvm/Target/TargetData.h"
 
 
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "mvm/Config/config.h"
 #include "mvm/JIT.h"
 #include "mvm/VMKit.h"

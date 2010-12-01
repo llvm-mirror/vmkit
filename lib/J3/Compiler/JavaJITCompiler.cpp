@@ -24,7 +24,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/VMKit.h"
 

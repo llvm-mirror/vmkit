@@ -25,13 +25,13 @@ class Jnjvm;
 
 class ReferenceQueue {
 private:
-  gc** References;
+	mvm::gc** References;
   uint32 QueueLength;
   uint32 CurrentIndex;
   mvm::SpinLock QueueLock;
   uint8_t semantics;
 
-  gc* processReference(gc*, ReferenceThread*, uintptr_t closure);
+	mvm::gc* processReference(mvm::gc*, ReferenceThread*, uintptr_t closure);
 public:
 
   static const uint8_t WEAK = 1;
@@ -40,8 +40,8 @@ public:
 
 
   ReferenceQueue(uint8_t s) {
-    References = new gc*[INITIAL_QUEUE_SIZE];
-    memset(References, 0, INITIAL_QUEUE_SIZE * sizeof(gc*));
+    References = new mvm::gc*[INITIAL_QUEUE_SIZE];
+    memset(References, 0, INITIAL_QUEUE_SIZE * sizeof(mvm::gc*));
     QueueLength = INITIAL_QUEUE_SIZE;
     CurrentIndex = 0;
     semantics = s;
@@ -51,13 +51,13 @@ public:
     delete[] References;
   }
  
-  void addReference(gc* ref) {
+  void addReference(mvm::gc* ref) {
     llvm_gcroot(ref, 0);
     QueueLock.acquire();
     if (CurrentIndex >= QueueLength) {
       uint32 newLength = QueueLength * GROW_FACTOR;
-      gc** newQueue = new gc*[newLength];
-      memset(newQueue, 0, newLength * sizeof(gc*));
+			mvm::gc** newQueue = new mvm::gc*[newLength];
+      memset(newQueue, 0, newLength * sizeof(mvm::gc*));
       if (!newQueue) {
         fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
         abort();
@@ -96,7 +96,7 @@ public:
   ///
   ReferenceQueue PhantomReferencesQueue;
 
-  gc** ToEnqueue;
+	mvm::gc** ToEnqueue;
   uint32 ToEnqueueLength;
   uint32 ToEnqueueIndex;
   
@@ -106,27 +106,27 @@ public:
   mvm::Cond EnqueueCond;
   mvm::SpinLock ToEnqueueLock;
 
-  void addToEnqueue(gc* obj);
+  void addToEnqueue(mvm::gc* obj);
 
   static void enqueueStart(ReferenceThread*);
 
   /// addWeakReference - Add a weak reference to the queue.
   ///
-  void addWeakReference(gc* ref) {
+  void addWeakReference(mvm::gc* ref) {
     llvm_gcroot(ref, 0);
     WeakReferencesQueue.addReference(ref);
   }
   
   /// addSoftReference - Add a weak reference to the queue.
   ///
-  void addSoftReference(gc* ref) {
+  void addSoftReference(mvm::gc* ref) {
     llvm_gcroot(ref, 0);
     SoftReferencesQueue.addReference(ref);
   }
   
   /// addPhantomReference - Add a weak reference to the queue.
   ///
-  void addPhantomReference(gc* ref) {
+  void addPhantomReference(mvm::gc* ref) {
     llvm_gcroot(ref, 0);
     PhantomReferencesQueue.addReference(ref);
   }
@@ -147,7 +147,7 @@ public:
   /// finalizationQueue - A list of allocated objets that contain a finalize
   /// method.
   ///
-  gc** FinalizationQueue;
+	mvm::gc** FinalizationQueue;
 
   /// CurrentIndex - Current index in the queue of finalizable objects.
   ///
@@ -163,7 +163,7 @@ public:
   
   /// ToBeFinalized - List of objects that are scheduled to be finalized.
   ///
-  gc** ToBeFinalized;
+	mvm::gc** ToBeFinalized;
   
   /// ToBeFinalizedLength - Current length of the queue of objects scheduled
   /// for finalization.
@@ -192,7 +192,7 @@ public:
   /// addFinalizationCandidate - Add an object to the queue of objects with
   /// a finalization method.
   ///
-  void addFinalizationCandidate(gc*);
+  void addFinalizationCandidate(mvm::gc*);
 
   /// scanFinalizationQueue - Scan objets with a finalized method and schedule
   /// them for finalization if they are not live.

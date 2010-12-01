@@ -12,7 +12,7 @@
 
 #include "ObjectHeader.h"
 #include "mvm/Allocator.h"
-#include "mvm/GC/GC.h"
+#include "mvm/GC.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"

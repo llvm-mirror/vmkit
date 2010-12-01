@@ -99,7 +99,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
 
   JavaObject* res = 0;
   JavaObject* jexc = 0;
-  gc* exc = 0;
+	mvm::gc* exc = 0;
   
   llvm_gcroot(res, 0);
   llvm_gcroot(Meth, 0);

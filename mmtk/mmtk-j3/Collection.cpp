@@ -11,7 +11,7 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/VMKit.h"
 #include "MMTkObject.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 
 namespace mmtk {
 

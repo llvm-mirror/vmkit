@@ -34,10 +34,9 @@
   #define END_CATCH }
 #endif
 
-class gc;
-
 namespace mvm {
 
+class gc;
 class MethodInfo;
 class VirtualMachine;
 

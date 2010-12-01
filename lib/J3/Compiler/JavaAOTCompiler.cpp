@@ -1415,7 +1415,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   Elemts.push_back(Tracer ? 
       ConstantExpr::getCast(Instruction::BitCast, Tracer, PTy) : N);
   
-  for (uint32_t i = 0; i < VirtualTable::numberOfSpecializedTracers(); i++) {
+  for (uint32_t i = 0; i < mvm::VirtualTable::numberOfSpecializedTracers(); i++) {
     // Push null for now.
     Elemts.push_back(N);
   }
@@ -2211,11 +2211,11 @@ void* JavaAOTCompiler::loadMethod(void* handle, const char* symbol) {
 #ifdef WITH_MMTK
 
 #include <set>
-extern std::set<gc*> __InternalSet__;
+extern std::set<mvm::gc*> __InternalSet__;
 
 CommonClass* JavaAOTCompiler::getUniqueBaseClass(CommonClass* cl) {
-  std::set<gc*>::iterator I = __InternalSet__.begin();
-  std::set<gc*>::iterator E = __InternalSet__.end();
+  std::set<mvm::gc*>::iterator I = __InternalSet__.begin();
+  std::set<mvm::gc*>::iterator E = __InternalSet__.end();
   CommonClass* currentClass = 0;
 
   for (; I != E; ++I) {

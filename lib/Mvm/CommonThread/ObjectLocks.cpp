@@ -14,7 +14,7 @@
 #include "mvm/Threads/ObjectLocks.h"
 #include "mvm/Threads/Thread.h"
 #include "mvm/VirtualMachine.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "cterror.h"
 #include <cerrno>
 #include <sys/time.h>

@@ -18,8 +18,6 @@
 
 #include "mvm/Threads/Locks.h"
 
-class VirtualTable;
-
 #define declare_gcroot(type, name) type name; llvm_gcroot(name, 0); name
 
 namespace mvm {

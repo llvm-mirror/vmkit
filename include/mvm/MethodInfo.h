@@ -11,7 +11,7 @@
 #define MVM_METHODINFO_H
 
 #include "mvm/Allocator.h"
-#include "mvm/GC/GC.h"
+#include "mvm/GC.h"
 
 namespace mvm {
 

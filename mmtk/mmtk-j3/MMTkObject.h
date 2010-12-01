@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 #include "MutatorThread.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 
 namespace mmtk {
 
@@ -22,7 +22,7 @@ struct MMTkClass {
   MMTkObject* delegatee;
 };
 
-struct MMTkVirtualTable : public VirtualTable {
+struct MMTkVirtualTable : public mvm::VirtualTable {
   MMTkClass* cl;
 };
 

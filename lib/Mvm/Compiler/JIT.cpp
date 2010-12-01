@@ -42,9 +42,8 @@
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
 #include "mvm/VirtualMachine.h"
-#include "mvm/GC/GC.h"
 #include "MutatorThread.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 
 #include <dlfcn.h>
 #include <sys/mman.h>

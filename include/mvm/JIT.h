@@ -19,7 +19,7 @@
 #include "llvm/Target/TargetMachine.h"
 
 #include "mvm/MethodInfo.h"
-#include "mvm/GC/GC.h"
+#include "mvm/GC.h"
 
 namespace llvm {
   class Constant;

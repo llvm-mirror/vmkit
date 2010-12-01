@@ -9,7 +9,7 @@
 
 #include "mvm/GC/GC.h"
 #include "mvm/Threads/Thread.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 
 using namespace mvm;
 

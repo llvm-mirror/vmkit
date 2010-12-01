@@ -11,11 +11,12 @@
 #define _GC_CHUNK_H_
 
 #include "mvm/VirtualMachine.h"
+#include "mvm/GC.h"
 
 #include "gcmapper.h"
 #include "types.h"
 
-class gcRoot;        /* object collectable */
+using namespace mvm;
 
 /* description d'un bout de mémoire */
 class GCChunkNode {

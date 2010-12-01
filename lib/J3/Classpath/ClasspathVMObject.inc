@@ -47,7 +47,7 @@ JavaObject* src) {
     assert(cl->isClass() && "Not a class!");
     size = cl->asClass()->getVirtualSize();
   }
-  res = (JavaObject*)gc::operator new(size, src->getVirtualTable());
+  res = (JavaObject*)mvm::gc::operator new(size, src->getVirtualTable());
   memcpy((void*)((uintptr_t)res + 2 * sizeof(void*)),
          (void*)((uintptr_t)src + 2 * sizeof(void*)),
          size - 2 * sizeof(void*));

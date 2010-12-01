@@ -452,7 +452,7 @@ public:
 
   /// VT - The VirtualTable for this GC-class.
   ///
-  static VirtualTable VT;
+  static mvm::VirtualTable VT;
 
   /// Is the object a VMClassLoader object?
   ///

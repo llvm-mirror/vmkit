@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "MutatorThread.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 
 #include "mvm/VirtualMachine.h"
 

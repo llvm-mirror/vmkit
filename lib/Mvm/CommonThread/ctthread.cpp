@@ -9,7 +9,7 @@
 
 #include "debug.h"
 
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "mvm/MethodInfo.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"

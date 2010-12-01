@@ -11,13 +11,14 @@
 #ifndef MVM_MMAP_GC_H
 #define MVM_MMAP_GC_H
 
-#include "mvm/GC/GC.h"
 #include "types.h"
 #include "gcalloc.h"
 
 #define gc_allocator std::allocator
 
-struct VirtualTable {
+namespace mvm {
+class GCVirtualTable : public CommonVirtualTable {
+public:
   uintptr_t destructor;
   uintptr_t operatorDelete;
   uintptr_t tracer;
@@ -34,18 +35,16 @@ struct VirtualTable {
     return &destructor;
   }
 
-  VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
+  GCVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
     destructor = d;
     operatorDelete = o;
     tracer = t;
   }
 
-  VirtualTable() {}
+  GCVirtualTable() {}
 
   static void emptyTracer(void*) {}
 };
-
-namespace mvm {
 
 class Thread;
 
@@ -361,10 +360,7 @@ public:
 
 };
 
-}
-
-
-class gc : public gcRoot {
+class collectable : public gcRoot {
 public:
  
   size_t objectSize() const {
@@ -388,5 +384,7 @@ public:
   }
 
 };
+
+}
 
 #endif

@@ -24,9 +24,9 @@ extern "C" void __llvm_gcroot(void**, void*) __attribute__((nothrow));
 #define llvm_gcroot(a, b)
 #endif
 
-class gc;
-
 namespace mvm {
+
+class gc;
 
 extern "C" uint8  llvm_atomic_cmp_swap_i8(uint8* ptr,  uint8 cmp,
                                           uint8 val);

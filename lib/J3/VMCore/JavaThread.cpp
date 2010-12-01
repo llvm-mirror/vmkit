@@ -139,8 +139,7 @@ void JavaThread::printJavaBacktrace() {
   }
 }
 
-gc** JNILocalReferences::addJNIReference(JavaThread* th,
-                                                 gc* obj) {
+mvm::gc** JNILocalReferences::addJNIReference(JavaThread* th, mvm::gc* obj) {
   llvm_gcroot(obj, 0);
   
   if (length == MAXIMUM_REFERENCES) {

@@ -10,7 +10,7 @@
 #include "debug.h"
 #include "mvm/VirtualMachine.h"
 #include "MMTkObject.h"
-#include "MvmGC.h"
+#include "mvm/GC.h"
 
 namespace mmtk {
 
@@ -46,9 +46,9 @@ extern "C" void Java_org_j3_mmtk_Scanning_resetThreadCounter__ (MMTkObject* Scan
   // Nothing to do.
 }
 
-extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* Scanning, uint32_t id, MMTkObject* TC, gc* obj) ALWAYS_INLINE;
+extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* Scanning, uint32_t id, MMTkObject* TC, mvm::gc* obj) ALWAYS_INLINE;
 
-extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* Scanning, uint32_t id, MMTkObject* TC, gc* obj) {
+extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* Scanning, uint32_t id, MMTkObject* TC, mvm::gc* obj) {
   assert(obj && "No object to trace");
   assert(obj->getVirtualTable() && "No virtual table");
   assert(obj->getVirtualTable()->tracer && "No tracer in VT");
@@ -60,7 +60,7 @@ extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_Tra
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_scanObject__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (
-    MMTkObject* Scanning, uintptr_t TC, gc* obj) {
+    MMTkObject* Scanning, uintptr_t TC, mvm::gc* obj) {
   assert(obj && "No object to trace");
   assert(obj->getVirtualTable() && "No virtual table");
   assert(obj->getVirtualTable()->tracer && "No tracer in VT");

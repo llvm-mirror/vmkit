@@ -53,9 +53,9 @@ using namespace j3;
 // Classpath with the vmdata field).
 //===----------------------------------------------------------------------===//
 
-VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
-                               (uintptr_t)VMClassLoader::staticDestructor,
-                               (uintptr_t)VMClassLoader::staticTracer);
+mvm::VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
+																		(uintptr_t)VMClassLoader::staticDestructor,
+																		(uintptr_t)VMClassLoader::staticTracer);
 
 //===----------------------------------------------------------------------===//
 // Trace methods for Java objects. There are four types of objects:
@@ -336,7 +336,7 @@ void JavaThread::tracer(uintptr_t closure) {
   JNILocalReferences* end = localJNIRefs;
   while (end != NULL) {
     for (uint32 i = 0; i < end->length; ++i) {
-      gc** obj = end->localReferences + i;
+			mvm::gc** obj = end->localReferences + i;
       mvm::Collector::markAndTraceRoot(obj, closure);
     }
     end = end->prev;

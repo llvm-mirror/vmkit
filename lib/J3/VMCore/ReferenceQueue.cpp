@@ -21,7 +21,7 @@ ReferenceThread::ReferenceThread(Jnjvm* vm) :
     SoftReferencesQueue(ReferenceQueue::SOFT), 
     PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
 
-  ToEnqueue = new gc*[INITIAL_QUEUE_SIZE];
+  ToEnqueue = new mvm::gc*[INITIAL_QUEUE_SIZE];
   ToEnqueueLength = INITIAL_QUEUE_SIZE;
   ToEnqueueIndex = 0;
 
@@ -29,7 +29,7 @@ ReferenceThread::ReferenceThread(Jnjvm* vm) :
 }
 
 
-bool enqueueReference(gc* _obj) {
+bool enqueueReference(mvm::gc* _obj) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* obj = (JavaObject*)_obj;
   llvm_gcroot(obj, 0);
@@ -38,7 +38,7 @@ bool enqueueReference(gc* _obj) {
   return (bool)meth->invokeIntSpecialBuf(vm, cl, obj, 0);
 }
 
-void invokeEnqueue(gc* res) {
+void invokeEnqueue(mvm::gc* res) {
   llvm_gcroot(res, 0);
   TRY {
     enqueueReference(res);
@@ -47,7 +47,7 @@ void invokeEnqueue(gc* res) {
 }
 
 void ReferenceThread::enqueueStart(ReferenceThread* th) {
-  gc* res = NULL;
+	mvm::gc* res = NULL;
   llvm_gcroot(res, 0);
 
   while (true) {
@@ -73,11 +73,11 @@ void ReferenceThread::enqueueStart(ReferenceThread* th) {
 }
 
 
-void ReferenceThread::addToEnqueue(gc* obj) {
+void ReferenceThread::addToEnqueue(mvm::gc* obj) {
   llvm_gcroot(obj, 0);
   if (ToEnqueueIndex >= ToEnqueueLength) {
     uint32 newLength = ToEnqueueLength * GROW_FACTOR;
-    gc** newQueue = new gc*[newLength];
+		mvm::gc** newQueue = new mvm::gc*[newLength];
     if (!newQueue) {
       fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
       abort();
@@ -92,32 +92,32 @@ void ReferenceThread::addToEnqueue(gc* obj) {
   ToEnqueue[ToEnqueueIndex++] = obj;
 }
 
-gc** getReferentPtr(gc* _obj) {
+mvm::gc** getReferentPtr(mvm::gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
   llvm_gcroot(obj, 0);
-  return (gc**)JavaObjectReference::getReferentPtr(obj);
+  return (mvm::gc**)JavaObjectReference::getReferentPtr(obj);
 }
 
-void setReferent(gc* _obj, gc* val) {
+void setReferent(mvm::gc* _obj, mvm::gc* val) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
   llvm_gcroot(obj, 0);
   llvm_gcroot(val, 0);
   JavaObjectReference::setReferent(obj, (JavaObject*)val);
 }
  
-void clearReferent(gc* _obj) {
+void clearReferent(mvm::gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
   llvm_gcroot(obj, 0);
   JavaObjectReference::setReferent(obj, NULL);
 }
 
-gc* ReferenceQueue::processReference(gc* reference, ReferenceThread* th, uintptr_t closure) {
+mvm::gc* ReferenceQueue::processReference(mvm::gc* reference, ReferenceThread* th, uintptr_t closure) {
   if (!mvm::Collector::isLive(reference, closure)) {
     clearReferent(reference);
     return NULL;
   }
 
-  gc* referent = *(getReferentPtr(reference));
+	mvm::gc* referent = *(getReferentPtr(reference));
 
   if (!referent) {
     return NULL;
@@ -132,10 +132,10 @@ gc* ReferenceQueue::processReference(gc* reference, ReferenceThread* th, uintptr
     // Nothing to do.
   }
 
-  gc* newReference =
+	mvm::gc* newReference =
       mvm::Collector::getForwardedReference(reference, closure);
   if (mvm::Collector::isLive(referent, closure)) {
-    gc* newReferent = mvm::Collector::getForwardedReferent(referent, closure);
+		mvm::gc* newReferent = mvm::Collector::getForwardedReferent(referent, closure);
     setReferent(newReference, newReferent);
     return newReference;
   } else {
@@ -150,8 +150,8 @@ void ReferenceQueue::scan(ReferenceThread* th, uintptr_t closure) {
   uint32 NewIndex = 0;
 
   for (uint32 i = 0; i < CurrentIndex; ++i) {
-    gc* obj = References[i];
-    gc* res = processReference(obj, th, closure);
+		mvm::gc* obj = References[i];
+		mvm::gc* res = processReference(obj, th, closure);
     if (res) References[NewIndex++] = res;
   }
 
@@ -160,11 +160,11 @@ void ReferenceQueue::scan(ReferenceThread* th, uintptr_t closure) {
 
 
 FinalizerThread::FinalizerThread(Jnjvm* vm) : MutatorThread(vm->vmkit) {
-  FinalizationQueue = new gc*[INITIAL_QUEUE_SIZE];
+  FinalizationQueue = new mvm::gc*[INITIAL_QUEUE_SIZE];
   QueueLength = INITIAL_QUEUE_SIZE;
   CurrentIndex = 0;
 
-  ToBeFinalized = new gc*[INITIAL_QUEUE_SIZE];
+  ToBeFinalized = new mvm::gc*[INITIAL_QUEUE_SIZE];
   ToBeFinalizedLength = INITIAL_QUEUE_SIZE;
   CurrentFinalizedIndex = 0;
 
@@ -174,7 +174,7 @@ FinalizerThread::FinalizerThread(Jnjvm* vm) : MutatorThread(vm->vmkit) {
 void FinalizerThread::growFinalizationQueue() {
   if (CurrentIndex >= QueueLength) {
     uint32 newLength = QueueLength * GROW_FACTOR;
-    gc** newQueue = new gc*[newLength];
+		mvm::gc** newQueue = new mvm::gc*[newLength];
     if (!newQueue) {
       fprintf(stderr, "I don't know how to handle finalizer overflows yet!\n");
       abort();
@@ -189,7 +189,7 @@ void FinalizerThread::growFinalizationQueue() {
 void FinalizerThread::growToBeFinalizedQueue() {
   if (CurrentFinalizedIndex >= ToBeFinalizedLength) {
     uint32 newLength = ToBeFinalizedLength * GROW_FACTOR;
-    gc** newQueue = new gc*[newLength];
+		mvm::gc** newQueue = new mvm::gc*[newLength];
     if (!newQueue) {
       fprintf(stderr, "I don't know how to handle finalizer overflows yet!\n");
       abort();
@@ -202,7 +202,7 @@ void FinalizerThread::growToBeFinalizedQueue() {
 }
 
 
-void FinalizerThread::addFinalizationCandidate(gc* obj) {
+void FinalizerThread::addFinalizationCandidate(mvm::gc* obj) {
   llvm_gcroot(obj, 0);
   FinalizationQueueLock.acquire();
  
@@ -218,7 +218,7 @@ void FinalizerThread::addFinalizationCandidate(gc* obj) {
 void FinalizerThread::scanFinalizationQueue(uintptr_t closure) {
   uint32 NewIndex = 0;
   for (uint32 i = 0; i < CurrentIndex; ++i) {
-    gc* obj = FinalizationQueue[i];
+		mvm::gc* obj = FinalizationQueue[i];
 
     if (!mvm::Collector::isLive(obj, closure)) {
       obj = mvm::Collector::retainForFinalize(FinalizationQueue[i], closure);
@@ -238,7 +238,7 @@ void FinalizerThread::scanFinalizationQueue(uintptr_t closure) {
 
 typedef void (*destructor_t)(void*);
 
-void invokeFinalizer(gc* _obj) {
+void invokeFinalizer(mvm::gc* _obj) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* obj = (JavaObject*)_obj;
   llvm_gcroot(obj, 0);
@@ -247,7 +247,7 @@ void invokeFinalizer(gc* _obj) {
   meth->invokeIntVirtualBuf(vm, cl, obj, 0);
 }
 
-void invokeFinalize(gc* res) {
+void invokeFinalize(mvm::gc* res) {
   llvm_gcroot(res, 0);
   TRY {
     invokeFinalizer(res);
@@ -256,7 +256,7 @@ void invokeFinalize(gc* res) {
 }
 
 void FinalizerThread::finalizerStart(FinalizerThread* th) {
-  gc* res = NULL;
+	mvm::gc* res = NULL;
   llvm_gcroot(res, 0);
 
   while (true) {
@@ -275,7 +275,7 @@ void FinalizerThread::finalizerStart(FinalizerThread* th) {
       th->FinalizationQueueLock.release();
       if (!res) break;
 
-      VirtualTable* VT = res->getVirtualTable();
+			mvm::VirtualTable* VT = res->getVirtualTable();
       if (VT->operatorDelete) {
         destructor_t dest = (destructor_t)VT->destructor;
         dest(res);

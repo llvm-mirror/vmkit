@@ -137,9 +137,9 @@ private:
   virtual void scanSoftReferencesQueue(uintptr_t closure);
   virtual void scanPhantomReferencesQueue(uintptr_t closure);
   virtual void scanFinalizationQueue(uintptr_t closure);
-  virtual void addFinalizationCandidate(gc* obj);
-  virtual size_t getObjectSize(gc* obj);
-  virtual const char* getObjectTypeName(gc* obj);
+  virtual void addFinalizationCandidate(mvm::gc* obj);
+  virtual size_t getObjectSize(mvm::gc* obj);
+  virtual const char* getObjectTypeName(mvm::gc* obj);
 
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
@@ -368,7 +368,7 @@ public:
 
 	// asjavaException - convert from gc to JavaObject. Will be used to identify the points
 	// where we must test the original vm of the exception
-	static JavaObject* asJavaException(gc* o) { llvm_gcroot(o, 0); return (JavaObject*)o; } 
+	static JavaObject* asJavaException(mvm::gc* o) { llvm_gcroot(o, 0); return (JavaObject*)o; } 
 };
 
 } // end namespace j3

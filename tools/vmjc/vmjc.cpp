@@ -36,7 +36,7 @@
 #include "llvm/Target/TargetMachine.h"
 
 
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "mvm/JIT.h"
 #include "mvm/VMKit.h"
 #include "mvm/VirtualMachine.h"

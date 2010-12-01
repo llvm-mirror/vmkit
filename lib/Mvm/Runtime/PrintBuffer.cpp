@@ -10,7 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "MvmGC.h"
+#include "mvm/GC.h"
 #include "mvm/PrintBuffer.h"
 
 using namespace mvm;

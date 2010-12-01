@@ -669,7 +669,7 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
                                             ClassBytes* bytes) {
-  gc* excp = NULL;
+	mvm::gc* excp = NULL;
   llvm_gcroot(excp, 0);
   UserClass* res = NULL;
   lock.lock();

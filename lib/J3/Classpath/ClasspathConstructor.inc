@@ -78,7 +78,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
                                ArrayObject* args,
                                JavaObject* Clazz, jint index) {
   JavaObject* res = 0;
-  gc* excp = 0;
+	mvm::gc* excp = 0;
 	JavaObject* jexcp;
 	
   llvm_gcroot(cons, 0);
