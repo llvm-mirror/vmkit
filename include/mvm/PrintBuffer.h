@@ -14,7 +14,6 @@
 #include <cstring> // memcpy
 
 #include "types.h"
-#include "mvm/Object.h"
 #include "mvm/UTF8.h"
 
 namespace mvm {

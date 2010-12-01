@@ -11,7 +11,6 @@
 #include <cstdlib>
 
 #include "MvmGC.h"
-#include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
 
 using namespace mvm;

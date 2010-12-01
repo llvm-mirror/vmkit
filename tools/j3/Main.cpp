@@ -9,7 +9,6 @@
 
 #include "MvmGC.h"
 #include "mvm/JIT.h"
-#include "mvm/Object.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 

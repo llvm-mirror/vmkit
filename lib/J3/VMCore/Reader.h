@@ -10,8 +10,6 @@
 #ifndef JNJVM_READER_H
 #define JNJVM_READER_H
 
-#include "mvm/Object.h"
-
 #include "types.h"
 
 #include "JavaArray.h"

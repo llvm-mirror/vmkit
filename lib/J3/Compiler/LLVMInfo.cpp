@@ -16,7 +16,7 @@
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Target/TargetData.h"
 
-
+#include "MvmGC.h"
 #include "mvm/JIT.h"
 
 #include "JavaConstantPool.h"
