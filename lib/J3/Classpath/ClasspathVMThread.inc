@@ -32,13 +32,13 @@ jclass clazz
   return JavaThread::get()->currentThread();
 }
 
-void start(JavaThread* thread) {
-
+void start(mvm::Thread* mut) {
   JavaObjectVMThread* vmThread = NULL;
   JavaObject* javaThread = NULL;
   llvm_gcroot(vmThread, 0);
   llvm_gcroot(javaThread, 0);
 
+	JavaThread* thread = JavaThread::j3Thread(mut);
   Jnjvm* vm = thread->getJVM();
   // Wait some time to let the creator initialise these fields.
   while ((thread->javaThread == NULL) || (thread->vmThread == NULL)) {
