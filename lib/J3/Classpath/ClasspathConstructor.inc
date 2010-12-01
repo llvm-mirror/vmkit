@@ -78,7 +78,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
                                ArrayObject* args,
                                JavaObject* Clazz, jint index) {
   JavaObject* res = 0;
-  JavaObject* excp = 0;
+  gc* excp = 0;
 
   llvm_gcroot(cons, 0);
   llvm_gcroot(args, 0);
@@ -120,19 +120,21 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       TRY {
         meth->invokeIntSpecialBuf(vm, cl, res, buf);
       } CATCH {
-        excp = JavaThread::get()->getPendingException();
+        excp = mvm::Thread::get()->getPendingException();
       } END_CATCH;
 			mvm::Thread* mut = mvm::Thread::get();
-      JavaThread* th = JavaThread::j3Thread(mut);
       if (excp) {
-        if (JavaObject::getClass(excp)->isAssignableFrom(vm->upcalls->newException)) {
+				JavaObject* jexcp;
+				llvm_gcroot(jexcp, 0);
+				jexcp = Jnjvm::asJavaException(excp);
+        if (jexcp && JavaObject::getClass(jexcp)->isAssignableFrom(vm->upcalls->newException)) {
           mut->clearPendingException();
           // If it's an exception, we encapsule it in an
           // invocationTargetException
-          vm->invocationTargetException(excp);
+          vm->invocationTargetException(jexcp);
         } else {
           // If it's an error, throw it again.
-          th->throwIt();
+          mut->throwIt();
         }
         return NULL;
       }

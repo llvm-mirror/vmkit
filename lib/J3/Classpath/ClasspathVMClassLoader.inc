@@ -157,7 +157,7 @@ JavaObject* pd) {
     res = cl->getClassDelegatee(vm, pd);
   } else {
     excp = vm->CreateLinkageError("duplicate class definition");
-    JavaThread::get()->throwException(excp);
+    mvm::Thread::get()->setPendingException(excp)->throwIt();
   }
 
   END_NATIVE_EXCEPTION

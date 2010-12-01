@@ -669,7 +669,7 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
 
 UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
                                             ClassBytes* bytes) {
-  JavaObject* excp = NULL;
+  gc* excp = NULL;
   llvm_gcroot(excp, 0);
   UserClass* res = NULL;
   lock.lock();
@@ -694,12 +694,13 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
       classes->lock.unlock();
       assert(success && "Could not add class in map");
     } CATCH {
-      excp = JavaThread::get()->getPendingException();
-      mvm::Thread::get()->clearPendingException();    
+			mvm::Thread* mut = mvm::Thread::get();
+      excp = mut->getPendingException();
+      mut->clearPendingException();    
     } END_CATCH;
   }
   if (excp != NULL) {
-    JavaThread::get()->throwException(excp);
+    mvm::Thread::get()->setPendingException(excp)->throwIt();
   }
   lock.unlock();
 

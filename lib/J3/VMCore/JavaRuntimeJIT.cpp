@@ -52,8 +52,8 @@ extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
   // Since the function is marked readnone, LLVM may move it after the
   // exception check. Therefore, we trick LLVM to check the return value of the
   // function.
-#define hack_check(type)																				\
-		JavaObject* obj = JavaThread::get()->getPendingException(); \
+#define hack_check(type)																							\
+		gc* obj = mvm::Thread::get()->getPendingException();							\
 		if (obj) return (type)obj;
 
 	hack_check(void*);
@@ -372,7 +372,7 @@ extern "C" void j3JavaObjectRelease(JavaObject* obj) {
 // Does not call any Java code. Can not yield a GC.
 extern "C" void j3ThrowException(JavaObject* obj) {
   llvm_gcroot(obj, 0);
-  return JavaThread::get()->throwException(obj);
+  return mvm::Thread::get()->setPendingException(obj)->throwIt();
 }
 
 // Creates a Java object and then throws it.
@@ -387,7 +387,8 @@ extern "C" JavaObject* j3NullPointerException() {
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
 
   return exc;
 }
@@ -404,7 +405,8 @@ extern "C" JavaObject* j3NegativeArraySizeException(sint32 val) {
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
 
   return exc;
 }
@@ -421,7 +423,8 @@ extern "C" JavaObject* j3OutOfMemoryError(sint32 val) {
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
 
   return exc;
 }
@@ -438,7 +441,8 @@ extern "C" JavaObject* j3StackOverflowError() {
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
 
   return exc;
 }
@@ -455,7 +459,8 @@ extern "C" JavaObject* j3ArithmeticException() {
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
 
   return exc;
 }
@@ -475,7 +480,8 @@ extern "C" JavaObject* j3ClassCastException(JavaObject* obj,
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
 
   return exc;
 }
@@ -495,7 +501,8 @@ extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
   
   return exc;
 }
@@ -512,7 +519,8 @@ extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT,
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
   
   return exc;
 }
@@ -530,7 +538,8 @@ extern "C" void j3ThrowExceptionFromJIT() {
 
   END_NATIVE_EXCEPTION
 
-	th->setPendingException(exc)->throwFromNative();
+	th->mut->setPendingException(exc);
+	th->throwFromNative();
   
 }
 

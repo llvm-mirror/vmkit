@@ -98,7 +98,8 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
                           ArrayObject* args, JavaObject* Cl, jint index) {
 
   JavaObject* res = 0;
-  JavaObject* exc = 0;
+  JavaObject* jexc = 0;
+  gc* exc = 0;
   
   llvm_gcroot(res, 0);
   llvm_gcroot(Meth, 0);
@@ -106,6 +107,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
   llvm_gcroot(args, 0);
   llvm_gcroot(Cl, 0);
   llvm_gcroot(exc, 0);
+  llvm_gcroot(jexc, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
 
@@ -164,17 +166,18 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
         VAR = meth->invoke##TYPE##StaticBuf(vm, cl, buf);								\
       }																																	\
     } CATCH {																														\
-      exc = JavaThread::get()->getPendingException();										\
+      exc = mvm::Thread::get()->getPendingException();									\
     } END_CATCH;																												\
-		mvm::Thread* mut = mvm::Thread::get();															\
-		JavaThread*  th = JavaThread::j3Thread(mut);												\
+																																				\
     if (exc) {																													\
-      if (JavaObject::getClass(exc)->isAssignableFrom(									\
+			mvm::Thread* mut = mvm::Thread::get();														\
+			jexc = Jnjvm::asJavaException(exc);																\
+      if (jexc && JavaObject::getClass(jexc)->isAssignableFrom(					\
 																											vm->upcalls->newException)) {	\
         mut->clearPendingException();																		\
-				th->getJVM()->invocationTargetException(exc);										\
+				JavaThread::j3Thread(mut)->getJVM()->invocationTargetException(jexc); \
       } else {																													\
-        th->throwIt();																									\
+        mut->throwIt();																									\
       }																																	\
       return NULL;																											\
     }

@@ -93,7 +93,7 @@ public:
   ///
 	Jnjvm *jnjvm;
 
-  JavaObject** pushJNIRef(JavaObject* obj) {
+  gc** pushJNIRef(gc* obj) {
     llvm_gcroot(obj, 0);
     if (!obj) return 0;
    
@@ -152,28 +152,6 @@ public:
     return javaThread;
   }
 
-  /// setException - only set the pending exception
-	///
-	JavaThread* setPendingException(JavaObject *obj);
- 
-  /// throwException - Throw the given exception in the current thread.
-  ///
-  void throwException(JavaObject* obj);
-
-  /// throwIt - Throw a pending exception.
-  ///
-  void throwIt();
-
-  /// clearPendingException - Clear the pending exception.
-	//
-	void clearPendingException() { mut->pendingException = 0; }
-  
-  /// getPendingException - Return the pending exception.
-  ///
-  JavaObject* getPendingException() {
-    return (JavaObject*)mut->pendingException;
-  }
-
   /// throwFromJNI - Throw an exception after executing JNI code.
   ///
   void throwFromJNI(void* SP) {
@@ -185,14 +163,14 @@ public:
   ///
   void throwFromNative() {
 #ifdef DWARF_EXCEPTIONS
-    throwIt();
+    mut->throwIt();
 #endif
   }
   
   /// throwFromJava - Throw an exception after executing Java code.
   ///
   void throwFromJava() {
-    throwIt();
+    mut->throwIt();
   }
 
   /// startJava - Interesting, but actually does nothing :)

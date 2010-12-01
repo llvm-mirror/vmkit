@@ -356,6 +356,10 @@ public:
   /// mapping the initial thread.
   ///
   void loadBootstrap();
+
+	// asjavaException - convert from gc to JavaObject. Will be used to identify the points
+	// where we must test the original vm of the exception
+	static JavaObject* asJavaException(gc* o) { llvm_gcroot(o, 0); return (JavaObject*)o; } 
 };
 
 } // end namespace j3

@@ -104,7 +104,16 @@ void Thread::endUnknownFrame() {
 #define SELF_HANDLE 0
 #endif
 
-void Thread::internalThrowException() {
+Thread* Thread::setPendingException(gc *obj) {
+	llvm_gcroot(obj, 0);
+  assert(pendingException == 0 && "pending exception already there?");
+	pendingException = obj;
+	return this;
+}
+
+void Thread::throwIt() {
+  assert(pendingException);
+
 #ifdef RUNTIME_DWARF_EXCEPTIONS
   // Use dlsym instead of getting the functions statically with extern "C"
   // because gcc compiles exceptions differently.

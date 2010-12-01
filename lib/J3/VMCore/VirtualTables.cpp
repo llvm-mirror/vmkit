@@ -336,7 +336,7 @@ void JavaThread::tracer(uintptr_t closure) {
   JNILocalReferences* end = localJNIRefs;
   while (end != NULL) {
     for (uint32 i = 0; i < end->length; ++i) {
-      JavaObject** obj = end->localReferences + i;
+      gc** obj = end->localReferences + i;
       mvm::Collector::markAndTraceRoot(obj, closure);
     }
     end = end->prev;

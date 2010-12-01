@@ -46,7 +46,7 @@ const unsigned int Jnjvm::Magic = 0xcafebabe;
 /// initialiseClass - Java class initialisation. Java specification §2.17.5.
 
 void UserClass::initialiseClass(Jnjvm* vm) {
-  JavaObject* exc = NULL;
+  gc* exc = NULL;
   JavaObject* obj = NULL;
   llvm_gcroot(exc, 0);
   llvm_gcroot(obj, 0);
@@ -147,9 +147,8 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         release();
       } END_CATCH;
 
-			JavaThread* th = JavaThread::get();
-      if (th->getPendingException() != NULL) {
-        th->throwIt();
+      if (mut->getPendingException() != NULL) {
+        mut->throwIt();
         return;
       }
     }
@@ -183,9 +182,9 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       TRY {
         meth->invokeIntStatic(vm, cl);
       } CATCH {
-        exc = JavaThread::get()->getPendingException();
+        exc = mut->getPendingException();
         assert(exc && "no exception?");
-				mvm::Thread::get()->clearPendingException();
+				mut->clearPendingException();
       } END_CATCH;
     }
 
@@ -209,11 +208,13 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //     ExceptionInInitializerError cannot be created because an
     //     OutOfMemoryError occurs, then instead use an OutOfMemoryError object
     //     in place of E in the following step.
-		JavaThread* th = JavaThread::get();
-    if (JavaObject::getClass(exc)->isAssignableFrom(vm->upcalls->newException)) {
+		JavaObject* jexc;
+		llvm_gcroot(jexc, 0);
+		jexc = Jnjvm::asJavaException(exc);
+    if (jexc && JavaObject::getClass(jexc)->isAssignableFrom(vm->upcalls->newException)) {
       Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
-      Jnjvm* vm = th->getJVM();
+      Jnjvm* vm = JavaThread::get()->getJVM();
       obj = clExcp->doNew(vm);
       if (obj == NULL) {
         fprintf(stderr, "implement me");
@@ -232,7 +233,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     setOwnerClass(0);
     broadcastClass();
     release();
-    th->throwException(exc);
+    mut->setPendingException(exc)->throwIt();
     return;
   }
 }
@@ -245,7 +246,7 @@ void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init,
 
   obj = cl->doNew(this);
   init->invokeIntSpecial(this, cl, obj, &excp);
-  JavaThread::get()->throwException(obj);
+  mvm::Thread::get()->setPendingException(obj)->throwIt();
 }
 
 JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
@@ -277,7 +278,7 @@ void Jnjvm::error(UserClass* cl, JavaMethod* init, JavaString* str) {
   llvm_gcroot(obj, 0);
   llvm_gcroot(str, 0);
   obj = CreateError(cl, init, str);
-  JavaThread::get()->throwException(obj);
+  mvm::Thread::get()->setPendingException(obj)->throwIt();
 }
 
 void Jnjvm::arrayStoreException() {
@@ -1175,7 +1176,7 @@ void Jnjvm::loadBootstrap() {
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
-  JavaObject* exc = NULL;
+  gc* exc = NULL;
   JavaObject* obj = NULL;
   JavaObject* group = NULL;
   
@@ -1208,11 +1209,12 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   } CATCH {
   } END_CATCH;
 
-  exc = JavaThread::get()->getPendingException();
+	mvm::Thread* mut = mvm::Thread::get();
+  exc = mut->getPendingException();
 
   if (exc != NULL) {
     JavaThread* th   = JavaThread::get();
-    th->clearPendingException();
+    mut->clearPendingException();
     obj = th->currentThread();
     group = upcalls->group->getInstanceObjectField(obj);
     TRY {
@@ -1262,7 +1264,7 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   JavaString* str = NULL;
   JavaObject* instrumenter = NULL;
   ArrayObject* args = NULL;
-  JavaObject* exc = NULL;
+  gc* exc = NULL;
 
   llvm_gcroot(str, 0);
   llvm_gcroot(instrumenter, 0);
@@ -1286,12 +1288,15 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   TRY {
     vm->loadBootstrap();
   } CATCH {
-    exc = JavaThread::get()->getPendingException();
+    exc = mvm::Thread::get()->getPendingException();
   } END_CATCH;
 
   if (exc != NULL) {
+		JavaObject *jexc;
+		llvm_gcroot(jexc, 0);
+		jexc = Jnjvm::asJavaException(exc);
     fprintf(stderr, "Exception %s while bootstrapping VM.",
-        UTF8Buffer(JavaObject::getClass(exc)->name).cString());
+						exc ? UTF8Buffer(JavaObject::getClass(jexc)->name).cString() : " foreign exception");
   } else {
     ClArgumentsInfo& info = vm->argumentsInfo;
   

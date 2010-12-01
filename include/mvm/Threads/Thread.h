@@ -265,9 +265,24 @@ public:
 
   /// clearPendingException - Clear any pending exception of the current thread.
   void clearPendingException() {
+		pendingException = 0;
 #ifdef RUNTIME_DWARF_EXCEPTIONS
     internalPendingException = 0;
 #endif
+  }
+
+  /// setException - only set the pending exception
+	///
+	Thread* setPendingException(gc *obj);
+
+  /// throwIt - Throw a pending exception.
+  ///
+  void throwIt();
+
+  /// getPendingException - Return the pending exception.
+  ///
+  gc* getPendingException() {
+    return pendingException;
   }
 
   bool isMvmThread() {
@@ -345,8 +360,6 @@ public:
   ///
   ExceptionBuffer* lastExceptionBuffer;
 #endif
-
-  void internalThrowException();
 
   void startKnownFrame(KnownFrame& F) __attribute__ ((noinline));
   void endKnownFrame();

@@ -63,23 +63,6 @@ JavaThread::~JavaThread() {
 #endif
 }
 
-JavaThread* JavaThread::setPendingException(JavaObject *obj) {
-	llvm_gcroot(obj, 0);
-  assert(mvm::Thread::get()->pendingException == 0 && "pending exception already there?");
-	mvm::Thread::get()->pendingException = obj;
-}
-
-void JavaThread::throwIt() {
-  assert(mvm::Thread::get()->pendingException);
-	mvm::Thread::get()->internalThrowException();
-}
-
-void JavaThread::throwException(JavaObject* obj) {
-  llvm_gcroot(obj, 0);
-	setPendingException(obj);
-	throwIt();
-}
-
 void JavaThread::startJNI() {
   // Interesting, but no need to do anything.
 }
@@ -158,8 +141,8 @@ void JavaThread::printJavaBacktrace() {
   }
 }
 
-JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,
-                                                 JavaObject* obj) {
+gc** JNILocalReferences::addJNIReference(JavaThread* th,
+                                                 gc* obj) {
   llvm_gcroot(obj, 0);
   
   if (length == MAXIMUM_REFERENCES) {

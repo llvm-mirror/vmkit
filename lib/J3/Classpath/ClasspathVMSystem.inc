@@ -38,17 +38,17 @@ jint len) {
   assert(src->getVirtualTable());
   assert(dst->getVirtualTable());
 
-  JavaThread* th = JavaThread::get();
-  Jnjvm *vm = th->getJVM();
+	mvm::Thread* mut = mvm::Thread::get();
+  Jnjvm *vm = JavaThread::j3Thread(mut)->getJVM();
 
   if (src == NULL || dst == NULL) {
-    th->setPendingException(vm->CreateNullPointerException());
+    mut->setPendingException(vm->CreateNullPointerException());
     return;
   }
   
   if (!(JavaObject::getClass(src)->isArray() &&
         JavaObject::getClass(dst)->isArray())) {
-    th->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
+    mut->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
     return;
   }
   
@@ -61,24 +61,24 @@ jint len) {
   sint32 dstSize = JavaArray::getSize(dst);
 
   if (len > srcSize) {
-    th->setPendingException(vm->CreateIndexOutOfBoundsException(len));
+    mut->setPendingException(vm->CreateIndexOutOfBoundsException(len));
   } else if (len > dstSize) {
-    th->setPendingException(vm->CreateIndexOutOfBoundsException(len));
+    mut->setPendingException(vm->CreateIndexOutOfBoundsException(len));
   } else if (len + sstart > srcSize) {
-    th->setPendingException(vm->CreateIndexOutOfBoundsException(len + sstart));
+    mut->setPendingException(vm->CreateIndexOutOfBoundsException(len + sstart));
   } else if (len + dstart > dstSize) {
-    th->setPendingException(vm->CreateIndexOutOfBoundsException(len + dstart));
+    mut->setPendingException(vm->CreateIndexOutOfBoundsException(len + dstart));
   } else if (dstart < 0) {
-    th->setPendingException(vm->CreateIndexOutOfBoundsException(dstart));
+    mut->setPendingException(vm->CreateIndexOutOfBoundsException(dstart));
   } else if (sstart < 0) {
-    th->setPendingException(vm->CreateIndexOutOfBoundsException(sstart));
+    mut->setPendingException(vm->CreateIndexOutOfBoundsException(sstart));
   } else if (len < 0) {
-    th->setPendingException(vm->CreateIndexOutOfBoundsException(len));
+    mut->setPendingException(vm->CreateIndexOutOfBoundsException(len));
   } else if ((dstType->isPrimitive() || srcType->isPrimitive()) &&
              srcType != dstType) {
-    th->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
+    mut->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
   }
-  if (th->getPendingException() != NULL) return;
+  if (mut->getPendingException() != NULL) return;
   
   jint i = sstart;
   jint length = len;
@@ -104,7 +104,7 @@ jint len) {
   memmove(ptrDst, ptrSrc, length << logSize);
 
   if (doThrow) {
-    th->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
+    mut->setPendingException(vm->CreateArrayStoreException((JavaVirtualTable*)dst->getVirtualTable()));
   }
 }
 
