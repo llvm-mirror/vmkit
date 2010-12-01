@@ -79,12 +79,14 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
                                JavaObject* Clazz, jint index) {
   JavaObject* res = 0;
   gc* excp = 0;
-
+	JavaObject* jexcp;
+	
   llvm_gcroot(cons, 0);
   llvm_gcroot(args, 0);
   llvm_gcroot(Clazz, 0);
   llvm_gcroot(res, 0);
   llvm_gcroot(excp, 0);
+	llvm_gcroot(jexcp, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
@@ -124,8 +126,6 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       } END_CATCH;
 			mvm::Thread* mut = mvm::Thread::get();
       if (excp) {
-				JavaObject* jexcp;
-				llvm_gcroot(jexcp, 0);
 				jexcp = Jnjvm::asJavaException(excp);
         if (jexcp && JavaObject::getClass(jexcp)->isAssignableFrom(vm->upcalls->newException)) {
           mut->clearPendingException();

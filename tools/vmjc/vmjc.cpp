@@ -38,6 +38,7 @@
 
 #include "MvmGC.h"
 #include "mvm/JIT.h"
+#include "mvm/VMKit.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
@@ -185,8 +186,9 @@ int main(int argc, char **argv) {
   if (DisableStubs) Comp->generateStubs = false;
   if (AssumeCompiled) Comp->assumeCompiled = true;
   if (DisableCooperativeGC) Comp->disableCooperativeGC();
-    
-  Jnjvm* vm = new(allocator, "Bootstrap loader") Jnjvm(allocator, loader);
+	
+	mvm::VMKit* vmkit = new(allocator, "VMKit") mvm::VMKit(allocator);
+  Jnjvm* vm = new(allocator, "Bootstrap loader") Jnjvm(allocator, vmkit, loader);
   
   for (std::vector<std::string>::iterator i = Properties.begin(),
        e = Properties.end(); i != e; ++i) {

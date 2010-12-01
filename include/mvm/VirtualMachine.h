@@ -21,6 +21,7 @@
 namespace mvm {
 
 class MethodInfo;
+class VMKit;
 
 class FunctionMap {
 public:
@@ -53,10 +54,11 @@ public:
 ///
 class VirtualMachine : public mvm::PermanentObject {
 protected:
-  VirtualMachine(mvm::BumpPtrAllocator &Alloc) :
+  VirtualMachine(mvm::BumpPtrAllocator &Alloc, mvm::VMKit* vmk) :
 		  allocator(Alloc) {
     mainThread = 0;
     NumberOfThreads = 0;
+		vmkit = vmk;
   }
 
   virtual ~VirtualMachine() {
@@ -84,6 +86,9 @@ public:
   /// ThreadLock - Lock to create or destroy a new thread.
   ///
   mvm::SpinLock ThreadLock;
+
+	/// vmkit - a pointer to vmkit that contains information on all the vms
+	mvm::VMKit* vmkit;
   
   /// setMainThread - Set the main thread of this VM.
   ///

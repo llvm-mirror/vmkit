@@ -19,6 +19,7 @@
 #include "debug.h"
 
 #include "mvm/Threads/Thread.h"
+#include "mvm/VMKit.h"
 #include "MvmGC.h"
 
 #include "ClasspathReflect.h"
@@ -48,6 +49,9 @@ const unsigned int Jnjvm::Magic = 0xcafebabe;
 void UserClass::initialiseClass(Jnjvm* vm) {
   gc* exc = NULL;
   JavaObject* obj = NULL;
+	JavaObject* jexc;
+	
+	llvm_gcroot(jexc, 0);
   llvm_gcroot(exc, 0);
   llvm_gcroot(obj, 0);
   
@@ -208,8 +212,6 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //     ExceptionInInitializerError cannot be created because an
     //     OutOfMemoryError occurs, then instead use an OutOfMemoryError object
     //     in place of E in the following step.
-		JavaObject* jexc;
-		llvm_gcroot(jexc, 0);
 		jexc = Jnjvm::asJavaException(exc);
     if (jexc && JavaObject::getClass(jexc)->isAssignableFrom(vm->upcalls->newException)) {
       Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
@@ -1265,7 +1267,9 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   JavaObject* instrumenter = NULL;
   ArrayObject* args = NULL;
   gc* exc = NULL;
-
+	JavaObject *jexc;
+	
+	llvm_gcroot(jexc, 0);
   llvm_gcroot(str, 0);
   llvm_gcroot(instrumenter, 0);
   llvm_gcroot(args, 0);
@@ -1292,8 +1296,6 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   } END_CATCH;
 
   if (exc != NULL) {
-		JavaObject *jexc;
-		llvm_gcroot(jexc, 0);
 		jexc = Jnjvm::asJavaException(exc);
     fprintf(stderr, "Exception %s while bootstrapping VM.",
 						exc ? UTF8Buffer(JavaObject::getClass(jexc)->name).cString() : " foreign exception");
@@ -1341,8 +1343,8 @@ void Jnjvm::runApplication(int argc, char** argv) {
   mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 
-Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) : 
-  VirtualMachine(Alloc), lockSystem(Alloc) {
+Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JnjvmBootstrapLoader* loader) : 
+  VirtualMachine(Alloc, vmkit), lockSystem(Alloc) {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
@@ -1464,7 +1466,6 @@ const char* Jnjvm::getObjectTypeName(gc* object) {
 // Helper function to run J3 without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   mvm::Collector::initialise();
- 
   mvm::ThreadAllocator allocator; 
   char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));
   memcpy(newArgv + 1, argv, argc * sizeof(char*));
@@ -1472,10 +1473,11 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   newArgv[1] = mainClass;
  
   mvm::BumpPtrAllocator Allocator;
+	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
   JavaCompiler* Comp = new JavaCompiler();
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, loader);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
 
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();

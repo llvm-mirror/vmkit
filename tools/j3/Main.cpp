@@ -9,6 +9,7 @@
 
 #include "MvmGC.h"
 #include "mvm/JIT.h"
+#include "mvm/VMKit.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
 
@@ -39,7 +40,8 @@ int main(int argc, char **argv, char **envp) {
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, loader);
+	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
  
   // Run the application. 
   vm->runApplication(argc, argv);

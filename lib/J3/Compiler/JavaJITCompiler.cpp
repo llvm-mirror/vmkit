@@ -26,6 +26,7 @@
 
 #include "MvmGC.h"
 #include "mvm/VirtualMachine.h"
+#include "mvm/VMKit.h"
 
 #include "JavaClass.h"
 #include "JavaConstantPool.h"
@@ -417,7 +418,6 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
    
   mvm::MvmModule::initialise();
   mvm::Collector::initialise();
- 
   mvm::ThreadAllocator allocator;
   char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));
   memcpy(newArgv + 1, argv, argc * sizeof(void*));
@@ -425,10 +425,11 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   newArgv[1] = mainClass;
 
   mvm::BumpPtrAllocator Allocator;
+	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, loader);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();
   
