@@ -152,14 +152,14 @@ private:
   /// getCXXExceptionPtr - Emit code to get a pointer to internalPendingException.
 	llvm::Value* getCXXExceptionPtr(llvm::Value* mutatorThreadPtr);
 
+  /// getPendingExceptionPtr - Emit code to get a pointer to the Java pending exception
+	llvm::Value* getPendingExceptionPtr(llvm::Value* mutatorThreadPtr);
+
   /// getJavaThreadPtr - Emit code to get a pointer to the current JavaThread.
 	llvm::Value* getJavaThreadPtr(llvm::Value* mutatorThreadPtr);
 
   /// getJNIEnvPtr - Emit code to get a pointer to JNIEnv
 	llvm::Value* getJNIEnvPtr(llvm::Value* javaThreadPtr);
-
-  /// getJavaExceptionPtr - Emit code to get a pointer to the Java pending exception
-	llvm::Value* getJavaExceptionPtr(llvm::Value* javaThreadPtr);
 	
 
 //===------------------------- Debugging support --------------------------===//

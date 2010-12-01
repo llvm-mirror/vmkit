@@ -20,7 +20,8 @@
 ;;; field 10: void*  lastKnownFrame
 ;;; field 11: void*  lastExceptionBuffer
 ;;; field 12: void*  vmData
-%Thread       = type { %CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*, i8* }
+;;; field 13: gc*    pendingException
+%Thread       = type { %CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*, i8*, i8* }
 %VMThreadData = type { %VT*, %Thread* }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

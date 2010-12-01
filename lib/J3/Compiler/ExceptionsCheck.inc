@@ -8,7 +8,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+    Value* exceptionPtr = getPendingExceptionPtr(getMutatorThreadPtr());
     
     // Get the Java exception.
     Value* obj = 0;
@@ -28,13 +28,13 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
       // Make the load volatile to force the instruction after the call.
       // Otherwise, LLVM will merge the load with a previous load because
       // the function is readnone.
-      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
+      obj = new LoadInst(exceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
-      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+      obj = new LoadInst(exceptionPtr, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
     }
 
@@ -61,7 +61,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
   res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+    Value* exceptionPtr = getPendingExceptionPtr(getMutatorThreadPtr());
     
     // Get the Java exception.
     Value* obj = 0;
@@ -74,13 +74,13 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
+      obj = new LoadInst(exceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
-      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+      obj = new LoadInst(exceptionPtr, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
     }
 
@@ -108,7 +108,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
   res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+    Value* exceptionPtr = getPendingExceptionPtr(getMutatorThreadPtr());
     
     // Get the Java exception.
     Value* obj = 0;
@@ -121,13 +121,13 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
+      obj = new LoadInst(exceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
-      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+      obj = new LoadInst(exceptionPtr, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
     }
   
@@ -152,7 +152,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
   res->setDebugLoc(DL);
   
   if (TheCompiler->hasExceptionsEnabled()) {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+    Value* exceptionPtr = getPendingExceptionPtr(getMutatorThreadPtr());
     
     // Get the Java exception.
     Value* obj = 0;
@@ -165,13 +165,13 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
+      obj = new LoadInst(exceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
       test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
     } else {
-      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+      obj = new LoadInst(exceptionPtr, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
     }
 
@@ -210,9 +210,9 @@ void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
 
 void JavaJIT::throwException(Value* obj) {
   JITVerifyNull(obj);
-	Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+	Value* exceptionPtr = getPendingExceptionPtr(getMutatorThreadPtr());
 
-  new StoreInst(obj, javaExceptionPtr, currentBlock);
+  new StoreInst(obj, exceptionPtr, currentBlock);
   if (currentExceptionBlock != endExceptionBlock) {
     Instruction* insn = currentExceptionBlock->begin();
     PHINode* node = dyn_cast<PHINode>(insn);
@@ -458,10 +458,10 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     currentBlock = cur->javaHandler;
 
     // First thing in the handler: clear the exception.
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+    Value* exceptionPtr = getPendingExceptionPtr(getMutatorThreadPtr());
     
     // Clear exceptions.
-    new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr,
+    new StoreInst(intrinsics->JavaObjectNullConstant, exceptionPtr,
                   currentBlock);
 
 #if defined(SERVICE)

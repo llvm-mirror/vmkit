@@ -305,6 +305,15 @@ llvm::Value* JavaJIT::getCXXExceptionPtr(llvm::Value* mutatorThreadPtr) {
 	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
 }
 
+llvm::Value* JavaJIT::getPendingExceptionPtr(llvm::Value* mutatorThreadPtr) { 
+	Value* GEP[3] = { intrinsics->constantZero,
+										intrinsics->OffsetThreadInMutatorThreadConstant,
+										intrinsics->OffsetPendingExceptionInThreadConstant };
+    
+	Value* res = GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+  return new BitCastInst(res, intrinsics->JavaObjectPtrType, "", currentBlock);
+}
+
 llvm::Value* JavaJIT::getJavaThreadPtr(llvm::Value* mutatorThreadPtr) { 
 	Value* GEP[3] = { intrinsics->constantZero,
 										intrinsics->OffsetThreadInMutatorThreadConstant,
@@ -321,13 +330,6 @@ llvm::Value* JavaJIT::getJNIEnvPtr(llvm::Value* javaThreadPtr) {
     
 	Value* res = GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
 	return new BitCastInst(res, intrinsics->ptrType, "", currentBlock);
-}
-
-llvm::Value* JavaJIT::getJavaExceptionPtr(llvm::Value* javaThreadPtr) { 
-	Value* GEP[2] = { intrinsics->constantZero,
-										intrinsics->OffsetJavaExceptionInJavaThreadConstant };
-    
-	return GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
 }
 
 

@@ -21,7 +21,6 @@ using namespace j3;
 
 JavaThread::JavaThread(mvm::MutatorThread* mut, Jnjvm* isolate)
 	: mvm::VMThreadData(mut) {
-  pendingException = NULL;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = NULL;
@@ -66,13 +65,12 @@ JavaThread::~JavaThread() {
 
 JavaThread* JavaThread::setPendingException(JavaObject *obj) {
 	llvm_gcroot(obj, 0);
-  assert(JavaThread::get()->pendingException == 0 && "pending exception already there?");
-	mvm::Thread* mut = mvm::Thread::get();
-  j3Thread(mut)->pendingException = obj;	
+  assert(mvm::Thread::get()->pendingException == 0 && "pending exception already there?");
+	mvm::Thread::get()->pendingException = obj;
 }
 
 void JavaThread::throwIt() {
-  assert(JavaThread::get()->pendingException);
+  assert(mvm::Thread::get()->pendingException);
 	mvm::Thread::get()->internalThrowException();
 }
 

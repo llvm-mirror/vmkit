@@ -30,6 +30,11 @@
 
 using namespace mvm;
 
+void Thread::tracer(uintptr_t closure) {
+	mvm::Collector::markAndTraceRoot(&pendingException, closure);
+	vmData->tracer(closure);
+}
+
 int Thread::kill(void* tid, int signo) {
   return pthread_kill((pthread_t)tid, signo);
 }

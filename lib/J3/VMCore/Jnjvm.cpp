@@ -1209,7 +1209,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   } END_CATCH;
 
   exc = JavaThread::get()->getPendingException();
-	printf("Exception: %p\n", exc);
+
   if (exc != NULL) {
     JavaThread* th   = JavaThread::get();
     th->clearPendingException();

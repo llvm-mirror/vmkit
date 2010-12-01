@@ -24,7 +24,10 @@
 ;;; Field 3: The static instance
 %TaskClassMirror = type { i8, i1, i8* }
 
-%JavaThread = type { %VMThreadData, i8*, %JavaObject* }
+;;; The Java Thread
+;;; Field 1: VMThreadData parent
+;;; Field 2: void*        jniEnv
+%JavaThread = type { %VMThreadData, i8* }
 
 %JavaConstantPool = type { %JavaClass*, i32, i8*, i32*, i8** }
 

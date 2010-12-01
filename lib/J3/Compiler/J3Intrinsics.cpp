@@ -46,6 +46,8 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   JavaObjectType = 
     PointerType::getUnqual(module->getTypeByName("JavaObject"));
 
+  JavaObjectPtrType = PointerType::getUnqual(JavaObjectType);
+
   JavaArrayType =
     PointerType::getUnqual(module->getTypeByName("JavaArray"));
   
@@ -140,7 +142,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   OffsetInitializedInTaskClassMirrorConstant = constantOne;
   
   OffsetJNIInJavaThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 1);
-  OffsetJavaExceptionInJavaThreadConstant = ConstantInt::get(Type::getInt32Ty(Context), 2);
   
   ClassReadyConstant = ConstantInt::get(Type::getInt8Ty(Context), ready);
   

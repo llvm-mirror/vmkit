@@ -29,6 +29,7 @@ public:
   const llvm::Type* JavaArrayObjectType;
   
   const llvm::Type* JavaObjectType;
+  const llvm::Type* JavaObjectPtrType;
   const llvm::Type* JavaArrayType;
   const llvm::Type* JavaCommonClassType;
   const llvm::Type* JavaClassType;

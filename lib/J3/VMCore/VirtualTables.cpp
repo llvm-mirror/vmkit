@@ -254,8 +254,7 @@ void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
 //
 // The threads must trace:
 // (1) Their stack (already done by the GC in the case of GCMmap2 or Boehm)
-// (2) Their pending exception if there is one.
-// (3) The java.lang.Thread delegate.
+// (2) The java.lang.Thread delegate.
 //===----------------------------------------------------------------------===//
 
 
@@ -328,7 +327,6 @@ void Jnjvm::tracer(uintptr_t closure) {
 }
 
 void JavaThread::tracer(uintptr_t closure) {
-  mvm::Collector::markAndTraceRoot(&pendingException, closure);
   mvm::Collector::markAndTraceRoot(&javaThread, closure);
   mvm::Collector::markAndTraceRoot(&vmThread, closure);
 #ifdef SERVICE

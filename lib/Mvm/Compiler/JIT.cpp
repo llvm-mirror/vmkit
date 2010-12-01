@@ -331,6 +331,8 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   OffsetDoYieldInThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 4);
   OffsetCXXExceptionInThreadConstant =      ConstantInt::get(Type::getInt32Ty(Context), 11);
   OffsetVMDataInThreadConstant =            ConstantInt::get(Type::getInt32Ty(Context), 12);
+  OffsetPendingExceptionInThreadConstant =  ConstantInt::get(Type::getInt32Ty(Context), 13);
+
 	OffsetThreadInMutatorThreadConstant =     ConstantInt::get(Type::getInt32Ty(Context), 0);
 }
 

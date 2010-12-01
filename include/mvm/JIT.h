@@ -182,6 +182,8 @@ public:
   llvm::Constant* OffsetVMInThreadConstant;
   llvm::Constant* OffsetCXXExceptionInThreadConstant;
   llvm::Constant* OffsetVMDataInThreadConstant;
+	llvm::Constant* OffsetPendingExceptionInThreadConstant;
+
 	llvm::Constant* OffsetThreadInMutatorThreadConstant;
 };
 

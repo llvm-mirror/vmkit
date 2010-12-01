@@ -71,10 +71,6 @@ public:
   /// jniEnv - The JNI environment of the thread.
   ///
   void* jniEnv;
-  
-  /// pendingException - The Java exception currently pending.
-  ///
-  JavaObject* pendingException;
 
   /// javaThread - The Java representation of this thread.
   ///
@@ -171,12 +167,12 @@ public:
 
   /// clearPendingException - Clear the pending exception.
 	//
-	void clearPendingException() { pendingException = 0; }
+	void clearPendingException() { mut->pendingException = 0; }
   
   /// getPendingException - Return the pending exception.
   ///
   JavaObject* getPendingException() {
-    return pendingException;
+    return (JavaObject*)mut->pendingException;
   }
 
   /// throwFromJNI - Throw an exception after executing JNI code.

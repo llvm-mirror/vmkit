@@ -34,6 +34,8 @@
   #define END_CATCH }
 #endif
 
+class gc;
+
 namespace mvm {
 
 class MethodInfo;
@@ -150,6 +152,8 @@ public:
 		this->mut = m;
 	}
 
+  virtual void tracer(uintptr_t closure) = 0;
+
 	virtual ~VMThreadData() {} // force the construction of a VT
 };
 
@@ -160,11 +164,12 @@ class Thread : public CircularBase {
 public:
   Thread() {
 #ifdef RUNTIME_DWARF_EXCEPTIONS
-  internalPendingException = 0;
+		internalPendingException = 0;
 #else
-  lastExceptionBuffer = 0;
+		lastExceptionBuffer = 0;
 #endif
-  lastKnownFrame = 0;
+		lastKnownFrame = 0;
+		pendingException = 0;
   }
 
   /// yield - Yield the processor to another thread.
@@ -240,10 +245,10 @@ private:
 
 public:
  
-  /// tracer - Does nothing. Used for child classes which may defined
-  /// a tracer.
+  /// tracer - trace the pendingException and the vmData
   ///
-  virtual void tracer(uintptr_t closure) {}
+  virtual void tracer(uintptr_t closure);
+
   void scanStack(uintptr_t closure);
   
   void* getLastSP() { return lastSP; }
@@ -351,6 +356,10 @@ public:
   /// vmData - vm specific data
   ///
 	VMThreadData* vmData;
+
+  /// pendingException - the pending exception
+  ///
+	gc* pendingException;
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS
