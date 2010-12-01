@@ -146,13 +146,17 @@ class MutatorThread;
 class VMThreadData {
 public:
   /// mut - The associated thread mutator
-	MutatorThread* mut;
+	MutatorThread*  mut;
+	VirtualMachine* vm;
 
-	VMThreadData(MutatorThread* m) {
+	VMThreadData(MutatorThread* m, VirtualMachine *v) {
 		this->mut = m;
+		this->vm = v;
 	}
 
   virtual void tracer(uintptr_t closure) = 0;
+
+	void attach();
 
 	virtual ~VMThreadData() {} // force the construction of a VT
 };

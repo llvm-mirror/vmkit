@@ -20,7 +20,7 @@
 using namespace j3;
 
 JavaThread::JavaThread(mvm::MutatorThread* mut, Jnjvm* isolate)
-	: mvm::VMThreadData(mut) {
+	: mvm::VMThreadData(mut, isolate) {
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = NULL;

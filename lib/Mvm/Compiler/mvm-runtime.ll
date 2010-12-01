@@ -22,7 +22,11 @@
 ;;; field 12: void*  vmData
 ;;; field 13: gc*    pendingException
 %Thread       = type { %CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*, i8*, i8* }
-%VMThreadData = type { %VT*, %Thread* }
+
+;;; field 0: VT
+;;; field 1: mvm::MutatorThread*  mut
+;;; field 2: mvm::VirtualMachine* vm
+%VMThreadData = type { %VT*, %MutatorThread*, i8* }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Printing functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

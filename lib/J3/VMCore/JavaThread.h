@@ -89,10 +89,6 @@ public:
   ///
   JNILocalReferences* localJNIRefs;
 
-  /// jnjvm - my vm
-  ///
-	Jnjvm *jnjvm;
-
   gc** pushJNIRef(gc* obj) {
     llvm_gcroot(obj, 0);
     if (!obj) return 0;
@@ -108,7 +104,7 @@ public:
 
   /// JavaThread - Empty constructor, used to get the VT.
   ///
-  JavaThread() : mvm::VMThreadData(0) {
+  JavaThread() : mvm::VMThreadData(0, 0) {
 #ifdef SERVICE
     replacedEIPs = 0;
 #endif
@@ -143,7 +139,7 @@ public:
   /// getJVM - Get the Java VM in which this thread executes.
   ///
   Jnjvm* getJVM() {
-    return jnjvm;
+    return (Jnjvm*)vm;
   }
 
   /// currentThread - Return the current thread as a Java object.
