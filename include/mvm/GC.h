@@ -40,6 +40,23 @@ namespace mvm {
 
 	class CommonVirtualTable {
 	public:
+		uintptr_t destructor;
+		uintptr_t operatorDelete;
+		uintptr_t tracer;
+
+		uintptr_t* getFunctions() {
+			return &destructor;
+		}
+
+		CommonVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
+			destructor = d;
+			operatorDelete = o;
+			tracer = t;
+		}
+
+		CommonVirtualTable() {}
+
+		static void emptyTracer(void*) {}
 	};
 
 } // namespace mvm

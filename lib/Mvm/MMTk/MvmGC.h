@@ -19,9 +19,6 @@ namespace mvm {
 
 class GCVirtualTable : public CommonVirtualTable {
 public:
-  uintptr_t destructor;
-  uintptr_t operatorDelete;
-  uintptr_t tracer;
   uintptr_t specializedTracers[1];
   
   static uint32_t numberOfBaseFunctions() {
@@ -32,19 +29,8 @@ public:
     return 1;
   }
 
-  uintptr_t* getFunctions() {
-    return &destructor;
-  }
-
-  GCVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
-    destructor = d;
-    operatorDelete = o;
-    tracer = t;
-  }
-
+  GCVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) : CommonVirtualTable(d, o, t) {}
   GCVirtualTable() {}
-
-  static void emptyTracer(void*) {}
 };
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT);
