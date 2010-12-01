@@ -20,7 +20,7 @@ namespace mvm {
 class GCVirtualTable : public CommonVirtualTable {
 public:
   static uint32_t numberOfBaseFunctions() {
-    return 3;
+    return numberOfCommonEntries();
   }
   
   static uint32_t numberOfSpecializedTracers() {

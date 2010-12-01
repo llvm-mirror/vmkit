@@ -22,7 +22,7 @@ public:
   uintptr_t specializedTracers[1];
   
   static uint32_t numberOfBaseFunctions() {
-    return 4;
+    return numberOfCommonEntries() + 1;
   }
 
   static uint32_t numberOfSpecializedTracers() {

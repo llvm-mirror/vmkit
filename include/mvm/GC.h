@@ -56,6 +56,8 @@ namespace mvm {
 
 		CommonVirtualTable() {}
 
+		static int numberOfCommonEntries() { return 3; }
+
 		static void emptyTracer(void*) {}
 	};
 
