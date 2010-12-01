@@ -127,14 +127,6 @@ public:
   ///
   virtual const char* getObjectTypeName(gc* object) { return "An object"; }
 
-  /// rendezvous - The rendezvous implementation for garbage collection.
-  ///
-#ifdef WITH_LLVM_GCC
-  CooperativeCollectionRV rendezvous;
-#else
-  UncooperativeCollectionRV rendezvous;
-#endif
-
 //===----------------------------------------------------------------------===//
 // (3) Backtrace-related methods.
 //===----------------------------------------------------------------------===//

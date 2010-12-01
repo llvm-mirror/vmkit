@@ -15,6 +15,7 @@
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
+#include "mvm/VMKit.h"
 
 #include <cassert>
 #include <csetjmp>
@@ -51,18 +52,18 @@ void Thread::yield(void) {
   Thread* th = mvm::Thread::get();
   if (th->isMvmThread()) {
     if (th->doYield && !th->inRV) {
-      th->MyVM->rendezvous.join();
+      th->vmkit->rendezvous.join();
     }
   }
   sched_yield();
 }
 
 void Thread::joinRVBeforeEnter() {
-  MyVM->rendezvous.joinBeforeUncooperative(); 
+  vmkit->rendezvous.joinBeforeUncooperative(); 
 }
 
 void Thread::joinRVAfterLeave(void* savedSP) {
-  MyVM->rendezvous.joinAfterUncooperative(savedSP); 
+  vmkit->rendezvous.joinAfterUncooperative(savedSP); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {
@@ -428,9 +429,9 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 #ifdef ISOLATE
   th->IsolateID = th->MyVM->IsolateID;
 #endif
-  th->MyVM->rendezvous.prepareForJoin();
+  th->vmkit->rendezvous.prepareForJoin();
   th->routine(th);
-  th->MyVM->rendezvous.removeThread(th);
+  th->vmkit->rendezvous.removeThread(th);
 }
 
 
@@ -445,7 +446,7 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   routine = fct;
   // Make sure to add it in the list of threads before leaving this function:
   // the garbage collector wants to trace this thread.
-  MyVM->rendezvous.addThread(this);
+  vmkit->rendezvous.addThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
   pthread_detach((pthread_t)internalThreadID);

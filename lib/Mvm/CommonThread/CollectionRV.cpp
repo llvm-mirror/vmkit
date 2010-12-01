@@ -12,6 +12,7 @@
 #include "MvmGC.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/CollectionRV.h"
+#include "mvm/VMKit.h"
 
 #include "debug.h"
 
@@ -204,7 +205,7 @@ void CooperativeCollectionRV::joinAfterUncooperative(void* SP) {
 
 extern "C" void conditionalSafePoint() {
   mvm::Thread* th = mvm::Thread::get();
-  th->MyVM->rendezvous.join();
+  th->vmkit->rendezvous.join();
 }
 
 void CooperativeCollectionRV::finishRV() {
@@ -253,7 +254,7 @@ void UncooperativeCollectionRV::joinBeforeUncooperative() {
 
 static void siggcHandler(int) {
   mvm::Thread* th = mvm::Thread::get();
-  th->MyVM->rendezvous.join();
+  th->vmkit->rendezvous.join();
 }
 
 void UncooperativeCollectionRV::prepareForJoin() {
