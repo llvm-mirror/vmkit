@@ -120,7 +120,7 @@ public:
 
   /// create - Creates a Java thread and a mutator thread.
   ///
-	static mvm::Thread* create(Jnjvm* isolate);
+	static JavaThread* create(Jnjvm* isolate);
 
   /// j3Thread - gives the JavaThread associated with the mutator thread
   ///

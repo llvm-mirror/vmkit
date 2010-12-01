@@ -1070,10 +1070,14 @@ void Jnjvm::loadBootstrap() {
   
   // First create system threads.
   finalizerThread = new FinalizerThread(this);
+	javaFinalizerThread = new JavaThread(finalizerThread, this);
+	javaFinalizerThread->attach();
   finalizerThread->start(
       (void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
     
   referenceThread = new ReferenceThread(this);
+	javaReferenceThread = new JavaThread(referenceThread, this);
+	javaReferenceThread->attach();
   referenceThread->start(
       (void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
   
@@ -1287,8 +1291,6 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   vm->argumentsInfo.argv = vm->argumentsInfo.argv + pos - 1;
   vm->argumentsInfo.argc = vm->argumentsInfo.argc - pos + 1;
 
-	//  vm->mainThread = thread;
-
   TRY {
     vm->loadBootstrap();
   } CATCH {
@@ -1339,7 +1341,8 @@ void ThreadSystem::enter() {
 void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;
-  mainThread = JavaThread::create(this);
+  javaMainThread = JavaThread::create(this);
+	mainThread = javaMainThread->mut;
   mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 

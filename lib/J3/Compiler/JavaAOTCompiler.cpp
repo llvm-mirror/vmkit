@@ -2133,9 +2133,9 @@ end:
 
 void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {
   name = n;
-	mvm::Thread* th = JavaThread::create(vm);
-  vm->setMainThread(th);
-  th->start(mainCompilerStart);
+	vm->javaMainThread = JavaThread::create(vm);
+  vm->mainThread = vm->javaMainThread->mut;
+  vm->javaMainThread->mut->start(mainCompilerStart);
   vm->waitForExit();
 }
 

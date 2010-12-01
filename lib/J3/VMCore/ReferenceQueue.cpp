@@ -25,7 +25,6 @@ ReferenceThread::ReferenceThread(Jnjvm* vm) :
   ToEnqueueIndex = 0;
 
 	MyVM = vm;
-	vmData = new JavaThread(this, vm);
 }
 
 
@@ -169,7 +168,6 @@ FinalizerThread::FinalizerThread(Jnjvm* vm) {
   CurrentFinalizedIndex = 0;
 
 	MyVM = vm;
-	vmData = new JavaThread(this, vm);
 }
 
 void FinalizerThread::growFinalizationQueue() {

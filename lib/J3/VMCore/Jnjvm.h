@@ -249,6 +249,15 @@ public:
   /// hashStr - Hash map of java/lang/String objects allocated by this JVM.
   ///
   StringMap hashStr;
+
+	/// javaMainThread - the java main thread
+	JavaThread* javaMainThread;
+
+	/// javaFinalizerThread - the java finalizer thread
+	JavaThread* javaFinalizerThread;
+
+	/// javaReferenceThread - the java reference thread
+	JavaThread* javaReferenceThread;
  
 public:
   

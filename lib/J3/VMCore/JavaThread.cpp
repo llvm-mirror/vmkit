@@ -26,7 +26,6 @@ JavaThread::JavaThread(mvm::MutatorThread* mut, Jnjvm* isolate)
   currentAddedReferences = NULL;
   javaThread = NULL;
   vmThread = NULL;
-	jnjvm = isolate;
 
 #ifdef SERVICE
   eipIndex = 0;
@@ -41,12 +40,11 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 	return (JavaThread*)mut->vmData;
 }
 
-mvm::Thread *JavaThread::create(Jnjvm* isolate) {
+JavaThread *JavaThread::create(Jnjvm* isolate) {
 	mvm::MutatorThread *mut = new mvm::MutatorThread();
 	JavaThread *th   = new JavaThread(mut, isolate);
-  mut->MyVM   = isolate;
-	mut->vmData = th;
-	return mut;
+	th->attach();
+	return th;
 }
 
 void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
