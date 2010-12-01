@@ -24,7 +24,18 @@
     and build LLVM-GCC</a> from SVN head.</li>
   <li> Update PATH to include the <tt>llvm-gcc</tt> binary. </li>
   <li> Re-configure LLVM. </li>
-  <li> Configure VMKit with three additional options: <tt>--with-gc=mmtk</tt>, <tt>--with-llvmgcc</tt>, and <tt>--with-mmtk-plan={marksweep|copyms}</tt> </li>
+  <li> Configure VMKit with three additional options:</li>
+  <ul>
+    <li><tt>--with-gc=mmtk</tt></li>
+    <li><tt>--with-llvmgcc</tt></li>
+    <li><tt>--with-mmtk-plan=</tt> </li>
+      <ul>
+      <li><tt>org.mmtk.plan.marksweep.MS (default)</tt></li>
+      <li><tt>org.mmtk.plan.copyms.CopyMS</tt></li>
+      <li><tt>org.mmtk.plan.semispace.SS</tt></li>
+      <li><tt>org.mmtk.plan.immix.Immix</tt></li>
+      </ul>
+  </ul>
   <li> Build VMKit:</li>
   <ul>
     <li><tt>make ENABLE_OPTIMIZED=1 </tt></li>
