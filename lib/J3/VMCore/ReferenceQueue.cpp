@@ -15,7 +15,8 @@
 
 using namespace j3;
 
-ReferenceThread::ReferenceThread(Jnjvm* vm) : 
+ReferenceThread::ReferenceThread(Jnjvm* vm) :
+	  MutatorThread(vm->vmkit),
     WeakReferencesQueue(ReferenceQueue::WEAK),
     SoftReferencesQueue(ReferenceQueue::SOFT), 
     PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
@@ -158,7 +159,7 @@ void ReferenceQueue::scan(ReferenceThread* th, uintptr_t closure) {
 }
 
 
-FinalizerThread::FinalizerThread(Jnjvm* vm) {
+FinalizerThread::FinalizerThread(Jnjvm* vm) : MutatorThread(vm->vmkit) {
   FinalizationQueue = new gc*[INITIAL_QUEUE_SIZE];
   QueueLength = INITIAL_QUEUE_SIZE;
   CurrentIndex = 0;

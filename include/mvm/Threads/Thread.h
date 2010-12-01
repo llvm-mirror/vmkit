@@ -142,6 +142,7 @@ public:
 
 class ExceptionBuffer;
 class MutatorThread;
+class VMKit;
 
 class VMThreadData {
 public:
@@ -166,12 +167,13 @@ public:
 /// contains all thread-specific informations.
 class Thread : public CircularBase {
 public:
-  Thread() {
+  Thread(VMKit* vmk) {
 #ifdef RUNTIME_DWARF_EXCEPTIONS
 		internalPendingException = 0;
 #else
 		lastExceptionBuffer = 0;
 #endif
+		vmkit = vmk;
 		lastKnownFrame = 0;
 		pendingException = 0;
   }
@@ -377,6 +379,10 @@ public:
   /// pendingException - the pending exception
   ///
 	gc* pendingException;
+
+	/// vmkit - a (shortcut) pointer to vmkit that contains information on all the vms
+	///
+	mvm::VMKit* vmkit;
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS

@@ -18,7 +18,7 @@ namespace mvm {
 
 class MutatorThread : public mvm::Thread {
 public:
-  MutatorThread() : mvm::Thread() {
+  MutatorThread(VMKit* vmkit) : mvm::Thread(vmkit) {
     MutatorContext = 0;
   }
   mvm::ThreadAllocator Allocator;

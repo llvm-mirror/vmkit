@@ -18,7 +18,7 @@ namespace mvm {
 
 class CollectionRV {
 public:
-  /// oneThread - The main thread of this VM.
+  /// oneThread - One of the threads
   mvm::Thread* oneThread;
 
 protected: 

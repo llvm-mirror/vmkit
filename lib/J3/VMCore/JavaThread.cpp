@@ -41,7 +41,7 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 }
 
 JavaThread *JavaThread::create(Jnjvm* isolate) {
-	mvm::MutatorThread *mut = new mvm::MutatorThread();
+	mvm::MutatorThread *mut = new mvm::MutatorThread(isolate->vmkit);
 	JavaThread *th   = new JavaThread(mut, isolate);
 	th->attach();
 	return th;
