@@ -56,8 +56,6 @@ public:
                        size * sizeof(uint16)) < 0;
   }
 
-	void print(PrintBuffer *pb) const;
-
 	static uint32_t readerHasher(const uint16* buf, sint32 size);
 	
 	uint32_t hash() const {
@@ -97,48 +95,6 @@ public:
   
   void replace(const UTF8* oldUTF8, const UTF8* newUTF8);
   void insert(const UTF8* val);
-};
-
-class UTF8Builder {
-	uint16 *buf;
-	uint32  cur;
-	uint32  size;
-
-public:
-	UTF8Builder(size_t size) {
-		size = (size < 4) ? 4 : size;
-		this->buf = new uint16[size];
-		this->size = size;
-	}
-
-	UTF8Builder *append(const UTF8 *utf8, uint32 start=0, uint32 length=0xffffffff) {
-		length = length == 0xffffffff ? utf8->size : length;
-		uint32 req = cur + length;
-
-		if(req > size) {
-			uint32 newSize = size<<1;
-			while(req < newSize)
-				newSize <<= 1;
-			uint16 *newBuf = new uint16[newSize];
-			memcpy(newBuf, buf, cur<<1);
-			delete []buf;
-			buf = newBuf;
-			size = newSize;
-		}
-
-		memcpy(buf + cur, &utf8->elements + start, length<<1);
-		cur = req;
-
-		return this;
-	}
-
-	const UTF8 *toUTF8(UTF8Map *map) {
-		return map->lookupOrCreateReader(buf, size);
-	}
-
-	~UTF8Builder() {
-		delete [] buf;
-	}
 };
 
 } // end namespace mvm

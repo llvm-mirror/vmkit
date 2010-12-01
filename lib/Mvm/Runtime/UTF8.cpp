@@ -1,13 +1,7 @@
 #include "mvm/Allocator.h"
 #include "mvm/UTF8.h"
-#include "mvm/PrintBuffer.h"
 
 using namespace mvm;
-
-void UTF8::print(PrintBuffer *pb) const {
-	pb->writeUTF8(this);
-}
-
 
 const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   uint32 len = end - start;

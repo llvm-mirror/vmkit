@@ -19,6 +19,41 @@
 
 namespace mvm {
 
+// #define VT_DESTRUCTOR_OFFSET 0
+// #define VT_OPERATOR_DELETE_OFFSET 1
+// #define VT_TRACER_OFFSET 2
+// #define VT_PRINT_OFFSET 3
+// #define VT_HASHCODE_OFFSET 4
+// #define VT_NB_FUNCS 5
+// #define VT_SIZE 5 * sizeof(void*)
+
+class PrintBuffer;
+
+/// OldObject - Root of all objects. Define default implementations of virtual
+/// methods and some commodity functions.
+/// ************           Technically this class is not used anywhere, to be removed?           ************
+///
+class OldObject : public gc {
+public:
+	static void     default_tracer(gc *o, uintptr_t closure) {}
+	static intptr_t default_hashCode(const gc *o)            { return (intptr_t)o; }
+	static void     default_print(const gc *o, PrintBuffer *buf);
+
+  /// tracer - Default implementation of tracer. Does nothing.
+  ///
+  virtual void tracer(uintptr_t closure) { default_tracer(this, closure); }
+
+  /// print - Default implementation of print.
+  ///
+  virtual void      print(PrintBuffer *buf) const { default_print(this, buf); }
+
+  /// hashCode - Default implementation of hashCode. Returns the address
+  /// of this object.
+  ///
+  virtual intptr_t  hashCode() const { return default_hashCode(this);}
+  
+};
+
 /// PrintBuffer - This class is a buffered string.
 ///
 class PrintBuffer {
@@ -48,16 +83,15 @@ public:
 		init();
 	}
 
-	template <class T>
-	PrintBuffer(const T *obj) {
+	PrintBuffer(const OldObject *obj) {
+		llvm_gcroot(obj, 0);
 		init();
 		writeObj(obj);
 	}
 
-	PrintBuffer(const Object *obj) {
-		llvm_gcroot(obj, 0);
+	PrintBuffer(const UTF8 *utf8) {
 		init();
-		writeObj(obj);
+		writeUTF8(utf8);
 	}
 
 	virtual ~PrintBuffer() {
@@ -156,17 +190,9 @@ public:
     return this;
   }
 
-  /// writeObj - Writes anything (except an object) to the buffer.
-  ///
-	template <class T>
-  inline PrintBuffer *writeObj(const T *obj) {
-		obj->print(this);
-		return this;
-	}
-
   /// writeObj - Writes a gc Object to the buffer.
   ///
-  inline PrintBuffer *writeObj(const Object *obj) {
+  inline PrintBuffer *writeObj(const OldObject *obj) {
 		llvm_gcroot(obj, 0);
 		obj->print(this);
 		return this;

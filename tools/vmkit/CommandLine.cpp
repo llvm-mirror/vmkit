@@ -6,7 +6,7 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-
+#if 0
 
 #include <assert.h>
 #include <dlfcn.h>
@@ -172,3 +172,5 @@ void CommandLine::executeInstr() {
     }
   }
 }
+
+#endif

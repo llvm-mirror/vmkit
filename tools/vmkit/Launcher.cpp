@@ -11,7 +11,7 @@
 #include "llvm/LinkAllVMCore.h"
 #include "llvm/PassManager.h"
 #include "llvm/CodeGen/LinkAllCodegenComponents.h"
-#include "llvm/Support/CommandLine.h"
+//#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/PassNameParser.h"
 #include "llvm/Support/PluginLoader.h"
@@ -29,7 +29,7 @@
 #include "../../lib/J3/VMCore/JnjvmClassLoader.h"
 #include "../../lib/J3/VMCore/Jnjvm.h"
 
-#include "CommandLine.h"
+//#include "CommandLine.h"
 
 using namespace j3;
 using namespace llvm;
