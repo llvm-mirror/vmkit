@@ -28,9 +28,6 @@ public:
   static uint32_t numberOfSpecializedTracers() {
     return 1;
   }
-
-  GCVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, VirtualMachine* v) : CommonVirtualTable(d, o, t, v) {}
-  GCVirtualTable() {}
 };
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT);

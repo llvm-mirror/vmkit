@@ -258,7 +258,11 @@ public:
 
 	/// javaReferenceThread - the java reference thread
 	JavaThread* javaReferenceThread;
- 
+
+
+	mvm::VirtualTable* VMClassLoader__VT;
+
+	void initialiseInternalVTs();
 public:
   
   /// CreateExceptions - These are the runtime exceptions thrown by Java code

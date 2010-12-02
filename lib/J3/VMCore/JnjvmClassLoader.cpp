@@ -884,13 +884,13 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   Classpath* upcalls = vm->bootstrapLoader->upcalls;
   vmdata = 
     (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
-  
+
   if (vmdata == NULL) {
     JavaObject::acquire(loader);
     vmdata = 
       (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
     if (!vmdata) {
-      vmdata = VMClassLoader::allocate();
+      vmdata = VMClassLoader::allocate(vm);
       mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
       JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
                                                      loader, vmdata, vm);
@@ -1197,6 +1197,7 @@ Class* JnjvmClassLoader::loadClassFromSelf(Jnjvm* vm, const char* name) {
 extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
                                         CommonClass* cl) {
   cl->classLoader = JCL;
+	cl->virtualVT->vm = JCL->getIsolate();
   
   JCL->hashUTF8->insert(cl->name);
 
@@ -1267,6 +1268,19 @@ extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
   intptr_t res = meth->classDef->classLoader->nativeLookup(meth, j3, buf);
   assert(res && "Could not find required native method");
   return res;
+}
+
+VMClassLoader* VMClassLoader::allocate(Jnjvm *vm) {
+	VMClassLoader* res = 0;
+	llvm_gcroot(res, 0);
+	res = (VMClassLoader*)gc::operator new(sizeof(VMClassLoader), vm->VMClassLoader__VT);
+	return res;
+}
+
+bool VMClassLoader::isVMClassLoader(Jnjvm *vm, JavaObject* obj) {
+	llvm_gcroot(obj, 0);
+	// not safe: must verify that obj belongs to a jvm
+	return obj->getVirtualTable() == vm->VMClassLoader__VT;
 }
 
 extern "C" void staticCallback() {

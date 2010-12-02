@@ -53,10 +53,13 @@ using namespace j3;
 // Classpath with the vmdata field).
 //===----------------------------------------------------------------------===//
 
-mvm::VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
-																		(uintptr_t)VMClassLoader::staticDestructor,
-																		(uintptr_t)VMClassLoader::staticTracer,
-																		0);
+void Jnjvm::initialiseInternalVTs() {
+	VMClassLoader__VT = (mvm::VirtualTable*)allocator.Allocate(sizeof(mvm::VirtualTable), "Virtual table");
+	VMClassLoader__VT->destructor     = (uintptr_t)VMClassLoader::staticDestructor;
+	VMClassLoader__VT->operatorDelete = 0;
+	VMClassLoader__VT->tracer         = (uintptr_t)VMClassLoader::staticTracer;
+	VMClassLoader__VT->vm             = this;
+}
 
 //===----------------------------------------------------------------------===//
 // Trace methods for Java objects. There are four types of objects:

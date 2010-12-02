@@ -1346,7 +1346,12 @@ void Jnjvm::runApplication(int argc, char** argv) {
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JnjvmBootstrapLoader* loader) : 
-  VirtualMachine(Alloc, vmkit), lockSystem(Alloc) {
+	VirtualMachine(Alloc, vmkit), 
+	lockSystem(Alloc) {
+
+	loader->isolate = this;
+
+	initialiseInternalVTs();
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
@@ -1433,7 +1438,7 @@ size_t Jnjvm::getObjectSize(mvm::gc* object) {
   // in this case.
   size_t size = 0;
   JavaObject* src = (JavaObject*)object;
-  if (VMClassLoader::isVMClassLoader(src)) {
+  if (VMClassLoader::isVMClassLoader(this, src)) {
     size = sizeof(VMClassLoader);
   } else {
     CommonClass* cl = JavaObject::getClass(src);
@@ -1455,7 +1460,7 @@ size_t Jnjvm::getObjectSize(mvm::gc* object) {
 
 const char* Jnjvm::getObjectTypeName(mvm::gc* object) {
   JavaObject* src = (JavaObject*)object;
-  if (VMClassLoader::isVMClassLoader(src)) {
+  if (VMClassLoader::isVMClassLoader(this, src)) {
     return "VMClassLoader";
   } else {
     CommonClass* cl = JavaObject::getClass(src);

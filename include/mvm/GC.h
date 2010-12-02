@@ -51,15 +51,6 @@ namespace mvm {
 			return &destructor;
 		}
 
-		CommonVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, VirtualMachine* v) {
-			destructor = d;
-			operatorDelete = o;
-			tracer = t;
-			vm = v;
-		}
-
-		CommonVirtualTable() {}
-
 		static int numberOfCommonEntries() { return 4; }
 
 		static void emptyTracer(void*) {}
@@ -73,11 +64,7 @@ namespace mvm {
 	class gc : public collectable {
 	};
 
-	class VirtualTable : public GCVirtualTable {
-	public:
-		VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, VirtualMachine* v) : GCVirtualTable(d, o, t, v) {}
-		VirtualTable() {}
-	};
+	class VirtualTable : public GCVirtualTable {};
 
   static const uint32_t HashBits = 8;
   static const uint64_t GCBitMask = ((1 << GCBits) - 1);

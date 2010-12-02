@@ -87,6 +87,7 @@ private:
 
 protected:
   
+	friend class Jnjvm;
   JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc) : allocator(Alloc) {}
   
   /// TheCompiler - The Java compiler for this class loader.
@@ -443,23 +444,13 @@ private:
 
 public:
 
-  static VMClassLoader* allocate() {
-    VMClassLoader* res = 0;
-    llvm_gcroot(res, 0);
-    res = (VMClassLoader*)gc::operator new(sizeof(VMClassLoader), &VT);
-    return res;
-  }
-
-  /// VT - The VirtualTable for this GC-class.
+  /// Allocate a VMClassLoader
   ///
-  static mvm::VirtualTable VT;
+  static VMClassLoader* allocate(Jnjvm *vm);
 
   /// Is the object a VMClassLoader object?
   ///
-  static bool isVMClassLoader(JavaObject* obj) {
-    llvm_gcroot(obj, 0);
-    return obj->getVirtualTable() == &VT;
-  }
+  static bool isVMClassLoader(Jnjvm *vm, JavaObject* obj);
 
   /// staticTracer - Trace the internal class loader.
   ///

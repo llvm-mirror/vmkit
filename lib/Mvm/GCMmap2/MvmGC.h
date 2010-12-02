@@ -32,9 +32,6 @@ public:
   static uint32_t numberOfSpecializedTracers() {
     return 0;
   }
-
-  GCVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, VirtualMachine *v) : CommonVirtualTable(d, o, t, v) {}
-  GCVirtualTable() {}
 };
 
 class Collector {
