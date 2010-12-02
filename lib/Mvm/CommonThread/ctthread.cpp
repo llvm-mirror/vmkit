@@ -31,6 +31,10 @@
 
 using namespace mvm;
 
+mvm::VMKit* Thread::vmkit() {
+	return vmData->vm->vmkit; 
+}
+
 void Thread::tracer(uintptr_t closure) {
 	mvm::Collector::markAndTraceRoot(&pendingException, closure);
 	vmData->tracer(closure);
@@ -52,18 +56,18 @@ void Thread::yield(void) {
   Thread* th = mvm::Thread::get();
   if (th->isMvmThread()) {
     if (th->doYield && !th->inRV) {
-      th->vmkit->rendezvous.join();
+      th->vmkit()->rendezvous.join();
     }
   }
   sched_yield();
 }
 
 void Thread::joinRVBeforeEnter() {
-  vmkit->rendezvous.joinBeforeUncooperative(); 
+  vmkit()->rendezvous.joinBeforeUncooperative(); 
 }
 
 void Thread::joinRVAfterLeave(void* savedSP) {
-  vmkit->rendezvous.joinAfterUncooperative(savedSP); 
+  vmkit()->rendezvous.joinAfterUncooperative(savedSP); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {
@@ -177,7 +181,7 @@ MethodInfo* StackWalker::get() {
   ip = FRAME_IP(addr);
   bool isStub = ((unsigned char*)ip)[0] == 0xCE;
   if (isStub) ip = addr[2];
-  return thread->MyVM->IPToMethodInfo(ip);
+  return thread->vmkit()->IPToMethodInfo(ip);
 }
 
 void* StackWalker::operator*() {
@@ -429,9 +433,9 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 #ifdef ISOLATE
   th->IsolateID = th->MyVM->IsolateID;
 #endif
-  th->vmkit->rendezvous.prepareForJoin();
+  th->vmkit()->rendezvous.prepareForJoin();
   th->routine(th);
-  th->vmkit->rendezvous.removeThread(th);
+  th->vmkit()->rendezvous.removeThread(th);
 }
 
 
@@ -446,7 +450,7 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   routine = fct;
   // Make sure to add it in the list of threads before leaving this function:
   // the garbage collector wants to trace this thread.
-  vmkit->rendezvous.addThread(this);
+  vmkit()->rendezvous.addThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
   pthread_detach((pthread_t)internalThreadID);
@@ -490,3 +494,4 @@ void Thread::releaseThread(mvm::Thread* th) {
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
 }
+

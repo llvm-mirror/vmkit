@@ -34,6 +34,7 @@
 
 #include "debug.h"
 #include "mvm/Allocator.h"
+#include "mvm/VMKit.h"
 
 #include "Classpath.h"
 #include "ClasspathReflect.h"
@@ -917,8 +918,10 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 JnjvmClassLoader::~JnjvmClassLoader() {
 
   if (isolate) {
-    isolate->removeMethodInfos(TheCompiler);
-  }
+    isolate->vmkit->removeMethodInfos(TheCompiler);
+  } else {
+		mvm::Thread::get()->vmkit()->removeMethodInfos(TheCompiler);
+	}
 
   if (classes) {
     classes->~ClassMap();
@@ -1128,7 +1131,7 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
         if (!isAbstract(meth.access) && meth.code) {
           JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
             JavaStaticMethodInfo(0, meth.code, &meth);
-          vm->FunctionsCache.addMethodInfo(MI, meth.code);
+          vm->vmkit->FunctionsCache.addMethodInfo(MI, meth.code);
         }
       }
       
@@ -1137,7 +1140,7 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
         if (!isAbstract(meth.access) && meth.code) {
           JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
             JavaStaticMethodInfo(0, meth.code, &meth);
-          vm->FunctionsCache.addMethodInfo(MI, meth.code);
+          vm->vmkit->FunctionsCache.addMethodInfo(MI, meth.code);
         }
       }
     }

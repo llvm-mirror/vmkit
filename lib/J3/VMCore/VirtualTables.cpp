@@ -56,7 +56,7 @@ using namespace j3;
 void Jnjvm::initialiseInternalVTs() {
 	VMClassLoader__VT = (mvm::VirtualTable*)allocator.Allocate(sizeof(mvm::VirtualTable), "Virtual table");
 	VMClassLoader__VT->destructor     = (uintptr_t)VMClassLoader::staticDestructor;
-	VMClassLoader__VT->operatorDelete = 0;
+	VMClassLoader__VT->operatorDelete = (uintptr_t)VMClassLoader::staticDestructor;
 	VMClassLoader__VT->tracer         = (uintptr_t)VMClassLoader::staticTracer;
 	VMClassLoader__VT->vm             = this;
 }

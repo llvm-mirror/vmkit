@@ -205,7 +205,7 @@ void CooperativeCollectionRV::joinAfterUncooperative(void* SP) {
 
 extern "C" void conditionalSafePoint() {
   mvm::Thread* th = mvm::Thread::get();
-  th->vmkit->rendezvous.join();
+  th->vmkit()->rendezvous.join();
 }
 
 void CooperativeCollectionRV::finishRV() {
@@ -254,7 +254,7 @@ void UncooperativeCollectionRV::joinBeforeUncooperative() {
 
 static void siggcHandler(int) {
   mvm::Thread* th = mvm::Thread::get();
-  th->vmkit->rendezvous.join();
+  th->vmkit()->rendezvous.join();
 }
 
 void UncooperativeCollectionRV::prepareForJoin() {

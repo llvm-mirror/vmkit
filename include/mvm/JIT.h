@@ -220,7 +220,7 @@ class JITMethodInfo : public MethodInfo {
 public:
   virtual void scan(uintptr_t closure, void* ip, void* addr);
   JITMethodInfo(llvm::GCFunctionInfo* GFI) : GCInfo(GFI) {}
-  void addToVM(VirtualMachine* vm, llvm::JIT* jit);
+  void addToVMKit(VMKit* vmkit, llvm::JIT* jit);
 };
 
 class MvmJITMethodInfo : public JITMethodInfo {

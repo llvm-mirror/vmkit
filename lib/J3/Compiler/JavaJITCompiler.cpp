@@ -359,10 +359,10 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
     llvm::GCFunctionInfo* GFI = &(GCInfo->getFunctionInfo(*func));
     assert((GFI != NULL) && "No GC information");
   
-    Jnjvm* vm = JavaThread::get()->getJVM();
+		mvm::VMKit* vmkit = mvm::Thread::get()->vmkit();
     mvm::JITMethodInfo* MI = 
       new(allocator, "JavaJITMethodInfo") JavaJITMethodInfo(GFI, meth);
-    MI->addToVM(vm, (JIT*)executionEngine);
+    MI->addToVMKit(vmkit, (JIT*)executionEngine);
 
     uint32_t infoLength = GFI->size();
     meth->codeInfoLength = infoLength;
@@ -401,10 +401,10 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
   llvm::GCFunctionInfo* GFI = &(GCInfo->getFunctionInfo(*F));
   assert((GFI != NULL) && "No GC information");
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
+	mvm::VMKit* vmkit = mvm::Thread::get()->vmkit();
   mvm::JITMethodInfo* MI = 
     new(allocator, "JITMethodInfo") mvm::MvmJITMethodInfo(GFI, F, this);
-  MI->addToVM(vm, (JIT*)executionEngine);
+  MI->addToVMKit(vmkit, (JIT*)executionEngine);
   
   // Now that it's compiled, we don't need the IR anymore
   F->deleteBody();

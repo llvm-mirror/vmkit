@@ -175,7 +175,7 @@ public:
 #else
 		lastExceptionBuffer = 0;
 #endif
-		vmkit = vmk;
+		_vmkit = vmk;
 		lastKnownFrame = 0;
 		pendingException = 0;
   }
@@ -382,9 +382,13 @@ public:
   ///
 	gc* pendingException;
 
-	/// vmkit - a (shortcut) pointer to vmkit that contains information on all the vms
+private:
+	/// _vmkit - a (shortcut) pointer to vmkit that contains information on all the vms
 	///
-	mvm::VMKit* vmkit;
+	mvm::VMKit* _vmkit;
+
+public:
+	mvm::VMKit* vmkit();
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS

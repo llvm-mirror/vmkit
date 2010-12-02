@@ -44,6 +44,7 @@
 #include "mvm/VirtualMachine.h"
 #include "MutatorThread.h"
 #include "mvm/GC.h"
+#include "mvm/VMKit.h"
 
 #include <dlfcn.h>
 #include <sys/mman.h>
@@ -99,11 +100,11 @@ public:
     llvm::GCFunctionInfo* GFI = *I;
     JITMethodInfo* MI = new(*MvmModule::Allocator, "MvmJITMethodInfo")
         MvmJITMethodInfo(GFI, &F, MvmModule::executionEngine);
-    MI->addToVM(mvm::Thread::get()->MyVM, (JIT*)MvmModule::executionEngine);
+    MI->addToVMKit(mvm::Thread::get()->vmkit(), (JIT*)MvmModule::executionEngine);
   }
 };
 
-void JITMethodInfo::addToVM(VirtualMachine* VM, JIT* jit) {
+void JITMethodInfo::addToVMKit(VMKit* vmkit, JIT* jit) {
   JITCodeEmitter* JCE = jit->getCodeEmitter();
   assert(GCInfo != NULL);
   for (GCFunctionInfo::iterator I = GCInfo->begin(), E = GCInfo->end();
@@ -111,7 +112,7 @@ void JITMethodInfo::addToVM(VirtualMachine* VM, JIT* jit) {
        I++) {
     uintptr_t address = JCE->getLabelAddress(I->Label);
     assert(address != 0);
-    VM->FunctionsCache.addMethodInfo(this, (void*)address);
+    vmkit->FunctionsCache.addMethodInfo(this, (void*)address);
   }
 }
 

@@ -11,6 +11,7 @@
 #include "mvm/MethodInfo.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/GC.h"
+#include "mvm/VMKit.h"
 
 #include <dlfcn.h>
 #include <map>

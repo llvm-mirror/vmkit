@@ -19,8 +19,8 @@ extern "C" MMTkObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__(MMTkActivePl
   assert(A && "No active plan");
   
   if (A->current == NULL) {
-    A->current = (mvm::MutatorThread*)mvm::Thread::get()->vmkit->rendezvous.oneThread;
-  } else if (A->current->next() == mvm::Thread::get()->vmkit->rendezvous.oneThread) {
+    A->current = (mvm::MutatorThread*)mvm::Thread::get()->vmkit()->rendezvous.oneThread;
+  } else if (A->current->next() == mvm::Thread::get()->vmkit()->rendezvous.oneThread) {
     A->current = NULL;
     return NULL;
   } else {

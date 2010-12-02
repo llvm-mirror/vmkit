@@ -19,36 +19,6 @@
 
 namespace mvm {
 
-class MethodInfo;
-class VMKit;
-class gc;
-
-class FunctionMap {
-public:
-  /// Functions - Map of applicative methods to function pointers. This map is
-  /// used when walking the stack so that VMKit knows which applicative method
-  /// is executing on the stack.
-  ///
-  std::map<void*, MethodInfo*> Functions;
-
-  /// FunctionMapLock - Spin lock to protect the Functions map.
-  ///
-  mvm::SpinLock FunctionMapLock;
-
-  /// IPToMethodInfo - Map a code start instruction instruction to the MethodInfo.
-  ///
-  MethodInfo* IPToMethodInfo(void* ip);
-
-  /// addMethodInfo - A new instruction pointer in the function map.
-  ///
-  void addMethodInfo(MethodInfo* meth, void* ip);
-
-  /// removeMethodInfos - Remove all MethodInfo owned by the given owner.
-  void removeMethodInfos(void* owner);
-
-  FunctionMap();
-};
-
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
 ///
@@ -125,18 +95,6 @@ public:
   ///
   virtual const char* getObjectTypeName(gc* object) { return "An object"; }
 
-//===----------------------------------------------------------------------===//
-// (3) Backtrace-related methods.
-//===----------------------------------------------------------------------===//
-
-  FunctionMap FunctionsCache;
-  MethodInfo* IPToMethodInfo(void* ip) {
-    return FunctionsCache.IPToMethodInfo(ip);
-  }
-  void removeMethodInfos(void* owner) {
-    FunctionsCache.removeMethodInfos(owner);
-  }
-  
 //===----------------------------------------------------------------------===//
 // (4) Launch-related methods.
 //===----------------------------------------------------------------------===//

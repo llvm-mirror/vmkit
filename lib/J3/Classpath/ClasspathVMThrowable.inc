@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "mvm/VMKit.h"
+
 #include "types.h"
 
 #include "Classpath.h"
@@ -137,15 +139,18 @@ JavaObject* vmthrow, JavaObject* throwable) {
   llvm_gcroot(stack, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaField* field = vm->upcalls->vmDataVMThrowable;
+
+  Jnjvm*      vm = JavaThread::get()->getJVM();
+	mvm::VMKit* vmkit = vm->vmkit;
+  JavaField*  field = vm->upcalls->vmDataVMThrowable;
+
   stack = field->getInstanceObjectField(vmthrow);
   
   // remove the VMThrowable.fillInStackTrace method and the last method
   // on the stack.
   sint32 index = 2;;
   while (index != JavaArray::getSize(stack)) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
+    mvm::MethodInfo* MI = vmkit->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
     if (!MI->isHighLevelMethod()) ++index;
     else {
       JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
@@ -159,7 +164,7 @@ JavaObject* vmthrow, JavaObject* throwable) {
   sint32 size = 0;
   sint32 cur = index;
   while (cur < JavaArray::getSize(stack)) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
+    mvm::MethodInfo* MI = vmkit->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
     ++cur;
     if (MI->isHighLevelMethod()) ++size;
   }
@@ -169,7 +174,7 @@ JavaObject* vmthrow, JavaObject* throwable) {
   
   cur = 0;
   for (sint32 i = index; i < JavaArray::getSize(stack); ++i) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, i));
+    mvm::MethodInfo* MI = vmkit->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, i));
     if (MI->isHighLevelMethod()) {
       JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
       ArrayObject::setElement(result, consStackElement(meth, ArrayPtr::getElement((ArrayPtr*)stack, i)), cur);
