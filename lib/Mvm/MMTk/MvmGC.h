@@ -29,7 +29,7 @@ public:
     return 1;
   }
 
-  GCVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) : CommonVirtualTable(d, o, t) {}
+  GCVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, VirtualMachine* v) : CommonVirtualTable(d, o, t, v) {}
   GCVirtualTable() {}
 };
 

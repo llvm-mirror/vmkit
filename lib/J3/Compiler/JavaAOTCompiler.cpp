@@ -1414,7 +1414,11 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
 
   Elemts.push_back(Tracer ? 
       ConstantExpr::getCast(Instruction::BitCast, Tracer, PTy) : N);
+
+  // vm
+  Elemts.push_back(N);
   
+	// specialized tracers
   for (uint32_t i = 0; i < mvm::VirtualTable::numberOfSpecializedTracers(); i++) {
     // Push null for now.
     Elemts.push_back(N);

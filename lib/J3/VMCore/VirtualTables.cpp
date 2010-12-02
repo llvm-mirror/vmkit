@@ -55,7 +55,8 @@ using namespace j3;
 
 mvm::VirtualTable VMClassLoader::VT((uintptr_t)VMClassLoader::staticDestructor,
 																		(uintptr_t)VMClassLoader::staticDestructor,
-																		(uintptr_t)VMClassLoader::staticTracer);
+																		(uintptr_t)VMClassLoader::staticTracer,
+																		0);
 
 //===----------------------------------------------------------------------===//
 // Trace methods for Java objects. There are four types of objects:

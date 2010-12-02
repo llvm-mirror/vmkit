@@ -1399,7 +1399,8 @@ void ClassArray::initialiseVT(Class* javaLangObject) {
 }
 
 JavaVirtualTable::JavaVirtualTable(Class* C) {
-   
+	vm = C->classLoader->getIsolate();
+
   if (C->super) {
 
     Class* referenceClass = 
@@ -1495,6 +1496,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
 }
   
 JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
+	vm = C->classLoader->getIsolate();
   
   if (C->baseClass()->isClass())
     C->baseClass()->asClass()->resolveClass();
@@ -1713,6 +1715,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
 
 JavaVirtualTable::JavaVirtualTable(ClassPrimitive* C) {
   // Only used for subtype checking
+	vm = C->classLoader->getIsolate();
   cl = C;
   depth = 0;
   display[0] = this;

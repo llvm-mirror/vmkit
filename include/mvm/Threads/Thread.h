@@ -43,6 +43,7 @@ class VirtualMachine;
 /// CircularBase - This class represents a circular list. Classes that extend
 /// this class automatically place their instances in a circular list.
 ///
+// WARNING: if you modify this class, you must also change mvm-runtime.ll
 class CircularBase {
   /// _next - The next object in the list.
   ///
@@ -143,6 +144,7 @@ class ExceptionBuffer;
 class MutatorThread;
 class VMKit;
 
+// WARNING: if you modify this class, you must also change mvm-runtime.ll
 class VMThreadData {
 public:
   /// mut - The associated thread mutator
@@ -164,6 +166,7 @@ public:
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.
+// WARNING: if you modify this class, you must also change mvm-runtime.ll
 class Thread : public CircularBase {
 public:
   Thread(VMKit* vmk) {

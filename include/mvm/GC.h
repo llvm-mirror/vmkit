@@ -39,26 +39,28 @@ namespace mvm {
 		}
 	};
 
+	// WARNING: if you modify this class, you must also change the generation of VT in JavaAOTCompiler
 	class CommonVirtualTable {
 	public:
 		uintptr_t       destructor;
 		uintptr_t       operatorDelete;
 		uintptr_t       tracer;
-		//		VirtualMachine* vm;
+		VirtualMachine* vm;
 
 		uintptr_t* getFunctions() {
 			return &destructor;
 		}
 
-		CommonVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
+		CommonVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, VirtualMachine* v) {
 			destructor = d;
 			operatorDelete = o;
 			tracer = t;
+			vm = v;
 		}
 
 		CommonVirtualTable() {}
 
-		static int numberOfCommonEntries() { return 3; }
+		static int numberOfCommonEntries() { return 4; }
 
 		static void emptyTracer(void*) {}
 	};
@@ -73,7 +75,7 @@ namespace mvm {
 
 	class VirtualTable : public GCVirtualTable {
 	public:
-		VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) : GCVirtualTable(d, o, t) {}
+		VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t, VirtualMachine* v) : GCVirtualTable(d, o, t, v) {}
 		VirtualTable() {}
 	};
 

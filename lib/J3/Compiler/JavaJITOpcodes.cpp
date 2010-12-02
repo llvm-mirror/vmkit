@@ -156,6 +156,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
     }
     
 #if JNJVM_EXECUTE > 1
+		//		if (compilingMethod->name->equals(compilingClass->classLoader->asciizConstructUTF8("allocSlowOnce")))
     {
       Value* args[3] = {
         ConstantInt::get(Type::getInt32Ty(*llvmContext), (int64_t)bytecode),
