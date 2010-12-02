@@ -53,16 +53,15 @@ public:
 /// defines what a VM should be.
 ///
 class VirtualMachine : public mvm::PermanentObject {
-protected:
-  VirtualMachine(mvm::BumpPtrAllocator &Alloc, mvm::VMKit* vmk) :
-		  allocator(Alloc) {
-		vmkit = vmk;
-  }
+private:
+	friend class VMKit;
+	VirtualMachine(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {}
 
-  virtual ~VirtualMachine() {
-  }
+protected:
+  VirtualMachine(mvm::BumpPtrAllocator &Alloc, mvm::VMKit* vmk);
 
 public:
+  virtual ~VirtualMachine();
 
   /// allocator - Bump pointer allocator to allocate permanent memory
   /// related to this VM.
@@ -73,9 +72,8 @@ public:
 	///
 	mvm::VMKit* vmkit;
 
-//===----------------------------------------------------------------------===//
-// (1) Thread-related methods.
-//===----------------------------------------------------------------------===//
+	/// vmID - id of the vm
+	size_t vmID;
 
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.
@@ -120,7 +118,7 @@ public:
 
   /// getObjectSize - Get the size of this object. Used by copying collectors.
   ///
-  virtual size_t getObjectSize(gc* object) = 0;
+  virtual size_t getObjectSize(gc* object) { abort(); }
 
   /// getObjectTypeName - Get the type of this object. Used by the GC for
   /// debugging purposes.
@@ -145,10 +143,10 @@ public:
 
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.
-  virtual void runApplication(int argc, char** argv) = 0;
+  virtual void runApplication(int argc, char** argv) { abort(); }
   
   /// waitForExit - Wait until the virtual machine stops its execution.
-  virtual void waitForExit() = 0;
+  virtual void waitForExit() { abort(); }
 };
 
 } // end namespace mvm

@@ -1,8 +1,10 @@
 #ifndef _VMKIT_H_
 #define _VMKIT_H_
 
+#include <vector>
 #include "mvm/Allocator.h"
 #include "mvm/Threads/CollectionRV.h"
+#include "mvm/VirtualMachine.h"
 
 namespace mvm {
 
@@ -13,6 +15,14 @@ public:
 
   VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
 	}
+	/// ------------------------------------------------- ///
+	/// ---             vm managment                  --- ///
+	/// ------------------------------------------------- ///
+	mvm::SpinLock                lockvms;  // lock for vms
+	std::vector<VirtualMachine*> vms;      // array of vms
+
+	size_t addVM(VirtualMachine* vm);
+	void   removeVM(size_t id);
 
 	/// ------------------------------------------------- ///
 	/// ---             thread managment              --- ///
