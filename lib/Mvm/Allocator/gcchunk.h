@@ -10,11 +10,15 @@
 #ifndef _GC_CHUNK_H_
 #define _GC_CHUNK_H_
 
-#include "mvm/VirtualMachine.h"
-#include "mvm/GC.h"
+//#include "mvm/VirtualMachine.h"
+//#include "mvm/GC.h"
 
 #include "gcmapper.h"
 #include "types.h"
+
+namespace mvm {
+	class gcRoot;
+}
 
 using namespace mvm;
 

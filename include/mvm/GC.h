@@ -16,6 +16,7 @@
 
 namespace mvm {
 
+	class VirtualMachine;
 	class VirtualTable;
 	class gc;
 
@@ -40,9 +41,10 @@ namespace mvm {
 
 	class CommonVirtualTable {
 	public:
-		uintptr_t destructor;
-		uintptr_t operatorDelete;
-		uintptr_t tracer;
+		uintptr_t       destructor;
+		uintptr_t       operatorDelete;
+		uintptr_t       tracer;
+		//		VirtualMachine* vm;
 
 		uintptr_t* getFunctions() {
 			return &destructor;

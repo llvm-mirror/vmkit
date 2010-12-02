@@ -14,7 +14,6 @@
 
 namespace mvm {
   static const uint32_t GCBits = 2;
-  static const uint64_t GCBitMask = 0x3;
   static const bool MovesObject = false;
 }
 

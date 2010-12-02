@@ -1,4 +1,4 @@
-//===----------- GC.h - Garbage Collection Interface -----------------------===//
+//===----------- MvmGC.h - Garbage Collection Interface -------------------===//
 //
 //                     The Micro Virtual Machine
 //
@@ -13,10 +13,16 @@
 
 #include "types.h"
 #include "gcalloc.h"
+#include "mvm/VirtualMachine.h"
 
 #define gc_allocator std::allocator
 
+using namespace mvm;
+
 namespace mvm {
+	class Thread;
+	class VirtualMachine;
+
 class GCVirtualTable : public CommonVirtualTable {
 public:
   static uint32_t numberOfBaseFunctions() {
@@ -30,8 +36,6 @@ public:
   GCVirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) : CommonVirtualTable(d, o, t) {}
   GCVirtualTable() {}
 };
-
-class Thread;
 
 class Collector {
   friend class GCThread;
@@ -185,7 +189,7 @@ public:
 
     unlock();
 
-    if (vt->destructor)
+    if (((CommonVirtualTable*)vt)->destructor)
       mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p);
 
 
@@ -342,7 +346,6 @@ public:
   static gc* getForwardedFinalizable(gc* val, uintptr_t closure) {
     return val;
   }
-
 };
 
 class collectable : public gcRoot {
@@ -369,7 +372,6 @@ public:
   }
 
 };
-
 }
 
 #endif

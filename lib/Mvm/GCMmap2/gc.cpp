@@ -7,7 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/GC/GC.h"
 #include "mvm/Threads/Thread.h"
 #include "mvm/GC.h"
 

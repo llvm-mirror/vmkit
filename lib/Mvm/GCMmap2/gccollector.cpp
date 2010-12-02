@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mvm/GC.h"
+#include "mvm/VMKit.h"
 
 using namespace mvm;
 
@@ -40,10 +41,10 @@ void Collector::do_collect() {
   unused_nodes->attrape(used_nodes);
 
   mvm::Thread* th = mvm::Thread::get();
-  th->MyVM->rendezvous.startRV();
+  th->vmkit->rendezvous.startRV();
   th->MyVM->startCollection();
 
-  th->MyVM->rendezvous.synchronize();
+  th->vmkit->rendezvous.synchronize();
 
   mvm::Thread* tcur = th;
 
@@ -89,7 +90,7 @@ void Collector::do_collect() {
   status = stat_alloc;
   
   // Wake up all threads.
-  th->MyVM->rendezvous.finishRV();
+  th->vmkit->rendezvous.finishRV();
   th->MyVM->endCollection();
   
   // Kill unreachable objects.

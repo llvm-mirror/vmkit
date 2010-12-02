@@ -13,7 +13,6 @@
 #include "mvm/Allocator.h"
 #include "mvm/Threads/CollectionRV.h"
 #include "mvm/Threads/Locks.h"
-#include "mvm/GC.h"
 
 #include <cassert>
 #include <map>
@@ -22,6 +21,7 @@ namespace mvm {
 
 class MethodInfo;
 class VMKit;
+class gc;
 
 class FunctionMap {
 public:
