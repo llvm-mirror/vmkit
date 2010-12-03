@@ -155,6 +155,19 @@ extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {
   return val;
 }
 
+void Collector::objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) {
+  *slot = value;
+}
+
+void Collector::objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) {
+  *slot = value;
+}
+
+bool Collector::objectReferenceTryCASBarrier(gc*ref, gc** slot, gc* old, gc* value) {
+  gc* res = __sync_val_compare_and_swap(slot, old, value);
+  return (old == res);
+}
+
 //TODO: Remove these.
 std::set<gc*> __InternalSet__;
 void* Collector::begOf(gc* obj) {

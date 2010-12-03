@@ -71,11 +71,14 @@ public:
   static void scanObject(void** ptr, uintptr_t closure) __attribute__ ((always_inline));
   static void markAndTrace(void* source, void* ptr, uintptr_t closure) __attribute__ ((always_inline));
   static void markAndTraceRoot(void* ptr, uintptr_t closure) __attribute__ ((always_inline));
-  static gc* retainForFinalize(gc* val, uintptr_t closure) __attribute__ ((always_inline));
-  static gc* retainReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
-  static gc* getForwardedFinalizable(gc* val, uintptr_t closure) __attribute__ ((always_inline));
-  static gc* getForwardedReference(gc* val, uintptr_t closure) __attribute__ ((always_inline));
-  static gc* getForwardedReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc*  retainForFinalize(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc*  retainReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc*  getForwardedFinalizable(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc*  getForwardedReference(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static gc*  getForwardedReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static void objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) __attribute__ ((always_inline));
+  static void objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) __attribute__ ((always_inline));
+  static bool objectReferenceTryCASBarrier(gc* ref, gc** slot, gc* old, gc* value) __attribute__ ((always_inline));
 
   static void collect();
   

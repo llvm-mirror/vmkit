@@ -99,7 +99,8 @@ public:
     llvm_gcroot(self, 0);
     llvm_gcroot(value, 0);
     if (value != NULL) assert(value->getVirtualTable());
-    self->elements[i] = value;
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)self, (gc**)&(self->elements[i]), (gc*)value);
   }
 
   static JavaObject** getElements(ArrayObject* self) {

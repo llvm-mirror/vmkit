@@ -27,30 +27,60 @@ jclass clazz,
 #endif
 JavaObject* src) {
   
-  JavaObject* res = 0;
+  JavaObject* res = NULL;
+  JavaObject* tmp = NULL;
   llvm_gcroot(res, 0);
   llvm_gcroot(src, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   UserCommonClass* cl = JavaObject::getClass(src);
-  size_t size = 0;
+  Jnjvm* vm = JavaThread::get()->getJVM();
   if (cl->isArray()) {
     UserClassArray* array = cl->asArrayClass();
+    int length = JavaArray::getSize(src);
+    res = array->doNew(length, vm);
     UserCommonClass* base = array->baseClass();
-    uint32 logSize = base->isPrimitive() ? 
-      base->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
-
-    size = sizeof(JavaObject) + sizeof(ssize_t) + 
-                  (JavaArray::getSize(src) << logSize);
+    if (base->isPrimitive()) {
+      int size = length << base->asPrimitiveClass()->logSize;
+      memcpy((void*)((uintptr_t)res + sizeof(JavaObject) + sizeof(size_t)),
+             (void*)((uintptr_t)src + sizeof(JavaObject) + sizeof(size_t)),
+             size);
+    } else {
+      for (int i = 0; i < length; i++) {
+        tmp = ArrayObject::getElement((ArrayObject*)src, i);
+        ArrayObject::setElement((ArrayObject*)res, tmp, i);
+      }
+    }
   } else {
     assert(cl->isClass() && "Not a class!");
-    size = cl->asClass()->getVirtualSize();
+    res = cl->asClass()->doNew(vm);
+    while (cl != NULL) {
+      for (uint32 i = 0; i < cl->asClass()->nbVirtualFields; ++i) {
+        JavaField& field = cl->asClass()->virtualFields[i];
+        if (field.isReference()) {
+          tmp = field.getInstanceObjectField(src);
+          JavaObject** ptr = field.getInstanceObjectFieldPtr(res);
+          mvm::Collector::objectReferenceWriteBarrier((gc*)res, (gc**)ptr, (gc*)tmp);
+        } else if (field.isLong()) {
+          field.setInstanceLongField(res, field.getInstanceLongField(src));
+        } else if (field.isDouble()) {
+          field.setInstanceDoubleField(res, field.getInstanceDoubleField(src));
+        } else if (field.isInt()) {
+          field.setInstanceInt32Field(res, field.getInstanceInt32Field(src));
+        } else if (field.isFloat()) {
+          field.setInstanceFloatField(res, field.getInstanceFloatField(src));
+        } else if (field.isShort() || field.isChar()) {
+          field.setInstanceInt16Field(res, field.getInstanceInt16Field(src));
+        } else if (field.isByte() || field.isBoolean()) {
+          field.setInstanceInt8Field(res, field.getInstanceInt8Field(src));
+        } else {
+          UNREACHABLE();
+        }
+      }
+      cl = cl->super;
+    }
   }
-  res = (JavaObject*)gc::operator new(size, src->getVirtualTable());
-  memcpy((void*)((uintptr_t)res + 2 * sizeof(void*)),
-         (void*)((uintptr_t)src + 2 * sizeof(void*)),
-         size - 2 * sizeof(void*));
 
   END_NATIVE_EXCEPTION
 

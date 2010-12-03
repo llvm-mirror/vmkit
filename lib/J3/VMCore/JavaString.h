@@ -21,9 +21,10 @@ class ArrayUInt16;
 class Jnjvm;
 
 class JavaString : public JavaObject {
-public:
+ private:
   // CLASSPATH FIELDS!!
   const ArrayUInt16* value;
+ public:
   sint32 count;
   sint32 cachedHashCode;
   sint32 offset;
@@ -31,7 +32,8 @@ public:
   static void setValue(JavaString* self, const ArrayUInt16* array) {
     llvm_gcroot(self, 0);
     llvm_gcroot(array, 0);
-    self->value = array;
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)self, (gc**)&(self->value), (gc*)array);
   }
   static const ArrayUInt16* getValue(const JavaString* self) {
     llvm_gcroot(self, 0);

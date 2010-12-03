@@ -14,7 +14,7 @@
 
 #include "JavaClass.h"
 #include "JavaObject.h"
-#include <JavaThread.h>
+#include "JavaThread.h"
 
 extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
 
@@ -42,7 +42,8 @@ public:
   static void setProtectionDomain(JavaObjectClass* cl, JavaObject* pd) {
     llvm_gcroot(cl, 0);
     llvm_gcroot(pd, 0);
-    cl->pd = pd;
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)cl, (gc**)&(cl->pd), (gc*)pd);
   }
   
   static JavaObject* getProtectionDomain(JavaObjectClass* cl) {
@@ -179,13 +180,22 @@ public:
   static void setDetailedMessage(JavaObjectThrowable* self, JavaObject* obj) {
     llvm_gcroot(self, 0);
     llvm_gcroot(obj, 0);
-    self->detailedMessage = obj;
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)self, (gc**)&(self->detailedMessage), (gc*)obj);
   }
 
   static void fillInStackTrace(JavaObjectThrowable* self) {
+    JavaObject* stackTrace = NULL;
     llvm_gcroot(self, 0);
-    self->cause = self;
-    self->vmState = internalFillInStackTrace(self);
+    llvm_gcroot(stackTrace, 0);
+
+    stackTrace = internalFillInStackTrace(self);
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)self, (gc**)&(self->vmState), (gc*)stackTrace);
+
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)self, (gc**)&(self->cause), (gc*)self);
+
     self->stackTrace = NULL;
   }
 };
@@ -201,8 +211,10 @@ public:
     llvm_gcroot(self, 0);
     llvm_gcroot(r, 0);
     llvm_gcroot(q, 0);
-    self->referent = r;
-    self->queue = q;
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)self, (gc**)&(self->referent), (gc*)r);
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)self, (gc**)&(self->queue), (gc*)q);
   }
 
   static JavaObject** getReferentPtr(JavaObjectReference* self) {
@@ -213,6 +225,7 @@ public:
   static void setReferent(JavaObjectReference* self, JavaObject* r) {
     llvm_gcroot(self, 0);
     llvm_gcroot(r, 0);
+    // No write barrier: this is only called by the GC.
     self->referent = r;
   }
 };

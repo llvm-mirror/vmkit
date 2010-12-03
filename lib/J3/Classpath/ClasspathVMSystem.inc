@@ -82,33 +82,26 @@ jint len) {
   }
   if (th->pendingException != NULL) return;
   
-  jint i = sstart;
-  jint length = len;
-  bool doThrow = false;
   if (!(dstType->isPrimitive())) {
-    while (i < sstart + len && !doThrow) {
-      cur = ArrayObject::getElement((ArrayObject*)src, i);
+    for (int i = 0; i < len; i++) {
+      cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
       if (cur) {
         if (!(JavaObject::getClass(cur)->isAssignableFrom(dstType))) {
-          doThrow = true;
-          length = i;
+          th->pendingException = vm->CreateArrayStoreException(
+              (JavaVirtualTable*)dst->getVirtualTable());
+          break;
+        } else {
+          ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);
         }
       }
-      ++i;
     }
+  } else { 
+    uint32 logSize = dstType->asPrimitiveClass()->logSize;
+    void* ptrDst = (void*)((int64_t)JavaArray::getElements(dst) + (dstart << logSize));
+    void* ptrSrc = (void*)((int64_t)JavaArray::getElements(src) + (sstart << logSize));
+    memmove(ptrDst, ptrSrc, len << logSize);
   }
-  
-  uint32 logSize = dstType->isPrimitive() ? 
-    dstType->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
 
-  void* ptrDst = (void*)((int64_t)JavaArray::getElements(dst) + (dstart << logSize));
-  void* ptrSrc = (void*)((int64_t)JavaArray::getElements(src) + (sstart << logSize));
-  memmove(ptrDst, ptrSrc, length << logSize);
-
-  if (doThrow) {
-    th->pendingException = vm->CreateArrayStoreException(
-      (JavaVirtualTable*)dst->getVirtualTable());
-  }
 }
 
 JNIEXPORT jint JNICALL Java_java_lang_VMSystem_identityHashCode(

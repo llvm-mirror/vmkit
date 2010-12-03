@@ -109,6 +109,19 @@ gc* Collector::getForwardedReferent(gc* val, uintptr_t closure) {
   return NULL;
 }
 
+void Collector::objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) {
+  *slot = value;
+}
+
+void Collector::objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) {
+  *slot = value;
+}
+
+bool Collector::objectReferenceTryCASBarrier(gc*ref, gc** slot, gc* old, gc* value) {
+  gc* res = __sync_val_compare_and_swap(slot, old, value);
+  return (old == res);
+}
+
 void Collector::collect() {
   // Do nothing.
 }
