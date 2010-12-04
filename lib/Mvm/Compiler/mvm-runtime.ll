@@ -22,7 +22,8 @@
 ;;; field 12: void*  vmData
 ;;; field 13: gc*    pendingException
 ;;; field 14: VMkit* vmkit
-%Thread       = type { %CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*, i8*, i8*, i8* }
+;;; field 15: void*  allVMDatas
+%Thread       = type { %CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*, i8*, i8*, i8*, i8* }
 
 ;;; field 0: VT
 ;;; field 1: mvm::MutatorThread*  mut

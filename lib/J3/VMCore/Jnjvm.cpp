@@ -1393,6 +1393,17 @@ ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
   return tmp;
 }
 
+void Jnjvm::finalizeObject(mvm::gc* _o) {
+	JavaObject *obj = (JavaObject*)_o;
+
+	llvm_gcroot(_o, 0);
+	llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = upcalls->FinalizeObject;
+  UserClass* cl = JavaObject::getClass(obj)->asClass();
+  meth->invokeIntVirtualBuf(this, cl, obj, 0);
+}
+
 void Jnjvm::startCollection() {
   finalizerThread->FinalizationQueueLock.acquire();
   referenceThread->ToEnqueueLock.acquire();

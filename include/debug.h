@@ -73,7 +73,7 @@
 #define UNREACHABLE() ABORT()
 
 #define ASSERT(cond) {  \
-  if (!cond) ABORT(); } \
+		if (!cond) { fprintf(stderr, "fatal: assert("#cond")\n"); ABORT(); } } \
 
 #undef ALWAYS_INLINE
 #define ALWAYS_INLINE __attribute__ ((always_inline))

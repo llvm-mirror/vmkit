@@ -239,12 +239,10 @@ void FinalizerThread::scanFinalizationQueue(uintptr_t closure) {
 typedef void (*destructor_t)(void*);
 
 void invokeFinalizer(mvm::gc* _obj) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* obj = (JavaObject*)_obj;
   llvm_gcroot(obj, 0);
-  JavaMethod* meth = vm->upcalls->FinalizeObject;
-  UserClass* cl = JavaObject::getClass(obj)->asClass();
-  meth->invokeIntVirtualBuf(vm, cl, obj, 0);
+  Jnjvm* vm = (Jnjvm*)obj->getVirtualTable()->vm; //JavaThread::get()->getJVM();
+	vm->finalizeObject(obj);
 }
 
 void invokeFinalize(mvm::gc* res) {
@@ -276,6 +274,7 @@ void FinalizerThread::finalizerStart(FinalizerThread* th) {
       if (!res) break;
 
 			mvm::VirtualTable* VT = res->getVirtualTable();
+			ASSERT(VT->vm);
       if (VT->operatorDelete) {
         destructor_t dest = (destructor_t)VT->destructor;
         dest(res);

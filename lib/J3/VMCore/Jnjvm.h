@@ -320,6 +320,10 @@ public:
   /// asciizToUTF8 - Constructs an UTF8 out of the asciiz.
   ///
   ArrayUInt16* asciizToArray(const char* asciiz);
+
+  /// finalizeObject - invoke the finalizer of a java object
+  ///
+	void finalizeObject(mvm::gc* obj);
   
   /// setFinalizerThread - Set the finalizer thread of this VM.
   ///

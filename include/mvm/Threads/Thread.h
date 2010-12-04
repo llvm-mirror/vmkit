@@ -149,6 +149,7 @@ class VMThreadData {
 public:
   /// mut - The associated thread mutator
 	MutatorThread*  mut;
+  /// vm - The associated virtual machine
 	VirtualMachine* vm;
 
 	VMThreadData(MutatorThread* m, VirtualMachine *v) {
@@ -178,6 +179,7 @@ public:
 		_vmkit = vmk;
 		lastKnownFrame = 0;
 		pendingException = 0;
+		allVmsData = 0;
   }
 
   /// yield - Yield the processor to another thread.
@@ -389,6 +391,15 @@ private:
 
 public:
 	mvm::VMKit* vmkit();
+
+  /// allVmsData - the array of thread specific data.
+  ///
+	VMThreadData** allVmsData;
+
+  /// reallocAllVmsData - realloc the allVmsData from old to n or 0 to n if allVmsData=0
+	///   must be protected by rendezvous.threadLock
+  ///
+	void reallocAllVmsData(int old, int n);
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS

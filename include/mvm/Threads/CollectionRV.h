@@ -18,16 +18,6 @@ namespace mvm {
 
 class CollectionRV {
 public:
-  /// oneThread - One of the threads
-  mvm::Thread* oneThread;
-
-protected: 
-  /// numberOfThreads - The number of threads that currently run under this VM.
-  uint32_t numberOfThreads;
-
-  /// threadLock - Lock to create or destroy a new thread.
-  mvm::SpinLock threadLock;
-
   /// _lockRV - Lock for synchronization.
   LockNormal _lockRV;         
   
@@ -43,8 +33,6 @@ protected:
 public: 
   CollectionRV() {
     nbJoined = 0;
-    oneThread = 0;
-    numberOfThreads = 0;
   }
 
   void lockRV() { _lockRV.lock(); }
@@ -71,12 +59,6 @@ public:
   virtual void join() = 0;
   virtual void joinAfterUncooperative(void* SP) = 0;
   virtual void joinBeforeUncooperative() = 0;
-
-  /// addThread - Add a new thread to the list of threads.
-  void addThread(mvm::Thread* th);
-  
-  /// removeThread - Remove the thread from the list of threads.
-  void removeThread(mvm::Thread* th);
 
   /// prepareForJoin - for uncooperative gc, prepare the SIGGC handler
 	virtual void prepareForJoin() = 0;

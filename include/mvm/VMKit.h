@@ -42,16 +42,17 @@ public:
   /// allocator - Bump pointer allocator to allocate permanent memory of VMKit
   mvm::BumpPtrAllocator& allocator;
 
-  VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
-	}
+  VMKit(mvm::BumpPtrAllocator &Alloc);
+
+	SpinLock                     vmkitLock;
 
 	/// ------------------------------------------------- ///
 	/// ---             vm managment                  --- ///
 	/// ------------------------------------------------- ///
-	// locksvms - a lock for vms
-	mvm::SpinLock                lockvms;
 	// vms - the list of vms. Could be directly an array and we could also directly use the vmID as index in this array.
-	std::vector<VirtualMachine*> vms;
+	// synchronize with vmkitLock
+	VirtualMachine**             vms;
+	size_t                       numberOfVms;
 
 	size_t addVM(VirtualMachine* vm);
 	void   removeVM(size_t id);
@@ -59,6 +60,13 @@ public:
 	/// ------------------------------------------------- ///
 	/// ---             thread managment              --- ///
 	/// ------------------------------------------------- ///
+  /// oneThread - the linked list of thread. 
+  ///
+	Thread*                      oneThread;
+
+  /// numberOfThreads - The number of threads that currently run under this VM.
+  size_t                       numberOfThreads;
+
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
 #ifdef WITH_LLVM_GCC
@@ -66,6 +74,9 @@ public:
 #else
   UncooperativeCollectionRV rendezvous;
 #endif
+
+	void addThread(mvm::Thread* th);  
+	void removeThread(mvm::Thread* th);
 
 	/// ------------------------------------------------- ///
 	/// ---    backtrace related methods              --- ///
