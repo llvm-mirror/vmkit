@@ -18,6 +18,9 @@
 //     referenced by classes.
 // (4) Tracing the roots of a program: the JVM and the threads.
 //
+// Additionnaly, all write of GC objets in J3 data structures must go through
+// a write barrier.
+//
 //===----------------------------------------------------------------------===//
 
 #include "ClasspathReflect.h"
@@ -229,20 +232,15 @@ void JnjvmClassLoader::tracer(uintptr_t closure) {
 void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
  
   JnjvmClassLoader::tracer(closure);
-
-#define TRACE_DELEGATEE(prim) \
-  prim->tracer(closure);
-
-  TRACE_DELEGATEE(upcalls->OfVoid);
-  TRACE_DELEGATEE(upcalls->OfBool);
-  TRACE_DELEGATEE(upcalls->OfByte);
-  TRACE_DELEGATEE(upcalls->OfChar);
-  TRACE_DELEGATEE(upcalls->OfShort);
-  TRACE_DELEGATEE(upcalls->OfInt);
-  TRACE_DELEGATEE(upcalls->OfFloat);
-  TRACE_DELEGATEE(upcalls->OfLong);
-  TRACE_DELEGATEE(upcalls->OfDouble);
-#undef TRACE_DELEGATEE
+  upcalls->OfVoid->tracer(closure);
+  upcalls->OfBool->tracer(closure);
+  upcalls->OfByte->tracer(closure);
+  upcalls->OfChar->tracer(closure);
+  upcalls->OfShort->tracer(closure);
+  upcalls->OfInt->tracer(closure);
+  upcalls->OfFloat->tracer(closure);
+  upcalls->OfLong->tracer(closure);
+  upcalls->OfDouble->tracer(closure);
 }
 
 //===----------------------------------------------------------------------===//
@@ -316,24 +314,12 @@ void Jnjvm::tracer(uintptr_t closure) {
   for (i = i + 1; i < mvm::LockSystem::GlobalSize; i++) {
     assert(lockSystem.LockTable[i] == NULL);
   }
-
-
-#if defined(ISOLATE_SHARING)
-  mvm::Collector::markAndTraceRoot(&JnjvmSharedLoader::sharedLoader, closure);
-#endif
-  
-#ifdef SERVICE
-  parent->tracer(closure);
-#endif
 }
 
 void JavaThread::tracer(uintptr_t closure) {
   mvm::Collector::markAndTraceRoot(&pendingException, closure);
   mvm::Collector::markAndTraceRoot(&javaThread, closure);
   mvm::Collector::markAndTraceRoot(&vmThread, closure);
-#ifdef SERVICE
-  mvm::Collector::markAndTraceRoot(&ServiceException, closure);
-#endif
   
   JNILocalReferences* end = localJNIRefs;
   while (end != NULL) {

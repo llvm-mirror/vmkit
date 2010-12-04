@@ -274,7 +274,8 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
   strings = new(allocator, "StringList") StringList();
 
   vmdata->JCL = this;
-  javaLoader = loader;
+  mvm::Collector::objectReferenceNonHeapWriteBarrier(
+      (gc**)&javaLoader, (gc*)loader);
   isolate = I;
 
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;

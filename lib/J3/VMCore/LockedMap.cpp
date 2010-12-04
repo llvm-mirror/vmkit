@@ -10,17 +10,24 @@
 #include <map>
 
 #include "JavaArray.h"
-#include "JavaClass.h"
 #include "JavaString.h"
-#include "JavaTypes.h"
 #include "LockedMap.h"
-#include "Zip.h"
-
-#include <cstring>
 
 using namespace j3;
 
 void StringMap::insert(JavaString* str) {
+  const ArrayUInt16* array = NULL;
   llvm_gcroot(str, 0);
-  map.insert(std::make_pair(JavaString::getValue(str), str));
+  llvm_gcroot(array, 0);
+  array = JavaString::getValue(str);
+  StringMap::iterator it = map.insert(std::make_pair(array, str)).first;
+  assert(map.find(array)->second == str);
+  assert(map.find(array)->first == array);
+  assert(&(map.find(array)->second) == &(it->second));
+  assert(&(map.find(array)->first) == &(it->first));
+  // Inform the GC that we just stored a string here.
+  mvm::Collector::objectReferenceNonHeapWriteBarrier(
+      (gc**)&(it->second), (gc*)str);
+  mvm::Collector::objectReferenceNonHeapWriteBarrier(
+      (gc**)&(it->first), (gc*)array);
 }

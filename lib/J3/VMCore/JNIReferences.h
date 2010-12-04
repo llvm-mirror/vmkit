@@ -69,7 +69,8 @@ public:
       return next->addJNIReference(obj);
     } else {
       ++count;
-      globalReferences[length] = obj;
+      mvm::Collector::objectReferenceNonHeapWriteBarrier(
+          (gc**)&(globalReferences[length]), (gc*)obj);
       return &globalReferences[length++];
     }
   }
@@ -77,7 +78,7 @@ public:
   void removeJNIReference(JavaObject** obj) {
     if (((uintptr_t)obj >= (uintptr_t)globalReferences) &&
         ((uintptr_t)obj) < (uintptr_t)(globalReferences + MAXIMUM_REFERENCES)) {
-      *obj = 0;
+      *obj = NULL;
       --count;
     } else {
       assert(next && "No global reference located there");

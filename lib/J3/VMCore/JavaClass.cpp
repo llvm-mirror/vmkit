@@ -1066,8 +1066,13 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
 
   prev = (JavaObject*)__sync_val_compare_and_swap((uintptr_t)obj, NULL, val);
 
-  if (!prev) return val;
-  else return prev;
+  if (prev == NULL) {
+    // Write it again to execute the write barrier.
+    mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)obj, (gc*)val);
+    return val;
+  } else {
+    return prev;
+  }
 }
 
 #else
@@ -1078,8 +1083,14 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   llvm_gcroot(prev, 0);
   prev = (JavaObject*)__sync_val_compare_and_swap(&(delegatee[0]), NULL, val);
 
-  if (!prev) return val;
-  else return prev;
+  if (prev == NULL) {
+    // Write it again to execute the write barrier.
+    mvm::Collector::objectReferenceNonHeapWriteBarrier(
+        (gc**)&(delegatee[0]), (gc*)val);
+    return val;
+  } else {
+    return prev;
+  }
 }
 
 #endif

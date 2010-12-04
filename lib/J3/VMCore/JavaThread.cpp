@@ -40,8 +40,10 @@ JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() {
 void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
   llvm_gcroot(thread, 0);
   llvm_gcroot(vmth, 0);
-  javaThread = thread;
-  vmThread = vmth;
+  mvm::Collector::objectReferenceNonHeapWriteBarrier(
+      (gc**)&javaThread, (gc*)thread);
+  mvm::Collector::objectReferenceNonHeapWriteBarrier(
+      (gc**)&vmThread, (gc*)vmth);
 }
 
 JavaThread::~JavaThread() {
@@ -153,7 +155,8 @@ JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,
     next->prev = this;
     return next->addJNIReference(th, obj);
   } else {
-    localReferences[length] = obj;
+    mvm::Collector::objectReferenceNonHeapWriteBarrier(
+        (gc**)&(localReferences[length]), (gc*)obj);
     return &localReferences[length++];
   }
 }

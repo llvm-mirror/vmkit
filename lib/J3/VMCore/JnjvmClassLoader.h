@@ -513,7 +513,8 @@ public:
       JCL->strings = next;
       return next->addString(JCL, obj);
     } else {
-      strings[length] = obj;
+      mvm::Collector::objectReferenceNonHeapWriteBarrier(
+          (gc**)&(strings[length]), (gc*)obj);
       return &strings[length++];
     }
   }
