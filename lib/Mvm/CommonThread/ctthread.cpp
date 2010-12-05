@@ -44,17 +44,14 @@ Thread::Thread(VMKit* vmk) {
 	vmk->registerPreparedThread(this);
 }
 
-Thread::~Thread() {
-	vmkit->unregisterPreparedThread(this);
-}
-
 void Thread::attach(VirtualMachine* vm) {
 	MyVM = vm;
 	vmData = allVmsData[vm->vmID];
 
 	if(!vmData) {
-		printf("should not happen yet\n");
-		abort();
+		vmkit->vmkitLock.lock();
+		vmData = allVmsData[vm->vmID] = vm->buildVMThreadData(this);
+		vmkit->vmkitLock.unlock();
 	}
 }
 
@@ -68,11 +65,17 @@ void Thread::reallocAllVmsData(int old, int n) {
 		delete oldData;
 	} else
 		allVmsData = newData;
+	memset(allVmsData + old*sizeof(VMThreadData*), 0, (n-old)*sizeof(VMThreadData*));
 }
 
 void Thread::tracer(uintptr_t closure) {
 	mvm::Collector::markAndTraceRoot(&pendingException, closure);
-	vmData->tracer(closure);
+
+	// should we take the vmkit lock? I suppose that all the threads are suspended during the collection...
+	for(size_t i=0; i<vmkit->numberOfVms; i++)
+		if(allVmsData[i]) {
+			allVmsData[i]->tracer(closure);
+		}
 }
 
 int Thread::kill(void* tid, int signo) {
@@ -525,6 +528,7 @@ void Thread::releaseThread(mvm::Thread* th) {
     // Wait for the thread to die.
     pthread_join((pthread_t)thread_id, NULL);
   }
+	//	th->vmkit->unregisterPreparedThread(th);
   uintptr_t index = ((uintptr_t)th & Thread::IDMask);
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;

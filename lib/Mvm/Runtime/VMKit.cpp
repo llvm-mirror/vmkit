@@ -57,6 +57,9 @@ void VMKit::unregisterPreparedThread(mvm::Thread* th) {
 	vmkitLock.lock();
 	numberOfRunningThreads--;
 	th->remove();
+	//for(int i=0; i<numberOfVms; i++)
+	//if(th->allVmsData[i])
+	//		delete th->allVmsData[i]; -> Must make a choice for the destruction of threads...
 	delete th->allVmsData;
 	vmkitLock.unlock();
 }

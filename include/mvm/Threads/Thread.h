@@ -160,7 +160,6 @@ protected:
   Thread(VMKit* vmk);
 
 public:
-  ~Thread();
 
   /// yield - Yield the processor to another thread.
   ///

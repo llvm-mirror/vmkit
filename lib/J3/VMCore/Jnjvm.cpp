@@ -1063,8 +1063,8 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
 
 mvm::VMThreadData* Jnjvm::buildVMThreadData(mvm::Thread* mut) {
 	JavaThread* th = new JavaThread(this, finalizerThread);
-	mut->allVmsData[vmID] = th; // will be done by my caller but I will call java code 
-	mut->vmData = th;           // will be done by my caller but I will call java code 
+	mut->allVmsData[vmID] = th; // will be done by my caller but I have to call java code before
+	mut->vmData = th;           // will be done by my caller but I have to call java code before
 	bootstrapLoader->upcalls->CreateForeignJavaThread(this, th);
 	return th;
 }
@@ -1123,8 +1123,6 @@ void Jnjvm::loadBootstrap() {
   // The initialization code of the classes initialized below may require
   // to get the Java thread, so we create the Java thread object first.
 	upcalls->InitializeThreading(this);
-
-	buildVMThreadData(finalizerThread);
   
   LOAD_CLASS(upcalls->newClass);
   LOAD_CLASS(upcalls->newConstructor);
