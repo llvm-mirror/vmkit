@@ -157,18 +157,11 @@ public:
 /// contains all thread-specific informations.
 // WARNING: if you modify this class, you must also change mvm-runtime.ll
 class Thread : public CircularBase<Thread> {
+protected:
+  Thread(VMKit* vmk);
+
 public:
-  Thread(VMKit* vmk) {
-#ifdef RUNTIME_DWARF_EXCEPTIONS
-		internalPendingException = 0;
-#else
-		lastExceptionBuffer = 0;
-#endif
-		_vmkit = vmk;
-		lastKnownFrame = 0;
-		pendingException = 0;
-		allVmsData = 0;
-  }
+  ~Thread();
 
   /// yield - Yield the processor to another thread.
   ///

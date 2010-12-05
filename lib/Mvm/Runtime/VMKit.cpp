@@ -28,6 +28,10 @@ size_t VMKit::addVM(VirtualMachine* vm) {
 	delete[] oldVms;
 	
  	// reallocate the allVMDatas
+ 	for(Thread* cur=preparedThreads.next(); cur!=&preparedThreads; cur=cur->next()) {
+		cur->reallocAllVmsData(res, numberOfVms);
+	}
+
  	for(Thread* cur=runningThreads.next(); cur!=&runningThreads; cur=cur->next()) {
 		cur->reallocAllVmsData(res, numberOfVms);
 	}
@@ -38,21 +42,37 @@ size_t VMKit::addVM(VirtualMachine* vm) {
 }
 
 void VMKit::removeVM(size_t id) {
+	// what can I do with the VMThreadData?
 	vms[id] = 0;
 }
 
-void VMKit::addThread(mvm::Thread* th) {
+void VMKit::registerPreparedThread(mvm::Thread* th) {
 	vmkitLock.lock();
-	numberOfRunningThreads++;
-	th->appendTo(&runningThreads);
+	th->appendTo(&preparedThreads);
 	th->reallocAllVmsData(0, numberOfVms);
 	vmkitLock.unlock();
 }
   
-void VMKit::removeThread(mvm::Thread* th) {
+void VMKit::unregisterPreparedThread(mvm::Thread* th) {
 	vmkitLock.lock();
 	numberOfRunningThreads--;
 	th->remove();
-	th->allVmsData = 0;
+	delete th->allVmsData;
+	vmkitLock.unlock();
+}
+
+void VMKit::registerRunningThread(mvm::Thread* th) {
+	vmkitLock.lock();
+	numberOfRunningThreads++;
+	th->remove();
+	th->appendTo(&runningThreads);
+	vmkitLock.unlock();
+}
+  
+void VMKit::unregisterRunningThread(mvm::Thread* th) {
+	vmkitLock.lock();
+	numberOfRunningThreads--;
+	th->remove();
+	th->appendTo(&preparedThreads);
 	vmkitLock.unlock();
 }

@@ -60,6 +60,10 @@ public:
 	/// ------------------------------------------------- ///
 	/// ---             thread managment              --- ///
 	/// ------------------------------------------------- ///
+  /// preparedThreads - the list of prepared threads, they are not yet running.
+  ///
+	CircularBase<Thread>         preparedThreads;
+
   /// runningThreads - the list of running threads
   ///
 	CircularBase<Thread>         runningThreads;
@@ -75,8 +79,11 @@ public:
   UncooperativeCollectionRV rendezvous;
 #endif
 
-	void addThread(mvm::Thread* th);  
-	void removeThread(mvm::Thread* th);
+	void registerPreparedThread(mvm::Thread* th);  
+	void unregisterPreparedThread(mvm::Thread* th);
+
+	void registerRunningThread(mvm::Thread* th);  
+	void unregisterRunningThread(mvm::Thread* th);
 
 	/// ------------------------------------------------- ///
 	/// ---    backtrace related methods              --- ///

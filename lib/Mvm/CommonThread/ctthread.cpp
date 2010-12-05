@@ -31,6 +31,23 @@
 
 using namespace mvm;
 
+Thread::Thread(VMKit* vmk) {
+#ifdef RUNTIME_DWARF_EXCEPTIONS
+	internalPendingException = 0;
+#else
+	lastExceptionBuffer = 0;
+#endif
+	_vmkit = vmk;
+	lastKnownFrame = 0;
+	pendingException = 0;
+	allVmsData = 0;
+	vmk->registerPreparedThread(this);
+}
+
+Thread::~Thread() {
+	vmkit()->unregisterPreparedThread(this);
+}
+
 // must be protected by rendezvous.threadLock
 void Thread::reallocAllVmsData(int old, int n) {
 	VMThreadData **newData = new VMThreadData*[n];
@@ -447,7 +464,7 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 #endif
   th->vmkit()->rendezvous.prepareForJoin();
   th->routine(th);
-  th->vmkit()->removeThread(th);
+  th->vmkit()->unregisterRunningThread(th);
 }
 
 
@@ -462,7 +479,7 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   routine = fct;
   // Make sure to add it in the list of threads before leaving this function:
   // the garbage collector wants to trace this thread.
-  vmkit()->addThread(this);
+  vmkit()->registerRunningThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
   pthread_detach((pthread_t)internalThreadID);
