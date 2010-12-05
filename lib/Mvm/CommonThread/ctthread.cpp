@@ -48,6 +48,16 @@ Thread::~Thread() {
 	vmkit()->unregisterPreparedThread(this);
 }
 
+void Thread::attach(VirtualMachine* vm) {
+	MyVM = vm;
+	vmData = allVmsData[vm->vmID];
+
+	if(!vmData) {
+		printf("should not happen yet\n");
+		abort();
+	}
+}
+
 // must be protected by rendezvous.threadLock
 void Thread::reallocAllVmsData(int old, int n) {
 	VMThreadData **newData = new VMThreadData*[n];

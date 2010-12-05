@@ -116,11 +116,11 @@ public:
 
   /// JavaThread - Creates a Java thread. 
   ///
-  JavaThread(mvm::MutatorThread*, Jnjvm* isolate);
+  JavaThread(Jnjvm* vm, mvm::Thread*mut);
 
   /// create - Creates a Java thread and a mutator thread.
   ///
-	static JavaThread* create(Jnjvm* isolate);
+	static JavaThread* create(Jnjvm* vm);
 
   /// j3Thread - gives the JavaThread associated with the mutator thread
   ///

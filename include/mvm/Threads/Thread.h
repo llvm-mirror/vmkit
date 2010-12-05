@@ -129,25 +129,24 @@ public:
 
 
 class ExceptionBuffer;
-class MutatorThread;
+class Thread;
 class VMKit;
 
 // WARNING: if you modify this class, you must also change mvm-runtime.ll
 class VMThreadData {
 public:
   /// mut - The associated thread mutator
-	MutatorThread*  mut;
+	Thread*         mut;
+
   /// vm - The associated virtual machine
 	VirtualMachine* vm;
 
-	VMThreadData(MutatorThread* m, VirtualMachine *v) {
+	VMThreadData(VirtualMachine *v, Thread* m) {
 		this->mut = m;
 		this->vm = v;
 	}
 
   virtual void tracer(uintptr_t closure) = 0;
-
-	void attach();
 
 	virtual ~VMThreadData() {} // force the construction of a VT
 };
@@ -381,6 +380,10 @@ public:
 	///   must be protected by rendezvous.threadLock
   ///
 	void reallocAllVmsData(int old, int n);
+
+	/// attach - attach the vm specific data of the given virtual machine
+	///
+	void attach(VirtualMachine* vm);
 };
 
 #ifndef RUNTIME_DWARF_EXCEPTIONS

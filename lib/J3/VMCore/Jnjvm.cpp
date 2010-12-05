@@ -1070,14 +1070,16 @@ void Jnjvm::loadBootstrap() {
   
   // First create system threads.
   finalizerThread = new FinalizerThread(this);
-	javaFinalizerThread = new JavaThread(finalizerThread, this);
-	javaFinalizerThread->attach();
+	javaFinalizerThread = new JavaThread(this, finalizerThread);
+	finalizerThread->allVmsData[vmID] = javaFinalizerThread;
+	finalizerThread->attach(this);
   finalizerThread->start(
       (void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
     
   referenceThread = new ReferenceThread(this);
-	javaReferenceThread = new JavaThread(referenceThread, this);
-	javaReferenceThread->attach();
+	javaReferenceThread = new JavaThread(this, referenceThread);
+	referenceThread->allVmsData[vmID] = javaReferenceThread;
+	referenceThread->attach(this);
   referenceThread->start(
       (void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
   

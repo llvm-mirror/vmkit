@@ -19,9 +19,8 @@
 
 using namespace j3;
 
-JavaThread::JavaThread(mvm::MutatorThread* mut, Jnjvm* isolate)
-	: mvm::VMThreadData(mut, isolate) {
-  jniEnv = isolate->jniEnv;
+JavaThread::JavaThread(Jnjvm* vm, mvm::Thread* mut) : mvm::VMThreadData(vm, mut) {
+  jniEnv = vm->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = NULL;
   javaThread = NULL;
@@ -30,8 +29,8 @@ JavaThread::JavaThread(mvm::MutatorThread* mut, Jnjvm* isolate)
 #ifdef SERVICE
   eipIndex = 0;
   replacedEIPs = new void*[100];
-  if (isolate->upcalls->newThrowable) {
-    ServiceException = isolate->upcalls->newThrowable->doNew(isolate);
+  if (vm->upcalls->newThrowable) {
+    ServiceException = vm->upcalls->newThrowable->doNew(vm);
   }
 #endif
 }
@@ -40,10 +39,11 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 	return (JavaThread*)mut->vmData;
 }
 
-JavaThread *JavaThread::create(Jnjvm* isolate) {
-	mvm::MutatorThread *mut = new mvm::MutatorThread(isolate->vmkit);
-	JavaThread *th   = new JavaThread(mut, isolate);
-	th->attach();
+JavaThread *JavaThread::create(Jnjvm* vm) {
+	mvm::Thread *mut = new mvm::MutatorThread(vm->vmkit);
+	JavaThread *th   = new JavaThread(vm, mut);
+	mut->allVmsData[vm->vmID] = th;
+	mut->attach(vm);
 	return th;
 }
 
