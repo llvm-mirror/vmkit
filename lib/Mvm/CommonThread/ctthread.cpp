@@ -49,9 +49,9 @@ void Thread::attach(VirtualMachine* vm) {
 	vmData = allVmsData[vm->vmID];
 
 	if(!vmData) {
-		vmkit->vmkitLock.lock();
+		vmkit->vmkitLock();
 		vmData = allVmsData[vm->vmID] = vm->buildVMThreadData(this);
-		vmkit->vmkitLock.unlock();
+		vmkit->vmkitUnlock();
 	}
 }
 

@@ -44,7 +44,10 @@ public:
 
   VMKit(mvm::BumpPtrAllocator &Alloc);
 
-	SpinLock                     vmkitLock;
+	SpinLock                     _vmkitLock;
+
+	void vmkitLock() { _vmkitLock.lock(); }
+	void vmkitUnlock() { _vmkitLock.unlock(); }
 
 	/// ------------------------------------------------- ///
 	/// ---             vm managment                  --- ///

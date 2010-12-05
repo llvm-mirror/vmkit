@@ -9,12 +9,12 @@ VMKit::VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
 }
 
 size_t VMKit::addVM(VirtualMachine* vm) {
-	vmkitLock.lock();
+	vmkitLock();
 
 	for(size_t i=0; i<numberOfVms; i++)
 		if(!vms[i]) {
 			vms[i] = vm;
-			vmkitLock.unlock();
+			vmkitUnlock();
 			return i;
 		}
 
@@ -36,7 +36,7 @@ size_t VMKit::addVM(VirtualMachine* vm) {
 		cur->reallocAllVmsData(res, numberOfVms);
 	}
 
-	vmkitLock.unlock();
+	vmkitUnlock();
 
 	return res;
 }
@@ -47,35 +47,35 @@ void VMKit::removeVM(size_t id) {
 }
 
 void VMKit::registerPreparedThread(mvm::Thread* th) {
-	vmkitLock.lock();
+	vmkitLock();
 	th->appendTo(&preparedThreads);
 	th->reallocAllVmsData(0, numberOfVms);
-	vmkitLock.unlock();
+	vmkitUnlock();
 }
   
 void VMKit::unregisterPreparedThread(mvm::Thread* th) {
-	vmkitLock.lock();
+	vmkitLock();
 	numberOfRunningThreads--;
 	th->remove();
 	//for(int i=0; i<numberOfVms; i++)
 	//if(th->allVmsData[i])
 	//		delete th->allVmsData[i]; -> Must make a choice for the destruction of threads...
 	delete th->allVmsData;
-	vmkitLock.unlock();
+	vmkitUnlock();
 }
 
 void VMKit::registerRunningThread(mvm::Thread* th) {
-	vmkitLock.lock();
+	vmkitLock();
 	numberOfRunningThreads++;
 	th->remove();
 	th->appendTo(&runningThreads);
-	vmkitLock.unlock();
+	vmkitUnlock();
 }
   
 void VMKit::unregisterRunningThread(mvm::Thread* th) {
-	vmkitLock.lock();
+	vmkitLock();
 	numberOfRunningThreads--;
 	th->remove();
 	th->appendTo(&preparedThreads);
-	vmkitLock.unlock();
+	vmkitUnlock();
 }
