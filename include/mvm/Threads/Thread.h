@@ -60,11 +60,11 @@ public:
 
   /// next - Get the next object in the list.
   ///
-  inline T *next0() { return _next; }
+  inline T *next() { return _next; }
 
   /// prev - Get the previous object in the list.
   ///
-  inline T *prev0() { return _prev; }
+  inline T *prev() { return _prev; }
 
   /// CricularBase - Creates the object as a single element in the list.
   ///
@@ -72,7 +72,7 @@ public:
 
   /// CircularBase - Creates the object and place it in the given list.
   ///
-  inline explicit CircularBase(T *p) { appendTo(p); }
+  inline explicit CircularBase(CircularBase<T> *p) { appendTo(p); }
 
   /// remove - Remove the object from its list.
   ///
@@ -84,8 +84,8 @@ public:
 
   /// append - Add the object in the list.
   ///
-  inline void appendTo(T *p) { 
-    _prev = p;
+  inline void appendTo(CircularBase<T> *p) { 
+    _prev = (T*)p;
     _next = p->_next;
     _next->_prev = (T*)this;
     _prev->_next = (T*)this;

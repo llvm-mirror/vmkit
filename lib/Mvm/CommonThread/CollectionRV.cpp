@@ -23,7 +23,7 @@ void CollectionRV::another_mark() {
   assert(th->getLastSP() != NULL);
   assert(nbJoined < vmkit->NumberOfThreads);
   nbJoined++;
-  if (nbJoined == vmkit->numberOfThreads) {
+  if (nbJoined == vmkit->numberOfRunningThreads) {
     condInitiator.broadcast();
   }
 }
@@ -41,7 +41,7 @@ void CollectionRV::waitRV() {
   // Add myself.
   nbJoined++;
 
-  while (nbJoined != mvm::Thread::get()->vmkit()->numberOfThreads) {
+  while (nbJoined != mvm::Thread::get()->vmkit()->numberOfRunningThreads) {
     condInitiator.wait(&_lockRV);
   } 
 }
@@ -49,30 +49,29 @@ void CollectionRV::waitRV() {
 void CooperativeCollectionRV::synchronize() {
   assert(nbJoined == 0);
   mvm::Thread* self = mvm::Thread::get();
+	mvm::VMKit* vmkit = self->vmkit();
+
   // Lock thread lock, so that we can traverse the thread list safely. This will
   // be released on finishRV.
-	self->vmkit()->vmkitLock.lock();
+	vmkit->vmkitLock.lock();
 
-  mvm::Thread* cur = self;
-  do {
+	for(Thread* cur=vmkit->runningThreads.next(); cur!=&vmkit->runningThreads; cur=cur->next()) { 
     assert(!cur->doYield);
     cur->doYield = true;
     assert(!cur->joinedRV);
-    cur = cur->next0();
-  } while (cur != self);
- 
+  }
+
   // The CAS is not necessary but it does a memory barrier. 
   __sync_bool_compare_and_swap(&(self->joinedRV), false, true);
 
   // Lookup currently blocked threads.
-  for (cur = self->next0(); cur != self; 
-       cur = cur->next0()) {
-    if (cur->getLastSP()) {
+	for(Thread* cur=vmkit->runningThreads.next(); cur!=&vmkit->runningThreads; cur=cur->next()) {
+		if(cur->getLastSP() && cur != self) {
       nbJoined++;
       cur->joinedRV = true;
     }
   }
-  
+
   // And wait for other threads to finish.
   waitRV();
 
@@ -91,15 +90,18 @@ void CooperativeCollectionRV::synchronize() {
 void UncooperativeCollectionRV::synchronize() { 
   assert(nbJoined == 0);
   mvm::Thread* self = mvm::Thread::get();
+	mvm::VMKit* vmkit = self->vmkit();
+
   // Lock thread lock, so that we can traverse the thread list safely. This will
   // be released on finishRV.
   self->vmkit()->vmkitLock.lock();
-  
-  for (mvm::Thread* cur = self->next0(); cur != self; 
-       cur = cur->next0()) {
-    int res = cur->kill(SIGGC);
-    assert(!res && "Error on kill");
-  }
+
+	for(Thread* cur=vmkit->runningThreads.next(); cur!=&vmkit->runningThreads; cur=cur->next()) { 
+		if(cur!=self) {
+			int res = cur->kill(SIGGC);
+			assert(!res && "Error on kill");
+		}
+	}
   
   // And wait for other threads to finish.
   waitRV();
@@ -194,15 +196,15 @@ void CooperativeCollectionRV::finishRV() {
   lockRV();
     
   mvm::Thread* initiator = mvm::Thread::get();
-  mvm::Thread* cur = initiator;
-  do {
+	mvm::VMKit* vmkit = initiator->vmkit();
+
+  for(mvm::Thread* cur=vmkit->runningThreads.next(); cur!=&vmkit->runningThreads; cur=cur->next()) {
     assert(cur->doYield && "Inconsistent state");
     assert(cur->joinedRV && "Inconsistent state");
     cur->doYield = false;
     cur->joinedRV = false;
-    cur = cur->next0();
-  } while (cur != initiator);
-
+  }
+	
   assert(nbJoined == initiator->MyVM->NumberOfThreads && "Inconsistent state");
   nbJoined = 0;
   initiator->vmkit()->vmkitLock.unlock();

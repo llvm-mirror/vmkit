@@ -11,31 +11,30 @@
 #include "mvm/VirtualMachine.h"
 #include "MMTkObject.h"
 #include "mvm/GC.h"
+#include "mvm/VMKit.h"
 
 namespace mmtk {
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) {
   // When entering this function, all threads are waiting on the rendezvous to
   // finish.
-  mvm::Thread* th = mvm::Thread::get();
-  mvm::Thread* tcur = th;
+  mvm::VMKit* vmkit = mvm::Thread::get()->vmkit();
+  mvm::Thread* tcur;
   
-  do {
+	for(tcur=vmkit->runningThreads.next(); tcur!=&vmkit->runningThreads; tcur=tcur->next()) {
     tcur->scanStack(reinterpret_cast<uintptr_t>(TL));
-    tcur = tcur->next0();
-  } while (tcur != th);
+  }
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) { 
   mvm::Thread::get()->MyVM->tracer(reinterpret_cast<uintptr_t>(TL));
+
+	mvm::VMKit* vmkit = mvm::Thread::get()->vmkit();
+  mvm::Thread* tcur;
   
-	mvm::Thread* th = mvm::Thread::get();
-  mvm::Thread* tcur = th;
-  
-  do {
+	for(tcur=vmkit->runningThreads.next(); tcur!=&vmkit->runningThreads; tcur=tcur->next()) {
     tcur->tracer(reinterpret_cast<uintptr_t>(TL));
-    tcur = tcur->next0();
-  } while (tcur != th);
+  }
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeStaticRoots__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) {

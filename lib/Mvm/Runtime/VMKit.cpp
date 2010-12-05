@@ -28,12 +28,8 @@ size_t VMKit::addVM(VirtualMachine* vm) {
 	delete[] oldVms;
 	
  	// reallocate the allVMDatas
- 	Thread* cur=oneThread;
-	if(cur) {
-		do {
-			cur->reallocAllVmsData(res, numberOfVms);
-			cur = cur->next0();
-		} while(cur!=oneThread);
+ 	for(Thread* cur=runningThreads.next(); cur!=&runningThreads; cur=cur->next()) {
+		cur->reallocAllVmsData(res, numberOfVms);
 	}
 
 	vmkitLock.unlock();
@@ -47,22 +43,16 @@ void VMKit::removeVM(size_t id) {
 
 void VMKit::addThread(mvm::Thread* th) {
 	vmkitLock.lock();
-	numberOfThreads++;
-	if (th != oneThread) {
-		if (oneThread) th->appendTo(oneThread);
-		else oneThread = th;
-	}
+	numberOfRunningThreads++;
+	th->appendTo(&runningThreads);
 	th->reallocAllVmsData(0, numberOfVms);
 	vmkitLock.unlock();
 }
   
 void VMKit::removeThread(mvm::Thread* th) {
 	vmkitLock.lock();
-	numberOfThreads--;
-	if (oneThread == th) oneThread = th->next0();
+	numberOfRunningThreads--;
 	th->remove();
-	if (!numberOfThreads) oneThread = 0;
-	delete th->allVmsData;
 	th->allVmsData = 0;
 	vmkitLock.unlock();
 }

@@ -60,12 +60,12 @@ public:
 	/// ------------------------------------------------- ///
 	/// ---             thread managment              --- ///
 	/// ------------------------------------------------- ///
-  /// oneThread - the linked list of thread. 
+  /// runningThreads - the list of running threads
   ///
-	Thread*                      oneThread;
+	CircularBase<Thread>         runningThreads;
 
-  /// numberOfThreads - The number of threads that currently run under this VM.
-  size_t                       numberOfThreads;
+  /// numberOfRunningThreads - The number of threads that currently run under this VM.
+  size_t                       numberOfRunningThreads;
 
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///

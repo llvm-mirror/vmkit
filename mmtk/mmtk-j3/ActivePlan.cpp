@@ -17,15 +17,20 @@ namespace mmtk {
 
 extern "C" MMTkObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__(MMTkActivePlan* A) {
   assert(A && "No active plan");
-  
-  if (A->current == NULL) {
-    A->current = (mvm::MutatorThread*)mvm::Thread::get()->vmkit()->oneThread;
-  } else if (A->current->next0() == mvm::Thread::get()->vmkit()->oneThread) {
-    A->current = NULL;
-    return NULL;
-  } else {
-    A->current = (mvm::MutatorThread*)A->current->next0();
-  }
+
+	mvm::CircularBase<mvm::Thread>* mut = A->current;
+
+	if(!mut)
+		mut = &mvm::Thread::get()->vmkit()->runningThreads;
+
+	mut = mut->next();
+
+	if(mut == &mvm::Thread::get()->vmkit()->runningThreads) {
+		A->current = NULL;
+		return NULL;
+	}
+	
+	A->current = (mvm::MutatorThread*)mut;
 
   if (A->current->MutatorContext == 0) {
     return Java_org_j3_mmtk_ActivePlan_getNextMutator__(A);
