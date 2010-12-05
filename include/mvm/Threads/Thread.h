@@ -133,6 +133,7 @@ class Thread;
 class VMKit;
 
 // WARNING: if you modify this class, you must also change mvm-runtime.ll
+// WARNING: when a VMThreadData is store in a thread (in allVmsData), you must never delete it yourself.
 class VMThreadData {
 public:
   /// mut - The associated thread mutator
