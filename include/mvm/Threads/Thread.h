@@ -44,68 +44,56 @@ class VirtualMachine;
 /// this class automatically place their instances in a circular list.
 ///
 // WARNING: if you modify this class, you must also change mvm-runtime.ll
+template<typename T>
 class CircularBase {
   /// _next - The next object in the list.
   ///
-  CircularBase  *_next;
+  T  *_next;
 
   /// _prev - The previous object in the list.
   ///
-  CircularBase  *_prev;
+  T  *_prev;
 public:
-  
   /// ~CircularBase - Give the class a home.
   ///
   virtual ~CircularBase() {}
 
   /// next - Get the next object in the list.
   ///
-  inline CircularBase *next() { return _next; }
+  inline T *next() { return _next; }
 
   /// prev - Get the previous object in the list.
   ///
-  inline CircularBase *prev() { return _prev; }
-
-  /// next - Set the next object in the list.
-  ///
-  inline void next(CircularBase *n) { _next = n; }
-
-  /// prev - Set the previous object in the list.
-  ///
-  inline void prev(CircularBase *p) { _prev = p; }
+  inline T *prev() { return _prev; }
 
   /// CricularBase - Creates the object as a single element in the list.
   ///
-  inline CircularBase() { alone(); }
+  inline CircularBase() { _prev = _next = (T*)this; }
 
   /// CircularBase - Creates the object and place it in the given list.
   ///
-  inline explicit CircularBase(CircularBase *p) { append(p); }
+  inline explicit CircularBase(T *p) { appendTo(p); }
 
   /// remove - Remove the object from its list.
   ///
   inline void remove() {
     _prev->_next = _next; 
     _next->_prev = _prev;
-    alone();
+    _prev = _next = (T*)this;
   }
 
   /// append - Add the object in the list.
   ///
-  inline void append(CircularBase *p) { 
+  inline void appendTo(T *p) { 
     _prev = p;
     _next = p->_next;
-    _next->_prev = this;
-    _prev->_next = this;
+    _next->_prev = (T*)this;
+    _prev->_next = (T*)this;
   }
-
-  /// alone - Set the object as being part of a new empty list.
-  ///
-  inline void alone() { _prev = _next = this; }
 
   /// print - Print the list for debug purposes.
   void print() {
-    CircularBase* temp = this;
+    T* temp = (T*)this;
     do {
       fprintf(stderr, "%p -> ", (void*)temp);
       temp = temp->next();
@@ -168,7 +156,7 @@ public:
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.
 // WARNING: if you modify this class, you must also change mvm-runtime.ll
-class Thread : public CircularBase {
+class Thread : public CircularBase<Thread> {
 public:
   Thread(VMKit* vmk) {
 #ifdef RUNTIME_DWARF_EXCEPTIONS

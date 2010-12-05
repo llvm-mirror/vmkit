@@ -49,7 +49,7 @@ void VMKit::addThread(mvm::Thread* th) {
 	vmkitLock.lock();
 	numberOfThreads++;
 	if (th != oneThread) {
-		if (oneThread) th->append(oneThread);
+		if (oneThread) th->appendTo(oneThread);
 		else oneThread = th;
 	}
 	th->reallocAllVmsData(0, numberOfVms);
