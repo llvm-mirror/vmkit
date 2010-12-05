@@ -100,7 +100,7 @@ public:
     llvm::GCFunctionInfo* GFI = *I;
     JITMethodInfo* MI = new(*MvmModule::Allocator, "MvmJITMethodInfo")
         MvmJITMethodInfo(GFI, &F, MvmModule::executionEngine);
-    MI->addToVMKit(mvm::Thread::get()->vmkit(), (JIT*)MvmModule::executionEngine);
+    MI->addToVMKit(mvm::Thread::get()->vmkit, (JIT*)MvmModule::executionEngine);
   }
 };
 

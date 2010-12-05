@@ -21,11 +21,11 @@ extern "C" MMTkObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__(MMTkActivePl
 	mvm::CircularBase<mvm::Thread>* mut = A->current;
 
 	if(!mut)
-		mut = &mvm::Thread::get()->vmkit()->runningThreads;
+		mut = &mvm::Thread::get()->vmkit->runningThreads;
 
 	mut = mut->next();
 
-	if(mut == &mvm::Thread::get()->vmkit()->runningThreads) {
+	if(mut == &mvm::Thread::get()->vmkit->runningThreads) {
 		A->current = NULL;
 		return NULL;
 	}

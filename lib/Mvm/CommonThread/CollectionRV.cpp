@@ -19,7 +19,7 @@
 using namespace mvm;
 
 void CollectionRV::another_mark() {
-	VMKit *vmkit = mvm::Thread::get()->vmkit();
+	VMKit *vmkit = mvm::Thread::get()->vmkit;
   assert(th->getLastSP() != NULL);
   assert(nbJoined < vmkit->NumberOfThreads);
   nbJoined++;
@@ -41,7 +41,7 @@ void CollectionRV::waitRV() {
   // Add myself.
   nbJoined++;
 
-  while (nbJoined != mvm::Thread::get()->vmkit()->numberOfRunningThreads) {
+  while (nbJoined != mvm::Thread::get()->vmkit->numberOfRunningThreads) {
     condInitiator.wait(&_lockRV);
   } 
 }
@@ -49,7 +49,7 @@ void CollectionRV::waitRV() {
 void CooperativeCollectionRV::synchronize() {
   assert(nbJoined == 0);
   mvm::Thread* self = mvm::Thread::get();
-	mvm::VMKit* vmkit = self->vmkit();
+	mvm::VMKit* vmkit = self->vmkit;
 
   // Lock thread lock, so that we can traverse the thread list safely. This will
   // be released on finishRV.
@@ -90,11 +90,11 @@ void CooperativeCollectionRV::synchronize() {
 void UncooperativeCollectionRV::synchronize() { 
   assert(nbJoined == 0);
   mvm::Thread* self = mvm::Thread::get();
-	mvm::VMKit* vmkit = self->vmkit();
+	mvm::VMKit* vmkit = self->vmkit;
 
   // Lock thread lock, so that we can traverse the thread list safely. This will
   // be released on finishRV.
-  self->vmkit()->vmkitLock.lock();
+  self->vmkit->vmkitLock.lock();
 
 	for(Thread* cur=vmkit->runningThreads.next(); cur!=&vmkit->runningThreads; cur=cur->next()) { 
 		if(cur!=self) {
@@ -189,14 +189,14 @@ void CooperativeCollectionRV::joinAfterUncooperative(void* SP) {
 
 extern "C" void conditionalSafePoint() {
   mvm::Thread* th = mvm::Thread::get();
-  th->vmkit()->rendezvous.join();
+  th->vmkit->rendezvous.join();
 }
 
 void CooperativeCollectionRV::finishRV() {
   lockRV();
     
   mvm::Thread* initiator = mvm::Thread::get();
-	mvm::VMKit* vmkit = initiator->vmkit();
+	mvm::VMKit* vmkit = initiator->vmkit;
 
   for(mvm::Thread* cur=vmkit->runningThreads.next(); cur!=&vmkit->runningThreads; cur=cur->next()) {
     assert(cur->doYield && "Inconsistent state");
@@ -207,7 +207,7 @@ void CooperativeCollectionRV::finishRV() {
 	
   assert(nbJoined == initiator->MyVM->NumberOfThreads && "Inconsistent state");
   nbJoined = 0;
-  initiator->vmkit()->vmkitLock.unlock();
+  initiator->vmkit->vmkitLock.unlock();
   condEndRV.broadcast();
   unlockRV();
   initiator->inRV = false;
@@ -220,9 +220,9 @@ void CooperativeCollectionRV::prepareForJoin() {
 void UncooperativeCollectionRV::finishRV() {
   lockRV();
   mvm::Thread* initiator = mvm::Thread::get();
-  assert(nbJoined == initiator->vmkit()->NumberOfThreads && "Inconsistent state");
+  assert(nbJoined == initiator->vmkit->NumberOfThreads && "Inconsistent state");
   nbJoined = 0;
-  initiator->vmkit()->vmkitLock.unlock();
+  initiator->vmkit->vmkitLock.unlock();
   condEndRV.broadcast();
   unlockRV();
   initiator->inRV = false;
@@ -238,7 +238,7 @@ void UncooperativeCollectionRV::joinBeforeUncooperative() {
 
 static void siggcHandler(int) {
   mvm::Thread* th = mvm::Thread::get();
-  th->vmkit()->rendezvous.join();
+  th->vmkit->rendezvous.join();
 }
 
 void UncooperativeCollectionRV::prepareForJoin() {

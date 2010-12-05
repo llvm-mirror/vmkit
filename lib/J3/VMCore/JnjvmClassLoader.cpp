@@ -920,7 +920,7 @@ JnjvmClassLoader::~JnjvmClassLoader() {
   if (isolate) {
     isolate->vmkit->removeMethodInfos(TheCompiler);
   } else {
-		mvm::Thread::get()->vmkit()->removeMethodInfos(TheCompiler);
+		mvm::Thread::get()->vmkit->removeMethodInfos(TheCompiler);
 	}
 
   if (classes) {

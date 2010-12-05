@@ -36,14 +36,14 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
   mvm::Thread* th = mvm::Thread::get();
 
   // Verify that another collection is not happening.
-  th->vmkit()->rendezvous.startRV();
+  th->vmkit->rendezvous.startRV();
   if (th->doYield) {
-    th->vmkit()->rendezvous.cancelRV();
-    th->vmkit()->rendezvous.join();
+    th->vmkit->rendezvous.cancelRV();
+    th->vmkit->rendezvous.join();
     return;
   } else {
     th->MyVM->startCollection();
-    th->vmkit()->rendezvous.synchronize();
+    th->vmkit->rendezvous.synchronize();
   
     JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
 
@@ -73,7 +73,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
               elapsedTime / 1000000);
     }
 
-    th->vmkit()->rendezvous.finishRV();
+    th->vmkit->rendezvous.finishRV();
     th->MyVM->endCollection();
   }
 
@@ -82,7 +82,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
 extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ (MMTkObject* C) {
   mvm::Thread* th = mvm::Thread::get();
   assert(th->inRV && "Joining collection without a rendezvous");
-  th->vmkit()->rendezvous.join();
+  th->vmkit->rendezvous.join();
 }
 
 extern "C" int Java_org_j3_mmtk_Collection_rendezvous__I (MMTkObject* C, int where) {

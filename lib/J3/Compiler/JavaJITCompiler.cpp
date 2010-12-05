@@ -359,7 +359,7 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
     llvm::GCFunctionInfo* GFI = &(GCInfo->getFunctionInfo(*func));
     assert((GFI != NULL) && "No GC information");
   
-		mvm::VMKit* vmkit = mvm::Thread::get()->vmkit();
+		mvm::VMKit* vmkit = mvm::Thread::get()->vmkit;
     mvm::JITMethodInfo* MI = 
       new(allocator, "JavaJITMethodInfo") JavaJITMethodInfo(GFI, meth);
     MI->addToVMKit(vmkit, (JIT*)executionEngine);
@@ -401,7 +401,7 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
   llvm::GCFunctionInfo* GFI = &(GCInfo->getFunctionInfo(*F));
   assert((GFI != NULL) && "No GC information");
   
-	mvm::VMKit* vmkit = mvm::Thread::get()->vmkit();
+	mvm::VMKit* vmkit = mvm::Thread::get()->vmkit;
   mvm::JITMethodInfo* MI = 
     new(allocator, "JITMethodInfo") mvm::MvmJITMethodInfo(GFI, F, this);
   MI->addToVMKit(vmkit, (JIT*)executionEngine);

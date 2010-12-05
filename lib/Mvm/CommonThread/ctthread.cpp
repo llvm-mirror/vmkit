@@ -37,7 +37,7 @@ Thread::Thread(VMKit* vmk) {
 #else
 	lastExceptionBuffer = 0;
 #endif
-	_vmkit = vmk;
+	vmkit = vmk;
 	lastKnownFrame = 0;
 	pendingException = 0;
 	allVmsData = 0;
@@ -45,7 +45,7 @@ Thread::Thread(VMKit* vmk) {
 }
 
 Thread::~Thread() {
-	vmkit()->unregisterPreparedThread(this);
+	vmkit->unregisterPreparedThread(this);
 }
 
 void Thread::attach(VirtualMachine* vm) {
@@ -70,10 +70,6 @@ void Thread::reallocAllVmsData(int old, int n) {
 		allVmsData = newData;
 }
 
-mvm::VMKit* Thread::vmkit() {
-	return vmData->vm->vmkit; 
-}
-
 void Thread::tracer(uintptr_t closure) {
 	mvm::Collector::markAndTraceRoot(&pendingException, closure);
 	vmData->tracer(closure);
@@ -95,18 +91,18 @@ void Thread::yield(void) {
   Thread* th = mvm::Thread::get();
   if (th->isMvmThread()) {
     if (th->doYield && !th->inRV) {
-      th->vmkit()->rendezvous.join();
+      th->vmkit->rendezvous.join();
     }
   }
   sched_yield();
 }
 
 void Thread::joinRVBeforeEnter() {
-  vmkit()->rendezvous.joinBeforeUncooperative(); 
+  vmkit->rendezvous.joinBeforeUncooperative(); 
 }
 
 void Thread::joinRVAfterLeave(void* savedSP) {
-  vmkit()->rendezvous.joinAfterUncooperative(savedSP); 
+  vmkit->rendezvous.joinAfterUncooperative(savedSP); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {
@@ -220,7 +216,7 @@ MethodInfo* StackWalker::get() {
   ip = FRAME_IP(addr);
   bool isStub = ((unsigned char*)ip)[0] == 0xCE;
   if (isStub) ip = addr[2];
-  return thread->vmkit()->IPToMethodInfo(ip);
+  return thread->vmkit->IPToMethodInfo(ip);
 }
 
 void* StackWalker::operator*() {
@@ -472,9 +468,9 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 #ifdef ISOLATE
   th->IsolateID = th->MyVM->IsolateID;
 #endif
-  th->vmkit()->rendezvous.prepareForJoin();
+  th->vmkit->rendezvous.prepareForJoin();
   th->routine(th);
-  th->vmkit()->unregisterRunningThread(th);
+  th->vmkit->unregisterRunningThread(th);
 }
 
 
@@ -489,7 +485,7 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   routine = fct;
   // Make sure to add it in the list of threads before leaving this function:
   // the garbage collector wants to trace this thread.
-  vmkit()->registerRunningThread(this);
+  vmkit->registerRunningThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
   pthread_detach((pthread_t)internalThreadID);

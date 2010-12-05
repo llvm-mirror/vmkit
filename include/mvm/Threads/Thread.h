@@ -364,13 +364,10 @@ public:
   ///
 	gc* pendingException;
 
-private:
-	/// _vmkit - a (shortcut) pointer to vmkit that contains information on all the vms
-	///
-	mvm::VMKit* _vmkit;
-
 public:
-	mvm::VMKit* vmkit();
+	/// vmkit - a (shortcut) pointer to vmkit that contains information on all the vms
+	///
+	mvm::VMKit* vmkit;
 
   /// allVmsData - the array of thread specific data.
   ///
