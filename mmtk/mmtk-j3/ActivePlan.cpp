@@ -20,11 +20,11 @@ extern "C" MMTkObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__(MMTkActivePl
   
   if (A->current == NULL) {
     A->current = (mvm::MutatorThread*)mvm::Thread::get()->vmkit()->oneThread;
-  } else if (A->current->next() == mvm::Thread::get()->vmkit()->oneThread) {
+  } else if (A->current->next0() == mvm::Thread::get()->vmkit()->oneThread) {
     A->current = NULL;
     return NULL;
   } else {
-    A->current = (mvm::MutatorThread*)A->current->next();
+    A->current = (mvm::MutatorThread*)A->current->next0();
   }
 
   if (A->current->MutatorContext == 0) {

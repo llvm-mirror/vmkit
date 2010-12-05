@@ -22,7 +22,7 @@ extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_Tra
   
   do {
     tcur->scanStack(reinterpret_cast<uintptr_t>(TL));
-    tcur = (mvm::Thread*)tcur->next();
+    tcur = tcur->next0();
   } while (tcur != th);
 }
 
@@ -34,7 +34,7 @@ extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_Tra
   
   do {
     tcur->tracer(reinterpret_cast<uintptr_t>(TL));
-    tcur = (mvm::Thread*)tcur->next();
+    tcur = tcur->next0();
   } while (tcur != th);
 }
 

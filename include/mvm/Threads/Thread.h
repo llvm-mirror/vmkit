@@ -60,11 +60,11 @@ public:
 
   /// next - Get the next object in the list.
   ///
-  inline T *next() { return _next; }
+  inline T *next0() { return _next; }
 
   /// prev - Get the previous object in the list.
   ///
-  inline T *prev() { return _prev; }
+  inline T *prev0() { return _prev; }
 
   /// CricularBase - Creates the object as a single element in the list.
   ///
@@ -96,7 +96,7 @@ public:
     T* temp = (T*)this;
     do {
       fprintf(stderr, "%p -> ", (void*)temp);
-      temp = temp->next();
+      temp = temp->next0();
     } while (temp != this);
     fprintf(stderr, "\n");
   }

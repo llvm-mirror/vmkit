@@ -32,7 +32,7 @@ size_t VMKit::addVM(VirtualMachine* vm) {
 	if(cur) {
 		do {
 			cur->reallocAllVmsData(res, numberOfVms);
-			cur = (Thread*)cur->next();
+			cur = cur->next0();
 		} while(cur!=oneThread);
 	}
 
@@ -59,7 +59,7 @@ void VMKit::addThread(mvm::Thread* th) {
 void VMKit::removeThread(mvm::Thread* th) {
 	vmkitLock.lock();
 	numberOfThreads--;
-	if (oneThread == th) oneThread = (Thread*)th->next();
+	if (oneThread == th) oneThread = th->next0();
 	th->remove();
 	if (!numberOfThreads) oneThread = 0;
 	delete th->allVmsData;

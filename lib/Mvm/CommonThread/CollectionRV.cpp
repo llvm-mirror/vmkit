@@ -58,15 +58,15 @@ void CooperativeCollectionRV::synchronize() {
     assert(!cur->doYield);
     cur->doYield = true;
     assert(!cur->joinedRV);
-    cur = (mvm::Thread*)cur->next();
+    cur = cur->next0();
   } while (cur != self);
  
   // The CAS is not necessary but it does a memory barrier. 
   __sync_bool_compare_and_swap(&(self->joinedRV), false, true);
 
   // Lookup currently blocked threads.
-  for (cur = (mvm::Thread*)self->next(); cur != self; 
-       cur = (mvm::Thread*)cur->next()) {
+  for (cur = self->next0(); cur != self; 
+       cur = cur->next0()) {
     if (cur->getLastSP()) {
       nbJoined++;
       cur->joinedRV = true;
@@ -95,8 +95,8 @@ void UncooperativeCollectionRV::synchronize() {
   // be released on finishRV.
   self->vmkit()->vmkitLock.lock();
   
-  for (mvm::Thread* cur = (mvm::Thread*)self->next(); cur != self; 
-       cur = (mvm::Thread*)cur->next()) {
+  for (mvm::Thread* cur = self->next0(); cur != self; 
+       cur = cur->next0()) {
     int res = cur->kill(SIGGC);
     assert(!res && "Error on kill");
   }
@@ -200,7 +200,7 @@ void CooperativeCollectionRV::finishRV() {
     assert(cur->joinedRV && "Inconsistent state");
     cur->doYield = false;
     cur->joinedRV = false;
-    cur = (mvm::Thread*)cur->next();
+    cur = cur->next0();
   } while (cur != initiator);
 
   assert(nbJoined == initiator->MyVM->NumberOfThreads && "Inconsistent state");
