@@ -1061,6 +1061,14 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
   return appClassLoader;
 }
 
+mvm::VMThreadData* Jnjvm::buildVMThreadData(mvm::Thread* mut) {
+	JavaThread* th = new JavaThread(this, finalizerThread);
+	mut->allVmsData[vmID] = th; // will be done by my caller but I will call java code 
+	mut->vmData = th;           // will be done by my caller but I will call java code 
+	bootstrapLoader->upcalls->CreateForeignJavaThread(this, th);
+	return th;
+}
+
 void Jnjvm::loadBootstrap() {
   JavaObject* obj = NULL;
   JavaObject* javaLoader = NULL;
@@ -1070,11 +1078,7 @@ void Jnjvm::loadBootstrap() {
   
   // First create system threads.
   finalizerThread = new FinalizerThread(this);
-	javaFinalizerThread = new JavaThread(this, finalizerThread);
-	finalizerThread->allVmsData[vmID] = javaFinalizerThread;
-	finalizerThread->attach(this);
-  finalizerThread->start(
-      (void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
+  finalizerThread->start((void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
     
   referenceThread = new ReferenceThread(this);
 	javaReferenceThread = new JavaThread(this, referenceThread);
@@ -1119,6 +1123,8 @@ void Jnjvm::loadBootstrap() {
   // The initialization code of the classes initialized below may require
   // to get the Java thread, so we create the Java thread object first.
 	upcalls->InitializeThreading(this);
+
+	buildVMThreadData(finalizerThread);
   
   LOAD_CLASS(upcalls->newClass);
   LOAD_CLASS(upcalls->newConstructor);

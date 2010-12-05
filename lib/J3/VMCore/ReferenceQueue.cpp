@@ -242,6 +242,7 @@ void invokeFinalizer(mvm::gc* _obj) {
   JavaObject* obj = (JavaObject*)_obj;
   llvm_gcroot(obj, 0);
   Jnjvm* vm = (Jnjvm*)obj->getVirtualTable()->vm; //JavaThread::get()->getJVM();
+	mvm::Thread::get()->attach(vm);
 	vm->finalizeObject(obj);
 }
 

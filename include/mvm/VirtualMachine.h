@@ -46,6 +46,13 @@ public:
 	size_t vmID;
 
 //===----------------------------------------------------------------------===//
+// (1) thread-related methods.
+//===----------------------------------------------------------------------===//
+	/// buildVMThreadData - allocate a java thread for the underlying mutator. Called when the java thread is a foreign thread.
+	///
+	virtual VMThreadData* buildVMThreadData(Thread* mut) { return new VMThreadData(this, mut); }
+
+//===----------------------------------------------------------------------===//
 // (2) GC-related methods.
 //===----------------------------------------------------------------------===//
 

@@ -146,7 +146,7 @@ public:
 		this->vm = v;
 	}
 
-  virtual void tracer(uintptr_t closure) = 0;
+  virtual void tracer(uintptr_t closure) {};
 
 	virtual ~VMThreadData() {} // force the construction of a VT
 };

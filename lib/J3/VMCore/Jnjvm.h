@@ -253,9 +253,6 @@ public:
 	/// javaMainThread - the java main thread
 	JavaThread* javaMainThread;
 
-	/// javaFinalizerThread - the java finalizer thread
-	JavaThread* javaFinalizerThread;
-
 	/// javaReferenceThread - the java reference thread
 	JavaThread* javaReferenceThread;
 
@@ -367,6 +364,10 @@ public:
   /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
   ///
   virtual void waitForExit();
+
+	/// buildVMThreadData - allocate a java thread for the underlying mutator. Called when the java thread is a foreign thread.
+	///
+	virtual mvm::VMThreadData* buildVMThreadData(mvm::Thread* mut);
 
   /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
   /// bootstrap classes (e.g. java/lang/Class, java/lang/Exception) and

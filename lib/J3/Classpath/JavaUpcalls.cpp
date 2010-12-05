@@ -257,6 +257,16 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, &th);
 }
 
+
+void Classpath::CreateForeignJavaThread(Jnjvm* vm, JavaThread* myth) {
+  JavaObject* RG = 0;
+  llvm_gcroot(RG, 0);
+
+  RG = rootGroup->getStaticObjectField();           // should be system group or a special group for foreign threads
+  CreateJavaThread(vm, myth, "foreign thread", RG);
+}
+  
+
 void Classpath::InitializeThreading(Jnjvm* vm) {
 
   JavaObject* RG = 0;
@@ -288,10 +298,6 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   systemName = vm->asciizToStr("system");
   groupName->setInstanceObjectField(SystemGroup, systemName);
 
-  // Create the finalizer thread.
-  assert(vm->getFinalizerThread() && "VM did not set its finalizer thread");
-  CreateJavaThread(vm, vm->javaFinalizerThread, "Finalizer", SystemGroup);
-  
   // Create the enqueue thread.
   assert(vm->getReferenceThread() && "VM did not set its enqueue thread");
   CreateJavaThread(vm, vm->javaReferenceThread, "Reference", SystemGroup);
