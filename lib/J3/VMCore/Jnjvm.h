@@ -314,7 +314,19 @@ public:
   /// finalizeObject - invoke the finalizer of a java object
   ///
 	virtual void finalizeObject(mvm::gc* obj);
-    
+  
+  /// getReferentPtr - return the referent of a reference
+  ///
+	virtual mvm::gc** getReferent(mvm::gc* ref);
+
+  /// setReferentPtr - set the referent of a reference
+  ///
+	virtual void setReferent(mvm::gc* ref, mvm::gc* val);
+
+  /// enqueueReference - enqueue the reference
+  ///
+	virtual bool enqueueReference(mvm::gc* _obj);
+  
   /// setReferenceThread - Set the enqueue thread of this VM.
   ///
   void setReferenceThread(ReferenceThread* th) { referenceThread = th; }

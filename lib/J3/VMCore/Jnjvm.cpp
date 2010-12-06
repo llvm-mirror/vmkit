@@ -1076,7 +1076,7 @@ void Jnjvm::loadBootstrap() {
   llvm_gcroot(javaLoader, 0);
   JnjvmClassLoader* loader = bootstrapLoader;
   
-  referenceThread = new ReferenceThread(this);
+  referenceThread = new ReferenceThread(vmkit);
 	javaReferenceThread = new JavaThread(this, referenceThread);
 	referenceThread->allVmsData[vmID] = javaReferenceThread;
 	referenceThread->attach(this);
@@ -1404,6 +1404,29 @@ void Jnjvm::finalizeObject(mvm::gc* _o) {
   JavaMethod* meth = upcalls->FinalizeObject;
   UserClass* cl = JavaObject::getClass(obj)->asClass();
   meth->invokeIntVirtualBuf(this, cl, obj, 0);
+}
+
+mvm::gc** Jnjvm::getReferent(mvm::gc* _obj) {
+  llvm_gcroot(_obj, 0);
+  JavaObjectReference* obj = (JavaObjectReference*)_obj;
+  llvm_gcroot(obj, 0);
+  return (mvm::gc**)JavaObjectReference::getReferentPtr(obj);
+}
+
+void Jnjvm::setReferent(mvm::gc* _obj, mvm::gc* val) {
+  llvm_gcroot(_obj, 0);
+  JavaObjectReference* obj = (JavaObjectReference*)_obj;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(val, 0);
+  JavaObjectReference::setReferent(obj, (JavaObject*)val);
+}
+
+bool Jnjvm::enqueueReference(mvm::gc* _obj) {
+  JavaObject* obj = (JavaObject*)_obj;
+  llvm_gcroot(obj, 0);
+  JavaMethod* meth = upcalls->EnqueueReference;
+  UserClass* cl = JavaObject::getClass(obj)->asClass();
+  return (bool)meth->invokeIntSpecialBuf(this, cl, obj, 0);
 }
 
 void Jnjvm::startCollection() {

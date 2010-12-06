@@ -15,33 +15,40 @@
 
 using namespace j3;
 
-ReferenceThread::ReferenceThread(Jnjvm* vm) :
-	  MutatorThread(vm->vmkit),
-    WeakReferencesQueue(ReferenceQueue::WEAK),
-    SoftReferencesQueue(ReferenceQueue::SOFT), 
-    PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
+ReferenceThread::ReferenceThread(mvm::VMKit* vmkit) :
+	MutatorThread(vmkit),
+	WeakReferencesQueue(ReferenceQueue::WEAK),
+	SoftReferencesQueue(ReferenceQueue::SOFT), 
+	PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
 
   ToEnqueue = new mvm::gc*[INITIAL_QUEUE_SIZE];
   ToEnqueueLength = INITIAL_QUEUE_SIZE;
   ToEnqueueIndex = 0;
-
-	MyVM = vm;
 }
 
-
-bool enqueueReference(mvm::gc* _obj) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaObject* obj = (JavaObject*)_obj;
+mvm::gc** getReferent(mvm::gc* obj) {
   llvm_gcroot(obj, 0);
-  JavaMethod* meth = vm->upcalls->EnqueueReference;
-  UserClass* cl = JavaObject::getClass(obj)->asClass();
-  return (bool)meth->invokeIntSpecialBuf(vm, cl, obj, 0);
+	mvm::VirtualMachine* vm = obj->getVirtualTable()->vm;
+	mvm::Thread::get()->attach(vm);
+	return vm->getReferent(obj);
 }
 
-void invokeEnqueue(mvm::gc* res) {
-  llvm_gcroot(res, 0);
+void setReferent(mvm::gc* obj, mvm::gc* val) {
+	printf("set referent: %p %p\n", obj, val);
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(val, 0);
+	mvm::VirtualMachine* vm = obj->getVirtualTable()->vm;
+	mvm::Thread::get()->attach(vm);
+	vm->setReferent(obj, val);
+}
+ 
+void invokeEnqueue(mvm::gc* obj) {
+  llvm_gcroot(obj, 0);
   TRY {
-    enqueueReference(res);
+		mvm::VirtualMachine* vm = obj->getVirtualTable()->vm;
+		mvm::Thread::get()->attach(vm);
+		
+    vm->enqueueReference(obj);
   } IGNORE;
   mvm::Thread::get()->clearPendingException();
 }
@@ -92,32 +99,13 @@ void ReferenceThread::addToEnqueue(mvm::gc* obj) {
   ToEnqueue[ToEnqueueIndex++] = obj;
 }
 
-mvm::gc** getReferentPtr(mvm::gc* _obj) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  return (mvm::gc**)JavaObjectReference::getReferentPtr(obj);
-}
-
-void setReferent(mvm::gc* _obj, mvm::gc* val) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  llvm_gcroot(val, 0);
-  JavaObjectReference::setReferent(obj, (JavaObject*)val);
-}
- 
-void clearReferent(mvm::gc* _obj) {
-  JavaObjectReference* obj = (JavaObjectReference*)_obj;
-  llvm_gcroot(obj, 0);
-  JavaObjectReference::setReferent(obj, NULL);
-}
-
 mvm::gc* ReferenceQueue::processReference(mvm::gc* reference, ReferenceThread* th, uintptr_t closure) {
   if (!mvm::Collector::isLive(reference, closure)) {
-    clearReferent(reference);
+    setReferent(reference, 0);
     return NULL;
   }
 
-	mvm::gc* referent = *(getReferentPtr(reference));
+	mvm::gc* referent = *(getReferent(reference));
 
   if (!referent) {
     return NULL;
@@ -139,7 +127,7 @@ mvm::gc* ReferenceQueue::processReference(mvm::gc* reference, ReferenceThread* t
     setReferent(newReference, newReferent);
     return newReference;
   } else {
-    clearReferent(newReference);
+    setReferent(newReference, 0);
     th->addToEnqueue(newReference);
     return NULL;
   }

@@ -131,7 +131,7 @@ public:
     PhantomReferencesQueue.addReference(ref);
   }
 
-  ReferenceThread(Jnjvm* vm);
+  ReferenceThread(mvm::VMKit* vmkit);
 
 	virtual void localDestroy() {
     delete[] ToEnqueue;

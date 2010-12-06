@@ -80,17 +80,13 @@ void FinalizerThread::scanFinalizationQueue(uintptr_t closure) {
 
 typedef void (*destructor_t)(void*);
 
-void invokeFinalizer(mvm::gc* obj) {
+void invokeFinalize(mvm::gc* obj) {
   llvm_gcroot(obj, 0);
-  VirtualMachine* vm = obj->getVirtualTable()->vm; //JavaThread::get()->getJVM();
-	mvm::Thread::get()->attach(vm);
-	vm->finalizeObject(obj);
-}
-
-void invokeFinalize(mvm::gc* res) {
-  llvm_gcroot(res, 0);
   TRY {
-    invokeFinalizer(res);
+		llvm_gcroot(obj, 0);
+		VirtualMachine* vm = obj->getVirtualTable()->vm; //JavaThread::get()->getJVM();
+		mvm::Thread::get()->attach(vm);
+		vm->finalizeObject(obj);
   } IGNORE;
   mvm::Thread::get()->clearPendingException();
 }

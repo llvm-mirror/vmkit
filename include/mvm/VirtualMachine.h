@@ -55,10 +55,6 @@ public:
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.
 //===----------------------------------------------------------------------===//
-  /// finalizeObject - invoke the finalizer of a java object
-  ///
-	virtual void finalizeObject(mvm::gc* obj) {}
-
   /// startCollection - Preliminary code before starting a GC.
   ///
   virtual void startCollection() {}
@@ -66,6 +62,24 @@ public:
   /// endCollection - Code after running a GC.
   ///
   virtual void endCollection() {}
+
+  /// finalizeObject - invoke the finalizer of a java object
+  ///
+	virtual void finalizeObject(mvm::gc* obj) {}
+
+  /// getReferentPtr - return the referent of a reference
+  ///
+	virtual mvm::gc** getReferent(mvm::gc* ref) { abort(); }
+
+  /// setReferentPtr - set the referent of a reference
+  ///
+	virtual void setReferent(mvm::gc* ref, mvm::gc* val) { abort(); }
+
+  /// enqueueReference - enqueue the reference
+  ///
+	virtual bool enqueueReference(mvm::gc* _obj) { abort(); }
+
+
   
   /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
   /// before scanning the finalization queue.
