@@ -1,7 +1,6 @@
 #ifndef _VMKIT_H_
 #define _VMKIT_H_
 
-#include <vector>
 #include "mvm/Allocator.h"
 #include "mvm/Threads/CollectionRV.h"
 #include "mvm/VirtualMachine.h"
@@ -10,6 +9,7 @@ namespace mvm {
 class MethodInfo;
 class VMKit;
 class gc;
+class FinalizerThread;
 
 class FunctionMap {
 public:
@@ -91,6 +91,18 @@ public:
 
 	void registerRunningThread(mvm::Thread* th);  
 	void unregisterRunningThread(mvm::Thread* th);
+
+	FinalizerThread*             finalizerThread;
+
+  /// scanFinalizationQueue - Scan objets with a finalized method and schedule
+  /// them for finalization if they are not live.
+  /// 
+  void scanFinalizationQueue(uintptr_t closure);
+
+  /// addFinalizationCandidate - Add an object to the queue of objects with
+  /// a finalization method.
+  ///
+  void addFinalizationCandidate(gc* object);
 
 	/// ------------------------------------------------- ///
 	/// ---             collection managment          --- ///

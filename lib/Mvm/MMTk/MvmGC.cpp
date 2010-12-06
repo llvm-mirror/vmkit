@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mvm/GC.h"
+#include "mvm/VMKit.h"
 #include "MutatorThread.h"
 #include "mvm/VirtualMachine.h"
 
@@ -37,12 +38,12 @@ extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
   gc* res = (gc*)gcmalloc(sz, VT);
   if (VT->destructor)
-    mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
+    mvm::Thread::get()->vmkit->addFinalizationCandidate(res);
   return res;
 }
 
 extern "C" void addFinalizationCandidate(gc* obj) {
-  mvm::Thread::get()->MyVM->addFinalizationCandidate(obj);
+  mvm::Thread::get()->vmkit->addFinalizationCandidate(obj);
 }
 
 extern "C" void* AllocateMagicArray(int32_t sz, void* length) {

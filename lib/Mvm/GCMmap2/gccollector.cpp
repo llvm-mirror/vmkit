@@ -69,7 +69,7 @@ void Collector::do_collect() {
 		th->MyVM->scanSoftReferencesQueue(0);
   
 		// (6) Trace the finalization queue.
-		th->MyVM->scanFinalizationQueue(0);
+		th->vmkit->scanFinalizationQueue(0);
 
 		// (7) Trace the phantom reference queue.
 		th->MyVM->scanPhantomReferencesQueue(0);

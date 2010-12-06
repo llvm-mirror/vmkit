@@ -290,11 +290,6 @@ void Jnjvm::tracer(uintptr_t closure) {
     ArrayUInt16** key = const_cast<ArrayUInt16**>(&(i->first));
     mvm::Collector::markAndTraceRoot(key, closure);
   }
-
-  // (5) Trace the finalization queue.
-  for (uint32 i = 0; i < finalizerThread->CurrentFinalizedIndex; ++i) {
-    mvm::Collector::markAndTraceRoot(finalizerThread->ToBeFinalized + i, closure);
-  }
   
   // (6) Trace the reference queue
   for (uint32 i = 0; i < referenceThread->ToEnqueueIndex; ++i) {

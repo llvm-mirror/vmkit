@@ -11,6 +11,7 @@
 #include "mvm/GC.h"
 
 #include "mvm/VirtualMachine.h"
+#include "mvm/VMKit.h"
 
 #include <sys/mman.h>
 #include <set>
@@ -58,7 +59,7 @@ extern "C" void addFinalizationCandidate(void* obj) __attribute__((always_inline
 
 extern "C" void addFinalizationCandidate(void* obj) {
   llvm_gcroot(obj, 0);
-  mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)obj);
+  mvm::Thread::get()->vmkit->addFinalizationCandidate((gc*)obj);
 }
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {

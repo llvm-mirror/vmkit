@@ -1,5 +1,6 @@
 #include "mvm/VMKit.h"
 #include "mvm/VirtualMachine.h"
+#include "mvm/SystemThreads.h"
 
 using namespace mvm;
 
@@ -12,6 +13,19 @@ using namespace mvm;
 VMKit::VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
 	vms          = 0;
 	vmsArraySize = 0;
+
+  // First create system threads.
+  finalizerThread = new FinalizerThread(this);
+  finalizerThread->start((void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
+}
+
+void VMKit::scanFinalizationQueue(uintptr_t closure) {
+  finalizerThread->scanFinalizationQueue(closure);
+}
+
+void VMKit::addFinalizationCandidate(mvm::gc* object) {
+  llvm_gcroot(object, 0);
+  finalizerThread->addFinalizationCandidate(object);
 }
 
 void VMKit::tracer(uintptr_t closure) {
@@ -36,6 +50,8 @@ bool VMKit::startCollection() {
 		// Lock thread lock, so that we can traverse the vm and thread lists safely. This will be released on finishRV.
 		vmkitLock();
 
+		finalizerThread->FinalizationQueueLock.acquire();
+
 		// call first startCollection on each vm to avoid deadlock. 
 		// indeed, a vm could want to execute applicative code
 		for(size_t i=0; i<vmsArraySize; i++)
@@ -56,6 +72,9 @@ void VMKit::endCollection() {
 	for(size_t i=0; i<vmsArraySize; i++)
 		if(vms[i])
 			vms[i]->endCollection();
+
+  finalizerThread->FinalizationQueueLock.release();
+  finalizerThread->FinalizationCond.broadcast();
 
 	vmkitUnlock();
 }

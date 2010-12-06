@@ -187,7 +187,7 @@ public:
     unlock();
 
     if (((CommonVirtualTable*)vt)->destructor)
-      mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)p);
+      mvm::Thread::get()->vmkit->addFinalizationCandidate((gc*)p);
 
 
     return p;

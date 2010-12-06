@@ -33,7 +33,6 @@ namespace j3 {
 class ArrayObject;
 class Classpath;
 class CommonClass;
-class FinalizerThread;
 class JavaField;
 class JavaMethod;
 class JavaObject;
@@ -123,10 +122,6 @@ public:
 
 private:
   
-  /// finalizerThread - The thread that finalizes Java objects.
-  ///
-  FinalizerThread* finalizerThread;
- 
   /// enqueueThread - The thread that enqueue Java references.
   ///
   ReferenceThread* referenceThread;
@@ -136,8 +131,6 @@ private:
   virtual void scanWeakReferencesQueue(uintptr_t closure);
   virtual void scanSoftReferencesQueue(uintptr_t closure);
   virtual void scanPhantomReferencesQueue(uintptr_t closure);
-  virtual void scanFinalizationQueue(uintptr_t closure);
-  virtual void addFinalizationCandidate(mvm::gc* obj);
   virtual size_t getObjectSize(mvm::gc* obj);
   virtual const char* getObjectTypeName(mvm::gc* obj);
 
@@ -321,15 +314,7 @@ public:
   /// finalizeObject - invoke the finalizer of a java object
   ///
 	virtual void finalizeObject(mvm::gc* obj);
-  
-  /// setFinalizerThread - Set the finalizer thread of this VM.
-  ///
-  void setFinalizerThread(FinalizerThread* th) { finalizerThread = th; }
-  
-  /// getFinalizerThread - Get the finalizer thread of this VM.
-  ///
-  FinalizerThread* getFinalizerThread() const { return finalizerThread; }
-  
+    
   /// setReferenceThread - Set the enqueue thread of this VM.
   ///
   void setReferenceThread(ReferenceThread* th) { referenceThread = th; }

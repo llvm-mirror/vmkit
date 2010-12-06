@@ -82,16 +82,6 @@ public:
   ///
   virtual void scanPhantomReferencesQueue(uintptr_t closure) {}
 
-  /// scanFinalizationQueue - Scan objets with a finalized method and schedule
-  /// them for finalization if they are not live.
-  /// 
-  virtual void scanFinalizationQueue(uintptr_t closure) {}
-
-  /// addFinalizationCandidate - Add an object to the queue of objects with
-  /// a finalization method.
-  ///
-  virtual void addFinalizationCandidate(gc* object) {}
-
   /// tracer - Trace this virtual machine's GC-objects. 
 	///    Called once by vm. If you have GC-objects in a thread specific data, redefine the tracer of your VMThreadData.
   ///

@@ -1062,7 +1062,7 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
 }
 
 mvm::VMThreadData* Jnjvm::buildVMThreadData(mvm::Thread* mut) {
-	JavaThread* th = new JavaThread(this, finalizerThread);
+	JavaThread* th = new JavaThread(this, mut);
 	mut->allVmsData[vmID] = th; // will be done by my caller but I have to call java code before
 	mut->vmData = th;           // will be done by my caller but I have to call java code before
 	bootstrapLoader->upcalls->CreateForeignJavaThread(this, th);
@@ -1076,10 +1076,6 @@ void Jnjvm::loadBootstrap() {
   llvm_gcroot(javaLoader, 0);
   JnjvmClassLoader* loader = bootstrapLoader;
   
-  // First create system threads.
-  finalizerThread = new FinalizerThread(this);
-  finalizerThread->start((void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
-    
   referenceThread = new ReferenceThread(this);
 	javaReferenceThread = new JavaThread(this, referenceThread);
 	referenceThread->allVmsData[vmID] = javaReferenceThread;
@@ -1411,7 +1407,6 @@ void Jnjvm::finalizeObject(mvm::gc* _o) {
 }
 
 void Jnjvm::startCollection() {
-  finalizerThread->FinalizationQueueLock.acquire();
   referenceThread->ToEnqueueLock.acquire();
   referenceThread->SoftReferencesQueue.acquire();
   referenceThread->WeakReferencesQueue.acquire();
@@ -1419,12 +1414,10 @@ void Jnjvm::startCollection() {
 }
   
 void Jnjvm::endCollection() {
-  finalizerThread->FinalizationQueueLock.release();
   referenceThread->ToEnqueueLock.release();
   referenceThread->SoftReferencesQueue.release();
   referenceThread->WeakReferencesQueue.release();
   referenceThread->PhantomReferencesQueue.release();
-  finalizerThread->FinalizationCond.broadcast();
   referenceThread->EnqueueCond.broadcast();
 }
   
@@ -1438,15 +1431,6 @@ void Jnjvm::scanSoftReferencesQueue(uintptr_t closure) {
   
 void Jnjvm::scanPhantomReferencesQueue(uintptr_t closure) {
   referenceThread->PhantomReferencesQueue.scan(referenceThread, closure);
-}
-
-void Jnjvm::scanFinalizationQueue(uintptr_t closure) {
-  finalizerThread->scanFinalizationQueue(closure);
-}
-
-void Jnjvm::addFinalizationCandidate(mvm::gc* object) {
-  llvm_gcroot(object, 0);
-  finalizerThread->addFinalizationCandidate(object);
 }
 
 size_t Jnjvm::getObjectSize(mvm::gc* object) {
