@@ -72,7 +72,7 @@ void Thread::tracer(uintptr_t closure) {
 	mvm::Collector::markAndTraceRoot(&pendingException, closure);
 
 	// should we take the vmkit lock? I suppose that all the threads are suspended during the collection...
-	for(size_t i=0; i<vmkit->numberOfVms; i++)
+	for(size_t i=0; i<vmkit->vmsArraySize; i++)
 		if(allVmsData[i]) {
 			allVmsData[i]->tracer(closure);
 		}

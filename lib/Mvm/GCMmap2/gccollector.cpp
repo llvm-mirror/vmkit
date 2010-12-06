@@ -42,7 +42,7 @@ void Collector::do_collect() {
 
   mvm::Thread* th = mvm::Thread::get();
   th->vmkit->rendezvous.startRV();
-  th->MyVM->startCollection();
+  th->vmkit->startCollection();
 
   th->vmkit->rendezvous.synchronize();
 
@@ -91,7 +91,7 @@ void Collector::do_collect() {
   
   // Wake up all threads.
   th->vmkit->rendezvous.finishRV();
-  th->MyVM->endCollection();
+  th->vmkit->endCollection();
   
   // Kill unreachable objects.
   GCChunkNode *next = 0;

@@ -55,7 +55,7 @@ public:
 	// vms - the list of vms. Could be directly an array and we could also directly use the vmID as index in this array.
 	// synchronize with vmkitLock
 	VirtualMachine**             vms;
-	size_t                       numberOfVms;
+	size_t                       vmsArraySize;
 
 	size_t addVM(VirtualMachine* vm);
 	void   removeVM(size_t id);
@@ -87,6 +87,13 @@ public:
 
 	void registerRunningThread(mvm::Thread* th);  
 	void unregisterRunningThread(mvm::Thread* th);
+
+	/// ------------------------------------------------- ///
+	/// ---             collection managment          --- ///
+	/// ------------------------------------------------- ///
+
+	void startCollection();
+	void endCollection();
 
 	/// ------------------------------------------------- ///
 	/// ---    backtrace related methods              --- ///

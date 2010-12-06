@@ -42,7 +42,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
     th->vmkit->rendezvous.join();
     return;
   } else {
-    th->MyVM->startCollection();
+    th->vmkit->startCollection();
     th->vmkit->rendezvous.synchronize();
   
     JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
@@ -74,7 +74,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
     }
 
     th->vmkit->rendezvous.finishRV();
-    th->MyVM->endCollection();
+    th->vmkit->endCollection();
   }
 
 }
