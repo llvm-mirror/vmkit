@@ -528,6 +528,7 @@ void Thread::releaseThread(mvm::Thread* th) {
     // Wait for the thread to die.
     pthread_join((pthread_t)thread_id, NULL);
   }
+	th->localDestroy();
 	th->vmkit->unregisterPreparedThread(th);
   uintptr_t index = ((uintptr_t)th & Thread::IDMask);
   index = (index & ~TheStackManager.baseAddr) >> 20;

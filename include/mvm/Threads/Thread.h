@@ -312,6 +312,10 @@ public:
   ///
   void* operator new(size_t sz);
   void operator delete(void* th) { UNREACHABLE(); }
+
+  /// localDestroy - call by releaseThread. Used for sub classes. 
+  ///
+	virtual void localDestroy() {}
   
   /// releaseThread - Free the stack so that another thread can use it.
   ///

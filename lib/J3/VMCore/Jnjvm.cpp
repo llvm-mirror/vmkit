@@ -1411,14 +1411,11 @@ void Jnjvm::finalizeObject(mvm::gc* _o) {
 }
 
 void Jnjvm::startCollection() {
-	printf("start collection of %p\n", this);
-	printf("%p - %p\n", finalizerThread, referenceThread);
   finalizerThread->FinalizationQueueLock.acquire();
   referenceThread->ToEnqueueLock.acquire();
   referenceThread->SoftReferencesQueue.acquire();
   referenceThread->WeakReferencesQueue.acquire();
   referenceThread->PhantomReferencesQueue.acquire();
-	printf("yop\n");
 }
   
 void Jnjvm::endCollection() {

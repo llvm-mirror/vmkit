@@ -27,7 +27,7 @@ extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_Tra
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) { 
-  mvm::Thread::get()->MyVM->tracer(reinterpret_cast<uintptr_t>(TL));
+  mvm::Thread::get()->vmkit->tracer(reinterpret_cast<uintptr_t>(TL));
 
 	mvm::VMKit* vmkit = mvm::Thread::get()->vmkit;
   mvm::Thread* tcur;

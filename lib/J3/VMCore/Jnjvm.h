@@ -320,7 +320,7 @@ public:
 
   /// finalizeObject - invoke the finalizer of a java object
   ///
-	void finalizeObject(mvm::gc* obj);
+	virtual void finalizeObject(mvm::gc* obj);
   
   /// setFinalizerThread - Set the finalizer thread of this VM.
   ///

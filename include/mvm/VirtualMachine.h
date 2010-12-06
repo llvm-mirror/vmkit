@@ -55,6 +55,9 @@ public:
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.
 //===----------------------------------------------------------------------===//
+  /// finalizeObject - invoke the finalizer of a java object
+  ///
+	virtual void finalizeObject(mvm::gc* obj) {}
 
   /// startCollection - Preliminary code before starting a GC.
   ///
@@ -89,7 +92,8 @@ public:
   ///
   virtual void addFinalizationCandidate(gc* object) {}
 
-  /// tracer - Trace this virtual machine's GC-objects.
+  /// tracer - Trace this virtual machine's GC-objects. 
+	///    Called once by vm. If you have GC-objects in a thread specific data, redefine the tracer of your VMThreadData.
   ///
   virtual void tracer(uintptr_t closure) {}
 

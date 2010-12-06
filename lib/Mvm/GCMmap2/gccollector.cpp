@@ -41,64 +41,62 @@ void Collector::do_collect() {
   unused_nodes->attrape(used_nodes);
 
   mvm::Thread* th = mvm::Thread::get();
-  th->vmkit->rendezvous.startRV();
-  th->vmkit->startCollection();
+	if(th->startCollection()) {
 
-  th->vmkit->rendezvous.synchronize();
+		mvm::Thread* tcur = th;
 
-  mvm::Thread* tcur = th;
+		// (1) Trace VMKit.
+		th->vmkit->tracer(0);
 
-  // (1) Trace the VM.
-  th->MyVM->tracer(0);
+		// (2) Trace the threads.
+		do {
+			tcur->scanStack(0);
+			tcur->tracer(0);
+			tcur = (mvm::Thread*)tcur->next();
+		} while (tcur != th);
 
-  // (2) Trace the threads.
-  do {
-    tcur->scanStack(0);
-    tcur->tracer(0);
-    tcur = (mvm::Thread*)tcur->next();
-  } while (tcur != th);
+		// (3) Trace stack objects.
+		for(cur = used_nodes->next(); cur != used_nodes; cur = cur->next())
+			trace(cur);
 
-  // (3) Trace stack objects.
-  for(cur = used_nodes->next(); cur != used_nodes; cur = cur->next())
-    trace(cur);
+		// Go back to the previous node.
+		cur = cur->prev();
 
-  // Go back to the previous node.
-  cur = cur->prev();
+		// (4) Trace the weak reference queue.
+		th->MyVM->scanWeakReferencesQueue(0);
 
-  // (4) Trace the weak reference queue.
-  th->MyVM->scanWeakReferencesQueue(0);
-
-  // (5) Trace the soft reference queue.
-  th->MyVM->scanSoftReferencesQueue(0);
+		// (5) Trace the soft reference queue.
+		th->MyVM->scanSoftReferencesQueue(0);
   
-  // (6) Trace the finalization queue.
-  th->MyVM->scanFinalizationQueue(0);
+		// (6) Trace the finalization queue.
+		th->MyVM->scanFinalizationQueue(0);
 
-  // (7) Trace the phantom reference queue.
-  th->MyVM->scanPhantomReferencesQueue(0);
+		// (7) Trace the phantom reference queue.
+		th->MyVM->scanPhantomReferencesQueue(0);
 
-  // (8) Trace the new objects added by queues.
-  for(cur = cur->next(); cur != used_nodes; cur = cur->next())
-    trace(cur);
+		// (8) Trace the new objects added by queues.
+		for(cur = cur->next(); cur != used_nodes; cur = cur->next())
+			trace(cur);
 
 
-  // Finalize.
-  GCChunkNode finalizable;
-  finalizable.attrape(unused_nodes);
+		// Finalize.
+		GCChunkNode finalizable;
+		finalizable.attrape(unused_nodes);
 
-  // We have stopped collecting, go back to alloc state.
-  status = stat_alloc;
+		// We have stopped collecting, go back to alloc state.
+		status = stat_alloc;
   
-  // Wake up all threads.
-  th->vmkit->rendezvous.finishRV();
-  th->vmkit->endCollection();
+		// Wake up all threads.
+		th->vmkit->rendezvous.finishRV();
+		th->vmkit->endCollection();
   
-  // Kill unreachable objects.
-  GCChunkNode *next = 0;
-  for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
-    next = cur->next();
-    allocator->reject_chunk(cur);
-  }
+		// Kill unreachable objects.
+		GCChunkNode *next = 0;
+		for(cur=finalizable.next(); cur!=&finalizable; cur=next) {
+			next = cur->next();
+			allocator->reject_chunk(cur);
+		}
+	}
   
 }
 

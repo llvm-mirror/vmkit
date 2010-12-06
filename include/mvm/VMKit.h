@@ -44,7 +44,7 @@ public:
 
   VMKit(mvm::BumpPtrAllocator &Alloc);
 
-	SpinLock                     _vmkitLock;
+	LockNormal                   _vmkitLock;
 
 	void vmkitLock() { _vmkitLock.lock(); }
 	void vmkitUnlock() { _vmkitLock.unlock(); }
@@ -52,8 +52,8 @@ public:
 	/// ------------------------------------------------- ///
 	/// ---             vm managment                  --- ///
 	/// ------------------------------------------------- ///
-	// vms - the list of vms. Could be directly an array and we could also directly use the vmID as index in this array.
-	// synchronize with vmkitLock
+	// vms - the list of vms. 
+	//       synchronized with vmkitLock
 	VirtualMachine**             vms;
 	size_t                       vmsArraySize;
 
@@ -64,22 +64,26 @@ public:
 	/// ---             thread managment              --- ///
 	/// ------------------------------------------------- ///
   /// preparedThreads - the list of prepared threads, they are not yet running.
+	///                   synchronized with vmkitLock
   ///
 	CircularBase<Thread>         preparedThreads;
 
   /// runningThreads - the list of running threads
+	///                  synchronize with vmkitLock
   ///
 	CircularBase<Thread>         runningThreads;
 
   /// numberOfRunningThreads - The number of threads that currently run under this VM.
+	///                          synchronized with vmkitLock
+	///
   size_t                       numberOfRunningThreads;
 
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
 #ifdef WITH_LLVM_GCC
-  CooperativeCollectionRV rendezvous;
+  CooperativeCollectionRV      rendezvous;
 #else
-  UncooperativeCollectionRV rendezvous;
+  UncooperativeCollectionRV    rendezvous;
 #endif
 
 	void registerPreparedThread(mvm::Thread* th);  
@@ -92,8 +96,10 @@ public:
 	/// ---             collection managment          --- ///
 	/// ------------------------------------------------- ///
 
-	void startCollection();
+	bool startCollection(); // 1 ok, begin collection, 0 do not start collection
 	void endCollection();
+
+  void tracer(uintptr_t closure);
 
 	/// ------------------------------------------------- ///
 	/// ---    backtrace related methods              --- ///
