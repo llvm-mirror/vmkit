@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   
 	mvm::BumpPtrAllocator Allocator;
 
-  mvm::MvmModule::initialise(Fast ? CodeGenOpt::None : CodeGenOpt::Aggressive);
+  mvm::VMKit::initialise(Fast ? CodeGenOpt::None : CodeGenOpt::Aggressive);
 	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
 
   if (VMToRun == RunJava) {

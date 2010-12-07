@@ -5,6 +5,13 @@
 #include "mvm/Threads/CollectionRV.h"
 #include "mvm/VirtualMachine.h"
 
+#include "llvm/Target/TargetMachine.h"
+
+namespace llvm {
+  class Module;
+  class TargetMachine;
+}
+
 namespace mvm {
 class MethodInfo;
 class VMKit;
@@ -42,6 +49,11 @@ class VMKit : public mvm::PermanentObject {
 public:
   /// allocator - Bump pointer allocator to allocate permanent memory of VMKit
   mvm::BumpPtrAllocator& allocator;
+
+	// initialise - initialise vmkit. If never called, will be called by the first constructor of vmkit
+	static void initialise(llvm::CodeGenOpt::Level = llvm::CodeGenOpt::Default,
+                         llvm::Module* TheModule = 0,
+                         llvm::TargetMachine* TheTarget = 0);
 
   VMKit(mvm::BumpPtrAllocator &Alloc);
 

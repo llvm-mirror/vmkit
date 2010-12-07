@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
     cl::PrintHelpMessage();
     return 0;
   }
-   
+
   // Disable cross-compiling for now.
   if (false) {
     Module* TheModule = new Module("bootstrap module",
@@ -168,17 +168,14 @@ int main(int argc, char **argv) {
                              getStringRepresentation());
 
 
-    mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, &Target);
+    mvm::VMKit::initialise(CodeGenOpt::Default, TheModule, &Target);
 #endif
-  } else {
-    mvm::MvmModule::initialise();
   }
 
   mvm::BumpPtrAllocator allocator;
+	mvm::VMKit* vmkit = new(allocator, "VMKit") mvm::VMKit(allocator);
 
   JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
-
-	mvm::VMKit* vmkit = new(allocator, "VMKit") mvm::VMKit(allocator);
 
   JnjvmBootstrapLoader* loader = new(allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(allocator, Comp, false);

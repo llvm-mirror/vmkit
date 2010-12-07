@@ -30,7 +30,6 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
-#include "ReferenceQueue.h"
 #include "Zip.h"
 
 using namespace j3;

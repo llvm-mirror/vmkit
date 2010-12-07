@@ -29,18 +29,16 @@ int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;  
 
   // Initialize base components.  
-  MvmModule::initialise();
-  Collector::initialise();
+  mvm::BumpPtrAllocator Allocator;
+	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
   
   // Tell the compiler to run all optimizations.
   StandardCompileOpts = true;
  
   // Create the allocator that will allocate the bootstrap loader and the JVM.
-  mvm::BumpPtrAllocator Allocator;
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
-	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
   Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
  
   // Run the application. 

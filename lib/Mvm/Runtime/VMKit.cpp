@@ -2,6 +2,7 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/SystemThreads.h"
 #include "mvm/GC.h"
+#include "mvm/JIT.h"
 
 using namespace mvm;
 
@@ -14,14 +15,18 @@ using namespace mvm;
 static SpinLock initedLock;
 static bool     inited = false;
 
-VMKit::VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
+void VMKit::initialise(llvm::CodeGenOpt::Level level, llvm::Module* TheModule, llvm::TargetMachine* TheTarget) {
 	initedLock.lock();
 	if(!inited) {
 		inited = true;
-		//mvm::MvmModule::initialise();
+		mvm::MvmModule::initialise(level, TheModule, TheTarget);
 		mvm::Collector::initialise();
 	}
 	initedLock.unlock();
+}
+
+VMKit::VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
+	initialise();
 
 	vms          = 0;
 	vmsArraySize = 0;

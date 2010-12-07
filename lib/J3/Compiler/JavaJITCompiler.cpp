@@ -415,11 +415,8 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
 // Helper function to run an executable with a JIT
 extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   llvm::llvm_shutdown_obj X; 
-   
 
   mvm::BumpPtrAllocator Allocator;
-
-  mvm::MvmModule::initialise();
 	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
 
   mvm::ThreadAllocator thallocator;
