@@ -1339,11 +1339,12 @@ void Jnjvm::runApplication(int argc, char** argv) {
   javaMainThread->mut->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 
-Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JnjvmBootstrapLoader* loader) : 
+Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp, bool dlLoad) : 
 	VirtualMachine(Alloc, vmkit), 
 	lockSystem(Alloc) {
 
-	loader->isolate = this;
+  bootstrapLoader = new(Alloc, "bootstrap loader") JnjvmBootstrapLoader(Alloc, Comp, dlLoad);
+	bootstrapLoader->isolate = this;
 
 	initialiseInternalVTs();
 
@@ -1354,12 +1355,11 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JnjvmBootstrapLoad
   jniEnv = &JNI_JNIEnvTable;
   javavmEnv = &JNI_JavaVMTable;
   
-  bootstrapLoader = loader;
   upcalls = bootstrapLoader->upcalls;
 
   throwable = upcalls->newThrowable;
 
-  StringList* end = loader->strings;
+  StringList* end = bootstrapLoader->strings;
   while (end) {
     for (uint32 i = 0; i < end->length; ++i) {
       JavaString* obj = end->strings[i];
@@ -1466,9 +1466,8 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
 	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
  
   JavaCompiler* Comp = new JavaCompiler();
-  JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
-    JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
+
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, Comp, true);
 
   mvm::ThreadAllocator thallocator; 
   char** newArgv = (char**)thallocator.Allocate((argc + 1) * sizeof(char*));

@@ -37,9 +37,7 @@ int main(int argc, char **argv, char **envp) {
  
   // Create the allocator that will allocate the bootstrap loader and the JVM.
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
-  JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
-    JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, Comp, true);
  
   // Run the application. 
   vm->runApplication(argc, argv);

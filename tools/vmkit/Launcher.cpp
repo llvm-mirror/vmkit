@@ -73,9 +73,7 @@ int main(int argc, char** argv) {
 
   if (VMToRun == RunJava) {
     JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
-    JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
-			JnjvmBootstrapLoader(Allocator, Comp, true);
-    Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
+    Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, Comp, true);
     vm->runApplication(argc, argv);
     vm->waitForExit();
   }

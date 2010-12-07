@@ -177,15 +177,12 @@ int main(int argc, char **argv) {
 
   JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
 
-  JnjvmBootstrapLoader* loader = new(allocator, "Bootstrap loader")
-    JnjvmBootstrapLoader(allocator, Comp, false);
-
   if (DisableExceptions) Comp->disableExceptions();
   if (DisableStubs) Comp->generateStubs = false;
   if (AssumeCompiled) Comp->assumeCompiled = true;
   if (DisableCooperativeGC) Comp->disableCooperativeGC();
 	
-  Jnjvm* vm = new(allocator, "Bootstrap loader") Jnjvm(allocator, vmkit, loader);
+  Jnjvm* vm = new(allocator, "Bootstrap loader") Jnjvm(allocator, vmkit, Comp, false);
   
   for (std::vector<std::string>::iterator i = Properties.begin(),
        e = Properties.end(); i != e; ++i) {

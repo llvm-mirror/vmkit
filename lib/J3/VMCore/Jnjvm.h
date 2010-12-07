@@ -330,7 +330,7 @@ public:
 
   /// Jnjvm - Allocates a new JVM.
   ///
-  Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JnjvmBootstrapLoader* loader);
+  Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp, bool dlLoad);
   
   /// runApplication - Runs the application with the given command line.
   /// User-visible function, inherited by the VirtualMachine class.
