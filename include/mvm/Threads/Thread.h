@@ -158,58 +158,55 @@ public:
 // WARNING: if you modify this class, you must also change mvm-runtime.ll
 class Thread : public CircularBase<Thread> {
 public:
-  /// IsolateID - The Isolate ID of the thread's VM.
-  size_t IsolateID;                                      // 1
+  /// doYield - Flag to tell the thread to yield for GC reasons.
+  bool doYield;                                          // 1 - intrinsic
+
+#ifdef RUNTIME_DWARF_EXCEPTIONS
+  void* internalPendingException;
+#else
+  /// lastExceptionBuffer - The last exception buffer on this thread's stack.
+  ExceptionBuffer* lastExceptionBuffer;                  // 2 - intrinsic
+#endif
+
+  /// vmData - vm specific data - notice that vmkit do not consider that this field has a value
+	VMThreadData* vmData;                                  // 3 - intrinsic
+
+  /// pendingException - the pending exception
+	gc* pendingException;                                  // 4 - intrinsic
+  
+	/// vmkit - a (shortcut) pointer to vmkit that contains information on all the vms
+	mvm::VMKit* vmkit;                                     // 5
 
   /// MyVM - The VM attached to this Thread.
-  VirtualMachine* MyVM;                                  // 2
+  VirtualMachine* MyVM;                                  // 6
 
   /// baseSP - The base stack pointer.
-  void* baseSP;                                          // 3
- 
-  /// doYield - Flag to tell the thread to yield for GC reasons.
-  bool doYield;                                          // 4
+  void* baseSP;                                          // 7
 
   /// inRV - Flag to tell that the thread is being part of a rendezvous.
-  bool inRV;                                             // 5
+  bool inRV;                                             // 8
 
   /// joinedRV - Flag to tell that the thread has joined a rendezvous.
-  bool joinedRV;                                         // 6
+  bool joinedRV;                                         // 9
 
 private:
   /// lastSP - If the thread is running native code that can not be
   /// interrupted, lastSP is not null and contains the value of the
   /// stack pointer before entering native.
-  void* lastSP;                                          // 7
+  void* lastSP;                                          // 10
  
   /// internalThreadID - The implementation specific thread id.
-  void* internalThreadID;                                // 8
+  void* internalThreadID;                                // 11
 
 public:
   /// routine - The function to invoke when the thread starts.
-  void (*routine)(mvm::Thread*);                         // 9
+  void (*routine)(mvm::Thread*);                         // 12
 
   /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
-  KnownFrame* lastKnownFrame;                            // 10
-  
-#ifdef RUNTIME_DWARF_EXCEPTIONS
-  void* internalPendingException;
-#else
-  /// lastExceptionBuffer - The last exception buffer on this thread's stack.
-  ExceptionBuffer* lastExceptionBuffer;                  // 11
-#endif
-
-  /// vmData - vm specific data
-	VMThreadData* vmData;                                  // 12
-
-  /// pendingException - the pending exception
-	gc* pendingException;                                  // 13
-
-	/// vmkit - a (shortcut) pointer to vmkit that contains information on all the vms
-	mvm::VMKit* vmkit;                                     // 14
+  KnownFrame* lastKnownFrame;                            // 13
 
   /// allVmsData - the array of thread specific data.
-	VMThreadData** allVmsData;                             // 15
+	VMThreadData** allVmsData;                             // 14
 
 
 protected:

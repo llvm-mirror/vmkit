@@ -326,10 +326,10 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   VTType            = PointerType::getUnqual(module->getTypeByName("VT"));
   MutatorThreadType = PointerType::getUnqual(module->getTypeByName("MutatorThread"));
 
-  OffsetDoYieldInThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 4);
-  OffsetCXXExceptionInThreadConstant =      ConstantInt::get(Type::getInt32Ty(Context), 11);
-  OffsetVMDataInThreadConstant =            ConstantInt::get(Type::getInt32Ty(Context), 12);
-  OffsetPendingExceptionInThreadConstant =  ConstantInt::get(Type::getInt32Ty(Context), 13);
+  OffsetDoYieldInThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 1);
+  OffsetCXXExceptionInThreadConstant =      ConstantInt::get(Type::getInt32Ty(Context), 2);
+  OffsetVMDataInThreadConstant =            ConstantInt::get(Type::getInt32Ty(Context), 3);
+  OffsetPendingExceptionInThreadConstant =  ConstantInt::get(Type::getInt32Ty(Context), 4);
 
 	OffsetThreadInMutatorThreadConstant =     ConstantInt::get(Type::getInt32Ty(Context), 0);
 }

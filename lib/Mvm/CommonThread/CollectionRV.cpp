@@ -199,7 +199,7 @@ void CooperativeCollectionRV::finishRV() {
     cur->joinedRV = false;
   }
 	
-  assert(nbJoined == initiator->MyVM->NumberOfThreads && "Inconsistent state");
+  assert(nbJoined == initiator->vmkit->NumberOfThreads && "Inconsistent state");
   nbJoined = 0;
   condEndRV.broadcast();
   unlockRV();

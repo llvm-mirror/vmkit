@@ -24,10 +24,6 @@ ifeq ($(WITH_LLVM_GCC), 1)
     USEDMODULES += $(GCLIB).bc
   endif
 
-  ifeq ($(ISOLATE_SHARING_BUILD), 1) 
-    USEDMODULES += Isolate.bc
-  endif
-
   BUILT_SOURCES = j3.s
   SOURCES = j3.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
 
@@ -35,10 +31,6 @@ else
 
 USEDLIBS = J3.a Classpath.a J3.a J3Compiler.a Allocator.a \
 	   Mvm.a MvmCompiler.a $(GCLIB).a Allocator.a CommonThread.a
-
-  ifeq ($(ISOLATE_SHARING_BUILD), 1) 
-    USEDLIBS += Isolate
-  endif
 
 endif
 

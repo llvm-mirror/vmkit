@@ -21,10 +21,6 @@ ifeq ($(WITH_LLVM_GCC), 1)
     USEDMODULES += J3.bc Classpath.bc J3Compiler.bc
   endif
 
-  ifeq ($(ISOLATE_SHARING_BUILD), 1) 
-    USEDMODULES += Isolate.bc
-  endif
-
   ifeq ($(WITH_N3_PNETLIB), 1)
     USEDMODULES += N3.bc PNetLib.bc
   endif
@@ -42,21 +38,17 @@ ifeq ($(WITH_LLVM_GCC), 1)
 
 
 else
-  
+
   USEDLIBS += Allocator.a Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
 
   ifeq ($(WITH_J3), 1)
     USEDLIBS += J3.a Classpath.a J3.a J3Compiler.a
   endif
 
-  ifeq ($(ISOLATE_SHARING_BUILD), 1) 
-    USEDLIBS += Isolate.a
-  endif
-
   ifeq ($(WITH_N3_PNETLIB), 1)
     USEDLIBS += N3.a PNetLib.a
   endif
-  
+
   USEDLIBS += Allocator.a Mvm.a MvmCompiler.a $(GCLIB).a CommonThread.a
 
 endif
