@@ -310,10 +310,6 @@ void Jnjvm::tracer(uintptr_t closure) {
   }
 
 
-#if defined(ISOLATE_SHARING)
-  mvm::Collector::markAndTraceRoot(&JnjvmSharedLoader::sharedLoader, closure);
-#endif
-  
 #ifdef SERVICE
   parent->tracer(closure);
 #endif

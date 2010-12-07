@@ -306,7 +306,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     ex->catche = reader.readU2();
 
-#ifndef ISOLATE_SHARING
     if (ex->catche) {
       UserClass* cl = 
         (UserClass*)(compilingClass->ctpInfo->isClassLoaded(ex->catche));
@@ -317,7 +316,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     } else {
       ex->catchClass = Classpath::newThrowable;
     }
-#endif
     
     ex->tester = createBasicBlock("testException");
     

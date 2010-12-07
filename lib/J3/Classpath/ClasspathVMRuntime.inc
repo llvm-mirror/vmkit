@@ -181,12 +181,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jint par1) {
-#if defined(ISOLATE_SHARING)
-  // TODO: do a longjmp
   exit(par1);
-#else
-  exit(par1);
-#endif
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_freeMemory(

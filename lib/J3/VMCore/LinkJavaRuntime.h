@@ -69,17 +69,6 @@ extern "C" void j3ServiceCallStop(Jnjvm* OldService,
                                      Jnjvm* NewService);
 #endif
 
-
-
-
-#ifdef ISOLATE_SHARING
-extern "C" void* j3StaticCtpLookup(UserClass* cl, uint32 index);
-extern "C" UserConstantPool* j3SpecialCtpLookup(UserConstantPool* ctpInfo,
-                                                   uint32 index,
-                                                   UserConstantPool** res);
-#endif
-
-
 namespace force_linker {
   struct ForceRuntimeLinking {
     ForceRuntimeLinking() {
@@ -121,12 +110,6 @@ namespace force_linker {
       (void) j3ServiceCallStart(0, 0);
       (void) j3ServiceCallStop(0, 0);
 #endif
-
-#ifdef ISOLATE_SHARING
-      (void) j3StaticCtpLookup(0, 0);
-      (void) j3SpecialCtpLookup(0, 0, 0);
-#endif
-
     }
   } ForcePassLinking; // Force link by creating a global definition.
 }

@@ -157,10 +157,6 @@ public:
 /// super or interfaces.
 ///
 class CommonClass : public mvm::PermanentObject {
-#ifdef ISOLATE_SHARING
-friend class UserCommonClass;
-#endif
-
 public:
   
 //===----------------------------------------------------------------------===//
@@ -341,7 +337,6 @@ public:
   ///
   JavaObject* setDelegatee(JavaObject* val);
 
-#if !defined(ISOLATE_SHARING)
   /// getDelegatee - Get the java/lang/Class object representing this class.
   ///
   JavaObject* getDelegatee() const {
@@ -354,8 +349,6 @@ public:
   JavaObject* const* getDelegateePtr() const {
     return delegatee;
   }
-
-#endif
   
   /// resolvedImplClass - Return the internal representation of the
   /// java.lang.Class object. The class must be resolved.
@@ -593,11 +586,9 @@ public:
     return staticSize;
   }
   
-#ifndef ISOLATE_SHARING
   /// doNew - Allocates a Java object whose class is this class.
   ///
   JavaObject* doNew(Jnjvm* vm);
-#endif
   
   /// tracer - Tracer function of instances of Class.
   ///
@@ -1292,9 +1283,5 @@ public:
 
 } // end namespace j3
 
-
-#ifdef ISOLATE_SHARING
-#include "IsolateCommonClass.h"
-#endif
 
 #endif

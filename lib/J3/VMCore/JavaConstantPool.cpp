@@ -282,7 +282,6 @@ const UTF8* JavaConstantPool::resolveClassName(uint32 index) {
 
 CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
   CommonClass* temp = isClassLoaded(index);
-#ifndef ISOLATE_SHARING
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[index]);
@@ -293,20 +292,17 @@ CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
     } 
     ctpRes[index] = temp;
   }
-#endif
   return temp;
 }
 
 CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
   CommonClass* temp = isClassLoaded(index);
-#ifndef ISOLATE_SHARING
   if (!temp) {
     JnjvmClassLoader* loader = classDef->classLoader;
     assert(loader && "Class has no loader?");
     const UTF8* name = UTF8At(ctpDef[index]);
     temp = loader->lookupClassOrArray(name);
   }
-#endif
 
   if (!temp && classDef->classLoader->getCompiler()->isStaticCompiling()) {
     temp = loadClass(index);
@@ -504,13 +500,10 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
       if (field) {
         if (!stat) {
           ctpRes[index] = (void*)field->ptrOffset;
-        } 
-#ifndef ISOLATE_SHARING
-        else if (lookup->isReady()) {
+        } else if (lookup->isReady()) {
           void* S = field->classDef->getStaticInstance();
           ctpRes[index] = (void*)((uint64)S + field->ptrOffset);
         }
-#endif
       }
       return field;
     }

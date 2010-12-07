@@ -37,10 +37,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   
   LLVMContext& Context = module->getContext();
 
-#ifdef ISOLATE_SHARING
-  JnjvmType = 
-    PointerType::getUnqual(module->getTypeByName("Jnjvm"));
-#endif
   ConstantPoolType = ptrPtrType;
   
   JavaObjectType = 
@@ -215,15 +211,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   GetFinalFloatFieldFunction = module->getFunction("getFinalFloatField");
   GetFinalDoubleFieldFunction = module->getFunction("getFinalDoubleField");
 
-#ifdef ISOLATE_SHARING
-  GetCtpClassFunction = module->getFunction("getCtpClass");
-  GetJnjvmExceptionClassFunction = 
-    module->getFunction("getJnjvmExceptionClass");
-  GetJnjvmArrayClassFunction = module->getFunction("getJnjvmArrayClass");
-  StaticCtpLookupFunction = module->getFunction("j3StaticCtpLookup");
-  SpecialCtpLookupFunction = module->getFunction("j3SpecialCtpLookup");
-#endif
- 
 #ifdef SERVICE
   ServiceCallStartFunction = module->getFunction("j3ServiceCallStart");
   ServiceCallStopFunction = module->getFunction("j3ServiceCallStop");

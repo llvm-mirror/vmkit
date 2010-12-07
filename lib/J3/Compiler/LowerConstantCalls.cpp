@@ -423,14 +423,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             NBB = Invoke->getNormalDest();
           }
           
-#ifdef ISOLATE_SHARING
-          ConstantInt* Cons = dyn_cast<ConstantInt>(Index);
-          assert(CI && "Wrong use of GetConstantPoolAt");
-          uint64 val = Cons->getZExtValue();
-          Value* indexes = ConstantInt::get(Type::getInt32Ty(*Context), val + 1);
-#else
           Value* indexes = Index;
-#endif
           Value* arg1 = GetElementPtrInst::Create(CTP, indexes, "", CI);
           arg1 = new LoadInst(arg1, "", false, CI);
           Value* test = new ICmpInst(CI, ICmpInst::ICMP_EQ, arg1,
@@ -703,39 +696,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           // And reanalyse the current block.
           break;
         }
-#ifdef ISOLATE_SHARING
-        else if (V == intrinsics->GetCtpClassFunction) {
-          Changed = true;
-          Value* val = Call.getArgument(0); 
-          Value* indexes[2] = { intrinsics->constantZero, 
-                                intrinsics->OffsetCtpInClassConstant };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes,
-                                                   indexes + 2, "", CI);
-          Value* VT = new LoadInst(VTPtr, "", CI);
-          CI->replaceAllUsesWith(VT);
-          CI->eraseFromParent();
-        } else if (V == intrinsics->GetJnjvmArrayClassFunction) {
-          Changed = true;
-          Value* val = Call.getArgument(0); 
-          Value* index = Call.getArgument(1); 
-          Value* indexes[3] = { intrinsics->constantZero, intrinsics->constantTwo,
-                                index };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
-                                                   "", CI);
-          Value* VT = new LoadInst(VTPtr, "", CI);
-          CI->replaceAllUsesWith(VT);
-          CI->eraseFromParent();
-        } else if (V == intrinsics->GetJnjvmExceptionClassFunction) {
-          Changed = true;
-          Value* val = Call.getArgument(0);
-          Value* indexes[2] = { intrinsics->constantZero, intrinsics->constantOne };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
-                                                   "", CI);
-          Value* VT = new LoadInst(VTPtr, "", CI);
-          CI->replaceAllUsesWith(VT);
-          CI->eraseFromParent();
-        }
-#endif
 
       }
     }

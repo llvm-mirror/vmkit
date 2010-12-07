@@ -237,7 +237,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     ex->catche = reader.readU2();
 
-#ifndef ISOLATE_SHARING
     if (ex->catche) {
       UserClass* cl = 
         (UserClass*)(compilingClass->ctpInfo->isClassLoaded(ex->catche));
@@ -248,7 +247,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     } else {
       ex->catchClass = Classpath::newThrowable;
     }
-#endif
     
     ex->catcher = createBasicBlock("testException");
     
@@ -369,17 +367,11 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     currentBlock = cur->tester;
     
     Value* clVar = 0; 
-#ifdef ISOLATE_SHARING
-    // We're dealing with exceptions, don't catch the exception if the class can
-    // not be found.
-    if (cur->catche) clVar = getResolvedClass(cur->catche, false, false, 0);
-    else clVar = CallInst::Create(module->GetJnjvmExceptionClassFunction,
-                                  isolateLocal, "", currentBlock);
-#else
+
     // We know catchClass exists because we have loaded all exceptions catched
     // by the method when we loaded the class that defined this method.
     clVar = module->getNativeClass(cur->catchClass);
-#endif
+
     if (clVar->getType() != module->JavaCommonClassType) 
       clVar = new BitCastInst(clVar, module->JavaCommonClassType, "",
                               currentBlock);

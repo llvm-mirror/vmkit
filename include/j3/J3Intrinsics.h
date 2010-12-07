@@ -43,10 +43,6 @@ public:
   const llvm::Type* AttributType;
   const llvm::Type* JavaThreadType;
   
-#ifdef ISOLATE_SHARING
-  const llvm::Type* JnjvmType;
-#endif
-  
   llvm::Function* StartJNIFunction;
   llvm::Function* EndJNIFunction;
   llvm::Function* InterfaceLookupFunction;
@@ -81,14 +77,6 @@ public:
   llvm::Function* GetConstantPoolAtFunction;
   llvm::Function* MultiCallNewFunction;
   llvm::Function* GetArrayClassFunction;
-
-#ifdef ISOLATE_SHARING
-  llvm::Function* GetCtpClassFunction;
-  llvm::Function* GetJnjvmExceptionClassFunction;
-  llvm::Function* GetJnjvmArrayClassFunction;
-  llvm::Function* StaticCtpLookupFunction;
-  llvm::Function* SpecialCtpLookupFunction;
-#endif
 
 #ifdef SERVICE
   llvm::Function* ServiceCallStartFunction;

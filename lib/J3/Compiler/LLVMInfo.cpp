@@ -235,10 +235,6 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
       llvmArgs.push_back(LAI.llvmType);
     }
 
-#if defined(ISOLATE_SHARING)
-    llvmArgs.push_back(Mod->getIntrinsics()->ConstantPoolType);
-#endif
-
     LLVMAssessorInfo& LAI =
       Compiler->getTypedefInfo(signature->getReturnType());
     virtualType = FunctionType::get(LAI.llvmType, llvmArgs, false);
@@ -260,11 +256,6 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
       LLVMAssessorInfo& LAI = Compiler->getTypedefInfo(type);
       llvmArgs.push_back(LAI.llvmType);
     }
-
-#if defined(ISOLATE_SHARING)
-    // cached constant pool
-    llvmArgs.push_back(Compiler->getIntrinsics()->ConstantPoolType);
-#endif
 
     LLVMAssessorInfo& LAI =
       Compiler->getTypedefInfo(signature->getReturnType());
@@ -298,11 +289,6 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
         llvmArgs.push_back(LAI.llvmType);
       }
     }
-
-#if defined(ISOLATE_SHARING)
-    // cached constant pool
-    llvmArgs.push_back(Compiler->getIntrinsics()->ConstantPoolType);
-#endif
 
     LLVMAssessorInfo& LAI =
       Compiler->getTypedefInfo(signature->getReturnType());
@@ -343,9 +329,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create(context, "enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ptr, *func;
-#if defined(ISOLATE_SHARING)
-  Value* ctp = i;
-#endif
+
   ++i;
   func = i;
   ++i;
@@ -396,10 +380,6 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
                                     currentBlock);
   }
 
-#if defined(ISOLATE_SHARING)
-  Args.push_back(ctp);
-#endif
-
   Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
                                 currentBlock);
   if (!signature->getReturnType()->isVoid()) {
@@ -435,9 +415,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   BasicBlock* currentBlock = BasicBlock::Create(context, "enter", res);
   Function::arg_iterator i = res->arg_begin();
   Value *obj, *ap, *func;
-#if defined(ISOLATE_SHARING)
-  Value* ctp = i;
-#endif
+
   ++i;
   func = i;
   ++i;
@@ -475,10 +453,6 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
     }
     Args.push_back(arg);
   }
-
-#if defined(ISOLATE_SHARING)
-  Args.push_back(ctp);
-#endif
 
   Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
                                 currentBlock);

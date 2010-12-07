@@ -168,17 +168,10 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Value* indexes2[2];
     indexes2[0] = intrinsics->constantZero;
 
-#ifdef ISOLATE_SHARING
-    Value* indexesCtp; //[3];
-#endif
     if (meth) {
       LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(meth);
       Constant* Offset = LMI->getOffset();
       indexes2[1] = Offset;
-#ifdef ISOLATE_SHARING
-      indexesCtp = ConstantInt::get(Type::getInt32Ty(*llvmContext),
-                                    Offset->getZExtValue() * -1);
-#endif
     } else {
    
       GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),
@@ -211,11 +204,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
       currentBlock = endResolveVirtual;
 
       indexes2[1] = node;
-#ifdef ISOLATE_SHARING
-      Value* mul = BinaryOperator::CreateMul(val, intrinsics->constantMinusOne,
-                                             "", currentBlock);
-      indexesCtp = mul;
-#endif
     }
 
     makeArgs(it, index, args, signature->nbArguments + 1);
@@ -229,13 +217,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Value* Func = new LoadInst(FuncPtr, "", currentBlock);
   
     Func = new BitCastInst(Func, LSI->getVirtualPtrType(), "", currentBlock);
-#ifdef ISOLATE_SHARING
-    Value* CTP = GetElementPtrInst::Create(VT, indexesCtp, "", currentBlock);
-    
-    CTP = new LoadInst(CTP, "", currentBlock);
-    CTP = new BitCastInst(CTP, intrinsics->ConstantPoolType, "", currentBlock);
-    args.push_back(CTP);
-#endif
     val = invoke(Func, args, "", currentBlock);
   
     if (endBlock) {
@@ -436,13 +417,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
   uint32 index = 0;
   if (stat) {
-#ifdef ISOLATE_SHARING
-    Value* val = getClassCtp();
-    Value* cl = CallInst::Create(intrinsics->GetClassDelegateePtrFunction,
-                                 val, "", currentBlock);
-#else
     Value* cl = TheCompiler->getJavaClassPtr(compilingClass);
-#endif
     nativeArgs.push_back(cl);
     index = 2;
   } else {
@@ -698,27 +673,6 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = OK;
 }
 
-#ifdef ISOLATE_SHARING
-Value* JavaJIT::getStaticInstanceCtp() {
-  Value* cl = getClassCtp();
-  Value* indexes[2] = { intrinsics->constantZero, module->constantSeven };
-  Value* arg1 = GetElementPtrInst::Create(cl, indexes, indexes + 2,
-                                          "", currentBlock);
-  arg1 = new LoadInst(arg1, "", false, currentBlock);
-  return arg1;
-  
-}
-
-Value* JavaJIT::getClassCtp() {
-  Value* indexes = intrinsics->constantOne;
-  Value* arg1 = GetElementPtrInst::Create(ctpCache, indexes.begin(),
-                                          indexes.end(),  "", currentBlock);
-  arg1 = new LoadInst(arg1, "", false, currentBlock);
-  arg1 = new BitCastInst(arg1, intrinsics->JavaClassType, "", currentBlock);
-  return arg1;
-}
-#endif
-
 void JavaJIT::beginSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
@@ -891,11 +845,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   
   uint32 index = 0;
   uint32 count = 0;
-#if defined(ISOLATE_SHARING)
-  uint32 max = args.size() - 2;
-#else
   uint32 max = args.size();
-#endif
   Signdef* sign = compilingMethod->getSignature();
   Typedef* const* arguments = sign->getArgumentsType();
   uint32 type = 0;
@@ -1057,11 +1007,7 @@ llvm::Function* JavaJIT::javaCompile() {
  
   uint32 index = 0;
   uint32 count = 0;
-#if defined(ISOLATE_SHARING)
-  uint32 max = func->arg_size() - 2;
-#else
   uint32 max = func->arg_size();
-#endif
   Function::arg_iterator i = func->arg_begin(); 
   Signdef* sign = compilingMethod->getSignature();
   Typedef* const* arguments = sign->getArgumentsType();
@@ -1112,15 +1058,6 @@ llvm::Function* JavaJIT::javaCompile() {
                            currentBlock);
     }
 #endif
-
-#if defined(ISOLATE_SHARING)
-  ctpCache = i;
-  Value* addrCtpCache = new AllocaInst(intrinsics->ConstantPoolType, "",
-                                       currentBlock);
-  /// make it volatile to be sure it's on the stack
-  new StoreInst(ctpCache, addrCtpCache, true, currentBlock);
-#endif
- 
 
 #if defined(SERVICE)
   JnjvmClassLoader* loader = compilingClass->classLoader;
@@ -1478,20 +1415,10 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
 
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
                        uint32 index, std::vector<Value*>& Args, uint32 nb) {
-#if defined(ISOLATE_SHARING)
-  nb += 1;
-#endif
   Args.reserve(nb + 2);
   mvm::ThreadAllocator threadAllocator;
   Value** args = (Value**)threadAllocator.Allocate(nb*sizeof(Value*));
-#if defined(ISOLATE_SHARING)
-  args[nb - 1] = isolateLocal;
-  sint32 start = nb - 2;
-  it--;
-  it--;
-#else
   sint32 start = nb - 1;
-#endif
   for (sint32 i = start; i >= 0; --i) {
     it--;
     if (it->get() == Type::getInt64Ty(*llvmContext) || it->get() == Type::getDoubleTy(*llvmContext)) {
@@ -1659,32 +1586,6 @@ void JavaJIT::invokeSpecial(uint16 index) {
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   llvm::Instruction* val = 0;
 
-#if defined(ISOLATE_SHARING)
-  const Type* Ty = intrinsics->ConstantPoolType;
-  Constant* Nil = Constant::getNullValue(Ty);
-  GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),Ty, false,
-                                          GlobalValue::ExternalLinkage, Nil,
-                                          "");
-  Value* res = new LoadInst(GV, "", false, currentBlock);
-  Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, res, Nil, "");
- 
-  BasicBlock* trueCl = createBasicBlock("UserCtp OK");
-  BasicBlock* falseCl = createBasicBlock("UserCtp Not OK");
-  PHINode* node = llvm::PHINode::Create(Ty, "", trueCl);
-  node->addIncoming(res, currentBlock);
-  BranchInst::Create(falseCl, trueCl, test, currentBlock);
-  std::vector<Value*> Args;
-  Args.push_back(ctpCache);
-  Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
-  Args.push_back(GV);
-  res = CallInst::Create(intrinsics->SpecialCtpLookupFunction, Args.begin(),
-                         Args.end(), "", falseCl);
-  node->addIncoming(res, falseCl);
-  BranchInst::Create(trueCl, falseCl);
-  currentBlock = trueCl;
-  args.push_back(node);
-#endif
-
   if (!meth) {
     meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
   }
@@ -1775,18 +1676,9 @@ void JavaJIT::invokeStatic(uint16 index) {
     func = TheCompiler->getMethod(meth);
   }
 
-#if defined(ISOLATE_SHARING)
-  Value* newCtpCache = getConstantPoolAt(index,
-                                         intrinsics->StaticCtpLookupFunction,
-                                         intrinsics->ConstantPoolType, 0,
-                                         false);
-#endif
   std::vector<Value*> args; // size = [signature->nbIn + 2]; 
   FunctionType::param_iterator it  = staticType->param_end();
   makeArgs(it, index, args, signature->nbArguments);
-#if defined(ISOLATE_SHARING)
-  args.push_back(newCtpCache);
-#endif
 
   if (className->equals(loader->mathName)) {
     val = lowerMathOps(name, args);
@@ -1821,16 +1713,9 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 
 // This makes unswitch loop very unhappy time-wise, but makes GVN happy
 // number-wise. IMO, it's better to have this than Unswitch.
-#ifdef ISOLATE_SHARING
-  Value* CTP = ctpCache;
-  Value* Cl = GetElementPtrInst::Create(CTP, intrinsics->ConstantOne, "",
-                                        currentBlock);
-  Cl = new LoadInst(Cl, "", currentBlock);
-#else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
   Value* CTP = TheCompiler->getConstantPool(ctp);
   Value* Cl = TheCompiler->getNativeClass(compilingClass);
-#endif
 
   std::vector<Value*> Args;
   Args.push_back(resolver);
@@ -1975,17 +1860,12 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
         Cl = invoke(intrinsics->InitialisationCheckFunction, Cl, "",
                     currentBlock);
       }
-#if !defined(ISOLATE_SHARING)
       if (needsCheck) {
         CallInst::Create(intrinsics->ForceInitialisationCheckFunction, Cl, "",
                          currentBlock);
       }
 
       object = TheCompiler->getStaticInstance(field->classDef);
-#else
-      object = CallInst::Create(intrinsics->GetStaticInstanceFunction, Cl, "",
-                                currentBlock); 
-#endif
     } else {
       object = new LoadInst(
           object, "", TheCompiler->useCooperativeGC(), currentBlock);
@@ -2082,7 +1962,7 @@ void JavaJIT::getStaticField(uint16 index) {
   Value* ptr = ldResolved(index, true, NULL, LAI.llvmTypePtr);
   
   bool final = false;
-#if !defined(ISOLATE_SHARING)
+
   JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   if (!compilingMethod->name->equals(JBL->clinitName)) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, true);
@@ -2135,7 +2015,6 @@ void JavaJIT::getStaticField(uint16 index) {
       }
     }
   }
-#endif
 
   if (!final) {
     JnjvmClassLoader* JCL = compilingClass->classLoader;

@@ -924,7 +924,6 @@ void UserClass::resolveParents() {
     interfaces[i]->resolveClass(); 
 }
 
-#ifndef ISOLATE_SHARING
 void Class::resolveClass() {
   if (isResolved() || isErroneous()) return;
   resolveParents();
@@ -934,12 +933,6 @@ void Class::resolveClass() {
       &(getCurrentTaskClassMirror().status), loaded, resolved);
   assert(isResolved() || isErroneous());
 }
-#else
-void Class::resolveClass() {
-  assert(status >= resolved && 
-         "Asking to resolve a not resolved-class in a isolate environment");
-}
-#endif
 
 void UserClass::resolveInnerOuterClasses() {
   if (!innerOuterResolved) {

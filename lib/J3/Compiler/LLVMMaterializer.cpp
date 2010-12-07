@@ -150,7 +150,7 @@ bool LLVMMaterializer::Materialize(GlobalValue *GV, std::string *ErrInfo) {
     LLVMMethodInfo* LMI = Comp->getMethodInfo(meth);
     uint64_t offset = dyn_cast<ConstantInt>(LMI->getOffset())->getZExtValue();
     assert(meth->classDef->isResolved() && "Class not resolved");
-#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
+#if !defined(SERVICE)
     assert(meth->classDef->isInitializing() && "Class not ready");
 #endif
     assert(meth->classDef->virtualVT && "Class has no VT");

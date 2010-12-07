@@ -2056,17 +2056,11 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           uint8 id = reader.readU1();
           i += 1;
           uint8 charId = arrayType(compilingMethod, id);
-#ifndef ISOLATE_SHARING
           JnjvmBootstrapLoader* loader = 
             compilingClass->classLoader->bootstrapLoader;
+
           dcl = loader->getArrayClass(id);
           valCl = TheCompiler->getNativeClass(dcl);
-#else
-          Value* args[2] = { isolateLocal,
-                             ConstantInt::get(Type::getInt32Ty(*llvmContext), id - 4) };
-          valCl = CallInst::Create(intrinsics->GetJnjvmArrayClassFunction,
-                                   args, args + 2, "", currentBlock);
-#endif
 
           LLVMAssessorInfo& LAI = TheCompiler->AssessorInfo[charId];
           sizeElement = ConstantInt::get(Type::getInt32Ty(*llvmContext),
