@@ -61,9 +61,10 @@ const UTF8* JavaCompiler::NoInlinePragma = 0;
 
 
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
+																					 Jnjvm* vm,
                                            JavaCompiler* Comp, 
                                            bool dlLoad) : 
-    JnjvmClassLoader(Alloc) {
+	JnjvmClassLoader(Alloc, vm) {
   
 	TheCompiler = Comp;
   
@@ -262,9 +263,13 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
 JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
                                    JnjvmClassLoader& JCL, JavaObject* loader,
                                    VMClassLoader* vmdata,
-                                   Jnjvm* I) : allocator(Alloc) {
+                                   Jnjvm* I,
+																	 Jnjvm* v) : allocator(Alloc) {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
+
+	vm = v;
+
   bootstrapLoader = JCL.bootstrapLoader;
   TheCompiler = bootstrapLoader->getCompiler()->Create("Applicative loader");
   
@@ -872,7 +877,7 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
       vmdata = VMClassLoader::allocate(vm);
       mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
       JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
-                                                     loader, vmdata, vm);
+                                                     loader, vmdata, vm, vm);
       upcalls->vmdataClassLoader->setInstanceObjectField(loader, (JavaObject*)vmdata);
     }
     JavaObject::release(loader);

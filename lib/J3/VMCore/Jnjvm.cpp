@@ -1343,7 +1343,7 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp
 	VirtualMachine(Alloc, vmkit), 
 	lockSystem(Alloc) {
 
-  bootstrapLoader = new(Alloc, "bootstrap loader") JnjvmBootstrapLoader(Alloc, Comp, dlLoad);
+  bootstrapLoader = new(Alloc, "bootstrap loader") JnjvmBootstrapLoader(Alloc, this, Comp, dlLoad);
 	bootstrapLoader->isolate = this;
 
 	initialiseInternalVTs();

@@ -58,6 +58,10 @@ private:
   ///
   Jnjvm* isolate;
 
+  /// vm - my vm
+  ///
+  Jnjvm* vm;
+
   /// javaLoder - The Java representation of the class loader. Null for the
   /// bootstrap class loader.
   ///
@@ -77,7 +81,7 @@ private:
   /// first use of a Java class loader.
   ///
   JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
-                   JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate);
+                   JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate, Jnjvm* vm);
 
   /// lookupComponentName - Try to find the component name of the given array
   /// name. If the component name is not in the table of UTF8s and holder
@@ -88,7 +92,7 @@ private:
 protected:
   
 	friend class Jnjvm;
-  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc) : allocator(Alloc) {}
+  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, Jnjvm* v) : allocator(Alloc) { vm = v; }
   
   /// TheCompiler - The Java compiler for this class loader.
   ///
@@ -352,8 +356,7 @@ public:
   /// to do before any execution of a JVM. Also try to load libvmjc.so
   /// if dlLoad is not false.
   ///
-  JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc, JavaCompiler* Comp,
-                       bool dlLoad);
+  JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc, Jnjvm* vm, JavaCompiler* Comp, bool dlLoad);
   
   virtual JavaString** UTF8ToStr(const UTF8* utf8);
 
