@@ -174,11 +174,12 @@ int main(int argc, char **argv) {
     mvm::MvmModule::initialise();
   }
 
+  mvm::BumpPtrAllocator allocator;
+
   JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
 
-  mvm::Collector::initialise();
+	mvm::VMKit* vmkit = new(allocator, "VMKit") mvm::VMKit(allocator);
 
-  mvm::BumpPtrAllocator allocator;
   JnjvmBootstrapLoader* loader = new(allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(allocator, Comp, false);
 
@@ -187,7 +188,6 @@ int main(int argc, char **argv) {
   if (AssumeCompiled) Comp->assumeCompiled = true;
   if (DisableCooperativeGC) Comp->disableCooperativeGC();
 	
-	mvm::VMKit* vmkit = new(allocator, "VMKit") mvm::VMKit(allocator);
   Jnjvm* vm = new(allocator, "Bootstrap loader") Jnjvm(allocator, vmkit, loader);
   
   for (std::vector<std::string>::iterator i = Properties.begin(),

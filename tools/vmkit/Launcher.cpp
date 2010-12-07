@@ -66,15 +66,15 @@ int main(int argc, char** argv) {
     return 0;
   }
   
+	mvm::BumpPtrAllocator Allocator;
+
   mvm::MvmModule::initialise(Fast ? CodeGenOpt::None : CodeGenOpt::Aggressive);
-  mvm::Collector::initialise();
+	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
 
   if (VMToRun == RunJava) {
-    mvm::BumpPtrAllocator Allocator;
     JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
     JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
-        JnjvmBootstrapLoader(Allocator, Comp, true);
-		mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
+			JnjvmBootstrapLoader(Allocator, Comp, true);
     Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
     vm->runApplication(argc, argv);
     vm->waitForExit();

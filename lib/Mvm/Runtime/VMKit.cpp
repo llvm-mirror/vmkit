@@ -1,6 +1,7 @@
 #include "mvm/VMKit.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/SystemThreads.h"
+#include "mvm/GC.h"
 
 using namespace mvm;
 
@@ -10,7 +11,18 @@ using namespace mvm;
 #define dprintf(...)
 #endif
 
+static SpinLock initedLock;
+static bool     inited = false;
+
 VMKit::VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
+	initedLock.lock();
+	if(!inited) {
+		inited = true;
+		//mvm::MvmModule::initialise();
+		mvm::Collector::initialise();
+	}
+	initedLock.unlock();
+
 	vms          = 0;
 	vmsArraySize = 0;
 
@@ -115,7 +127,7 @@ size_t VMKit::addVM(VirtualMachine* vm) {
 		}
 
 	int res = vmsArraySize;
-	vmsArraySize = vmsArraySize ? (vmsArraySize<<1) : 4;
+	vmsArraySize = vmsArraySize ? (vmsArraySize<<1) : 1;
 	// reallocate the vms
 	VirtualMachine **newVms = new VirtualMachine*[vmsArraySize];
 

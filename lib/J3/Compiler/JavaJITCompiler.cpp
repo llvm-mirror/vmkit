@@ -416,16 +416,18 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
 extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   llvm::llvm_shutdown_obj X; 
    
+
+  mvm::BumpPtrAllocator Allocator;
+
   mvm::MvmModule::initialise();
-  mvm::Collector::initialise();
-  mvm::ThreadAllocator allocator;
-  char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));
+	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
+
+  mvm::ThreadAllocator thallocator;
+  char** newArgv = (char**)thallocator.Allocate((argc + 1) * sizeof(char*));
   memcpy(newArgv + 1, argv, argc * sizeof(void*));
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;
 
-  mvm::BumpPtrAllocator Allocator;
-	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);

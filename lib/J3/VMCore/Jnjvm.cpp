@@ -1461,19 +1461,20 @@ const char* Jnjvm::getObjectTypeName(mvm::gc* object) {
 
 // Helper function to run J3 without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
-  mvm::Collector::initialise();
-  mvm::ThreadAllocator allocator; 
-  char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));
-  memcpy(newArgv + 1, argv, argc * sizeof(char*));
-  newArgv[0] = newArgv[1];
-  newArgv[1] = mainClass;
- 
   mvm::BumpPtrAllocator Allocator;
+
 	mvm::VMKit* vmkit = new(Allocator, "VMKit") mvm::VMKit(Allocator);
+ 
   JavaCompiler* Comp = new JavaCompiler();
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
   Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, loader);
+
+  mvm::ThreadAllocator thallocator; 
+  char** newArgv = (char**)thallocator.Allocate((argc + 1) * sizeof(char*));
+  memcpy(newArgv + 1, argv, argc * sizeof(char*));
+  newArgv[0] = newArgv[1];
+  newArgv[1] = mainClass;
 
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();
