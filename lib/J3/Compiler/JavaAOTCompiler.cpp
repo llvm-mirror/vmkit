@@ -228,10 +228,6 @@ Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
 }
 
 Constant* JavaAOTCompiler::getJavaClassPtr(CommonClass* cl) {
-#ifdef ISOLATE
-  abort();
-  return 0;
-#else
   // Make sure it's emitted.
   getJavaClass(cl);
 
@@ -248,7 +244,6 @@ Constant* JavaAOTCompiler::getJavaClassPtr(CommonClass* cl) {
 
   Constant* Ptr = ConstantExpr::getGetElementPtr(TCMArray, GEP2, 2);
   return Ptr;
-#endif
 }
 
 JavaObject* JavaAOTCompiler::getFinalObject(llvm::Value* obj) {
@@ -476,10 +471,6 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
 }
 
 Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
-#ifdef ISOLATE
-  assert(0 && "Should not be here");
-  abort();
-#endif
   static_instance_iterator End = staticInstances.end();
   static_instance_iterator I = staticInstances.find(classDef);
   if (I == End) {

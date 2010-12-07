@@ -925,11 +925,6 @@ void UserClass::resolveParents() {
 }
 
 #ifndef ISOLATE_SHARING
-#ifdef ISOLATE
-void Class::resolveClass() {
-  UNIMPLEMENTED();
-}
-#else
 void Class::resolveClass() {
   if (isResolved() || isErroneous()) return;
   resolveParents();
@@ -939,7 +934,6 @@ void Class::resolveClass() {
       &(getCurrentTaskClassMirror().status), loaded, resolved);
   assert(isResolved() || isErroneous());
 }
-#endif
 #else
 void Class::resolveClass() {
   assert(status >= resolved && 
@@ -1044,34 +1038,6 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
   }
 }
 
-
-#ifdef ISOLATE
-TaskClassMirror& Class::getCurrentTaskClassMirror() {
-  return IsolateInfo[JavaThread::get()->getJVM()->IsolateID];
-}
-
-JavaObject* CommonClass::getDelegatee() {
-  return delegatee[JavaThread::get()->getJVM()->IsolateID];
-}
-
-JavaObject** CommonClass::getDelegateePtr() {
-  return &(delegatee[JavaThread::get()->getJVM()->IsolateID]);
-}
-
-JavaObject* CommonClass::setDelegatee(JavaObject* val) {
-  JavaObject* prev = NULL;
-  llvm_gcroot(val, 0);
-  llvm_gcroot(prev, 0);
-  JavaObject** obj = &(delegatee[JavaThread::get()->getJVM()->IsolateID]);
-
-  prev = (JavaObject*)__sync_val_compare_and_swap((uintptr_t)obj, NULL, val);
-
-  if (!prev) return val;
-  else return prev;
-}
-
-#else
-
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   JavaObject* prev = NULL;
   llvm_gcroot(val, 0);
@@ -1081,8 +1047,6 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   if (!prev) return val;
   else return prev;
 }
-
-#endif
 
 
 

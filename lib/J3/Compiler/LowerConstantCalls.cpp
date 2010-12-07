@@ -42,59 +42,6 @@ namespace j3 {
 #endif
 
 
-#ifdef ISOLATE
-static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
-  Value* GEP[2] = { intrinsics->constantZero,
-                    intrinsics->OffsetTaskClassMirrorInClassConstant };
-  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
-
-  Value* threadId = CallInst::Create(intrinsics->llvm_frameaddress,
-                                     intrinsics->constantZero, "", CI);
-  threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "", CI);
-  threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
-                                       "", CI);
-  
-  threadId = new IntToPtrInst(threadId, intrinsics->ptr32Type, "", CI);
-
-  Value* GEP1[2] = { intrinsics->OffsetThreadInMutatorThreadConstant, intrinsics->OffsetIsolateInThreadConstant }
-  Value* IsolateID = GetElementPtrInst::Create(threadId, GEP1, GEP1 + 2, "", CI);
-
-  IsolateID = new LoadInst(IsolateID, "", CI);
-
-  Value* GEP2[2] = { intrinsics->constantZero, IsolateID };
-
-  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
-                                         CI);
-  return TCM;
-}
-
-static Value* getDelegatee(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
-  Value* GEP[2] = { intrinsics->constantZero,
-                    intrinsics->constantTwo };
-  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
-
-  Value* threadId = CallInst::Create(intrinsics->llvm_frameaddress,
-                                     intrinsics->constantZero, "", CI);
-  threadId = new PtrToIntInst(threadId, intrinsics->pointerSizeType, "", CI);
-  threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
-                                       "", CI);
-  
-  threadId = new IntToPtrInst(threadId, intrinsics->ptr32Type, "", CI);
-  
-  Value* GEP1[2] = { intrinsics->OffsetThreadInMutatorThreadConstant, intrinsics->OffsetIsolateInThreadConstant }
-  Value* IsolateID = GetElementPtrInst::Create(threadId, GEP1, GEP1 + 2, "", CI);
-
-  IsolateID = new LoadInst(IsolateID, "", CI);
-
-  Value* GEP2[2] = { intrinsics->constantZero, IsolateID };
-
-  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
-                                         CI);
-  return new LoadInst(TCM, "", CI);
-}
-
-#else
-
 static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
   Value* GEP[2] = { intrinsics->constantZero,
                     intrinsics->OffsetTaskClassMirrorInClassConstant };
@@ -120,7 +67,6 @@ static Value* getDelegatee(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI
   return new LoadInst(TCM, "", CI);
 
 }
-#endif
 
 bool LowerConstantCalls::runOnFunction(Function& F) {
   LLVMContext* Context = &F.getContext();
@@ -362,18 +308,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Class = new LoadInst(ClassPtr, "", CI);
           CI->replaceAllUsesWith(Class);
           CI->eraseFromParent();
-#if defined(ISOLATE)
-        } else if (V == intrinsics->GetStaticInstanceFunction) {
-          Changed = true;
-
-          Value* TCM = getTCM(intrinsics, Call.getArgument(0), CI);
-          Constant* C = intrinsics->OffsetStaticInstanceInTaskClassMirrorConstant;
-          Value* GEP[2] = { intrinsics->constantZero, C };
-          Value* Replace = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "", CI);
-          Replace = new LoadInst(Replace, "", CI);
-          CI->replaceAllUsesWith(Replace);
-          CI->eraseFromParent();
-#endif
         } else if (V == intrinsics->GetClassDelegateeFunction) {
           Changed = true;
           BasicBlock* NBB = II->getParent()->splitBasicBlock(II);

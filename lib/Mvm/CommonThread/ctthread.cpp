@@ -467,10 +467,8 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   sigaction(SIGSEGV, &sa, NULL);
 
 
-  assert(th->MyVM && "VM not set in a thread");
-#ifdef ISOLATE
-  th->IsolateID = th->MyVM->IsolateID;
-#endif
+  assert(th->vmkit && "VM not set in a thread");
+
   th->vmkit->rendezvous.prepareForJoin();
   th->routine(th);
   th->vmkit->unregisterRunningThread(th);

@@ -1373,10 +1373,7 @@ void JavaJIT::loadConstant(uint16 index) {
   uint8 type = ctpInfo->typeAt(index);
   
   if (type == JavaConstantPool::ConstantString) {
-#if defined(ISOLATE)
-    abort();
-#else
-    
+
     if (TheCompiler->isStaticCompiling()) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
       JavaString* str = *(compilingClass->classLoader->UTF8ToStr(utf8));
@@ -1397,7 +1394,7 @@ void JavaJIT::loadConstant(uint16 index) {
         push(val, false, upcalls->newString);
       }
     }
-#endif   
+
   } else if (type == JavaConstantPool::ConstantLong) {
     push(ConstantInt::get(Type::getInt64Ty(*llvmContext), ctpInfo->LongAt(index)),
          false);
@@ -1978,7 +1975,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
         Cl = invoke(intrinsics->InitialisationCheckFunction, Cl, "",
                     currentBlock);
       }
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+#if !defined(ISOLATE_SHARING)
       if (needsCheck) {
         CallInst::Create(intrinsics->ForceInitialisationCheckFunction, Cl, "",
                          currentBlock);
@@ -2085,7 +2082,7 @@ void JavaJIT::getStaticField(uint16 index) {
   Value* ptr = ldResolved(index, true, NULL, LAI.llvmTypePtr);
   
   bool final = false;
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
+#if !defined(ISOLATE_SHARING)
   JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   if (!compilingMethod->name->equals(JBL->clinitName)) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, true);

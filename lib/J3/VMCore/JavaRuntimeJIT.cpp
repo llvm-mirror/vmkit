@@ -552,9 +552,7 @@ extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
   str = cl->classLoader->UTF8ToStr(utf8);
-#if defined(ISOLATE_SHARING) || !defined(ISOLATE)
   ctpInfo->ctpRes[index] = str;
-#endif
   
   END_NATIVE_EXCEPTION
 

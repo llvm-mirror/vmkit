@@ -181,7 +181,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jint par1) {
-#if defined(ISOLATE) || defined(ISOLATE_SHARING)
+#if defined(ISOLATE_SHARING)
   // TODO: do a longjmp
   exit(par1);
 #else

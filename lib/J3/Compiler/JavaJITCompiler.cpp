@@ -155,10 +155,6 @@ Constant* JavaJITCompiler::getFinalObject(JavaObject* obj, CommonClass* cl) {
 }
 
 Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
-#ifdef ISOLATE
-  assert(0 && "Should not be here");
-  abort();
-#endif
   void* obj = classDef->getStaticInstance();
   if (!obj) {
     classDef->acquire();
