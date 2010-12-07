@@ -35,7 +35,6 @@
 #include "LinkJavaRuntime.h"
 #include "LockedMap.h"
 #include "Reader.h"
-#include "ReferenceQueue.h"
 #include "Zip.h"
 
 using namespace j3;
@@ -1076,10 +1075,6 @@ void Jnjvm::loadBootstrap() {
   llvm_gcroot(javaLoader, 0);
   JnjvmClassLoader* loader = bootstrapLoader;
   
-  referenceThread = new ReferenceThread(vmkit);
-  referenceThread->start(
-      (void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
-  
   // Initialise the bootstrap class loader if it's not
   // done already.
   if (bootstrapLoader->upcalls->newString == NULL) {
@@ -1425,34 +1420,7 @@ bool Jnjvm::enqueueReference(mvm::gc* _obj) {
   UserClass* cl = JavaObject::getClass(obj)->asClass();
   return (bool)meth->invokeIntSpecialBuf(this, cl, obj, 0);
 }
-
-void Jnjvm::startCollection() {
-  referenceThread->ToEnqueueLock.acquire();
-  referenceThread->SoftReferencesQueue.acquire();
-  referenceThread->WeakReferencesQueue.acquire();
-  referenceThread->PhantomReferencesQueue.acquire();
-}
   
-void Jnjvm::endCollection() {
-  referenceThread->ToEnqueueLock.release();
-  referenceThread->SoftReferencesQueue.release();
-  referenceThread->WeakReferencesQueue.release();
-  referenceThread->PhantomReferencesQueue.release();
-  referenceThread->EnqueueCond.broadcast();
-}
-  
-void Jnjvm::scanWeakReferencesQueue(uintptr_t closure) {
-  referenceThread->WeakReferencesQueue.scan(referenceThread, closure);
-}
-  
-void Jnjvm::scanSoftReferencesQueue(uintptr_t closure) {
-  referenceThread->SoftReferencesQueue.scan(referenceThread, closure);
-}
-  
-void Jnjvm::scanPhantomReferencesQueue(uintptr_t closure) {
-  referenceThread->PhantomReferencesQueue.scan(referenceThread, closure);
-}
-
 size_t Jnjvm::getObjectSize(mvm::gc* object) {
   // TODO: because this is called during GC, there is no need to do
   // llvm_gcroot. For clarity, it may be useful to have a special type

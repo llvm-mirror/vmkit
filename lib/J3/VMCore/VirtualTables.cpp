@@ -291,11 +291,6 @@ void Jnjvm::tracer(uintptr_t closure) {
     mvm::Collector::markAndTraceRoot(key, closure);
   }
   
-  // (6) Trace the reference queue
-  for (uint32 i = 0; i < referenceThread->ToEnqueueIndex; ++i) {
-    mvm::Collector::markAndTraceRoot(referenceThread->ToEnqueue + i, closure);
-  }
- 
   // (7) Trace the locks and their associated object.
   uint32 i = 0;
   for (; i < mvm::LockSystem::GlobalSize; i++) {

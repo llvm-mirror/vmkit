@@ -79,23 +79,6 @@ public:
   ///
 	virtual bool enqueueReference(mvm::gc* _obj) { abort(); }
 
-
-  
-  /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
-  /// before scanning the finalization queue.
-  /// 
-  virtual void scanWeakReferencesQueue(uintptr_t closure) {}
-  
-  /// scanSoftReferencesQueue - Scan all soft references. Called by the GC
-  /// before scanning the finalization queue.
-  ///
-  virtual void scanSoftReferencesQueue(uintptr_t closure) {}
-  
-  /// scanPhantomReferencesQueue - Scan all phantom references. Called by the GC
-  /// after the finalization queue.
-  ///
-  virtual void scanPhantomReferencesQueue(uintptr_t closure) {}
-
   /// tracer - Trace this virtual machine's GC-objects. 
 	///    Called once by vm. If you have GC-objects in a thread specific data, redefine the tracer of your VMThreadData.
   ///

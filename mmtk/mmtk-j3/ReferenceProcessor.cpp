@@ -10,6 +10,8 @@
 
 #include "debug.h"
 #include "mvm/VirtualMachine.h"
+#include "mvm/VMKit.h"
+#include "mvm/SystemThreads.h"
 #include "MMTkObject.h"
 
 namespace mmtk {
@@ -19,12 +21,12 @@ extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLo
   uint32_t val = RP->ordinal;
 
   if (val == 0) {
-    th->MyVM->scanSoftReferencesQueue(TL);
+    th->vmkit->scanSoftReferencesQueue(TL);
   } else if (val == 1) {
-    th->MyVM->scanWeakReferencesQueue(TL);
+    th->vmkit->scanWeakReferencesQueue(TL);
   } else {
     assert(val == 2);
-    th->MyVM->scanPhantomReferencesQueue(TL);
+    th->vmkit->scanPhantomReferencesQueue(TL);
   }
 }
 

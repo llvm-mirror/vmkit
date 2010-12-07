@@ -15,7 +15,8 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "ReferenceQueue.h"
+#include "mvm/SystemThreads.h"
+#include "mvm/VMKit.h"
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
@@ -307,7 +308,7 @@ extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, 0);
-  JavaThread::get()->getJVM()->getReferenceThread()->addWeakReference(reference);
+  mvm::Thread::get()->vmkit->referenceThread->addWeakReference(reference);
 
   END_NATIVE_EXCEPTION
 
@@ -324,7 +325,7 @@ extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->getReferenceThread()->addWeakReference(reference);
+  mvm::Thread::get()->vmkit->referenceThread->addWeakReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -338,7 +339,7 @@ extern "C" void Java_java_lang_ref_SoftReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, 0);
-  JavaThread::get()->getJVM()->getReferenceThread()->addSoftReference(reference);
+  mvm::Thread::get()->vmkit->referenceThread->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -355,7 +356,7 @@ extern "C" void Java_java_lang_ref_SoftReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
 
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->getReferenceThread()->addSoftReference(reference);
+  mvm::Thread::get()->vmkit->referenceThread->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -372,7 +373,7 @@ extern "C" void Java_java_lang_ref_PhantomReference__0003Cinit_0003E__Ljava_lang
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, queue);
-  JavaThread::get()->getJVM()->getReferenceThread()->addPhantomReference(reference);
+  mvm::Thread::get()->vmkit->referenceThread->addPhantomReference(reference);
 
   END_NATIVE_EXCEPTION
 }

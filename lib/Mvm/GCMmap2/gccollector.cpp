@@ -9,6 +9,7 @@
 
 #include "mvm/GC.h"
 #include "mvm/VMKit.h"
+#include "mvm/SystemThreads.h"
 
 using namespace mvm;
 
@@ -63,16 +64,16 @@ void Collector::do_collect() {
 		cur = cur->prev();
 
 		// (4) Trace the weak reference queue.
-		th->MyVM->scanWeakReferencesQueue(0);
+		th->vmkit->scanWeakReferencesQueue(0);
 
 		// (5) Trace the soft reference queue.
-		th->MyVM->scanSoftReferencesQueue(0);
+		th->vmkit->scanSoftReferencesQueue(0);
   
 		// (6) Trace the finalization queue.
 		th->vmkit->scanFinalizationQueue(0);
 
 		// (7) Trace the phantom reference queue.
-		th->MyVM->scanPhantomReferencesQueue(0);
+		th->vmkit->scanPhantomReferencesQueue(0);
 
 		// (8) Trace the new objects added by queues.
 		for(cur = cur->next(); cur != used_nodes; cur = cur->next())

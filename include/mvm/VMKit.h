@@ -10,6 +10,7 @@ class MethodInfo;
 class VMKit;
 class gc;
 class FinalizerThread;
+class ReferenceThread;
 
 class FunctionMap {
 public:
@@ -92,7 +93,13 @@ public:
 	void registerRunningThread(mvm::Thread* th);  
 	void unregisterRunningThread(mvm::Thread* th);
 
+  /// enqueueThread - The thread that finalizes references.
+  ///
 	FinalizerThread*             finalizerThread;
+  
+  /// enqueueThread - The thread that enqueues references.
+  ///
+  ReferenceThread* referenceThread;
 
   /// scanFinalizationQueue - Scan objets with a finalized method and schedule
   /// them for finalization if they are not live.
@@ -103,6 +110,21 @@ public:
   /// a finalization method.
   ///
   void addFinalizationCandidate(gc* object);
+  
+  /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
+  /// before scanning the finalization queue.
+  /// 
+  void scanWeakReferencesQueue(uintptr_t closure);
+  
+  /// scanSoftReferencesQueue - Scan all soft references. Called by the GC
+  /// before scanning the finalization queue.
+  ///
+  void scanSoftReferencesQueue(uintptr_t closure);
+  
+  /// scanPhantomReferencesQueue - Scan all phantom references. Called by the GC
+  /// after the finalization queue.
+  ///
+  void scanPhantomReferencesQueue(uintptr_t closure);
 
 	/// ------------------------------------------------- ///
 	/// ---             collection managment          --- ///

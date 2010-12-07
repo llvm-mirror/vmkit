@@ -121,16 +121,7 @@ public:
   UserClass* throwable;
 
 private:
-  
-  /// enqueueThread - The thread that enqueue Java references.
-  ///
-  ReferenceThread* referenceThread;
 
-  virtual void startCollection();
-  virtual void endCollection();
-  virtual void scanWeakReferencesQueue(uintptr_t closure);
-  virtual void scanSoftReferencesQueue(uintptr_t closure);
-  virtual void scanPhantomReferencesQueue(uintptr_t closure);
   virtual size_t getObjectSize(mvm::gc* obj);
   virtual const char* getObjectTypeName(mvm::gc* obj);
 
@@ -322,14 +313,6 @@ public:
   /// enqueueReference - enqueue the reference
   ///
 	virtual bool enqueueReference(mvm::gc* _obj);
-  
-  /// setReferenceThread - Set the enqueue thread of this VM.
-  ///
-  void setReferenceThread(ReferenceThread* th) { referenceThread = th; }
-  
-  /// getReferenceThread - Get the enqueue thread of this VM.
-  ///
-  ReferenceThread* getReferenceThread() const { return referenceThread; }
 
   /// ~Jnjvm - Destroy the JVM.
   ///

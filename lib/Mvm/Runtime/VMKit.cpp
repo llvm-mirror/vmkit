@@ -17,6 +17,21 @@ VMKit::VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
   // First create system threads.
   finalizerThread = new FinalizerThread(this);
   finalizerThread->start((void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
+
+  referenceThread = new ReferenceThread(this);
+  referenceThread->start((void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
+}
+
+void VMKit::scanWeakReferencesQueue(uintptr_t closure) {
+  referenceThread->WeakReferencesQueue.scan(referenceThread, closure);
+}
+  
+void VMKit::scanSoftReferencesQueue(uintptr_t closure) {
+  referenceThread->SoftReferencesQueue.scan(referenceThread, closure);
+}
+  
+void VMKit::scanPhantomReferencesQueue(uintptr_t closure) {
+  referenceThread->PhantomReferencesQueue.scan(referenceThread, closure);
 }
 
 void VMKit::scanFinalizationQueue(uintptr_t closure) {
@@ -51,6 +66,10 @@ bool VMKit::startCollection() {
 		vmkitLock();
 
 		finalizerThread->FinalizationQueueLock.acquire();
+		referenceThread->ToEnqueueLock.acquire();
+		referenceThread->SoftReferencesQueue.acquire();
+		referenceThread->WeakReferencesQueue.acquire();
+		referenceThread->PhantomReferencesQueue.acquire();
 
 		// call first startCollection on each vm to avoid deadlock. 
 		// indeed, a vm could want to execute applicative code
@@ -74,6 +93,11 @@ void VMKit::endCollection() {
 			vms[i]->endCollection();
 
   finalizerThread->FinalizationQueueLock.release();
+  referenceThread->ToEnqueueLock.release();
+  referenceThread->SoftReferencesQueue.release();
+  referenceThread->WeakReferencesQueue.release();
+  referenceThread->PhantomReferencesQueue.release();
+  referenceThread->EnqueueCond.broadcast();
   finalizerThread->FinalizationCond.broadcast();
 
 	vmkitUnlock();
