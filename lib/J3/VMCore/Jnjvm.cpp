@@ -1077,9 +1077,9 @@ void Jnjvm::loadBootstrap() {
   JnjvmClassLoader* loader = bootstrapLoader;
   
   referenceThread = new ReferenceThread(vmkit);
-	javaReferenceThread = new JavaThread(this, referenceThread);
-	referenceThread->allVmsData[vmID] = javaReferenceThread;
-	referenceThread->attach(this);
+	//javaReferenceThread = new JavaThread(this, referenceThread);
+	//referenceThread->allVmsData[vmID] = javaReferenceThread;
+	//referenceThread->attach(this);
   referenceThread->start(
       (void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
   

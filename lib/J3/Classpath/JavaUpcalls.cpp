@@ -297,10 +297,6 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   initGroup->invokeIntSpecial(vm, threadGroup, SystemGroup);
   systemName = vm->asciizToStr("system");
   groupName->setInstanceObjectField(SystemGroup, systemName);
-
-  // Create the enqueue thread.
-  assert(vm->getReferenceThread() && "VM did not set its enqueue thread");
-  CreateJavaThread(vm, vm->javaReferenceThread, "Reference", SystemGroup);
 }
 
 extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Object_2(

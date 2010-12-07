@@ -246,10 +246,6 @@ public:
 	/// javaMainThread - the java main thread
 	JavaThread* javaMainThread;
 
-	/// javaReferenceThread - the java reference thread
-	JavaThread* javaReferenceThread;
-
-
 	mvm::VirtualTable* VMClassLoader__VT;
 
 	void initialiseInternalVTs();
