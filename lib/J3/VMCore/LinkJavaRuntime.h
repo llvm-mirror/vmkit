@@ -62,13 +62,6 @@ extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
                                     JavaMethod* meth);
 
 
-#ifdef SERVICE
-extern "C" void j3ServiceCallStart(Jnjvm* OldService,
-                                      Jnjvm* NewService);
-extern "C" void j3ServiceCallStop(Jnjvm* OldService,
-                                     Jnjvm* NewService);
-#endif
-
 namespace force_linker {
   struct ForceRuntimeLinking {
     ForceRuntimeLinking() {
@@ -106,10 +99,6 @@ namespace force_linker {
       (void) j3PrintMethodEnd(0);
       (void) j3PrintExecution(0, 0, 0);
       (void) j3StringLookup(0, 0);
-#ifdef SERVICE
-      (void) j3ServiceCallStart(0, 0);
-      (void) j3ServiceCallStop(0, 0);
-#endif
     }
   } ForcePassLinking; // Force link by creating a global definition.
 }

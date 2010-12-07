@@ -1681,38 +1681,6 @@ void JavaAOTCompiler::printStats() {
   fprintf(stderr, "%lluB\n", (unsigned long long int)size);
 }
 
-
-#ifdef SERVICE
-Value* JavaAOTCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
-  llvm::Constant* varGV = 0;
-  isolate_iterator End = isolates.end();
-  isolate_iterator I = isolates.find(isolate);
-  if (I == End) {
-  
-    
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
-                                                 uint64_t(isolate)),
-                                ptrType);
-
-    Module& Mod = *getLLVMModule();
-    varGV = new GlobalVariable(Mod, ptrType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "");
-  
-    isolates.insert(std::make_pair(isolate, varGV));
-  } else {
-    varGV = I->second;
-  }
-  if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
-    return new LoadInst(varGV, "", BB);
-  } else {
-    assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
-    return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
-  }
-}
-#endif
-
 void JavaAOTCompiler::CreateStaticInitializer() {
 
   std::vector<const llvm::Type*> llvmArgs;

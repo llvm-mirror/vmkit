@@ -31,9 +31,6 @@ class GCChunkNode {
 	                        /* bit 0-2: la marque */
 	                        /* bit 3: est-on collectable */
 public:
-#ifdef SERVICE
-  mvm::VirtualMachine* meta; // who allocated me
-#endif
  	static const signed int maskCollectable    = 8;
  	static const signed int maskNotCollectable = 0;
 

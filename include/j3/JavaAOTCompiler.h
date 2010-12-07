@@ -69,11 +69,6 @@ public:
   
   virtual void setMethod(llvm::Function* func, void* ptr, const char* name);
   
-
-#ifdef SERVICE
-  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
-#endif
-  
   virtual ~JavaAOTCompiler() {}
   
   virtual void* loadMethod(void* handle, const char* symbol);
@@ -156,13 +151,6 @@ private:
   typedef std::map<const UTF8*, llvm::Constant*>::iterator
     utf8_iterator;
 
-#ifdef SERVICE
-  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where);
-  std::map<const Jnjvm*, llvm::GlobalVariable*> isolates;
-  typedef std::map<const Jnjvm*, llvm::GlobalVariable*>::iterator
-    isolate_iterator; 
-#endif
-  
   bool isCompiling(const CommonClass* cl) const;
 
 public:

@@ -45,10 +45,6 @@ using namespace j3;
 using namespace llvm;
 
 static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
-#ifdef SERVICE
-  return true;
-#else
-
   if (cl->isReadyForCompilation() || 
       (!cl->isInterface() && compilingClass->isAssignableFrom(cl))) {
     return false;
@@ -62,7 +58,6 @@ static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
   }
 
   return true;
-#endif
 }
 
 bool JavaJIT::canBeInlined(JavaMethod* meth) {
@@ -1059,53 +1054,6 @@ llvm::Function* JavaJIT::javaCompile() {
     }
 #endif
 
-#if defined(SERVICE)
-  JnjvmClassLoader* loader = compilingClass->classLoader;
-  Value* Cmp = 0;
-  Value* mutatorThreadId = 0;
-  Value* OldIsolateID = 0;
-  Value* IsolateIDPtr = 0;
-  Value* OldIsolate = 0;
-  Value* NewIsolate = 0;
-  Value* IsolatePtr = 0;
-  if (loader != loader->bootstrapLoader && isPublic(compilingMethod->access)) {
-    mutatorThreadId = getMutatorThreadPtr();
-     
-    IsolateIDPtr = getIsolateIDPtr(mutatorThreadPtr);
-    const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
-    IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
-                                   currentBlock);
-    OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
-
-    Value* MyID = ConstantInt::get(intrinsics->pointerSizeType,
-                                   loader->getIsolate()->IsolateID);
-    Cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, OldIsolateID, MyID,
-                       "");
-
-    BasicBlock* EndBB = createBasicBlock("After service check");
-    BasicBlock* ServiceBB = createBasicBlock("Begin service call");
-
-    BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
-
-    currentBlock = ServiceBB;
-  
-    new StoreInst(MyID, IsolateIDPtr, currentBlock);
-    IsolatePtr = getVMPtr(mutatorThreadId);
-     
-    OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
-    NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
-    new StoreInst(NewIsolate, IsolatePtr, currentBlock);
-
-#if DEBUG
-    Value* GEP[2] = { OldIsolate, NewIsolate };
-    CallInst::Create(intrinsics->ServiceCallStartFunction, GEP, GEP + 2,
-                     "", currentBlock);
-#endif
-    BranchInst::Create(EndBB, currentBlock);
-    currentBlock = EndBB;
-  }
-#endif
-
   readExceptionTable(reader, codeLen);
   
   reader.cursor = start;
@@ -1198,28 +1146,6 @@ llvm::Function* JavaJIT::javaCompile() {
     Value* arg = TheCompiler->getMethodInClass(compilingMethod); 
     CallInst::Create(intrinsics->PrintMethodEndFunction, arg, "", currentBlock);
     }
-#endif
-  
-#if defined(SERVICE)
-  if (Cmp) {
-    BasicBlock* EndBB = createBasicBlock("After service check");
-    BasicBlock* ServiceBB = createBasicBlock("End Service call");
-
-    BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
-
-    currentBlock = ServiceBB;
-  
-    new StoreInst(OldIsolateID, IsolateIDPtr, currentBlock);
-    new StoreInst(OldIsolate, IsolatePtr, currentBlock);
-
-#if DEBUG
-    Value* GEP[2] = { OldIsolate, NewIsolate };
-    CallInst::Create(intrinsics->ServiceCallStopFunction, GEP, GEP + 2,
-                     "", currentBlock);
-#endif
-    BranchInst::Create(EndBB, currentBlock);
-    currentBlock = EndBB;
-  }
 #endif
 
   PI = pred_begin(currentBlock);

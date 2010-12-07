@@ -318,12 +318,6 @@ public:
   ///
   void (*routine)(mvm::Thread*);
  
-#ifdef SERVICE
-  /// stoppingService - The service that is currently stopping.
-  ///
-  VirtualMachine* stoppingService;  
-#endif
-
   /// printBacktrace - Print the backtrace.
   ///
   void printBacktrace();

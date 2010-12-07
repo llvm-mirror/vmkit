@@ -211,11 +211,6 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   GetFinalFloatFieldFunction = module->getFunction("getFinalFloatField");
   GetFinalDoubleFieldFunction = module->getFunction("getFinalDoubleField");
 
-#ifdef SERVICE
-  ServiceCallStartFunction = module->getFunction("j3ServiceCallStart");
-  ServiceCallStopFunction = module->getFunction("j3ServiceCallStop");
-#endif
-
 #ifndef WITHOUT_VTABLE
   VirtualLookupFunction = module->getFunction("j3VirtualTableLookup");
 #endif

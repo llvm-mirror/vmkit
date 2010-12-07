@@ -271,17 +271,10 @@ JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
 }
 
 void* JavaMethod::compiledPtr() {
-  if (code != 0) return code;
-  else {
-#ifdef SERVICE
-    Jnjvm *vm = classDef->classLoader->getIsolate();
-    if (vm && vm->status == 0) {
-      JavaThread* th = JavaThread::get();
-      th->throwException(th->ServiceException);
-    }
-#endif
+  if (code != 0) 
+		return code;
+  else
     code = classDef->classLoader->getCompiler()->materializeFunction(this);
-  }
   
   return code;
 }

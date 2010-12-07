@@ -120,13 +120,7 @@ public:
   }
 
   static inline void maybeCollect() {
-    if(_enable_auto && 
-#ifdef SERVICE
-       (mvm::Thread::get()->MyVM->_since_last_collection <= (_collect_freq_auto - _collect_freq_maybe))
-#else
-       (_since_last_collection <= (_collect_freq_auto - _collect_freq_maybe))
-#endif
-      )
+    if(_enable_auto && (_since_last_collection <= (_collect_freq_auto - _collect_freq_maybe)))
       collect(); 
   }
 
@@ -138,47 +132,13 @@ public:
     return res;
 #else
     lock();
-
-#ifdef SERVICE
-    if (threads->get_nb_threads()) {
-      VirtualMachine* vm = mvm::Thread::get()->MyVM;
-      vm->_since_last_collection -= n;
-      if (_enable_auto && (vm->_since_last_collection <= 0)) {
-        vm->gcTriggered++;
-        if (vm->gcTriggered > vm->GCLimit) {
-          vm->_since_last_collection += n;
-          unlock();
-          vm->stopService();
-          return 0;
-        }
-        collect_unprotect();
-      }
-      
-      if (vm->memoryUsed + n > vm->memoryLimit) {
-        vm->_since_last_collection += n;
-        unlock();
-        vm->stopService();
-        return 0;
-      }
-    } else {
-#endif
     
     _since_last_collection -= n;
     if(_enable_auto && (_since_last_collection <= 0)) {
       collect_unprotect();
     }
-#ifdef SERVICE
-    }
-#endif
     register GCChunkNode *header = allocator->alloc_chunk(n, 1, current_mark & 1);
 
-#ifdef SERVICE
-    if (threads->get_nb_threads()) {
-      VirtualMachine* vm = mvm::Thread::get()->MyVM;
-      header->meta = vm;
-      vm->memoryUsed += n;
-    }
-#endif
     header->append(used_nodes);
     register struct gcRoot *p = header->chunk();
     p->setVirtualTable(vt);
@@ -208,28 +168,6 @@ public:
       gcfatal("%p isn't a avalid object", ptr);
 
     size_t      old_sz = node->nbb();
-#ifdef SERVICE
-    if (threads->get_nb_threads()) {
-      VirtualMachine* vm = mvm::Thread::get()->MyVM;
-      vm->_since_last_collection -= (n - old_sz);
-      if (_enable_auto && (vm->_since_last_collection <= 0)) {
-        if (vm->gcTriggered + 1 > vm->GCLimit) {
-          unlock();
-          vm->stopService();
-          return 0;
-        }
-        vm->gcTriggered++;
-        collect_unprotect();
-      }
-      
-      if (vm->memoryUsed + (n - old_sz) > vm->memoryLimit) {
-        vm->_since_last_collection += (n - old_sz);
-        unlock();
-        vm->stopService();
-        return 0;
-      }
-    } else {
-#endif
     
     _since_last_collection -= (n - old_sz);
 
@@ -237,19 +175,7 @@ public:
       collect_unprotect();
     }
 
-#ifdef SERVICE
-    }
-#endif
-
     GCChunkNode  *res = allocator->realloc_chunk(desc, node, n);
-
-#ifdef SERVICE
-    if (threads->get_nb_threads()) {
-      VirtualMachine* vm = mvm::Thread::get()->MyVM;
-      res->meta = vm;
-      vm->memoryUsed += (n - old_sz);
-    }
-#endif
 
     if(res != node) {
       res->append(used_nodes);

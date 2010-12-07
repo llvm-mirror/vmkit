@@ -211,14 +211,6 @@ JavaJITCompiler::~JavaJITCompiler() {
   // ~JavaLLVMCompiler will delete the module.
 }
 
-#ifdef SERVICE
-Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
-                                     uint64_t(isolate));
-  return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.ptrType);
-}
-#endif
-
 void JavaJITCompiler::makeVT(Class* cl) { 
   JavaVirtualTable* VT = cl->virtualVT; 
   assert(VT && "No VT was allocated!");

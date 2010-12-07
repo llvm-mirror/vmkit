@@ -78,11 +78,6 @@ public:
   llvm::Function* MultiCallNewFunction;
   llvm::Function* GetArrayClassFunction;
 
-#ifdef SERVICE
-  llvm::Function* ServiceCallStartFunction;
-  llvm::Function* ServiceCallStopFunction;
-#endif
-
   llvm::Function* GetClassDelegateeFunction;
   llvm::Function* RuntimeDelegateeFunction;
   llvm::Function* ArrayLengthFunction;

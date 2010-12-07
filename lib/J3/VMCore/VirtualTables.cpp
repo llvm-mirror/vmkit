@@ -308,19 +308,11 @@ void Jnjvm::tracer(uintptr_t closure) {
   for (i = i + 1; i < mvm::LockSystem::GlobalSize; i++) {
     assert(lockSystem.LockTable[i] == NULL);
   }
-
-
-#ifdef SERVICE
-  parent->tracer(closure);
-#endif
 }
 
 void JavaThread::tracer(uintptr_t closure) {
   mvm::Collector::markAndTraceRoot(&javaThread, closure);
   mvm::Collector::markAndTraceRoot(&vmThread, closure);
-#ifdef SERVICE
-  mvm::Collector::markAndTraceRoot(&ServiceException, closure);
-#endif
   
   JNILocalReferences* end = localJNIRefs;
   while (end != NULL) {

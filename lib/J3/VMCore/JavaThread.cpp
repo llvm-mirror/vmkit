@@ -25,14 +25,6 @@ JavaThread::JavaThread(Jnjvm* vm, mvm::Thread* mut) : mvm::VMThreadData(vm, mut)
   currentAddedReferences = NULL;
   javaThread = NULL;
   vmThread = NULL;
-
-#ifdef SERVICE
-  eipIndex = 0;
-  replacedEIPs = new void*[100];
-  if (vm->upcalls->newThrowable) {
-    ServiceException = vm->upcalls->newThrowable->doNew(vm);
-  }
-#endif
 }
 
 JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
@@ -56,9 +48,6 @@ void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
 
 JavaThread::~JavaThread() {
   delete localJNIRefs;
-#ifdef SERVICE
-  delete replacedEIPs;
-#endif
 }
 
 void JavaThread::startJNI() {

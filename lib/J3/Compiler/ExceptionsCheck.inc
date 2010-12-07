@@ -379,34 +379,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
            "Class not loaded when reading the exception table");
 
     Value* VTVar = TheCompiler->getVirtualTable(cur->catchClass->virtualVT);
-
-    
-#ifdef SERVICE
-    // Verifies that the current isolate is not stopped. If it is, we don't
-    // catch the exception but resume unwinding.
-    JnjvmClassLoader* loader = compilingClass->classLoader;;
-    if (loader != loader->bootstrapLoader) {
-      Value* Isolate = getVMPtr(getMutatorThread());
-     
-      Isolate = new LoadInst(Isolate, "", currentBlock);
-      Isolate = new BitCastInst(Isolate, intrinsics->ptrPtrType, "", currentBlock);
-      Value* Status = GetElementPtrInst::Create(Isolate, intrinsics->constantOne, "",
-                                                currentBlock);
-      Status = new LoadInst(Status, "", currentBlock);
-      Status = new PtrToIntInst(Status, Type::Int32Ty, "", currentBlock);
-  
-      Value* stopping = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, Status,
-                                     intrinsics->constantOne, "");
-
-      BasicBlock* raiseBlock = createBasicBlock("raiseBlock");
-      BasicBlock* continueBlock = createBasicBlock("continueBlock");
-      BranchInst::Create(raiseBlock, continueBlock, stopping, currentBlock);
-      currentBlock = raiseBlock;
-      BranchInst::Create(endExceptionBlock, currentBlock); 
-
-      currentBlock = continueBlock;
-    }
-#endif
     
     // Get the Java exception.
     Value* obj = currentBlock->begin();
@@ -462,38 +434,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     new StoreInst(intrinsics->JavaObjectNullConstant, exceptionPtr,
                   currentBlock);
 
-#if defined(SERVICE)
-
-    // Change the isolate we are currently running, now that we have catched
-    // the exception: the exception may have been thrown by another isolate.
-    Value* mutatorThreadId = 0;
-    Value* OldIsolateID = 0;
-    Value* IsolateIDPtr = 0;
-    Value* OldIsolate = 0;
-    Value* NewIsolate = 0;
-    Value* IsolatePtr = 0;
-    currentBlock = cur->javaHandler;
-    if (loader != loader->bootstrapLoader) {
-      mutatorThreadId = getGetMutatorThreadPtr();
-      IsolateIDPtr = getIsolateIDPtr(mutatorThreadId);
-      const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
-      IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
-                                     currentBlock);
-      OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
-
-      Value* MyID = ConstantInt::get(intrinsics->pointerSizeType,
-                                     loader->getIsolate()->IsolateID);
-
-      new StoreInst(MyID, IsolateIDPtr, currentBlock);
-      IsolatePtr = getVMPtr(mutatorThreadPtr);
-     
-      OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
-      NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
-      new StoreInst(NewIsolate, IsolatePtr, currentBlock);
-
-    }
-#endif
-     
   }
  
   // Restore currentBlock.

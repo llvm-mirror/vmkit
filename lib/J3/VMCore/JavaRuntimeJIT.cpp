@@ -167,10 +167,8 @@ extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
     *offset = dmeth->offset;
   }
 
-#if !defined(SERVICE)
   assert(dmeth->classDef->isInitializing() && 
          "Class not ready in a virtual lookup.");
-#endif
 
   res = dmeth->offset;
 
@@ -595,9 +593,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
 
   // Update the virtual table.
   assert(lookup->isResolved() && "Class not resolved");
-#if !defined(SERVICE)
   assert(lookup->isInitializing() && "Class not ready");
-#endif
   assert(lookup->virtualVT && "Class has no VT");
   assert(lookup->virtualTableSize > Virt->offset && 
          "The method's offset is greater than the virtual table size");
@@ -745,22 +741,3 @@ extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
          UTF8Buffer(meth->name).cString(),
          OpcodeNames[opcode], index);
 }
-
-#ifdef SERVICE
-
-extern "C" void j3ServiceCallStart(Jnjvm* OldService,
-                                 Jnjvm* NewService) {
-  fprintf(stderr, "I have switched from %d to %d\n", OldService->IsolateID,
-          NewService->IsolateID);
-
-  fprintf(stderr, "Now the thread id is %d\n", mvm::Thread::get()->IsolateID);
-}
-
-extern "C" void j3ServiceCallStop(Jnjvm* OldService,
-                                Jnjvm* NewService) {
-  fprintf(stderr, "End service call\n");
-}
-
-#endif
-
-

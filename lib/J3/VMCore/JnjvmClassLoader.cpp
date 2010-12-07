@@ -283,28 +283,6 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
     JavaObject::getClass(loader)->asClass()->lookupMethodDontThrow(
         meth->name, meth->type, false, true, &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
-
-#if defined(SERVICE)
-  /// If the appClassLoader is already set in the isolate, then we need
-  /// a new one each time a class loader is allocated.
-  if (isolate->appClassLoader) {
-    isolate = new Jnjvm(allocator, bootstrapLoader);
-    isolate->memoryLimit = 4000000;
-    isolate->threadLimit = 10;
-    isolate->parent = I->parent;
-    isolate->CU = this;
-    mvm::Thread* th = mvm::Thread::get();
-    mvm::VirtualMachine* OldVM = th->MyVM;
-    th->MyVM = isolate;
-    th->IsolateID = isolate->IsolateID;
-    
-    isolate->loadBootstrap();
-    
-    th->MyVM = OldVM;
-    th->IsolateID = OldVM->IsolateID;
-  }
-#endif
-
 }
 
 void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {

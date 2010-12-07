@@ -197,10 +197,6 @@ public:
   
   virtual void setMethod(llvm::Function* func, void* ptr, const char* name) = 0;
   
-#ifdef SERVICE
-  virtual llvm::Value* getIsolate(Jnjvm* vm, llvm::Value* Where) = 0;
-#endif
-  
   virtual void* materializeFunction(JavaMethod* meth) = 0;
   llvm::Function* parseFunction(JavaMethod* meth);
    
