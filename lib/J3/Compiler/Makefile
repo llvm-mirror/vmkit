@@ -23,6 +23,3 @@ include $(LEVEL)/Makefile.common
 
 CXX.Flags += -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../Classpath $(CLASSPATH_FLAGS) -I$(PROJ_SRC_DIR)/../VMCore
 
-ifeq ($(ISOLATE_BUILD), 1)
-  CXX.Flags += -I$(PROJ_SRC_DIR)/../Isolate
-endif

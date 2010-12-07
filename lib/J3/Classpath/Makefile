@@ -26,6 +26,3 @@ include $(LEVEL)/Makefile.common
 
 CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore $(CLASSPATH_FLAGS)
 
-ifeq ($(ISOLATE_BUILD), 1)
-  CXX.Flags += -I$(PROJ_SRC_DIR)/../Isolate
-endif

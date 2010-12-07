@@ -140,12 +140,6 @@ private:
   /// getMutatorThreadPtr - Emit code to get a pointer to the current MutatorThread.
 	llvm::Value* getMutatorThreadPtr();
 
-  /// getIsolateIDPtr - Emit code to get a pointer to IsolateID.
-	llvm::Value* getIsolateIDPtr(llvm::Value* mutatorThreadPtr);
-
-  /// getVMPtr - Emit code to get a pointer to MyVM.
-	llvm::Value* getVMPtr(llvm::Value* mutatorThreadPtr);
-
   /// getDoYieldPtr - Emit code to get a pointer to doYield.
 	llvm::Value* getDoYieldPtr(llvm::Value* mutatorThreadPtr);
 

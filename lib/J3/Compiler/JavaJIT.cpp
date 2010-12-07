@@ -249,22 +249,6 @@ llvm::Value* JavaJIT::getMutatorThreadPtr() {
   return threadId;
 }
 
-llvm::Value* JavaJIT::getIsolateIDPtr(llvm::Value* mutatorThreadPtr) { 
-	Value* GEP[3] = { intrinsics->constantZero,
-										intrinsics->OffsetThreadInMutatorThreadConstant,
-										intrinsics->OffsetIsolateIDInThreadConstant };
-    
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
-}
-
-llvm::Value* JavaJIT::getVMPtr(llvm::Value* mutatorThreadPtr) { 
-	Value* GEP[3] = { intrinsics->constantZero,
-										intrinsics->OffsetThreadInMutatorThreadConstant,
-										intrinsics->OffsetVMInThreadConstant };
-    
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
-}
-
 llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) { 
 	Value* GEP[3] = { intrinsics->constantZero,
 										intrinsics->OffsetThreadInMutatorThreadConstant,

@@ -178,8 +178,6 @@ public:
   const llvm::Type* VTType;
 
   llvm::Constant* OffsetDoYieldInThreadConstant;
-  llvm::Constant* OffsetIsolateIDInThreadConstant;
-  llvm::Constant* OffsetVMInThreadConstant;
   llvm::Constant* OffsetCXXExceptionInThreadConstant;
   llvm::Constant* OffsetVMDataInThreadConstant;
 	llvm::Constant* OffsetPendingExceptionInThreadConstant;
