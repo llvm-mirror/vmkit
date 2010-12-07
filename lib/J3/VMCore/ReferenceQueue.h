@@ -133,7 +133,7 @@ public:
 
   ReferenceThread(mvm::VMKit* vmkit);
 
-	virtual void localDestroy() {
+	virtual ~ReferenceThread() {
     delete[] ToEnqueue;
   }
 };

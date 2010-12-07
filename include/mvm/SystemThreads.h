@@ -74,7 +74,7 @@ public:
 
   FinalizerThread(VMKit* vmkit);
 
-	virtual void localDestroy() {
+	~FinalizerThread() {
     delete[] FinalizationQueue;
     delete[] ToBeFinalized;
   }

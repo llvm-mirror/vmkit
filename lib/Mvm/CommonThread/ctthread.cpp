@@ -517,21 +517,23 @@ void* Thread::operator new(size_t sz) {
   return res;
 }
 
-/// releaseThread - Remove the stack of the thread from the list of stacks
-/// in use.
-void Thread::releaseThread(mvm::Thread* th) {
+void Thread::operator delete(void* th) {
+	printf("deleting %p\n", th);
+  uintptr_t index = ((uintptr_t)th & Thread::IDMask);
+  index = (index & ~TheStackManager.baseAddr) >> 20;
+  TheStackManager.used[index] = 0;
+}
+
+Thread::~Thread() {
+	printf("destroying %p\n", this);
   // It seems like the pthread implementation in Linux is clearing with NULL
   // the stack of the thread. So we have to get the thread id before
   // calling pthread_join.
-  void* thread_id = th->internalThreadID;
+  void* thread_id = internalThreadID;
   if (thread_id != NULL) {
     // Wait for the thread to die.
     pthread_join((pthread_t)thread_id, NULL);
   }
-	th->localDestroy();
-	th->vmkit->unregisterPreparedThread(th);
-  uintptr_t index = ((uintptr_t)th & Thread::IDMask);
-  index = (index & ~TheStackManager.baseAddr) >> 20;
-  TheStackManager.used[index] = 0;
+	vmkit->unregisterPreparedThread(this);
 }
 

@@ -48,6 +48,7 @@ void invokeEnqueue(mvm::gc* obj) {
 		mvm::VirtualMachine* vm = obj->getVirtualTable()->vm;
 		mvm::Thread::get()->attach(vm);
 		
+		printf("enqueue reference: %p\n", obj);
     vm->enqueueReference(obj);
   } IGNORE;
   mvm::Thread::get()->clearPendingException();

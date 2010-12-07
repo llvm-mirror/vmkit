@@ -311,15 +311,8 @@ public:
   /// Thread. The thread object is inlined in the stack.
   ///
   void* operator new(size_t sz);
-  void operator delete(void* th) { UNREACHABLE(); }
-
-  /// localDestroy - call by releaseThread. Used for sub classes. 
-  ///
-	virtual void localDestroy() {}
-  
-  /// releaseThread - Free the stack so that another thread can use it.
-  ///
-  static void releaseThread(mvm::Thread* th);
+  void operator delete(void* th);
+  virtual ~Thread();
 
   /// routine - The function to invoke when the thread starts.
   ///
