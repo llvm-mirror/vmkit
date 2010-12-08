@@ -982,7 +982,7 @@ Class* JnjvmClassLoader::loadClassFromSelf(Jnjvm* vm, const char* name) {
 extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
                                         CommonClass* cl) {
   cl->classLoader = JCL;
-	cl->virtualVT->vm = JCL->getIsolate();
+	cl->virtualVT->vm = JCL->vm;
   
   JCL->hashUTF8->insert(cl->name);
 

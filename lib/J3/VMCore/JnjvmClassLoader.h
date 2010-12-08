@@ -122,10 +122,6 @@ public:
   ///
   mvm::BumpPtrAllocator& allocator;
  
-  /// getIsolate - Returns the isolate that created this class loader.
-  ///
-  Jnjvm* getIsolate() const { return isolate; }
-
   /// getClasses - Returns the classes this class loader has loaded.
   ///
   ClassMap* getClasses() const { return classes; }

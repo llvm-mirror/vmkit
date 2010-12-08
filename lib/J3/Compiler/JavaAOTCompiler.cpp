@@ -2182,7 +2182,7 @@ CommonClass* JavaAOTCompiler::getUniqueBaseClass(CommonClass* cl) {
 
   for (; I != E; ++I) {
     JavaObject* obj = (JavaObject*)(*I);
-    if (!VMClassLoader::isVMClassLoader(cl->classLoader->getIsolate(), obj) && JavaObject::instanceOf(obj, cl)) {
+    if (!VMClassLoader::isVMClassLoader(cl->classLoader->vm, obj) && JavaObject::instanceOf(obj, cl)) {
       if (currentClass != NULL) {
         if (JavaObject::getClass(obj) != currentClass) {
           return 0;
