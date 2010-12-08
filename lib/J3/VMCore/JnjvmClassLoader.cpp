@@ -73,7 +73,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
 JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
                                    JavaObject* loader,
                                    VMClassLoader* vmdata,
-                                   Jnjvm* I,
 																	 Jnjvm* v) : allocator(Alloc) {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
@@ -90,7 +89,6 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
 
   vmdata->JCL = this;
   javaLoader = loader;
-  isolate = I;
 
   JavaMethod* meth = vm->upcalls->loadInClassLoader;
   loadClassMethod = 
@@ -684,7 +682,7 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* jloader, Jnjvm* vm) {
     if (!vmdata) {
       vmdata = VMClassLoader::allocate(vm);
       mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
-      JCL = new(*A, "Class loader") JnjvmClassLoader(*A, jloader, vmdata, vm, vm);
+      JCL = new(*A, "Class loader") JnjvmClassLoader(*A, jloader, vmdata, vm);
       upcalls->vmdataClassLoader->setInstanceObjectField(jloader, (JavaObject*)vmdata);
     }
     JavaObject::release(jloader);
@@ -707,11 +705,7 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 
 JnjvmClassLoader::~JnjvmClassLoader() {
 
-  if (isolate) {
-    isolate->vmkit->removeMethodInfos(TheCompiler);
-  } else {
-		mvm::Thread::get()->vmkit->removeMethodInfos(TheCompiler);
-	}
+	mvm::Thread::get()->vmkit->removeMethodInfos(TheCompiler);
 
   if (classes) {
     classes->~ClassMap();

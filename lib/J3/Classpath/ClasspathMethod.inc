@@ -146,7 +146,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
     JavaObject** ptr = ArrayObject::getElements(args);
     Typedef* const* arguments = sign->getArgumentsType();
     for (sint32 i = 0; i < size; ++i) {
-      JavaObject::decapsulePrimitive(ptr[i], vm, &buf[i], arguments[i]);
+      JavaObject::decapsulePrimitive(ptr[i], &buf[i], arguments[i]);
       if (!arguments[i]->isPrimitive()) {
         buf[i].l = reinterpret_cast<jobject>(&ptr[i]);
       }

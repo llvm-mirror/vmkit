@@ -113,7 +113,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       Typedef* const* arguments = sign->getArgumentsType();
       // Store the arguments, unboxing primitives if necessary.
       for (sint32 i = 0; i < size; ++i) {
-        JavaObject::decapsulePrimitive(ptr[i], vm, &buf[i], arguments[i]);
+        JavaObject::decapsulePrimitive(ptr[i], &buf[i], arguments[i]);
         if (!arguments[i]->isPrimitive()) {
           buf[i].l = reinterpret_cast<jobject>(&ptr[i]);
         }

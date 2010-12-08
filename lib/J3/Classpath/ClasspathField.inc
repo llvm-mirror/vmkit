@@ -634,7 +634,6 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   UserClass* cl = JavaObjectField::getClass(Field);
-  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   jvalue buf;
   bool stat = isStatic(field->access);
@@ -647,7 +646,7 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   }
  
   const Typedef* type = field->getSignature();
-  JavaObject::decapsulePrimitive(val, vm, &buf, type);
+  JavaObject::decapsulePrimitive(val, &buf, type);
   
 
   if (type->isPrimitive()) {

@@ -293,7 +293,7 @@ public:
   /// decapsulePrimitive - Based on the signature argument, decapsule
   /// obj as a primitive and put it in the buffer.
   ///
-  static void decapsulePrimitive(JavaObject* self, Jnjvm* vm, jvalue* buf,
+  static void decapsulePrimitive(JavaObject* self, jvalue* buf,
                                  const Typedef* signature);
 
   static uint16_t hashCodeGenerator;

@@ -52,12 +52,6 @@ class ZipArchive;
 /// table for non-isolate environments.
 ///
 class JnjvmClassLoader : public mvm::PermanentObject {
-private:
-
-  /// isolate - Which isolate defined me? Null for the bootstrap class loader.
-  ///
-  Jnjvm* isolate;
-
 public:
   /// vm - my vm
   ///
@@ -82,7 +76,7 @@ private:
   /// JnjvmClassLoader - Allocate a user-defined class loader. Called on
   /// first use of a Java class loader.
   ///
-  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate, Jnjvm* vm);
+  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JavaObject* loader, VMClassLoader* vmdata, Jnjvm* vm);
 
   /// lookupComponentName - Try to find the component name of the given array
   /// name. If the component name is not in the table of UTF8s and holder
@@ -283,21 +277,21 @@ public:
   /// insertAllMethodsInVM - Insert all methods defined by this class loader
   /// in the VM.
   ///
-  void insertAllMethodsInVM(Jnjvm* vm);
+  void insertAllMethodsInVM();
 
   /// loadLibFromJar - Try to load the shared library compiled by vmjc with
   /// this jar file.
   ///
-  void loadLibFromJar(Jnjvm* vm, const char* name, const char* file);
+  void loadLibFromJar(const char* name, const char* file);
 
   /// loadLibFromFile - Try to load the shared library compiled by vmjc with
   /// this class file.
   ///
-  void loadLibFromFile(Jnjvm* vm, const char* name);
+  void loadLibFromFile(const char* name);
   
   /// loadClassFromSelf - Load the main class if we are an executable.
   ///
-  Class* loadClassFromSelf(Jnjvm* vm, const char* name);
+  Class* loadClassFromSelf(const char* name);
 
   friend class Class;
 };

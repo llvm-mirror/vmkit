@@ -1343,7 +1343,6 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp
 	lockSystem(Alloc) {
 
   bootstrapLoader = new(Alloc, "bootstrap loader") JnjvmBootstrapLoader(Alloc, this, Comp);
-	bootstrapLoader->isolate = this;
   
   upcalls = new(allocator, "Classpath") Classpath(bootstrapLoader, dlLoad);
 

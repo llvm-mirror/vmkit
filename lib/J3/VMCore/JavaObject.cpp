@@ -138,10 +138,12 @@ bool JavaObject::owner(JavaObject* self) {
   return mvm::ThinLock::owner(self, self->getJVM()->lockSystem);
 }
 
-void JavaObject::decapsulePrimitive(JavaObject* obj, Jnjvm *vm, jvalue* buf,
+void JavaObject::decapsulePrimitive(JavaObject* obj, jvalue* buf,
                                     const Typedef* signature) {
 
   llvm_gcroot(obj, 0);
+
+	Jnjvm* vm = obj->getJVM();
 
   if (!signature->isPrimitive()) {
     if (obj && !(getClass(obj)->isOfTypeName(signature->getName()))) {
