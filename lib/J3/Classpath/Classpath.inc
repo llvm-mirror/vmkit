@@ -38,8 +38,8 @@ JavaObject* Cl) {
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, true);
   
   if (cl->isClass() && 
-      cl->asClass()->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
-                                           vm->bootstrapLoader->clinitType, 
+      cl->asClass()->lookupMethodDontThrow(vm->upcalls->clinitName,
+                                           vm->upcalls->clinitType, 
                                            true, false, 0))
   res = true;
 

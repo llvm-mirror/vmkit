@@ -204,7 +204,7 @@ Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
     final_object_iterator I = finalObjects.find(cl->delegatee[0]);
     if (I == End) {
     
-      Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
+      Class* javaClass = cl->classLoader->vm->upcalls->newClass;
       LLVMClassInfo* LCI = getClassInfo(javaClass);
       const llvm::Type* Ty = LCI->getVirtualType();
       Module& Mod = *getLLVMModule();
@@ -313,7 +313,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
       CommonClass* cl = JavaObject::getClass(obj);
       
       if (cl->isArray()) {
-        Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
+        Classpath* upcalls = cl->classLoader->vm->upcalls;
         CommonClass* subClass = cl->asArrayClass()->baseClass();
         if (subClass->isPrimitive()) {
           if (subClass == upcalls->OfBool) {
@@ -581,7 +581,7 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaClass(CommonClass* cl) {
-  Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
+  Class* javaClass = cl->classLoader->vm->upcalls->newClass;
   LLVMClassInfo* LCI = getClassInfo(javaClass);
   const StructType* STy = 
     dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
@@ -613,7 +613,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
   CommonClass* cl = JavaObject::getClass(obj);
 
   if (cl->isArray()) {
-    Classpath* upcalls = cl->classLoader->bootstrapLoader->upcalls;
+    Classpath* upcalls = cl->classLoader->vm->upcalls;
     CommonClass* subClass = cl->asArrayClass()->baseClass();
     if (subClass->isPrimitive()) {
       if (subClass == upcalls->OfBool) {
@@ -1395,8 +1395,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
       Tracer = ArrayObjectTracer;
     }
   } else if (classDef->isClass()) {
-    if (classDef->isAssignableFrom(
-          classDef->classLoader->bootstrapLoader->upcalls->newReference)) {
+    if (classDef->isAssignableFrom(classDef->classLoader->vm->upcalls->newReference)) {
       Tracer = ReferenceObjectTracer;
     } else {
       Tracer = RegularObjectTracer;
@@ -1928,7 +1927,7 @@ void mainCompilerStart(mvm::Thread* mut) {
     bootstrapLoader->analyseClasspathEnv(vm->classpath);
   } else {
     bootstrapLoader->analyseClasspathEnv(vm->classpath);
-    bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
+    vm->upcalls->postInitialiseClasspath(bootstrapLoader);
   }
   
     
@@ -2052,15 +2051,15 @@ void mainCompilerStart(mvm::Thread* mut) {
  
     if (M->compileRT) {
       // Make sure that if we compile RT, the native classes are emitted.
-      M->getNativeClass(bootstrapLoader->upcalls->OfVoid);
-      M->getNativeClass(bootstrapLoader->upcalls->OfBool);
-      M->getNativeClass(bootstrapLoader->upcalls->OfByte);
-      M->getNativeClass(bootstrapLoader->upcalls->OfChar);
-      M->getNativeClass(bootstrapLoader->upcalls->OfShort);
-      M->getNativeClass(bootstrapLoader->upcalls->OfInt);
-      M->getNativeClass(bootstrapLoader->upcalls->OfFloat);
-      M->getNativeClass(bootstrapLoader->upcalls->OfLong);
-      M->getNativeClass(bootstrapLoader->upcalls->OfDouble);
+      M->getNativeClass(vm->upcalls->OfVoid);
+      M->getNativeClass(vm->upcalls->OfBool);
+      M->getNativeClass(vm->upcalls->OfByte);
+      M->getNativeClass(vm->upcalls->OfChar);
+      M->getNativeClass(vm->upcalls->OfShort);
+      M->getNativeClass(vm->upcalls->OfInt);
+      M->getNativeClass(vm->upcalls->OfFloat);
+      M->getNativeClass(vm->upcalls->OfLong);
+      M->getNativeClass(vm->upcalls->OfDouble);
 
       // Also do not allow inling of some functions.
 #define SET_INLINE(NAME) { \

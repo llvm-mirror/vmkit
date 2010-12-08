@@ -160,8 +160,8 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
 
   UserClass* realCl = cl->asClass();
   res = realCl->doNew(vm);
-  JavaMethod* init = realCl->lookupMethod(vm->bootstrapLoader->initName,
-                                          vm->bootstrapLoader->initExceptionSig,
+  JavaMethod* init = realCl->lookupMethod(vm->upcalls->initName,
+                                          vm->upcalls->initExceptionSig,
                                           false, true, 0);
   str = vm->asciizToStr(msg);
   init->invokeIntSpecial(vm, realCl, res, &str);

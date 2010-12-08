@@ -25,6 +25,7 @@
 #include "JavaTypes.h"
 #include "LockedMap.h"
 #include "Reader.h"
+#include "JnjvmClassLoader.h"
  
 using namespace j3;
 

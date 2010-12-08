@@ -17,6 +17,18 @@
 #include "Jnjvm.h"
 #include "mvm/SystemThreads.h"
 #include "mvm/VMKit.h"
+#include "j3/JavaCompiler.h"
+#include "JavaTypes.h"
+
+// for dlopen and dlsym
+#include <dlfcn.h> 
+
+using namespace j3;
+
+typedef void (*static_init_t)(JnjvmClassLoader*);
+
+const UTF8* JavaCompiler::InlinePragma = 0;
+const UTF8* JavaCompiler::NoInlinePragma = 0;
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
@@ -28,203 +40,6 @@
             e = cl->staticMethods.end(); i!= e; ++i) { \
     i->second->compiledPtr(); \
   }
-
-
-using namespace j3;
-
-Class*      Classpath::newThread;
-Class*      Classpath::newVMThread;
-JavaField*  Classpath::assocThread;
-JavaField*  Classpath::vmdataVMThread;
-JavaMethod* Classpath::finaliseCreateInitialThread;
-JavaMethod* Classpath::initVMThread;
-JavaMethod* Classpath::groupAddThread;
-JavaField*  Classpath::threadName;
-JavaField*  Classpath::groupName;
-JavaMethod* Classpath::initGroup;
-JavaField*  Classpath::priority;
-JavaField*  Classpath::daemon;
-JavaField*  Classpath::group;
-JavaField*  Classpath::running;
-Class*      Classpath::threadGroup;
-JavaField*  Classpath::rootGroup;
-JavaField*  Classpath::vmThread;
-JavaMethod* Classpath::uncaughtException;
-Class*      Classpath::inheritableThreadLocal;
-
-JavaMethod* Classpath::runVMThread;
-JavaMethod* Classpath::setContextClassLoader;
-JavaMethod* Classpath::getSystemClassLoader;
-Class*      Classpath::newString;
-Class*      Classpath::newClass;
-Class*      Classpath::newThrowable;
-Class*      Classpath::newException;
-JavaMethod* Classpath::initClass;
-JavaMethod* Classpath::initClassWithProtectionDomain;
-JavaField*  Classpath::vmdataClass;
-JavaMethod* Classpath::setProperty;
-JavaMethod* Classpath::initString;
-JavaMethod* Classpath::getCallingClassLoader;
-JavaMethod* Classpath::initConstructor;
-Class*      Classpath::newConstructor;
-ClassArray* Classpath::constructorArrayClass;
-ClassArray* Classpath::constructorArrayAnnotation;
-JavaField*  Classpath::constructorSlot;
-JavaMethod* Classpath::initMethod;
-JavaMethod* Classpath::initField;
-Class*      Classpath::newField;
-Class*      Classpath::newMethod;
-ClassArray* Classpath::methodArrayClass;
-ClassArray* Classpath::fieldArrayClass;
-JavaField*  Classpath::methodSlot;
-JavaField*  Classpath::fieldSlot;
-ClassArray* Classpath::classArrayClass;
-JavaMethod* Classpath::loadInClassLoader;
-JavaMethod* Classpath::initVMThrowable;
-JavaField*  Classpath::vmDataVMThrowable;
-Class*      Classpath::newVMThrowable;
-JavaField*  Classpath::bufferAddress;
-JavaField*  Classpath::dataPointer32;
-JavaField*  Classpath::dataPointer64;
-Class*      Classpath::newPointer32;
-Class*      Classpath::newPointer64;
-Class*      Classpath::newDirectByteBuffer;
-JavaField*  Classpath::vmdataClassLoader;
-JavaMethod* Classpath::InitDirectByteBuffer;
-Class*      Classpath::newClassLoader;
-
-
-JavaField*  Classpath::boolValue;
-JavaField*  Classpath::byteValue;
-JavaField*  Classpath::shortValue;
-JavaField*  Classpath::charValue;
-JavaField*  Classpath::intValue;
-JavaField*  Classpath::longValue;
-JavaField*  Classpath::floatValue;
-JavaField*  Classpath::doubleValue;
-
-Class*      Classpath::newStackTraceElement;
-ClassArray* Classpath::stackTraceArray;
-JavaMethod* Classpath::initStackTraceElement;
-
-Class* Classpath::voidClass;
-Class* Classpath::boolClass;
-Class* Classpath::byteClass;
-Class* Classpath::shortClass;
-Class* Classpath::charClass;
-Class* Classpath::intClass;
-Class* Classpath::floatClass;
-Class* Classpath::doubleClass;
-Class* Classpath::longClass;
-
-Class* Classpath::vmStackWalker;
-
-Class* Classpath::InvocationTargetException;
-Class* Classpath::ArrayStoreException;
-Class* Classpath::ClassCastException;
-Class* Classpath::IllegalMonitorStateException;
-Class* Classpath::IllegalArgumentException;
-Class* Classpath::InterruptedException;
-Class* Classpath::IndexOutOfBoundsException;
-Class* Classpath::ArrayIndexOutOfBoundsException;
-Class* Classpath::NegativeArraySizeException;
-Class* Classpath::NullPointerException;
-Class* Classpath::SecurityException;
-Class* Classpath::ClassFormatError;
-Class* Classpath::ClassCircularityError;
-Class* Classpath::NoClassDefFoundError;
-Class* Classpath::UnsupportedClassVersionError;
-Class* Classpath::NoSuchFieldError;
-Class* Classpath::NoSuchMethodError;
-Class* Classpath::InstantiationError;
-Class* Classpath::InstantiationException;
-Class* Classpath::IllegalAccessError;
-Class* Classpath::IllegalAccessException;
-Class* Classpath::VerifyError;
-Class* Classpath::ExceptionInInitializerError;
-Class* Classpath::LinkageError;
-Class* Classpath::AbstractMethodError;
-Class* Classpath::UnsatisfiedLinkError;
-Class* Classpath::InternalError;
-Class* Classpath::OutOfMemoryError;
-Class* Classpath::StackOverflowError;
-Class* Classpath::UnknownError;
-Class* Classpath::ClassNotFoundException;
-Class* Classpath::ArithmeticException;
-
-JavaMethod* Classpath::InitInvocationTargetException;
-JavaMethod* Classpath::InitArrayStoreException;
-JavaMethod* Classpath::InitClassCastException;
-JavaMethod* Classpath::InitIllegalMonitorStateException;
-JavaMethod* Classpath::InitIllegalArgumentException;
-JavaMethod* Classpath::InitInterruptedException;
-JavaMethod* Classpath::InitIndexOutOfBoundsException;
-JavaMethod* Classpath::InitArrayIndexOutOfBoundsException;
-JavaMethod* Classpath::InitNegativeArraySizeException;
-JavaMethod* Classpath::InitNullPointerException;
-JavaMethod* Classpath::InitSecurityException;
-JavaMethod* Classpath::InitClassFormatError;
-JavaMethod* Classpath::InitClassCircularityError;
-JavaMethod* Classpath::InitNoClassDefFoundError;
-JavaMethod* Classpath::InitUnsupportedClassVersionError;
-JavaMethod* Classpath::InitNoSuchFieldError;
-JavaMethod* Classpath::InitNoSuchMethodError;
-JavaMethod* Classpath::InitInstantiationError;
-JavaMethod* Classpath::InitInstantiationException;
-JavaMethod* Classpath::InitIllegalAccessError;
-JavaMethod* Classpath::InitIllegalAccessException;
-JavaMethod* Classpath::InitVerifyError;
-JavaMethod* Classpath::InitExceptionInInitializerError;
-JavaMethod* Classpath::InitLinkageError;
-JavaMethod* Classpath::InitAbstractMethodError;
-JavaMethod* Classpath::InitUnsatisfiedLinkError;
-JavaMethod* Classpath::InitInternalError;
-JavaMethod* Classpath::InitOutOfMemoryError;
-JavaMethod* Classpath::InitStackOverflowError;
-JavaMethod* Classpath::InitUnknownError;
-JavaMethod* Classpath::InitClassNotFoundException;
-JavaMethod* Classpath::InitArithmeticException;
-JavaMethod* Classpath::InitObject;
-JavaMethod* Classpath::FinalizeObject;
-JavaMethod* Classpath::IntToString;
-
-JavaMethod* Classpath::SystemArraycopy;
-JavaMethod* Classpath::VMSystemArraycopy;
-Class*      Classpath::SystemClass;
-
-JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
-JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
-JavaMethod* Classpath::ErrorWithExcpInvocationTargetException;
-
-ClassArray* Classpath::ArrayOfByte;
-ClassArray* Classpath::ArrayOfChar;
-ClassArray* Classpath::ArrayOfString;
-ClassArray* Classpath::ArrayOfInt;
-ClassArray* Classpath::ArrayOfShort;
-ClassArray* Classpath::ArrayOfBool;
-ClassArray* Classpath::ArrayOfLong;
-ClassArray* Classpath::ArrayOfFloat;
-ClassArray* Classpath::ArrayOfDouble;
-ClassArray* Classpath::ArrayOfObject;
-
-ClassPrimitive* Classpath::OfByte;
-ClassPrimitive* Classpath::OfChar;
-ClassPrimitive* Classpath::OfInt;
-ClassPrimitive* Classpath::OfShort;
-ClassPrimitive* Classpath::OfBool;
-ClassPrimitive* Classpath::OfLong;
-ClassPrimitive* Classpath::OfFloat;
-ClassPrimitive* Classpath::OfDouble;
-ClassPrimitive* Classpath::OfVoid;
-
-Class* Classpath::OfObject;
-
-JavaField* Classpath::methodClass;
-JavaField* Classpath::fieldClass;
-JavaField* Classpath::constructorClass;
-
-JavaMethod* Classpath::EnqueueReference;
-Class*      Classpath::newReference;
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
@@ -543,7 +358,162 @@ extern "C" JavaString* Java_java_lang_VMSystem_getenv__Ljava_lang_String_2(JavaS
   return ret;
 }
 
-void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
+
+Classpath::Classpath(JnjvmBootstrapLoader* loader, bool dlLoad) {
+   
+  // Try to find if we have a pre-compiled rt.jar
+  if (dlLoad) {
+    SuperArray = (Class*)dlsym(SELF_HANDLE, "java_lang_Object");
+    if (!SuperArray) {
+      loader->nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
+      if (loader->nativeHandle) {
+        // Found it!
+        SuperArray = (Class*)dlsym(loader->nativeHandle, "java_lang_Object");
+      }
+    }
+    
+    if (SuperArray) {
+      assert(TheCompiler && 
+					   "Loading libvmjc"DYLD_EXTENSION" requires a compiler");
+			ClassArray::SuperArray = (Class*)SuperArray->getInternal();
+      
+      // Get the native classes.
+      OfVoid = (ClassPrimitive*)dlsym(loader->nativeHandle, "void");
+      OfBool = (ClassPrimitive*)dlsym(loader->nativeHandle, "boolean");
+      OfByte = (ClassPrimitive*)dlsym(loader->nativeHandle, "byte");
+      OfChar = (ClassPrimitive*)dlsym(loader->nativeHandle, "char");
+      OfShort = (ClassPrimitive*)dlsym(loader->nativeHandle, "short");
+      OfInt = (ClassPrimitive*)dlsym(loader->nativeHandle, "int");
+      OfFloat = (ClassPrimitive*)dlsym(loader->nativeHandle, "float");
+      OfLong = (ClassPrimitive*)dlsym(loader->nativeHandle, "long");
+      OfDouble = (ClassPrimitive*)dlsym(loader->nativeHandle, "double");
+      
+      
+      // We have the java/lang/Object class, execute the static initializer.
+      static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
+      assert(init && "Loaded the wrong boot library");
+      init(loader);
+      
+      // Get the base object arrays after the init, because init puts arrays
+      // in the class loader map.
+      ArrayOfString = 
+        loader->constructArray(loader->asciizConstructUTF8("[Ljava/lang/String;"));
+  
+      ArrayOfObject = 
+        loader->constructArray(loader->asciizConstructUTF8("[Ljava/lang/Object;"));
+      
+      InterfacesArray = ArrayOfObject->interfaces;
+      ClassArray::InterfacesArray = InterfacesArray;
+
+    }
+  }
+   
+  if (!OfChar) {
+    // Allocate interfaces.
+    InterfacesArray = (Class**)loader->allocator.Allocate(2 * sizeof(UserClass*),
+                                                  "Interface array");
+    ClassArray::InterfacesArray = InterfacesArray;
+
+    // Create the primitive classes.
+    OfChar = UPCALL_PRIMITIVE_CLASS(loader, "char", 1);
+    OfBool = UPCALL_PRIMITIVE_CLASS(loader, "boolean", 0);
+    OfShort = UPCALL_PRIMITIVE_CLASS(loader, "short", 1);
+    OfInt = UPCALL_PRIMITIVE_CLASS(loader, "int", 2);
+    OfLong = UPCALL_PRIMITIVE_CLASS(loader, "long", 3);
+    OfFloat = UPCALL_PRIMITIVE_CLASS(loader, "float", 2);
+    OfDouble = UPCALL_PRIMITIVE_CLASS(loader, "double", 3);
+    OfVoid = UPCALL_PRIMITIVE_CLASS(loader, "void", 0);
+    OfByte = UPCALL_PRIMITIVE_CLASS(loader, "byte", 0);
+  }
+  
+  // Create the primitive arrays.
+  ArrayOfChar   = loader->constructArray(loader->asciizConstructUTF8("[C"), OfChar);
+  ArrayOfByte   = loader->constructArray(loader->asciizConstructUTF8("[B"), OfByte);
+  ArrayOfInt    = loader->constructArray(loader->asciizConstructUTF8("[I"), OfInt);
+  ArrayOfBool   = loader->constructArray(loader->asciizConstructUTF8("[Z"), OfBool);
+  ArrayOfLong   = loader->constructArray(loader->asciizConstructUTF8("[J"), OfLong);
+  ArrayOfFloat  = loader->constructArray(loader->asciizConstructUTF8("[F"), OfFloat);
+  ArrayOfDouble = loader->constructArray(loader->asciizConstructUTF8("[D"), OfDouble);
+  ArrayOfShort  = loader->constructArray(loader->asciizConstructUTF8("[S"), OfShort);
+  
+  // Fill the maps.
+  primitiveMap[I_VOID]   = OfVoid;
+  primitiveMap[I_BOOL]   = OfBool;
+  primitiveMap[I_BYTE]   = OfByte;
+  primitiveMap[I_CHAR]   = OfChar;
+  primitiveMap[I_SHORT]  = OfShort;
+  primitiveMap[I_INT]    = OfInt;
+  primitiveMap[I_FLOAT]  = OfFloat;
+  primitiveMap[I_LONG]   = OfLong;
+  primitiveMap[I_DOUBLE] = OfDouble;
+
+  arrayTable[JavaArray::T_BOOLEAN - 4] = ArrayOfBool;
+  arrayTable[JavaArray::T_BYTE - 4]    = ArrayOfByte;
+  arrayTable[JavaArray::T_CHAR - 4]    = ArrayOfChar;
+  arrayTable[JavaArray::T_SHORT - 4]   = ArrayOfShort;
+  arrayTable[JavaArray::T_INT - 4]     = ArrayOfInt;
+  arrayTable[JavaArray::T_FLOAT - 4]   = ArrayOfFloat;
+  arrayTable[JavaArray::T_LONG - 4]    = ArrayOfLong;
+  arrayTable[JavaArray::T_DOUBLE - 4]  = ArrayOfDouble;
+  
+  Attribut::annotationsAttribut     = loader->asciizConstructUTF8("RuntimeVisibleAnnotations");
+  Attribut::codeAttribut            = loader->asciizConstructUTF8("Code");
+  Attribut::exceptionsAttribut      = loader->asciizConstructUTF8("Exceptions");
+  Attribut::constantAttribut        = loader->asciizConstructUTF8("ConstantValue");
+  Attribut::lineNumberTableAttribut = loader->asciizConstructUTF8("LineNumberTable");
+  Attribut::innerClassesAttribut    = loader->asciizConstructUTF8("InnerClasses");
+  Attribut::sourceFileAttribut      = loader->asciizConstructUTF8("SourceFile");
+ 
+  JavaCompiler::InlinePragma        = loader->asciizConstructUTF8("Lorg/vmmagic/pragma/Inline;");
+  JavaCompiler::NoInlinePragma      = loader->asciizConstructUTF8("Lorg/vmmagic/pragma/NoInline;");
+
+  initName = loader->asciizConstructUTF8("<init>");
+  initExceptionSig = loader->asciizConstructUTF8("(Ljava/lang/String;)V");
+  clinitName = loader->asciizConstructUTF8("<clinit>");
+  clinitType = loader->asciizConstructUTF8("()V");
+  runName = loader->asciizConstructUTF8("run");
+  prelib = loader->asciizConstructUTF8("lib");
+#if defined(__MACH__)
+  postlib = loader->asciizConstructUTF8(".dylib");
+#else 
+  postlib = loader->asciizConstructUTF8(".so");
+#endif
+  mathName = loader->asciizConstructUTF8("java/lang/Math");
+  stackWalkerName = loader->asciizConstructUTF8("gnu/classpath/VMStackWalker");
+  NoClassDefFoundErrorName = loader->asciizConstructUTF8("java/lang/NoClassDefFoundError");
+
+#define DEF_UTF8(var) \
+  var = loader->asciizConstructUTF8(#var)
+  
+  DEF_UTF8(abs);
+  DEF_UTF8(sqrt);
+  DEF_UTF8(sin);
+  DEF_UTF8(cos);
+  DEF_UTF8(tan);
+  DEF_UTF8(asin);
+  DEF_UTF8(acos);
+  DEF_UTF8(atan);
+  DEF_UTF8(atan2);
+  DEF_UTF8(exp);
+  DEF_UTF8(log);
+  DEF_UTF8(pow);
+  DEF_UTF8(ceil);
+  DEF_UTF8(floor);
+  DEF_UTF8(rint);
+  DEF_UTF8(cbrt);
+  DEF_UTF8(cosh);
+  DEF_UTF8(expm1);
+  DEF_UTF8(hypot);
+  DEF_UTF8(log10);
+  DEF_UTF8(log1p);
+  DEF_UTF8(sinh);
+  DEF_UTF8(tanh);
+  DEF_UTF8(finalize);
+
+#undef DEF_UTF8
+}
+
+void Classpath::postInitialiseClasspath(JnjvmClassLoader* loader) {
 
   newClassLoader = 
     UPCALL_CLASS(loader, "java/lang/ClassLoader");

@@ -232,20 +232,6 @@ void JnjvmClassLoader::tracer(uintptr_t closure) {
 void JnjvmBootstrapLoader::tracer(uintptr_t closure) {
  
   JnjvmClassLoader::tracer(closure);
-
-#define TRACE_DELEGATEE(prim) \
-  prim->tracer(closure);
-
-  TRACE_DELEGATEE(upcalls->OfVoid);
-  TRACE_DELEGATEE(upcalls->OfBool);
-  TRACE_DELEGATEE(upcalls->OfByte);
-  TRACE_DELEGATEE(upcalls->OfChar);
-  TRACE_DELEGATEE(upcalls->OfShort);
-  TRACE_DELEGATEE(upcalls->OfInt);
-  TRACE_DELEGATEE(upcalls->OfFloat);
-  TRACE_DELEGATEE(upcalls->OfLong);
-  TRACE_DELEGATEE(upcalls->OfDouble);
-#undef TRACE_DELEGATEE
 }
 
 //===----------------------------------------------------------------------===//
@@ -289,8 +275,23 @@ void Jnjvm::tracer(uintptr_t closure) {
     ArrayUInt16** key = const_cast<ArrayUInt16**>(&(i->first));
     mvm::Collector::markAndTraceRoot(key, closure);
   }
+
+	// (5) Trace the delegatees.
+#define TRACE_DELEGATEE(prim) \
+  prim->tracer(closure);
+
+  TRACE_DELEGATEE(upcalls->OfVoid);
+  TRACE_DELEGATEE(upcalls->OfBool);
+  TRACE_DELEGATEE(upcalls->OfByte);
+  TRACE_DELEGATEE(upcalls->OfChar);
+  TRACE_DELEGATEE(upcalls->OfShort);
+  TRACE_DELEGATEE(upcalls->OfInt);
+  TRACE_DELEGATEE(upcalls->OfFloat);
+  TRACE_DELEGATEE(upcalls->OfLong);
+  TRACE_DELEGATEE(upcalls->OfDouble);
+#undef TRACE_DELEGATEE
   
-  // (7) Trace the locks and their associated object.
+  // (6) Trace the locks and their associated object.
   uint32 i = 0;
   for (; i < mvm::LockSystem::GlobalSize; i++) {
     mvm::FatLock** array = lockSystem.LockTable[i];

@@ -29,6 +29,7 @@
 
 #include "JavaClass.h"
 #include "JavaUpcalls.h"
+#include "Jnjvm.h"
 
 namespace j3 {
 
@@ -71,7 +72,7 @@ public:
   JavaJIT(JavaLLVMCompiler* C, JavaMethod* meth, llvm::Function* func) {
     compilingMethod = meth;
     compilingClass = meth->classDef;
-    upcalls = compilingClass->classLoader->bootstrapLoader->upcalls;
+    upcalls = compilingClass->classLoader->vm->upcalls;
     TheCompiler = C;
     intrinsics = TheCompiler->getIntrinsics();
     llvmFunction = func;

@@ -59,216 +59,288 @@ class JavaMethod;
 class Class;
 class ClassArray;
 
+#if defined(__MACH__)
+#define SELF_HANDLE RTLD_DEFAULT
+#define DYLD_EXTENSION ".dylib"
+#else
+#define SELF_HANDLE 0
+#define DYLD_EXTENSION ".so"
+#endif
+
 class Classpath : public mvm::PermanentObject {
 public: 
-  ISOLATE_STATIC UserClass*  newClassLoader;
-  ISOLATE_STATIC JavaMethod* getSystemClassLoader;
-  ISOLATE_STATIC JavaMethod* setContextClassLoader;
-  ISOLATE_STATIC UserClass* newString;
-  ISOLATE_STATIC UserClass* newClass;
-  ISOLATE_STATIC UserClass* newThrowable;
-  ISOLATE_STATIC UserClass* newException;
-  ISOLATE_STATIC JavaMethod* initClass;
-  ISOLATE_STATIC JavaMethod* initClassWithProtectionDomain;
-  ISOLATE_STATIC JavaField* vmdataClass;
-  ISOLATE_STATIC JavaMethod* setProperty;
-  ISOLATE_STATIC JavaMethod* initString;
-  ISOLATE_STATIC JavaMethod* getCallingClassLoader;
-  ISOLATE_STATIC JavaMethod* initConstructor;
-  ISOLATE_STATIC UserClassArray* constructorArrayClass;
-  ISOLATE_STATIC UserClassArray* constructorArrayAnnotation;
-  ISOLATE_STATIC UserClass*      newConstructor;
-  ISOLATE_STATIC JavaField*  constructorSlot;
-  ISOLATE_STATIC JavaMethod* initMethod;
-  ISOLATE_STATIC JavaMethod* initField;
-  ISOLATE_STATIC UserClassArray* methodArrayClass;
-  ISOLATE_STATIC UserClassArray* fieldArrayClass;
-  ISOLATE_STATIC UserClass*      newMethod;
-  ISOLATE_STATIC UserClass*      newField;
-  ISOLATE_STATIC JavaField*  methodSlot;
-  ISOLATE_STATIC JavaField*  fieldSlot;
-  ISOLATE_STATIC UserClassArray* classArrayClass;
-  ISOLATE_STATIC JavaMethod* loadInClassLoader;
-  ISOLATE_STATIC JavaMethod* initVMThrowable;
-  ISOLATE_STATIC JavaField*  vmDataVMThrowable;
-  ISOLATE_STATIC UserClass*  newVMThrowable;
-  ISOLATE_STATIC JavaField*  bufferAddress;
-  ISOLATE_STATIC JavaField*  dataPointer32;
-  ISOLATE_STATIC JavaField*  dataPointer64;
-  ISOLATE_STATIC UserClass*  newPointer32;
-  ISOLATE_STATIC UserClass*  newPointer64;
-  ISOLATE_STATIC UserClass*  newDirectByteBuffer;
-  ISOLATE_STATIC JavaMethod* InitDirectByteBuffer;
-  ISOLATE_STATIC JavaField*  vmdataClassLoader;
+	Classpath(JnjvmBootstrapLoader* loader, bool dlLoad);
 
-  ISOLATE_STATIC JavaField* boolValue;
-  ISOLATE_STATIC JavaField* byteValue;
-  ISOLATE_STATIC JavaField* shortValue;
-  ISOLATE_STATIC JavaField* charValue;
-  ISOLATE_STATIC JavaField* intValue;
-  ISOLATE_STATIC JavaField* longValue;
-  ISOLATE_STATIC JavaField* floatValue;
-  ISOLATE_STATIC JavaField* doubleValue;
+  void postInitialiseClasspath(JnjvmClassLoader* loader);
 
-  ISOLATE_STATIC UserClass* newStackTraceElement;
-  ISOLATE_STATIC UserClassArray* stackTraceArray;
-  ISOLATE_STATIC JavaMethod* initStackTraceElement;
+  UserClass*  newClassLoader;
+  JavaMethod* getSystemClassLoader;
+  JavaMethod* setContextClassLoader;
+  UserClass* newString;
+  UserClass* newClass;
+  UserClass* newThrowable;
+  UserClass* newException;
+  JavaMethod* initClass;
+  JavaMethod* initClassWithProtectionDomain;
+  JavaField* vmdataClass;
+  JavaMethod* setProperty;
+  JavaMethod* initString;
+  JavaMethod* getCallingClassLoader;
+  JavaMethod* initConstructor;
+  UserClassArray* constructorArrayClass;
+  UserClassArray* constructorArrayAnnotation;
+  UserClass*      newConstructor;
+  JavaField*  constructorSlot;
+  JavaMethod* initMethod;
+  JavaMethod* initField;
+  UserClassArray* methodArrayClass;
+  UserClassArray* fieldArrayClass;
+  UserClass*      newMethod;
+  UserClass*      newField;
+  JavaField*  methodSlot;
+  JavaField*  fieldSlot;
+  UserClassArray* classArrayClass;
+  JavaMethod* loadInClassLoader;
+  JavaMethod* initVMThrowable;
+  JavaField*  vmDataVMThrowable;
+  UserClass*  newVMThrowable;
+  JavaField*  bufferAddress;
+  JavaField*  dataPointer32;
+  JavaField*  dataPointer64;
+  UserClass*  newPointer32;
+  UserClass*  newPointer64;
+  UserClass*  newDirectByteBuffer;
+  JavaMethod* InitDirectByteBuffer;
+  JavaField*  vmdataClassLoader;
 
-  ISOLATE_STATIC void initialiseClasspath(JnjvmClassLoader* loader);
-  
-  ISOLATE_STATIC UserClass* voidClass;
-  ISOLATE_STATIC UserClass* boolClass;
-  ISOLATE_STATIC UserClass* byteClass;
-  ISOLATE_STATIC UserClass* shortClass;
-  ISOLATE_STATIC UserClass* charClass;
-  ISOLATE_STATIC UserClass* intClass;
-  ISOLATE_STATIC UserClass* floatClass;
-  ISOLATE_STATIC UserClass* doubleClass;
-  ISOLATE_STATIC UserClass* longClass;
-  
-  ISOLATE_STATIC UserClass* vmStackWalker;
-  
-  ISOLATE_STATIC UserClass* newThread;
-  ISOLATE_STATIC UserClass* newVMThread;
-  ISOLATE_STATIC JavaField* assocThread;
-  ISOLATE_STATIC JavaField* vmdataVMThread;
-  ISOLATE_STATIC JavaMethod* finaliseCreateInitialThread;
-  ISOLATE_STATIC JavaMethod* initVMThread;
-  ISOLATE_STATIC JavaMethod* runVMThread;
-  ISOLATE_STATIC JavaMethod* groupAddThread;
-  ISOLATE_STATIC JavaField* threadName;
-  ISOLATE_STATIC JavaField* groupName;
-  ISOLATE_STATIC JavaMethod* initGroup;
-  ISOLATE_STATIC JavaField* priority;
-  ISOLATE_STATIC JavaField* daemon;
-  ISOLATE_STATIC JavaField* group;
-  ISOLATE_STATIC JavaField* running;
-  ISOLATE_STATIC UserClass* threadGroup;
-  ISOLATE_STATIC JavaField* rootGroup;
-  ISOLATE_STATIC JavaField* vmThread;
-  ISOLATE_STATIC JavaMethod* uncaughtException;
-  ISOLATE_STATIC UserClass*  inheritableThreadLocal;
-  
+  JavaField* boolValue;
+  JavaField* byteValue;
+  JavaField* shortValue;
+  JavaField* charValue;
+  JavaField* intValue;
+  JavaField* longValue;
+  JavaField* floatValue;
+  JavaField* doubleValue;
 
-  ISOLATE_STATIC UserClass* InvocationTargetException;
-  ISOLATE_STATIC UserClass* ArrayStoreException;
-  ISOLATE_STATIC UserClass* ClassCastException;
-  ISOLATE_STATIC UserClass* IllegalMonitorStateException;
-  ISOLATE_STATIC UserClass* IllegalArgumentException;
-  ISOLATE_STATIC UserClass* InterruptedException;
-  ISOLATE_STATIC UserClass* IndexOutOfBoundsException;
-  ISOLATE_STATIC UserClass* ArrayIndexOutOfBoundsException;
-  ISOLATE_STATIC UserClass* NegativeArraySizeException;
-  ISOLATE_STATIC UserClass* NullPointerException;
-  ISOLATE_STATIC UserClass* SecurityException;
-  ISOLATE_STATIC UserClass* ClassFormatError;
-  ISOLATE_STATIC UserClass* ClassCircularityError;
-  ISOLATE_STATIC UserClass* NoClassDefFoundError;
-  ISOLATE_STATIC UserClass* UnsupportedClassVersionError;
-  ISOLATE_STATIC UserClass* NoSuchFieldError;
-  ISOLATE_STATIC UserClass* NoSuchMethodError;
-  ISOLATE_STATIC UserClass* InstantiationError;
-  ISOLATE_STATIC UserClass* InstantiationException;
-  ISOLATE_STATIC UserClass* IllegalAccessError;
-  ISOLATE_STATIC UserClass* IllegalAccessException;
-  ISOLATE_STATIC UserClass* VerifyError;
-  ISOLATE_STATIC UserClass* ExceptionInInitializerError;
-  ISOLATE_STATIC UserClass* LinkageError;
-  ISOLATE_STATIC UserClass* AbstractMethodError;
-  ISOLATE_STATIC UserClass* UnsatisfiedLinkError;
-  ISOLATE_STATIC UserClass* InternalError;
-  ISOLATE_STATIC UserClass* OutOfMemoryError;
-  ISOLATE_STATIC UserClass* StackOverflowError;
-  ISOLATE_STATIC UserClass* UnknownError;
-  ISOLATE_STATIC UserClass* ClassNotFoundException;
-  ISOLATE_STATIC UserClass* ArithmeticException;
-
-  ISOLATE_STATIC JavaMethod* InitInvocationTargetException;
-  ISOLATE_STATIC JavaMethod* InitArrayStoreException;
-  ISOLATE_STATIC JavaMethod* InitClassCastException;
-  ISOLATE_STATIC JavaMethod* InitIllegalMonitorStateException;
-  ISOLATE_STATIC JavaMethod* InitIllegalArgumentException;
-  ISOLATE_STATIC JavaMethod* InitInterruptedException;
-  ISOLATE_STATIC JavaMethod* InitIndexOutOfBoundsException;
-  ISOLATE_STATIC JavaMethod* InitArrayIndexOutOfBoundsException;
-  ISOLATE_STATIC JavaMethod* InitNegativeArraySizeException;
-  ISOLATE_STATIC JavaMethod* InitNullPointerException;
-  ISOLATE_STATIC JavaMethod* InitSecurityException;
-  ISOLATE_STATIC JavaMethod* InitClassFormatError;
-  ISOLATE_STATIC JavaMethod* InitClassCircularityError;
-  ISOLATE_STATIC JavaMethod* InitNoClassDefFoundError;
-  ISOLATE_STATIC JavaMethod* InitUnsupportedClassVersionError;
-  ISOLATE_STATIC JavaMethod* InitNoSuchFieldError;
-  ISOLATE_STATIC JavaMethod* InitNoSuchMethodError;
-  ISOLATE_STATIC JavaMethod* InitInstantiationError;
-  ISOLATE_STATIC JavaMethod* InitInstantiationException;
-  ISOLATE_STATIC JavaMethod* InitIllegalAccessError;
-  ISOLATE_STATIC JavaMethod* InitIllegalAccessException;
-  ISOLATE_STATIC JavaMethod* InitVerifyError;
-  ISOLATE_STATIC JavaMethod* InitExceptionInInitializerError;
-  ISOLATE_STATIC JavaMethod* InitLinkageError;
-  ISOLATE_STATIC JavaMethod* InitAbstractMethodError;
-  ISOLATE_STATIC JavaMethod* InitUnsatisfiedLinkError;
-  ISOLATE_STATIC JavaMethod* InitInternalError;
-  ISOLATE_STATIC JavaMethod* InitOutOfMemoryError;
-  ISOLATE_STATIC JavaMethod* InitStackOverflowError;
-  ISOLATE_STATIC JavaMethod* InitUnknownError;
-  ISOLATE_STATIC JavaMethod* InitClassNotFoundException;
-  ISOLATE_STATIC JavaMethod* InitArithmeticException;
+  UserClass* newStackTraceElement;
+  UserClassArray* stackTraceArray;
+  JavaMethod* initStackTraceElement;
   
-  ISOLATE_STATIC JavaMethod* SystemArraycopy;
-  ISOLATE_STATIC JavaMethod* VMSystemArraycopy;
-  ISOLATE_STATIC Class*      SystemClass;
+  UserClass* voidClass;
+  UserClass* boolClass;
+  UserClass* byteClass;
+  UserClass* shortClass;
+  UserClass* charClass;
+  UserClass* intClass;
+  UserClass* floatClass;
+  UserClass* doubleClass;
+  UserClass* longClass;
   
-  ISOLATE_STATIC JavaMethod* IntToString;
-
-  ISOLATE_STATIC JavaMethod* InitObject;
-  ISOLATE_STATIC JavaMethod* FinalizeObject;
-
-  ISOLATE_STATIC JavaMethod* ErrorWithExcpNoClassDefFoundError;
-  ISOLATE_STATIC JavaMethod* ErrorWithExcpExceptionInInitializerError;
-  ISOLATE_STATIC JavaMethod* ErrorWithExcpInvocationTargetException;
+  UserClass* vmStackWalker;
   
+  UserClass* newThread;
+  UserClass* newVMThread;
+  JavaField* assocThread;
+  JavaField* vmdataVMThread;
+  JavaMethod* finaliseCreateInitialThread;
+  JavaMethod* initVMThread;
+  JavaMethod* runVMThread;
+  JavaMethod* groupAddThread;
+  JavaField* threadName;
+  JavaField* groupName;
+  JavaMethod* initGroup;
+  JavaField* priority;
+  JavaField* daemon;
+  JavaField* group;
+  JavaField* running;
+  UserClass* threadGroup;
+  JavaField* rootGroup;
+  JavaField* vmThread;
+  JavaMethod* uncaughtException;
+  UserClass*  inheritableThreadLocal;
   
 
-  ISOLATE_STATIC UserClassArray* ArrayOfByte;
-  ISOLATE_STATIC UserClassArray* ArrayOfChar;
-  ISOLATE_STATIC UserClassArray* ArrayOfInt;
-  ISOLATE_STATIC UserClassArray* ArrayOfShort;
-  ISOLATE_STATIC UserClassArray* ArrayOfBool;
-  ISOLATE_STATIC UserClassArray* ArrayOfLong;
-  ISOLATE_STATIC UserClassArray* ArrayOfFloat;
-  ISOLATE_STATIC UserClassArray* ArrayOfDouble;
-  ISOLATE_STATIC UserClassArray* ArrayOfObject;
-  ISOLATE_STATIC UserClassArray* ArrayOfString;
-  
-  ISOLATE_STATIC UserClassPrimitive* OfByte;
-  ISOLATE_STATIC UserClassPrimitive* OfChar;
-  ISOLATE_STATIC UserClassPrimitive* OfInt;
-  ISOLATE_STATIC UserClassPrimitive* OfShort;
-  ISOLATE_STATIC UserClassPrimitive* OfBool;
-  ISOLATE_STATIC UserClassPrimitive* OfLong;
-  ISOLATE_STATIC UserClassPrimitive* OfFloat;
-  ISOLATE_STATIC UserClassPrimitive* OfDouble;
-  ISOLATE_STATIC UserClassPrimitive* OfVoid;
+  UserClass* InvocationTargetException;
+  UserClass* ArrayStoreException;
+  UserClass* ClassCastException;
+  UserClass* IllegalMonitorStateException;
+  UserClass* IllegalArgumentException;
+  UserClass* InterruptedException;
+  UserClass* IndexOutOfBoundsException;
+  UserClass* ArrayIndexOutOfBoundsException;
+  UserClass* NegativeArraySizeException;
+  UserClass* NullPointerException;
+  UserClass* SecurityException;
+  UserClass* ClassFormatError;
+  UserClass* ClassCircularityError;
+  UserClass* NoClassDefFoundError;
+  UserClass* UnsupportedClassVersionError;
+  UserClass* NoSuchFieldError;
+  UserClass* NoSuchMethodError;
+  UserClass* InstantiationError;
+  UserClass* InstantiationException;
+  UserClass* IllegalAccessError;
+  UserClass* IllegalAccessException;
+  UserClass* VerifyError;
+  UserClass* ExceptionInInitializerError;
+  UserClass* LinkageError;
+  UserClass* AbstractMethodError;
+  UserClass* UnsatisfiedLinkError;
+  UserClass* InternalError;
+  UserClass* OutOfMemoryError;
+  UserClass* StackOverflowError;
+  UserClass* UnknownError;
+  UserClass* ClassNotFoundException;
+  UserClass* ArithmeticException;
 
-  ISOLATE_STATIC UserClass* OfObject;
+  JavaMethod* InitInvocationTargetException;
+  JavaMethod* InitArrayStoreException;
+  JavaMethod* InitClassCastException;
+  JavaMethod* InitIllegalMonitorStateException;
+  JavaMethod* InitIllegalArgumentException;
+  JavaMethod* InitInterruptedException;
+  JavaMethod* InitIndexOutOfBoundsException;
+  JavaMethod* InitArrayIndexOutOfBoundsException;
+  JavaMethod* InitNegativeArraySizeException;
+  JavaMethod* InitNullPointerException;
+  JavaMethod* InitSecurityException;
+  JavaMethod* InitClassFormatError;
+  JavaMethod* InitClassCircularityError;
+  JavaMethod* InitNoClassDefFoundError;
+  JavaMethod* InitUnsupportedClassVersionError;
+  JavaMethod* InitNoSuchFieldError;
+  JavaMethod* InitNoSuchMethodError;
+  JavaMethod* InitInstantiationError;
+  JavaMethod* InitInstantiationException;
+  JavaMethod* InitIllegalAccessError;
+  JavaMethod* InitIllegalAccessException;
+  JavaMethod* InitVerifyError;
+  JavaMethod* InitExceptionInInitializerError;
+  JavaMethod* InitLinkageError;
+  JavaMethod* InitAbstractMethodError;
+  JavaMethod* InitUnsatisfiedLinkError;
+  JavaMethod* InitInternalError;
+  JavaMethod* InitOutOfMemoryError;
+  JavaMethod* InitStackOverflowError;
+  JavaMethod* InitUnknownError;
+  JavaMethod* InitClassNotFoundException;
+  JavaMethod* InitArithmeticException;
   
-  ISOLATE_STATIC JavaField* methodClass;
-  ISOLATE_STATIC JavaField* fieldClass;
-  ISOLATE_STATIC JavaField* constructorClass;
+  JavaMethod* SystemArraycopy;
+  JavaMethod* VMSystemArraycopy;
+  Class*      SystemClass;
   
-  ISOLATE_STATIC JavaMethod* EnqueueReference;
-  ISOLATE_STATIC Class*      newReference;
+  JavaMethod* IntToString;
+
+  JavaMethod* InitObject;
+  JavaMethod* FinalizeObject;
+
+  JavaMethod* ErrorWithExcpNoClassDefFoundError;
+  JavaMethod* ErrorWithExcpExceptionInInitializerError;
+  JavaMethod* ErrorWithExcpInvocationTargetException;
+  
+  
+
+  UserClassArray* ArrayOfByte;
+  UserClassArray* ArrayOfChar;
+  UserClassArray* ArrayOfInt;
+  UserClassArray* ArrayOfShort;
+  UserClassArray* ArrayOfBool;
+  UserClassArray* ArrayOfLong;
+  UserClassArray* ArrayOfFloat;
+  UserClassArray* ArrayOfDouble;
+  UserClassArray* ArrayOfObject;
+  UserClassArray* ArrayOfString;
+  
+  UserClassPrimitive* OfByte;
+  UserClassPrimitive* OfChar;
+  UserClassPrimitive* OfInt;
+  UserClassPrimitive* OfShort;
+  UserClassPrimitive* OfBool;
+  UserClassPrimitive* OfLong;
+  UserClassPrimitive* OfFloat;
+  UserClassPrimitive* OfDouble;
+  UserClassPrimitive* OfVoid;
+
+  UserClass* OfObject;
+  
+  JavaField* methodClass;
+  JavaField* fieldClass;
+  JavaField* constructorClass;
+  
+  JavaMethod* EnqueueReference;
+  Class*      newReference;
+
+  /// upcalls - Upcall classes, fields and methods so that C++ code can call
+  /// Java code.
+  ///
+  Classpath* upcalls;
+  
+  /// InterfacesArray - The interfaces that array classes implement.
+  ///
+  UserClass** InterfacesArray;
+
+  /// SuperArray - The super of array classes.
+  UserClass* SuperArray;
+
+  /// Lists of UTF8s used internaly in VMKit.
+  const UTF8* NoClassDefFoundErrorName;
+  const UTF8* initName;
+  const UTF8* clinitName;
+  const UTF8* clinitType; 
+  const UTF8* initExceptionSig;
+  const UTF8* runName; 
+  const UTF8* prelib; 
+  const UTF8* postlib; 
+  const UTF8* mathName;
+  const UTF8* stackWalkerName;
+  const UTF8* abs;
+  const UTF8* sqrt;
+  const UTF8* sin;
+  const UTF8* cos;
+  const UTF8* tan;
+  const UTF8* asin;
+  const UTF8* acos;
+  const UTF8* atan;
+  const UTF8* atan2;
+  const UTF8* exp;
+  const UTF8* log;
+  const UTF8* pow;
+  const UTF8* ceil;
+  const UTF8* floor;
+  const UTF8* rint;
+  const UTF8* cbrt;
+  const UTF8* cosh;
+  const UTF8* expm1;
+  const UTF8* hypot;
+  const UTF8* log10;
+  const UTF8* log1p;
+  const UTF8* sinh;
+  const UTF8* tanh;
+  const UTF8* finalize;
+
+  /// primitiveMap - Map of primitive classes, hashed by id.
+  std::map<const char, UserClassPrimitive*> primitiveMap;
+
+  UserClassPrimitive* getPrimitiveClass(char id) {
+    return primitiveMap[id];
+  }
+
+  /// arrayTable - Table of array classes.
+  UserClassArray* arrayTable[8];
+
+  UserClassArray* getArrayClass(unsigned id) {
+    return arrayTable[id - 4];
+  }
 
 private:
-  ISOLATE_STATIC void CreateJavaThread(Jnjvm* vm, JavaThread* myth,
+  void CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                        const char* name, JavaObject* Group);
 
 public:
-  ISOLATE_STATIC void InitializeThreading(Jnjvm* vm);
+  void InitializeThreading(Jnjvm* vm);
 
-  ISOLATE_STATIC void CreateForeignJavaThread(Jnjvm* vm, JavaThread* myth);
+  void CreateForeignJavaThread(Jnjvm* vm, JavaThread* myth);
 };
 
 

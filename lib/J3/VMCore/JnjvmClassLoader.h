@@ -58,10 +58,12 @@ private:
   ///
   Jnjvm* isolate;
 
+public:
   /// vm - my vm
   ///
   Jnjvm* vm;
 
+private:
   /// javaLoder - The Java representation of the class loader. Null for the
   /// bootstrap class loader.
   ///
@@ -80,8 +82,7 @@ private:
   /// JnjvmClassLoader - Allocate a user-defined class loader. Called on
   /// first use of a Java class loader.
   ///
-  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
-                   JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate, Jnjvm* vm);
+  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate, Jnjvm* vm);
 
   /// lookupComponentName - Try to find the component name of the given array
   /// name. If the component name is not in the table of UTF8s and holder
@@ -234,11 +235,6 @@ public:
   ///
   const UTF8* readerConstructUTF8(const uint16* buf, uint32 size);
   
-  /// bootstrapLoader - The bootstrap loader of the JVM. Loads the base
-  /// classes.
-  ///
-  JnjvmBootstrapLoader* bootstrapLoader;
-  
   /// ~JnjvmClassLoader - Destroy the loader: destroy the tables, JIT module and
   /// module provider.
   ///
@@ -353,10 +349,9 @@ public:
   void analyseClasspathEnv(const char*);
   
   /// createBootstrapLoader - Creates the bootstrap loader, first thing
-  /// to do before any execution of a JVM. Also try to load libvmjc.so
-  /// if dlLoad is not false.
+  /// to do before any execution of a JVM. 
   ///
-  JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc, Jnjvm* vm, JavaCompiler* Comp, bool dlLoad);
+  JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc, Jnjvm* vm, JavaCompiler* Comp);
   
   virtual JavaString** UTF8ToStr(const UTF8* utf8);
 
@@ -364,68 +359,6 @@ public:
   /// a dynamic library
   ///
   void* nativeHandle;
-
-  /// upcalls - Upcall classes, fields and methods so that C++ code can call
-  /// Java code.
-  ///
-  Classpath* upcalls;
-  
-  /// InterfacesArray - The interfaces that array classes implement.
-  ///
-  UserClass** InterfacesArray;
-
-  /// SuperArray - The super of array classes.
-  UserClass* SuperArray;
-
-  /// Lists of UTF8s used internaly in VMKit.
-  const UTF8* NoClassDefFoundError;
-  const UTF8* initName;
-  const UTF8* clinitName;
-  const UTF8* clinitType; 
-  const UTF8* initExceptionSig;
-  const UTF8* runName; 
-  const UTF8* prelib; 
-  const UTF8* postlib; 
-  const UTF8* mathName;
-  const UTF8* stackWalkerName;
-  const UTF8* abs;
-  const UTF8* sqrt;
-  const UTF8* sin;
-  const UTF8* cos;
-  const UTF8* tan;
-  const UTF8* asin;
-  const UTF8* acos;
-  const UTF8* atan;
-  const UTF8* atan2;
-  const UTF8* exp;
-  const UTF8* log;
-  const UTF8* pow;
-  const UTF8* ceil;
-  const UTF8* floor;
-  const UTF8* rint;
-  const UTF8* cbrt;
-  const UTF8* cosh;
-  const UTF8* expm1;
-  const UTF8* hypot;
-  const UTF8* log10;
-  const UTF8* log1p;
-  const UTF8* sinh;
-  const UTF8* tanh;
-  const UTF8* finalize;
-
-  /// primitiveMap - Map of primitive classes, hashed by id.
-  std::map<const char, UserClassPrimitive*> primitiveMap;
-
-  UserClassPrimitive* getPrimitiveClass(char id) {
-    return primitiveMap[id];
-  }
-
-  /// arrayTable - Table of array classes.
-  UserClassArray* arrayTable[8];
-
-  UserClassArray* getArrayClass(unsigned id) {
-    return arrayTable[id - 4];
-  }
 
   virtual ~JnjvmBootstrapLoader();
 

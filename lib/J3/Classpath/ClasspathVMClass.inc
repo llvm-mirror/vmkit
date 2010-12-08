@@ -100,13 +100,12 @@ jboolean publicOnly) {
     ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(0, vm);
   } else {
     UserClass* realCl = cl->asClass();;
-    JnjvmClassLoader* classLoader = cl->classLoader;
     uint32 size = 0;
     
     for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
       JavaMethod* meth = &realCl->virtualMethods[i];
       bool pub = isPublic(meth->access);
-      if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
+      if (meth->name->equals(vm->upcalls->initName) && 
           (!publicOnly || pub)) {
         ++size;
       }
@@ -118,7 +117,7 @@ jboolean publicOnly) {
     for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
       JavaMethod* meth = &realCl->virtualMethods[i];
       bool pub = isPublic(meth->access);
-      if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
+      if (meth->name->equals(vm->upcalls->initName) && 
           (!publicOnly || pub)) {
         UserClass* Cons = vm->upcalls->newConstructor;
         tmp = Cons->doNew(vm);
@@ -160,14 +159,13 @@ jboolean publicOnly) {
     ret = (ArrayObject*)upcalls->methodArrayClass->doNew(0, vm);
   } else {
     UserClass* realCl = cl->asClass();
-    JnjvmClassLoader* classLoader = cl->classLoader;
     uint32 size = 0;
 
     for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
          ++i) {
       JavaMethod* meth = &realCl->virtualMethods[i];
       bool pub = isPublic(meth->access);
-      if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
+      if (!(meth->name->equals(vm->upcalls->initName)) && 
           (!publicOnly || pub)) {
         ++size; 
       }
@@ -181,7 +179,7 @@ jboolean publicOnly) {
          ++i) {
       JavaMethod* meth = &realCl->virtualMethods[i];
       bool pub = isPublic(meth->access);
-      if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
+      if (!(meth->name->equals(vm->upcalls->initName)) && 
           (!publicOnly || pub)) {
         // TODO: check parameter types
         UserClass* Meth = vm->upcalls->newMethod;

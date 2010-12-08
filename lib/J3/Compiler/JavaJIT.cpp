@@ -65,7 +65,7 @@ bool JavaJIT::canBeInlined(JavaMethod* meth) {
   return (meth->canBeInlined &&
           meth != compilingMethod && inlineMethods[meth] == 0 &&
           (loader == compilingClass->classLoader ||
-           loader == compilingClass->classLoader->bootstrapLoader));
+           loader == compilingClass->classLoader->vm->bootstrapLoader));
 }
 
 void JavaJIT::invokeVirtual(uint16 index) {
@@ -1363,8 +1363,7 @@ Value* JavaJIT::getTarget(Signdef* signature) {
 
 Instruction* JavaJIT::lowerMathOps(const UTF8* name, 
                                    std::vector<Value*>& args) {
-  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
-  if (name->equals(loader->abs)) {
+  if (name->equals(upcalls->abs)) {
     const Type* Ty = args[0]->getType();
     if (Ty == Type::getInt32Ty(*llvmContext)) {
       Constant* const_int32_9 = intrinsics->constantZero;
@@ -1397,71 +1396,71 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
       return llvm::CallInst::Create(intrinsics->func_llvm_fabs_f64, args[0],
                                     "tmp1", currentBlock);
     }
-  } else if (name->equals(loader->sqrt)) {
+  } else if (name->equals(upcalls->sqrt)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_sqrt_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->sin)) {
+  } else if (name->equals(upcalls->sin)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_sin_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->cos)) {
+  } else if (name->equals(upcalls->cos)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_cos_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->tan)) {
+  } else if (name->equals(upcalls->tan)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_tan_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->asin)) {
+  } else if (name->equals(upcalls->asin)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_asin_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->acos)) {
+  } else if (name->equals(upcalls->acos)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_acos_f64, args[0], 
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->atan)) {
+  } else if (name->equals(upcalls->atan)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_atan_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->atan2)) {
+  } else if (name->equals(upcalls->atan2)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_atan2_f64, 
                                   args.begin(), args.end(), "tmp1",
                                   currentBlock);
-  } else if (name->equals(loader->exp)) {
+  } else if (name->equals(upcalls->exp)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_exp_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->log)) {
+  } else if (name->equals(upcalls->log)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_log_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->pow)) {
+  } else if (name->equals(upcalls->pow)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_pow_f64, args.begin(),
                                   args.end(), "tmp1", currentBlock);
-  } else if (name->equals(loader->ceil)) {
+  } else if (name->equals(upcalls->ceil)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_ceil_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(loader->floor)) {
+  } else if (name->equals(upcalls->floor)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_floor_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->rint)) {
+  } else if (name->equals(upcalls->rint)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_rint_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->cbrt)) {
+  } else if (name->equals(upcalls->cbrt)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_cbrt_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(loader->cosh)) {
+  } else if (name->equals(upcalls->cosh)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_cosh_f64, args[0], "tmp1",
                                   currentBlock);
-  } else if (name->equals(loader->expm1)) {
+  } else if (name->equals(upcalls->expm1)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_expm1_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->hypot)) {
+  } else if (name->equals(upcalls->hypot)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_hypot_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->log10)) {
+  } else if (name->equals(upcalls->log10)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_log10_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->log1p)) {
+  } else if (name->equals(upcalls->log1p)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_log1p_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->sinh)) {
+  } else if (name->equals(upcalls->sinh)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_sinh_f64, args[0],
                                   "tmp1", currentBlock);
-  } else if (name->equals(loader->tanh)) {
+  } else if (name->equals(upcalls->tanh)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_tanh_f64, args[0],
                                   "tmp1", currentBlock);
   }
@@ -1524,7 +1523,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   makeArgs(it, index, args, signature->nbArguments + 1);
   JITVerifyNull(args[0]); 
   
-  if (meth == compilingClass->classLoader->bootstrapLoader->upcalls->InitObject) {
+  if (meth == upcalls->InitObject) {
     return;
   }
 
@@ -1558,10 +1557,9 @@ void JavaJIT::invokeStatic(uint16 index) {
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* staticType = LSI->getStaticType();
   ctpInfo->markAsStaticCall(index);
-  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
   llvm::Instruction* val = 0;
   
-  if (className->equals(loader->stackWalkerName)) {
+  if (className->equals(upcalls->stackWalkerName)) {
     callsStackWalker = true;
   }
 
@@ -1590,7 +1588,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   FunctionType::param_iterator it  = staticType->param_end();
   makeArgs(it, index, args, signature->nbArguments);
 
-  if (className->equals(loader->mathName)) {
+  if (className->equals(upcalls->mathName)) {
     val = lowerMathOps(name, args);
   }
     
@@ -1873,8 +1871,7 @@ void JavaJIT::getStaticField(uint16 index) {
   
   bool final = false;
 
-  JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
-  if (!compilingMethod->name->equals(JBL->clinitName)) {
+  if (!compilingMethod->name->equals(upcalls->clinitName)) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, true);
     if (field && field->classDef->isReady()) final = isFinal(field->access);
     if (final) {
@@ -1975,11 +1972,10 @@ void JavaJIT::getVirtualField(uint16 index) {
   
   Value* ptr = ldResolved(index, false, obj, LAI.llvmTypePtr);
   
-  JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   bool final = false;
   
   // In init methods, the fields have not been set yet.
-  if (!compilingMethod->name->equals(JBL->initName)) {
+  if (!compilingMethod->name->equals(upcalls->initName)) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, false);
     if (field) {
       final = isFinal(field->access) && sign->isPrimitive();

@@ -52,18 +52,18 @@ JavaString* strLib) {
   utf8Lib = JavaString::getValue(strLib);
   uint32 stLib = strLib->offset;
   sint32 lgLib = strLib->count;
-  sint32 lgPre = vm->bootstrapLoader->prelib->size;
-  sint32 lgPost = vm->bootstrapLoader->postlib->size;
+  sint32 lgPre = vm->upcalls->prelib->size;
+  sint32 lgPost = vm->upcalls->postlib->size;
   
   uint32 size = (uint32)(lgPre + lgLib + lgPost);
   array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
   uint16* elements = ArrayUInt16::getElements(array);
 
-  memmove(elements, vm->bootstrapLoader->prelib->elements,
+  memmove(elements, vm->upcalls->prelib->elements,
           lgPre * sizeof(uint16));
   memmove(&(elements[lgPre]), ArrayUInt16::getElements(utf8Lib) + stLib,
           lgLib * sizeof(uint16));
-  memmove(&(elements[lgPre + lgLib]), vm->bootstrapLoader->postlib->elements,
+  memmove(&(elements[lgPre + lgLib]), vm->upcalls->postlib->elements,
            lgPost * sizeof(uint16));
   
   res = vm->constructString(array);

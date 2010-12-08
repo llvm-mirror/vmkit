@@ -314,7 +314,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
       assert(cl && "exception class has not been loaded");
       ex->catchClass = cl;
     } else {
-      ex->catchClass = Classpath::newThrowable;
+      ex->catchClass = upcalls->newThrowable;
     }
     
     ex->tester = createBasicBlock("testException");

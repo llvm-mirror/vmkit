@@ -177,8 +177,8 @@ void UserClass::initialiseClass(Jnjvm* vm) {
   
       
       
-    JavaMethod* meth = lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
-                                             vm->bootstrapLoader->clinitType,
+    JavaMethod* meth = lookupMethodDontThrow(vm->upcalls->clinitName,
+                                             vm->upcalls->clinitType,
                                              true, false, 0);
 
     if (meth) {
@@ -213,7 +213,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //     in place of E in the following step.
 		jexc = Jnjvm::asJavaException(exc);
     if (jexc && JavaObject::getClass(jexc)->isAssignableFrom(vm->upcalls->newException)) {
-      Classpath* upcalls = classLoader->bootstrapLoader->upcalls;
+      Classpath* upcalls = vm->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
       Jnjvm* vm = JavaThread::get()->getJVM();
       obj = clExcp->doNew(vm);
@@ -1064,7 +1064,7 @@ mvm::VMThreadData* Jnjvm::buildVMThreadData(mvm::Thread* mut) {
 	JavaThread* th = new JavaThread(this, mut);
 	mut->allVmsData[vmID] = th; // will be done by my caller but I have to call java code before
 	mut->vmData = th;           // will be done by my caller but I have to call java code before
-	bootstrapLoader->upcalls->CreateForeignJavaThread(this, th);
+	upcalls->CreateForeignJavaThread(this, th);
 	return th;
 }
 
@@ -1077,8 +1077,8 @@ void Jnjvm::loadBootstrap() {
   
   // Initialise the bootstrap class loader if it's not
   // done already.
-  if (bootstrapLoader->upcalls->newString == NULL) {
-    bootstrapLoader->upcalls->initialiseClasspath(bootstrapLoader);
+  if (upcalls->newString == NULL) {
+    upcalls->postInitialiseClasspath(bootstrapLoader);
   }
   
 #define LOAD_CLASS(cl) \
@@ -1308,7 +1308,7 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
       }
     }
     
-    UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfString;
+    UserClassArray* array = vm->upcalls->ArrayOfString;
     args = (ArrayObject*)array->doNew(info.argc - 2, vm);
     for (int i = 2; i < info.argc; ++i) {
       ArrayObject::setElement(args, (JavaObject*)vm->asciizToStr(info.argv[i]), i - 2);
@@ -1343,8 +1343,10 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp
 	VirtualMachine(Alloc, vmkit), 
 	lockSystem(Alloc) {
 
-  bootstrapLoader = new(Alloc, "bootstrap loader") JnjvmBootstrapLoader(Alloc, this, Comp, dlLoad);
+  bootstrapLoader = new(Alloc, "bootstrap loader") JnjvmBootstrapLoader(Alloc, this, Comp);
 	bootstrapLoader->isolate = this;
+  
+  upcalls = new(allocator, "Classpath") Classpath(bootstrapLoader, dlLoad);
 
 	initialiseInternalVTs();
 
@@ -1354,8 +1356,6 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp
   appClassLoader = 0;
   jniEnv = &JNI_JNIEnvTable;
   javavmEnv = &JNI_JavaVMTable;
-  
-  upcalls = bootstrapLoader->upcalls;
 
   throwable = upcalls->newThrowable;
 

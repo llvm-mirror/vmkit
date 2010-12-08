@@ -319,7 +319,7 @@ JavaMethod* Class::lookupSpecialMethodDontThrow(const UTF8* name,
       isSuper(current->access) &&
       current != meth->classDef &&
       meth->classDef->isAssignableFrom(current) &&
-      !name->equals(classLoader->bootstrapLoader->initName)) {
+      !name->equals(classLoader->vm->upcalls->initName)) {
     meth = current->super->lookupMethodDontThrow(name, type, false, true, NULL);
   }
 
@@ -781,8 +781,8 @@ void Class::makeVT() {
   
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod& meth = virtualMethods[i];
-    if (meth.name->equals(classLoader->bootstrapLoader->finalize) &&
-        meth.type->equals(classLoader->bootstrapLoader->clinitType)) {
+    if (meth.name->equals(classLoader->vm->upcalls->finalize) &&
+        meth.type->equals(classLoader->vm->upcalls->clinitType)) {
       meth.offset = 0;
     } else {
       JavaMethod* parent = super? 
@@ -1286,8 +1286,8 @@ bool UserClass::needsInitialisationCheck() {
   if (nbStaticFields) return true;
 
   JavaMethod* meth = 
-    lookupMethodDontThrow(classLoader->bootstrapLoader->clinitName,
-                          classLoader->bootstrapLoader->clinitType, 
+    lookupMethodDontThrow(classLoader->vm->upcalls->clinitName,
+                          classLoader->vm->upcalls->clinitType, 
                           true, false, 0);
   
   if (meth) return true;
@@ -1300,7 +1300,7 @@ void ClassArray::initialiseVT(Class* javaLangObject) {
 
   ClassArray::SuperArray = javaLangObject;
   JnjvmClassLoader* JCL = javaLangObject->classLoader;
-  Classpath* upcalls = JCL->bootstrapLoader->upcalls;
+  Classpath* upcalls = JCL->vm->upcalls;
   
   assert(javaLangObject->virtualVT->init && 
          "Initializing array VT before JavaObjectVT");
@@ -1354,7 +1354,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
   if (C->super) {
 
     Class* referenceClass = 
-        C->classLoader->bootstrapLoader->upcalls->newReference;
+			C->classLoader->vm->upcalls->newReference;
     if (referenceClass != NULL && C->super->isAssignableFrom(referenceClass)) {
       tracer = (uintptr_t)ReferenceObjectTracer;
     } else {
@@ -1466,7 +1466,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
 
     // Set depth and display for fast dynamic type checking.
     JnjvmClassLoader* JCL = cl->classLoader;
-    Classpath* upcalls = JCL->bootstrapLoader->upcalls;
+    Classpath* upcalls = JCL->vm->upcalls;
     
     if (upcalls->ArrayOfObject) {
       UserCommonClass* base = C->baseClass();

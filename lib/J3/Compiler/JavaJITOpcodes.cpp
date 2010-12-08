@@ -2056,10 +2056,8 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           uint8 id = reader.readU1();
           i += 1;
           uint8 charId = arrayType(compilingMethod, id);
-          JnjvmBootstrapLoader* loader = 
-            compilingClass->classLoader->bootstrapLoader;
 
-          dcl = loader->getArrayClass(id);
+          dcl = upcalls->getArrayClass(id);
           valCl = TheCompiler->getNativeClass(dcl);
 
           LLVMAssessorInfo& LAI = TheCompiler->AssessorInfo[charId];
