@@ -177,36 +177,33 @@ public:
 	/// vmkit - a (shortcut) pointer to vmkit that contains information on all the vms
 	mvm::VMKit* vmkit;                                     // 5
 
-  /// MyVM - The VM attached to this Thread.
-  VirtualMachine* MyVM;                                  // 6
-
   /// baseSP - The base stack pointer.
-  void* baseSP;                                          // 7
+  void* baseSP;                                          // 6
 
   /// inRV - Flag to tell that the thread is being part of a rendezvous.
-  bool inRV;                                             // 8
+  bool inRV;                                             // 7
 
   /// joinedRV - Flag to tell that the thread has joined a rendezvous.
-  bool joinedRV;                                         // 9
+  bool joinedRV;                                         // 8
 
 private:
   /// lastSP - If the thread is running native code that can not be
   /// interrupted, lastSP is not null and contains the value of the
   /// stack pointer before entering native.
-  void* lastSP;                                          // 10
+  void* lastSP;                                          // 9
  
   /// internalThreadID - The implementation specific thread id.
-  void* internalThreadID;                                // 11
+  void* internalThreadID;                                // 10
 
 public:
   /// routine - The function to invoke when the thread starts.
-  void (*routine)(mvm::Thread*);                         // 12
+  void (*routine)(mvm::Thread*);                         // 11
 
   /// lastKnownFrame - The last frame that we know of, before resuming to JNI.
-  KnownFrame* lastKnownFrame;                            // 13
+  KnownFrame* lastKnownFrame;                            // 12
 
   /// allVmsData - the array of thread specific data.
-	VMThreadData** allVmsData;                             // 14
+	VMThreadData** allVmsData;                             // 13
 
 
 protected:

@@ -45,7 +45,6 @@ Thread::Thread(VMKit* vmk) {
 }
 
 void Thread::attach(VirtualMachine* vm) {
-	MyVM = vm;
 	vmData = allVmsData[vm->vmID];
 
 	if(!vmData) {

@@ -13,16 +13,15 @@
 ;;; field 3:  void*  vmData
 ;;; field 4:  gc*    pendingException
 ;;; field 5:  VMkit* vmkit
-;;; Field 6:  void*  MyVM
-;;; Field 7:  void*  baseSP
-;;; Field 8:  bool   inRV
-;;; Field 9:  bool   joinedRV
-;;; Field 10: void*  lastSP
-;;; Field 11: void*  internalThreadID
-;;; field 12: void*  routine
-;;; field 13: void*  lastKnownFrame
-;;; field 14: void*  allVMDatas
-%Thread       = type { %CircularBase, i1, i8*, i8*, i8*, i8*, i8*, i8*, i1, i1, i8*, i8*, i8*, i8*, i8* }
+;;; Field 6:  void*  baseSP
+;;; Field 7:  bool   inRV
+;;; Field 8:  bool   joinedRV
+;;; Field 9: void*  lastSP
+;;; Field 10: void*  internalThreadID
+;;; field 11: void*  routine
+;;; field 12: void*  lastKnownFrame
+;;; field 13: void*  allVMDatas
+%Thread       = type { %CircularBase, i1, i8*, i8*, i8*, i8*, i8*, i1, i1, i8*, i8*, i8*, i8*, i8* }
 
 ;;; field 0: VT
 ;;; field 1: mvm::MutatorThread*  mut
