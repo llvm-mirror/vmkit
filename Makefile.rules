@@ -133,7 +133,7 @@ ifneq ($(DISABLE_MMTK_COMPILE), 1)
 
 all:: $(LibDir)/FinalMMTk.bc
 
-$(LibDir)/FinalMMTk.bc: $(JARNAME).jar $(VMJC)
+$(LibDir)/FinalMMTk.bc: $(JARNAME).jar $(VMJC) $(LibDir)/MMTKAlloc.bc $(LibDir)/MMTKMagic$(SHLIBEXT) $(LibDir)/MMTKRuntime.bc
 	$(Echo) Building $(BuildMode) FinalMMTk $(notdir $@)
 	$(Verb) $(LOPT) -load=$(LibDir)/JITGCPass$(SHLIBEXT) -std-compile-opts -JITGCPass -f $(LibDir)/MMTKAlloc.bc -o $(LibDir)/MMTKAlloc.bc
 	$(Verb) $(VMJC) -std-compile-opts $(ADDITIONAL_ARGS) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic $(PROJ_OBJ_ROOT)/mmtk/java/$(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=$(PROJ_SRC_ROOT)/mmtk/java/vmkit.properties -disable-stubs -assume-compiled -llvm-lazy
