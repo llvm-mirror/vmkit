@@ -667,6 +667,7 @@ NM
 ac_ct_CXX
 CXXFLAGS
 CXX
+WITH_TOY
 WITH_N3
 monopath
 WITH_N3_MONO
@@ -774,6 +775,7 @@ with_j3
 with_pnet_local_prefix
 with_pnetlib
 with_mono
+with_toy
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1438,6 +1440,7 @@ Optional Packages:
                           Pnetlib's mscorlib.dll location (default is
                           /usr/lib/cscc/lib/)
   --with-mono=something   Mono's mscorlib.dll location (no default)
+  --with-toy=yes|no       Build the toy virtual machine (default is yes)
 
 Some influential environment variables:
   CC          C compiler command
@@ -4309,6 +4312,18 @@ else
 fi
 
 
+
+
+
+
+
+# Check whether --with-toy was given.
+if test "${with_toy+set}" = set; then
+  withval=$with_toy; WITH_TOY=$withval
+else
+  WITH_TOY=yes
+
+fi
 
 
 

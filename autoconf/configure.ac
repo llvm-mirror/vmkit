@@ -422,6 +422,18 @@ AC_SUBST([monopath])
 
 AC_SUBST([WITH_N3])
 
+dnl **************************************************************************
+dnl toy vm
+dnl **************************************************************************
+AC_ARG_WITH(toy,
+       [AS_HELP_STRING(--with-toy=yes|no,
+        [Build the toy virtual machine (default is yes)])],
+       [[WITH_TOY=$withval]],
+       [[WITH_TOY=yes]]
+)
+
+AC_SUBST([WITH_TOY])
+
 dnl===-----------------------------------------------------------------------===
 dnl===
 dnl=== SECTION 4: Check for programs we need and that they are the right version
