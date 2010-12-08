@@ -895,7 +895,7 @@ void JavaStaticMethodInfo::print(void* ip, void* addr) {
   fprintf(stderr, "\n");
 }
 
-void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
+void JnjvmClassLoader::insertAllMethodsInVM() {
   for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
        i != e; ++i) {
     CommonClass* cl = i->second;
@@ -923,7 +923,7 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
   }
 }
 
-void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
+void JnjvmClassLoader::loadLibFromJar(const char* name,
                                       const char* file) {
 
   mvm::ThreadAllocator threadAllocator;
@@ -938,12 +938,12 @@ void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
       static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
       assert(init && "Loaded the wrong library");
       init(this);
-      insertAllMethodsInVM(vm);
+      insertAllMethodsInVM();
     }
   }
 }
 
-void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
+void JnjvmClassLoader::loadLibFromFile(const char* name) {
   mvm::ThreadAllocator threadAllocator;
   assert(classes->map.size() == 0);
   char* soName = (char*)threadAllocator.Allocate(
@@ -955,18 +955,18 @@ void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
     if (cl) {
       static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
       init(this);
-      insertAllMethodsInVM(vm);
+      insertAllMethodsInVM();
     }
   }
 }
 
-Class* JnjvmClassLoader::loadClassFromSelf(Jnjvm* vm, const char* name) {
+Class* JnjvmClassLoader::loadClassFromSelf(const char* name) {
   assert(classes->map.size() == 0);
   Class* cl = (Class*)dlsym(SELF_HANDLE, name);
   if (cl) {
     static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
     init(this);
-    insertAllMethodsInVM(vm);
+    insertAllMethodsInVM();
   }
   return cl;
 }

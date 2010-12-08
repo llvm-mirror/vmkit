@@ -1050,10 +1050,10 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
     appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader,
                                                                     this);
     if (argumentsInfo.jarFile) {
-      appClassLoader->loadLibFromJar(this, argumentsInfo.jarFile,
+      appClassLoader->loadLibFromJar(argumentsInfo.jarFile,
                                      argumentsInfo.className);
     } else if (argumentsInfo.className) {
-      appClassLoader->loadLibFromFile(this, argumentsInfo.className);
+      appClassLoader->loadLibFromFile(argumentsInfo.className);
     }
   }
   return appClassLoader;
@@ -1186,7 +1186,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
 
   TRY {
     // First try to see if we are a self-contained executable.
-    UserClass* cl = appClassLoader->loadClassFromSelf(this, className);
+    UserClass* cl = appClassLoader->loadClassFromSelf(className);
     
     // If not, load the class.
     if (cl == NULL) {
@@ -1366,7 +1366,7 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp
     end = end->prev;
   }
 
-  bootstrapLoader->insertAllMethodsInVM(this);  
+  bootstrapLoader->insertAllMethodsInVM();
 }
 
 Jnjvm::~Jnjvm() {
