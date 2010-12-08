@@ -197,7 +197,6 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
   UserClass* cl = internalLoad(name, doResolve, strName);
 
   if (!cl && doThrow) {
-    Jnjvm* vm = JavaThread::get()->getJVM();
     if (name->equals(vm->upcalls->NoClassDefFoundErrorName)) {
       fprintf(stderr, "Unable to load NoClassDefFoundError");
       abort();

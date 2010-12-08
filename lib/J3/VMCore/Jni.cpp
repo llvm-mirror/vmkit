@@ -58,10 +58,9 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
 
   JnjvmClassLoader* loader = 0;
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
   UserClass* currentClass = th->getCallingClassLevel(0);
   if (currentClass) loader = currentClass->classLoader;
-  else loader = vm->appClassLoader;
+  else loader = myVM(env)->appClassLoader;
 
   UserCommonClass* cl = loader->loadClassFromAsciiz(asciiz, true, true);
   if (cl && cl->asClass()) {
@@ -150,12 +149,12 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   llvm_gcroot(res, 0);
   llvm_gcroot(str, 0);
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  
   verifyNull(Cl);
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, true);
   if (!cl->isClass()) RETURN_FROM_JNI(0);
 
+  Jnjvm* vm = cl->classLoader->vm;
+  
   UserClass* realCl = cl->asClass();
   res = realCl->doNew();
   JavaMethod* init = realCl->lookupMethod(vm->upcalls->initName,
@@ -2505,9 +2504,8 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass _elementClass,
   llvm_gcroot(res, 0);
 
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
 
-  if (length < 0) vm->negativeArraySizeException(length);
+  if (length < 0) th->getJVM()->negativeArraySizeException(length);
   
   UserCommonClass* base =
     UserCommonClass::resolvedImplClass(elementClass, true);
@@ -2542,10 +2540,9 @@ jobject GetObjectArrayElement(JNIEnv *env, jobjectArray _array, jsize index) {
   llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
   
   if (index >= ArrayObject::getSize(array)) {
-    vm->indexOutOfBounds(array, index);
+    th->getJVM()->indexOutOfBounds(array, index);
   }
   
   // Store local refererence.
@@ -2572,7 +2569,7 @@ void SetObjectArrayElement(JNIEnv *env, jobjectArray _array, jsize index,
   llvm_gcroot(val, 0);
 
   if (index >= ArrayObject::getSize(array)) {
-    JavaThread::get()->getJVM()->indexOutOfBounds(array, index);
+    myVM(env)->indexOutOfBounds(array, index);
   }
   
   // Store global reference.
@@ -2594,8 +2591,7 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfBool->doNew(len);
+  res = th->getJVM()->upcalls->ArrayOfBool->doNew(len);
   jbooleanArray ret = (jbooleanArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2613,8 +2609,7 @@ jbyteArray NewByteArray(JNIEnv *env, jsize len) {
   llvm_gcroot(res, 0);
 
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfByte->doNew(len);
+  res = th->getJVM()->upcalls->ArrayOfByte->doNew(len);
   jbyteArray ret = (jbyteArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2631,8 +2626,7 @@ jcharArray NewCharArray(JNIEnv *env, jsize len) {
   llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfChar->doNew(len);
+  res = th->getJVM()->upcalls->ArrayOfChar->doNew(len);
   jcharArray ret = (jcharArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2649,8 +2643,7 @@ jshortArray NewShortArray(JNIEnv *env, jsize len) {
   llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfShort->doNew(len);
+  res = th->getJVM()->upcalls->ArrayOfShort->doNew(len);
   jshortArray ret = (jshortArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2667,8 +2660,7 @@ jintArray NewIntArray(JNIEnv *env, jsize len) {
   llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfInt->doNew(len);
+  res = th->getJVM()->upcalls->ArrayOfInt->doNew(len);
   jintArray ret = (jintArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2685,8 +2677,7 @@ jlongArray NewLongArray(JNIEnv *env, jsize len) {
   llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfLong->doNew(len);
+  res = th->getJVM()->upcalls->ArrayOfLong->doNew(len);
   jlongArray ret = (jlongArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2703,8 +2694,7 @@ jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfFloat->doNew(len);
+  res = th->getJVM()->upcalls->ArrayOfFloat->doNew(len);
   jfloatArray ret = (jfloatArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2721,8 +2711,7 @@ jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   llvm_gcroot(res, 0);
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfDouble->doNew(len);
+  res = th->getJVM()->upcalls->ArrayOfDouble->doNew(len);
   jdoubleArray ret = (jdoubleArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -3369,7 +3358,7 @@ jint MonitorExit(JNIEnv *env, jobject _obj) {
   if (Obj != NULL) {
 
     if (!JavaObject::owner(Obj)) {
-      JavaThread::get()->getJVM()->illegalMonitorStateException(Obj);    
+      myVM(env)->illegalMonitorStateException(Obj);    
     }
   
     JavaObject::release(Obj);
@@ -3385,8 +3374,7 @@ jint MonitorExit(JNIEnv *env, jobject _obj) {
 
 jint GetJavaVM(JNIEnv *env, JavaVM **vm) {
   BEGIN_JNI_EXCEPTION
-  Jnjvm* myvm = JavaThread::get()->getJVM();
-  (*vm) = (JavaVM*)(void*)(&(myvm->javavmEnv));
+  (*vm) = (JavaVM*)(void*)(&(myVM(env)->javavmEnv));
   RETURN_FROM_JNI(0);
   END_JNI_EXCEPTION
   RETURN_FROM_JNI(0);
@@ -3491,8 +3479,7 @@ jobject NewGlobalRef(JNIEnv* env, jobject obj) {
     Obj = *(JavaObject**)obj;
     llvm_gcroot(Obj, 0);
 
-    Jnjvm* vm = JavaThread::get()->getJVM();
-
+    Jnjvm* vm = myVM(env);
 
     vm->globalRefsLock.lock();
     JavaObject** res = vm->globalRefs.addJNIReference(Obj);
@@ -3547,22 +3534,22 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
   llvm_gcroot(p, 0);
 
   JavaThread* th = JavaThread::get();
-  Jnjvm* myvm = th->getJVM();
-  UserClass* BB = myvm->upcalls->newDirectByteBuffer;
+  Jnjvm* vm = th->getJVM();
+  UserClass* BB = vm->upcalls->newDirectByteBuffer;
 
   res = BB->doNew();
 
 #if (__WORDSIZE == 32)
-  UserClass* PP = myvm->upcalls->newPointer32;
+  UserClass* PP = vm->upcalls->newPointer32;
   p = PP->doNew();
-  myvm->upcalls->dataPointer32->setInstanceInt32Field(p, (uint32)address);
+  vm->upcalls->dataPointer32->setInstanceInt32Field(p, (uint32)address);
 #else
-  UserClass* PP = myvm->upcalls->newPointer64;
+  UserClass* PP = vm->upcalls->newPointer64;
   p = PP->doNew();
-  myvm->upcalls->dataPointer64->setInstanceLongField(p, (jlong)address);
+  vm->upcalls->dataPointer64->setInstanceLongField(p, (jlong)address);
 #endif
 
-  myvm->upcalls->InitDirectByteBuffer->invokeIntSpecial(BB, res, 0, &p,
+  vm->upcalls->InitDirectByteBuffer->invokeIntSpecial(BB, res, 0, &p,
                                                         (uint32)capacity,
                                                         (uint32)capacity, 0);
 
@@ -3642,13 +3629,13 @@ jint GetEnv(JavaVM *vm, void **env, jint version) {
 
   BEGIN_JNI_EXCEPTION
 
-  JavaThread* _th = JavaThread::get();
-  JavaObject* obj = _th->currentThread();
+  JavaThread* th = JavaThread::get();
+  JavaObject* obj = th->currentThread();
   llvm_gcroot(obj, 0);
 
-  Jnjvm* myvm = _th->getJVM();
+  Jnjvm* vm = th->getJVM();
   if (obj != 0) {
-    (*env) = &(myvm->jniEnv);
+    (*env) = &(vm->jniEnv);
     RETURN_FROM_JNI(JNI_OK);
   } else {
     (*env) = 0;

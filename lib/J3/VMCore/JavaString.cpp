@@ -97,7 +97,7 @@ void JavaString::stringDestructor(JavaString* str) {
   llvm_gcroot(value, 0);
   value = JavaString::getValue(str);
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
+  Jnjvm* vm = str->getJVM();
   assert(vm && "No vm when destroying a string");
   if (value != NULL) vm->hashStr.removeUnlocked(value, str);
 }

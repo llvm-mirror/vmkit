@@ -38,9 +38,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
 	mvm::Thread* mut = mvm::Thread::get();
   uint32 length = mut->getFrameContextLength();
 
-  JavaThread* th = JavaThread::j3Thread(mut);
-  Jnjvm* vm = th->getJVM();
- 
+  Jnjvm* vm = JavaThread::j3Thread(mut)->getJVM();
 
   if (sizeof(void*) == 4) {
     ClassArray* cl = vm->upcalls->ArrayOfInt;
@@ -98,7 +96,7 @@ JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   llvm_gcroot(sourceName, 0);
   llvm_gcroot(res, 0);
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
+  Jnjvm* vm = meth->classDef->classLoader->vm;
   methodName = vm->internalUTF8ToStr(meth->name);
   Class* cl = meth->classDef;
   className = JavaString::internalToJava(cl->name, vm);

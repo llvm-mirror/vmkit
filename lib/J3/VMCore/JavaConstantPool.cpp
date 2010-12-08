@@ -515,8 +515,7 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
 JavaString* JavaConstantPool::resolveString(const UTF8* utf8, uint16 index) {
   JavaString* str = NULL;
   llvm_gcroot(str, 0);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  str = vm->internalUTF8ToStr(utf8);
+  str = classDef->classLoader->vm->internalUTF8ToStr(utf8);
   return str;
 }
 

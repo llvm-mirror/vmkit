@@ -120,22 +120,22 @@ void JavaObject::notifyAll(JavaObject* self) {
 
 void JavaObject::overflowThinLock(JavaObject* self) {
   llvm_gcroot(self, 0);
-  mvm::ThinLock::overflowThinLock(self, JavaThread::get()->getJVM()->lockSystem);
+  mvm::ThinLock::overflowThinLock(self, self->getJVM()->lockSystem);
 }
 
 void JavaObject::acquire(JavaObject* self) {
   llvm_gcroot(self, 0);
-  mvm::ThinLock::acquire(self, JavaThread::get()->getJVM()->lockSystem);
+  mvm::ThinLock::acquire(self, self->getJVM()->lockSystem);
 }
 
 void JavaObject::release(JavaObject* self) {
   llvm_gcroot(self, 0);
-  mvm::ThinLock::release(self, JavaThread::get()->getJVM()->lockSystem);
+  mvm::ThinLock::release(self, self->getJVM()->lockSystem);
 }
 
 bool JavaObject::owner(JavaObject* self) {
   llvm_gcroot(self, 0);
-  return mvm::ThinLock::owner(self, JavaThread::get()->getJVM()->lockSystem);
+  return mvm::ThinLock::owner(self, self->getJVM()->lockSystem);
 }
 
 void JavaObject::decapsulePrimitive(JavaObject* obj, Jnjvm *vm, jvalue* buf,

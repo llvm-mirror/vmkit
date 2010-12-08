@@ -202,7 +202,7 @@ extern "C" JavaString* Java_java_lang_VMString_intern__Ljava_lang_String_2(
   
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
+  Jnjvm* vm = obj->getJVM();
   array = JavaString::strToArray(obj, vm);
   res = vm->constructString(array);
   

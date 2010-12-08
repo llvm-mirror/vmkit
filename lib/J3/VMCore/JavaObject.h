@@ -237,6 +237,8 @@ private:
   
 public:
 
+	Jnjvm* getJVM() { return (Jnjvm*)getVirtualTable()->vm; }
+
   /// getClass - Returns the class of this object.
   ///
   static UserCommonClass* getClass(const JavaObject* self) {
