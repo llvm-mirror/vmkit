@@ -348,7 +348,7 @@ FatLock* LockSystem::allocate(gc* obj) {
   
     FatLock** tab = LockTable[index >> BitIndex];
   
-    VirtualMachine* vm = mvm::Thread::get()->MyVM;
+    VirtualMachine* vm = obj->getVirtualTable()->vm;
     if (tab == NULL) {
       tab = (FatLock**)vm->allocator.Allocate(
           IndexSize * sizeof(FatLock*), "Index LockTable");

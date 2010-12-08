@@ -85,7 +85,7 @@ extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_Obj
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
     MMTkObject* OM, mvm::gc* src, int allocator) {
-  size_t size = mvm::Thread::get()->MyVM->getObjectSize(src);
+  size_t size = src->getVirtualTable()->vm->getObjectSize(src);
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
   uintptr_t res = JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
       src, src->getVirtualTable(), size, allocator);
@@ -137,7 +137,7 @@ class FakeByteArray : public MMTkObject {
 
 extern "C" FakeByteArray* Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* OM, mvm::gc* src) {
-  const char* name = mvm::Thread::get()->MyVM->getObjectTypeName(src);
+  const char* name = src->getVirtualTable()->vm->getObjectTypeName(src);
   // This code is only used for debugging on a fatal error. It is fine to
   // allocate in the C++ heap.
   return new (strlen(name)) FakeByteArray(name);
