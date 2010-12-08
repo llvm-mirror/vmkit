@@ -69,15 +69,15 @@ public:
 
   /// getReferentPtr - return the referent of a reference
   ///
-	virtual mvm::gc** getReferent(mvm::gc* ref) { abort(); }
+	virtual mvm::gc** getReferent(mvm::gc* ref) = 0;
 
   /// setReferentPtr - set the referent of a reference
   ///
-	virtual void setReferent(mvm::gc* ref, mvm::gc* val) { abort(); }
+	virtual void setReferent(mvm::gc* ref, mvm::gc* val) = 0;
 
   /// enqueueReference - enqueue the reference
   ///
-	virtual bool enqueueReference(mvm::gc* _obj) { abort(); }
+	virtual bool enqueueReference(mvm::gc* _obj) = 0;
 
   /// tracer - Trace this virtual machine's GC-objects. 
 	///    Called once by vm. If you have GC-objects in a thread specific data, redefine the tracer of your VMThreadData.
@@ -86,7 +86,7 @@ public:
 
   /// getObjectSize - Get the size of this object. Used by copying collectors.
   ///
-  virtual size_t getObjectSize(gc* object) { abort(); }
+  virtual size_t getObjectSize(gc* object) = 0;
 
   /// getObjectTypeName - Get the type of this object. Used by the GC for
   /// debugging purposes.
@@ -99,10 +99,10 @@ public:
 
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.
-  virtual void runApplication(int argc, char** argv) { abort(); }
+  virtual void runApplication(int argc, char** argv) = 0;
   
   /// waitForExit - Wait until the virtual machine stops its execution.
-  virtual void waitForExit() { abort(); }
+  virtual void waitForExit() = 0;
 };
 
 } // end namespace mvm
