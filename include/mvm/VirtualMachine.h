@@ -50,7 +50,45 @@ public:
 //===----------------------------------------------------------------------===//
 	/// buildVMThreadData - allocate a java thread for the underlying mutator. Called when the java thread is a foreign thread.
 	///
-	virtual VMThreadData* buildVMThreadData(Thread* mut) { return new VMThreadData(this, mut); }
+	virtual VMThreadData* buildVMThreadData(Thread* mut) = 0; //{ return new VMThreadData(this, mut); }
+
+  /// nbNonDaemonThreads - Number of threads in the system that are not daemon
+  /// threads.
+  uint16 nbNonDaemonThreads;
+
+  /// nonDaemonLock - Protection lock for the nonDaemonThreads variable.
+  mvm::LockNormal nonDaemonLock;
+
+  /// nonDaemonVar - Condition variable to wake up the initial thread when it
+  /// waits for other non-daemon threads to end. The non-daemon thread that
+  /// decrements the nonDaemonThreads variable to zero wakes up the initial
+  /// thread.
+  mvm::Cond nonDaemonVar;
+  
+  /// enter - A thread calls this function when it enters the thread system.
+  virtual void enterNonDeamonMode();
+
+  /// leave - A thread calls this function when it leaves the thread system.
+  virtual void leaveNonDeamonMode();
+
+	virtual void runApplicationImpl(int argc, char** argv) {};
+
+  /// runInNonDeamonThread - start a non deamon thread a begin the code with start if != 0 and runApplicationImpl otherwise
+	/// the thread leaves the deamon mode when it finishs.
+	void runInNonDeamonThread(void (*start)(VirtualMachine*, int, char**), int argc, char** argv);
+
+  /// runInNonDeamonThread - start a non deamon thread a begin the code with runApplicationImpl, 
+	void runInNonDeamonThread(int argc, char **argv) { runInNonDeamonThread(0, argc, argv); }
+
+  /// waitNonDeamonThreads - wait until all the non deamon threads are terminated.
+	void waitForNonDeamonThreads();
+
+  /// runApplication - Run an application. The application name is in
+  /// the arguments, hence it is the virtual machine's job to parse them.
+  virtual void runApplication(int argc, char** argv) = 0;
+  
+  /// waitForExit - Wait until the virtual machine stops its execution.
+  virtual void waitForExit() = 0;
 
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.
@@ -96,13 +134,6 @@ public:
 //===----------------------------------------------------------------------===//
 // (4) Launch-related methods.
 //===----------------------------------------------------------------------===//
-
-  /// runApplication - Run an application. The application name is in
-  /// the arguments, hence it is the virtual machine's job to parse them.
-  virtual void runApplication(int argc, char** argv) = 0;
-  
-  /// waitForExit - Wait until the virtual machine stops its execution.
-  virtual void waitForExit() = 0;
 };
 
 } // end namespace mvm
