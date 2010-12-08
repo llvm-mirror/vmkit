@@ -70,8 +70,7 @@ JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  res = JavaObject::getClass(obj)->getClassDelegatee(vm);
+  res = JavaObject::getClass(obj)->getClassDelegatee();
 
   END_NATIVE_EXCEPTION
 

@@ -26,14 +26,13 @@ Jnjvm* myVM(JNIEnv* env) {
   return JavaThread::get()->getJVM();
 }
 
-UserClass* getClassFromStaticMethod(Jnjvm* vm, JavaMethod* meth,
+UserClass* getClassFromStaticMethod(JavaMethod* meth,
                                     JavaObject* clazz) {
   llvm_gcroot(clazz, 0);
   return meth->classDef;
 }
 
-static UserClass* getClassFromVirtualMethod(Jnjvm* vm, 
-                                            JavaMethod* meth,
+static UserClass* getClassFromVirtualMethod(JavaMethod* meth,
                                             UserCommonClass* cl) {
   return meth->classDef;
 }
@@ -67,9 +66,9 @@ jclass FindClass(JNIEnv *env, const char *asciiz) {
   UserCommonClass* cl = loader->loadClassFromAsciiz(asciiz, true, true);
   if (cl && cl->asClass()) {
     assert(cl->asClass()->isResolved());
-    cl->asClass()->initialiseClass(vm);
+    cl->asClass()->initialiseClass();
   }
-  jclass res = (jclass)cl->getClassDelegateePtr(vm);
+  jclass res = (jclass)cl->getClassDelegateePtr();
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -85,9 +84,9 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
   JavaObject* meth = *(JavaObject**)method;
   llvm_gcroot(meth, 0);
 
-  Jnjvm* vm = myVM(env);
-  Classpath* upcalls = vm->upcalls;
   UserCommonClass* cl = JavaObject::getClass(meth);
+  Jnjvm* vm = cl->classLoader->vm;
+  Classpath* upcalls = vm->upcalls;
   if (cl == upcalls->newConstructor)  {
     jmethodID res = (jmethodID)JavaObjectMethod::getInternalMethod((JavaObjectMethod*)meth);
     RETURN_FROM_JNI(res);
@@ -118,11 +117,10 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass _sub, jclass _sup) {
   llvm_gcroot(sub, 0);
   llvm_gcroot(sup, 0);
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl2 = 
-    UserCommonClass::resolvedImplClass(vm, sup, false);
+    UserCommonClass::resolvedImplClass(sup, false);
   UserCommonClass* cl1 = 
-    UserCommonClass::resolvedImplClass(vm, sub, false);
+    UserCommonClass::resolvedImplClass(sub, false);
 
   jboolean res = (jboolean)cl1->isAssignableFrom(cl2);
   RETURN_FROM_JNI(res);
@@ -155,16 +153,16 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   
   verifyNull(Cl);
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, true);
   if (!cl->isClass()) RETURN_FROM_JNI(0);
 
   UserClass* realCl = cl->asClass();
-  res = realCl->doNew(vm);
+  res = realCl->doNew();
   JavaMethod* init = realCl->lookupMethod(vm->upcalls->initName,
                                           vm->upcalls->initExceptionSig,
                                           false, true, 0);
   str = vm->asciizToStr(msg);
-  init->invokeIntSpecial(vm, realCl, res, &str);
+  init->invokeIntSpecial(realCl, res, &str);
 	mut->setPendingException(res);
   
   RETURN_FROM_JNI(1);
@@ -267,13 +265,12 @@ jobject AllocObject(JNIEnv *env, jclass _clazz) {
   llvm_gcroot(res, 0);
 
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
 
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(clazz, true);
   if (!cl->isClass()) RETURN_FROM_JNI(0);
 
   // Store local reference
-  res = cl->asClass()->doNew(vm);
+  res = cl->asClass()->doNew();
  
   jobject ret = (jobject)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
@@ -295,16 +292,15 @@ jobject NewObject(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(clazz, true);
   if (!cl->isClass()) RETURN_FROM_JNI(0);
   
   // Store local reference
-  res = cl->asClass()->doNew(vm);
+  res = cl->asClass()->doNew();
 
   va_list ap;
   va_start(ap, methodID);
-  meth->invokeIntSpecialAP(vm, cl->asClass(), res, ap);
+  meth->invokeIntSpecialAP(cl->asClass(), res, ap);
   va_end(ap);
  
   jobject ret = (jobject)th->pushJNIRef(res);
@@ -334,14 +330,13 @@ jobject NewObjectA(JNIEnv* env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(res, 0);
 
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
   JavaMethod* meth = (JavaMethod*)methodID;
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(clazz, true);
   
   // Store local reference
-  res = cl->asClass()->doNew(vm);
+  res = cl->asClass()->doNew();
 
-  meth->invokeIntSpecialBuf(vm, cl->asClass(), res, (void*)args);
+  meth->invokeIntSpecialBuf(cl->asClass(), res, (void*)args);
 
   jobject ret = (jobject)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
@@ -359,11 +354,8 @@ jclass GetObjectClass(JNIEnv *env, jobject _obj) {
   JavaObject* obj = *(JavaObject**)_obj;
   llvm_gcroot(obj, 0);
 
-  JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  
   // Store local reference
-  jclass res = (jclass)JavaObject::getClass(obj)->getClassDelegateePtr(vm);
+  jclass res = (jclass)JavaObject::getClass(obj)->getClassDelegateePtr();
   RETURN_FROM_JNI(res);
   
   END_JNI_EXCEPTION
@@ -410,8 +402,7 @@ jmethodID GetMethodID(JNIEnv* env, jclass _clazz, const char *aname,
   JavaObject* clazz = *(JavaObject**)_clazz;
   llvm_gcroot(clazz, 0);
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(clazz, true);
 
   UserClass* realCl = cl->isClass() ? cl->asClass() : cl->super;
 
@@ -446,10 +437,9 @@ jobject CallObjectMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
   
-  res = meth->invokeJavaObjectVirtualAP(vm, cl, obj, ap);
+  res = meth->invokeJavaObjectVirtualAP(cl, obj, ap);
   va_end(ap);
 
   jobject ret = (jobject)th->pushJNIRef(res);
@@ -475,11 +465,10 @@ jobject CallObjectMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
   
   // Store local reference.
-  res = meth->invokeJavaObjectVirtualAP(vm, cl, obj, args);
+  res = meth->invokeJavaObjectVirtualAP(cl, obj, args);
   
   jobject ret = (jobject)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
@@ -512,11 +501,10 @@ jboolean CallBooleanMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   llvm_gcroot(self, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl =
-      getClassFromVirtualMethod(vm, meth, JavaObject::getClass(self));
+      getClassFromVirtualMethod(meth, JavaObject::getClass(self));
   
-  uint32 res = meth->invokeIntVirtualAP(vm, cl, self, ap);
+  uint32 res = meth->invokeIntVirtualAP(cl, self, ap);
   va_end(ap);
 
   RETURN_FROM_JNI(res);
@@ -538,9 +526,8 @@ jboolean CallBooleanMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jboolean res = (jboolean)meth->invokeIntVirtualAP(vm, cl, obj, args);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jboolean res = (jboolean)meth->invokeIntVirtualAP(cl, obj, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -575,9 +562,8 @@ jbyte CallByteMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jbyte res = (jbyte)meth->invokeIntVirtualAP(vm, cl, obj, args);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jbyte res = (jbyte)meth->invokeIntVirtualAP(cl, obj, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -613,9 +599,8 @@ jchar CallCharMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
  
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jchar res = (jchar)meth->invokeIntVirtualAP(vm, cl, obj, args);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jchar res = (jchar)meth->invokeIntVirtualAP(cl, obj, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -651,9 +636,8 @@ jshort CallShortMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jshort res = (jshort)meth->invokeIntVirtualAP(vm, cl, obj, args);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jshort res = (jshort)meth->invokeIntVirtualAP(cl, obj, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -685,10 +669,9 @@ jint CallIntMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
   
-  uint32 res = meth->invokeIntVirtualAP(vm, cl, obj, ap);
+  uint32 res = meth->invokeIntVirtualAP(cl, obj, ap);
   va_end(ap);
   
   RETURN_FROM_JNI(res);
@@ -710,10 +693,9 @@ jint CallIntMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
   
-  jint res = (jint)meth->invokeIntVirtualAP(vm, cl, obj, args);
+  jint res = (jint)meth->invokeIntVirtualAP(cl, obj, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -750,9 +732,8 @@ jlong CallLongMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jlong res = (jlong)meth->invokeLongVirtualAP(vm, cl, obj, args);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jlong res = (jlong)meth->invokeLongVirtualAP(cl, obj, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -784,9 +765,8 @@ jfloat CallFloatMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jfloat res = meth->invokeFloatVirtualAP(vm, cl, obj, ap);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jfloat res = meth->invokeFloatVirtualAP(cl, obj, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -807,9 +787,8 @@ jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jfloat res = (jfloat)meth->invokeFloatVirtualAP(vm, cl, obj, args);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jfloat res = (jfloat)meth->invokeFloatVirtualAP(cl, obj, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -841,9 +820,8 @@ jdouble CallDoubleMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jdouble res = meth->invokeDoubleVirtualAP(vm, cl, obj, ap);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jdouble res = meth->invokeDoubleVirtualAP(cl, obj, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -864,9 +842,8 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  jdouble res = (jdouble)meth->invokeDoubleVirtualAP(vm, cl, obj, args);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  jdouble res = (jdouble)meth->invokeDoubleVirtualAP(cl, obj, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -898,9 +875,8 @@ void CallVoidMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
   llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  meth->invokeIntVirtualAP(vm, cl, obj, ap);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  meth->invokeIntVirtualAP(cl, obj, ap);
   va_end(ap);
 
   RETURN_VOID_FROM_JNI;
@@ -923,9 +899,8 @@ void CallVoidMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  meth->invokeIntVirtualAP(vm, cl, obj, args);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  meth->invokeIntVirtualAP(cl, obj, args);
   
   RETURN_VOID_FROM_JNI;
 
@@ -946,10 +921,9 @@ void CallVoidMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
   llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
   
-  meth->invokeIntVirtualBuf(vm, cl, obj, (void*)args);
+  meth->invokeIntVirtualBuf(cl, obj, (void*)args);
 
   RETURN_VOID_FROM_JNI;
 
@@ -1199,9 +1173,8 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
   llvm_gcroot(obj, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
-  meth->invokeIntSpecialAP(vm, cl, obj, ap);
+  UserClass* cl = getClassFromVirtualMethod(meth, JavaObject::getClass(obj));
+  meth->invokeIntSpecialAP(cl, obj, ap);
   va_end(ap);
   
   RETURN_VOID_FROM_JNI;
@@ -1235,8 +1208,7 @@ jfieldID GetFieldID(JNIEnv *env, jclass _clazz, const char *aname,
   JavaObject* clazz = *(JavaObject**)_clazz;
   llvm_gcroot(clazz, 0);
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(clazz, true);
 
   if (cl->isClass()) {
     const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz(aname);
@@ -1599,8 +1571,7 @@ jmethodID GetStaticMethodID(JNIEnv *env, jclass _clazz, const char *aname,
   JavaObject* clazz = *(JavaObject**)_clazz;
   llvm_gcroot(clazz, 0);
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(clazz, true);
 
   if (cl->isClass()) {
     const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz(aname);
@@ -1636,11 +1607,10 @@ jobject CallStaticObjectMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
 
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
   
   // Store local reference.
-  res = meth->invokeJavaObjectStaticAP(vm, cl, ap);
+  res = meth->invokeJavaObjectStaticAP(cl, ap);
   va_end(ap);
   
   jobject ret = (jobject)th->pushJNIRef(res);
@@ -1663,11 +1633,10 @@ jobject CallStaticObjectMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   
   JavaMethod* meth = (JavaMethod*)methodID;
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
   
   // Store local reference.
-  res = meth->invokeJavaObjectStaticAP(vm, cl, args);
+  res = meth->invokeJavaObjectStaticAP(cl, args);
 
   jobject ret = (jobject)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
@@ -1698,9 +1667,8 @@ jboolean CallStaticBooleanMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  uint32 res = meth->invokeIntStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  uint32 res = meth->invokeIntStaticAP(cl, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -1719,9 +1687,8 @@ jboolean CallStaticBooleanMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jboolean res = (jboolean)meth->invokeIntStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jboolean res = (jboolean)meth->invokeIntStaticAP(cl, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1748,9 +1715,8 @@ jbyte CallStaticByteMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   va_list ap;
   va_start(ap, methodID);
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jbyte res = (jbyte) meth->invokeIntStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jbyte res = (jbyte) meth->invokeIntStaticAP(cl, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -1769,9 +1735,8 @@ jbyte CallStaticByteMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jbyte res = (jbyte)meth->invokeIntStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jbyte res = (jbyte)meth->invokeIntStaticAP(cl, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1799,9 +1764,8 @@ jchar CallStaticCharMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jchar res = (jchar) meth->invokeIntStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jchar res = (jchar) meth->invokeIntStaticAP(cl, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -1819,9 +1783,8 @@ jchar CallStaticCharMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jchar res = (jchar)meth->invokeIntStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jchar res = (jchar)meth->invokeIntStaticAP(cl, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1850,9 +1813,8 @@ jshort CallStaticShortMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jshort res = (jshort) meth->invokeIntStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jshort res = (jshort) meth->invokeIntStaticAP(cl, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -1871,9 +1833,8 @@ jshort CallStaticShortMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jshort res = (jshort)meth->invokeIntStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jshort res = (jshort)meth->invokeIntStaticAP(cl, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1901,9 +1862,8 @@ jint CallStaticIntMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jint res = (jint) meth->invokeIntStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jint res = (jint) meth->invokeIntStaticAP(cl, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -1921,9 +1881,8 @@ jint CallStaticIntMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jint res = (jint)meth->invokeIntStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jint res = (jint)meth->invokeIntStaticAP(cl, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -1952,9 +1911,8 @@ jlong CallStaticLongMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) 
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jlong res = (jlong) meth->invokeLongStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jlong res = (jlong) meth->invokeLongStaticAP(cl, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -1973,9 +1931,8 @@ jlong CallStaticLongMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jlong res = (jlong)meth->invokeLongStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jlong res = (jlong)meth->invokeLongStaticAP(cl, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2006,9 +1963,8 @@ jfloat CallStaticFloatMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jfloat res = (jfloat) meth->invokeFloatStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jfloat res = (jfloat) meth->invokeFloatStaticAP(cl, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -2027,9 +1983,8 @@ jfloat CallStaticFloatMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jfloat res = (jfloat)meth->invokeFloatStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jfloat res = (jfloat)meth->invokeFloatStaticAP(cl, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2059,9 +2014,8 @@ jdouble CallStaticDoubleMethod(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jdouble res = (jdouble) meth->invokeDoubleStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jdouble res = (jdouble) meth->invokeDoubleStaticAP(cl, ap);
   va_end(ap);
   RETURN_FROM_JNI(res);
 
@@ -2079,9 +2033,8 @@ jdouble CallStaticDoubleMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  jdouble res = (jdouble)meth->invokeDoubleStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  jdouble res = (jdouble)meth->invokeDoubleStaticAP(cl, args);
   RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
@@ -2110,9 +2063,8 @@ void CallStaticVoidMethod(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
   llvm_gcroot(clazz, 0);
 
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  meth->invokeIntStaticAP(vm, cl, ap);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  meth->invokeIntStaticAP(cl, ap);
   va_end(ap);
 
   RETURN_VOID_FROM_JNI;
@@ -2133,9 +2085,8 @@ void CallStaticVoidMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
   llvm_gcroot(clazz, 0);
   
   JavaMethod* meth = (JavaMethod*)methodID;
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz);
-  meth->invokeIntStaticAP(vm, cl, args);
+  UserClass* cl = getClassFromStaticMethod(meth, clazz);
+  meth->invokeIntStaticAP(cl, args);
   
   RETURN_VOID_FROM_JNI;
 
@@ -2161,8 +2112,7 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass _clazz, const char *aname,
   JavaObject* clazz = *(JavaObject**)_clazz;
   llvm_gcroot(clazz, 0);
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(clazz, true);
   
   if (cl->isClass()) {
     const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz(aname);
@@ -2560,12 +2510,12 @@ jobjectArray NewObjectArray(JNIEnv *env, jsize length, jclass _elementClass,
   if (length < 0) vm->negativeArraySizeException(length);
   
   UserCommonClass* base =
-    UserCommonClass::resolvedImplClass(vm, elementClass, true);
+    UserCommonClass::resolvedImplClass(elementClass, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
   const UTF8* arrayName = loader->constructArrayName(1, name);
   UserClassArray* array = loader->constructArray(arrayName, base);
-  res = (ArrayObject*)array->doNew(length, vm);
+  res = (ArrayObject*)array->doNew(length);
   
   if (initialElement) {
     for (sint32 i = 0; i < length; ++i) {
@@ -2645,7 +2595,7 @@ jbooleanArray NewBooleanArray(JNIEnv *env, jsize len) {
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfBool->doNew(len, vm);
+  res = vm->upcalls->ArrayOfBool->doNew(len);
   jbooleanArray ret = (jbooleanArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2664,7 +2614,7 @@ jbyteArray NewByteArray(JNIEnv *env, jsize len) {
 
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfByte->doNew(len, vm);
+  res = vm->upcalls->ArrayOfByte->doNew(len);
   jbyteArray ret = (jbyteArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2682,7 +2632,7 @@ jcharArray NewCharArray(JNIEnv *env, jsize len) {
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfChar->doNew(len, vm);
+  res = vm->upcalls->ArrayOfChar->doNew(len);
   jcharArray ret = (jcharArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2700,7 +2650,7 @@ jshortArray NewShortArray(JNIEnv *env, jsize len) {
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfShort->doNew(len, vm);
+  res = vm->upcalls->ArrayOfShort->doNew(len);
   jshortArray ret = (jshortArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2718,7 +2668,7 @@ jintArray NewIntArray(JNIEnv *env, jsize len) {
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfInt->doNew(len, vm);
+  res = vm->upcalls->ArrayOfInt->doNew(len);
   jintArray ret = (jintArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2736,7 +2686,7 @@ jlongArray NewLongArray(JNIEnv *env, jsize len) {
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfLong->doNew(len, vm);
+  res = vm->upcalls->ArrayOfLong->doNew(len);
   jlongArray ret = (jlongArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2754,7 +2704,7 @@ jfloatArray NewFloatArray(JNIEnv *env, jsize len) {
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfFloat->doNew(len, vm);
+  res = vm->upcalls->ArrayOfFloat->doNew(len);
   jfloatArray ret = (jfloatArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -2772,7 +2722,7 @@ jdoubleArray NewDoubleArray(JNIEnv *env, jsize len) {
   
   JavaThread* th = JavaThread::get();
   Jnjvm* vm = th->getJVM();
-  res = vm->upcalls->ArrayOfDouble->doNew(len, vm);
+  res = vm->upcalls->ArrayOfDouble->doNew(len);
   jdoubleArray ret = (jdoubleArray)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
 
@@ -3600,19 +3550,19 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
   Jnjvm* myvm = th->getJVM();
   UserClass* BB = myvm->upcalls->newDirectByteBuffer;
 
-  res = BB->doNew(myvm);
+  res = BB->doNew();
 
 #if (__WORDSIZE == 32)
   UserClass* PP = myvm->upcalls->newPointer32;
-  p = PP->doNew(myvm);
+  p = PP->doNew();
   myvm->upcalls->dataPointer32->setInstanceInt32Field(p, (uint32)address);
 #else
   UserClass* PP = myvm->upcalls->newPointer64;
-  p = PP->doNew(myvm);
+  p = PP->doNew();
   myvm->upcalls->dataPointer64->setInstanceLongField(p, (jlong)address);
 #endif
 
-  myvm->upcalls->InitDirectByteBuffer->invokeIntSpecial(myvm, BB, res, 0, &p,
+  myvm->upcalls->InitDirectByteBuffer->invokeIntSpecial(BB, res, 0, &p,
                                                         (uint32)capacity,
                                                         (uint32)capacity, 0);
 

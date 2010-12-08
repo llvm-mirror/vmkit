@@ -65,9 +65,9 @@ JavaObject* loader) {
 
   if (cl != 0) {
     if (clinit && cl->asClass()) {
-      cl->asClass()->initialiseClass(vm);
+      cl->asClass()->initialiseClass();
     }
-    res = cl->getClassDelegatee(vm);
+    res = cl->getClassDelegatee();
   } else {
     vm->classNotFoundException(str);
   }
@@ -94,10 +94,10 @@ jboolean publicOnly) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
 
   if (cl->isArray() || cl->isInterface() || cl->isPrimitive()) {
-    ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(0, vm);
+    ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(0);
   } else {
     UserClass* realCl = cl->asClass();;
     uint32 size = 0;
@@ -111,7 +111,7 @@ jboolean publicOnly) {
       }
     }
   
-    ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(size, vm);
+    ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(size);
 
     sint32 index = 0;
     for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
@@ -120,8 +120,8 @@ jboolean publicOnly) {
       if (meth->name->equals(vm->upcalls->initName) && 
           (!publicOnly || pub)) {
         UserClass* Cons = vm->upcalls->newConstructor;
-        tmp = Cons->doNew(vm);
-        vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp, &Cl, i);
+        tmp = Cons->doNew();
+        vm->upcalls->initConstructor->invokeIntSpecial(Cons, tmp, &Cl, i);
         ArrayObject::setElement(ret, tmp, index);
         index++;
       }
@@ -152,11 +152,11 @@ jboolean publicOnly) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
   Classpath* upcalls = vm->upcalls;
 
   if (cl->isArray() || cl->isPrimitive()) {
-    ret = (ArrayObject*)upcalls->methodArrayClass->doNew(0, vm);
+    ret = (ArrayObject*)upcalls->methodArrayClass->doNew(0);
   } else {
     UserClass* realCl = cl->asClass();
     uint32 size = 0;
@@ -172,7 +172,7 @@ jboolean publicOnly) {
     }
 
     
-    ret = (ArrayObject*)upcalls->methodArrayClass->doNew(size, vm);
+    ret = (ArrayObject*)upcalls->methodArrayClass->doNew(size);
 
     sint32 index = 0;
     for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
@@ -183,9 +183,9 @@ jboolean publicOnly) {
           (!publicOnly || pub)) {
         // TODO: check parameter types
         UserClass* Meth = vm->upcalls->newMethod;
-        tmp = Meth->doNew(vm);
+        tmp = Meth->doNew();
         str = vm->internalUTF8ToStr(meth->name);
-        upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, &Cl, &str, i);
+        upcalls->initMethod->invokeIntSpecial(Meth, tmp, &Cl, &str, i);
         ArrayObject::setElement(ret, tmp, index);
         index++;
       }
@@ -210,8 +210,7 @@ jboolean ignore) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
   res = cl->getAccess();
 
   END_NATIVE_EXCEPTION
@@ -232,7 +231,7 @@ JavaObject* Cl) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
   
   const UTF8* iname = cl->getName();
   result = JavaString::internalToJava(iname, vm);
@@ -254,8 +253,7 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
   
   res = cl->isPrimitive();
 
@@ -276,8 +274,7 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
 
   res = cl->isInterface();
 
@@ -300,12 +297,11 @@ JavaObject* Cl) {
   
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
 
   if (cl->isArray()) {
     UserCommonClass* bc = cl->asArrayClass()->baseClass();
-    res = bc->getClassDelegatee(vm);
+    res = bc->getClassDelegatee();
   } else {
     res = 0;
   }
@@ -327,8 +323,7 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
   res = cl->classLoader->getJavaClassLoader();
 
   END_NATIVE_EXCEPTION
@@ -352,8 +347,8 @@ JavaObject* Cl1, JavaObject* Cl2) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   if (!Cl2) vm->nullPointerException();
 
-  UserCommonClass* cl1 = UserCommonClass::resolvedImplClass(vm, Cl1, false);
-  UserCommonClass* cl2 = UserCommonClass::resolvedImplClass(vm, Cl2, false);
+  UserCommonClass* cl1 = UserCommonClass::resolvedImplClass(Cl1, false);
+  UserCommonClass* cl2 = UserCommonClass::resolvedImplClass(Cl2, false);
 
   res = cl2->isAssignableFrom(cl1);
 
@@ -376,11 +371,10 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
   if (cl->isInterface()) res = 0;
   else {
-    if (cl->getSuper()) res = cl->getSuper()->getClassDelegatee(vm);
+    if (cl->getSuper()) res = cl->getSuper()->getClassDelegatee();
     else res = 0;
   }
 
@@ -402,8 +396,7 @@ JavaObject* Cl, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
   res = JavaObject::instanceOf(obj, cl);
 
   END_NATIVE_EXCEPTION
@@ -429,10 +422,10 @@ JavaObject* Cl, jboolean publicOnly) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
 
   if (!cl->isClass()) {
-    ret = (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(0, vm);
+    ret = (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(0);
   } else {
     UserClass* realCl = cl->asClass(); 
     uint32 size = 0;
@@ -445,7 +438,7 @@ JavaObject* Cl, jboolean publicOnly) {
     }
 
 
-    ret = (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(size, vm);
+    ret = (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(size);
 
     sint32 index = 0;
     for (uint32 i = 0; i < realCl->nbVirtualFields + realCl->nbStaticFields;
@@ -454,9 +447,9 @@ JavaObject* Cl, jboolean publicOnly) {
       if (!publicOnly || isPublic(field->access)) {
         // TODO: check parameter types
         UserClass* Field = vm->upcalls->newField;
-        tmp = Field->doNew(vm);
+        tmp = Field->doNew();
         name = vm->internalUTF8ToStr(field->name);
-        vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, &Cl, &name, i);
+        vm->upcalls->initField->invokeIntSpecial(Field, tmp, &Cl, &name, i);
         ArrayObject::setElement(ret, tmp, index);
         index++;
       }
@@ -482,12 +475,12 @@ JavaObject* Cl) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-  res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(cl->nbInterfaces, vm);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
+  res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(cl->nbInterfaces);
 
   for (uint16 i = 0; i < cl->nbInterfaces; ++i) {
     UserClass* klass = cl->interfaces[i];
-    ArrayObject::setElement(res, klass->getClassDelegatee(vm), i);
+    ArrayObject::setElement(res, klass->getClassDelegatee(), i);
   }
 
   END_NATIVE_EXCEPTION
@@ -509,14 +502,13 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false)->asClass();
+  UserClass* cl = UserCommonClass::resolvedImplClass(Cl, false)->asClass();
 
   if (cl) {
     cl->resolveInnerOuterClasses();
     UserClass* outer = cl->getOuterClass();
     if (outer) {
-      res = outer->getClassDelegatee(vm);
+      res = outer->getClassDelegatee();
     }
   }
 
@@ -540,7 +532,7 @@ JavaObject* Cl, bool publicOnly) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false)->asClass();
+  UserClass* cl = UserCommonClass::resolvedImplClass(Cl, false)->asClass();
   if (cl) {
     cl->resolveInnerOuterClasses();
     UserClassArray* array = vm->upcalls->constructorArrayClass;
@@ -556,11 +548,11 @@ JavaObject* Cl, bool publicOnly) {
       sizeArray = cl->nbInnerClasses;
     }
 
-    result = (ArrayObject*)array->doNew(sizeArray, vm);
+    result = (ArrayObject*)array->doNew(sizeArray);
     for (uint16 i = 0; i < cl->nbInnerClasses; ++i) {
       UserClass* klass = cl->innerClasses[i];
       if (!publicOnly || isPublic(klass->innerAccess))
-        ArrayObject::setElement(result, klass->getClassDelegatee(vm), i); 
+        ArrayObject::setElement(result, klass->getClassDelegatee(), i); 
     }
   }
   
@@ -601,7 +593,7 @@ JavaObject* Cl) {
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
-  res = (ArrayObject*)array->doNew(0, vm);
+  res = (ArrayObject*)array->doNew(0);
 
   END_NATIVE_EXCEPTION
 
@@ -620,8 +612,7 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false)->asClass();
+  UserClass* cl = UserCommonClass::resolvedImplClass(Cl, false)->asClass();
 
   if (cl) res = cl->isAnonymous;
 

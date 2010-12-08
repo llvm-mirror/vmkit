@@ -35,7 +35,7 @@ JavaObject* Cl) {
 
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, true);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, true);
   
   if (cl->isClass() && 
       cl->asClass()->lookupMethodDontThrow(vm->upcalls->clinitName,
@@ -230,12 +230,11 @@ JavaObject* target, JavaObject* constr, JavaObjectConstructor* cons) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = 
-    (UserClass*)UserCommonClass::resolvedImplClass(vm, target, true);
-  res = cl->doNew(vm);
+    (UserClass*)UserCommonClass::resolvedImplClass(target, true);
+  res = cl->doNew();
   JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
-  meth->invokeIntSpecial(vm, cl, res);
+  meth->invokeIntSpecial(cl, res);
 
   END_NATIVE_EXCEPTION
 
@@ -255,14 +254,13 @@ JavaObject* arrayType, jint arrayLength) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* base = 
-    UserCommonClass::resolvedImplClass(vm, arrayType, true);
+    UserCommonClass::resolvedImplClass(arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
   const UTF8* arrayName = loader->constructArrayName(1, name);
   UserClassArray* array = loader->constructArray(arrayName, base);
-  res = array->doNew(arrayLength, vm);
+  res = array->doNew(arrayLength);
 
   END_NATIVE_EXCEPTION
 

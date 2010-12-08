@@ -353,8 +353,6 @@ public:
   ///
   JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc, Jnjvm* vm, JavaCompiler* Comp);
   
-  virtual JavaString** UTF8ToStr(const UTF8* utf8);
-
   /// nativeHandle - Non-null handle if boot classes were static compiled in
   /// a dynamic library
   ///

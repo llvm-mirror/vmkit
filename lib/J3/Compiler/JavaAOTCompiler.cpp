@@ -1980,7 +1980,7 @@ void mainCompilerStart(mvm::Thread* mut) {
               if (!strncmp(UTF8Buffer(cl->name).cString(), i->c_str(),
                            i->length() - 1)) {
                 TRY {
-                  cl->asClass()->initialiseClass(vm);
+                  cl->asClass()->initialiseClass();
                 } CATCH {
                   fprintf(stderr, "Error when initializing %s\n",
                           UTF8Buffer(cl->name).cString());
@@ -1994,7 +1994,7 @@ void mainCompilerStart(mvm::Thread* mut) {
             CommonClass* cl = bootstrapLoader->lookupClass(name);
             if (cl && cl->isClass()) {
               TRY {
-                cl->asClass()->initialiseClass(vm);
+                cl->asClass()->initialiseClass();
               } CATCH {
                 fprintf(stderr, "Error when initializing %s\n",
                         UTF8Buffer(cl->name).cString());
@@ -2036,7 +2036,7 @@ void mainCompilerStart(mvm::Thread* mut) {
       
       if (!M->clinits->empty()) {
         vm->loadBootstrap();
-        cl->initialiseClass(vm);
+        cl->initialiseClass();
         bootstrapLoader->setCompiler(M);
       }
       

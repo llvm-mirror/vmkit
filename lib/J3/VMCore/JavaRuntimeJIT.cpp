@@ -118,7 +118,7 @@ extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
     JavaField* field = cl->asClass()->lookupField(utf8, sign->keyName, true,
                                                   true, &fieldCl);
     
-    fieldCl->initialiseClass(JavaThread::get()->getJVM());
+    fieldCl->initialiseClass();
     void* obj = ((UserClass*)fieldCl)->getStaticInstance();
   
     assert(obj && "No static instance in static field lookup");
@@ -216,7 +216,7 @@ extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass* cl) {
   BEGIN_NATIVE_EXCEPTION(1)
  
   cl->resolveClass();
-  cl->initialiseClass(JavaThread::get()->getJVM());
+  cl->initialiseClass();
   
   END_NATIVE_EXCEPTION
 
@@ -231,8 +231,7 @@ extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl) {
   llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(1)
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  res = cl->getClassDelegatee(vm);
+  res = cl->getClassDelegatee();
   END_NATIVE_EXCEPTION
   
 	hack_check(JavaObject*);
@@ -241,11 +240,10 @@ extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl) {
 }
 
 // Throws if one of the dimension is negative.
-JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len,
-                               sint32* dims, Jnjvm* vm) {
+JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len, sint32* dims) {
   assert(len > 0 && "Negative size given by VMKit");
  
-  JavaObject* _res = cl->doNew(dims[0], vm);
+  JavaObject* _res = cl->doNew(dims[0]);
   ArrayObject* res = NULL;
   JavaObject* temp = NULL;
   llvm_gcroot(_res, 0);
@@ -259,14 +257,14 @@ JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len,
     UserClassArray* base = (UserClassArray*)_base;
     if (dims[0] > 0) {
       for (sint32 i = 0; i < dims[0]; ++i) {
-        temp = multiCallNewIntern(base, (len - 1), &dims[1], vm);
+        temp = multiCallNewIntern(base, (len - 1), &dims[1]);
         ArrayObject::setElement(res, temp, i);
       }
     } else {
       for (uint32 i = 1; i < len; ++i) {
         sint32 p = dims[i];
         if (p < 0) {
-          JavaThread::get()->getJVM()->negativeArraySizeException(p);
+          cl->classLoader->vm->negativeArraySizeException(p);
         }
       }
     }
@@ -288,9 +286,8 @@ extern "C" JavaObject* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
   for (uint32 i = 0; i < len; ++i){
     dims[i] = va_arg(ap, int);
   }
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  res = multiCallNewIntern(cl, len, dims, vm);
-
+  res = multiCallNewIntern(cl, len, dims);
+	
   END_NATIVE_EXCEPTION
 
   return res;
@@ -687,7 +684,7 @@ extern "C" void* j3ResolveSpecialStub() {
     lookup->lookupSpecialMethodDontThrow(utf8, sign->keyName, caller->classDef);
   
   if (!callee) {
-		JavaThread::j3Thread(mut)->getJVM()->noSuchMethodError(lookup, utf8);
+		cl->classLoader->vm->noSuchMethodError(lookup, utf8);
   }
 
   // Compile the found method.

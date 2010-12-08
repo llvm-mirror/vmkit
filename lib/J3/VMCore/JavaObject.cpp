@@ -152,7 +152,7 @@ void JavaObject::decapsulePrimitive(JavaObject* obj, Jnjvm *vm, jvalue* buf,
     vm->illegalArgumentException("");
   } else {
     UserCommonClass* cl = getClass(obj);
-    UserClassPrimitive* value = cl->toPrimitive(vm);
+    UserClassPrimitive* value = cl->toPrimitive();
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)signature;
 
     if (value == 0) {

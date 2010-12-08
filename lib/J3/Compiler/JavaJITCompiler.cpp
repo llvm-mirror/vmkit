@@ -135,8 +135,7 @@ Constant* JavaJITCompiler::getJavaClass(CommonClass* cl) {
 }
 
 Constant* JavaJITCompiler::getJavaClassPtr(CommonClass* cl) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaObject* const* obj = cl->getClassDelegateePtr(vm);
+  JavaObject* const* obj = cl->getClassDelegateePtr();
   assert(obj && "Delegatee not created");
   Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                   uint64(obj));
@@ -161,7 +160,7 @@ Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
     obj = classDef->getStaticInstance();
     if (!obj) {
       // Allocate now so that compiled code can reference it.
-      obj = classDef->allocateStaticInstance(JavaThread::get()->getJVM());
+      obj = classDef->allocateStaticInstance();
     }
     classDef->release();
   }

@@ -45,7 +45,7 @@ const unsigned int Jnjvm::Magic = 0xcafebabe;
 
 /// initialiseClass - Java class initialisation. Java specification §2.17.5.
 
-void UserClass::initialiseClass(Jnjvm* vm) {
+void UserClass::initialiseClass() {
 	mvm::gc* exc = NULL;
   JavaObject* obj = NULL;
 	JavaObject* jexc;
@@ -111,7 +111,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //    NoClassDefFoundError.
     if (isErroneous()) {
       release();
-      vm->noClassDefFoundError(name);
+      classLoader->vm->noClassDefFoundError(name);
     }
 
     // 6. Otherwise, record the fact that initialization of the Class object is
@@ -125,7 +125,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     // Single environment allocates the static instance during resolution, so
     // that compiled code can access it directly (with an initialization
     // check just before the access)
-    if (!cl->getStaticInstance()) cl->allocateStaticInstance(vm);
+    if (!cl->getStaticInstance()) cl->allocateStaticInstance();
 
     release();
   
@@ -141,7 +141,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     UserClass* super = getSuper();
     if (super) {
       TRY {
-        super->initialiseClass(vm);
+        super->initialiseClass();
       } CATCH {
         acquire();
         setErroneous();
@@ -171,19 +171,19 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     if (!vmjced) {
       JavaField* fields = cl->getStaticFields();
       for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
-        fields[i].InitStaticField(vm);
+        fields[i].InitStaticField();
       }
     }
   
       
-      
-    JavaMethod* meth = lookupMethodDontThrow(vm->upcalls->clinitName,
-                                             vm->upcalls->clinitType,
+		
+    JavaMethod* meth = lookupMethodDontThrow(classLoader->vm->upcalls->clinitName,
+                                             classLoader->vm->upcalls->clinitType,
                                              true, false, 0);
 
     if (meth) {
       TRY {
-        meth->invokeIntStatic(vm, cl);
+        meth->invokeIntStatic(cl);
       } CATCH {
         exc = mut->getPendingException();
         assert(exc && "no exception?");
@@ -212,17 +212,16 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //     OutOfMemoryError occurs, then instead use an OutOfMemoryError object
     //     in place of E in the following step.
 		jexc = Jnjvm::asJavaException(exc);
-    if (jexc && JavaObject::getClass(jexc)->isAssignableFrom(vm->upcalls->newException)) {
-      Classpath* upcalls = vm->upcalls;
+    if (jexc && JavaObject::getClass(jexc)->isAssignableFrom(classLoader->vm->upcalls->newException)) {
+      Classpath* upcalls = classLoader->vm->upcalls;
       UserClass* clExcp = upcalls->ExceptionInInitializerError;
-      Jnjvm* vm = JavaThread::get()->getJVM();
-      obj = clExcp->doNew(vm);
+      obj = clExcp->doNew();
       if (obj == NULL) {
         fprintf(stderr, "implement me");
         abort();
       }
       JavaMethod* init = upcalls->ErrorWithExcpExceptionInInitializerError;
-      init->invokeIntSpecial(vm, clExcp, obj, &exc);
+      init->invokeIntSpecial(clExcp, obj, &exc);
       exc = obj;
     } 
 
@@ -245,8 +244,8 @@ void Jnjvm::errorWithExcp(UserClass* cl, JavaMethod* init,
   llvm_gcroot(obj, 0);
   llvm_gcroot(excp, 0);
 
-  obj = cl->doNew(this);
-  init->invokeIntSpecial(this, cl, obj, &excp);
+  obj = cl->doNew();
+  init->invokeIntSpecial(cl, obj, &excp);
   mvm::Thread::get()->setPendingException(obj)->throwIt();
 }
 
@@ -256,11 +255,11 @@ JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
   JavaString* str = NULL;
   llvm_gcroot(obj, 0);
   llvm_gcroot(str, 0);
-  obj = cl->doNew(this);
+  obj = cl->doNew();
 
   if (asciiz) str = asciizToStr(asciiz);
 
-  init->invokeIntSpecial(this, cl, obj, &str);
+  init->invokeIntSpecial(cl, obj, &str);
   return obj;
 }
 
@@ -269,8 +268,8 @@ JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
   JavaObject* obj = NULL;
   llvm_gcroot(str, 0);
   llvm_gcroot(obj, 0);
-  obj = cl->doNew(this);
-  init->invokeIntSpecial(this, cl, obj, &str);
+  obj = cl->doNew();
+  init->invokeIntSpecial(cl, obj, &str);
   return obj;
 }
 
@@ -292,7 +291,7 @@ void Jnjvm::indexOutOfBounds(const JavaObject* obj, sint32 entry) {
   llvm_gcroot(obj, 0);
   llvm_gcroot(str, 0);
   str = (JavaString*)upcalls->IntToString->invokeJavaObjectStatic(
-      this, upcalls->intClass, entry, 10);
+      upcalls->intClass, entry, 10);
   error(upcalls->ArrayIndexOutOfBoundsException,
         upcalls->InitArrayIndexOutOfBoundsException, str);
 }
@@ -301,7 +300,7 @@ void Jnjvm::negativeArraySizeException(sint32 size) {
   JavaString* str = NULL;
   llvm_gcroot(str, 0);
   str = (JavaString*)
-    upcalls->IntToString->invokeJavaObjectStatic(this, upcalls->intClass,
+    upcalls->IntToString->invokeJavaObjectStatic(upcalls->intClass,
                                                  size, 10);
   error(upcalls->NegativeArraySizeException,
         upcalls->InitNegativeArraySizeException, str);
@@ -316,7 +315,7 @@ JavaObject* Jnjvm::CreateIndexOutOfBoundsException(sint32 entry) {
   JavaString* str = NULL;
   llvm_gcroot(str, 0);
   str = (JavaString*)
-    upcalls->IntToString->invokeJavaObjectStatic(this, upcalls->intClass,
+    upcalls->IntToString->invokeJavaObjectStatic(upcalls->intClass,
                                                  entry, 10);
   return CreateError(upcalls->ArrayIndexOutOfBoundsException,
                      upcalls->InitArrayIndexOutOfBoundsException, str);
@@ -363,7 +362,7 @@ JavaObject* Jnjvm::CreateStackOverflowError() {
   // Don't call init, or else we'll get a new stack overflow error.
   JavaObject* obj = NULL;
   llvm_gcroot(obj, 0);
-  obj = upcalls->StackOverflowError->doNew(this);
+  obj = upcalls->StackOverflowError->doNew();
   JavaObjectThrowable::fillInStackTrace((JavaObjectThrowable*)obj);
   return obj;
 }
@@ -482,7 +481,7 @@ JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
   llvm_gcroot(msg, 0);
   llvm_gcroot(str, 0);
   msg = (ArrayUInt16*)
-    vm->upcalls->ArrayOfChar->doNew(19 + cl->name->size + name->size, vm);
+    vm->upcalls->ArrayOfChar->doNew(19 + cl->name->size + name->size);
 
   uint32 i = 0;
 
@@ -558,7 +557,7 @@ JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
   llvm_gcroot(msg, 0);
   llvm_gcroot(str, 0);
 
-  msg = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(15 + name->size, vm);
+  msg = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(15 + name->size);
   uint32 i = 0;
 
 
@@ -597,7 +596,7 @@ JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
   llvm_gcroot(msg, 0);
   llvm_gcroot(str, 0);
 
-  msg = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(15 + name->count, vm);
+  msg = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(15 + name->count);
   uint32 i = 0;
 
   ArrayUInt16::setElement(msg, 'u', i); i++;
@@ -654,7 +653,7 @@ void Jnjvm::noClassDefFoundError(UserClass* cl, const UTF8* name) {
   llvm_gcroot(str, 0);
 
   uint32 size = 35 + name->size + cl->name->size;
-  msg = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
+  msg = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size);
   uint32 i = 0;
 
 
@@ -729,7 +728,7 @@ JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
   ArrayUInt16* tmp = NULL;
   llvm_gcroot(tmp, 0);
   uint32 size = utf8->size;
-  tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
+  tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size);
   
   for (uint32 i = 0; i < size; i++) {
     ArrayUInt16::setElement(tmp, utf8->elements[i], i);
@@ -760,7 +759,7 @@ void Jnjvm::addProperty(char* key, char* value) {
 }
 
 // Mimic what's happening in Classpath when creating a java.lang.Class object.
-JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
+JavaObject* UserCommonClass::getClassDelegatee(JavaObject* pd) {
   JavaObjectClass* delegatee = 0;
   JavaObjectClass* base = 0;
   llvm_gcroot(pd, 0);
@@ -768,12 +767,12 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   llvm_gcroot(base, 0);
 
   if (getDelegatee() == NULL) {
-    UserClass* cl = vm->upcalls->newClass;
-    delegatee = (JavaObjectClass*)cl->doNew(vm);
+    UserClass* cl = classLoader->vm->upcalls->newClass;
+    delegatee = (JavaObjectClass*)cl->doNew();
     JavaObjectClass::setClass(delegatee, this);
     if (pd == NULL && isArray()) {
       base = (JavaObjectClass*)
-        asArrayClass()->baseClass()->getClassDelegatee(vm, pd);
+        asArrayClass()->baseClass()->getClassDelegatee(pd);
       JavaObjectClass::setProtectionDomain(
         delegatee, JavaObjectClass::getProtectionDomain(base));
     } else {
@@ -784,10 +783,10 @@ JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   return getDelegatee();
 }
 
-JavaObject* const* UserCommonClass::getClassDelegateePtr(Jnjvm* vm, JavaObject* pd) {
+JavaObject* const* UserCommonClass::getClassDelegateePtr(JavaObject* pd) {
   llvm_gcroot(pd, 0);
   // Make sure it's created.
-  getClassDelegatee(vm, pd);
+  getClassDelegatee(pd);
   return getDelegateePtr();
 }
 
@@ -1047,7 +1046,7 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
   
   if (appClassLoader == NULL) {
     UserClass* cl = upcalls->newClassLoader;
-    loader = upcalls->getSystemClassLoader->invokeJavaObjectStatic(this, cl);
+    loader = upcalls->getSystemClassLoader->invokeJavaObjectStatic(cl);
     appClassLoader = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader,
                                                                     this);
     if (argumentsInfo.jarFile) {
@@ -1083,7 +1082,7 @@ void Jnjvm::loadBootstrap() {
   
 #define LOAD_CLASS(cl) \
   cl->resolveClass(); \
-  cl->initialiseClass(this);
+  cl->initialiseClass();
   
   // If a string belongs to the vm hashmap, we must remove it when
   // it's destroyed. So we define a new VT for strings that will be
@@ -1106,7 +1105,7 @@ void Jnjvm::loadBootstrap() {
     JavaString::internStringVT->operatorDelete = 
       (uintptr_t)JavaString::stringDestructor;
   }
-  upcalls->newString->initialiseClass(this);
+  upcalls->newString->initialiseClass();
 
   // The initialization code of the classes initialized below may require
   // to get the Java thread, so we create the Java thread object first.
@@ -1166,13 +1165,13 @@ void Jnjvm::loadBootstrap() {
   obj = JavaThread::get()->currentThread();
   javaLoader = appClassLoader->getJavaClassLoader();
 
-  upcalls->setContextClassLoader->invokeIntSpecial(this, upcalls->newThread,
+  upcalls->setContextClassLoader->invokeIntSpecial(upcalls->newThread,
                                                    obj, &javaLoader);
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
   UserCommonClass* math = loader->loadName(
       loader->asciizConstructUTF8("java/lang/Math"), true, true, NULL);
-  math->asClass()->initialiseClass(this);
+  math->asClass()->initialiseClass();
 }
 
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
@@ -1195,14 +1194,14 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
       cl = (UserClass*)appClassLoader->loadName(name, true, true, NULL);
     }
     
-    cl->initialiseClass(this);
+    cl->initialiseClass();
   
     const UTF8* funcSign = 
       appClassLoader->asciizConstructUTF8("([Ljava/lang/String;)V");
     const UTF8* funcName = appClassLoader->asciizConstructUTF8("main");
     JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
     if (isPublic(method->access)) { 
-      method->invokeIntStatic(this, method->classDef, &args);
+      method->invokeIntStatic(method->classDef, &args);
     } else {
       fprintf(stderr, "Main method not public.\n");
     }
@@ -1218,7 +1217,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     obj = th->currentThread();
     group = upcalls->group->getInstanceObjectField(obj);
     TRY {
-      upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
+      upcalls->uncaughtException->invokeIntSpecial(upcalls->threadGroup,
                                                    group, &obj, &exc);
     } CATCH {
       fprintf(stderr, "Exception in thread \"main\": "
@@ -1235,14 +1234,14 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
     const UTF8* name = appClassLoader->asciizConstructUTF8(className);
     UserClass* cl = (UserClass*)
         appClassLoader->loadName(name, true, true, NULL);
-    cl->initialiseClass(this);
+    cl->initialiseClass();
   
     const UTF8* funcSign = appClassLoader->asciizConstructUTF8(
       "(Ljava/lang/String;Ljava/lang/instrument/Instrumentation;)V");
     const UTF8* funcName = appClassLoader->asciizConstructUTF8("premain");
     JavaMethod* method = cl->lookupMethod(funcName, funcSign, true, true, 0);
   
-    method->invokeIntStatic(this, method->classDef, &args, &instrumenter);
+    method->invokeIntStatic(method->classDef, &args, &instrumenter);
   } IGNORE;
 }
 
@@ -1309,7 +1308,7 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
     }
     
     UserClassArray* array = vm->upcalls->ArrayOfString;
-    args = (ArrayObject*)array->doNew(info.argc - 2, vm);
+    args = (ArrayObject*)array->doNew(info.argc - 2);
     for (int i = 2; i < info.argc; ++i) {
       ArrayObject::setElement(args, (JavaObject*)vm->asciizToStr(info.argv[i]), i - 2);
     }
@@ -1379,7 +1378,7 @@ ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
   llvm_gcroot(tmp, 0);
 
   uint32 size = strlen(asciiz);
-  tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size, this);
+  tmp = (ArrayUInt16*)upcalls->ArrayOfChar->doNew(size);
   
   for (uint32 i = 0; i < size; i++) {
     ArrayUInt16::setElement(tmp, asciiz[i], i);
@@ -1395,7 +1394,7 @@ void Jnjvm::finalizeObject(mvm::gc* _o) {
 
   JavaMethod* meth = upcalls->FinalizeObject;
   UserClass* cl = JavaObject::getClass(obj)->asClass();
-  meth->invokeIntVirtualBuf(this, cl, obj, 0);
+  meth->invokeIntVirtualBuf(cl, obj, 0);
 }
 
 mvm::gc** Jnjvm::getReferent(mvm::gc* _obj) {
@@ -1418,7 +1417,7 @@ bool Jnjvm::enqueueReference(mvm::gc* _obj) {
   llvm_gcroot(obj, 0);
   JavaMethod* meth = upcalls->EnqueueReference;
   UserClass* cl = JavaObject::getClass(obj)->asClass();
-  return (bool)meth->invokeIntSpecialBuf(this, cl, obj, 0);
+  return (bool)meth->invokeIntSpecialBuf(cl, obj, 0);
 }
   
 size_t Jnjvm::getObjectSize(mvm::gc* object) {

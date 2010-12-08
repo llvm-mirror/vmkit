@@ -122,7 +122,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
   
   if (nbArgs == size) {
-    UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+    UserCommonClass* _cl = UserCommonClass::resolvedImplClass(Cl, false);
     UserClass* cl = (UserClass*)_cl;
     
     if (isVirtual(meth->access)) {
@@ -133,14 +133,14 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       }
 
       if (isInterface(cl->access)) {
-        cl->initialiseClass(vm);
+        cl->initialiseClass();
         UserClass* methodCl = 0;
         UserClass* lookup = objCl->isArray() ? objCl->super : objCl->asClass();
         meth = lookup->lookupMethod(meth->name, meth->type, false, true,
                                     &methodCl);
       }
     } else {
-      cl->initialiseClass(vm);
+      cl->initialiseClass();
     }
     
     JavaObject** ptr = ArrayObject::getElements(args);
@@ -158,14 +158,14 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       if (isVirtual(meth->access)) {																		\
         if (isPublic(meth->access) && !isFinal(meth->access) &&					\
             !isFinal(meth->classDef->access)) {													\
-          VAR = meth->invoke##TYPE##VirtualBuf(vm, cl, obj, buf);				\
+          VAR = meth->invoke##TYPE##VirtualBuf(cl, obj, buf);						\
         } else {																												\
-          VAR = meth->invoke##TYPE##SpecialBuf(vm, cl, obj, buf);				\
-        }																																\
-      } else {																													\
-        VAR = meth->invoke##TYPE##StaticBuf(vm, cl, buf);								\
-      }																																	\
-    } CATCH {																														\
+          VAR = meth->invoke##TYPE##SpecialBuf(cl, obj, buf);						\
+				}																																\
+			} else {																													\
+				VAR = meth->invoke##TYPE##StaticBuf(cl, buf);										\
+			}																																	\
+		} CATCH {																														\
       exc = mvm::Thread::get()->getPendingException();									\
     } END_CATCH;																												\
 																																				\
@@ -173,7 +173,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
 			mvm::Thread* mut = mvm::Thread::get();														\
 			jexc = Jnjvm::asJavaException(exc);																\
       if (jexc && JavaObject::getClass(jexc)->isAssignableFrom(					\
-																											vm->upcalls->newException)) {	\
+																															 vm->upcalls->newException)) { \
         mut->clearPendingException();																		\
 				JavaThread::j3Thread(mut)->getJVM()->invocationTargetException(jexc); \
       } else {																													\
@@ -192,42 +192,42 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       } else if (prim->isBool()) {
         uint32 val = 0;
         RUN_METH(Int, val);
-        res = vm->upcalls->boolClass->doNew(vm);
+        res = vm->upcalls->boolClass->doNew();
         vm->upcalls->boolValue->setInstanceInt8Field(res, val);
       } else if (prim->isByte()) {
         uint32 val = 0;
         RUN_METH(Int, val);
-        res = vm->upcalls->byteClass->doNew(vm);
+        res = vm->upcalls->byteClass->doNew();
         vm->upcalls->byteValue->setInstanceInt8Field(res, val);
       } else if (prim->isChar()) {
         uint32 val = 0;
         RUN_METH(Int, val);
-        res = vm->upcalls->charClass->doNew(vm);
+        res = vm->upcalls->charClass->doNew();
         vm->upcalls->charValue->setInstanceInt16Field(res, val);
       } else if (prim->isShort()) {
         uint32 val = 0;
         RUN_METH(Int, val);
-        res = vm->upcalls->shortClass->doNew(vm);
+        res = vm->upcalls->shortClass->doNew();
         vm->upcalls->shortValue->setInstanceInt16Field(res, val);
       } else if (prim->isInt()) {
         uint32 val = 0;
         RUN_METH(Int, val);
-        res = vm->upcalls->intClass->doNew(vm);
+        res = vm->upcalls->intClass->doNew();
         vm->upcalls->intValue->setInstanceInt32Field(res, val);
       } else if (prim->isLong()) {
         sint64 val = 0;
         RUN_METH(Long, val);
-        res = vm->upcalls->longClass->doNew(vm);
+        res = vm->upcalls->longClass->doNew();
         vm->upcalls->longValue->setInstanceLongField(res, val);
       } else if (prim->isFloat()) {
         float val = 0;
         RUN_METH(Float, val);
-        res = vm->upcalls->floatClass->doNew(vm);
+        res = vm->upcalls->floatClass->doNew();
         vm->upcalls->floatValue->setInstanceFloatField(res, val);
       } else if (prim->isDouble()) {
         double val = 0;
         RUN_METH(Double, val);
-        res = vm->upcalls->doubleClass->doNew(vm);
+        res = vm->upcalls->doubleClass->doNew();
         vm->upcalls->doubleValue->setInstanceDoubleField(res, val);
       }
     } else {

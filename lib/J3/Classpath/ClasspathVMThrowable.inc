@@ -44,10 +44,10 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
 
   if (sizeof(void*) == 4) {
     ClassArray* cl = vm->upcalls->ArrayOfInt;
-    result = (ArrayPtr*) cl->doNew(length, vm);
+    result = (ArrayPtr*) cl->doNew(length);
   } else {
     ClassArray* cl = vm->upcalls->ArrayOfLong;
-    result = (ArrayPtr*) cl->doNew(length, vm);
+    result = (ArrayPtr*) cl->doNew(length);
   }
   
   // Don't call th->getFrameContext because it is not GC-safe.
@@ -61,7 +61,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   }
 
   // Set the tempory data in the new VMThrowable object.
-  vmThrowable = vm->upcalls->newVMThrowable->doNew(vm);
+  vmThrowable = vm->upcalls->newVMThrowable->doNew();
   vm->upcalls->vmDataVMThrowable->setInstanceObjectField(vmThrowable, result);
   return vmThrowable;
 }
@@ -116,8 +116,8 @@ JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   uint16 lineNumber = meth->lookupLineNumber(reinterpret_cast<uintptr_t>(ip));
 
   UserClass* newS = vm->upcalls->newStackTraceElement;
-  res = newS->doNew(vm);
-  vm->upcalls->initStackTraceElement->invokeIntSpecial(vm, newS, res,
+  res = newS->doNew();
+  vm->upcalls->initStackTraceElement->invokeIntSpecial(newS, res,
                                                        &sourceName,
                                                        lineNumber,
                                                        &className,
@@ -170,7 +170,7 @@ JavaObject* vmthrow, JavaObject* throwable) {
   }
 
   result = (ArrayObject*)
-    vm->upcalls->stackTraceArray->doNew(size, vm);
+    vm->upcalls->stackTraceArray->doNew(size);
   
   cur = 0;
   for (sint32 i = index; i < JavaArray::getSize(stack); ++i) {

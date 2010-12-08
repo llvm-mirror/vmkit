@@ -145,7 +145,8 @@ JavaMethod::~JavaMethod() {
   
 }
 
-UserClassPrimitive* CommonClass::toPrimitive(Jnjvm* vm) const {
+UserClassPrimitive* CommonClass::toPrimitive() const {
+	Jnjvm* vm = classLoader->vm;
   if (this == vm->upcalls->voidClass) {
     return vm->upcalls->OfVoid;
   } else if (this == vm->upcalls->intClass) {
@@ -252,13 +253,13 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC | JNJVM_ARRAY;
 }
 
-JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
+JavaObject* UserClassArray::doNew(sint32 n) {
   JavaObject* res = NULL;
   llvm_gcroot(res, 0);
   if (n < 0) {
-    vm->negativeArraySizeException(n);
+    classLoader->vm->negativeArraySizeException(n);
   } else if (n > JavaArray::MaxArraySize) {
-    vm->outOfMemoryError();
+    classLoader->vm->outOfMemoryError();
   }
   UserCommonClass* cl = baseClass();
   uint32 logSize = cl->isPrimitive() ? 
@@ -373,7 +374,7 @@ JavaMethod* Class::lookupMethod(const UTF8* name, const UTF8* type,
   JavaMethod* res = lookupMethodDontThrow(name, type, isStatic, recurse,
                                           methodCl);
   if (!res) {
-    JavaThread::get()->getJVM()->noSuchMethodError(this, name);
+    classLoader->vm->noSuchMethodError(this, name);
   }
   return res;
 }
@@ -382,7 +383,7 @@ JavaMethod* Class::lookupInterfaceMethod(const UTF8* name, const UTF8* type) {
   JavaMethod* res = lookupInterfaceMethodDontThrow(name, type);
 
   if (!res) {
-    JavaThread::get()->getJVM()->noSuchMethodError(this, name);
+    classLoader->vm->noSuchMethodError(this, name);
   }
   return res;
 }
@@ -435,12 +436,12 @@ JavaField* Class::lookupField(const UTF8* name, const UTF8* type,
   JavaField* res = lookupFieldDontThrow(name, type, isStatic, recurse,
                                         definingClass);
   if (!res) {
-    JavaThread::get()->getJVM()->noSuchFieldError(this, name);
+    classLoader->vm->noSuchFieldError(this, name);
   }
   return res;
 }
 
-JavaObject* UserClass::doNew(Jnjvm* vm) {
+JavaObject* UserClass::doNew() {
   JavaObject* res = NULL;
   llvm_gcroot(res, 0);
   assert(this && "No class when allocating.");
@@ -586,7 +587,7 @@ void JavaField::InitStaticField(float val) {
   ((float*)((uint64)obj + ptrOffset))[0] = val;
 }
 
-void JavaField::InitStaticField(Jnjvm* vm) {
+void JavaField::InitStaticField() {
   const Typedef* type = getSignature();
   Attribut* attribut = lookupAttribut(Attribut::constantAttribut);
 
@@ -597,6 +598,7 @@ void JavaField::InitStaticField(Jnjvm* vm) {
     JavaConstantPool * ctpInfo = classDef->ctpInfo;
     uint16 idx = reader.readU2();
     if (type->isPrimitive()) {
+			Jnjvm* vm = classDef->classLoader->vm;
       UserCommonClass* cl = type->assocClass(vm->bootstrapLoader);
       if (cl == vm->upcalls->OfLong) {
         InitStaticField((uint64)ctpInfo->LongAt(idx));
@@ -619,7 +621,7 @@ void JavaField::InitStaticField(Jnjvm* vm) {
   } 
 }
 
-void* UserClass::allocateStaticInstance(Jnjvm* vm) {
+void* UserClass::allocateStaticInstance() {
 #ifdef USE_GC_BOEHM
   void* val = GC_MALLOC(getStaticSize());
 #else
@@ -899,7 +901,7 @@ void Class::readClass() {
     ctpInfo->resolveClassName(reader.readU2());
   
   if (!(thisClassName->equals(name))) {
-    JavaThread::get()->getJVM()->noClassDefFoundError(this, thisClassName);
+    classLoader->vm->noClassDefFoundError(this, thisClassName);
   }
 
   readParents(reader);
@@ -961,11 +963,11 @@ void UserClass::resolveInnerOuterClasses() {
   }
 }
 
-static JavaObject* getClassType(Jnjvm* vm, JnjvmClassLoader* loader,
+static JavaObject* getClassType(JnjvmClassLoader* loader,
                                 Typedef* type) {
   UserCommonClass* res = type->assocClass(loader);
   assert(res && "No associated class");
-  return res->getClassDelegatee(vm);
+  return res->getClassDelegatee();
 }
 
 ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
@@ -975,13 +977,12 @@ ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
   llvm_gcroot(res, 0);
   llvm_gcroot(delegatee, 0);
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   Signdef* sign = getSignature();
   Typedef* const* arguments = sign->getArgumentsType();
-  res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(sign->nbArguments,vm);
+  res = (ArrayObject*)loader->vm->upcalls->classArrayClass->doNew(sign->nbArguments);
 
   for (uint32 index = 0; index < sign->nbArguments; ++index) {
-    delegatee = getClassType(vm, loader, arguments[index]);
+    delegatee = getClassType(loader, arguments[index]);
     ArrayObject::setElement(res, delegatee, index);
   }
 
@@ -990,9 +991,8 @@ ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
 }
 
 JavaObject* JavaMethod::getReturnType(JnjvmClassLoader* loader) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
   Typedef* ret = getSignature()->getReturnType();
-  return getClassType(vm, loader, ret);
+  return getClassType(loader, ret);
 }
 
 ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
@@ -1003,21 +1003,21 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
   llvm_gcroot(delegatee, 0);
   
   Attribut* exceptionAtt = lookupAttribut(Attribut::exceptionsAttribut);
-  Jnjvm* vm = JavaThread::get()->getJVM();
+  Jnjvm* vm = loader->vm;
   if (exceptionAtt == 0) {
-    return (ArrayObject*)vm->upcalls->classArrayClass->doNew(0, vm);
+    return (ArrayObject*)vm->upcalls->classArrayClass->doNew(0);
   } else {
     UserConstantPool* ctp = classDef->getConstantPool();
     Reader reader(exceptionAtt, classDef->bytes);
     uint16 nbe = reader.readU2();
-    res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(nbe, vm);
+    res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(nbe);
 
     for (uint16 i = 0; i < nbe; ++i) {
       uint16 idx = reader.readU2();
       UserCommonClass* cl = ctp->loadClass(idx);
       assert(cl->asClass() && "Wrong exception type");
       cl->asClass()->resolveClass();
-      delegatee = cl->getClassDelegatee(vm);
+      delegatee = cl->getClassDelegatee();
       ArrayObject::setElement(res, delegatee, i);
     }
     return res;
@@ -1036,8 +1036,7 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
 
 
 
-UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
-                                                    JavaObject* clazz,
+UserCommonClass* UserCommonClass::resolvedImplClass(JavaObject* clazz,
                                                     bool doClinit) {
 
   llvm_gcroot(clazz, 0);
@@ -1046,7 +1045,7 @@ UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
   assert(cl && "No class in Class object");
   if (cl->isClass()) {
     cl->asClass()->resolveClass();
-    if (doClinit) cl->asClass()->initialiseClass(vm);
+    if (doClinit) cl->asClass()->initialiseClass();
   }
   return cl;
 }
@@ -1244,9 +1243,9 @@ bool UserClass::isNativeOverloaded(JavaMethod* meth) {
 
 ArrayUInt16* JavaMethod::toString() const {
    
-  Jnjvm* vm = JavaThread::get()->getJVM();
+  Jnjvm* vm = classDef->classLoader->vm;
   uint32 size = classDef->name->size + name->size + type->size + 1;
-  ArrayUInt16* res = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
+  ArrayUInt16* res = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size);
   llvm_gcroot(res, 0);
 
   uint32 i = 0;
@@ -1763,27 +1762,27 @@ uint16 JavaMethod::lookupCtpIndex(uintptr_t ip) {
 void Class::acquire() {
   JavaObject* delegatee = NULL;
   llvm_gcroot(delegatee, 0);
-  delegatee = getClassDelegatee(JavaThread::get()->getJVM());
+  delegatee = getClassDelegatee();
   JavaObject::acquire(delegatee);
 }
   
 void Class::release() {
   JavaObject* delegatee = NULL;
   llvm_gcroot(delegatee, 0);
-  delegatee = getClassDelegatee(JavaThread::get()->getJVM());
+  delegatee = getClassDelegatee();
   JavaObject::release(delegatee);
 }
 
 void Class::waitClass() {
   JavaObject* delegatee = NULL;
   llvm_gcroot(delegatee, 0);
-  delegatee = getClassDelegatee(JavaThread::get()->getJVM());
+  delegatee = getClassDelegatee();
   JavaObject::wait(delegatee);
 }
   
 void Class::broadcastClass() {
   JavaObject* delegatee = NULL;
   llvm_gcroot(delegatee, 0);
-  delegatee = getClassDelegatee(JavaThread::get()->getJVM());
+  delegatee = getClassDelegatee();
   JavaObject::notifyAll(delegatee);
 }

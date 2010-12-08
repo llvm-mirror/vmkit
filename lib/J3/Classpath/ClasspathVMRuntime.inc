@@ -56,7 +56,7 @@ JavaString* strLib) {
   sint32 lgPost = vm->upcalls->postlib->size;
   
   uint32 size = (uint32)(lgPre + lgLib + lgPost);
-  array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
+  array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size);
   uint16* elements = ArrayUInt16::getElements(array);
 
   memmove(elements, vm->upcalls->prelib->elements,

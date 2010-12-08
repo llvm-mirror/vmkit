@@ -44,7 +44,7 @@ jchar byteId) {
     abort();
   }
   
-  res = prim->getClassDelegatee(vm);
+  res = prim->getClassDelegatee();
 
   END_NATIVE_EXCEPTION
 
@@ -72,7 +72,7 @@ JavaString* name) {
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
   UserCommonClass* cl = JCL->lookupClassFromJavaString(name);
 
-  if (cl) res = cl->getClassDelegatee(vm);
+  if (cl) res = cl->getClassDelegatee();
 
   END_NATIVE_EXCEPTION
 
@@ -100,7 +100,7 @@ jboolean doResolve) {
   JnjvmClassLoader* JCL = vm->bootstrapLoader;
   UserCommonClass* cl = JCL->loadClassFromJavaString(str, doResolve, false);
 
-  if (cl != 0) res = cl->getClassDelegatee(vm);
+  if (cl != 0) res = cl->getClassDelegatee();
   
   END_NATIVE_EXCEPTION
 
@@ -154,7 +154,7 @@ JavaObject* pd) {
     UserClass* cl = JCL->constructClass(name, classBytes);
     cl->resolveClass();
 
-    res = cl->getClassDelegatee(vm, pd);
+    res = cl->getClassDelegatee(pd);
   } else {
     excp = vm->CreateLinkageError("duplicate class definition");
     mvm::Thread::get()->setPendingException(excp)->throwIt();
@@ -177,8 +177,7 @@ JavaObject* Cl) {
   BEGIN_NATIVE_EXCEPTION(0)
   
   verifyNull(Cl);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass::resolvedImplClass(Cl, false);
 
   END_NATIVE_EXCEPTION
 }
@@ -363,7 +362,7 @@ extern "C" ArrayObject* Java_java_lang_VMClassLoader_getBootPackages__() {
   BEGIN_NATIVE_EXCEPTION(0)
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  obj = (ArrayObject*)vm->upcalls->ArrayOfString->doNew(NUM_BOOT_PACKAGES, vm);
+  obj = (ArrayObject*)vm->upcalls->ArrayOfString->doNew(NUM_BOOT_PACKAGES);
   for (uint32 i = 0; i < NUM_BOOT_PACKAGES; ++i) {
     ArrayObject::setElement(obj, vm->asciizToStr(bootPackages[i]), i);
   }

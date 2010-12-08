@@ -88,9 +88,9 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
   llvm_gcroot(excp, 0);
 	llvm_gcroot(jexcp, 0);
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
   UserClass* cl = JavaObjectConstructor::getClass(cons);
+  Jnjvm* vm = cl->classLoader->vm;
   sint32 nbArgs = args ? ArrayObject::getSize(args) : 0;
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
@@ -103,11 +103,11 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
 
   if (nbArgs == size) {
-    UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Clazz, false);
+    UserCommonClass* _cl = UserCommonClass::resolvedImplClass(Clazz, false);
     UserClass* cl = _cl->asClass();
     if (cl) {
-      cl->initialiseClass(vm);
-      res = cl->doNew(vm);
+      cl->initialiseClass();
+      res = cl->doNew();
       JavaObject** ptr = (JavaObject**)ArrayObject::getElements(args);
       
       Typedef* const* arguments = sign->getArgumentsType();
@@ -120,7 +120,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       }
       
       TRY {
-        meth->invokeIntSpecialBuf(vm, cl, res, buf);
+        meth->invokeIntSpecialBuf(cl, res, buf);
       } CATCH {
         excp = mvm::Thread::get()->getPendingException();
       } END_CATCH;
@@ -213,7 +213,7 @@ JavaObjectConstructor* Meth) {
 
   verifyNull(Meth);
   JavaMethod* meth = JavaObjectConstructor::getInternalMethod(Meth);
-  Jnjvm* vm = JavaThread::get()->getJVM();
+  Jnjvm* vm = meth->classDef->classLoader->vm;
   result = vm->internalUTF8ToStr(meth->type);
   
   END_NATIVE_EXCEPTION

@@ -67,7 +67,7 @@ void start(mvm::Thread* mut) {
   assert(vmThread->getVirtualTable());
   assert(javaThread->getVirtualTable());
   // Run the VMThread::run function
-  vm->upcalls->runVMThread->invokeIntSpecial(vm, vmthClass, vmThread);
+  vm->upcalls->runVMThread->invokeIntSpecial(vmthClass, vmThread);
  
   // Remove the thread from the list.
   if (!isDaemon) {

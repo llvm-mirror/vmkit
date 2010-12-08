@@ -77,38 +77,38 @@ using namespace j3;
 #if 1 // VA_ARGS do not work on all platforms for LLVM.
 #define INVOKE_AP(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
 \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(UserClass* cl, JavaObject* obj, va_list ap) { \
   llvm_gcroot(obj, 0); \
   verifyNull(obj); \
   Signdef* sign = getSignature(); \
   mvm::ThreadAllocator allocator; \
   jvalue* buf = (jvalue*)allocator.Allocate(sign->nbArguments * sizeof(jvalue)); \
   readArgs(buf, sign, ap, jni); \
-  return invoke##TYPE_NAME##VirtualBuf(vm, cl, obj, buf); \
+  return invoke##TYPE_NAME##VirtualBuf(cl, obj, buf); \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(UserClass* cl, JavaObject* obj, va_list ap) {\
   llvm_gcroot(obj, 0); \
   verifyNull(obj); \
   Signdef* sign = getSignature(); \
   mvm::ThreadAllocator allocator; \
   jvalue* buf = (jvalue*)allocator.Allocate(sign->nbArguments * sizeof(jvalue)); \
   readArgs(buf, sign, ap, jni); \
-  return invoke##TYPE_NAME##SpecialBuf(vm, cl, obj, buf); \
+  return invoke##TYPE_NAME##SpecialBuf(cl, obj, buf); \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {\
+TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(UserClass* cl, va_list ap) {\
   Signdef* sign = getSignature(); \
   mvm::ThreadAllocator allocator; \
   jvalue* buf = (jvalue*)allocator.Allocate(sign->nbArguments * sizeof(jvalue)); \
   readArgs(buf, sign, ap, jni); \
-  return invoke##TYPE_NAME##StaticBuf(vm, cl, buf); \
+  return invoke##TYPE_NAME##StaticBuf(cl, buf); \
 }
 
 #else
 
 #define INVOKE_AP(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) { \
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(UserClass* cl, JavaObject* obj, va_list ap) { \
   llvm_gcroot(obj, 0); \
   verifyNull(obj); \
   UserClass* objCl = JavaObject::getClass(obj)->isArray() ? JavaObject::getClass(obj)->super : JavaObject::getClass(obj)->asClass(); \
@@ -131,7 +131,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObje
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {\
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(UserClass* cl, JavaObject* obj, va_list ap) {\
   llvm_gcroot(obj, 0); \
   verifyNull(obj);\
   void* func = this->compiledPtr();\
@@ -147,10 +147,10 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObje
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {\
+TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(UserClass* cl, va_list ap) {\
   if (!cl->isReady()) { \
     cl->resolveClass(); \
-    cl->initialiseClass(vm); \
+    cl->initialiseClass(); \
   } \
   \
   void* func = this->compiledPtr();\
@@ -169,7 +169,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list a
 #endif
 
 #define INVOKE_BUF(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
-TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
+TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(UserClass* cl, JavaObject* obj, void* buf) {\
   llvm_gcroot(obj, 0); \
   verifyNull(obj);\
   Signdef* sign = getSignature(); \
@@ -193,7 +193,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
   th->endJava(); \
   return res; \
 }\
-TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {\
+TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(UserClass* cl, JavaObject* obj, void* buf) {\
   llvm_gcroot(obj, 0); \
   verifyNull(obj);\
   void* func = this->compiledPtr();\
@@ -209,10 +209,10 @@ TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObj
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {\
+TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(UserClass* cl, void* buf) {\
   if (!cl->isReady()) { \
     cl->resolveClass(); \
-    cl->initialiseClass(vm); \
+    cl->initialiseClass(); \
   } \
   \
   void* func = this->compiledPtr();\
@@ -229,28 +229,28 @@ TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* bu
 }\
 
 #define INVOKE_VA(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF) \
-TYPE JavaMethod::invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) { \
+TYPE JavaMethod::invoke##TYPE_NAME##Virtual(UserClass* cl, JavaObject* obj, ...) { \
   llvm_gcroot(obj, 0); \
   va_list ap;\
   va_start(ap, obj);\
-  TYPE res = invoke##TYPE_NAME##VirtualAP(vm, cl, obj, ap);\
+  TYPE res = invoke##TYPE_NAME##VirtualAP(cl, obj, ap);\
   va_end(ap); \
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) {\
+TYPE JavaMethod::invoke##TYPE_NAME##Special(UserClass* cl, JavaObject* obj, ...) {\
   llvm_gcroot(obj, 0); \
   va_list ap;\
   va_start(ap, obj);\
-  TYPE res = invoke##TYPE_NAME##SpecialAP(vm, cl, obj, ap);\
+  TYPE res = invoke##TYPE_NAME##SpecialAP(cl, obj, ap);\
   va_end(ap); \
   return res; \
 }\
 \
-TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {\
+TYPE JavaMethod::invoke##TYPE_NAME##Static(UserClass* cl, ...) {\
   va_list ap;\
   va_start(ap, cl);\
-  TYPE res = invoke##TYPE_NAME##StaticAP(vm, cl, ap);\
+  TYPE res = invoke##TYPE_NAME##StaticAP(cl, ap);\
   va_end(ap); \
   return res; \
 }\

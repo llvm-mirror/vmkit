@@ -222,7 +222,7 @@ void invokeFinalize(mvm::gc* obj) {
   llvm_gcroot(obj, 0);
   TRY {
 		llvm_gcroot(obj, 0);
-		VirtualMachine* vm = obj->getVirtualTable()->vm; //JavaThread::get()->getJVM();
+		VirtualMachine* vm = obj->getVirtualTable()->vm;
 		mvm::Thread::get()->attach(vm);
 		vm->finalizeObject(obj);
   } IGNORE;

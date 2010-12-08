@@ -27,7 +27,7 @@ JavaString* JavaString::stringDup(const ArrayUInt16*& _array, Jnjvm* vm) {
   llvm_gcroot(res, 0);
 
   UserClass* cl = vm->upcalls->newString;
-  res = (JavaString*)cl->doNew(vm);
+  res = (JavaString*)cl->doNew();
   
   // It's a hashed string, set the destructor so that the string
   // removes itself from the vm string map. Do this only if
@@ -80,7 +80,7 @@ const ArrayUInt16* JavaString::strToArray(JavaString* self, Jnjvm* vm) {
 
   assert(getValue(self) && "String without an array?");
   if (self->offset || (self->count != ArrayUInt16::getSize(getValue(self)))) {
-    array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(self->count, vm);
+    array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(self->count);
     for (sint32 i = 0; i < self->count; i++) {
       ArrayUInt16::setElement(
           array, ArrayUInt16::getElement(value, i + self->offset), i);
@@ -107,7 +107,7 @@ JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
   ArrayUInt16* array = 0;
   llvm_gcroot(array, 0);
 
-  array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(name->size, vm);
+  array = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(name->size);
   
   for (sint32 i = 0; i < name->size; i++) {
     uint16 cur = name->elements[i];

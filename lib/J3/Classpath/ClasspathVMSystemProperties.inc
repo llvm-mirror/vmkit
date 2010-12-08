@@ -36,8 +36,7 @@ void setProperty(Jnjvm* vm, JavaObject* prop, const char* key,
   Val = vm->asciizToStr(val);
   Key = vm->asciizToStr(key);
                         
-  vm->upcalls->setProperty->invokeIntSpecial(
-      vm, (UserClass*)JavaObject::getClass(prop), prop, &Key, &Val);
+  vm->upcalls->setProperty->invokeIntSpecial((UserClass*)JavaObject::getClass(prop), prop, &Key, &Val);
 }
 
 void setUnameProp(Jnjvm* vm, JavaObject* prop) {

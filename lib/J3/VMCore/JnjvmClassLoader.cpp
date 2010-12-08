@@ -174,9 +174,9 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
   if (!cl) {
     UserClass* forCtp = loadClass;
     if (strName == NULL) {
-      strName = JavaString::internalToJava(name, isolate);
+      strName = JavaString::internalToJava(name, vm);
     }
-    obj = loadClassMethod->invokeJavaObjectVirtual(isolate, forCtp, javaLoader,
+    obj = loadClassMethod->invokeJavaObjectVirtual(forCtp, javaLoader,
                                                    &strName);
     cl = JavaObjectClass::getClass(((JavaObjectClass*)obj));
   }
@@ -752,14 +752,6 @@ JnjvmBootstrapLoader::~JnjvmBootstrapLoader() {
 JavaString** JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
   JavaString* res = NULL;
   llvm_gcroot(res, 0);
-  res = isolate->internalUTF8ToStr(val);
-  return strings->addString(this, res);
-}
-
-JavaString** JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
-  JavaString* res = NULL;
-  llvm_gcroot(res, 0);
-  Jnjvm* vm = JavaThread::get()->getJVM();
   res = vm->internalUTF8ToStr(val);
   return strings->addString(this, res);
 }

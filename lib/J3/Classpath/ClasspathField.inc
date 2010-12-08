@@ -52,12 +52,11 @@ JavaObjectField* Field) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   JnjvmClassLoader* loader = cl->classLoader;
   UserCommonClass* fieldCl = field->getSignature()->assocClass(loader);
-  res = fieldCl->getClassDelegatee(vm);
+  res = fieldCl->getClassDelegatee();
 
   END_NATIVE_EXCEPTION
 
@@ -77,14 +76,14 @@ JavaObjectField* Field, JavaObject* obj) {
   
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   const Typedef* type = field->getSignature();
   bool stat =  isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -142,13 +141,13 @@ JavaObjectField* Field, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -212,13 +211,13 @@ JavaObjectField* Field, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat =  isStatic(field->access);
    
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -257,13 +256,13 @@ JavaObjectField* Field, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -332,13 +331,13 @@ JavaObjectField* Field, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -376,13 +375,13 @@ JavaObjectField* Field, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -422,13 +421,13 @@ JavaObjectField* Field, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -472,13 +471,13 @@ JavaObjectField* Field, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -554,13 +553,13 @@ JavaObjectField* Field, JavaObject* obj) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -571,42 +570,42 @@ JavaObjectField* Field, JavaObject* obj) {
     if (prim->isBool()) {
       uint8 val =  stat ? field->getStaticInt8Field() :
                           field->getInstanceInt8Field(obj);
-      res = vm->upcalls->boolClass->doNew(vm);
+      res = vm->upcalls->boolClass->doNew();
       vm->upcalls->boolValue->setInstanceInt8Field(res, val);
     } else if (prim->isByte()) {
       sint8 val =  stat ? field->getStaticInt8Field() :
                           field->getInstanceInt8Field(obj);
-      res = vm->upcalls->byteClass->doNew(vm);
+      res = vm->upcalls->byteClass->doNew();
       vm->upcalls->byteValue->setInstanceInt8Field(res, val);
     } else if (prim->isChar()) {
       uint16 val =  stat ? field->getStaticInt16Field() :
                            field->getInstanceInt16Field(obj);
-      res = vm->upcalls->charClass->doNew(vm);
+      res = vm->upcalls->charClass->doNew();
       vm->upcalls->charValue->setInstanceInt16Field(res, val);
     } else if (prim->isShort()) {
       sint16 val =  stat ? field->getStaticInt16Field() :
                            field->getInstanceInt16Field(obj);
-      res = vm->upcalls->shortClass->doNew(vm);
+      res = vm->upcalls->shortClass->doNew();
       vm->upcalls->shortValue->setInstanceInt16Field(res, val);
     } else if (prim->isInt()) {
       sint64 val =  stat ? field->getStaticInt32Field() :
                            field->getInstanceInt32Field(obj);
-      res = vm->upcalls->intClass->doNew(vm);
+      res = vm->upcalls->intClass->doNew();
       vm->upcalls->intValue->setInstanceInt32Field(res, val);
     } else if (prim->isLong()) {
       sint64 val =  stat ? field->getStaticLongField() :
                            field->getInstanceLongField(obj);
-      res = vm->upcalls->longClass->doNew(vm);
+      res = vm->upcalls->longClass->doNew();
       vm->upcalls->longValue->setInstanceLongField(res, val);
     } else if (prim->isFloat()) {
       float val =  stat ? field->getStaticFloatField() :
                           field->getInstanceFloatField(obj);
-      res = vm->upcalls->floatClass->doNew(vm);
+      res = vm->upcalls->floatClass->doNew();
       vm->upcalls->floatValue->setInstanceFloatField(res, val);
     } else if (prim->isDouble()) {
       double val =  stat ? field->getStaticDoubleField() :
                            field->getInstanceDoubleField(obj);
-      res = vm->upcalls->doubleClass->doNew(vm);
+      res = vm->upcalls->doubleClass->doNew();
       vm->upcalls->doubleValue->setInstanceDoubleField(res, val);
     }
   } else {
@@ -634,15 +633,15 @@ JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   jvalue buf;
   bool stat = isStatic(field->access);
   
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -724,13 +723,13 @@ JavaObjectField* Field, JavaObject* obj, jboolean val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -766,13 +765,13 @@ JavaObjectField* Field, JavaObject* obj, jbyte val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -837,13 +836,13 @@ JavaObjectField* Field, JavaObject* obj, jchar val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -901,13 +900,13 @@ JavaObjectField* Field, JavaObject* obj, jshort val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -965,13 +964,13 @@ JavaObjectField* Field, JavaObject* obj, jint val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -1024,13 +1023,13 @@ JavaObjectField* Field, JavaObject* obj, jlong val) {
   
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -1077,13 +1076,13 @@ JavaObjectField* Field, JavaObject* obj, jfloat val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }
@@ -1124,13 +1123,13 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
+  Jnjvm* vm = cl->classLoader->vm;
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
   
   if (stat) {
-    cl->initialiseClass(vm);
+    cl->initialiseClass();
   } else {
     verifyNull(obj);
   }

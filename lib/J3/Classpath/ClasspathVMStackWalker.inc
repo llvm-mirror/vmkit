@@ -48,12 +48,12 @@ jclass clazz,
   uint32 finalSize = th->getJavaFrameContext((void**)buffer);
   
   result = (ArrayObject*)
-    vm->upcalls->stackTraceArray->doNew(finalSize, vm);
+    vm->upcalls->stackTraceArray->doNew(finalSize);
    
   for (uint32 i = 0; i != finalSize; ++i) {
     JavaMethod* meth = ((JavaMethod**)buffer)[i];
     assert(meth && "Wrong stack trace");
-    delegatee = meth->classDef->getClassDelegatee(vm);;
+    delegatee = meth->classDef->getClassDelegatee();;
     ArrayObject::setElement(result, delegatee, i);
   }
   
@@ -75,8 +75,7 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(Cl, false);
   res = cl->classLoader->getJavaClassLoader();
 
   END_NATIVE_EXCEPTION

@@ -51,9 +51,9 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   llvm_gcroot(th, 0);
   llvm_gcroot(name, 0);
 
-  th = newThread->doNew(vm);
+  th = newThread->doNew();
   myth->javaThread = th;
-  vmth = (JavaObjectVMThread*)newVMThread->doNew(vm);
+  vmth = (JavaObjectVMThread*)newVMThread->doNew();
   name = vm->asciizToStr(thName);
   
   threadName->setInstanceObjectField(th, name);
@@ -65,9 +65,9 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   JavaObjectVMThread::setVmdata(vmth, myth);
   
   group->setInstanceObjectField(th, Group);
-  groupAddThread->invokeIntSpecial(vm, threadGroup, Group, &th);
+  groupAddThread->invokeIntSpecial(threadGroup, Group, &th);
   
-  finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, &th);
+  finaliseCreateInitialThread->invokeIntStatic(inheritableThreadLocal, &th);
 }
 
 
@@ -91,13 +91,13 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
 
   // Resolve and initialize classes first.
   newThread->resolveClass();
-  newThread->initialiseClass(vm);
+  newThread->initialiseClass();
   
   newVMThread->resolveClass();
-  newVMThread->initialiseClass(vm);
+  newVMThread->initialiseClass();
   
   threadGroup->resolveClass();
-  threadGroup->initialiseClass(vm);
+  threadGroup->initialiseClass();
 
   // Create the main thread
   RG = rootGroup->getStaticObjectField();
@@ -106,8 +106,8 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   CreateJavaThread(vm, vm->javaMainThread, "main", RG);
 
   // Create the "system" group.
-  SystemGroup = threadGroup->doNew(vm);
-  initGroup->invokeIntSpecial(vm, threadGroup, SystemGroup);
+  SystemGroup = threadGroup->doNew();
+  initGroup->invokeIntSpecial(threadGroup, SystemGroup);
   systemName = vm->asciizToStr("system");
   groupName->setInstanceObjectField(SystemGroup, systemName);
 }
@@ -233,7 +233,7 @@ extern "C" JavaObject* Java_gnu_classpath_VMStackWalker_getCallingClass__() {
 
   JavaThread* th = JavaThread::get();
   UserClass* cl = th->getCallingClassLevel(2);
-  if (cl != NULL) res = cl->getClassDelegatee(th->getJVM());
+  if (cl != NULL) res = cl->getClassDelegatee();
   
   END_NATIVE_EXCEPTION
 
@@ -278,9 +278,8 @@ extern "C" JavaObject* Java_sun_reflect_Reflection_getCallerClass__I(uint32 inde
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
   UserClass* cl = th->getCallingClassLevel(index);
-  if (cl) res = cl->getClassDelegatee(vm);
+  if (cl) res = cl->getClassDelegatee();
   
   END_NATIVE_EXCEPTION
 
@@ -301,7 +300,7 @@ extern "C" JavaObject* Java_java_lang_reflect_AccessibleObject_getDeclaredAnnota
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
-  res = array->doNew(0, vm);
+  res = array->doNew(0);
 
   END_NATIVE_EXCEPTION
 
