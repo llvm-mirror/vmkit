@@ -47,52 +47,6 @@ class UserClassArray;
 class UserClassPrimitive;
 class UserCommonClass;
 
-/// ThreadSystem - Thread management of a JVM. Each JVM has one thread
-/// management system to count the number of non-daemon threads it owns.
-/// The initial thread of the JVM is a non-daemon thread. When there are
-/// no more non-daemon threads, the JVM stops executing.
-///
-class ThreadSystem {
-public:
-  /// nonDaemonThreads - Number of threads in the system that are not daemon
-  /// threads.
-  //
-  uint16 nonDaemonThreads;
-
-  /// nonDaemonLock - Protection lock for the nonDaemonThreads variable.
-  ///
-  mvm::LockNormal nonDaemonLock;
-
-  /// nonDaemonVar - Condition variable to wake up the initial thread when it
-  /// waits for other non-daemon threads to end. The non-daemon thread that
-  /// decrements the nonDaemonThreads variable to zero wakes up the initial
-  /// thread.
-  ///
-  mvm::Cond nonDaemonVar;
-  
-  /// ThreadSystem - Allocates a thread system management, initializing the
-  /// lock, the condition variable and setting the initial number of non
-  /// daemon threads to one, for the initial thread.
-  ///
-  ThreadSystem() {
-    nonDaemonThreads = 1;
-  }
-
-  /// ~ThreadSystem - Destroys the thread system manager. Destroys the lock and
-  /// the condition variable.
-  ///
-  ~ThreadSystem() {}
-
-  /// leave - A thread calls this function when it leaves the thread system.
-  ///
-  void leave();
-
-  /// enter - A thread calls this function when it enters the thread system.
-  ///
-  void enter();
-
-};
-
 class ClArgumentsInfo {
 public:
   int argc;
@@ -162,6 +116,31 @@ private:
   static void mainJavaStart(mvm::Thread* thread);
   
 public:
+
+  /// nonDaemonThreads - Number of threads in the system that are not daemon
+  /// threads.
+  //
+  uint16 nonDaemonThreads;
+
+  /// nonDaemonLock - Protection lock for the nonDaemonThreads variable.
+  ///
+  mvm::LockNormal nonDaemonLock;
+
+  /// nonDaemonVar - Condition variable to wake up the initial thread when it
+  /// waits for other non-daemon threads to end. The non-daemon thread that
+  /// decrements the nonDaemonThreads variable to zero wakes up the initial
+  /// thread.
+  ///
+  mvm::Cond nonDaemonVar;
+  
+  /// leave - A thread calls this function when it leaves the thread system.
+  ///
+  void leaveNonDaemonMode();
+
+  /// enter - A thread calls this function when it enters the thread system.
+  ///
+  void enterNonDaemonMode();
+
   
   /// tracer - Traces instances of this class.
   ///
@@ -188,11 +167,6 @@ public:
   /// upcalls - Upcalls to call Java methods and access Java fields.
   ///
   Classpath* upcalls;
-
-  /// threadSystem - The thread system to manage non-daemon threads and
-  /// control the end of the JVM's execution.
-  ///
-  ThreadSystem threadSystem;
   
   /// lockSystem - The lock system to allocate and manage Java locks.
   ///

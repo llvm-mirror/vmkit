@@ -2084,13 +2084,7 @@ void mainCompilerStart(mvm::Thread* mut) {
     M->CreateStaticInitializer();
 
 end:
-
-  vm->threadSystem.nonDaemonLock.lock();
-  --(vm->threadSystem.nonDaemonThreads);
-  if (vm->threadSystem.nonDaemonThreads == 0)
-      vm->threadSystem.nonDaemonVar.signal();
-  vm->threadSystem.nonDaemonLock.unlock();  
-  
+	vm->leaveNonDaemonMode();
 }
 
 void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {

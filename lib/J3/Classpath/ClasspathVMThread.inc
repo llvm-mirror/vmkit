@@ -61,7 +61,7 @@ void start(mvm::Thread* mut) {
   bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
 
   if (!isDaemon) {
-    vm->threadSystem.enter();
+    vm->enterNonDaemonMode();
   }
  
   assert(vmThread->getVirtualTable());
@@ -71,7 +71,7 @@ void start(mvm::Thread* mut) {
  
   // Remove the thread from the list.
   if (!isDaemon) {
-    vm->threadSystem.leave();
+    vm->leaveNonDaemonMode();
   }
 }
 

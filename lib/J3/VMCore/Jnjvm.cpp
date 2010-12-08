@@ -1247,15 +1247,13 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
 
 void Jnjvm::waitForExit() { 
   
-  threadSystem.nonDaemonLock.lock();
+  nonDaemonLock.lock();
   
-  while (threadSystem.nonDaemonThreads) {
-    threadSystem.nonDaemonVar.wait(&threadSystem.nonDaemonLock);
+  while (nonDaemonThreads) {
+    nonDaemonVar.wait(&nonDaemonLock);
   }
   
-  threadSystem.nonDaemonLock.unlock();
-
-  return;
+  nonDaemonLock.unlock();
 }
 
 void Jnjvm::mainJavaStart(mvm::Thread* thread) {
@@ -1276,7 +1274,7 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   vm->bootstrapLoader->analyseClasspathEnv(vm->bootstrapLoader->bootClasspathEnv);
   vm->argumentsInfo.readArgs(vm);
   if (vm->argumentsInfo.className == NULL) {
-    vm->threadSystem.leave();
+    vm->leaveNonDaemonMode();
     return;
   }
 
@@ -1315,17 +1313,17 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
 
     vm->executeClass(info.className, args);
   }
-  vm->threadSystem.leave();
+  vm->leaveNonDaemonMode();
 }
 
-void ThreadSystem::leave() {
+void Jnjvm::leaveNonDaemonMode() {
   nonDaemonLock.lock();
   --nonDaemonThreads;
   if (nonDaemonThreads == 0) nonDaemonVar.signal();
   nonDaemonLock.unlock();  
 }
 
-void ThreadSystem::enter() {
+void Jnjvm::enterNonDaemonMode() {
   nonDaemonLock.lock();
   ++nonDaemonThreads;
   nonDaemonLock.unlock();  
@@ -1342,6 +1340,7 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp
 	VirtualMachine(Alloc, vmkit), 
 	lockSystem(Alloc) {
 
+	nonDaemonThreads = 1;
   bootstrapLoader = new(Alloc, "bootstrap loader") JnjvmBootstrapLoader(Alloc, this, Comp);
   
   upcalls = new(allocator, "Classpath") Classpath(bootstrapLoader, dlLoad);
