@@ -41,7 +41,20 @@ Thread::Thread(VMKit* vmk) {
 	lastKnownFrame = 0;
 	pendingException = 0;
 	allVmsData = 0;
+	state = 0;             // not daemon, not running
 	vmk->registerPreparedThread(this);
+}
+
+void Thread::setDaemon() {
+	if((state & THREAD_RUNNING) && !(state & THREAD_DAEMON))
+		vmkit->nonDaemonThreadsManager.leaveNonDaemonMode();
+	state |= THREAD_DAEMON;
+}
+
+void Thread::setNonDaemon() {
+	if((state & THREAD_RUNNING) && (state & THREAD_DAEMON))
+		vmkit->nonDaemonThreadsManager.enterNonDaemonMode();
+	state &= ~THREAD_DAEMON;
 }
 
 void Thread::attach(VirtualMachine* vm) {
@@ -470,10 +483,11 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 
   th->vmkit->rendezvous.prepareForJoin();
   th->routine(th);
+	th->state &= ~THREAD_RUNNING;
+	if(!(th->state & THREAD_DAEMON))
+		th->vmkit->nonDaemonThreadsManager.leaveNonDaemonMode();
   th->vmkit->unregisterRunningThread(th);
 }
-
-
 
 /// start - Called by the creator of the thread to run the new thread.
 /// The thread is in a detached state, because each virtual machine has
@@ -485,6 +499,9 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   routine = fct;
   // Make sure to add it in the list of threads before leaving this function:
   // the garbage collector wants to trace this thread.
+	state |= THREAD_RUNNING;
+	if(!(state & THREAD_DAEMON))
+		vmkit->nonDaemonThreadsManager.enterNonDaemonMode();
   vmkit->registerRunningThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
@@ -492,7 +509,6 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   pthread_attr_destroy(&attributs);
   return res;
 }
-
 
 /// operator new - Get a stack from the stack manager. The Thread object
 /// will be placed in the first page at the bottom of the stack. Hence

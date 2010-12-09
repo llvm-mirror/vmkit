@@ -45,6 +45,41 @@ public:
   FunctionMap();
 };
 
+
+class NonDaemonThreadManager {
+	friend class Thread;
+public:
+	NonDaemonThreadManager() { nonDaemonThreads = 0; }
+
+private:
+  /// nonDaemonThreads - Number of threads in the system that are not daemon
+  /// threads.
+  //
+  uint16 nonDaemonThreads;
+
+  /// nonDaemonLock - Protection lock for the nonDaemonThreads variable.
+  ///
+  mvm::LockNormal nonDaemonLock;
+
+  /// nonDaemonVar - Condition variable to wake up the initial thread when it
+  /// waits for other non-daemon threads to end. The non-daemon thread that
+  /// decrements the nonDaemonThreads variable to zero wakes up the initial
+  /// thread.
+  ///
+  mvm::Cond nonDaemonVar;
+  
+  /// leave - A thread calls this function when it leaves the thread system.
+  ///
+  void leaveNonDaemonMode();
+
+  /// enter - A thread calls this function when it enters the thread system.
+  ///
+  void enterNonDaemonMode();
+
+public:
+	void waitNonDaemonThreads();
+};
+
 class VMKit : public mvm::PermanentObject {
 public:
   /// allocator - Bump pointer allocator to allocate permanent memory of VMKit
@@ -90,6 +125,9 @@ public:
 	///                          synchronized with vmkitLock
 	///
   size_t                       numberOfRunningThreads;
+
+	// nonDaemonThreadsManager - manager of the non daemon threads
+	NonDaemonThreadManager       nonDaemonThreadsManager;
 
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///

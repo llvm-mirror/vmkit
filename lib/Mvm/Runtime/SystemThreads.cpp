@@ -13,6 +13,8 @@ ReferenceThread::ReferenceThread(mvm::VMKit* vmkit) :
   ToEnqueue = new mvm::gc*[INITIAL_QUEUE_SIZE];
   ToEnqueueLength = INITIAL_QUEUE_SIZE;
   ToEnqueueIndex = 0;
+
+	setDaemon();
 }
 
 mvm::gc** getReferent(mvm::gc* obj) {
@@ -150,6 +152,8 @@ FinalizerThread::FinalizerThread(VMKit* vmkit) : MutatorThread(vmkit) {
   ToBeFinalized = new mvm::gc*[INITIAL_QUEUE_SIZE];
   ToBeFinalizedLength = INITIAL_QUEUE_SIZE;
   CurrentFinalizedIndex = 0;
+
+	setDaemon();
 }
 
 void FinalizerThread::growFinalizationQueue() {

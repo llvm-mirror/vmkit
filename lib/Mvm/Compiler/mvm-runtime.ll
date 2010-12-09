@@ -8,20 +8,21 @@
 %CircularBase = type { %VT*, %CircularBase*, %CircularBase* }
 
 ;;; Field 0:  the parent (circular base)
-;;; Field 1:  bool   doYield
-;;; field 2:  void*  lastExceptionBuffer/internalPendingException
-;;; field 3:  void*  vmData
-;;; field 4:  gc*    pendingException
-;;; field 5:  VMkit* vmkit
-;;; Field 6:  void*  baseSP
-;;; Field 7:  bool   inRV
-;;; Field 8:  bool   joinedRV
-;;; Field 9: void*  lastSP
-;;; Field 10: void*  internalThreadID
-;;; field 11: void*  routine
-;;; field 12: void*  lastKnownFrame
-;;; field 13: void*  allVMDatas
-%Thread       = type { %CircularBase, i1, i8*, i8*, i8*, i8*, i8*, i1, i1, i8*, i8*, i8*, i8*, i8* }
+;;; Field 1:  bool    doYield
+;;; field 2:  void*   lastExceptionBuffer/internalPendingException
+;;; field 3:  void*   vmData
+;;; field 4:  gc*     pendingException
+;;; field 5:  VMkit*  vmkit
+;;; Field 6:  void*   baseSP
+;;; Field 7:  bool    inRV
+;;; Field 8:  bool    joinedRV
+;;; Field 9:  void*   lastSP
+;;; Field 10: void*   internalThreadID
+;;; field 11: void*   routine
+;;; field 12: void*   lastKnownFrame
+;;; field 13: void*   allVMDatas
+;;; field 14: uint32  state
+%Thread       = type { %CircularBase, i1, i8*, i8*, i8*, i8*, i8*, i1, i1, i8*, i8*, i8*, i8*, i8*, i32 }
 
 ;;; field 0: VT
 ;;; field 1: mvm::MutatorThread*  mut

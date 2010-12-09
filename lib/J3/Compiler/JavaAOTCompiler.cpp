@@ -2084,7 +2084,7 @@ void mainCompilerStart(mvm::Thread* mut) {
     M->CreateStaticInitializer();
 
 end:
-	vm->leaveNonDaemonMode();
+		return;
 }
 
 void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {

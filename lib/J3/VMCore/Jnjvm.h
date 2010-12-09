@@ -116,31 +116,6 @@ private:
   static void mainJavaStart(mvm::Thread* thread);
   
 public:
-
-  /// nonDaemonThreads - Number of threads in the system that are not daemon
-  /// threads.
-  //
-  uint16 nonDaemonThreads;
-
-  /// nonDaemonLock - Protection lock for the nonDaemonThreads variable.
-  ///
-  mvm::LockNormal nonDaemonLock;
-
-  /// nonDaemonVar - Condition variable to wake up the initial thread when it
-  /// waits for other non-daemon threads to end. The non-daemon thread that
-  /// decrements the nonDaemonThreads variable to zero wakes up the initial
-  /// thread.
-  ///
-  mvm::Cond nonDaemonVar;
-  
-  /// leave - A thread calls this function when it leaves the thread system.
-  ///
-  void leaveNonDaemonMode();
-
-  /// enter - A thread calls this function when it enters the thread system.
-  ///
-  void enterNonDaemonMode();
-
   
   /// tracer - Traces instances of this class.
   ///

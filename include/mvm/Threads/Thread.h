@@ -152,6 +152,9 @@ public:
 	virtual ~VMThreadData() {} // force the construction of a VT
 };
 
+#define THREAD_RUNNING 1
+#define THREAD_DAEMON  2
+
 /// Thread - This class is the base of custom virtual machines' Thread classes.
 /// It provides static functions to manage threads. An instance of this class
 /// contains all thread-specific informations.
@@ -205,11 +208,23 @@ public:
   /// allVmsData - the array of thread specific data.
 	VMThreadData** allVmsData;                             // 13
 
+private:
+  /// state - daemon, running
+	uint32 state;                                          // 14
 
 protected:
   Thread(VMKit* vmk);
 
 public:
+
+	/// setDaemon - the thread is a daemon
+	void setDaemon();
+
+	/// setDaemon - the thread is not a daemon
+	void setNonDaemon();
+
+	/// getDaemon - get the daemon flag of the thread
+	uint32 getState() { return state; }
 
   /// yield - Yield the processor to another thread.
   ///

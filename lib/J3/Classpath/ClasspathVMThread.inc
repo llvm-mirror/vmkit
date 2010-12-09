@@ -60,19 +60,13 @@ void start(mvm::Thread* mut) {
   // wait until exit.
   bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
 
-  if (!isDaemon) {
-    vm->enterNonDaemonMode();
-  }
- 
+  if (isDaemon)
+		mut->setDaemon();
+	
   assert(vmThread->getVirtualTable());
   assert(javaThread->getVirtualTable());
   // Run the VMThread::run function
   vm->upcalls->runVMThread->invokeIntSpecial(vmthClass, vmThread);
- 
-  // Remove the thread from the list.
-  if (!isDaemon) {
-    vm->leaveNonDaemonMode();
-  }
 }
 
 JNIEXPORT void JNICALL Java_java_lang_VMThread_start(

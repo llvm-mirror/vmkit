@@ -12,53 +12,31 @@ VirtualMachine::~VirtualMachine() {
 	vmkit->removeVM(vmID);
 }
 
-void VirtualMachine::leaveNonDeamonMode() {
-  nonDaemonLock.lock();
-  --nbNonDaemonThreads;
-  if (nbNonDaemonThreads == 0) nonDaemonVar.signal();
-  nonDaemonLock.unlock();  
-}
 
-void VirtualMachine::enterNonDeamonMode() {
-  nonDaemonLock.lock();
-  ++nbNonDaemonThreads;
-  nonDaemonLock.unlock();  
-}
+// class LauncherThread : public Thread {
+// public:
+// 	void (*realStart)(VirtualMachine*, int, char**);
+// 	VirtualMachine *vm;
+// 	int argc;
+// 	char** argv;
 
-void VirtualMachine::waitForNonDeamonThreads() { 
-	nonDaemonLock.lock();
-  
-  while (nbNonDaemonThreads) {
-    nonDaemonVar.wait(&nonDaemonLock);
-  }
-  
-  nonDaemonLock.unlock();
-}
+// 	LauncherThread(VMKit* vmkit, void (*s)(VirtualMachine*, int, char**), VirtualMachine* v, int ac, char** av) : Thread(vmkit) {
+// 		realStart = s;
+// 		vm = v;
+// 		argc = ac;
+// 		argv = av;
+// 	}
 
-class LauncherThread : public Thread {
-public:
-	void (*realStart)(VirtualMachine*, int, char**);
-	VirtualMachine *vm;
-	int argc;
-	char** argv;
+// 	static void launch(LauncherThread* th) {
+// 		if(th->realStart)
+// 			th->realStart(th->vm, th->argc, th->argv);
+// 		else
+// 			th->vm->runApplicationImpl(th->argc, th->argv);
+// 		th->vm->leaveNonDeamonMode();
+// 	}
+// };
 
-	LauncherThread(VMKit* vmkit, void (*s)(VirtualMachine*, int, char**), VirtualMachine* v, int ac, char** av) : Thread(vmkit) {
-		realStart = s;
-		vm = v;
-		argc = ac;
-		argv = av;
-	}
-
-	static void launch(LauncherThread* th) {
-		if(th->realStart)
-			th->realStart(th->vm, th->argc, th->argv);
-		else
-			th->vm->runApplicationImpl(th->argc, th->argv);
-		th->vm->leaveNonDeamonMode();
-	}
-};
-
-void VirtualMachine::runInNonDeamonThread(void (*start)(VirtualMachine*, int, char**), int argc, char **argv) {
-  enterNonDeamonMode();
-  (new LauncherThread(vmkit, start, this, argc, argv))->start((void (*)(Thread*))LauncherThread::launch);
-}
+// void VirtualMachine::runInNonDeamonThread(void (*start)(VirtualMachine*, int, char**), int argc, char **argv) {
+//   enterNonDeamonMode();
+//   (new LauncherThread(vmkit, start, this, argc, argv))->start((void (*)(Thread*))LauncherThread::launch);
+// }
