@@ -1,5 +1,6 @@
 #include "mvm/VirtualMachine.h"
 #include "mvm/VMKit.h"
+#include "MutatorThread.h"
 
 using namespace mvm;
 
@@ -12,14 +13,14 @@ VirtualMachine::~VirtualMachine() {
 	vmkit->removeVM(vmID);
 }
 
-class LauncherThread : public Thread {
+class LauncherThread : public MutatorThread {
 public:
- 	void (*realStart)(VirtualMachine*, int, char**);
- 	VirtualMachine *vm;
- 	int argc;
- 	char** argv;
+ 	void          (*realStart)(VirtualMachine*, int, char**);
+ 	VirtualMachine* vm;
+ 	int             argc;
+ 	char**          argv;
 
- 	LauncherThread(VMKit* vmkit, void (*s)(VirtualMachine*, int, char**), VirtualMachine* v, int ac, char** av) : Thread(vmkit) {
+ 	LauncherThread(VMKit* vmkit, void (*s)(VirtualMachine*, int, char**), VirtualMachine* v, int ac, char** av) : MutatorThread(vmkit) {
  		realStart = s;
  		vm = v;
  		argc = ac;
@@ -34,10 +35,10 @@ public:
  	}
 };
 
-void VirtualMachine::runApplication0(void (*starter)(VirtualMachine*, int, char**), int argc, char **argv) {
+void VirtualMachine::runApplication(void (*starter)(VirtualMachine*, int, char**), int argc, char **argv) {
 	(new LauncherThread(vmkit, starter, this, argc, argv))->start((void (*)(Thread*))LauncherThread::launch);
 }
 
-void VirtualMachine::runApplication0(int argc, char** argv) {
-	runApplication0(0, argc, argv);
+void VirtualMachine::runApplication(int argc, char** argv) {
+	runApplication(0, argc, argv);
 }

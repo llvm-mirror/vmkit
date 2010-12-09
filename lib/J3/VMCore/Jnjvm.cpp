@@ -1316,12 +1316,6 @@ void Jnjvm::runApplicationImpl(int argc, char** argv) {
 	mainJavaStart(mvm::Thread::get());
 }
 
-void Jnjvm::runApplication(int argc, char** argv) {
-  argumentsInfo.argc = argc;
-  argumentsInfo.argv = argv;
-  JavaThread::create(this)->mut->start((void (*)(mvm::Thread*))mainJavaStart);
-}
-
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp, bool dlLoad) : 
 	VirtualMachine(Alloc, vmkit), 
 	lockSystem(Alloc) {

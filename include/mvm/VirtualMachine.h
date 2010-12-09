@@ -58,11 +58,11 @@ public:
 
 	/// runApplication - launch runApplicationImpl in a vmkit thread. The vmData is not allocated.
 	///
-	void runApplication0(int argc, char** argv);
+	void runApplication(int argc, char** argv);
 
 	/// runApplication - launch starter in a vmkit thread. The vmData is not allocated.
 	///
-	void runApplication0(void (*starter)(VirtualMachine* vm, int argc, char** argv), int argc, char** argv);
+	void runApplication(void (*starter)(VirtualMachine* vm, int argc, char** argv), int argc, char** argv);
   
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.
