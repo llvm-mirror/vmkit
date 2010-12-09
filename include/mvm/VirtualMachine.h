@@ -50,7 +50,7 @@ public:
 //===----------------------------------------------------------------------===//
 	/// buildVMThreadData - allocate a java thread for the underlying mutator. Called when the java thread is a foreign thread.
 	///
-	virtual VMThreadData* buildVMThreadData(Thread* mut) = 0; //{ return new VMThreadData(this, mut); }
+	virtual VMThreadData* buildVMThreadData(Thread* mut) { return new VMThreadData(this, mut); }
 
 	/// runApplicationImpl - code executed after a runApplication in a vmkit thread
 	///

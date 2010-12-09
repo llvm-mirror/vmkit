@@ -111,13 +111,15 @@ public:
   ///
   ~JavaThread();
 
+private:
   /// JavaThread - Creates a Java thread. 
   ///
   JavaThread(Jnjvm* vm, mvm::Thread*mut);
 
-  /// create - Creates a Java thread and a mutator thread.
+public:
+  /// associate - Associate a java thread to the mutator
   ///
-	static JavaThread* create(Jnjvm* vm);
+	static JavaThread* associate(Jnjvm* vm, mvm::Thread* mut);
 
   /// j3Thread - gives the JavaThread associated with the mutator thread
   ///

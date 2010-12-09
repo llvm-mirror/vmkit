@@ -282,10 +282,6 @@ public:
 	///
   virtual void runApplicationImpl(int argc, char** argv);
   
-	/// associateBootstrapJavaThread - allocate a bootstrap java thread for the underlying mutator during bootstrap. 
-	///
-	void associateBootstrapJavaThread();
-
 	/// buildVMThreadData - allocate a java thread for the underlying mutator. Called when the java thread is a foreign thread.
 	///
 	virtual mvm::VMThreadData* buildVMThreadData(mvm::Thread* mut);

@@ -31,13 +31,13 @@ JavaThread* JavaThread::j3Thread(mvm::Thread* mut) {
 	return (JavaThread*)mut->vmData;
 }
 
-JavaThread *JavaThread::create(Jnjvm* vm) {
-	mvm::Thread *mut = new mvm::MutatorThread(vm->vmkit);
+JavaThread* JavaThread::associate(Jnjvm* vm, mvm::Thread* mut) {
 	JavaThread *th   = new JavaThread(vm, mut);
 	mut->allVmsData[vm->vmID] = th;
 	mut->attach(vm);
 	return th;
 }
+
 
 void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
   llvm_gcroot(thread, 0);

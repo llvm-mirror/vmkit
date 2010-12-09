@@ -1060,9 +1060,7 @@ JnjvmClassLoader* Jnjvm::loadAppClassLoader() {
 }
 
 mvm::VMThreadData* Jnjvm::buildVMThreadData(mvm::Thread* mut) {
-	JavaThread* th = new JavaThread(this, mut);
-	mut->allVmsData[vmID] = th; // will be done by my caller but I have to call java code before
-	mut->vmData = th;           // will be done by my caller but I have to call java code before
+	JavaThread* th = JavaThread::associate(this, mut);
 	upcalls->CreateForeignJavaThread(this, th);
 	return th;
 }
@@ -1245,8 +1243,7 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
   } IGNORE;
 }
 
-void Jnjvm::mainJavaStart(mvm::Thread* thread) {
-
+void Jnjvm::runApplicationImpl(int argc, char** argv) {
   JavaString* str = NULL;
   JavaObject* instrumenter = NULL;
   ArrayObject* args = NULL;
@@ -1259,18 +1256,22 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   llvm_gcroot(args, 0);
   llvm_gcroot(exc, 0);
 
-  Jnjvm* vm = JavaThread::j3Thread(thread)->getJVM();
-  vm->bootstrapLoader->analyseClasspathEnv(vm->bootstrapLoader->bootClasspathEnv);
-  vm->argumentsInfo.readArgs(vm);
-  if (vm->argumentsInfo.className == NULL)
+	JavaThread::associate(this, mvm::Thread::get());
+
+  argumentsInfo.argc = argc;
+  argumentsInfo.argv = argv;
+
+  bootstrapLoader->analyseClasspathEnv(bootstrapLoader->bootClasspathEnv);
+  argumentsInfo.readArgs(this);
+  if (argumentsInfo.className == NULL)
     return;
 
-  int pos = vm->argumentsInfo.appArgumentsPos;  
-  vm->argumentsInfo.argv = vm->argumentsInfo.argv + pos - 1;
-  vm->argumentsInfo.argc = vm->argumentsInfo.argc - pos + 1;
+  int pos = argumentsInfo.appArgumentsPos;  
+  argumentsInfo.argv = argumentsInfo.argv + pos - 1;
+  argumentsInfo.argc = argumentsInfo.argc - pos + 1;
 
   TRY {
-    vm->loadBootstrap();
+    loadBootstrap();
   } CATCH {
     exc = mvm::Thread::get()->getPendingException();
   } END_CATCH;
@@ -1280,40 +1281,26 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
     fprintf(stderr, "Exception %s while bootstrapping VM.",
 						exc ? UTF8Buffer(JavaObject::getClass(jexc)->name).cString() : " foreign exception");
   } else {
-    ClArgumentsInfo& info = vm->argumentsInfo;
+    ClArgumentsInfo& info = argumentsInfo;
   
     if (info.agents.size()) {
       assert(0 && "implement me");
       instrumenter = 0;//createInstrumenter();
       for (std::vector< std::pair<char*, char*> >::iterator i = 
            info.agents.begin(), e = info.agents.end(); i!= e; ++i) {
-        str = vm->asciizToStr(i->second);
-        vm->executePremain(i->first, str, instrumenter);
+        str = asciizToStr(i->second);
+        executePremain(i->first, str, instrumenter);
       }
     }
     
-    UserClassArray* array = vm->upcalls->ArrayOfString;
+    UserClassArray* array = upcalls->ArrayOfString;
     args = (ArrayObject*)array->doNew(info.argc - 2);
     for (int i = 2; i < info.argc; ++i) {
-      ArrayObject::setElement(args, (JavaObject*)vm->asciizToStr(info.argv[i]), i - 2);
+      ArrayObject::setElement(args, (JavaObject*)asciizToStr(info.argv[i]), i - 2);
     }
 
-    vm->executeClass(info.className, args);
+    executeClass(info.className, args);
   }
-}
-
-void Jnjvm::associateBootstrapJavaThread() {
-	mvm::Thread* mut = mvm::Thread::get();
-	JavaThread *th   = new JavaThread(this, mut);
-	mut->allVmsData[vmID] = th;
-	mut->attach(this);
-}
-
-void Jnjvm::runApplicationImpl(int argc, char** argv) {
-	associateBootstrapJavaThread();
-  argumentsInfo.argc = argc;
-  argumentsInfo.argv = argv;
-	mainJavaStart(mvm::Thread::get());
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp, bool dlLoad) : 
