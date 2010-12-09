@@ -27,50 +27,6 @@ class gc;
 
 namespace mvm {
 
-extern "C" uint8  llvm_atomic_cmp_swap_i8(uint8* ptr,  uint8 cmp,
-                                          uint8 val);
-extern "C" uint16 llvm_atomic_cmp_swap_i16(uint16* ptr, uint16 cmp,
-                                           uint16 val);
-extern "C" uint32 llvm_atomic_cmp_swap_i32(uint32* ptr, uint32 cmp,
-                                           uint32 val);
-extern "C" uint64 llvm_atomic_cmp_swap_i64(uint64* ptr, uint64 cmp,
-                                           uint64 val);
-
-#ifndef WITH_LLVM_GCC
-
-// TODO: find what macro for gcc < 4.2
-
-#define __sync_bool_compare_and_swap_32(ptr, cmp, val) \
-  mvm::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), \
-                           (uint32)(val)) == (uint32)(cmp)
-
-#if (__WORDSIZE == 64)
-
-#define __sync_bool_compare_and_swap(ptr, cmp, val) \
-  mvm::llvm_atomic_cmp_swap_i64((uint64*)(ptr), (uint64)(cmp), \
-                           (uint64)(val)) == (uint64)(cmp)
-
-#define __sync_val_compare_and_swap(ptr, cmp,val) \
-  mvm::llvm_atomic_cmp_swap_i64((uint64*)(ptr), (uint64)(cmp), \
-                           (uint64)(val))
-
-
-#else
-
-
-
-#define __sync_bool_compare_and_swap(ptr, cmp, val) \
-  mvm::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), \
-                           (uint32)(val)) == (uint32)(cmp)
-
-#define __sync_val_compare_and_swap(ptr, cmp,val) \
-  mvm::llvm_atomic_cmp_swap_i32((uint32*)(ptr), (uint32)(cmp), \
-                           (uint32)(val))
-#endif
-
-
-#endif
-
 class Cond;
 class FatLock;
 class LockNormal;
@@ -96,7 +52,6 @@ protected:
   ///
   pthread_mutex_t internalLock;
   
-
 public:
 
   /// Lock - Creates a lock, recursive if rec is true.
