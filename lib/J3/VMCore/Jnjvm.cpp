@@ -1302,6 +1302,20 @@ void Jnjvm::mainJavaStart(mvm::Thread* thread) {
   }
 }
 
+void Jnjvm::associateBootstrapJavaThread() {
+	mvm::Thread* mut = mvm::Thread::get();
+	JavaThread *th   = new JavaThread(this, mut);
+	mut->allVmsData[vmID] = th;
+	mut->attach(this);
+}
+
+void Jnjvm::runApplicationImpl(int argc, char** argv) {
+	associateBootstrapJavaThread();
+  argumentsInfo.argc = argc;
+  argumentsInfo.argv = argv;
+	mainJavaStart(mvm::Thread::get());
+}
+
 void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;

@@ -205,7 +205,6 @@ void VMKit::waitNonDaemonThreads() {
 	nonDaemonThreadsManager.waitNonDaemonThreads();
 }
 
-
 void NonDaemonThreadManager::leaveNonDaemonMode() {
   nonDaemonLock.lock();
   --nonDaemonThreads;

@@ -52,21 +52,17 @@ public:
 	///
 	virtual VMThreadData* buildVMThreadData(Thread* mut) = 0; //{ return new VMThreadData(this, mut); }
 
-	virtual void runApplicationImpl(int argc, char** argv) {};
+	/// runApplicationImpl - code executed after a runApplication in a vmkit thread
+	///
+	virtual void runApplicationImpl(int argc, char** argv) {}
 
-//   /// runInNonDeamonThread - start a non deamon thread a begin the code with start if != 0 and runApplicationImpl otherwise
-// 	/// the thread leaves the deamon mode when it finishs.
-// 	void runInNonDeamonThread(void (*start)(VirtualMachine*, int, char**), int argc, char** argv);
+	/// runApplication - launch runApplicationImpl in a vmkit thread. The vmData is not allocated.
+	///
+	void runApplication0(int argc, char** argv);
 
-//   /// runInNonDeamonThread - start a non deamon thread a begin the code with runApplicationImpl, 
-// 	void runInNonDeamonThread(int argc, char **argv) { runInNonDeamonThread(0, argc, argv); }
-
-//   /// waitNonDeamonThreads - wait until all the non deamon threads are terminated.
-// 	void waitForNonDeamonThreads();
-
-//   /// runApplication - Run an application. The application name is in
-//   /// the arguments, hence it is the virtual machine's job to parse them.
-//   virtual void runApplication(int argc, char** argv) = 0;
+	/// runApplication - launch starter in a vmkit thread. The vmData is not allocated.
+	///
+	void runApplication0(void (*starter)(VirtualMachine* vm, int argc, char** argv), int argc, char** argv);
   
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.

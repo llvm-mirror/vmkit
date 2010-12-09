@@ -280,11 +280,19 @@ public:
   /// Jnjvm - Allocates a new JVM.
   ///
   Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp, bool dlLoad);
+
+  /// runApplicationImpl - function executed in a thread after a call to runApplication
+	///
+  virtual void runApplicationImpl(int argc, char** argv);
   
   /// runApplication - Runs the application with the given command line.
   /// User-visible function, inherited by the VirtualMachine class.
   ///
   virtual void runApplication(int argc, char** argv);
+
+	/// associateBootstrapJavaThread - allocate a bootstrap java thread for the underlying mutator during bootstrap. 
+	///
+	void associateBootstrapJavaThread();
 
 	/// buildVMThreadData - allocate a java thread for the underlying mutator. Called when the java thread is a foreign thread.
 	///
