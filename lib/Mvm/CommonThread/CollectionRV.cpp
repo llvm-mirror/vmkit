@@ -54,8 +54,9 @@ void CooperativeCollectionRV::synchronize() {
   self->MyVM->ThreadLock.lock();
 
   mvm::Thread* cur = self;
+  assert(initiator == NULL);
+  initiator = self;
   do {
-    assert(!cur->doYield);
     cur->doYield = true;
     assert(!cur->joinedRV);
     cur = (mvm::Thread*)cur->next();
@@ -192,8 +193,8 @@ extern "C" void conditionalSafePoint() {
 
 void CooperativeCollectionRV::finishRV() {
   lockRV();
-    
-  mvm::Thread* initiator = mvm::Thread::get();
+  
+  assert(mvm::Thread::get() == initiator);
   mvm::Thread* cur = initiator;
   do {
     assert(cur->doYield && "Inconsistent state");
@@ -207,8 +208,9 @@ void CooperativeCollectionRV::finishRV() {
   nbJoined = 0;
   initiator->MyVM->ThreadLock.unlock();
   condEndRV.broadcast();
+  initiator = NULL;
   unlockRV();
-  initiator->inRV = false;
+  mvm::Thread::get()->inRV = false;
 }
 
 void UncooperativeCollectionRV::finishRV() {

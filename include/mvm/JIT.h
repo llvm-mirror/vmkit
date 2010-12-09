@@ -122,6 +122,9 @@ public:
   llvm::Function* AllocateFunction;
   llvm::Function* AllocateUnresolvedFunction;
   llvm::Function* AddFinalizationCandidate;
+  llvm::Function* ArrayWriteBarrierFunction;
+  llvm::Function* FieldWriteBarrierFunction;
+  llvm::Function* NonHeapWriteBarrierFunction;
 
   llvm::Constant* constantInt8Zero;
   llvm::Constant* constantZero;

@@ -25,9 +25,4 @@ void StringMap::insert(JavaString* str) {
   assert(map.find(array)->first == array);
   assert(&(map.find(array)->second) == &(it->second));
   assert(&(map.find(array)->first) == &(it->first));
-  // Inform the GC that we just stored a string here.
-  mvm::Collector::objectReferenceNonHeapWriteBarrier(
-      (gc**)&(it->second), (gc*)str);
-  mvm::Collector::objectReferenceNonHeapWriteBarrier(
-      (gc**)&(it->first), (gc*)array);
 }

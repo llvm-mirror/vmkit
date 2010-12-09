@@ -322,6 +322,10 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   assert(AllocateUnresolvedFunction && "No allocateUnresolved function");
   AddFinalizationCandidate = module->getFunction("addFinalizationCandidate");
   assert(AddFinalizationCandidate && "No addFinalizationCandidate function");
+
+  ArrayWriteBarrierFunction = module->getFunction("arrayWriteBarrier");
+  FieldWriteBarrierFunction = module->getFunction("fieldWriteBarrier");
+  NonHeapWriteBarrierFunction = module->getFunction("nonHeapWriteBarrier");
 }
 
 const llvm::TargetData* MvmModule::TheTargetData;

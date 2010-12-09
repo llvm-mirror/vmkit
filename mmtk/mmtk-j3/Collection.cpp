@@ -36,7 +36,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
 
   // Verify that another collection is not happening.
   th->MyVM->rendezvous.startRV();
-  if (th->doYield) {
+  if (th->MyVM->rendezvous.getInitiator() != NULL) {
     th->MyVM->rendezvous.cancelRV();
     th->MyVM->rendezvous.join();
     return;
@@ -104,8 +104,16 @@ extern "C" int32_t Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ (MMTkObje
 
 
 extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ (MMTkObject* C) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I (MMTkObject* C, sint32 val) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_mmtk_Collection_noThreadsInGC__ (MMTkObject* C) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I (MMTkObject* C, sint32 val) {
+  mvm::Thread::get()->doYield = true;
+}
+
+extern "C" uint8_t Java_org_j3_mmtk_Collection_noThreadsInGC__ (MMTkObject* C) {
+  mvm::Thread* th = mvm::Thread::get();
+  bool threadInGC = th->doYield;
+  return !threadInGC;
+}
+
 extern "C" void Java_org_j3_mmtk_Collection_requestMutatorFlush__ (MMTkObject* C) { UNIMPLEMENTED(); }
 
 } // namespace mmtk

@@ -721,8 +721,15 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index,
                                          intrinsics->JavaArrayObjectType);
-
-        new StoreInst(val, ptr, false, currentBlock);
+        if (mvm::Collector::supportsWriteBarrier()) {
+          ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
+          val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
+          obj = new BitCastInst(obj, intrinsics->ptrType, "", currentBlock);
+          Value* args[3] = { obj, ptr, val };
+          CallInst::Create(intrinsics->ArrayWriteBarrierFunction, args, args + 3, "", currentBlock);
+        } else {
+          new StoreInst(val, ptr, false, currentBlock);
+        }
         break;
       }
 

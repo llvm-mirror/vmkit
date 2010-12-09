@@ -42,7 +42,9 @@ namespace mvm {
 
 bool InlineMalloc::runOnFunction(Function& F) {
   Function* Malloc = F.getParent()->getFunction("gcmalloc");
-  if (!Malloc || Malloc->isDeclaration()) return false;
+  Function* FieldWriteBarrier = F.getParent()->getFunction("fieldWriteBarrier");
+  Function* ArrayWriteBarrier = F.getParent()->getFunction("arrayWriteBarrier");
+  Function* NonHeapWriteBarrier = F.getParent()->getFunction("nonHeapWriteBarrier");
   bool Changed = false;
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
@@ -61,6 +63,12 @@ bool InlineMalloc::runOnFunction(Function& F) {
           Changed |= InlineFunction(Call, IFI);
           break;
         }
+      } else if (Temp == FieldWriteBarrier ||
+                 Temp == NonHeapWriteBarrier ||
+                 Temp == ArrayWriteBarrier) {
+        InlineFunctionInfo IFI(NULL, mvm::MvmModule::TheTargetData);
+        Changed |= InlineFunction(Call, IFI);
+        break;
       }
     }
   }

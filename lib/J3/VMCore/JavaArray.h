@@ -99,7 +99,7 @@ public:
     llvm_gcroot(self, 0);
     llvm_gcroot(value, 0);
     if (value != NULL) assert(value->getVirtualTable());
-    mvm::Collector::objectReferenceWriteBarrier(
+    mvm::Collector::objectReferenceArrayWriteBarrier(
         (gc*)self, (gc**)&(self->elements[i]), (gc*)value);
   }
 

@@ -2066,8 +2066,15 @@ void JavaJIT::setStaticField(uint16 index) {
   if (type != val->getType()) { // int1, int8, int16
     convertValue(val, type, currentBlock, false);
   }
-
-  new StoreInst(val, ptr, false, currentBlock);
+  
+  if (mvm::Collector::supportsWriteBarrier() && type == intrinsics->JavaObjectType) {
+    ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
+    val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
+    Value* args[2] = { ptr, val };
+    CallInst::Create(intrinsics->NonHeapWriteBarrierFunction, args, args + 2, "", currentBlock);
+  } else {
+    new StoreInst(val, ptr, false, currentBlock);
+  }
 }
 
 void JavaJIT::getStaticField(uint16 index) {
@@ -2166,8 +2173,17 @@ void JavaJIT::setVirtualField(uint16 index) {
   if (type != val->getType()) { // int1, int8, int16
     convertValue(val, type, currentBlock, false);
   }
-
-  new StoreInst(val, ptr, false, currentBlock);
+  
+  if (mvm::Collector::supportsWriteBarrier() && type == intrinsics->JavaObjectType) {
+    ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
+    val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
+    object = new LoadInst(object, "", currentBlock);
+    object = new BitCastInst(object, intrinsics->ptrType, "", currentBlock);
+    Value* args[3] = { object, ptr, val };
+    CallInst::Create(intrinsics->FieldWriteBarrierFunction, args, args + 3, "", currentBlock);
+  } else {
+    new StoreInst(val, ptr, false, currentBlock);
+  }
 }
 
 void JavaJIT::getVirtualField(uint16 index) {

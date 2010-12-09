@@ -15,6 +15,7 @@ import org.mmtk.plan.Plan;
 import org.mmtk.plan.TraceLocal;
 import org.mmtk.plan.TransitiveClosure;
 import org.mmtk.utility.heap.HeapGrowthManager;
+import org.mmtk.utility.Constants;
 import org.vmmagic.pragma.Inline;
 import org.vmmagic.unboxed.Address;
 import org.vmmagic.unboxed.Extent;
@@ -114,4 +115,43 @@ public final class Bindings {
   private static native void memcpy(
       ObjectReference to, ObjectReference from, int size);
 
+  @Inline
+  private static void arrayWriteBarrier(ObjectReference ref, Address slot, ObjectReference value) {
+    if (Selected.Constraints.get().needsObjectReferenceWriteBarrier()) {
+      Selected.Mutator mutator = Selected.Mutator.get();
+      mutator.objectReferenceWrite(ref, slot, value, slot.toWord(), slot.toWord(), Constants.ARRAY_ELEMENT);
+    } else {
+      slot.store(value);
+    }
+  }
+  
+  @Inline
+  private static void fieldWriteBarrier(ObjectReference ref, Address slot, ObjectReference value) {
+    if (Selected.Constraints.get().needsObjectReferenceWriteBarrier()) {
+      Selected.Mutator mutator = Selected.Mutator.get();
+      mutator.objectReferenceWrite(ref, slot, value, slot.toWord(), slot.toWord(), Constants.INSTANCE_FIELD);
+    } else {
+      slot.store(value);
+    }
+  }
+  
+  @Inline
+  private static void nonHeapWriteBarrier(Address slot, ObjectReference value) {
+    if (Selected.Constraints.get().needsObjectReferenceNonHeapWriteBarrier()) {
+      Selected.Mutator mutator = Selected.Mutator.get();
+      mutator.objectReferenceNonHeapWrite(slot, value, slot.toWord(), slot.toWord());
+    } else {
+      slot.store(value);
+    }
+  }
+  
+  @Inline
+  private static boolean writeBarrierCAS(ObjectReference src, Address slot, ObjectReference old, ObjectReference value) {
+    if (Selected.Constraints.get().needsObjectReferenceWriteBarrier()) {
+      Selected.Mutator mutator = Selected.Mutator.get();
+      return mutator.objectReferenceTryCompareAndSwap(src, slot, old, value, slot.toWord(), slot.toWord(), Constants.INSTANCE_FIELD);
+    } else {
+      return slot.attempt(old.toAddress().toWord(), value.toAddress().toWord());
+    }
+  }
 }

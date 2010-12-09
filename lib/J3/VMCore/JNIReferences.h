@@ -69,8 +69,7 @@ public:
       return next->addJNIReference(obj);
     } else {
       ++count;
-      mvm::Collector::objectReferenceNonHeapWriteBarrier(
-          (gc**)&(globalReferences[length]), (gc*)obj);
+      globalReferences[length] = obj;
       return &globalReferences[length++];
     }
   }

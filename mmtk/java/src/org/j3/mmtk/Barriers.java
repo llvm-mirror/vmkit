@@ -14,7 +14,7 @@ package org.j3.mmtk;
 
 import org.jikesrvm.SizeConstants;
 import org.jikesrvm.Magic;
-import org.mmtk.vm.VM;
+import org.j3.runtime.VM;
 
 import org.vmmagic.unboxed.*;
 import org.vmmagic.pragma.*;
@@ -33,6 +33,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void booleanWrite(ObjectReference objref, boolean value, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setBooleanAtOffset(objref.toObject(), offset.toOffset(), value, location.toInt());
   }
 
@@ -48,6 +49,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final boolean booleanRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getByteAtOffset(objref.toObject(), offset.toOffset()) == 0;
   }
 
@@ -63,6 +65,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void byteWrite(ObjectReference objref, byte value, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setByteAtOffset(objref.toObject(), offset.toOffset(), value, location.toInt());
   }
 
@@ -78,6 +81,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final byte byteRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getByteAtOffset(objref.toObject(), offset.toOffset());
   }
 
@@ -93,6 +97,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void charWrite(ObjectReference objref, char value, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setCharAtOffset(objref.toObject(), offset.toOffset(), value, location.toInt());
   }
 
@@ -108,6 +113,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final char charRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getCharAtOffset(objref.toObject(), offset.toOffset());
   }
 
@@ -123,6 +129,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void shortWrite(ObjectReference objref, short value, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setShortAtOffset(objref.toObject(), offset.toOffset(), value, location.toInt());
   }
 
@@ -138,6 +145,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final short shortRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getShortAtOffset(objref.toObject(), offset.toOffset());
   }
 
@@ -153,6 +161,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void intWrite(ObjectReference objref, int value, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setIntAtOffset(objref.toObject(), offset.toOffset(), value, location.toInt());
   }
 
@@ -168,6 +177,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final int intRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getIntAtOffset(objref.toObject(), offset.toOffset());
   }
 
@@ -184,6 +194,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
    */
   @Override
   public boolean intTryCompareAndSwap(ObjectReference objref, int expected, int newValue, Word offset, Word unused, int mode) {
+    VM._assert(VM.NOT_REACHED);
     int oldValue;
     do {
       oldValue = Magic.prepareInt(objref, offset.toOffset());
@@ -204,6 +215,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void longWrite(ObjectReference objref, long value, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setLongAtOffset(objref.toObject(), offset.toOffset(), value, location.toInt());
   }
 
@@ -219,6 +231,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final long longRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getLongAtOffset(objref.toObject(), offset.toOffset());
   }
 
@@ -235,6 +248,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
    */
   @Override
   public boolean longTryCompareAndSwap(ObjectReference objref, long expected, long newValue, Word offset, Word unused, int mode) {
+    VM._assert(VM.NOT_REACHED);
     long oldValue;
     do {
       oldValue = Magic.prepareLong(objref, offset.toOffset());
@@ -255,6 +269,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void floatWrite(ObjectReference objref, float value, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setFloatAtOffset(objref.toObject(), offset.toOffset(), value, location.toInt());
   }
 
@@ -270,6 +285,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final float floatRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getFloatAtOffset(objref.toObject(), offset.toOffset());
   }
 
@@ -285,6 +301,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void doubleWrite(ObjectReference objref, double value, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setDoubleAtOffset(objref.toObject(), offset.toOffset(), value, location.toInt());
   }
 
@@ -300,6 +317,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final double doubleRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getDoubleAtOffset(objref.toObject(), offset.toOffset());
   }
 
@@ -314,8 +332,8 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
    */
   @Inline
   @Override
-  public final void objectReferenceWrite(ObjectReference objref, ObjectReference value, Word offset, Word location, int mode) {
-    Magic.setObjectAtOffset(objref.toObject(), offset.toOffset(), value.toObject(), location.toInt());
+  public final void objectReferenceWrite(ObjectReference objref, ObjectReference value, Word slot, Word location, int mode) {
+    slot.toAddress().store(value);
   }
 
   /**
@@ -330,6 +348,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final ObjectReference objectReferenceRead(ObjectReference objref, Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return ObjectReference.fromObject(Magic.getObjectAtOffset(objref.toObject(), offset.toOffset(), location.toInt()));
   }
 
@@ -362,6 +381,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final ObjectReference objectReferenceAtomicWrite(ObjectReference objref, ObjectReference target, Word offset, Word unused, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Object obj = objref.toObject();
     Object newObject = target.toObject();
     Object oldObject;
@@ -385,6 +405,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final boolean objectReferenceTryCompareAndSwap(ObjectReference objref, ObjectReference old, ObjectReference target, Word offset, Word unused, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Object oldValue;
     do {
       oldValue = Magic.prepareObject(objref, offset.toOffset());
@@ -405,8 +426,8 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Inline
   @Override
   public final void wordWrite(ObjectReference ref, Word target,
-      Word offset, Word location, int mode) {
-    Magic.setWordAtOffset(ref.toObject(), offset.toOffset(), target, location.toInt());
+      Word slot, Word location, int mode) {
+    slot.toAddress().store(target);
   }
 
   /**
@@ -424,6 +445,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final Word wordAtomicWrite(ObjectReference ref, Word target,
       Word offset, Word unused, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Word oldValue;
     do {
       oldValue = Magic.prepareWord(ref.toObject(), offset.toOffset());
@@ -446,6 +468,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final boolean wordTryCompareAndSwap(ObjectReference ref, Word old, Word target,
       Word offset, Word unused, int mode) {
+    VM._assert(VM.NOT_REACHED);
     do {
       Word currentValue = Magic.prepareWord(ref, offset.toOffset());
       if (currentValue != old) return false;
@@ -466,6 +489,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final Word wordRead(ObjectReference ref,
         Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getWordAtOffset(ref.toObject(), offset.toOffset(), location.toInt());
   }
 
@@ -482,6 +506,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final void addressWrite(ObjectReference ref, Address target,
       Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setAddressAtOffset(ref.toObject(), offset.toOffset(), target, location.toInt());
   }
 
@@ -498,6 +523,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final Address addressRead(ObjectReference ref,
         Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getAddressAtOffset(ref.toObject(), offset.toOffset(), location.toInt());
   }
 
@@ -514,6 +540,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
    */
   @Override
   public boolean addressTryCompareAndSwap(ObjectReference objref, Address expected, Address newValue, Word offset, Word unused, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Address oldValue;
     do {
       oldValue = Magic.prepareAddress(objref, offset.toOffset());
@@ -535,6 +562,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final void offsetWrite(ObjectReference ref, Offset target,
       Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setOffsetAtOffset(ref.toObject(), offset.toOffset(), target, location.toInt());
   }
 
@@ -551,6 +579,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final Offset offsetRead(ObjectReference ref,
         Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getOffsetAtOffset(ref.toObject(), offset.toOffset(), location.toInt());
   }
 
@@ -567,6 +596,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final void extentWrite(ObjectReference ref, Extent target,
       Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     Magic.setExtentAtOffset(ref.toObject(), offset.toOffset(), target, location.toInt());
   }
 
@@ -583,6 +613,7 @@ public class Barriers extends org.mmtk.vm.Barriers implements SizeConstants {
   @Override
   public final Extent extentRead(ObjectReference ref,
         Word offset, Word location, int mode) {
+    VM._assert(VM.NOT_REACHED);
     return Magic.getExtentAtOffset(ref.toObject(), offset.toOffset(), location.toInt());
   }
 

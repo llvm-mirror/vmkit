@@ -77,8 +77,10 @@ public:
   static gc*  getForwardedReference(gc* val, uintptr_t closure) __attribute__ ((always_inline));
   static gc*  getForwardedReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
   static void objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) __attribute__ ((always_inline));
+  static void objectReferenceArrayWriteBarrier(gc* ref, gc** slot, gc* value) __attribute__ ((always_inline));
   static void objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) __attribute__ ((always_inline));
   static bool objectReferenceTryCASBarrier(gc* ref, gc** slot, gc* old, gc* value) __attribute__ ((always_inline));
+  static bool supportsWriteBarrier();
 
   static void collect();
   

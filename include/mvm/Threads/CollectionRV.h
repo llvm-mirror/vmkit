@@ -29,10 +29,14 @@ protected:
 
   /// nbJoined - Number of threads that joined the rendezvous.
   unsigned nbJoined;
+
+  // initiator - The initiator of the rendesvous.
+  Thread* initiator;
   
 public: 
   CollectionRV() {
     nbJoined = 0;
+    initiator = NULL;
   }
 
   void lockRV() { _lockRV.lock(); }
@@ -52,6 +56,7 @@ public:
   }
   
   void another_mark();
+  Thread* getInitiator() const { return initiator; }
 
   virtual void finishRV() = 0;
   virtual void synchronize() = 0;
@@ -64,7 +69,7 @@ public:
 };
 
 class CooperativeCollectionRV : public CollectionRV {
-public: 
+public:
   void finishRV();
   void synchronize();
 
@@ -72,6 +77,7 @@ public:
   void joinAfterUncooperative(void* SP);
   void joinBeforeUncooperative();
   void addThread(Thread* th);
+
 };
 
 class UncooperativeCollectionRV : public CollectionRV {

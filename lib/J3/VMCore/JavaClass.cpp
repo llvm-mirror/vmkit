@@ -580,7 +580,9 @@ void JavaField::InitStaticField(uint64 val) {
 void JavaField::InitStaticField(JavaObject* val) {
   llvm_gcroot(val, 0);
   void* obj = classDef->getStaticInstance();
-  ((JavaObject**)((uint64)obj + ptrOffset))[0] = val;
+  assert(isReference());
+  JavaObject** ptr = (JavaObject**)((uint64)obj + ptrOffset);
+  mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
 }
 
 void JavaField::InitStaticField(double val) {
@@ -1059,38 +1061,27 @@ JavaObject** CommonClass::getDelegateePtr() {
 }
 
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
-  JavaObject* prev = NULL;
   llvm_gcroot(val, 0);
-  llvm_gcroot(prev, 0);
   JavaObject** obj = &(delegatee[JavaThread::get()->getJVM()->IsolateID]);
-
-  prev = (JavaObject*)__sync_val_compare_and_swap((uintptr_t)obj, NULL, val);
-
-  if (prev == NULL) {
-    // Write it again to execute the write barrier.
+  classLoader->lock.lock();
+  if (*obj == NULL) {
     mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)obj, (gc*)val);
-    return val;
-  } else {
-    return prev;
   }
+  classLoader->lock.unlock();
+  return getDelegatee();
 }
 
 #else
 
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
-  JavaObject* prev = NULL;
   llvm_gcroot(val, 0);
-  llvm_gcroot(prev, 0);
-  prev = (JavaObject*)__sync_val_compare_and_swap(&(delegatee[0]), NULL, val);
-
-  if (prev == NULL) {
-    // Write it again to execute the write barrier.
-    mvm::Collector::objectReferenceNonHeapWriteBarrier(
-        (gc**)&(delegatee[0]), (gc*)val);
-    return val;
-  } else {
-    return prev;
+  JavaObject** obj = &(delegatee[0]);
+  classLoader->lock.lock();
+  if (*obj == NULL) {
+    mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)obj, (gc*)val);
   }
+  classLoader->lock.unlock();
+  return getDelegatee();
 }
 
 #endif

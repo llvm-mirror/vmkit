@@ -45,6 +45,14 @@ extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedFinalizable__Lorg_mmtk
     uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" uint8_t JnJVM_org_j3_bindings_Bindings_isLive__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
     uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
+  
+extern "C" uint8_t JnJVM_org_j3_bindings_Bindings_writeBarrierCAS__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2(gc* ref, gc** slot, gc* old, gc* value) ALWAYS_INLINE;
+  
+extern "C" void JnJVM_org_j3_bindings_Bindings_arrayWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(gc* ref, gc** ptr, gc* value) ALWAYS_INLINE;
+
+extern "C" void JnJVM_org_j3_bindings_Bindings_fieldWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(gc* ref, gc** ptr, gc* value) ALWAYS_INLINE;
+  
+extern "C" void JnJVM_org_j3_bindings_Bindings_nonHeapWriteBarrier__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(gc** ptr, gc* value) ALWAYS_INLINE;
 
 extern "C" void* JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(
     int sz, void* VT) ALWAYS_INLINE;
@@ -54,11 +62,11 @@ extern "C" void* gcmalloc(uint32_t sz, void* VT) {
   return (gc*)JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, VT);
 }
 
-extern "C" void addFinalizationCandidate(void* obj) __attribute__((always_inline));
+extern "C" void addFinalizationCandidate(gc* obj) __attribute__((always_inline));
 
-extern "C" void addFinalizationCandidate(void* obj) {
+extern "C" void addFinalizationCandidate(gc* obj) {
   llvm_gcroot(obj, 0);
-  mvm::Thread::get()->MyVM->addFinalizationCandidate((gc*)obj);
+  mvm::Thread::get()->MyVM->addFinalizationCandidate(obj);
 }
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
@@ -67,6 +75,23 @@ extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
   res = (gc*)gcmalloc(sz, VT);
   if (VT->destructor) addFinalizationCandidate(res);
   return res;
+}
+
+extern "C" void arrayWriteBarrier(gc* ref, gc** ptr, gc* value) {
+  JnJVM_org_j3_bindings_Bindings_arrayWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
+      ref, ptr, value);
+  if (mvm::Thread::get()->doYield) mvm::Collector::collect();
+}
+
+extern "C" void fieldWriteBarrier(gc* ref, gc** ptr, gc* value) {
+  JnJVM_org_j3_bindings_Bindings_fieldWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
+      ref, ptr, value);
+  if (mvm::Thread::get()->doYield) mvm::Collector::collect();
+}
+
+extern "C" void nonHeapWriteBarrier(gc** ptr, gc* value) {
+  JnJVM_org_j3_bindings_Bindings_nonHeapWriteBarrier__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(ptr, value);
+  if (mvm::Thread::get()->doYield) mvm::Collector::collect();
 }
 
 void MutatorThread::init(Thread* _th) {
@@ -156,16 +181,25 @@ extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {
 }
 
 void Collector::objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) {
-  *slot = value;
+  fieldWriteBarrier(ref, slot, value);
+}
+
+void Collector::objectReferenceArrayWriteBarrier(gc* ref, gc** slot, gc* value) {
+  arrayWriteBarrier(ref, slot, value);
 }
 
 void Collector::objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) {
-  *slot = value;
+  nonHeapWriteBarrier(slot, value);
 }
 
-bool Collector::objectReferenceTryCASBarrier(gc*ref, gc** slot, gc* old, gc* value) {
-  gc* res = __sync_val_compare_and_swap(slot, old, value);
-  return (old == res);
+bool Collector::objectReferenceTryCASBarrier(gc* ref, gc** slot, gc* old, gc* value) {
+  bool res = JnJVM_org_j3_bindings_Bindings_writeBarrierCAS__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2(ref, slot, old, value);
+  if (mvm::Thread::get()->doYield) mvm::Collector::collect();
+  return res;
+}
+
+bool Collector::supportsWriteBarrier() {
+  return true;
 }
 
 //TODO: Remove these.

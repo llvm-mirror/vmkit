@@ -34,6 +34,18 @@ extern "C" void addFinalizationCandidate(gc* obj) {
   // This is useless with GCmmap2, as the gcmalloc already did it.
 }
 
+extern "C" void fieldWriteBarrier(gc* ref, gc** slot, gc* value) {
+  *slot = value;
+}
+
+extern "C" void arrayWriteBarrier(gc* ref, gc** slot, gc* value) {
+  *slot = value;
+}
+
+extern "C" void nonHeapWriteBarrier(gc** slot, gc* value) {
+  *slot = value;
+}
+
 void Collector::scanObject(void** val, uintptr_t closure) {
   void* obj = *val;
   if (obj) {
