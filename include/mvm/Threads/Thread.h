@@ -212,7 +212,8 @@ private:
   /// state - daemon, running
 	uint32 state;                                          // 14
 
-protected:
+private:
+	friend class MutatorThread;
   Thread(VMKit* vmk);
 
 public:
