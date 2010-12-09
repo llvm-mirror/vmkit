@@ -415,7 +415,7 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, Comp, true);
   vm->runApplication(argc + 1, newArgv);
-  vm->waitForExit();
+  vmkit->waitNonDaemonThreads();
   
   return 0;
 }

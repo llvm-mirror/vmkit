@@ -1245,10 +1245,6 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
   } IGNORE;
 }
 
-void Jnjvm::waitForExit() { 
-	vmkit->nonDaemonThreadsManager.waitNonDaemonThreads();
-}
-
 void Jnjvm::mainJavaStart(mvm::Thread* thread) {
 
   JavaString* str = NULL;
@@ -1449,7 +1445,8 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   newArgv[1] = mainClass;
 
   vm->runApplication(argc + 1, newArgv);
-  vm->waitForExit();
+
+  vmkit->waitNonDaemonThreads();
   
   return 0; 
 }

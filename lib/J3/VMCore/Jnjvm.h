@@ -286,10 +286,6 @@ public:
   ///
   virtual void runApplication(int argc, char** argv);
 
-  /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
-  ///
-  virtual void waitForExit();
-
 	/// buildVMThreadData - allocate a java thread for the underlying mutator. Called when the java thread is a foreign thread.
 	///
 	virtual mvm::VMThreadData* buildVMThreadData(mvm::Thread* mut);

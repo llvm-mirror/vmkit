@@ -201,6 +201,11 @@ void VMKit::unregisterRunningThread(mvm::Thread* th) {
 	vmkitUnlock();
 }
 
+void VMKit::waitNonDaemonThreads() { 
+	nonDaemonThreadsManager.waitNonDaemonThreads();
+}
+
+
 void NonDaemonThreadManager::leaveNonDaemonMode() {
   nonDaemonLock.lock();
   --nonDaemonThreads;

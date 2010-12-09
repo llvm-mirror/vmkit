@@ -41,7 +41,7 @@ int main(int argc, char **argv, char **envp) {
  
   // Run the application. 
   vm->runApplication(argc, argv);
-  vm->waitForExit();
+  vmkit->waitNonDamonThreads();
   exit(0);
 
   // Destroy everyone.

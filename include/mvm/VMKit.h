@@ -129,6 +129,17 @@ public:
 	// nonDaemonThreadsManager - manager of the non daemon threads
 	NonDaemonThreadManager       nonDaemonThreadsManager;
 
+	void registerPreparedThread(mvm::Thread* th);  
+	void unregisterPreparedThread(mvm::Thread* th);
+
+	void registerRunningThread(mvm::Thread* th);  
+	void unregisterRunningThread(mvm::Thread* th);
+
+	void waitNonDaemonThreads();
+
+	/// ------------------------------------------------- ///
+	/// ---             memory managment              --- ///
+	/// ------------------------------------------------- ///
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
 #ifdef WITH_LLVM_GCC
@@ -136,12 +147,6 @@ public:
 #else
   UncooperativeCollectionRV    rendezvous;
 #endif
-
-	void registerPreparedThread(mvm::Thread* th);  
-	void unregisterPreparedThread(mvm::Thread* th);
-
-	void registerRunningThread(mvm::Thread* th);  
-	void unregisterRunningThread(mvm::Thread* th);
 
   /// enqueueThread - The thread that finalizes references.
   ///
@@ -175,10 +180,6 @@ public:
   /// after the finalization queue.
   ///
   void scanPhantomReferencesQueue(uintptr_t closure);
-
-	/// ------------------------------------------------- ///
-	/// ---             collection managment          --- ///
-	/// ------------------------------------------------- ///
 
 	bool startCollection(); // 1 ok, begin collection, 0 do not start collection
 	void endCollection();

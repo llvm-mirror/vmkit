@@ -75,8 +75,9 @@ int main(int argc, char** argv) {
     JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
     Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, vmkit, Comp, true);
     vm->runApplication(argc, argv);
-    vm->waitForExit();
   }
+
+	vmkit->waitNonDaemonThreads();
 
   return 0;
 }

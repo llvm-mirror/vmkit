@@ -15,7 +15,6 @@ namespace toyvm {
 		virtual bool enqueueReference(mvm::gc*) { NI(); }
 		virtual size_t getObjectSize(mvm::gc*) { NI(); }
 		virtual void runApplication(int, char**) { NI(); }
-		virtual void waitForExit() { NI(); }
 	};
 
 	class ToyVMThread : public mvm::VMThreadData {

@@ -68,9 +68,6 @@ public:
 //   /// the arguments, hence it is the virtual machine's job to parse them.
 //   virtual void runApplication(int argc, char** argv) = 0;
   
-//   /// waitForExit - Wait until the virtual machine stops its execution.
-//   virtual void waitForExit() = 0;
-
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.
 //===----------------------------------------------------------------------===//
