@@ -2090,8 +2090,7 @@ end:
 
 void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {
   name = n;
-	vm->javaMainThread = JavaThread::create(vm);
-  vm->javaMainThread->mut->start(mainCompilerStart);
+	JavaThread::create(vm)->mut->start(mainCompilerStart);
   vm->vmkit->waitNonDaemonThreads();
 }
 

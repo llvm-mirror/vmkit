@@ -1319,8 +1319,7 @@ void Jnjvm::runApplicationImpl(int argc, char** argv) {
 void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;
-  javaMainThread = JavaThread::create(this);
-  javaMainThread->mut->start((void (*)(mvm::Thread*))mainJavaStart);
+  JavaThread::create(this)->mut->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, mvm::VMKit* vmkit, JavaCompiler* Comp, bool dlLoad) : 

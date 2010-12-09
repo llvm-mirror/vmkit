@@ -183,9 +183,6 @@ public:
   ///
   StringMap hashStr;
 
-	/// javaMainThread - the java main thread
-	JavaThread* javaMainThread;
-
 	mvm::VirtualTable* VMClassLoader__VT;
 
 	void initialiseInternalVTs();

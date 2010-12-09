@@ -103,7 +103,7 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   RG = rootGroup->getStaticObjectField();
   assert(RG && "No root group");
   assert(vm->getMainThread() && "VM did not set its main thread");
-  CreateJavaThread(vm, vm->javaMainThread, "main", RG);
+  CreateJavaThread(vm, JavaThread::get(), "main", RG);
 
   // Create the "system" group.
   SystemGroup = threadGroup->doNew();
