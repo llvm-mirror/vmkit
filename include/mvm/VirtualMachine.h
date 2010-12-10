@@ -55,8 +55,10 @@ class VirtualMachine : public mvm::PermanentObject {
 protected:
   VirtualMachine(mvm::BumpPtrAllocator &Alloc) :
 		  allocator(Alloc) {
-    mainThread = 0;
-    NumberOfThreads = 0;
+    mainThread = NULL;
+    numberOfThreads = 0;
+    doExit = false;
+    exitingThread = NULL;
   }
 
   virtual ~VirtualMachine() {
@@ -79,11 +81,21 @@ public:
 
   /// NumberOfThreads - The number of threads that currently run under this VM.
   ///
-  uint32_t NumberOfThreads;
+  uint32_t numberOfThreads;
 
   /// ThreadLock - Lock to create or destroy a new thread.
   ///
-  mvm::SpinLock ThreadLock;
+  mvm::LockNormal threadLock;
+
+  /// ThreadVar - Condition variable to wake up the thread manager.
+  mvm::Cond threadVar;
+
+  /// exitingThread - Thread that is currently exiting. Used by the thread
+  /// manager to free the resources (stack) used by a thread.
+  mvm::Thread* exitingThread;
+
+  /// doExit - Should the VM exit now?
+  bool doExit;
   
   /// setMainThread - Set the main thread of this VM.
   ///
@@ -96,25 +108,40 @@ public:
   /// addThread - Add a new thread to the list of threads.
   ///
   void addThread(mvm::Thread* th) {
-    ThreadLock.lock();
-    NumberOfThreads++;
+    threadLock.lock();
+    numberOfThreads++;
     if (th != mainThread) {
       if (mainThread) th->append(mainThread);
       else mainThread = th;
     }
-    ThreadLock.unlock();
+    threadLock.unlock();
   }
   
   /// removeThread - Remove the thread from the list of threads.
   ///
   void removeThread(mvm::Thread* th) {
-    ThreadLock.lock();
-    NumberOfThreads--;
+    threadLock.lock();
+    while (exitingThread != NULL) {
+      // Make sure the thread manager had a chance to consume the previous
+      // dead thread.
+      threadLock.unlock();
+      Thread::yield();
+      threadLock.lock();
+    }
+    numberOfThreads--;
     if (mainThread == th) mainThread = (Thread*)th->next();
     th->remove();
-    if (!NumberOfThreads) mainThread = 0;
-    ThreadLock.unlock();
+    if (numberOfThreads == 0) mainThread = NULL;
+    exitingThread = th;
+    threadVar.signal();
+    threadLock.unlock();
   }
+
+  /// exit - Exit this virtual machine.
+  void exit();
+
+  /// waitForExit - Wait until the virtual machine stops its execution.
+  void waitForExit();
 
 //===----------------------------------------------------------------------===//
 // (2) GC-related methods.
@@ -193,9 +220,6 @@ public:
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.
   virtual void runApplication(int argc, char** argv) = 0;
-  
-  /// waitForExit - Wait until the virtual machine stops its execution.
-  virtual void waitForExit() = 0;
 };
 
 } // end namespace mvm

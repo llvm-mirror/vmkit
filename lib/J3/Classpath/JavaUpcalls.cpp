@@ -518,11 +518,6 @@ extern "C" void nativeJavaObjectVMThreadTracer(
   JavaObjectVMThread::staticTracer(obj, closure);
 }
 
-extern "C" void nativeJavaObjectVMThreadDestructor(JavaObjectVMThread* obj) {
-  llvm_gcroot(obj, 0);
-  JavaObjectVMThread::staticDestructor(obj);
-}
-
 extern "C" JavaString* Java_java_lang_VMSystem_getenv__Ljava_lang_String_2(JavaString* str) {
   JavaString* ret = 0;
   llvm_gcroot(str, 0);
@@ -1018,11 +1013,6 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
       (uintptr_t)nativeJavaObjectVMThreadTracer,
       "nativeJavaObjectVMThreadTracer");
  
-   newVMThread->getVirtualVT()->setNativeDestructor(
-      (uintptr_t)nativeJavaObjectVMThreadDestructor,
-      "nativeJavaObjectVMThreadDestructor");
-
-   
   newReference = UPCALL_CLASS(loader, "java/lang/ref/Reference");
     
   EnqueueReference = 

@@ -13,6 +13,7 @@
 #include "MvmGC.h"
 #include "mvm/Object.h"
 #include "mvm/PrintBuffer.h"
+#include "mvm/VirtualMachine.h"
 
 using namespace mvm;
 
@@ -53,4 +54,26 @@ void Object::default_print(const gc *o, PrintBuffer *buf) {
   buf->write("<Object@");
   buf->writePtr((void*)o);
   buf->write(">");
+}
+
+void VirtualMachine::waitForExit() {   
+  threadLock.lock();
+  
+  while (!doExit) {
+    threadVar.wait(&threadLock);
+    if (exitingThread != NULL) {
+      Thread* th = exitingThread;
+      exitingThread = NULL;
+      mvm::Thread::releaseThread(th);
+    }
+  }
+  
+  threadLock.unlock();
+}
+
+void VirtualMachine::exit() { 
+  doExit = true;
+  threadLock.lock();
+  threadVar.signal();
+  threadLock.unlock();
 }

@@ -150,11 +150,6 @@ private:
   JavaThread* vmdata;
 
 public:
-  static void staticDestructor(JavaObjectVMThread* obj) {
-    llvm_gcroot(obj, 0);
-    mvm::Thread::releaseThread(obj->vmdata);
-  }
-  
   static void staticTracer(JavaObjectVMThread* obj, uintptr_t closure) {
     mvm::Collector::markAndTrace(obj, &obj->thread, closure);
   }

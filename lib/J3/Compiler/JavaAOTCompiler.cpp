@@ -2123,12 +2123,7 @@ void mainCompilerStart(JavaThread* th) {
 
 end:
 
-  vm->threadSystem.nonDaemonLock.lock();
-  --(vm->threadSystem.nonDaemonThreads);
-  if (vm->threadSystem.nonDaemonThreads == 0)
-      vm->threadSystem.nonDaemonVar.signal();
-  vm->threadSystem.nonDaemonLock.unlock();  
-  
+  vm->threadSystem.leave(); 
 }
 
 void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {

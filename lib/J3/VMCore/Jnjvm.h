@@ -59,15 +59,8 @@ public:
 
   /// nonDaemonLock - Protection lock for the nonDaemonThreads variable.
   ///
-  mvm::LockNormal nonDaemonLock;
+  mvm::SpinLock nonDaemonLock;
 
-  /// nonDaemonVar - Condition variable to wake up the initial thread when it
-  /// waits for other non-daemon threads to end. The non-daemon thread that
-  /// decrements the nonDaemonThreads variable to zero wakes up the initial
-  /// thread.
-  ///
-  mvm::Cond nonDaemonVar;
-  
   /// ThreadSystem - Allocates a thread system management, initializing the
   /// lock, the condition variable and setting the initial number of non
   /// daemon threads to one, for the initial thread.
@@ -348,10 +341,6 @@ public:
   /// User-visible function, inherited by the VirtualMachine class.
   ///
   virtual void runApplication(int argc, char** argv);
-
-  /// waitForExit - Waits that there are no more non-daemon threads in this JVM.
-  ///
-  virtual void waitForExit();
 
   /// loadBootstrap - Bootstraps the JVM, getting the class loader, initializing
   /// bootstrap classes (e.g. java/lang/Class, java/lang/Exception) and

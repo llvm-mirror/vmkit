@@ -20,9 +20,9 @@ using namespace mvm;
 void CollectionRV::another_mark() {
   mvm::Thread* th = mvm::Thread::get();
   assert(th->getLastSP() != NULL);
-  assert(nbJoined < th->MyVM->NumberOfThreads);
+  assert(nbJoined < th->MyVM->numberOfThreads);
   nbJoined++;
-  if (nbJoined == th->MyVM->NumberOfThreads) {
+  if (nbJoined == th->MyVM->numberOfThreads) {
     condInitiator.broadcast();
   }
 }
@@ -41,7 +41,7 @@ void CollectionRV::waitRV() {
   // Add myself.
   nbJoined++;
 
-  while (nbJoined != self->MyVM->NumberOfThreads) {
+  while (nbJoined != self->MyVM->numberOfThreads) {
     condInitiator.wait(&_lockRV);
   } 
 }
@@ -51,7 +51,7 @@ void CooperativeCollectionRV::synchronize() {
   mvm::Thread* self = mvm::Thread::get();
   // Lock thread lock, so that we can traverse the thread list safely. This will
   // be released on finishRV.
-  self->MyVM->ThreadLock.lock();
+  self->MyVM->threadLock.lock();
 
   mvm::Thread* cur = self;
   assert(initiator == NULL);
@@ -94,7 +94,7 @@ void UncooperativeCollectionRV::synchronize() {
   mvm::Thread* self = mvm::Thread::get();
   // Lock thread lock, so that we can traverse the thread list safely. This will
   // be released on finishRV.
-  self->MyVM->ThreadLock.lock();
+  self->MyVM->threadLock.lock();
   
   for (mvm::Thread* cur = (mvm::Thread*)self->next(); cur != self; 
        cur = (mvm::Thread*)cur->next()) {
@@ -204,9 +204,9 @@ void CooperativeCollectionRV::finishRV() {
     cur = (mvm::Thread*)cur->next();
   } while (cur != initiator);
 
-  assert(nbJoined == initiator->MyVM->NumberOfThreads && "Inconsistent state");
+  assert(nbJoined == initiator->MyVM->numberOfThreads && "Inconsistent state");
   nbJoined = 0;
-  initiator->MyVM->ThreadLock.unlock();
+  initiator->MyVM->threadLock.unlock();
   condEndRV.broadcast();
   initiator = NULL;
   unlockRV();
@@ -216,9 +216,9 @@ void CooperativeCollectionRV::finishRV() {
 void UncooperativeCollectionRV::finishRV() {
   lockRV();
   mvm::Thread* initiator = mvm::Thread::get();
-  assert(nbJoined == initiator->MyVM->NumberOfThreads && "Inconsistent state");
+  assert(nbJoined == initiator->MyVM->numberOfThreads && "Inconsistent state");
   nbJoined = 0;
-  initiator->MyVM->ThreadLock.unlock();
+  initiator->MyVM->threadLock.unlock();
   condEndRV.broadcast();
   unlockRV();
   initiator->inRV = false;

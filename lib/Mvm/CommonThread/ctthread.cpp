@@ -446,17 +446,8 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
 void* Thread::operator new(size_t sz) {
   assert(sz < (size_t)getpagesize() && "Thread local data too big");
   void* res = (void*)TheStackManager.allocate();
-  // Give it a second chance.
-  if (res == NULL) {
-    Collector::collect();
-    // Wait for the finalizer to have cleaned up the threads.
-    while (res == NULL) {
-      mvm::Thread::yield();
-      res = (void*)TheStackManager.allocate();
-    }
-  }
   // Make sure the thread information is cleared.
-  memset(res, 0, sz);
+  if (res != NULL) memset(res, 0, sz);
   return res;
 }
 

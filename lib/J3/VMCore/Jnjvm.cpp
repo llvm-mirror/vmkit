@@ -1240,19 +1240,6 @@ void Jnjvm::executePremain(const char* className, JavaString* args,
   } IGNORE;
 }
 
-void Jnjvm::waitForExit() { 
-  
-  threadSystem.nonDaemonLock.lock();
-  
-  while (threadSystem.nonDaemonThreads) {
-    threadSystem.nonDaemonVar.wait(&threadSystem.nonDaemonLock);
-  }
-  
-  threadSystem.nonDaemonLock.unlock();
-
-  return;
-}
-
 void Jnjvm::mainJavaStart(JavaThread* thread) {
 
   JavaString* str = NULL;
@@ -1315,7 +1302,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 void ThreadSystem::leave() {
   nonDaemonLock.lock();
   --nonDaemonThreads;
-  if (nonDaemonThreads == 0) nonDaemonVar.signal();
+  if (nonDaemonThreads == 0) mvm::Thread::get()->MyVM->exit();
   nonDaemonLock.unlock();  
 }
 
