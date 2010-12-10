@@ -198,8 +198,15 @@ bool Collector::objectReferenceTryCASBarrier(gc* ref, gc** slot, gc* old, gc* va
   return res;
 }
 
-bool Collector::supportsWriteBarrier() {
-  return true;
+extern "C" uint8_t JnJVM_org_j3_bindings_Bindings_needsWriteBarrier__() ALWAYS_INLINE;
+extern "C" uint8_t JnJVM_org_j3_bindings_Bindings_needsNonHeapWriteBarrier__() ALWAYS_INLINE;
+
+bool Collector::needsWriteBarrier() {
+  return JnJVM_org_j3_bindings_Bindings_needsWriteBarrier__();
+}
+
+bool Collector::needsNonHeapWriteBarrier() {
+  return JnJVM_org_j3_bindings_Bindings_needsNonHeapWriteBarrier__();
 }
 
 //TODO: Remove these.

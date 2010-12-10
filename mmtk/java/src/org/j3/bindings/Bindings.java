@@ -154,4 +154,14 @@ public final class Bindings {
       return slot.attempt(old.toAddress().toWord(), value.toAddress().toWord());
     }
   }
+
+  @Inline
+  private static boolean needsWriteBarrier() {
+    return Selected.Constraints.get().needsObjectReferenceWriteBarrier();
+  }
+
+  @Inline
+  private static boolean needsNonHeapWriteBarrier() {
+    return Selected.Constraints.get().needsObjectReferenceNonHeapWriteBarrier();
+  }
 }

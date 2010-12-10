@@ -2067,7 +2067,7 @@ void JavaJIT::setStaticField(uint16 index) {
     convertValue(val, type, currentBlock, false);
   }
   
-  if (mvm::Collector::supportsWriteBarrier() && type == intrinsics->JavaObjectType) {
+  if (mvm::Collector::needsNonHeapWriteBarrier() && type == intrinsics->JavaObjectType) {
     ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
     val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
     Value* args[2] = { ptr, val };
@@ -2174,7 +2174,7 @@ void JavaJIT::setVirtualField(uint16 index) {
     convertValue(val, type, currentBlock, false);
   }
   
-  if (mvm::Collector::supportsWriteBarrier() && type == intrinsics->JavaObjectType) {
+  if (mvm::Collector::needsWriteBarrier() && type == intrinsics->JavaObjectType) {
     ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
     val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
     object = new LoadInst(object, "", currentBlock);

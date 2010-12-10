@@ -146,6 +146,10 @@ void Collector::collect() {
 void Collector::initialise() {
 }
 
-bool Collector::supportsWriteBarrier() {
+bool Collector::needsWriteBarrier() {
+  return false;
+}
+
+bool Collector::needsNonHeapWriteBarrier() {
   return false;
 }

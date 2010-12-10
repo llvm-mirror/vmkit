@@ -376,7 +376,11 @@ public:
     return (res == old);
   }
 
-  static bool supportsWriteBarrier() {
+  static bool needsWriteBarrier() {
+    return false;
+  }
+
+  static bool needsNonHeapWriteBarrier() {
     return false;
   }
 };
