@@ -1,5 +1,5 @@
 #include "mvm/VMKit.h"
-#include "../../lib/P3/VMCore/P3.h"
+#include "../../lib/p3/VMCore/P3.h"
 
 using namespace p3;
 
