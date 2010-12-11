@@ -42,25 +42,7 @@ public:
     delete[] References;
   }
  
-  void addReference(mvm::gc* ref) {
-    llvm_gcroot(ref, 0);
-    QueueLock.acquire();
-    if (CurrentIndex >= QueueLength) {
-      uint32 newLength = QueueLength * GROW_FACTOR;
-			mvm::gc** newQueue = new mvm::gc*[newLength];
-      memset(newQueue, 0, newLength * sizeof(mvm::gc*));
-      if (!newQueue) {
-        fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
-        abort();
-      }
-      for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = References[i];
-      delete[] References;
-      References = newQueue;
-      QueueLength = newLength;
-    }
-    References[CurrentIndex++] = ref;
-    QueueLock.release();
-  }
+  void addReference(mvm::gc* ref);
   
   void acquire() {
     QueueLock.acquire();
@@ -103,24 +85,15 @@ public:
 
   /// addWeakReference - Add a weak reference to the queue.
   ///
-  void addWeakReference(mvm::gc* ref) {
-    llvm_gcroot(ref, 0);
-    WeakReferencesQueue.addReference(ref);
-  }
+  void addWeakReference(mvm::gc* ref);
   
   /// addSoftReference - Add a weak reference to the queue.
   ///
-  void addSoftReference(mvm::gc* ref) {
-    llvm_gcroot(ref, 0);
-    SoftReferencesQueue.addReference(ref);
-  }
+  void addSoftReference(mvm::gc* ref);
   
   /// addPhantomReference - Add a weak reference to the queue.
   ///
-  void addPhantomReference(mvm::gc* ref) {
-    llvm_gcroot(ref, 0);
-    PhantomReferencesQueue.addReference(ref);
-  }
+  void addPhantomReference(mvm::gc* ref);
 
   ReferenceThread(mvm::VMKit* vmkit);
 

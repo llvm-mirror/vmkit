@@ -92,7 +92,7 @@ public:
 
   VMKit(mvm::BumpPtrAllocator &Alloc);
 
-	LockNormal                   _vmkitLock;
+	LockRecursive                _vmkitLock;
 
 	void vmkitLock() { _vmkitLock.lock(); }
 	void vmkitUnlock() { _vmkitLock.unlock(); }
@@ -148,23 +148,45 @@ public:
   UncooperativeCollectionRV    rendezvous;
 #endif
 
+private:
   /// enqueueThread - The thread that finalizes references.
   ///
 	FinalizerThread*             finalizerThread;
   
   /// enqueueThread - The thread that enqueues references.
   ///
-  ReferenceThread* referenceThread;
+  ReferenceThread*             referenceThread;
 
-  /// scanFinalizationQueue - Scan objets with a finalized method and schedule
-  /// them for finalization if they are not live.
-  /// 
-  void scanFinalizationQueue(uintptr_t closure);
+  /// getAndAllocateFinalizerThread - get the finalizer thread and allocate it if it does not exist
+  ///
+	FinalizerThread*             getAndAllocateFinalizerThread();
+
+  /// getAndAllocateReferenceThread - get the reference thread and allocate it if it does not exist
+  ///
+	ReferenceThread*             getAndAllocateReferenceThread();
+
+public:
+  /// addWeakReference - Add a weak reference to the queue.
+  ///
+  void addWeakReference(mvm::gc* ref);
+  
+  /// addSoftReference - Add a weak reference to the queue.
+  ///
+  void addSoftReference(mvm::gc* ref);
+  
+  /// addPhantomReference - Add a weak reference to the queue.
+  ///
+  void addPhantomReference(mvm::gc* ref);
 
   /// addFinalizationCandidate - Add an object to the queue of objects with
   /// a finalization method.
   ///
   void addFinalizationCandidate(gc* object);
+
+  /// scanFinalizationQueue - Scan objets with a finalized method and schedule
+  /// them for finalization if they are not live.
+  /// 
+  void scanFinalizationQueue(uintptr_t closure);
   
   /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
   /// before scanning the finalization queue.

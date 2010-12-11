@@ -17,6 +17,21 @@ ReferenceThread::ReferenceThread(mvm::VMKit* vmkit) :
 	setDaemon();
 }
 
+void ReferenceThread::addWeakReference(mvm::gc* ref) {
+	llvm_gcroot(ref, 0);
+	WeakReferencesQueue.addReference(ref);
+}
+  
+void ReferenceThread::addSoftReference(mvm::gc* ref) {
+	llvm_gcroot(ref, 0);
+	SoftReferencesQueue.addReference(ref);
+}
+  
+void ReferenceThread::addPhantomReference(mvm::gc* ref) {
+	llvm_gcroot(ref, 0);
+	PhantomReferencesQueue.addReference(ref);
+}
+
 mvm::gc** getReferent(mvm::gc* obj) {
   llvm_gcroot(obj, 0);
 	mvm::VirtualMachine* vm = obj->getVirtualTable()->vm;
@@ -87,6 +102,26 @@ void ReferenceThread::addToEnqueue(mvm::gc* obj) {
     ToEnqueueLength = newLength;
   }
   ToEnqueue[ToEnqueueIndex++] = obj;
+}
+
+void ReferenceQueue::addReference(mvm::gc* ref) {
+	llvm_gcroot(ref, 0);
+	QueueLock.acquire();
+	if (CurrentIndex >= QueueLength) {
+		uint32 newLength = QueueLength * GROW_FACTOR;
+		mvm::gc** newQueue = new mvm::gc*[newLength];
+		memset(newQueue, 0, newLength * sizeof(mvm::gc*));
+		if (!newQueue) {
+			fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
+			abort();
+		}
+		for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = References[i];
+		delete[] References;
+		References = newQueue;
+		QueueLength = newLength;
+	}
+	References[CurrentIndex++] = ref;
+	QueueLock.release();
 }
 
 mvm::gc* ReferenceQueue::processReference(mvm::gc* reference, ReferenceThread* th, uintptr_t closure) {

@@ -26,9 +26,5 @@ ifeq ($(WITH_N3_PNETLIB), 1)
   PARALLEL_DIRS += n3-pnetlib
 endif
 
-ifeq ($(WITH_J3), 1)
-  PARALLEL_DIRS += #toy-vm
-endif
-
 include $(LEVEL)/Makefile.common
 

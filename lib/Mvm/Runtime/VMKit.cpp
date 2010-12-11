@@ -30,34 +30,70 @@ VMKit::VMKit(mvm::BumpPtrAllocator &Alloc) : allocator(Alloc) {
 
 	vms          = 0;
 	vmsArraySize = 0;
-
-  // First create system threads.
-  finalizerThread = new FinalizerThread(this);
-  finalizerThread->start((void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
-
-  referenceThread = new ReferenceThread(this);
-  referenceThread->start((void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
 }
 
 void VMKit::scanWeakReferencesQueue(uintptr_t closure) {
-  referenceThread->WeakReferencesQueue.scan(referenceThread, closure);
+	if(referenceThread)
+		referenceThread->WeakReferencesQueue.scan(referenceThread, closure);
 }
   
 void VMKit::scanSoftReferencesQueue(uintptr_t closure) {
-  referenceThread->SoftReferencesQueue.scan(referenceThread, closure);
+	if(referenceThread)
+		referenceThread->SoftReferencesQueue.scan(referenceThread, closure);
 }
   
 void VMKit::scanPhantomReferencesQueue(uintptr_t closure) {
-  referenceThread->PhantomReferencesQueue.scan(referenceThread, closure);
+	if(referenceThread)
+		referenceThread->PhantomReferencesQueue.scan(referenceThread, closure);
 }
 
 void VMKit::scanFinalizationQueue(uintptr_t closure) {
-  finalizerThread->scanFinalizationQueue(closure);
+	if(finalizerThread)
+		finalizerThread->scanFinalizationQueue(closure);
+}
+
+FinalizerThread* VMKit::getAndAllocateFinalizerThread() {
+	if(!finalizerThread) {
+		vmkitLock();
+		if(!finalizerThread) {
+			finalizerThread = new FinalizerThread(this);
+			finalizerThread->start((void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
+		}
+		vmkitUnlock();
+	}
+	return finalizerThread;
+}
+
+ReferenceThread* VMKit::getAndAllocateReferenceThread() {
+	if(!referenceThread) {
+		vmkitLock();
+		if(!referenceThread) {
+			referenceThread = new ReferenceThread(this);
+			referenceThread->start((void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
+		}
+		vmkitUnlock();
+	}
+	return referenceThread;
 }
 
 void VMKit::addFinalizationCandidate(mvm::gc* object) {
   llvm_gcroot(object, 0);
-  finalizerThread->addFinalizationCandidate(object);
+  getAndAllocateFinalizerThread()->addFinalizationCandidate(object);
+}
+
+void VMKit::addWeakReference(mvm::gc* ref) {
+  llvm_gcroot(ref, 0);
+	getAndAllocateReferenceThread()->addWeakReference(ref);
+}
+  
+void VMKit::addSoftReference(mvm::gc* ref) {
+  llvm_gcroot(ref, 0);
+	getAndAllocateReferenceThread()->addSoftReference(ref);
+}
+  
+void VMKit::addPhantomReference(mvm::gc* ref) {
+	llvm_gcroot(ref, 0);
+	getAndAllocateReferenceThread()->addPhantomReference(ref);
 }
 
 void VMKit::tracer(uintptr_t closure) {
@@ -82,11 +118,14 @@ bool VMKit::startCollection() {
 		// Lock thread lock, so that we can traverse the vm and thread lists safely. This will be released on finishRV.
 		vmkitLock();
 
-		finalizerThread->FinalizationQueueLock.acquire();
-		referenceThread->ToEnqueueLock.acquire();
-		referenceThread->SoftReferencesQueue.acquire();
-		referenceThread->WeakReferencesQueue.acquire();
-		referenceThread->PhantomReferencesQueue.acquire();
+		if(finalizerThread)
+			finalizerThread->FinalizationQueueLock.acquire();
+		if(referenceThread) {
+			referenceThread->ToEnqueueLock.acquire();
+			referenceThread->SoftReferencesQueue.acquire();
+			referenceThread->WeakReferencesQueue.acquire();
+			referenceThread->PhantomReferencesQueue.acquire();
+		}
 
 		// call first startCollection on each vm to avoid deadlock. 
 		// indeed, a vm could want to execute applicative code
@@ -109,13 +148,18 @@ void VMKit::endCollection() {
 		if(vms[i])
 			vms[i]->endCollection();
 
-  finalizerThread->FinalizationQueueLock.release();
-  referenceThread->ToEnqueueLock.release();
-  referenceThread->SoftReferencesQueue.release();
-  referenceThread->WeakReferencesQueue.release();
-  referenceThread->PhantomReferencesQueue.release();
-  referenceThread->EnqueueCond.broadcast();
-  finalizerThread->FinalizationCond.broadcast();
+	if(finalizerThread) {
+		finalizerThread->FinalizationQueueLock.release();
+		finalizerThread->FinalizationCond.broadcast();
+	}
+
+	if(referenceThread) {
+		referenceThread->ToEnqueueLock.release();
+		referenceThread->SoftReferencesQueue.release();
+		referenceThread->WeakReferencesQueue.release();
+		referenceThread->PhantomReferencesQueue.release();
+		referenceThread->EnqueueCond.broadcast();
+	}
 
 	vmkitUnlock();
 }

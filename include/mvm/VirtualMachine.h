@@ -77,7 +77,7 @@ public:
 
   /// finalizeObject - invoke the finalizer of a java object
   ///
-	virtual void finalizeObject(mvm::gc* obj) {}
+	virtual void finalizeObject(mvm::gc* obj) = 0;
 
   /// getReferentPtr - return the referent of a reference
   ///

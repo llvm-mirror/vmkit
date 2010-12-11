@@ -17,13 +17,6 @@
 #include "ObjectHeader.h"
 #include "mvm/Threads/Thread.h"
 
-#ifdef WITH_LLVM_GCC
-extern "C" void __llvm_gcroot(void**, void*) __attribute__((nothrow));
-#define llvm_gcroot(a, b) __llvm_gcroot((void**)&a, b)
-#else
-#define llvm_gcroot(a, b)
-#endif
-
 namespace mvm {
 
 class gc;

@@ -120,7 +120,7 @@ extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, 0);
-  mvm::Thread::get()->vmkit->referenceThread->addWeakReference(reference);
+  mvm::Thread::get()->vmkit->addWeakReference(reference);
 
   END_NATIVE_EXCEPTION
 
@@ -137,7 +137,7 @@ extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, queue);
-  mvm::Thread::get()->vmkit->referenceThread->addWeakReference(reference);
+  mvm::Thread::get()->vmkit->addWeakReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -151,7 +151,7 @@ extern "C" void Java_java_lang_ref_SoftReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, 0);
-  mvm::Thread::get()->vmkit->referenceThread->addSoftReference(reference);
+  mvm::Thread::get()->vmkit->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -168,7 +168,7 @@ extern "C" void Java_java_lang_ref_SoftReference__0003Cinit_0003E__Ljava_lang_Ob
   BEGIN_NATIVE_EXCEPTION(0)
 
   JavaObjectReference::init(reference, referent, queue);
-  mvm::Thread::get()->vmkit->referenceThread->addSoftReference(reference);
+  mvm::Thread::get()->vmkit->addSoftReference(reference);
   
   END_NATIVE_EXCEPTION
 
@@ -185,7 +185,7 @@ extern "C" void Java_java_lang_ref_PhantomReference__0003Cinit_0003E__Ljava_lang
   BEGIN_NATIVE_EXCEPTION(0)
   
   JavaObjectReference::init(reference, referent, queue);
-  mvm::Thread::get()->vmkit->referenceThread->addPhantomReference(reference);
+  mvm::Thread::get()->vmkit->addPhantomReference(reference);
 
   END_NATIVE_EXCEPTION
 }
