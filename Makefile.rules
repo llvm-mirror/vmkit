@@ -140,7 +140,10 @@ ifneq ($(DISABLE_MMTK_COMPILE), 1)
 	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -std-compile-opts -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
 	$(Verb) $(LLVMLD) -r -o $(LibDir)/FinalMMTk.bc $(LibDir)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LibDir)/MMTKRuntime.bc
 	$(Verb) $(LOPT) -std-compile-opts $(LibDir)/FinalMMTk.bc -o $(LibDir)/FinalMMTk.bc
-	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=gcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkInline.inc
+	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=gcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkMallocInline.inc
+	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=fieldWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkFieldWriteInline.inc
+	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=arrayWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkArrayWriteInline.inc
+	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=nonHeapWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkNonHeapWriteInline.inc
 endif
 
 endif

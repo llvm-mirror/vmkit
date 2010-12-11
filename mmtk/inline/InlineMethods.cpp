@@ -19,12 +19,27 @@ using namespace llvm;
 
 namespace mmtk {
 
-namespace mmtk_runtime {
-  #include "MMTkInline.inc"
+namespace mmtk_malloc {
+  #include "MMTkMallocInline.inc"
+}
+
+namespace mmtk_array_write {
+  #include "MMTkArrayWriteInline.inc"
+}
+
+namespace mmtk_field_write {
+  #include "MMTkFieldWriteInline.inc"
+}
+
+namespace mmtk_non_heap_write {
+  #include "MMTkNonHeapWriteInline.inc"
 }
 
 extern "C" void MMTk_InlineMethods(llvm::Module* module) {
-  mmtk_runtime::makeLLVMFunction(module);
+  mmtk_malloc::makeLLVMFunction(module);
+  //mmtk_field_write::makeLLVMFunction(module);
+  //mmtk_array_write::makeLLVMFunction(module);
+  //mmtk_non_heap_write::makeLLVMFunction(module);
 }
 
 }

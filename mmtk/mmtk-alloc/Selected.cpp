@@ -77,20 +77,20 @@ extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
   return res;
 }
 
-extern "C" void arrayWriteBarrier(gc* ref, gc** ptr, gc* value) {
+extern "C" void arrayWriteBarrier(void* ref, void** ptr, void* value) {
   JnJVM_org_j3_bindings_Bindings_arrayWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
-      ref, ptr, value);
+      (gc*)ref, (gc**)ptr, (gc*)value);
   if (mvm::Thread::get()->doYield) mvm::Collector::collect();
 }
 
-extern "C" void fieldWriteBarrier(gc* ref, gc** ptr, gc* value) {
+extern "C" void fieldWriteBarrier(void* ref, void** ptr, void* value) {
   JnJVM_org_j3_bindings_Bindings_fieldWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
-      ref, ptr, value);
+      (gc*)ref, (gc**)ptr, (gc*)value);
   if (mvm::Thread::get()->doYield) mvm::Collector::collect();
 }
 
-extern "C" void nonHeapWriteBarrier(gc** ptr, gc* value) {
-  JnJVM_org_j3_bindings_Bindings_nonHeapWriteBarrier__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(ptr, value);
+extern "C" void nonHeapWriteBarrier(void** ptr, void* value) {
+  JnJVM_org_j3_bindings_Bindings_nonHeapWriteBarrier__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2((gc**)ptr, (gc*)value);
   if (mvm::Thread::get()->doYield) mvm::Collector::collect();
 }
 
@@ -181,15 +181,15 @@ extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {
 }
 
 void Collector::objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) {
-  fieldWriteBarrier(ref, slot, value);
+  fieldWriteBarrier((void*)ref, (void**)slot, (void*)value);
 }
 
 void Collector::objectReferenceArrayWriteBarrier(gc* ref, gc** slot, gc* value) {
-  arrayWriteBarrier(ref, slot, value);
+  arrayWriteBarrier((void*)ref, (void**)slot, (void*)value);
 }
 
 void Collector::objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) {
-  nonHeapWriteBarrier(slot, value);
+  nonHeapWriteBarrier((void**)slot, (void*)value);
 }
 
 bool Collector::objectReferenceTryCASBarrier(gc* ref, gc** slot, gc* old, gc* value) {
