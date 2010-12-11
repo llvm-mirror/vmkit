@@ -1,4 +1,4 @@
-##===- lib/Makefile ----------------------------------------*- Makefile -*-===##
+##===- lib/JnJVM/Makefile ----------------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -6,23 +6,10 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ..
+LEVEL = ../..
 
-PARALLEL_DIRS = Mvm
+DIRS = VMCore
 
 include $(LEVEL)/Makefile.config
-
-ifeq ($(WITH_J3), 1)
-PARALLEL_DIRS += J3
-endif
-
-ifeq ($(WITH_N3), 1)
-PARALLEL_DIRS += N3
-endif
-
-ifeq ($(WITH_P3), 1)
-PARALLEL_DIRS += P3
-endif
-
 include $(LEVEL)/Makefile.common
 

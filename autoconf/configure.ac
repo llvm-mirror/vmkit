@@ -422,6 +422,25 @@ AC_SUBST([monopath])
 
 AC_SUBST([WITH_N3])
 
+dnl **************************************************************************
+dnl toy vm
+dnl **************************************************************************
+AC_ARG_WITH(p3,
+       [AS_HELP_STRING(--with-p3=yes|no,
+        [Build the python virtual machine (default is no)])],
+       [[WITH_P3=$withval]],
+       [[WITH_P3=no]]
+)
+
+if test "x${WITH_P3}" = "xyes"; then
+  echo Building P3;
+  WITH_P3=1;
+else
+  WITH_P3=0;
+fi 
+
+AC_SUBST([WITH_P3])
+
 dnl===-----------------------------------------------------------------------===
 dnl===
 dnl=== SECTION 4: Check for programs we need and that they are the right version

@@ -26,5 +26,9 @@ ifeq ($(WITH_N3_PNETLIB), 1)
   PARALLEL_DIRS += n3-pnetlib
 endif
 
+ifeq ($(WITH_P3), 1) 
+  PARALLEL_DIRS += p3
+endif
+
 include $(LEVEL)/Makefile.common
 
