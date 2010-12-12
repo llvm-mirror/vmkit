@@ -5,6 +5,8 @@
 
 namespace p3 {
 
+class P3Reader;
+
 class P3 : public mvm::VirtualMachine {
 public:
   /// P3 - default constructor
@@ -45,6 +47,11 @@ public:
 	/// runApplicationImpl - code executed after a runApplication in a vmkit thread
 	///
 	virtual void runApplicationImpl(int argc, char** argv);
+
+public:
+	/// runFile - execute the file fileName
+	///
+	void runFile(const char* fileName);
 };
 
 } // namespace p3
