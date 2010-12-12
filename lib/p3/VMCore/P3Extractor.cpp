@@ -1,6 +1,7 @@
 #include "P3Extractor.h"
 #include "P3Reader.h"
 #include "P3Error.h"
+#include "P3Object.h"
 
 using namespace p3;
 
@@ -29,57 +30,53 @@ using namespace p3;
 #define TYPE_SET                '<'
 #define TYPE_FROZENSET          '>'
 
-void P3Extractor::readObject() {
+P3Object* P3Extractor::readObject() {
 	uint8 type = reader->readU1();
-
-	printf("reading object with type: %d (%c)\n", type, type);
 
 	switch(type) {
 		case TYPE_NONE:
-			break;
+			return new P3None();
 
 		case TYPE_TUPLE:
 			{
 				uint32 length = reader->readU4();
-				printf("  tuple length: %d\n", length);
+				P3Tuple* res = new P3Tuple(length);
 				for(uint32 i=0; i<length; i++)
-					readObject();
+					res->content[i] = readObject();
+				return res;
 			}
-			break;
 
 		case TYPE_INTERNED:
 		case TYPE_STRING:
 			{
 				uint32 length = reader->readU4();
-				printf("  string length: %d\n", length);
+				P3String* res = new P3String(length);
 				if(length > INT_MAX)
 					fatal("wrong length for string");
-				for(uint32 i=0; i<length; i++) {
-					uint8 c = reader->readU1();
-					printf("    %-3d (%c) ", c, c);
-				}
-				printf("\n");
+				for(uint32 i=0; i<length; i++)
+					res->content[i] = reader->readU1();
+				return res;
 			}
-			break;
 
 		case TYPE_CODE:
 			{
-				uint32 nargs   = reader->readU4();
-				uint32 nlocals = reader->readU4();
-				uint32 ssize   = reader->readU4();
-				uint32 flags   = reader->readU4();
-				readObject();      // code
-				readObject();      // const
-				readObject();      // names
-				readObject();      // varnames
-				readObject();      // freevars
-				readObject();      // cellvars
-				readObject();      // filename
-				readObject();      // name
-				reader->readU4();  // line num
-				readObject();      // lnotab
+				P3Code* res = new P3Code();
+				res->py_nargs    = reader->readU4();
+				res->py_nlocals  = reader->readU4();
+				res->py_nstacks  = reader->readU4();
+				res->py_flag     = reader->readU4();
+				res->py_code     = readObject()->asString();
+				res->py_const    = readObject()->asTuple();
+				res->py_names    = readObject();
+				res->py_varnames = readObject();
+				res->py_freevars = readObject();
+				res->py_cellvars = readObject();
+				res->py_filename = readObject();
+				res->py_name     = readObject();
+				res->py_linenum  = reader->readU4();
+				res->py_lnotab   = readObject();
+				return res;
 			}
-			break;
 
 		default:
 			fatal("wrong type info: %d ('%c')", type, type);

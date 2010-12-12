@@ -10,6 +10,8 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
+NO_PEDANTIC=1
+
 ifeq ($(WITH_LLVM_GCC), 1)
   MODULE_NAME = P3
 else

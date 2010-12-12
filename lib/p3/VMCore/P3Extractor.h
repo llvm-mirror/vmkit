@@ -3,6 +3,7 @@
 
 namespace p3 {
 
+class P3Object;
 class P3Reader;
 
 class P3Extractor {
@@ -14,7 +15,7 @@ public:
 
 	/// readObject - unmarshal an object
 	///
-	void readObject();
+	P3Object* readObject();
 };
 
 } // namespace p3

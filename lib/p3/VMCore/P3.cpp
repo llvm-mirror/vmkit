@@ -2,6 +2,8 @@
 #include "P3Error.h"
 #include "P3Reader.h"
 #include "P3Extractor.h"
+#include "P3Object.h"
+#include "P3Interpretor.h"
 
 using namespace p3;
 
@@ -22,14 +24,17 @@ void P3::runFile(const char* fileName) {
 		fatal("unable to open: %s", fileName);
 	P3Reader reader(bc);
 
-	uint16 ver = reader.readU2();
-	printf("ver: 0x%x\n", ver);
-	uint16 magic = reader.readU2();
-	printf("magic: 0x%x\n", magic);
-	reader.readU4(); // last modification
+	reader.readU2();         // version 0xf2d1 (???)
+	reader.readU2();         // magic 0xa0d
+	reader.readU4();         // last modification
 
 	P3Extractor extractor(&reader); 
-	extractor.readObject();
+	P3Object* obj = extractor.readObject();
+
+	if(!obj->isCode())
+		fatal("%s does not contain a code", fileName);
+
+	(new P3Interpretor(obj->asCode()))->execute();
 }
 
 void P3::runApplicationImpl(int argc, char** argv) {
