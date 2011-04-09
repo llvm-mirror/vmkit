@@ -626,6 +626,7 @@ AC_CONFIG_FILES(Makefile.config)
 AC_CONFIG_FILES([lib/J3/Classpath/Classpath.h])
 AC_CONFIG_FILES([tools/llcj/LinkPaths.h])
 AC_CONFIG_FILES([mmtk/java/src/org/j3/config/Selected.java])
+AC_CONFIG_FILES([mmtk/java/build.xml])
 
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)

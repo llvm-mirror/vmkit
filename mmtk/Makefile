@@ -9,7 +9,6 @@
 LEVEL = ..
 
 DIRS = magic mmtk-j3 mmtk-alloc java inline
-EXTRA_DIST = config/marksweep
 
 include $(LEVEL)/Makefile.config
 
