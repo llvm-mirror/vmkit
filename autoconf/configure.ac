@@ -31,12 +31,12 @@ dnl===
 dnl===-----------------------------------------------------------------------===
 dnl Initialize autoconf and define the package name, version number and
 dnl email address for reporting bugs.
-AC_INIT([vmkit],[0.29svn],[nicolas.geoffray@gmail.com])
+AC_INIT([vmkit],[0.30svn],[nicolas.geoffray@gmail.com])
 
 dnl Provide a copyright substitution and ensure the copyright notice is included
 dnl in the output of --version option of the generated configure script.
-AC_SUBST(VMKIT_COPYRIGHT,["Copyright (c) 2003-2010 Universite Pierre et Marie Curie."])
-AC_COPYRIGHT([Copyright (c) 2003-2010 Universite Pierre et Marie Curie.])
+AC_SUBST(VMKIT_COPYRIGHT,["Copyright (c) 2003-2011 Universite Pierre et Marie Curie."])
+AC_COPYRIGHT([Copyright (c) 2003-2011 Universite Pierre et Marie Curie.])
 
 dnl Indicate that we require autoconf 2.59 or later. Ths is needed because we
 dnl use some autoconf macros only available in 2.59.
@@ -626,6 +626,7 @@ AC_CONFIG_FILES(Makefile.config)
 AC_CONFIG_FILES([lib/J3/Classpath/Classpath.h])
 AC_CONFIG_FILES([tools/llcj/LinkPaths.h])
 AC_CONFIG_FILES([mmtk/java/src/org/j3/config/Selected.java])
+AC_CONFIG_FILES([mmtk/java/build.xml])
 
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)
