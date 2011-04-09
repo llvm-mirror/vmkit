@@ -21,7 +21,7 @@
 
 namespace llvm {
   class BasicBlock;
-  class DIFactory;
+  class DIBuilder;
 }
 
 namespace j3 {
@@ -46,7 +46,7 @@ class JavaLLVMCompiler : public JavaCompiler {
 
 protected:
   llvm::Module* TheModule;
-  llvm::DIFactory* DebugFactory;  
+  llvm::DIBuilder* DebugFactory;  
   J3Intrinsics JavaIntrinsics;
 
 private:  
@@ -82,7 +82,7 @@ public:
   virtual void* GenerateStub(llvm::Function* F) = 0;
   void addJavaPasses();
   
-  llvm::DIFactory* getDebugFactory() {
+  llvm::DIBuilder* getDebugFactory() {
     return DebugFactory;
   }
 

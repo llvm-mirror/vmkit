@@ -10,6 +10,7 @@
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
+#include "llvm/Analysis/DIBuilder.h"
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Target/TargetData.h"
 
@@ -25,7 +26,7 @@ using namespace llvm;
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   TheModule(new llvm::Module(str, *(new LLVMContext()))),
-  DebugFactory(new DIFactory(*TheModule)),
+  DebugFactory(new DIBuilder(*TheModule)),
   JavaIntrinsics(TheModule) {
 
   enabledException = true;
@@ -88,10 +89,10 @@ JavaMethod* JavaLLVMCompiler::getJavaMethod(const llvm::Function& F) {
 
 MDNode* JavaLLVMCompiler::GetDbgSubprogram(JavaMethod* meth) {
   if (getMethodInfo(meth)->getDbgSubprogram() == NULL) {
-    MDNode* node = DebugFactory->CreateSubprogram(DIDescriptor(), "", "",
-                                                  "", DIFile(), 0,
-                                                  DIType(), false,
-                                                  false);
+    MDNode* node = DebugFactory->createFunction(DIDescriptor(), "",
+                                                "", DIFile(), 0,
+                                                DIType(), false,
+                                                false);
     DbgInfos.insert(std::make_pair(node, meth));
     getMethodInfo(meth)->setDbgSubprogram(node);
   }
