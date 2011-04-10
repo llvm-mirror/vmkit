@@ -322,7 +322,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     ex->tester = createBasicBlock("testException");
     
     // PHI Node for the exception object
-    PHINode::Create(intrinsics->JavaObjectType, "", ex->tester);
+    PHINode::Create(intrinsics->JavaObjectType, 0, "", ex->tester);
     
     // Set the unwind destination of the instructions in the range of this
     // handler to the test block of the handler. If an instruction already has
@@ -344,7 +344,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     opcodeInfos[ex->handlerpc].handler = true;
     
     if (ex->javaHandler->empty()) {
-      PHINode::Create(intrinsics->JavaObjectType, "", ex->javaHandler);
+      PHINode::Create(intrinsics->JavaObjectType, 0, "", ex->javaHandler);
     }
 
   }
