@@ -115,8 +115,8 @@ JavaObject* prop) {
   
   tmp = getenv("USERNAME");
   if (!tmp) tmp = getenv("LOGNAME");
-  else if (!tmp) tmp = getenv("NAME");
-  else if (!tmp) tmp = "";
+  if (!tmp) tmp = getenv("NAME");
+  if (!tmp) tmp = "";
   setProperty(vm, prop, "user.name", tmp);
   
   tmp  = getenv("HOME");
