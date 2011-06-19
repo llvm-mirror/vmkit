@@ -24,7 +24,7 @@ extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
   VirtualTable* VT = (VirtualTable*)_VT;
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
   res = (gc*)malloc(sz);
-  memset(res, 0, sz);
+  memset((void*)res, 0, sz);
   
   lock.acquire();
   __InternalSet__.insert(res);
@@ -47,7 +47,7 @@ extern "C" void addFinalizationCandidate(gc* obj) {
 
 extern "C" void* AllocateMagicArray(int32_t sz, void* length) {
   gc* res = (gc*)malloc(sz);
-  memset(res, 0, sz);
+  memset((void*)res, 0, sz);
   ((void**)res)[0] = length;
   return res;
 }

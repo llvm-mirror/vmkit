@@ -120,7 +120,7 @@ public:
 		
  		if(fl->chunk_nbb()) {
 			//			printf("0 Filled %p with %d bytes\n", header->chunk(), header->nbb());
-			memset(header->chunk(), 0, header->nbb());
+			memset((void*)header->chunk(), 0, header->nbb());
 			header->free();
  			fl->reject(header);
 		} else {
@@ -138,7 +138,7 @@ public:
  		GCChunkNode *new_header = alloc_chunk(new_nbb, old_header->isCollectable(), old_header->mark());
  		uintptr_t old = old_header->nbb();
  		uintptr_t nbb = old < new_nbb ? old : new_nbb;
- 		memcpy(new_header->chunk(), old_header->chunk(), nbb);
+ 		memcpy((void*)new_header->chunk(), (void*)old_header->chunk(), nbb);
  		return new_header;
  	}
 	

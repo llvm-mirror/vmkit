@@ -16,7 +16,8 @@
 
 #define gc_allocator std::allocator
 
-struct VirtualTable {
+class VirtualTable {
+ public:
   uintptr_t destructor;
   uintptr_t operatorDelete;
   uintptr_t tracer;

@@ -34,8 +34,8 @@ extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(MMTkObject* str,
 
 extern "C" sint32
 Java_org_j3_mmtk_Strings_copyStringToChars__Ljava_lang_String_2_3CII(
-    MMTkObject* obj, MMTkString* str, MMTkArray* dst, uint32 dstBegin,
-    uint32 dstEnd) {
+    MMTkObject* obj, MMTkString* str, MMTkArray* dst, sint32 dstBegin,
+    sint32 dstEnd) {
 
   sint32 len = str->count;
   sint32 n = (dstBegin + len <= dstEnd) ? len : (dstEnd - dstBegin);

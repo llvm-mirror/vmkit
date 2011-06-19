@@ -111,8 +111,8 @@ public:
 		this->size = size;
 	}
 
-	UTF8Builder *append(const UTF8 *utf8, uint32 start=0, uint32 length=0xffffffff) {
-		length = length == 0xffffffff ? utf8->size : length;
+	UTF8Builder *append(const UTF8 *utf8, uint32 start=0, ssize_t length=-1) {
+		length = length == -1 ? utf8->size : length;
 		uint32 req = cur + length;
 
 		if(req > size) {

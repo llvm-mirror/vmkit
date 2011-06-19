@@ -16,7 +16,7 @@
 
 namespace mmtk {
 
-class MMTkObject;
+struct MMTkObject;
 
 struct MMTkClass {
   MMTkObject* delegatee;

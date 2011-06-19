@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-struct VirtualTable;
+class VirtualTable;
 
 class gcRoot {
 public:
