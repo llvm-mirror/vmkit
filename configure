@@ -647,10 +647,6 @@ classpathinclude
 classpathlibs
 classpathglibj
 EXCEPTION_FLAGS
-VM_FLAGS
-ISOLATE_BUILD
-SERVICE_BUILD
-SINGLE_BUILD
 MMTK_PLAN
 GC_FLAGS
 WITH_64
@@ -714,7 +710,6 @@ enable_option_checking
 with_llvmsrc
 with_llvmobj
 with_mmtk_plan
-with_vm_type
 with_exception_type
 with_runtime_exception_type
 with_gnu_classpath_libs
@@ -1355,9 +1350,6 @@ Optional Packages:
   --with-llvmobj          Location of LLVM Object Code
   --with-mmtk-plan=something
                           MMTk plan type ('org.mmtk.plan.marksweep.MS')
-  --with-vm-type=something
-                          VM type ('single' 'isolate' 'isolate-sharing' or
-                          'service')
   --with-exception-type=something
                           Exception type ('check' or 'dwarf')
   --with-runtime-exception-type=something
@@ -2548,41 +2540,6 @@ fi
 
 
 GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk"
-
-
-
-
-
-# Check whether --with-vm-type was given.
-if test "${with_vm_type+set}" = set; then :
-  withval=$with_vm_type; vmtype=$withval
-else
-   echo Using single as vm type.
-                vmtype=single
-
-
-fi
-
-
-if test "x$vmtype" = "xisolate";  then
-  VM_FLAGS="-DISOLATE"
-  ISOLATE_BUILD=1
-  SERVICE_BUILD=0
-  SINGLE_BUILD=0
-else
-  if test "x$vmtype" = "xservice"; then
-    VM_FLAGS="-DISOLATE -DSERVICE"
-    SERVICE_BUILD=1
-    ISOLATE_BUILD=1
-    SINGLE_BUILD=0
-  else
-    SINGLE_BUILD=1
-    ISOLATE_BUILD=0
-    SERVICE_BUILD=0
-  fi
-fi
-
-
 
 
 

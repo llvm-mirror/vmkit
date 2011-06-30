@@ -180,41 +180,6 @@ AC_SUBST([GC_FLAGS])
 AC_SUBST([MMTK_PLAN])
 
 dnl **************************************************************************
-dnl Virtual Machine type
-dnl **************************************************************************
-AC_ARG_WITH(vm-type,
-       [AS_HELP_STRING(--with-vm-type=something,
-           [VM type ('single' 'isolate' 'isolate-sharing' or 'service')])],
-       [[vmtype=$withval]],
-       [[ echo Using single as vm type.
-                vmtype=single
-       ]]
-)
-
-if test "x$vmtype" = "xisolate";  then
-  VM_FLAGS="-DISOLATE"
-  ISOLATE_BUILD=1
-  SERVICE_BUILD=0
-  SINGLE_BUILD=0
-else 
-  if test "x$vmtype" = "xservice"; then
-    VM_FLAGS="-DISOLATE -DSERVICE"
-    SERVICE_BUILD=1
-    ISOLATE_BUILD=1
-    SINGLE_BUILD=0
-  else
-    SINGLE_BUILD=1
-    ISOLATE_BUILD=0
-    SERVICE_BUILD=0
-  fi
-fi
-
-AC_SUBST([SINGLE_BUILD])
-AC_SUBST([SERVICE_BUILD])
-AC_SUBST([ISOLATE_BUILD])
-AC_SUBST([VM_FLAGS])
-
-dnl **************************************************************************
 dnl Exception type
 dnl **************************************************************************
 AC_ARG_WITH(exception-type,

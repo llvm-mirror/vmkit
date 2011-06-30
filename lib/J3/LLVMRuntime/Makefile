@@ -11,20 +11,8 @@ LEVEL = ../../..
 include $(LEVEL)/Makefile.config
 
 VMKIT_RUNTIME = $(PROJ_SRC_DIR)/runtime-default.ll
-
 VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-mmtk-thread.ll
-
-ifeq ($(ISOLATE_BUILD), 1)
-VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-isolate.ll
-endif
-
-ifeq ($(SERVICE_BUILD), 1)
-VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-service.ll $(PROJ_SRC_DIR)/runtime-isolate.ll
-endif
-
-ifeq ($(SINGLE_BUILD), 1)
 VMKIT_RUNTIME += $(PROJ_SRC_DIR)/runtime-single.ll
-endif
 
 BUILT_SOURCES = LLVMRuntime.inc
 
