@@ -18,11 +18,21 @@ PROJ_OBJ_ROOT := $(subst //,/,@abs_top_objdir@)
 # Set the root directory of this project's install prefix
 PROJ_INSTALL_ROOT := @prefix@
 
+MMTK_PLAN = @MMTK_PLAN@
+MMTK_PLAN_HEADER = @MMTK_PLAN_HEADER@
+WITH_64 = @WITH_64@
+ANT = @ANT@
+
 # Define BYTECODE_LIBRARY before including LLVM's Makefile.common to get
 # dependencies right.
 ifeq ($(MODULE_WITH_GC), 1)
   BYTECODE_LIBRARY = 1
 endif
+
+ifeq ($(BUILD_FRAMETABLE), 1)
+  BUILT_SOURCES = FrametablesSymbols.inc FrametablesExterns.inc
+endif
+  
 
 # Include LLVM's Master Makefile.
 include $(LLVM_OBJ_ROOT)/Makefile.common
