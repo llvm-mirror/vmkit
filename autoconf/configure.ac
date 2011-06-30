@@ -149,50 +149,6 @@ dnl=== SECTION 3: Command line arguments for the configure script.
 dnl===
 dnl===-----------------------------------------------------------------------===
 
-AC_ARG_WITH(llvmgcc,
-       [AS_HELP_STRING(--with-llvmgcc,
-           [Compile with llvm-gcc])],
-       [[withllvm=yes]],
-       [[withllvm=no]],
-)
-
-if test "x$withllvm" = "xyes";  then
-  WITH_LLVM_GCC=1
-  LLVM_FLAGS=-DWITH_LLVM_GCC
-fi
-
-AC_SUBST([WITH_LLVM_GCC])
-AC_SUBST([LLVM_FLAGS])
-
-AC_ARG_WITH(thread,
-       [AS_HELP_STRING(--with-thread=something,
-           [Thread type ('common' or 'no')])],
-       [thread=$withval],[thread=common]
-)
-
-AS_IF([test "x$thread" != "xno"],
-  [AC_CHECK_HEADER([pthread.h],,
-    [AC_MSG_WARN(phtread include NOT found)])
-  AC_CHECK_LIB(pthread, pthread_create, [], 
-     [AC_MSG_ERROR([pthread library not found])])
-  ]
-)
-
-if test "x$thread" = xcommon; then
-  AC_DEFINE([HAVE_PTHREAD], [1], [Using pthread library])
-fi
-
-AC_ARG_WITH(finalizer,
-       [AS_HELP_STRING(--with-finalizer,
-           [Compile with finalizer (default yes)])],
-       [[withfinalizer=$withfinalizer]],
-       [[withfinalizer=yes]],
-)
-
-if test ! "x$withfinalizer" = "xyes";  then
-  VM_FLAGS="$VM_FLAGS -DWITHOUT_FINALIZER"
-fi
-
 dnl **************************************************************************
 dnl Architecture
 dnl **************************************************************************
