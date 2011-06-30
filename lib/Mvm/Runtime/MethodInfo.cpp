@@ -15,12 +15,6 @@
 #include <dlfcn.h>
 #include <map>
 
-#if defined(__MACH__)
-#define SELF_HANDLE RTLD_DEFAULT
-#else
-#define SELF_HANDLE 0
-#endif
-
 using namespace mvm;
 
 void CamlMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
@@ -51,11 +45,6 @@ DefaultMethodInfo DefaultMethodInfo::DM;
 void DefaultMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
 }
 
-struct CamlFrames {
-  uint16_t NumDescriptors;
-  CamlFrame frames[1];
-};
-
 struct CamlFrameDecoder {
   CamlFrames* frames ;
   uint32 currentDescriptor;
@@ -64,7 +53,7 @@ struct CamlFrameDecoder {
   CamlFrameDecoder(CamlFrames* frames) {
     this->frames = frames;
     currentDescriptor = 0;
-    currentFrame = &(frames->frames[0]);
+    currentFrame = frames->frames();
   }
 
   bool hasNext() {
@@ -88,23 +77,33 @@ struct CamlFrameDecoder {
   }
 };
 
+CamlFrame* CamlFrames::frames() const {
+  intptr_t ptr = reinterpret_cast<intptr_t>(this) + sizeof(uint32_t);
+  // If the frames structure was not 4-aligned, manually do it here.
+  if (ptr & 2) {
+    ptr -= sizeof(uint16_t);
+  }
+  return reinterpret_cast<CamlFrame*>(ptr);
+}
+
 static BumpPtrAllocator* StaticAllocator = NULL;
 
-FunctionMap::FunctionMap() {
-  CamlFrames* frames =
-    (CamlFrames*)dlsym(SELF_HANDLE, "camlVmkitoptimized__frametable");
-  if (frames == NULL) return;
-  
+FunctionMap::FunctionMap(CamlFrames** allFrames) {
+  if (allFrames == NULL) return;
   StaticAllocator = new BumpPtrAllocator();
-  CamlFrameDecoder decoder(frames);
-  Dl_info info;
-  while (decoder.hasNext()) {
-    CamlFrame* frame = decoder.next();
-    int res = dladdr(frame->ReturnAddress, &info);
-    assert(res != 0 && "No frame");
-    StaticCamlMethodInfo* MI = new(*StaticAllocator, "StaticCamlMethodInfo")
-        StaticCamlMethodInfo(frame, info.dli_sname);
-    addMethodInfo(MI, frame->ReturnAddress);
+  int i = 0;
+  CamlFrames* frames = NULL;
+  while ((frames = allFrames[i++]) != NULL) {
+    CamlFrameDecoder decoder(frames);
+    Dl_info info;
+    while (decoder.hasNext()) {
+      CamlFrame* frame = decoder.next();
+      int res = dladdr(frame->ReturnAddress, &info);
+      assert(res != 0 && "No frame");
+      StaticCamlMethodInfo* MI = new(*StaticAllocator, "StaticCamlMethodInfo")
+          StaticCamlMethodInfo(frame, info.dli_sname);
+      addMethodInfo(MI, frame->ReturnAddress);
+    }
   }
 }
 

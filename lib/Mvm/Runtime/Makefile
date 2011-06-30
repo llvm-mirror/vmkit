@@ -10,22 +10,6 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-
-  MODULE_NAME = Mvm
-
-else
-  LIBRARYNAME = Mvm
-
-  VMKIT_ASSEMBLY = $(PROJ_SRC_DIR)/LLVMAssembly.ll
-  BUILT_SOURCES = LLVMAssembly.s
-
-  ifeq ($(WITH_64), 1)
-    VMKIT_ASSEMBLY += $(PROJ_SRC_DIR)/LLVMAssembly64.ll
-  endif
-
-  SOURCES = LLVMAssembly.s $(notdir $(wildcard $(PROJ_SRC_DIR)/*.cpp))
-
-endif
+MODULE_WITH_GC = Mvm
 
 include $(LEVEL)/Makefile.common

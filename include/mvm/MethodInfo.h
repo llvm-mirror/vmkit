@@ -2,7 +2,7 @@
 //
 //                            The VMKit project
 //
-// This file is distributed under the University of Pierre et Marie Curie 
+// This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
@@ -39,6 +39,12 @@ public:
   uint16_t FrameSize;
   uint16_t NumLiveOffsets;
   int16_t LiveOffsets[1];
+};
+
+class CamlFrames {
+public:
+  uint16_t NumDescriptors;
+  CamlFrame* frames() const; 
 };
 
 class CamlMethodInfo : public MethodInfo {

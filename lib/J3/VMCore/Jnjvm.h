@@ -15,6 +15,7 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
+#include "mvm/MethodInfo.h"
 #include "mvm/Object.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Cond.h"
@@ -335,7 +336,9 @@ public:
 
   /// Jnjvm - Allocates a new JVM.
   ///
-  Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader);
+  Jnjvm(mvm::BumpPtrAllocator& Alloc,
+        mvm::CamlFrames** frames,
+        JnjvmBootstrapLoader* loader);
   
   /// runApplication - Runs the application with the given command line.
   /// User-visible function, inherited by the VirtualMachine class.

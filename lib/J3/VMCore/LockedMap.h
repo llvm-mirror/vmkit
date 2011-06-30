@@ -37,43 +37,29 @@ class Typedef;
 class UserCommonClass;
 class UserClassArray;
 
-struct ltutf8
-{
-  bool operator()(const UTF8* s1, const UTF8* s2) const
-  {
-    return s1->lessThan(s2);
-  }
+struct ltutf8 {
+  bool operator()(const UTF8* s1, const UTF8* s2) const;
 };
 
-struct ltarray16
-{
-  bool operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const
-  {
-    llvm_gcroot(s1, 0);
-    llvm_gcroot(s2, 0);
-    if (ArrayUInt16::getSize(s1) < ArrayUInt16::getSize(s2)) return true;
-    else if (ArrayUInt16::getSize(s1) > ArrayUInt16::getSize(s2)) return false;
-    else return memcmp((const char*)ArrayUInt16::getElements(s1),
-                       (const char*)ArrayUInt16::getElements(s2),
-                       ArrayUInt16::getSize(s1) * sizeof(uint16)) < 0;
-  }
+struct ltarray16 {
+  bool operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const;
 };
 
-  class MapNoGC {
-  public:
-    static void gcroot(void* val, void* unused) 
-      __attribute__ ((always_inline)) {}
+class MapNoGC {
+public:
+  static void gcroot(void* val, void* unused) 
+    __attribute__ ((always_inline)) {}
 
-  };  
+};  
+
+class MapWithGC {
+public:
+  static void gcroot(void* val, void* unused) 
+    __attribute__ ((always_inline)) {
+    llvm_gcroot(val, unused);
+  }   
   
-  class MapWithGC {
-  public:
-    static void gcroot(void* val, void* unused) 
-      __attribute__ ((always_inline)) {
-      llvm_gcroot(val, unused);
-    }   
-    
-  };  
+};  
 
 
 template<class Key, class Container, class Compare, class Meta, class TLock,
@@ -154,12 +140,6 @@ class ClassMap :
   public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader*,
                    mvm::LockRecursive, MapNoGC > {
 
-#ifdef USE_GC_BOEHM
-public:
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator) {
-    return GC_MALLOC(sz);
-  }
-#endif
 };
 
 class StringMap :

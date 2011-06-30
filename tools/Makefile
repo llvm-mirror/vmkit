@@ -8,24 +8,9 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ..
 
-PARALLEL_DIRS += vmkit
-
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_J3), 1)
-  PARALLEL_DIRS += j3
-  PARALLEL_DIRS += vmjc
-  PARALLEL_DIRS += llcj
-endif
-
-ifeq ($(WITH_N3_MONO), 1) 
-  PARALLEL_DIRS += n3-mono
-endif
-
-ifeq ($(WITH_N3_PNETLIB), 1) 
-  PARALLEL_DIRS += n3-pnetlib
-endif
-
+PARALLEL_DIRS = j3 vmjc llcj
 
 include $(LEVEL)/Makefile.common
 

@@ -9,6 +9,7 @@
 
 #include "MvmGC.h"
 #include "mvm/JIT.h"
+#include "mvm/MethodInfo.h"
 #include "mvm/Object.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/Threads/Thread.h"
@@ -25,8 +26,14 @@ extern llvm::cl::opt<bool> StandardCompileOpts;
 using namespace j3;
 using namespace mvm;
 
+#include "FrametablesExterns.inc"
+
+CamlFrames* frametables[] = {
+  #include "FrametablesSymbols.inc"
+};
+
 int main(int argc, char **argv, char **envp) {
-  llvm::llvm_shutdown_obj X;  
+  llvm::llvm_shutdown_obj X;
 
   // Initialize base components.  
   MvmModule::initialise();
@@ -40,7 +47,7 @@ int main(int argc, char **argv, char **envp) {
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, loader);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, (CamlFrames**)frametables, loader);
  
   // Run the application. 
   vm->runApplication(argc, argv);

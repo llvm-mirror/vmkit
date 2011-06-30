@@ -20,6 +20,7 @@
 
 namespace mvm {
 
+class CamlFrames;
 class MethodInfo;
 
 class FunctionMap {
@@ -45,7 +46,7 @@ public:
   /// removeMethodInfos - Remove all MethodInfo owned by the given owner.
   void removeMethodInfos(void* owner);
 
-  FunctionMap();
+  FunctionMap(CamlFrames** frames);
 };
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
@@ -53,8 +54,8 @@ public:
 ///
 class VirtualMachine : public mvm::PermanentObject {
 protected:
-  VirtualMachine(mvm::BumpPtrAllocator &Alloc) :
-		  allocator(Alloc) {
+  VirtualMachine(mvm::BumpPtrAllocator &Alloc, mvm::CamlFrames** frames) :
+		  allocator(Alloc), FunctionsCache(frames) {
     mainThread = NULL;
     numberOfThreads = 0;
     doExit = false;

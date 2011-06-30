@@ -1310,14 +1310,8 @@ public:
     return ((JavaObject**)ptr)[0];
   }
 
-  void setInstanceObjectField(JavaObject* obj, JavaObject* val) {
-    llvm_gcroot(obj, 0);
-    llvm_gcroot(val, 0);
-    if (val != NULL) assert(val->getVirtualTable());
-    assert(classDef->isResolved());
-    JavaObject** ptr = (JavaObject**)((uint64)obj + ptrOffset);
-    mvm::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)val);
-  }
+  // This can't be inlined because of a linker bug.
+  void setInstanceObjectField(JavaObject* obj, JavaObject* val);
   
   bool isReference() {
     uint16 val = type->elements[0];

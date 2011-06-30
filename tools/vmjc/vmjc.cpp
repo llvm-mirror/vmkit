@@ -15,6 +15,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <llvm/Linker.h>
 #include "llvm/LinkAllPasses.h"
 #include "llvm/LinkAllVMCore.h"
 #include "llvm/Module.h"
@@ -24,6 +25,7 @@
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/IRReader.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/PassNameParser.h"
@@ -106,6 +108,24 @@ static cl::list<std::string>
 WithClinit("with-clinit", cl::desc("Classes to clinit"), cl::ZeroOrMore,
            cl::CommaSeparated);
 
+
+static cl::list<std::string> 
+LoadBytecodeFiles("load-bc", cl::desc("Load bytecode file"), cl::ZeroOrMore,
+                  cl::CommaSeparated);
+
+static void loadBytecodeFile(const std::string& str) {
+  SMDiagnostic Err;
+  Module* M = ParseIRFile(str, Err, mvm::MvmModule::globalModule->getContext());
+  if (M) {
+    M->setTargetTriple(mvm::MvmModule::getHostTriple());
+    Linker::LinkModules(mvm::MvmModule::globalModule, M, 0);
+    delete M;
+  } else {
+    Err.Print("load bytecode", errs());
+  }
+}
+
+
 int main(int argc, char **argv) {
   llvm_shutdown_obj X;  // Call llvm_shutdown() on exit.
   cl::ParseCommandLineOptions(argc, argv, "vmkit .class -> .ll compiler\n");
@@ -174,6 +194,11 @@ int main(int argc, char **argv) {
     mvm::MvmModule::initialise();
   }
 
+  for (std::vector<std::string>::iterator i = LoadBytecodeFiles.begin(),
+       e = LoadBytecodeFiles.end(); i != e; ++i) {
+    loadBytecodeFile(*i); 
+  }
+
   JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
 
   mvm::Collector::initialise();
@@ -187,7 +212,7 @@ int main(int argc, char **argv) {
   if (AssumeCompiled) Comp->assumeCompiled = true;
   if (DisableCooperativeGC) Comp->disableCooperativeGC();
     
-  Jnjvm* vm = new(allocator, "Bootstrap loader") Jnjvm(allocator, loader);
+  Jnjvm* vm = new(allocator, "Bootstrap loader") Jnjvm(allocator, NULL, loader);
   
   for (std::vector<std::string>::iterator i = Properties.begin(),
        e = Properties.end(); i != e; ++i) {

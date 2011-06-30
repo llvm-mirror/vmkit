@@ -428,7 +428,7 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, loader);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, NULL, loader);
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();
   

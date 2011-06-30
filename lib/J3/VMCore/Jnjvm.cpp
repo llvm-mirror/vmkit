@@ -1319,8 +1319,10 @@ void Jnjvm::runApplication(int argc, char** argv) {
   mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
 }
 
-Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc, JnjvmBootstrapLoader* loader) : 
-  VirtualMachine(Alloc), lockSystem(Alloc) {
+Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc,
+             mvm::CamlFrames** frames,
+             JnjvmBootstrapLoader* loader) : 
+  VirtualMachine(Alloc, frames), lockSystem(Alloc) {
 
   classpath = getenv("CLASSPATH");
   if (!classpath) classpath = ".";
@@ -1453,7 +1455,7 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   JavaCompiler* Comp = new JavaCompiler();
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, loader);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, NULL, loader);
 
   vm->runApplication(argc + 1, newArgv);
   vm->waitForExit();

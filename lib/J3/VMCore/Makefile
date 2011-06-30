@@ -10,17 +10,8 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = J3
-else
-  LIBRARYNAME = J3
-endif
-
+MODULE_WITH_GC = J3
 
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I$(PROJ_OBJ_DIR)/../Classpath -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../Classpath $(CLASSPATH_FLAGS) -I$(PROJ_SRC_DIR)/../../../include/j3
-
-ifeq ($(ISOLATE_BUILD), 1)
-  CXX.Flags += -I$(PROJ_SRC_DIR)/../Isolate
-endif
+CXX.Flags += -I$(PROJ_OBJ_DIR)/../Classpath -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../Classpath $(CLASSPATH_FLAGS) -I$(PROJ_SRC_DIR)/../../../include/j3 -Wno-mismatched-tags

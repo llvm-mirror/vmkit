@@ -1836,3 +1836,12 @@ void Class::broadcastClass() {
   delegatee = getClassDelegatee(JavaThread::get()->getJVM());
   JavaObject::notifyAll(delegatee);
 }
+
+void JavaField::setInstanceObjectField(JavaObject* obj, JavaObject* val) {
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(val, 0);
+  if (val != NULL) assert(val->getVirtualTable());
+  assert(classDef->isResolved());
+  JavaObject** ptr = (JavaObject**)((uint64)obj + ptrOffset);
+  mvm::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)val);
+}

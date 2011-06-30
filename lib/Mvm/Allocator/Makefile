@@ -10,11 +10,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = Allocator
-else
-  LIBRARYNAME = Allocator
-endif
+MODULE_WITH_GC = Allocator
 
 include $(LEVEL)/Makefile.common
 

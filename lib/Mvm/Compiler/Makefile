@@ -10,11 +10,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = MvmCompiler
-else
-  LIBRARYNAME = MvmCompiler
-endif
+MODULE_WITH_GC = MvmCompiler
 
 VMKIT_RUNTIME = $(PROJ_SRC_DIR)/LLVMRuntime.ll
 BUILT_SOURCES = LLVMRuntime.inc

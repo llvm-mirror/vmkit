@@ -10,7 +10,7 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-MODULE_NAME = InlineMMTk
+MODULE_WITH_GC = InlineMMTk
 
 include $(LEVEL)/Makefile.common
 

@@ -10,12 +10,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = CommonThread
-else
-  LIBRARYNAME = CommonThread
-endif
-
+MODULE_WITH_GC = CommonThread
 
 include $(LEVEL)/Makefile.common
 

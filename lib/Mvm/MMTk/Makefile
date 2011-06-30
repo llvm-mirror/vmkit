@@ -10,10 +10,6 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = MMTk
-else
-  LIBRARYNAME = MMTk
-endif
+MODULE_WITH_GC = MMTk
 
 include $(LEVEL)/Makefile.common

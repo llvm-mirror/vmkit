@@ -12,7 +12,6 @@
 #include <llvm/DerivedTypes.h>
 #include <llvm/Instructions.h>
 #include <llvm/LinkAllPasses.h>
-#include <llvm/Linker.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
 #include <llvm/PassManager.h>
@@ -57,11 +56,6 @@
 
 using namespace mvm;
 using namespace llvm;
-
-
-static cl::list<std::string> 
-LoadBytecodeFiles("load-bc", cl::desc("Load bytecode file"), cl::ZeroOrMore,
-                  cl::CommaSeparated);
 
 cl::opt<bool> EmitDebugInfo("emit-debug-info", 
                   cl::desc("Emit debugging information"),
@@ -118,18 +112,6 @@ void JITMethodInfo::addToVM(VirtualMachine* VM, JIT* jit) {
 
 static MvmJITListener JITListener;
 
-void MvmModule::loadBytecodeFile(const std::string& str) {
-  SMDiagnostic Err;
-  Module* M = ParseIRFile(str, Err, globalModule->getContext());
-  if (M) {
-    M->setTargetTriple(getHostTriple());
-    Linker::LinkModules(globalModule, M, 0);
-    delete M;
-  } else {
-    Err.Print("load bytecode", errs());
-  }
-}
-
 typedef void (*BootType)(uintptr_t Plan);
 typedef void (*BootHeapType)(intptr_t initial, intptr_t max);
 
@@ -176,10 +158,6 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   //LLVMContext& Context = globalModule->getContext();
   //MetadataTypeKind = Context.getMDKindID("HighLevelType");
  
-  for (std::vector<std::string>::iterator i = LoadBytecodeFiles.begin(),
-       e = LoadBytecodeFiles.end(); i != e; ++i) {
-    loadBytecodeFile(*i); 
-  }
 }
 
 BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {

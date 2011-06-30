@@ -13,13 +13,7 @@ include $(LEVEL)/Makefile.config
 
 # Top-Level vmkit Build Stages:
 #
-DIRS := lib tools/vmjc
-
-ifeq ($(GC_MMTK), 1)
-  DIRS += mmtk
-endif
-
-DIRS += tools
+DIRS := lib/Mvm/StaticGCPass lib tools/vmjc mmtk tools
 
 EXTRA_DIST=include
 

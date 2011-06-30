@@ -10,19 +10,9 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = J3Compiler
-else
-  LIBRARYNAME = J3Compiler
-endif
-
+MODULE_WITH_GC = J3Compiler
 EXTRA_DIST = ExceptionsCheck.inc ExceptionsDwarf.inc
-
 
 include $(LEVEL)/Makefile.common
 
 CXX.Flags += -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../Classpath $(CLASSPATH_FLAGS) -I$(PROJ_SRC_DIR)/../VMCore
-
-ifeq ($(ISOLATE_BUILD), 1)
-  CXX.Flags += -I$(PROJ_SRC_DIR)/../Isolate
-endif
