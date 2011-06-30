@@ -199,11 +199,8 @@ AC_ARG_WITH(gnu-classpath-glibj,
        [[classpathglibj=/usr/share/classpath/glibj.zip]]
 )
 
-classpathinclude="-I${classpathlibs}/../include -I/usr/include/classpath";
-
 AC_SUBST([classpathglibj])
 AC_SUBST([classpathlibs])
-AC_SUBST([classpathinclude])
 AC_SUBST([classpathversion])
 
 dnl===-----------------------------------------------------------------------===

@@ -20,4 +20,4 @@ MODULE_WITH_GC = Classpath
 
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore $(CLASSPATH_FLAGS)
+CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore -I$(PROJ_SRC_DIR)/../../../include/j3

@@ -633,7 +633,6 @@ LDFLAGS
 CFLAGS
 CC
 classpathversion
-classpathinclude
 classpathlibs
 classpathglibj
 MMTK_PLAN
@@ -2537,9 +2536,6 @@ else
   classpathglibj=/usr/share/classpath/glibj.zip
 
 fi
-
-
-classpathinclude="-I${classpathlibs}/../include -I/usr/include/classpath";
 
 
 

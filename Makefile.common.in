@@ -28,7 +28,7 @@ include $(LLVM_OBJ_ROOT)/Makefile.common
 CXX.Flags += @GC_FLAGS@ -fno-exceptions -Wno-variadic-macros -fno-omit-frame-pointer -fno-strict-aliasing -Wno-deprecated -ansi -DENABLE_THREADS -fno-rtti
 
 # GNU Classpath flags
-CLASSPATH_FLAGS = @classpathinclude@
+CLASSPATH_FLAGS =
 GLIBJ = @classpathglibj@
 
 # Pnet location
