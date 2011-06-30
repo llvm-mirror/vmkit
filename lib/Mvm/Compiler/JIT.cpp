@@ -397,10 +397,8 @@ void MvmModule::addCommandLinePasses(FunctionPassManager* PM) {
 
   addPass(PM, createVerifierPass());        // Verify that input is correct
 
-#ifdef WITH_MMTK
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, createInlineMallocPass());
-#endif
   
   // Create a new optimization pass for each one specified on the command line
   for (unsigned i = 0; i < PassList.size(); ++i) {

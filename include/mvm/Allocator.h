@@ -30,15 +30,11 @@ private:
   llvm::BumpPtrAllocator Allocator;
 public:
   void* Allocate(size_t sz, const char* name) {
-#ifdef USE_GC_BOEHM
-    return GC_MALLOC(sz);
-#else
     TheLock.acquire();
     void* res = Allocator.Allocate(sz, sizeof(void*));
     TheLock.release();
     memset(res, 0, sz);
     return res;
-#endif
   }
 
   void Deallocate(void* obj) {}
@@ -50,13 +46,9 @@ private:
   llvm::BumpPtrAllocator Allocator;
 public:
   void* Allocate(size_t sz) {
-#ifdef USE_GC_BOEHM
-    return GC_MALLOC(sz);
-#else
     void* res = Allocator.Allocate(sz, sizeof(void*));
     memset(res, 0, sz);
     return res;
-#endif
   }
 
   void Deallocate(void* obj) {}

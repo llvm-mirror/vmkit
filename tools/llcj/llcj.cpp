@@ -215,9 +215,6 @@ int main(int argc, char **argv) {
     gccArgv[gccArgc++] = VMKITLibs2;
     gccArgv[gccArgc++] = VMKITLibs3;
     gccArgv[gccArgc++] = "-pthread";
-#ifdef USE_GC_BOEHM
-    gccArgv[gccArgc++] = "-lgc";
-#endif
     gccArgv[gccArgc++] = "-lm";
     gccArgv[gccArgc++] = "-ldl";
     gccArgv[gccArgc++] = "-lz";

@@ -629,12 +629,8 @@ void JavaField::InitStaticField(Jnjvm* vm) {
 }
 
 void* UserClass::allocateStaticInstance(Jnjvm* vm) {
-#ifdef USE_GC_BOEHM
-  void* val = GC_MALLOC(getStaticSize());
-#else
   void* val = classLoader->allocator.Allocate(getStaticSize(),
                                               "Static instance");
-#endif
   setStaticInstance(val);
   return val;
 }

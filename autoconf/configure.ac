@@ -167,15 +167,6 @@ esac
 dnl **************************************************************************
 dnl GC type 
 dnl **************************************************************************
-AC_ARG_WITH(gc,
-       [AS_HELP_STRING(--with-gc=something,
-           [GC type ('mmtk' (requires llvm-gcc) 'single-mmap' 'multi-mmap' or 'boehm')])],
-       [[gc=$withval]],
-       [[ echo Using mmap2 as vvm gc type.
-                gc=single-mmap
-       ]]
-)
-
 AC_ARG_WITH(mmtk-plan,
        [AS_HELP_STRING(--with-mmtk-plan=something,
            [MMTk plan type ('org.mmtk.plan.marksweep.MS')])],
@@ -183,47 +174,9 @@ AC_ARG_WITH(mmtk-plan,
        [[MMTK_PLAN=org.mmtk.plan.marksweep.MS]]
 )
 
-if test "x$gc" = "xboehm";  then
-  GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/BoehmGC -DGC_THREADS"
-  AC_DEFINE([USE_GC_BOEHM], [1], [Using the boehm gc])
-  AC_SUBST(GC_MMAP2, [0])
-  AC_SUBST(GC_BOEHM, [1])
-  AC_SUBST(GC_MMTK, [0])
-  GC_LIBS=BoehmGC
-  case $target_os in
-    *linux*)
-      GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/BoehmGC -DUSE_GC_BOEHM -DGC_THREADS -DGC_LINUX_THREADS"
-    ;;
-  esac
-else
-  if test "x$gc" = "xmmtk";  then
-    AC_SUBST([GC_MULTI_MMAP], [0])
-    AC_SUBST([GC_SINGLE_MMAP], [1])
-    AC_SUBST(GC_MMAP2, [0])
-    AC_SUBST(GC_BOEHM, [0])
-    AC_SUBST(GC_MMTK, [1])
-    GC_LIBS=MMTk
-    GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk -DWITH_MMTK"
-  else
-    GC_LIBS=GCMmap2
-    if test "x$gc" = "xmulti-mmap"; then
-      GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/GCMmap2 -DWITH_TRACER -DMULTIPLE_GC -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
-      AC_SUBST([GC_MULTI_MMAP], [1])
-      AC_SUBST([GC_SINGLE_MMAP], [0])
-    else
-      GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/GCMmap2 -DWITH_TRACER -I\$(PROJ_SRC_ROOT)/lib/Mvm/Allocator"
-      AC_SUBST([GC_MULTI_MMAP], [0])
-      AC_SUBST([GC_SINGLE_MMAP], [1])
-    fi
-    AC_DEFINE([USE_GC_MMAP2], [1], [Using the gcmmap2])
-    AC_SUBST(GC_MMAP2, [1])
-    AC_SUBST(GC_BOEHM, [0])
-    AC_SUBST(GC_MMTK, [0])
-  fi
-fi
+GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk"
 
 AC_SUBST([GC_FLAGS])
-AC_SUBST([GC_LIBS])
 AC_SUBST([MMTK_PLAN])
 
 dnl **************************************************************************
@@ -429,13 +382,7 @@ AC_PATH_PROG(CAT,[cat],  [cat])
 
 AC_PATH_PROG(LLVMAS, [llvm-as],  [llvm-as])
 AC_PATH_PROG(LLC, [llc],  [llc])
-
-if test "x$gc" = "xmmtk";  then
-  AC_PATH_PROG(ANT, [ant])
-  if test -z "$ANT"; then
-    AC_MSG_ERROR([Apache ANT required for MMTk, but not found])
-  fi
-fi
+AC_PATH_PROG(ANT, [ant])
 
 dnl Find the install program
 AC_PROG_INSTALL
@@ -508,11 +455,6 @@ AC_CHECK_LIB(z, inflate, [], \
   [AC_MSG_ERROR([You need to install the zlib package (z).])]
 )
   
-if test "x$gc" = "xboehm";  then
-AC_CHECK_LIB(gc, GC_malloc, [], \
-    [AC_MSG_ERROR([You need to install the boehm-gc package (gc).])]
-)
-fi
 
 dnl===-----------------------------------------------------------------------===
 dnl===
@@ -524,13 +466,6 @@ AC_CHECK_HEADER([zlib.h], [], \
   AC_MSG_ERROR([You need to install the zlib devel package (zlib.h).])
 )
   
-if test "x$gc" = "xboehm";  then
-  AC_CHECK_HEADER([gc/gc.h], [], \
-    AC_MSG_ERROR([You need to install the boehm-gc devel package (gc/gc.h).])
-  )
-fi
-
-
 nl===-----------------------------------------------------------------------===
 dnl===
 dnl=== SECTION 7: Check for types and structures

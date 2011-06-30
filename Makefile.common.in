@@ -36,9 +36,4 @@ PNETLIB = @pnetlocalprefix@
 
 LIBS += -lz
 
-# GC configuration
-ifeq ($(GCLIB), BoehmGC)
-  LIBS += -lgc
-endif
-
 include $(PROJ_SRC_ROOT)/Makefile.rules

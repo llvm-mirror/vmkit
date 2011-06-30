@@ -2204,8 +2204,7 @@ void* JavaAOTCompiler::loadMethod(void* handle, const char* symbol) {
   return JavaCompiler::loadMethod(handle, symbol);
 }
 
-#ifdef WITH_MMTK
-
+// TODO: clean up to have a better interface with the fake GC.
 #include <set>
 extern std::set<gc*> __InternalSet__;
 
@@ -2228,9 +2227,3 @@ CommonClass* JavaAOTCompiler::getUniqueBaseClass(CommonClass* cl) {
   }
   return currentClass;
 }
-
-#else
-CommonClass* JavaAOTCompiler::getUniqueBaseClass(CommonClass* cl) {
-  return 0;
-}
-#endif
