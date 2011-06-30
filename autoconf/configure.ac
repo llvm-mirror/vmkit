@@ -199,84 +199,12 @@ AC_ARG_WITH(gnu-classpath-glibj,
        [[classpathglibj=/usr/share/classpath/glibj.zip]]
 )
 
-AC_ARG_WITH(j3,
-       [AS_HELP_STRING(--with-j3=yes|no,
-        [Build J3 (default is yes)])],
-       [[WITH_J3=$withval]],
-       [[WITH_J3=yes]]
-)
-
 classpathinclude="-I${classpathlibs}/../include -I/usr/include/classpath";
-
-if test "x${WITH_J3}" = "xyes"; then
-  WITH_J3=1;
-  AC_DEFINE([WITH_J3], [1], [With J3])
-else
-  WITH_J3=0;
-fi 
 
 AC_SUBST([classpathglibj])
 AC_SUBST([classpathlibs])
 AC_SUBST([classpathinclude])
 AC_SUBST([classpathversion])
-AC_SUBST([WITH_J3])
-
-dnl **************************************************************************
-dnl Local PNet directory
-dnl **************************************************************************
-AC_ARG_WITH(pnet-local-prefix,
-       [AS_HELP_STRING(--with-pnet-local-prefix=something,
-           [PNET local prefix (no default)])],
-       [[pnetlocalprefix=$withval]],
-       [[       echo Not using PNETlocal prefix.    
-                                pnetlocalprefix=''
-       ]]
-)
-
-AC_ARG_WITH(pnetlib,
-       [AS_HELP_STRING(--with-pnetlib=something,
-           [Pnetlib's mscorlib.dll location (default is /usr/lib/cscc/lib/)])],
-       [[pnetlibpath=$withval]],
-       [[pnetlibpath=/usr/lib/cscc/lib/]]
-)
-
-WITH_N3=0
-
-if test "x$pnetlocalprefix" != x; then
-  echo Using ${pnetlocalprefix} as PNET local prefix;
-  WITH_N3_PNETLIB=1;
-  WITH_N3=1;
-  AC_DEFINE([WITH_N3], [1], [With N3])
-else
-  WITH_N3_PNETLIB=0;
-fi
-
-AC_SUBST([pnetlocalprefix])
-AC_SUBST([WITH_N3_PNETLIB])
-
-N3_LIB=PNetLib
-AC_SUBST([N3_LIB])
-AC_SUBST([pnetlibpath])
-
-AC_ARG_WITH(mono,
-       [AS_HELP_STRING(--with-mono=something,
-         [Mono's mscorlib.dll location (no default)])],
-       [[monopath=$withval]],
-       [[echo Not using Mono]]
-)
-
-if test "x$monopath" != x; then
-  echo Building N3 with Mono;
-  WITH_N3_MONO=1;
-  WITH_N3=1;
-else
-  WITH_N3_MONO=0;
-fi
-
-AC_SUBST([WITH_N3_MONO])
-AC_SUBST([monopath])
-
-AC_SUBST([WITH_N3])
 
 dnl===-----------------------------------------------------------------------===
 dnl===
@@ -314,64 +242,6 @@ AC_PATH_PROG(ANT, [ant])
 
 dnl Find the install program
 AC_PROG_INSTALL
-
-if test "$WITH_LLVMGCCDIR" = "default" ; then
-  LLVMGCC="llvm-gcc${EXEEXT}"
-  LLVMGXX="llvm-g++${EXEEXT}"
-  AC_PATH_PROG(LLVMGCC, $LLVMGCC, [])
-  AC_PATH_PROG(LLVMGXX, $LLVMGXX, [])
-else
-  if test -z "$LLVMGCC"; then
-    LLVMGCC="$WITH_LLVMGCCDIR/bin/llvm-gcc${EXEEXT}"
-  fi
-  if test -z "$LLVMGXX"; then
-    LLVMGXX="$WITH_LLVMGCCDIR/bin/llvm-g++${EXEEXT}"
-  fi
-  AC_SUBST(LLVMGCC,$LLVMGCC)
-  AC_SUBST(LLVMGXX,$LLVMGXX)
-fi
-
-AC_MSG_CHECKING([tool compatibility])
-
-dnl Ensure that compilation tools are GCC or a GNU compatible compiler such as
-dnl ICC; we use GCC specific options in the makefiles so the compiler needs
-dnl to support those options.
-dnl "icc" emits gcc signatures
-dnl "icc -no-gcc" emits no gcc signature BUT is still compatible
-ICC=no
-IXX=no
-case $CC in
-  icc*|icpc*)
-    ICC=yes
-    IXX=yes
-    ;;
-   *)
-    ;;
-esac
-
-if test "$GCC" != "yes" && test "$ICC" != "yes"
-then
-  AC_MSG_ERROR([gcc|icc required but not found])
-fi
-
-dnl Ensure that compilation tools are GCC; we use GCC specific extensions
-if test "$GXX" != "yes" && test "$IXX" != "yes"
-then
-  AC_MSG_ERROR([g++|icc required but not found])
-fi
-
-dnl Verify that GCC is version 3.0 or higher
-if test "$GCC" = "yes"
-then
-  AC_COMPILE_IFELSE([[#if !defined(__GNUC__) || __GNUC__ < 3
-#error Unsupported GCC version
-#endif
-]], [], [AC_MSG_ERROR([gcc 3.x required, but you have a lower version])])
-fi
-
-dnl Tool compatibility is okay if we make it here.
-AC_MSG_RESULT([ok])
-
 
 dnl===-----------------------------------------------------------------------===
 dnl===
@@ -449,7 +319,6 @@ AC_CONFIG_FILES([mmtk/java/build.xml])
 
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)
-AC_CONFIG_MAKEFILE(lib/Makefile)
 
 
 AC_OUTPUT

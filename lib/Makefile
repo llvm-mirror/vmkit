@@ -8,17 +8,9 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ..
 
-PARALLEL_DIRS = Mvm
+PARALLEL_DIRS = Mvm J3
 
 include $(LEVEL)/Makefile.config
-
-ifeq ($(WITH_J3), 1)
-PARALLEL_DIRS += J3
-endif
-
-ifeq ($(WITH_N3), 1)
-PARALLEL_DIRS += N3
-endif
 
 include $(LEVEL)/Makefile.common
 
