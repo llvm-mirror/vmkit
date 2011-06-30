@@ -100,30 +100,10 @@ void Thread::endUnknownFrame() {
 #endif
 
 void Thread::internalThrowException() {
-#ifdef RUNTIME_DWARF_EXCEPTIONS
-  // Use dlsym instead of getting the functions statically with extern "C"
-  // because gcc compiles exceptions differently.
-  typedef void* (*cxa_allocate_exception_type)(unsigned);
-  typedef void  (*cxa_throw_type)(void*, void*, void*);
-  
-  static cxa_allocate_exception_type cxa_allocate_exception =
-    (cxa_allocate_exception_type)(uintptr_t)
-    dlsym(SELF_HANDLE, "__cxa_allocate_exception");
-  
-  static cxa_throw_type cxa_throw =
-    (cxa_throw_type)(uintptr_t)
-    dlsym(SELF_HANDLE, "__cxa_throw");
-  
-  void* exc = cxa_allocate_exception(0);
-  // 32 = sizeof(_Unwind_Exception) in libgcc...  
-  internalPendingException = (void*)((uintptr_t)exc - 32);
-  cxa_throw(exc, 0, 0);
-#else
 #if defined(__MACH__)
   _longjmp(lastExceptionBuffer->buffer, 1);
 #else
   longjmp(lastExceptionBuffer->buffer, 1);
-#endif
 #endif
 }
 

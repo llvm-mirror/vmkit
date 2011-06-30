@@ -180,43 +180,6 @@ AC_SUBST([GC_FLAGS])
 AC_SUBST([MMTK_PLAN])
 
 dnl **************************************************************************
-dnl Exception type
-dnl **************************************************************************
-AC_ARG_WITH(exception-type,
-       [AS_HELP_STRING(--with-exception-type=something,
-           [Exception type ('check' or 'dwarf')])],
-       [[exceptiontype=$withval]],
-       [[ echo Using check as exception type.
-                exceptiontype=check
-       ]]
-)
-
-AC_ARG_WITH(runtime-exception-type,
-       [AS_HELP_STRING(--with-runtime-exception-type=something,
-           [Runtime exception type ('setjmp' or 'dwarf')])],
-       [[runtimeexceptiontype=$withval]],
-       [[ echo Using setjmp as exception type.
-                exceptiontype=setjmp
-       ]]
-)
-
-if test "x$exceptiontype" = "xdwarf";  then
-  EXCEPTION_FLAGS="-DDWARF_EXCEPTIONS -fexceptions"
-fi
-
-if test "x$runtimeexceptiontype" = "xdwarf";  then
-  EXCEPTION_FLAGS+="-DRUNTIME_DWARF_EXCEPTIONS -fexceptions"
-fi
-
-if test "x$runtimeexceptiontype" != "xdwarf"; then
-  if test "x$exceptiontype" != "xdwarf"; then
-    EXCEPTION_FLAGS="-fno-exceptions"
-  fi
-fi
-
-AC_SUBST([EXCEPTION_FLAGS])
-
-dnl **************************************************************************
 dnl GNU CLASSPATH installation prefix
 dnl **************************************************************************
 

@@ -646,7 +646,6 @@ classpathversion
 classpathinclude
 classpathlibs
 classpathglibj
-EXCEPTION_FLAGS
 MMTK_PLAN
 GC_FLAGS
 WITH_64
@@ -710,8 +709,6 @@ enable_option_checking
 with_llvmsrc
 with_llvmobj
 with_mmtk_plan
-with_exception_type
-with_runtime_exception_type
 with_gnu_classpath_libs
 with_gnu_classpath_glibj
 with_j3
@@ -1350,10 +1347,6 @@ Optional Packages:
   --with-llvmobj          Location of LLVM Object Code
   --with-mmtk-plan=something
                           MMTk plan type ('org.mmtk.plan.marksweep.MS')
-  --with-exception-type=something
-                          Exception type ('check' or 'dwarf')
-  --with-runtime-exception-type=something
-                          Runtime exception type ('setjmp' or 'dwarf')
   --with-gnu-classpath-libs=something
                           GNU CLASSPATH libraries (default is
                           /usr/lib/classpath)
@@ -2541,46 +2534,6 @@ fi
 
 GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk"
 
-
-
-
-
-# Check whether --with-exception-type was given.
-if test "${with_exception_type+set}" = set; then :
-  withval=$with_exception_type; exceptiontype=$withval
-else
-   echo Using check as exception type.
-                exceptiontype=check
-
-
-fi
-
-
-
-# Check whether --with-runtime-exception-type was given.
-if test "${with_runtime_exception_type+set}" = set; then :
-  withval=$with_runtime_exception_type; runtimeexceptiontype=$withval
-else
-   echo Using setjmp as exception type.
-                exceptiontype=setjmp
-
-
-fi
-
-
-if test "x$exceptiontype" = "xdwarf";  then
-  EXCEPTION_FLAGS="-DDWARF_EXCEPTIONS -fexceptions"
-fi
-
-if test "x$runtimeexceptiontype" = "xdwarf";  then
-  EXCEPTION_FLAGS+="-DRUNTIME_DWARF_EXCEPTIONS -fexceptions"
-fi
-
-if test "x$runtimeexceptiontype" != "xdwarf"; then
-  if test "x$exceptiontype" != "xdwarf"; then
-    EXCEPTION_FLAGS="-fno-exceptions"
-  fi
-fi
 
 
 

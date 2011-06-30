@@ -124,11 +124,7 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   llvm::NoFramePointerElim = true;
   llvm::DisablePrettyStackTrace = true;
   llvm::JITEmitDebugInfo = EmitDebugInfo;
-#if DWARF_EXCEPTIONS
-  llvm::JITExceptionHandling = true;
-#else
   llvm::JITExceptionHandling = false;
-#endif
   
   // Disable branch fold for accurate line numbers.
   const char* commands[2] = { "vmkit", "-disable-branch-fold" };

@@ -399,12 +399,7 @@ extern "C" JavaObject* j3NullPointerException() {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-
   return exc;
 }
 
@@ -420,12 +415,7 @@ extern "C" JavaObject* j3NegativeArraySizeException(sint32 val) {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-
   return exc;
 }
 
@@ -441,12 +431,7 @@ extern "C" JavaObject* j3OutOfMemoryError(sint32 val) {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-
   return exc;
 }
 
@@ -462,12 +447,7 @@ extern "C" JavaObject* j3StackOverflowError() {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-
   return exc;
 }
 
@@ -483,12 +463,7 @@ extern "C" JavaObject* j3ArithmeticException() {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-
   return exc;
 }
 
@@ -507,12 +482,7 @@ extern "C" JavaObject* j3ClassCastException(JavaObject* obj,
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-
   return exc;
 }
 
@@ -531,12 +501,7 @@ extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-  
   return exc;
 }
 
@@ -552,12 +517,7 @@ extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT,
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-  
   return exc;
 }
 
@@ -574,12 +534,7 @@ extern "C" void j3ThrowExceptionFromJIT() {
 
   END_NATIVE_EXCEPTION
 
-#ifdef DWARF_EXCEPTIONS
-  th->throwException(exc);
-#else
   th->pendingException = exc;
-#endif
-  
 }
 
 extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {

@@ -17,22 +17,15 @@
 #include "debug.h"
 #include "types.h"
 
-#ifdef RUNTIME_DWARF_EXCEPTIONS
-  #define TRY try
-  #define CATCH catch(...)
-  #define IGNORE catch(...) { mvm::Thread::get()->clearException(); }
-  #define END_CATCH
+#include <csetjmp>
+#if defined(__MACH__)
+  #define TRY { mvm::ExceptionBuffer __buffer__; if (!_setjmp(__buffer__.buffer))
 #else
-  #include <csetjmp>
-  #if defined(__MACH__)
-    #define TRY { mvm::ExceptionBuffer __buffer__; if (!_setjmp(__buffer__.buffer))
-  #else
-    #define TRY { mvm::ExceptionBuffer __buffer__; if (!setjmp(__buffer__.buffer))
-  #endif
-  #define CATCH else
-  #define IGNORE else { mvm::Thread::get()->clearException(); }}
-  #define END_CATCH }
+  #define TRY { mvm::ExceptionBuffer __buffer__; if (!setjmp(__buffer__.buffer))
 #endif
+#define CATCH else
+#define IGNORE else { mvm::Thread::get()->clearException(); }}
+#define END_CATCH }
 
 namespace mvm {
 
@@ -146,12 +139,8 @@ class ExceptionBuffer;
 class Thread : public CircularBase {
 public:
   Thread() {
-#ifdef RUNTIME_DWARF_EXCEPTIONS
-  internalPendingException = 0;
-#else
-  lastExceptionBuffer = 0;
-#endif
-  lastKnownFrame = 0;
+    lastExceptionBuffer = 0;
+    lastKnownFrame = 0;
   }
 
   /// yield - Yield the processor to another thread.
@@ -251,9 +240,6 @@ public:
 
   /// clearException - Clear any pending exception of the current thread.
   void clearException() {
-#ifdef RUNTIME_DWARF_EXCEPTIONS
-    internalPendingException = 0;
-#endif
     internalClearException();
   }
 
@@ -325,13 +311,9 @@ public:
   ///
   KnownFrame* lastKnownFrame;
   
-#ifdef RUNTIME_DWARF_EXCEPTIONS
-  void* internalPendingException;
-#else
   /// lastExceptionBuffer - The last exception buffer on this thread's stack.
   ///
   ExceptionBuffer* lastExceptionBuffer;
-#endif
 
   void internalThrowException();
 
@@ -341,7 +323,6 @@ public:
   void endUnknownFrame();
 };
 
-#ifndef RUNTIME_DWARF_EXCEPTIONS
 class ExceptionBuffer {
 public:
   ExceptionBuffer() {
@@ -358,7 +339,6 @@ public:
   ExceptionBuffer* previousBuffer;
   jmp_buf buffer;
 };
-#endif
 
 /// StackWalker - This class walks the stack of threads, returning a MethodInfo
 /// object at each iteration.

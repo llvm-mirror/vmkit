@@ -56,17 +56,8 @@ using namespace j3;
   }\
 }
   
-#if defined(DWARF_EXCEPTIONS)
-
-#define DO_TRY try {
-#define DO_CATCH } catch(...) { th->throwFromJava(); } \
-
-#else
-
 #define DO_TRY
 #define DO_CATCH if (th->pendingException) { th->throwFromJava(); }
-
-#endif
 
 //===----------------------------------------------------------------------===//
 // We do not need to have special care on the GC-pointers in the buffer
