@@ -210,7 +210,6 @@ StackWalker::StackWalker(mvm::Thread* th) {
 }
 
 
-#ifdef WITH_LLVM_GCC
 void Thread::scanStack(uintptr_t closure) {
   StackWalker Walker(this);
   while (MethodInfo* MI = Walker.get()) {
@@ -218,22 +217,6 @@ void Thread::scanStack(uintptr_t closure) {
     ++Walker;
   }
 }
-
-#else
-
-void Thread::scanStack(uintptr_t closure) {
-  register unsigned int  **max = (unsigned int**)(void*)this->baseSP;
-  if (mvm::Thread::get() != this) {
-    register unsigned int  **cur = (unsigned int**)this->waitOnSP();
-    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
-  } else {
-    jmp_buf buf;
-    setjmp(buf);
-    register unsigned int  **cur = (unsigned int**)&buf;
-    for(; cur<max; cur++) Collector::scanObject((void**)cur, closure);
-  }
-}
-#endif
 
 void Thread::enterUncooperativeCode(unsigned level) {
   if (isMvmThread()) {

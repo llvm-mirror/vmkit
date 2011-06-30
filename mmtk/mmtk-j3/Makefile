@@ -11,12 +11,7 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = MMTKRuntime
-else
-  LIBRARYNAME = MMTKRuntime
-endif
-
+MODULE_NAME = MMTKRuntime
 LOADABLE_MODULE = 1
 USEDLIBS =
 

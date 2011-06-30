@@ -1,4 +1,4 @@
-##===- mmtk/mmtk-j3/Makefile -------------------------------*- Makefile -*-===##
+##===- mmtk/mmtk-alloc/Makefile ----------------------------*- Makefile -*-===##
 #
 #                     The vmkit project
 #
@@ -11,12 +11,7 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-ifeq ($(WITH_LLVM_GCC), 1)
-  MODULE_NAME = MMTKAlloc
-else
-  LIBRARYNAME = MMTKAlloc
-endif
-
+MODULE_NAME = MMTKAlloc
 LOADABLE_MODULE = 1
 USEDLIBS =
 
