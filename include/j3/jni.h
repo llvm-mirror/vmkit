@@ -92,8 +92,8 @@ typedef __jdoubleArray *jdoubleArray;
 #define JNI_TRUE true
 #define JNI_FALSE false
 
-typedef struct _Jv_JNIEnv JNIEnv;
-typedef struct _Jv_JavaVM JavaVM;
+typedef class _Jv_JNIEnv JNIEnv;
+typedef class _Jv_JavaVM JavaVM;
 
 # else /* __cplusplus */
 
