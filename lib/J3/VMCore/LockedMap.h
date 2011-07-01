@@ -71,7 +71,7 @@ public:
 
   TLock lock;
   std::map<const Key, Container, Compare,
-           gc_allocator<std::pair<const Key, Container> > > map;
+           std::allocator<std::pair<const Key, Container> > > map;
   
   inline Container lookupOrCreate(Key& V, Meta meta, funcCreate func) {
     Container res = 0;

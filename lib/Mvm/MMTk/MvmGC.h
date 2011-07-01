@@ -14,8 +14,6 @@
 #include "mvm/GC/GC.h"
 #include <cstdlib>
 
-#define gc_allocator std::allocator
-
 class VirtualTable {
  public:
   uintptr_t destructor;

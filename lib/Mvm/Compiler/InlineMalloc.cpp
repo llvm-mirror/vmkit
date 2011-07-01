@@ -34,11 +34,6 @@ namespace mvm {
   };
   char InlineMalloc::ID = 0;
 
-#if 0
-  static RegisterPass<InlineMalloc> X("InlineMalloc",
-                                      "Inline calls to gcmalloc");
-#endif
-
 
 bool InlineMalloc::runOnFunction(Function& F) {
   Function* Malloc = F.getParent()->getFunction("gcmalloc");

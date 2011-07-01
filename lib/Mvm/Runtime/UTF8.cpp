@@ -1,3 +1,12 @@
+//===------------- UTF8.cpp - Common UTF8 functions -----------------------===//
+//
+//                     The VMKit project
+//
+// This file is distributed under the University of Illinois Open Source 
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
 #include "mvm/Allocator.h"
 #include "mvm/UTF8.h"
 #include "mvm/PrintBuffer.h"

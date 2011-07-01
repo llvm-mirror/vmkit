@@ -1,6 +1,6 @@
-//===--------- Object.cc - Common objects for vmlets ----------------------===//
+//===--------- Object.cpp - Common objects GC objects ---------------------===//
 //
-//                     The Micro Virtual Machine
+//                     The VMKit project
 //
 // This file is distributed under the University of Illinois Open Source 
 // License. See LICENSE.TXT for details.
