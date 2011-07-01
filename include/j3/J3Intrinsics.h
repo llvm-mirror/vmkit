@@ -44,10 +44,6 @@ public:
   const llvm::Type* JavaThreadType;
   const llvm::Type* MutatorThreadType;
   
-#ifdef ISOLATE_SHARING
-  const llvm::Type* JnjvmType;
-#endif
-  
   llvm::Function* StartJNIFunction;
   llvm::Function* EndJNIFunction;
   llvm::Function* InterfaceLookupFunction;
@@ -68,9 +64,7 @@ public:
   llvm::Function* ResolveStaticStubFunction;
   llvm::Function* ResolveInterfaceFunction;
 
-#ifndef WITHOUT_VTABLE
   llvm::Function* VirtualLookupFunction;
-#endif
   llvm::Function* IsAssignableFromFunction;
   llvm::Function* IsSecondaryClassFunction;
   llvm::Function* GetDepthFunction;
@@ -82,19 +76,6 @@ public:
   llvm::Function* GetConstantPoolAtFunction;
   llvm::Function* MultiCallNewFunction;
   llvm::Function* GetArrayClassFunction;
-
-#ifdef ISOLATE_SHARING
-  llvm::Function* GetCtpClassFunction;
-  llvm::Function* GetJnjvmExceptionClassFunction;
-  llvm::Function* GetJnjvmArrayClassFunction;
-  llvm::Function* StaticCtpLookupFunction;
-  llvm::Function* SpecialCtpLookupFunction;
-#endif
-
-#ifdef SERVICE
-  llvm::Function* ServiceCallStartFunction;
-  llvm::Function* ServiceCallStopFunction;
-#endif
 
   llvm::Function* GetClassDelegateeFunction;
   llvm::Function* RuntimeDelegateeFunction;

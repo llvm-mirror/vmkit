@@ -80,18 +80,6 @@ public:
 
 };
 
-class UncooperativeCollectionRV : public CollectionRV {
-public: 
-  void finishRV();
-  void synchronize();
-
-  void join();
-  void joinAfterUncooperative(void* SP);
-  void joinBeforeUncooperative();
-  void addThread(Thread* th);
-};
-
-
 }
 
 #endif

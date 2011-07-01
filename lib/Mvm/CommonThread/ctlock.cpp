@@ -14,7 +14,6 @@
 #include "mvm/Threads/Thread.h"
 #include "mvm/VirtualMachine.h"
 #include "MvmGC.h"
-#include "cterror.h"
 #include <cerrno>
 #include <sys/time.h>
 #include <pthread.h>

@@ -82,50 +82,6 @@ void CooperativeCollectionRV::synchronize() {
   unlockRV();
 }
 
-
-#if defined(__MACH__)
-# define SIGGC  SIGXCPU
-#else
-# define SIGGC  SIGPWR
-#endif
-
-void UncooperativeCollectionRV::synchronize() { 
-  assert(nbJoined == 0);
-  mvm::Thread* self = mvm::Thread::get();
-  // Lock thread lock, so that we can traverse the thread list safely. This will
-  // be released on finishRV.
-  self->MyVM->threadLock.lock();
-  
-  for (mvm::Thread* cur = (mvm::Thread*)self->next(); cur != self; 
-       cur = (mvm::Thread*)cur->next()) {
-    int res = cur->kill(SIGGC);
-    assert(!res && "Error on kill");
-  }
-  
-  // And wait for other threads to finish.
-  waitRV();
-
-  // Unlock, so that threads in uncooperative code that go back to cooperative
-  // code can set back their lastSP.
-  unlockRV();
-}
-
-
-void UncooperativeCollectionRV::join() {
-  mvm::Thread* th = mvm::Thread::get();
-  th->inRV = true;
-
-  lockRV();
-  void* old = th->getLastSP();
-  th->setLastSP(FRAME_PTR());
-  another_mark();
-  waitEndOfRV();
-  th->setLastSP(old);
-  unlockRV();
-
-  th->inRV = false;
-}
-
 void CooperativeCollectionRV::join() {
   mvm::Thread* th = mvm::Thread::get();
   assert(th->doYield && "No yield");
@@ -213,47 +169,6 @@ void CooperativeCollectionRV::finishRV() {
   mvm::Thread::get()->inRV = false;
 }
 
-void UncooperativeCollectionRV::finishRV() {
-  lockRV();
-  mvm::Thread* initiator = mvm::Thread::get();
-  assert(nbJoined == initiator->MyVM->numberOfThreads && "Inconsistent state");
-  nbJoined = 0;
-  initiator->MyVM->threadLock.unlock();
-  condEndRV.broadcast();
-  unlockRV();
-  initiator->inRV = false;
-}
-
-void UncooperativeCollectionRV::joinAfterUncooperative(void* SP) {
-  UNREACHABLE();
-}
-
-void UncooperativeCollectionRV::joinBeforeUncooperative() {
-  UNREACHABLE();
-}
-
 void CooperativeCollectionRV::addThread(Thread* th) {
   // Nothing to do.
-}
-
-static void siggcHandler(int) {
-  mvm::Thread* th = mvm::Thread::get();
-  th->MyVM->rendezvous.join();
-}
-
-void UncooperativeCollectionRV::addThread(Thread* th) {
-  // Set the SIGGC handler for uncooperative rendezvous.
-  struct sigaction sa;
-  sigset_t mask;
-  sigaction(SIGGC, 0, &sa);
-  sigfillset(&mask);
-  sa.sa_mask = mask;
-  sa.sa_handler = siggcHandler;
-  sa.sa_flags |= SA_RESTART;
-  sigaction(SIGGC, &sa, NULL);
-  
-  if (nbJoined != 0) {
-    // In uncooperative mode, we may have missed a signal.
-    join();
-  }
 }

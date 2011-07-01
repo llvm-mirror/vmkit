@@ -78,18 +78,6 @@
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
 
-/* Using the boehm gc */
-#undef USE_GC_BOEHM
-
-/* Using the gcmmap2 */
-#undef USE_GC_MMAP2
-
-/* Compiling N3 */
-#undef WITH_N3
-
-/* Compiling JNJVM */
-#undef WITH_J3
-
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
 

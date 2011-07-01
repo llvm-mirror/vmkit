@@ -93,12 +93,6 @@ void Thread::endUnknownFrame() {
   lastKnownFrame = lastKnownFrame->previousFrame;
 }
 
-#if defined(__MACH__)
-#define SELF_HANDLE RTLD_DEFAULT
-#else
-#define SELF_HANDLE 0
-#endif
-
 void Thread::internalThrowException() {
 #if defined(__MACH__)
   _longjmp(lastExceptionBuffer->buffer, 1);
@@ -374,9 +368,6 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 
 
   assert(th->MyVM && "VM not set in a thread");
-#ifdef ISOLATE
-  th->IsolateID = th->MyVM->IsolateID;
-#endif
   th->MyVM->rendezvous.addThread(th);
   th->routine(th);
   th->MyVM->removeThread(th);
