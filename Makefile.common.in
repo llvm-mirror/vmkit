@@ -38,9 +38,6 @@ CXX.Flags += @GC_FLAGS@ -fno-exceptions -Wno-variadic-macros -fno-omit-frame-poi
 CLASSPATH_FLAGS =
 GLIBJ = @classpathglibj@
 
-# Pnet location
-PNETLIB = @pnetlocalprefix@
-
 LIBS += -lz
 
 include $(PROJ_SRC_ROOT)/Makefile.rules
