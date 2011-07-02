@@ -7,9 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 // 
-// This file contains GC specific tracing functions. It is used by the
-// GCMmap2 garbage collector and may be of use for other GCs. Boehm GC does
-// not use these functions.
+// This file contains GC specific tracing functions.
 //
 // The file is divided into four parts:
 // (1) Declaration of internal GC classes.

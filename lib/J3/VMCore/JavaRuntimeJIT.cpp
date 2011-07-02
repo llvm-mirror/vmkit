@@ -138,7 +138,6 @@ extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
   return res;
 }
 
-#ifndef WITHOUT_VTABLE
 // Throws if the method is not found.
 extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
                                        uint32* offset, JavaObject* obj) {
@@ -169,10 +168,8 @@ extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
     *offset = dmeth->offset;
   }
 
-#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
   assert(dmeth->classDef->isInitializing() && 
          "Class not ready in a virtual lookup.");
-#endif
 
   res = dmeth->offset;
 
@@ -180,7 +177,6 @@ extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
 
   return res;
 }
-#endif
 
 // Throws if the class is not found.
 extern "C" void* j3ClassLookup(UserClass* caller, uint32 index) { 
@@ -546,9 +542,7 @@ extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
   str = cl->classLoader->UTF8ToStr(utf8);
-#if defined(ISOLATE_SHARING) || !defined(ISOLATE)
   ctpInfo->ctpRes[index] = str;
-#endif
   
   END_NATIVE_EXCEPTION
 
@@ -591,9 +585,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
 
   // Update the virtual table.
   assert(lookup->isResolved() && "Class not resolved");
-#if !defined(ISOLATE_SHARING) && !defined(SERVICE)
   assert(lookup->isInitializing() && "Class not ready");
-#endif
   assert(lookup->virtualVT && "Class has no VT");
   assert(lookup->virtualTableSize > Virt->offset && 
          "The method's offset is greater than the virtual table size");
@@ -741,62 +733,3 @@ extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
          UTF8Buffer(meth->name).cString(),
          OpcodeNames[opcode], index);
 }
-
-#ifdef SERVICE
-
-extern "C" void j3ServiceCallStart(Jnjvm* OldService,
-                                 Jnjvm* NewService) {
-  fprintf(stderr, "I have switched from %d to %d\n", OldService->IsolateID,
-          NewService->IsolateID);
-
-  fprintf(stderr, "Now the thread id is %d\n", mvm::Thread::get()->IsolateID);
-}
-
-extern "C" void j3ServiceCallStop(Jnjvm* OldService,
-                                Jnjvm* NewService) {
-  fprintf(stderr, "End service call\n");
-}
-
-#endif
-
-
-#ifdef ISOLATE_SHARING
-extern "C" void* j3StaticCtpLookup(UserClass* cl, uint32 index) {
-  UserConstantPool* ctpInfo = cl->getConstantPool();
-  JavaConstantPool* shared = ctpInfo->getSharedPool();
-  uint32 clIndex = shared->getClassIndexFromMethod(index);
-  UserClass* refCl = (UserClass*)ctpInfo->loadClass(clIndex);
-  refCl->initialiseClass(JavaThread::get()->getJVM());
-
-  CommonClass* baseCl = 0;
-  const UTF8* utf8 = 0;
-  Signdef* sign = 0;
-
-  shared->resolveMethod(index, baseCl, utf8, sign);
-  UserClass* methodCl = 0;
-  refCl->lookupMethod(utf8, sign->keyName, true, true, &methodCl);
-  ctpInfo->ctpRes[index] = methodCl->getConstantPool();
-  shared->ctpRes[clIndex] = refCl->classDef;
-  return (void*)methodCl->getConstantPool();
-}
-
-extern "C" UserConstantPool* j3SpecialCtpLookup(UserConstantPool* ctpInfo,
-                                                   uint32 index,
-                                                   UserConstantPool** res) {
-  JavaConstantPool* shared = ctpInfo->getSharedPool();
-  uint32 clIndex = shared->getClassIndexFromMethod(index);
-  UserClass* refCl = (UserClass*)ctpInfo->loadClass(clIndex);
-
-  CommonClass* baseCl = 0;
-  const UTF8* utf8 = 0;
-  Signdef* sign = 0;
-
-  shared->resolveMethod(index, baseCl, utf8, sign);
-  UserClass* methodCl = 0;
-  refCl->lookupMethod(utf8, sign->keyName, false, true, &methodCl);
-  shared->ctpRes[clIndex] = refCl->classDef;
-  *res = methodCl->getConstantPool();
-  return methodCl->getConstantPool();
-}
-
-#endif

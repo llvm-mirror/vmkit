@@ -61,29 +61,10 @@ extern "C" void j3PrintMethodEnd(JavaMethod* meth);
 extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
                                     JavaMethod* meth);
 
-
-#ifdef SERVICE
-extern "C" void j3ServiceCallStart(Jnjvm* OldService,
-                                      Jnjvm* NewService);
-extern "C" void j3ServiceCallStop(Jnjvm* OldService,
-                                     Jnjvm* NewService);
-#endif
-
-
-
-
-#ifdef ISOLATE_SHARING
-extern "C" void* j3StaticCtpLookup(UserClass* cl, uint32 index);
-extern "C" UserConstantPool* j3SpecialCtpLookup(UserConstantPool* ctpInfo,
-                                                   uint32 index,
-                                                   UserConstantPool** res);
-#endif
-
-
 namespace force_linker {
   struct ForceRuntimeLinking {
     ForceRuntimeLinking() {
-      // We must reference the passes in such a way that compilers will not
+      // We must reference the methods in such a way that compilers will not
       // delete it all as dead code, even with whole program optimization,
       // yet is effectively a NO-OP. As the compiler isn't smart enough
       // to know that getenv() never returns -1, this will do the job.
@@ -117,16 +98,6 @@ namespace force_linker {
       (void) j3PrintMethodEnd(0);
       (void) j3PrintExecution(0, 0, 0);
       (void) j3StringLookup(0, 0);
-#ifdef SERVICE
-      (void) j3ServiceCallStart(0, 0);
-      (void) j3ServiceCallStop(0, 0);
-#endif
-
-#ifdef ISOLATE_SHARING
-      (void) j3StaticCtpLookup(0, 0);
-      (void) j3SpecialCtpLookup(0, 0, 0);
-#endif
-
     }
   } ForcePassLinking; // Force link by creating a global definition.
 }

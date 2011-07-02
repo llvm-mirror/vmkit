@@ -139,60 +139,7 @@ int main(int argc, char **argv) {
     return 0;
   }
    
-  // Disable cross-compiling for now.
-  if (false) {
-    Module* TheModule = new Module("bootstrap module",
-                                   *(new llvm::LLVMContext()));
-    if (!TargetTriple.empty())
-      TheModule->setTargetTriple(TargetTriple);
-    else
-      TheModule->setTargetTriple(mvm::MvmModule::getHostTriple());
-
-#if 0
-    // explicitly specified an architecture to compile for.
-    const Target *TheTarget = 0;
-    if (!MArch.empty()) {
-      for (TargetRegistry::iterator it = TargetRegistry::begin(),
-           ie = TargetRegistry::end(); it != ie; ++it) {
-        if (MArch == it->getName()) {
-          TheTarget = &*it;
-          break;
-        }
-      }
-
-      if (!TheTarget) {
-        errs() << argv[0] << ": error: invalid target '" << MArch << "'.\n";
-        return 1;
-      }
-    } else {
-      std::string Err;
-      TheTarget =
-        TargetRegistry::getClosestStaticTargetForModule(*TheModule, Err);
-      if (TheTarget == 0) {
-        errs() << argv[0] << ": error auto-selecting target for module '"
-               << Err << "'.  Please use the -march option to explicitly "
-               << "pick a target.\n";
-        return 1;
-      }
-    }
-
-    std::string FeaturesStr;
-    std::auto_ptr<TargetMachine>
-      target(TheTarget->createTargetMachine(*TheModule, FeaturesStr));
-    assert(target.get() && "Could not allocate target machine!");
-    TargetMachine &Target = *target.get();
-
-    // Install information about target datalayout stuff into the module for
-    // optimizer use.
-    TheModule->setDataLayout(Target.getTargetData()->
-                             getStringRepresentation());
-
-
-    mvm::MvmModule::initialise(CodeGenOpt::Default, TheModule, &Target);
-#endif
-  } else {
-    mvm::MvmModule::initialise();
-  }
+  mvm::MvmModule::initialise();
 
   for (std::vector<std::string>::iterator i = LoadBytecodeFiles.begin(),
        e = LoadBytecodeFiles.end(); i != e; ++i) {

@@ -205,7 +205,6 @@ public:
     delete[] FinalizationQueue;
     delete[] ToBeFinalized;
   }
-
 };
 
 } // namespace j3

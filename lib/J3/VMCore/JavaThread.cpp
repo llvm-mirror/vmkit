@@ -27,14 +27,6 @@ JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() {
   currentAddedReferences = NULL;
   javaThread = NULL;
   vmThread = NULL;
-
-#ifdef SERVICE
-  eipIndex = 0;
-  replacedEIPs = new void*[100];
-  if (isolate->upcalls->newThrowable) {
-    ServiceException = isolate->upcalls->newThrowable->doNew(isolate);
-  }
-#endif
 }
 
 void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
@@ -46,9 +38,6 @@ void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
 
 JavaThread::~JavaThread() {
   delete localJNIRefs;
-#ifdef SERVICE
-  delete replacedEIPs;
-#endif
 }
 
 void JavaThread::throwException(JavaObject* obj) {

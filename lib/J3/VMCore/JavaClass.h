@@ -158,9 +158,6 @@ public:
 /// super or interfaces.
 ///
 class CommonClass : public mvm::PermanentObject {
-#ifdef ISOLATE_SHARING
-friend class UserCommonClass;
-#endif
 
 public:
   
@@ -342,7 +339,6 @@ public:
   ///
   JavaObject* setDelegatee(JavaObject* val);
 
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   /// getDelegatee - Get the java/lang/Class object representing this class.
   ///
   JavaObject* getDelegatee() const {
@@ -356,13 +352,6 @@ public:
     return delegatee;
   }
 
-#else
-#if defined(ISOLATE)
-  JavaObject* getDelegatee();
-  JavaObject** getDelegateePtr();
-#endif
-#endif
-  
   /// resolvedImplClass - Return the internal representation of the
   /// java.lang.Class object. The class must be resolved.
   //
@@ -593,11 +582,9 @@ public:
     return staticSize;
   }
   
-#ifndef ISOLATE_SHARING
   /// doNew - Allocates a Java object whose class is this class.
   ///
   JavaObject* doNew(Jnjvm* vm);
-#endif
   
   /// tracer - Tracer function of instances of Class.
   ///
@@ -686,8 +673,6 @@ public:
   ///
   void broadcastClass();
   
-#ifndef ISOLATE
-  
   /// getCurrentTaskClassMirror - Get the class task mirror of the executing
   /// isolate.
   ///
@@ -718,35 +703,6 @@ public:
   void setIsResolving() {
     getCurrentTaskClassMirror().status = resolving;
   }
-  
-
-#else
-  
-  TaskClassMirror& getCurrentTaskClassMirror();
-  
-  bool isReadyForCompilation() {
-    return false;
-  }
-  
-  void setResolved() {
-    for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-      IsolateInfo[i].status = resolved;
-    }
-  }
-  
-  void setIsResolving() {
-    for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-      IsolateInfo[i].status = resolving;
-    }
-  }
-  
-  void setErroneous() {
-    for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-      IsolateInfo[i].status = erroneous;
-    }
-  }
-
-#endif
   
   /// getStaticInstance - Get the memory that holds static variables.
   ///
@@ -1348,10 +1304,5 @@ public:
 
 
 } // end namespace j3
-
-
-#ifdef ISOLATE_SHARING
-#include "IsolateCommonClass.h"
-#endif
 
 #endif

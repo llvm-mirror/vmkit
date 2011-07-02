@@ -112,9 +112,6 @@ public:
   /// JavaThread - Empty constructor, used to get the VT.
   ///
   JavaThread() {
-#ifdef SERVICE
-    replacedEIPs = 0;
-#endif
   }
 
   /// ~JavaThread - Delete any potential malloc'ed objects used by this thread.
@@ -221,25 +218,6 @@ private:
   virtual void internalClearException() {
     pendingException = NULL;
   }
-
-public:
-
-#ifdef SERVICE
-  /// ServiceException - The exception that will be thrown if a bundle is
-  /// stopped.
-  JavaObject* ServiceException;
-
-  /// replacedEIPs - List of instruction pointers which must be replaced
-  /// to a function that throws an exception. We maintain this list and update
-  /// the stack correctly so that Dwarf unwinding does not complain.
-  ///
-  void** replacedEIPs;
-
-  /// eipIndex - The current index in the replacedIPs list.
-  ///
-  uint32_t eipIndex;
-#endif
-
 };
 
 } // end namespace j3

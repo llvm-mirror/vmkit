@@ -508,25 +508,6 @@ private:
 //===--------------------- Yield point support  ---------------------------===//
 
   void checkYieldPoint();
- 
-
-#if defined(ISOLATE_SHARING)
-//===----------------- Sharing bytecode support ---------------------------===//
-  
-  /// isolateLocal - The Jnjvm object that the method is currently executing.
-  llvm::Value* isolateLocal;
-
-  /// ctpCache - The constant pool cache.
-  llvm::Value* ctpCache;
-
-  /// getStaticInstanceCtp - Get the static instance of the class of the method
-  /// being compiled.
-  llvm::Value* getStaticInstanceCtp();
-
-  /// getClassCtp - Get the class of the method being compiled.
-  llvm::Value* getClassCtp();
-#endif
-  
 };
 
 enum Opcode {

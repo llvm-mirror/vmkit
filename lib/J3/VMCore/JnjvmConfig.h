@@ -11,10 +11,6 @@
 #ifndef JNJVM_CONFIG_H
 #define JNJVM_CONFIG_H
 
-#ifdef ISOLATE_SHARING
-#define ISOLATE_STATIC
-#else
-
 namespace j3 {
 
 class ClassArray;
@@ -31,13 +27,7 @@ class JavaConstantPool;
 
 }
 #define ISOLATE_STATIC static
-#endif
 
-
-#ifdef ISOLATE
-#define NR_ISOLATES 32
-#else
 #define NR_ISOLATES 1
-#endif
 
 #endif // JNJVM_CONFIG_H

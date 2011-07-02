@@ -135,14 +135,12 @@ JavaField::~JavaField() {
   }
 }
 
-JavaMethod::~JavaMethod() {
-  
+JavaMethod::~JavaMethod() { 
   for (uint32 i = 0; i < nbAttributs; ++i) {
     Attribut* cur = &(attributs[i]);
     cur->~Attribut();
     classDef->classLoader->allocator.Deallocate(cur);
   }
-  
 }
 
 UserClassPrimitive* CommonClass::toPrimitive(Jnjvm* vm) const {
@@ -271,18 +269,9 @@ JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
 }
 
 void* JavaMethod::compiledPtr() {
-  if (code != 0) return code;
-  else {
-#ifdef SERVICE
-    Jnjvm *vm = classDef->classLoader->getIsolate();
-    if (vm && vm->status == 0) {
-      JavaThread* th = JavaThread::get();
-      th->throwException(th->ServiceException);
-    }
-#endif
+  if (code == 0) {
     code = classDef->classLoader->getCompiler()->materializeFunction(this);
   }
-  
   return code;
 }
 
@@ -922,12 +911,6 @@ void UserClass::resolveParents() {
     interfaces[i]->resolveClass(); 
 }
 
-#ifndef ISOLATE_SHARING
-#ifdef ISOLATE
-void Class::resolveClass() {
-  UNIMPLEMENTED();
-}
-#else
 void Class::resolveClass() {
   if (isResolved() || isErroneous()) return;
   resolveParents();
@@ -937,13 +920,6 @@ void Class::resolveClass() {
       &(getCurrentTaskClassMirror().status), loaded, resolved);
   assert(isResolved() || isErroneous());
 }
-#endif
-#else
-void Class::resolveClass() {
-  assert(status >= resolved && 
-         "Asking to resolve a not resolved-class in a isolate environment");
-}
-#endif
 
 void UserClass::resolveInnerOuterClasses() {
   if (!innerOuterResolved) {
@@ -1043,32 +1019,6 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
 }
 
 
-#ifdef ISOLATE
-TaskClassMirror& Class::getCurrentTaskClassMirror() {
-  return IsolateInfo[JavaThread::get()->getJVM()->IsolateID];
-}
-
-JavaObject* CommonClass::getDelegatee() {
-  return delegatee[JavaThread::get()->getJVM()->IsolateID];
-}
-
-JavaObject** CommonClass::getDelegateePtr() {
-  return &(delegatee[JavaThread::get()->getJVM()->IsolateID]);
-}
-
-JavaObject* CommonClass::setDelegatee(JavaObject* val) {
-  llvm_gcroot(val, 0);
-  JavaObject** obj = &(delegatee[JavaThread::get()->getJVM()->IsolateID]);
-  classLoader->lock.lock();
-  if (*obj == NULL) {
-    mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)obj, (gc*)val);
-  }
-  classLoader->lock.unlock();
-  return getDelegatee();
-}
-
-#else
-
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   llvm_gcroot(val, 0);
   JavaObject** obj = &(delegatee[0]);
@@ -1079,9 +1029,6 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   classLoader->lock.unlock();
   return getDelegatee();
 }
-
-#endif
-
 
 
 UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
@@ -1098,6 +1045,7 @@ UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
   }
   return cl;
 }
+
 
 void JavaMethod::jniConsFromMeth(char* buf, const UTF8* jniConsClName,
                                  const UTF8* jniConsName,
@@ -1272,8 +1220,8 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
 
 }
 
-bool UserClass::isNativeOverloaded(JavaMethod* meth) {
-  
+
+bool UserClass::isNativeOverloaded(JavaMethod* meth) {  
   for (uint32 i = 0; i < nbVirtualMethods; ++i) {
     JavaMethod& cur = virtualMethods[i];
     if (&cur != meth && isNative(cur.access) && cur.name->equals(meth->name))
@@ -1290,8 +1238,7 @@ bool UserClass::isNativeOverloaded(JavaMethod* meth) {
 }
 
 
-ArrayUInt16* JavaMethod::toString() const {
-   
+ArrayUInt16* JavaMethod::toString() const { 
   Jnjvm* vm = JavaThread::get()->getJVM();
   uint32 size = classDef->name->size + name->size + type->size + 1;
   ArrayUInt16* res = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(size, vm);
@@ -1324,6 +1271,7 @@ ArrayUInt16* JavaMethod::toString() const {
   return res;
 }
 
+
 bool UserClass::needsInitialisationCheck() {
   
   if (isReady()) return false;
@@ -1343,6 +1291,7 @@ bool UserClass::needsInitialisationCheck() {
   setInitializationState(ready);
   return false;
 }
+
 
 void ClassArray::initialiseVT(Class* javaLangObject) {
 

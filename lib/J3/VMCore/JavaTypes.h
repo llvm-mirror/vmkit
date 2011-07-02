@@ -423,15 +423,12 @@ public:
   }
 
 private:
-  
+
   /// arguments - The list of arguments of the signature. First is the return
   /// type.
   ///
   Typedef* arguments[1];
-
-    
 };
-
 
 } // end namespace j3
 

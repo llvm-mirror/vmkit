@@ -228,10 +228,6 @@ Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
 }
 
 Constant* JavaAOTCompiler::getJavaClassPtr(CommonClass* cl) {
-#ifdef ISOLATE
-  abort();
-  return 0;
-#else
   // Make sure it's emitted.
   getJavaClass(cl);
 
@@ -248,7 +244,6 @@ Constant* JavaAOTCompiler::getJavaClassPtr(CommonClass* cl) {
 
   Constant* Ptr = ConstantExpr::getGetElementPtr(TCMArray, GEP2, 2);
   return Ptr;
-#endif
 }
 
 JavaObject* JavaAOTCompiler::getFinalObject(llvm::Value* obj) {
@@ -476,10 +471,6 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
 }
 
 Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
-#ifdef ISOLATE
-  assert(0 && "Should not be here");
-  abort();
-#endif
   static_instance_iterator End = staticInstances.end();
   static_instance_iterator I = staticInstances.find(classDef);
   if (I == End) {
@@ -1687,37 +1678,6 @@ void JavaAOTCompiler::printStats() {
 }
 
 
-#ifdef SERVICE
-Value* JavaAOTCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
-  llvm::Constant* varGV = 0;
-  isolate_iterator End = isolates.end();
-  isolate_iterator I = isolates.find(isolate);
-  if (I == End) {
-  
-    
-    Constant* cons = 
-      ConstantExpr::getIntToPtr(ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
-                                                 uint64_t(isolate)),
-                                ptrType);
-
-    Module& Mod = *getLLVMModule();
-    varGV = new GlobalVariable(Mod, ptrType, !staticCompilation,
-                               GlobalValue::ExternalLinkage,
-                               cons, "");
-  
-    isolates.insert(std::make_pair(isolate, varGV));
-  } else {
-    varGV = I->second;
-  }
-  if (BasicBlock* BB = dyn_cast<BasicBlock>(Where)) {
-    return new LoadInst(varGV, "", BB);
-  } else {
-    assert(dyn_cast<Instruction>(Where) && "Wrong use of module");
-    return new LoadInst(varGV, "", dyn_cast<Instruction>(Where));
-  }
-}
-#endif
-
 void JavaAOTCompiler::CreateStaticInitializer() {
 
   std::vector<const llvm::Type*> llvmArgs;
@@ -1766,28 +1726,6 @@ void JavaAOTCompiler::CreateStaticInitializer() {
     }
   }
  
-#if 0
-  // Disable initialization of UTF8s, it makes the Init method too big.
-  // If we have defined some UTF8s.
-  if (utf8s.begin() != utf8s.end()) {
-    llvmArgs.clear();
-    llvmArgs.push_back(JavaIntrinsics.ptrType); // class loader
-    llvmArgs.push_back(utf8s.begin()->second->getType()); // val
-    FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()), llvmArgs, false);
-  
-    Function* AddUTF8 = Function::Create(FTy, GlobalValue::ExternalLinkage,
-                                         "vmjcAddUTF8", getLLVMModule());
-  
-
-  
-    for (utf8_iterator i = utf8s.begin(), e = utf8s.end(); i != e; ++i) {
-      Args[0] = loader;
-      Args[1] = i->second;
-      CallInst::Create(AddUTF8, Args, Args + 2, "", currentBlock);
-    }
-  }
-#endif
-
   for (native_class_iterator i = nativeClasses.begin(), 
        e = nativeClasses.end(); i != e; ++i) {
     if (isCompiling(i->first)) {

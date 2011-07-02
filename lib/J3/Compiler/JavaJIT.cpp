@@ -45,10 +45,6 @@ using namespace j3;
 using namespace llvm;
 
 static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
-#ifdef SERVICE
-  return true;
-#else
-
   if (cl->isReadyForCompilation() || 
       (!cl->isInterface() && compilingClass->isAssignableFrom(cl))) {
     return false;
@@ -62,7 +58,6 @@ static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
   }
 
   return true;
-#endif
 }
 
 bool JavaJIT::canBeInlined(JavaMethod* meth) {
@@ -135,17 +130,10 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Value* indexes2[2];
     indexes2[0] = intrinsics->constantZero;
 
-#ifdef ISOLATE_SHARING
-    Value* indexesCtp; //[3];
-#endif
     if (meth) {
       LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(meth);
       Constant* Offset = LMI->getOffset();
       indexes2[1] = Offset;
-#ifdef ISOLATE_SHARING
-      indexesCtp = ConstantInt::get(Type::getInt32Ty(*llvmContext),
-                                    Offset->getZExtValue() * -1);
-#endif
     } else {
    
       GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),
@@ -178,11 +166,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
       currentBlock = endResolveVirtual;
 
       indexes2[1] = node;
-#ifdef ISOLATE_SHARING
-      Value* mul = BinaryOperator::CreateMul(val, intrinsics->constantMinusOne,
-                                             "", currentBlock);
-      indexesCtp = mul;
-#endif
     }
 
     makeArgs(it, index, args, signature->nbArguments + 1);
@@ -196,13 +179,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Value* Func = new LoadInst(FuncPtr, "", currentBlock);
   
     Func = new BitCastInst(Func, LSI->getVirtualPtrType(), "", currentBlock);
-#ifdef ISOLATE_SHARING
-    Value* CTP = GetElementPtrInst::Create(VT, indexesCtp, "", currentBlock);
-    
-    CTP = new LoadInst(CTP, "", currentBlock);
-    CTP = new BitCastInst(CTP, intrinsics->ConstantPoolType, "", currentBlock);
-    args.push_back(CTP);
-#endif
     val = invoke(Func, args, "", currentBlock);
   
     if (endBlock) {
@@ -396,13 +372,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
   uint32 index = 0;
   if (stat) {
-#ifdef ISOLATE_SHARING
-    Value* val = getClassCtp();
-    Value* cl = CallInst::Create(intrinsics->GetClassDelegateePtrFunction,
-                                 val, "", currentBlock);
-#else
     Value* cl = TheCompiler->getJavaClassPtr(compilingClass);
-#endif
     nativeArgs.push_back(cl);
     index = 2;
   } else {
@@ -658,27 +628,6 @@ void JavaJIT::monitorExit(Value* obj) {
   currentBlock = OK;
 }
 
-#ifdef ISOLATE_SHARING
-Value* JavaJIT::getStaticInstanceCtp() {
-  Value* cl = getClassCtp();
-  Value* indexes[2] = { intrinsics->constantZero, module->constantSeven };
-  Value* arg1 = GetElementPtrInst::Create(cl, indexes, indexes + 2,
-                                          "", currentBlock);
-  arg1 = new LoadInst(arg1, "", false, currentBlock);
-  return arg1;
-  
-}
-
-Value* JavaJIT::getClassCtp() {
-  Value* indexes = intrinsics->constantOne;
-  Value* arg1 = GetElementPtrInst::Create(ctpCache, indexes.begin(),
-                                          indexes.end(),  "", currentBlock);
-  arg1 = new LoadInst(arg1, "", false, currentBlock);
-  arg1 = new BitCastInst(arg1, intrinsics->JavaClassType, "", currentBlock);
-  return arg1;
-}
-#endif
-
 void JavaJIT::beginSynchronize() {
   Value* obj = 0;
   if (isVirtual(compilingMethod->access)) {
@@ -847,15 +796,11 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
       floatStack.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", firstBB));
     }
   }
-      
-  
+
   uint32 index = 0;
   uint32 count = 0;
-#if defined(ISOLATE_SHARING)
-  uint32 max = args.size() - 2;
-#else
   uint32 max = args.size();
-#endif
+
   Signdef* sign = compilingMethod->getSignature();
   Typedef* const* arguments = sign->getArgumentsType();
   uint32 type = 0;
@@ -870,7 +815,6 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     thisObject = objectLocals[0];
   }
 
-  
   for (;count < max; ++i, ++index, ++count, ++type) {
     
     const Typedef* cur = arguments[type];
@@ -1017,11 +961,8 @@ llvm::Function* JavaJIT::javaCompile() {
  
   uint32 index = 0;
   uint32 count = 0;
-#if defined(ISOLATE_SHARING)
-  uint32 max = func->arg_size() - 2;
-#else
   uint32 max = func->arg_size();
-#endif
+
   Function::arg_iterator i = func->arg_begin(); 
   Signdef* sign = compilingMethod->getSignature();
   Typedef* const* arguments = sign->getArgumentsType();
@@ -1071,62 +1012,6 @@ llvm::Function* JavaJIT::javaCompile() {
     llvm::CallInst::Create(intrinsics->PrintMethodStartFunction, arg, "",
                            currentBlock);
     }
-#endif
-
-#if defined(ISOLATE_SHARING)
-  ctpCache = i;
-  Value* addrCtpCache = new AllocaInst(intrinsics->ConstantPoolType, "",
-                                       currentBlock);
-  /// make it volatile to be sure it's on the stack
-  new StoreInst(ctpCache, addrCtpCache, true, currentBlock);
-#endif
- 
-
-#if defined(SERVICE)
-  JnjvmClassLoader* loader = compilingClass->classLoader;
-  Value* Cmp = 0;
-  Value* mutatorThreadId = 0;
-  Value* OldIsolateID = 0;
-  Value* IsolateIDPtr = 0;
-  Value* OldIsolate = 0;
-  Value* NewIsolate = 0;
-  Value* IsolatePtr = 0;
-  if (loader != loader->bootstrapLoader && isPublic(compilingMethod->access)) {
-    mutatorThreadId = getMutatorThreadPtr();
-     
-    IsolateIDPtr = getIsolateIDPtr(mutatorThreadPtr);
-    const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
-    IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
-                                   currentBlock);
-    OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
-
-    Value* MyID = ConstantInt::get(intrinsics->pointerSizeType,
-                                   loader->getIsolate()->IsolateID);
-    Cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, OldIsolateID, MyID,
-                       "");
-
-    BasicBlock* EndBB = createBasicBlock("After service check");
-    BasicBlock* ServiceBB = createBasicBlock("Begin service call");
-
-    BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
-
-    currentBlock = ServiceBB;
-  
-    new StoreInst(MyID, IsolateIDPtr, currentBlock);
-    IsolatePtr = getVMPtr(mutatorThreadId);
-     
-    OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
-    NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
-    new StoreInst(NewIsolate, IsolatePtr, currentBlock);
-
-#if DEBUG
-    Value* GEP[2] = { OldIsolate, NewIsolate };
-    CallInst::Create(intrinsics->ServiceCallStartFunction, GEP, GEP + 2,
-                     "", currentBlock);
-#endif
-    BranchInst::Create(EndBB, currentBlock);
-    currentBlock = EndBB;
-  }
 #endif
 
   readExceptionTable(reader, codeLen);
@@ -1223,28 +1108,6 @@ llvm::Function* JavaJIT::javaCompile() {
     }
 #endif
   
-#if defined(SERVICE)
-  if (Cmp) {
-    BasicBlock* EndBB = createBasicBlock("After service check");
-    BasicBlock* ServiceBB = createBasicBlock("End Service call");
-
-    BranchInst::Create(EndBB, ServiceBB, Cmp, currentBlock);
-
-    currentBlock = ServiceBB;
-  
-    new StoreInst(OldIsolateID, IsolateIDPtr, currentBlock);
-    new StoreInst(OldIsolate, IsolatePtr, currentBlock);
-
-#if DEBUG
-    Value* GEP[2] = { OldIsolate, NewIsolate };
-    CallInst::Create(intrinsics->ServiceCallStopFunction, GEP, GEP + 2,
-                     "", currentBlock);
-#endif
-    BranchInst::Create(EndBB, currentBlock);
-    currentBlock = EndBB;
-  }
-#endif
-
   PI = pred_begin(currentBlock);
   PE = pred_end(currentBlock);
   if (PI == PE) {
@@ -1285,10 +1148,9 @@ llvm::Function* JavaJIT::javaCompile() {
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
   
-#ifndef DWARF_EXCEPTIONS
-  if (codeLen < 5 && !callsStackWalker && !TheCompiler->isStaticCompiling())
+  if (codeLen < 5 && !callsStackWalker && !TheCompiler->isStaticCompiling()) {
     compilingMethod->canBeInlined = false;
-#endif
+  }
   
   Attribut* annotationsAtt =
     compilingMethod->lookupAttribut(Attribut::annotationsAttribut);
@@ -1333,10 +1195,6 @@ void JavaJIT::loadConstant(uint16 index) {
   uint8 type = ctpInfo->typeAt(index);
   
   if (type == JavaConstantPool::ConstantString) {
-#if defined(ISOLATE)
-    abort();
-#else
-    
     if (TheCompiler->isStaticCompiling()) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
       JavaString* str = *(compilingClass->classLoader->UTF8ToStr(utf8));
@@ -1357,7 +1215,6 @@ void JavaJIT::loadConstant(uint16 index) {
         push(val, false, upcalls->newString);
       }
     }
-#endif   
   } else if (type == JavaConstantPool::ConstantLong) {
     push(ConstantInt::get(Type::getInt64Ty(*llvmContext), ctpInfo->LongAt(index)),
          false);
@@ -1441,20 +1298,11 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
 
 void JavaJIT::makeArgs(FunctionType::param_iterator it,
                        uint32 index, std::vector<Value*>& Args, uint32 nb) {
-#if defined(ISOLATE_SHARING)
-  nb += 1;
-#endif
   Args.reserve(nb + 2);
   mvm::ThreadAllocator threadAllocator;
   Value** args = (Value**)threadAllocator.Allocate(nb*sizeof(Value*));
-#if defined(ISOLATE_SHARING)
-  args[nb - 1] = isolateLocal;
-  sint32 start = nb - 2;
-  it--;
-  it--;
-#else
   sint32 start = nb - 1;
-#endif
+
   for (sint32 i = start; i >= 0; --i) {
     it--;
     if (it->get() == Type::getInt64Ty(*llvmContext) || it->get() == Type::getDoubleTy(*llvmContext)) {
@@ -1738,18 +1586,9 @@ void JavaJIT::invokeStatic(uint16 index) {
     func = TheCompiler->getMethod(meth);
   }
 
-#if defined(ISOLATE_SHARING)
-  Value* newCtpCache = getConstantPoolAt(index,
-                                         intrinsics->StaticCtpLookupFunction,
-                                         intrinsics->ConstantPoolType, 0,
-                                         false);
-#endif
   std::vector<Value*> args; // size = [signature->nbIn + 2]; 
   FunctionType::param_iterator it  = staticType->param_end();
   makeArgs(it, index, args, signature->nbArguments);
-#if defined(ISOLATE_SHARING)
-  args.push_back(newCtpCache);
-#endif
 
   if (className->equals(loader->mathName)) {
     val = lowerMathOps(name, args);
@@ -1784,16 +1623,9 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 
 // This makes unswitch loop very unhappy time-wise, but makes GVN happy
 // number-wise. IMO, it's better to have this than Unswitch.
-#ifdef ISOLATE_SHARING
-  Value* CTP = ctpCache;
-  Value* Cl = GetElementPtrInst::Create(CTP, intrinsics->ConstantOne, "",
-                                        currentBlock);
-  Cl = new LoadInst(Cl, "", currentBlock);
-#else
   JavaConstantPool* ctp = compilingClass->ctpInfo;
   Value* CTP = TheCompiler->getConstantPool(ctp);
   Value* Cl = TheCompiler->getNativeClass(compilingClass);
-#endif
 
   std::vector<Value*> Args;
   Args.push_back(resolver);
@@ -1937,18 +1769,11 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
       if (needsCheck) {
         Cl = invoke(intrinsics->InitialisationCheckFunction, Cl, "",
                     currentBlock);
-      }
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
-      if (needsCheck) {
         CallInst::Create(intrinsics->ForceInitialisationCheckFunction, Cl, "",
                          currentBlock);
       }
 
       object = TheCompiler->getStaticInstance(field->classDef);
-#else
-      object = CallInst::Create(intrinsics->GetStaticInstanceFunction, Cl, "",
-                                currentBlock); 
-#endif
     } else {
       object = new LoadInst(
           object, "", TheCompiler->useCooperativeGC(), currentBlock);
@@ -2052,7 +1877,6 @@ void JavaJIT::getStaticField(uint16 index) {
   Value* ptr = ldResolved(index, true, NULL, LAI.llvmTypePtr);
   
   bool final = false;
-#if !defined(ISOLATE) && !defined(ISOLATE_SHARING)
   JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   if (!compilingMethod->name->equals(JBL->clinitName)) {
     JavaField* field = compilingClass->ctpInfo->lookupField(index, true);
@@ -2105,7 +1929,6 @@ void JavaJIT::getStaticField(uint16 index) {
       }
     }
   }
-#endif
 
   if (!final) {
     JnjvmClassLoader* JCL = compilingClass->classLoader;
@@ -2911,7 +2734,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     ex->catche = reader.readU2();
 
-#ifndef ISOLATE_SHARING
     if (ex->catche) {
       UserClass* cl = 
         (UserClass*)(compilingClass->ctpInfo->isClassLoaded(ex->catche));
@@ -2922,7 +2744,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     } else {
       ex->catchClass = Classpath::newThrowable;
     }
-#endif
     
     ex->tester = createBasicBlock("testException");
     
@@ -2987,34 +2808,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     Value* VTVar = TheCompiler->getVirtualTable(cur->catchClass->virtualVT);
 
-    
-#ifdef SERVICE
-    // Verifies that the current isolate is not stopped. If it is, we don't
-    // catch the exception but resume unwinding.
-    JnjvmClassLoader* loader = compilingClass->classLoader;;
-    if (loader != loader->bootstrapLoader) {
-      Value* Isolate = getVMPtr(getMutatorThread());
-     
-      Isolate = new LoadInst(Isolate, "", currentBlock);
-      Isolate = new BitCastInst(Isolate, intrinsics->ptrPtrType, "", currentBlock);
-      Value* Status = GetElementPtrInst::Create(Isolate, intrinsics->constantOne, "",
-                                                currentBlock);
-      Status = new LoadInst(Status, "", currentBlock);
-      Status = new PtrToIntInst(Status, Type::Int32Ty, "", currentBlock);
-  
-      Value* stopping = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, Status,
-                                     intrinsics->constantOne, "");
-
-      BasicBlock* raiseBlock = createBasicBlock("raiseBlock");
-      BasicBlock* continueBlock = createBasicBlock("continueBlock");
-      BranchInst::Create(raiseBlock, continueBlock, stopping, currentBlock);
-      currentBlock = raiseBlock;
-      BranchInst::Create(endExceptionBlock, currentBlock); 
-
-      currentBlock = continueBlock;
-    }
-#endif
-    
     // Get the Java exception.
     Value* obj = currentBlock->begin();
     
@@ -3068,39 +2861,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // Clear exceptions.
     new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr,
                   currentBlock);
-
-#if defined(SERVICE)
-
-    // Change the isolate we are currently running, now that we have catched
-    // the exception: the exception may have been thrown by another isolate.
-    Value* mutatorThreadId = 0;
-    Value* OldIsolateID = 0;
-    Value* IsolateIDPtr = 0;
-    Value* OldIsolate = 0;
-    Value* NewIsolate = 0;
-    Value* IsolatePtr = 0;
-    currentBlock = cur->javaHandler;
-    if (loader != loader->bootstrapLoader) {
-      mutatorThreadId = getGetMutatorThreadPtr();
-      IsolateIDPtr = getIsolateIDPtr(mutatorThreadId);
-      const Type* realType = PointerType::getUnqual(intrinsics->pointerSizeType);
-      IsolateIDPtr = new BitCastInst(IsolateIDPtr, realType, "",
-                                     currentBlock);
-      OldIsolateID = new LoadInst(IsolateIDPtr, "", currentBlock);
-
-      Value* MyID = ConstantInt::get(intrinsics->pointerSizeType,
-                                     loader->getIsolate()->IsolateID);
-
-      new StoreInst(MyID, IsolateIDPtr, currentBlock);
-      IsolatePtr = getVMPtr(mutatorThreadPtr);
-     
-      OldIsolate = new LoadInst(IsolatePtr, "", currentBlock);
-      NewIsolate = intrinsics->getIsolate(loader->getIsolate(), currentBlock);
-      new StoreInst(NewIsolate, IsolatePtr, currentBlock);
-
-    }
-#endif
-     
   }
  
   // Restore currentBlock.

@@ -154,10 +154,6 @@ Constant* JavaJITCompiler::getFinalObject(JavaObject* obj, CommonClass* cl) {
 }
 
 Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
-#ifdef ISOLATE
-  assert(0 && "Should not be here");
-  abort();
-#endif
   void* obj = classDef->getStaticInstance();
   if (!obj) {
     classDef->acquire();
@@ -213,14 +209,6 @@ JavaJITCompiler::~JavaJITCompiler() {
   delete executionEngine;
   // ~JavaLLVMCompiler will delete the module.
 }
-
-#ifdef SERVICE
-Value* JavaJITCompiler::getIsolate(Jnjvm* isolate, Value* Where) {
-  ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
-                                     uint64_t(isolate));
-  return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.ptrType);
-}
-#endif
 
 void JavaJITCompiler::makeVT(Class* cl) { 
   JavaVirtualTable* VT = cl->virtualVT; 

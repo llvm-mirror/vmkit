@@ -29,21 +29,13 @@ Jnjvm* myVM(JNIEnv* env) {
 UserClass* getClassFromStaticMethod(Jnjvm* vm, JavaMethod* meth,
                                     JavaObject* clazz) {
   llvm_gcroot(clazz, 0);
-#ifdef ISOLATE_SHARING
-  return (UserClass*)UserCommonClass::resolvedImplClass(vm, clazz, false);
-#else
   return meth->classDef;
-#endif
 }
 
 static UserClass* getClassFromVirtualMethod(Jnjvm* vm, 
                                             JavaMethod* meth,
                                             UserCommonClass* cl) {
-#ifdef ISOLATE_SHARING
-  return cl->lookupClassFromMethod(this);
-#else
   return meth->classDef;
-#endif
 }
 
 extern "C" const struct JNIInvokeInterface_ JNI_JavaVMTable;
