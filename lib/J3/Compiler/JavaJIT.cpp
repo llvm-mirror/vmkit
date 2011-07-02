@@ -1470,32 +1470,6 @@ void JavaJIT::invokeSpecial(uint16 index) {
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
   llvm::Instruction* val = 0;
 
-#if defined(ISOLATE_SHARING)
-  const Type* Ty = intrinsics->ConstantPoolType;
-  Constant* Nil = Constant::getNullValue(Ty);
-  GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),Ty, false,
-                                          GlobalValue::ExternalLinkage, Nil,
-                                          "");
-  Value* res = new LoadInst(GV, "", false, currentBlock);
-  Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, res, Nil, "");
- 
-  BasicBlock* trueCl = createBasicBlock("UserCtp OK");
-  BasicBlock* falseCl = createBasicBlock("UserCtp Not OK");
-  PHINode* node = llvm::PHINode::Create(Ty, 2, "", trueCl);
-  node->addIncoming(res, currentBlock);
-  BranchInst::Create(falseCl, trueCl, test, currentBlock);
-  std::vector<Value*> Args;
-  Args.push_back(ctpCache);
-  Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
-  Args.push_back(GV);
-  res = CallInst::Create(intrinsics->SpecialCtpLookupFunction, Args.begin(),
-                         Args.end(), "", falseCl);
-  node->addIncoming(res, falseCl);
-  BranchInst::Create(trueCl, falseCl);
-  currentBlock = trueCl;
-  args.push_back(node);
-#endif
-
   if (!meth) {
     meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
   }

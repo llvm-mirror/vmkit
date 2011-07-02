@@ -302,18 +302,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Class = new LoadInst(ClassPtr, "", CI);
           CI->replaceAllUsesWith(Class);
           CI->eraseFromParent();
-#if defined(ISOLATE)
-        } else if (V == intrinsics->GetStaticInstanceFunction) {
-          Changed = true;
-
-          Value* TCM = getTCM(intrinsics, Call.getArgument(0), CI);
-          Constant* C = intrinsics->OffsetStaticInstanceInTaskClassMirrorConstant;
-          Value* GEP[2] = { intrinsics->constantZero, C };
-          Value* Replace = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "", CI);
-          Replace = new LoadInst(Replace, "", CI);
-          CI->replaceAllUsesWith(Replace);
-          CI->eraseFromParent();
-#endif
         } else if (V == intrinsics->GetClassDelegateeFunction) {
           Changed = true;
           BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
