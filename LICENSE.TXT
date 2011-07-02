@@ -64,3 +64,4 @@ Program             Directory
 Mono libraries      vmkit/lib/N3/Mono
 PNetlib libraries   vmkit/lib/N3/PNet
 MMTk                vmkit/mmtk/
+JNI                 vmkit/include/j3/
