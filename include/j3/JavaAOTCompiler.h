@@ -16,6 +16,8 @@ namespace j3 {
 
 class ArrayObject;
 class Attribut;
+class ClassBytes;
+class JnjvmBootstrapLoader;
 
 using mvm::UTF8;
 
@@ -48,6 +50,7 @@ public:
   
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert);
+  virtual llvm::Function* getMethod(JavaMethod* meth);
   
   virtual void makeVT(Class* cl);
   virtual void makeIMT(Class* cl);
@@ -64,7 +67,7 @@ public:
   
   virtual llvm::Constant* getString(JavaString* str);
   virtual llvm::Constant* getStringPtr(JavaString** str);
-  virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
+  virtual llvm::Constant* getResolvedConstantPool(JavaConstantPool* ctp);
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   
   virtual void setMethod(llvm::Function* func, void* ptr, const char* name);
@@ -93,6 +96,9 @@ private:
   llvm::Constant* CreateConstantFromJavaClass(CommonClass* cl);
   llvm::Constant* CreateConstantForBaseObject(CommonClass* cl);
   llvm::Constant* CreateConstantFromJavaObject(JavaObject* obj);
+  llvm::Constant* CreateConstantFromClassBytes(ClassBytes* bytes);
+  llvm::Constant* CreateConstantFromJavaConstantPool(JavaConstantPool* ctp);
+  void AddInitializerToClass(llvm::GlobalVariable* varGV, CommonClass* classDef);
   llvm::Constant* getUTF8(const UTF8* val);
   
   template<typename T>
@@ -103,29 +109,30 @@ private:
 
   llvm::Constant* CreateConstantFromObjectArray(const ArrayObject* val);
   
-  std::map<const CommonClass*, llvm::Constant*> nativeClasses;
+  std::map<CommonClass*, llvm::GlobalVariable*> nativeClasses;
   std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;
   std::map<const CommonClass*, llvm::Constant*> javaClasses;
   std::map<const JavaVirtualTable*, llvm::Constant*> virtualTables;
   std::map<const Class*, llvm::Constant*> staticInstances;
-  std::map<const JavaConstantPool*, llvm::Constant*> constantPools;
+  std::map<const JavaConstantPool*, llvm::Constant*> resolvedConstantPools;
   std::map<const JavaString*, llvm::Constant*> strings;
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
   std::map<const UTF8*, llvm::Constant*> utf8s;
   std::map<const Class*, llvm::Constant*> virtualMethods;
   std::map<const JavaObject*, llvm::Constant*> finalObjects;
   std::map<const llvm::Constant*, JavaObject*> reverseFinalObjects;
+  std::vector<JavaMethod*> toCompile;
   
   typedef std::map<const JavaObject*, llvm::Constant*>::iterator
     final_object_iterator;
   
   typedef std::map<const llvm::Constant*, JavaObject*>::iterator
     reverse_final_object_iterator;
-  
+
   typedef std::map<const Class*, llvm::Constant*>::iterator
     method_iterator;
   
-  typedef std::map<const CommonClass*, llvm::Constant*>::iterator
+  typedef std::map<CommonClass*, llvm::GlobalVariable*>::iterator
     native_class_iterator; 
   
   typedef std::map<const ClassArray*, llvm::GlobalVariable*>::iterator
@@ -141,8 +148,8 @@ private:
     static_instance_iterator;
   
   typedef std::map<const JavaConstantPool*, llvm::Constant*>::iterator
-    constant_pool_iterator;
-  
+    resolved_constant_pool_iterator;
+
   typedef std::map<const JavaString*, llvm::Constant*>::iterator
     string_iterator;
   
@@ -166,6 +173,7 @@ public:
   bool generateStubs;
   bool assumeCompiled;
   bool compileRT;
+  bool precompile;
 
   std::vector<std::string>* clinits;
   
@@ -178,10 +186,12 @@ public:
   
   void compileFile(Jnjvm* vm, const char* name);
   void compileClass(Class* cl);
+  void compileClassLoader(JnjvmBootstrapLoader* loader);
   void generateMain(const char* name, bool jit);
 
 private:
   void compileAllStubs(Signdef* sign);
+  llvm::Function* getMethodOrStub(JavaMethod* meth);
 };
 
 } // end namespace j3

@@ -848,7 +848,7 @@ public:
     Virtual
   };
 
-  /// constructMethod - Create a new method.
+  /// initialise - Create a new method.
   ///
   void initialise(Class* cl, const UTF8* name, const UTF8* type, uint16 access);
    

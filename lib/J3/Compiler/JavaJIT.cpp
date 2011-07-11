@@ -236,7 +236,7 @@ llvm::Value* JavaJIT::getVMPtr(llvm::Value* mutatorThreadPtr) {
 	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
 }
 
-llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) { 
+llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) {
 	Value* GEP[3] = { intrinsics->constantZero,
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetDoYieldInThreadConstant };
@@ -1195,14 +1195,14 @@ void JavaJIT::loadConstant(uint16 index) {
   uint8 type = ctpInfo->typeAt(index);
   
   if (type == JavaConstantPool::ConstantString) {
-    if (TheCompiler->isStaticCompiling()) {
+    if (TheCompiler->isStaticCompiling() && !TheCompiler->useCooperativeGC()) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
       JavaString* str = *(compilingClass->classLoader->UTF8ToStr(utf8));
       Value* val = TheCompiler->getString(str);
       push(val, false, upcalls->newString);
     } else {
       JavaString** str = (JavaString**)ctpInfo->ctpRes[index];
-      if (str) {
+      if ((str != NULL) && !TheCompiler->isStaticCompiling()) {
         Value* val = TheCompiler->getStringPtr(str);
         val = new LoadInst(val, "", currentBlock);
         push(val, false, upcalls->newString);
@@ -1468,11 +1468,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   ctpInfo->nameOfStaticOrSpecialMethod(index, cl, name, signature);
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   const llvm::FunctionType* virtualType = LSI->getVirtualType();
-  llvm::Instruction* val = 0;
-
-  if (!meth) {
-    meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
-  }
+  meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
 
   Value* func = 0;
   bool needsInit = false;
@@ -1502,6 +1498,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
     return;
   }
 
+  llvm::Instruction* val = 0;
   if (meth && canBeInlined(meth)) {
     val = invokeInline(meth, args);
   } else {
@@ -1598,7 +1595,7 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 // This makes unswitch loop very unhappy time-wise, but makes GVN happy
 // number-wise. IMO, it's better to have this than Unswitch.
   JavaConstantPool* ctp = compilingClass->ctpInfo;
-  Value* CTP = TheCompiler->getConstantPool(ctp);
+  Value* CTP = TheCompiler->getResolvedConstantPool(ctp);
   Value* Cl = TheCompiler->getNativeClass(compilingClass);
 
   std::vector<Value*> Args;
@@ -2139,8 +2136,8 @@ void JavaJIT::invokeInterface(uint16 index) {
   Args.push_back(targetObject);
   Args.push_back(Meth);
   Args.push_back(Index);
-  Value* node =
-      invoke(intrinsics->ResolveInterfaceFunction, Args, "", currentBlock);
+  Value* node = invoke(intrinsics->ResolveInterfaceFunction,
+                       Args, "invokeinterface", currentBlock);
   node = new BitCastInst(node, virtualPtrType, "", currentBlock);
 #endif
 

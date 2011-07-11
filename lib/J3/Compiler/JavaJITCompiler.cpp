@@ -100,12 +100,12 @@ Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
   return ConstantExpr::getIntToPtr(CI, Ty);
 }
 
-Constant* JavaJITCompiler::getConstantPool(JavaConstantPool* ctp) {
+Constant* JavaJITCompiler::getResolvedConstantPool(JavaConstantPool* ctp) {
   void* ptr = ctp->ctpRes;
   assert(ptr && "No constant pool found");
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64_t(ptr));
-  return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.ConstantPoolType);
+  return ConstantExpr::getIntToPtr(CI, JavaIntrinsics.ResolvedConstantPoolType);
 }
 
 Constant* JavaJITCompiler::getMethodInClass(JavaMethod* meth) {
@@ -449,7 +449,7 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
     }
   }
   // Load the constant pool.
-  Value* CTP = getConstantPool(ctpInfo);
+  Value* CTP = getResolvedConstantPool(ctpInfo);
   Value* Index = ConstantInt::get(Type::getInt32Ty(insert->getContext()),
                                   index);
   Value* func = GetElementPtrInst::Create(CTP, Index, "", insert);

@@ -70,7 +70,7 @@ public:
   
   virtual llvm::Constant* getString(JavaString* str);
   virtual llvm::Constant* getStringPtr(JavaString** str);
-  virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp);
+  virtual llvm::Constant* getResolvedConstantPool(JavaConstantPool* ctp);
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr);
   
   virtual void setMethod(llvm::Function* func, void* ptr, const char* name);

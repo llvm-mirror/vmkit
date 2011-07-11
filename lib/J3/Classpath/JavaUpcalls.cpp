@@ -31,7 +31,6 @@
 
 using namespace j3;
 
-#ifndef ISOLATE_SHARING
 Class*      Classpath::newThread;
 Class*      Classpath::newVMThread;
 JavaField*  Classpath::assocThread;
@@ -225,8 +224,6 @@ JavaField* Classpath::constructorClass;
 
 JavaMethod* Classpath::EnqueueReference;
 Class*      Classpath::newReference;
-
-#endif
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {

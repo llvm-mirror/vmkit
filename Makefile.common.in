@@ -20,9 +20,7 @@ PROJ_INSTALL_ROOT := @prefix@
 
 # Define BYTECODE_LIBRARY before including LLVM's Makefile.common to get
 # dependencies right.
-ifeq ($(MODULE_WITH_GC), 1)
-  BYTECODE_LIBRARY = 1
-endif
+BYTECODE_LIBRARY = 1
 
 ifeq ($(BUILD_FRAMETABLE), 1)
   BUILT_SOURCES = FrametablesSymbols.inc FrametablesExterns.inc

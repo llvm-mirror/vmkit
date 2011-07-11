@@ -605,7 +605,7 @@ void JavaField::InitStaticField(Jnjvm* vm) {
       } else {
         InitStaticField((uint64)ctpInfo->IntegerAt(idx));
       }
-    } else if (type->isReference()){
+    } else if (type->isReference()) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
       InitStaticField((JavaObject*)ctpInfo->resolveString(utf8, idx));
     } else {

@@ -290,6 +290,8 @@ CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
       temp = loader->loadName(name, resolve, false, NULL);
     } 
     ctpRes[index] = temp;
+  } else if (resolve && temp->isClass()) {
+    temp->asClass()->resolveClass();
   }
   return temp;
 }
@@ -303,9 +305,14 @@ CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
     temp = loader->lookupClassOrArray(name);
   }
 
-  if (!temp && classDef->classLoader->getCompiler()->isStaticCompiling()) {
-    temp = loadClass(index);
+  if (classDef->classLoader->getCompiler()->isStaticCompiling()) {
+    if (temp == NULL) {
+      temp = loadClass(index, true);
+    } else if (temp->isClass()) {
+      temp->asClass()->resolveClass();
+    }
   }
+
   return temp;
 }
 

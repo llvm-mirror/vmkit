@@ -123,7 +123,7 @@ public:
 
   void resolveVirtualClass(Class* cl);
   void resolveStaticClass(Class* cl);
-  llvm::Function* getMethod(JavaMethod* meth);
+  virtual llvm::Function* getMethod(JavaMethod* meth);
 
   void initialiseAssessorInfo();
   std::map<const char, LLVMAssessorInfo> AssessorInfo;
@@ -192,7 +192,7 @@ public:
   
   virtual llvm::Constant* getString(JavaString* str) = 0;
   virtual llvm::Constant* getStringPtr(JavaString** str) = 0;
-  virtual llvm::Constant* getConstantPool(JavaConstantPool* ctp) = 0;
+  virtual llvm::Constant* getResolvedConstantPool(JavaConstantPool* ctp) = 0;
   virtual llvm::Constant* getNativeFunction(JavaMethod* meth, void* natPtr) = 0;
   
   virtual void setMethod(llvm::Function* func, void* ptr, const char* name) = 0;

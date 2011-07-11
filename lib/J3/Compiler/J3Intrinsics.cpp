@@ -38,8 +38,8 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   VTType = PointerType::getUnqual(module->getTypeByName("VT"));
   LLVMContext& Context = module->getContext();
 
-  ConstantPoolType = ptrPtrType;
-  
+  ResolvedConstantPoolType = ptrPtrType;
+ 
   JavaObjectType = 
     PointerType::getUnqual(module->getTypeByName("JavaObject"));
 
@@ -54,6 +54,10 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
     PointerType::getUnqual(module->getTypeByName("JavaClassArray"));
   JavaClassType =
     PointerType::getUnqual(module->getTypeByName("JavaClass"));
+  ClassBytesType =
+    PointerType::getUnqual(module->getTypeByName("ClassBytes"));
+  JavaConstantPoolType =
+    PointerType::getUnqual(module->getTypeByName("JavaConstantPool"));
   
   JavaArrayUInt8Type =
     PointerType::getUnqual(module->getTypeByName("ArrayUInt8"));

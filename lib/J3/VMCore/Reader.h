@@ -41,8 +41,6 @@ class ClassBytes {
 
 class Reader {
 public:
-  // bytes - Pointer to a reference array. The array is not manipulated directly
-  // in order to support copying GC.
   ClassBytes* bytes;
   uint32 min;
   uint32 cursor;

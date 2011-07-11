@@ -591,7 +591,7 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
     std::vector<const llvm::Type*> Args;
-    Args.push_back(Compiler->getIntrinsics()->ConstantPoolType); // ctp
+    Args.push_back(Compiler->getIntrinsics()->ResolvedConstantPoolType); // ctp
     Args.push_back(getVirtualPtrType());
     Args.push_back(Compiler->getIntrinsics()->JavaObjectType);
     Args.push_back(Compiler->AssessorInfo[I_LONG].llvmTypePtr);
@@ -608,7 +608,7 @@ const FunctionType* LLVMSignatureInfo::getStaticBufType() {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
     std::vector<const llvm::Type*> Args;
-    Args.push_back(Compiler->getIntrinsics()->ConstantPoolType); // ctp
+    Args.push_back(Compiler->getIntrinsics()->ResolvedConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
     Args.push_back(Compiler->AssessorInfo[I_LONG].llvmTypePtr);
     LLVMAssessorInfo& LAI =

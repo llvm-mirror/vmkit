@@ -316,10 +316,6 @@ uint64 MvmModule::getTypeSize(const llvm::Type* type) {
 
 void MvmModule::runPasses(llvm::Function* func,
                           llvm::FunctionPassManager* pm) {
-  // Take the lock because the pass manager will call materializeFunction.
-  // Our implementation of materializeFunction requires that the lock is held
-  // by the caller. This is due to LLVM's JIT subsystem where the call to
-  // materializeFunction is guarded.
   pm->run(*func);
 }
 

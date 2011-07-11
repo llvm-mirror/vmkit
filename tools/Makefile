@@ -10,7 +10,7 @@ LEVEL = ..
 
 include $(LEVEL)/Makefile.config
 
-PARALLEL_DIRS = j3 vmjc llcj
+PARALLEL_DIRS = j3 vmjc llcj precompiler
 
 include $(LEVEL)/Makefile.common
 

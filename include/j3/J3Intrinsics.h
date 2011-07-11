@@ -35,7 +35,9 @@ public:
   const llvm::Type* JavaClassType;
   const llvm::Type* JavaClassArrayType;
   const llvm::Type* JavaClassPrimitiveType;
-  const llvm::Type* ConstantPoolType;
+  const llvm::Type* ClassBytesType;
+  const llvm::Type* JavaConstantPoolType;
+  const llvm::Type* ResolvedConstantPoolType;
   const llvm::Type* CodeLineInfoType;
   const llvm::Type* UTF8Type;
   const llvm::Type* JavaMethodType;
