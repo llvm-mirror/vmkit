@@ -290,20 +290,15 @@ public:
     baseAddr = 0;
     uintptr_t ptr = START_ADDR;
 
-    // Do an mmap at a fixed address. If the mmap fails for a given address
-    // use the next one.
-    while (!baseAddr && ptr != END_ADDR) {
-      ptr = ptr + 0x10000000;
 #if defined (__MACH__)
-      uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
+    uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
 #else
-      uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
+    uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
 #endif
-      baseAddr = (uintptr_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
-                                 PROT_READ | PROT_WRITE, flags, -1, 0);
-      if (baseAddr == (uintptr_t)MAP_FAILED) baseAddr = 0;
-    }
-    if (!baseAddr) {
+    baseAddr = (uintptr_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
+                               PROT_READ | PROT_WRITE, flags, -1, 0);
+
+    if (baseAddr == (uintptr_t) MAP_FAILED) {
       fprintf(stderr, "Can not allocate thread memory\n");
       abort();
     }
