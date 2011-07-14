@@ -40,7 +40,8 @@ is:</p>
 
 <ol>
   <li><a href="http://www.llvm.org/docs/GettingStarted.html#checkout">Checkout
-   and build LLVM</a> from SVN head:</li>
+    and build LLVM</a> from SVN head. Make sure you have llvm-gcc or clang available
+    when you configure LLVM. Alternatively, you can also checkout clang in llvm/tools.</li>
 
   <ul>
     <li><tt>svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm</tt></li>
@@ -98,6 +99,18 @@ is:</p>
     <dd>Tell vmkit where GNU Classpath glibj.zip is located.</dd>
     <dt><br/><tt>--with-gnu-classpath-libs=&lt;directory&gt;</tt></dt>
     <dd>Tell vmkit where GNU Classpath libs are located.</dd>
+    <dt><br/><tt>--with-mmtk-plan=</tt> </dt>
+      <dd>
+      <ul>
+      <li><tt>org.mmtk.plan.marksweep.MS (default)</tt></li>
+      <li><tt>org.mmtk.plan.copyms.CopyMS</tt></li>
+      <li><tt>org.mmtk.plan.semispace.SS</tt></li>
+      <li><tt>org.mmtk.plan.immix.Immix</tt></li>
+      <li><tt>org.mmtk.plan.generational.marksweep.GenMS</tt></li>
+      <li><tt>org.mmtk.plan.generational.copying.GenCopy</tt></li>
+      <li><tt>org.mmtk.plan.generational.immix.GenImmix</tt></li>
+      </ul>
+      </dd>
   </dl>
 
   </ul>
