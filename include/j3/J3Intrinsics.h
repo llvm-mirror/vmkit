@@ -17,34 +17,34 @@ namespace j3 {
 class J3Intrinsics : public mvm::BaseIntrinsics {
 
 public:
-  const llvm::Type* JavaArrayUInt8Type;
-  const llvm::Type* JavaArraySInt8Type;
-  const llvm::Type* JavaArrayUInt16Type;
-  const llvm::Type* JavaArraySInt16Type;
-  const llvm::Type* JavaArrayUInt32Type;
-  const llvm::Type* JavaArraySInt32Type;
-  const llvm::Type* JavaArrayLongType;
-  const llvm::Type* JavaArrayFloatType;
-  const llvm::Type* JavaArrayDoubleType;
-  const llvm::Type* JavaArrayObjectType;
+  llvm::Type* JavaArrayUInt8Type;
+  llvm::Type* JavaArraySInt8Type;
+  llvm::Type* JavaArrayUInt16Type;
+  llvm::Type* JavaArraySInt16Type;
+  llvm::Type* JavaArrayUInt32Type;
+  llvm::Type* JavaArraySInt32Type;
+  llvm::Type* JavaArrayLongType;
+  llvm::Type* JavaArrayFloatType;
+  llvm::Type* JavaArrayDoubleType;
+  llvm::Type* JavaArrayObjectType;
   
-  const llvm::Type* VTType;
-  const llvm::Type* JavaObjectType;
-  const llvm::Type* JavaArrayType;
-  const llvm::Type* JavaCommonClassType;
-  const llvm::Type* JavaClassType;
-  const llvm::Type* JavaClassArrayType;
-  const llvm::Type* JavaClassPrimitiveType;
-  const llvm::Type* ClassBytesType;
-  const llvm::Type* JavaConstantPoolType;
-  const llvm::Type* ResolvedConstantPoolType;
-  const llvm::Type* CodeLineInfoType;
-  const llvm::Type* UTF8Type;
-  const llvm::Type* JavaMethodType;
-  const llvm::Type* JavaFieldType;
-  const llvm::Type* AttributType;
-  const llvm::Type* JavaThreadType;
-  const llvm::Type* MutatorThreadType;
+  llvm::Type* VTType;
+  llvm::Type* JavaObjectType;
+  llvm::Type* JavaArrayType;
+  llvm::Type* JavaCommonClassType;
+  llvm::Type* JavaClassType;
+  llvm::Type* JavaClassArrayType;
+  llvm::Type* JavaClassPrimitiveType;
+  llvm::Type* ClassBytesType;
+  llvm::Type* JavaConstantPoolType;
+  llvm::Type* ResolvedConstantPoolType;
+  llvm::Type* CodeLineInfoType;
+  llvm::Type* UTF8Type;
+  llvm::Type* JavaMethodType;
+  llvm::Type* JavaFieldType;
+  llvm::Type* AttributType;
+  llvm::Type* JavaThreadType;
+  llvm::Type* MutatorThreadType;
   
   llvm::Function* StartJNIFunction;
   llvm::Function* EndJNIFunction;

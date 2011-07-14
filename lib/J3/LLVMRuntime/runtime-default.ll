@@ -64,7 +64,37 @@
 %JavaClassArray = type { %JavaCommonClass, %JavaCommonClass* }
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; Constant calls for Jnjvm runtime internal objects field accesses ;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;; Make sure all named types are emitted ;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+declare void @listAllTypes(%JavaObject,
+                           %JavaArray,
+                           %JavaCommonClass,
+                           %JavaClassPrimitive,
+                           %JavaClassArray,
+                           %JavaClass,
+                           %ClassBytes,
+                           %JavaConstantPool,
+                           %ArrayUInt8,
+                           %ArraySInt8,
+                           %ArrayUInt16,
+                           %ArraySInt16,
+                           %ArrayUInt32,
+                           %ArraySInt32,
+                           %ArrayLong,
+                           %ArrayDouble,
+                           %ArrayFloat,
+                           %ArrayObject,
+                           %JavaField,
+                           %JavaMethod,
+                           %UTF8,
+                           %Attribut,
+                           %JavaThread,
+                           %MutatorThread,
+                           %CodeLineInfo);
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;; Constant calls for J3 runtime internal objects field accesses ;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; j3RuntimeInitialiseClass - Initialises the class.

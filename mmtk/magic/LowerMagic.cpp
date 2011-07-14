@@ -382,22 +382,22 @@ bool LowerMagic::runOnFunction(Function& F) {
   Module* globalModule = F.getParent();
   LLVMContext& Context = globalModule->getContext();
   bool Changed = false;
-  const llvm::Type* pointerSizeType = 
+  llvm::Type* pointerSizeType = 
     globalModule->getPointerSize() == llvm::Module::Pointer32 ?
       Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
  
    Constant* constantPtrLogSize = 
     ConstantInt::get(Type::getInt32Ty(Context), sizeof(void*) == 8 ? 3 : 2);
 
-  const llvm::Type* ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
-  const llvm::Type* ptrSizeType = PointerType::getUnqual(pointerSizeType);
+  llvm::Type* ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
+  llvm::Type* ptrSizeType = PointerType::getUnqual(pointerSizeType);
 
 
   initialiseFunctions(globalModule);
 
   Function* MMalloc = globalModule->getFunction("AllocateMagicArray");
   if (!MMalloc) {
-    std::vector<const Type*>FuncTyArgs;
+    std::vector<Type*>FuncTyArgs;
     FuncTyArgs.push_back(Type::getInt32Ty(Context));
     FuncTyArgs.push_back(ptrType);
     FunctionType* FuncTy = FunctionType::get(ptrType, FuncTyArgs, false);

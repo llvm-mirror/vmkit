@@ -17,3 +17,6 @@ include $(LEVEL)/Makefile.common
 # Use CompileCommonOpts instead of CXX.Flags to make sure the flag is added
 # after the -Wall added by LLVM.
 CompileCommonOpts += -Wno-unused-variable
+
+clean-local::
+	$(Verb) $(RM) -f *.inc

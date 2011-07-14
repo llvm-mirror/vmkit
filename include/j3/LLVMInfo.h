@@ -31,8 +31,8 @@ class Signdef;
 
 class LLVMAssessorInfo {
 public:
-  const llvm::Type* llvmType;
-  const llvm::Type* llvmTypePtr;
+  llvm::Type* llvmType;
+  llvm::Type* llvmTypePtr;
   uint8_t logSizeInBytesConstant;
 };
 
@@ -50,16 +50,16 @@ private:
   llvm::Constant* virtualSizeConstant;
 
   /// virtualType - The LLVM type of instance of this class.
-  const llvm::Type * virtualType;
+  llvm::Type * virtualType;
 
   /// staticType - The LLVM type of the static instance of this class.
-  const llvm::Type * staticType;
+  llvm::Type * staticType;
 
 public:
   
   llvm::Value* getVirtualSize();
-  const llvm::Type* getVirtualType();
-  const llvm::Type* getStaticType();
+  llvm::Type* getVirtualType();
+  llvm::Type* getStaticType();
   
   LLVMClassInfo(Class* cl, JavaLLVMCompiler* comp) :
     Compiler(comp),
@@ -84,13 +84,13 @@ private:
 
   llvm::Function* methodFunction;
   llvm::Constant* offsetConstant;
-  const llvm::FunctionType* functionType;
+  llvm::FunctionType* functionType;
   llvm::MDNode* DbgSubprogram;
   
 public:
   llvm::Function* getMethod();
   llvm::Constant* getOffset();
-  const llvm::FunctionType* getFunctionType();
+  llvm::FunctionType* getFunctionType();
     
   LLVMMethodInfo(JavaMethod* M, JavaLLVMCompiler* comp) :  Compiler(comp),
     methodDef(M), methodFunction(0), offsetConstant(0), functionType(0),
@@ -135,16 +135,16 @@ private:
   /// Compiler - The compiler for this signature info.
   JavaLLVMCompiler* Compiler;
   
-  const llvm::FunctionType* staticType;
-  const llvm::FunctionType* virtualType;
-  const llvm::FunctionType* nativeType;
+  llvm::FunctionType* staticType;
+  llvm::FunctionType* virtualType;
+  llvm::FunctionType* nativeType;
   
-  const llvm::FunctionType* virtualBufType;
-  const llvm::FunctionType* staticBufType;
+  llvm::FunctionType* virtualBufType;
+  llvm::FunctionType* staticBufType;
 
-  const llvm::PointerType* staticPtrType;
-  const llvm::PointerType* virtualPtrType;
-  const llvm::PointerType* nativePtrType;
+  llvm::PointerType* staticPtrType;
+  llvm::PointerType* virtualPtrType;
+  llvm::PointerType* nativePtrType;
   
   llvm::Function* virtualBufFunction;
   llvm::Function* virtualAPFunction;
@@ -163,16 +163,16 @@ private:
    
   
 public:
-  const llvm::FunctionType* getVirtualType();
-  const llvm::FunctionType* getStaticType();
-  const llvm::FunctionType* getNativeType();
+  llvm::FunctionType* getVirtualType();
+  llvm::FunctionType* getStaticType();
+  llvm::FunctionType* getNativeType();
 
-  const llvm::FunctionType* getVirtualBufType();
-  const llvm::FunctionType* getStaticBufType();
+  llvm::FunctionType* getVirtualBufType();
+  llvm::FunctionType* getStaticBufType();
 
-  const llvm::PointerType*  getStaticPtrType();
-  const llvm::PointerType*  getNativePtrType();
-  const llvm::PointerType*  getVirtualPtrType();
+  llvm::PointerType*  getStaticPtrType();
+  llvm::PointerType*  getNativePtrType();
+  llvm::PointerType*  getVirtualPtrType();
    
   llvm::Function* getVirtualBuf();
   llvm::Function* getVirtualAP();

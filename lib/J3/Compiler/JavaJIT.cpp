@@ -1305,12 +1305,13 @@ void JavaJIT::makeArgs(FunctionType::param_iterator it,
 
   for (sint32 i = start; i >= 0; --i) {
     it--;
-    if (it->get() == Type::getInt64Ty(*llvmContext) || it->get() == Type::getDoubleTy(*llvmContext)) {
+    if (*it == Type::getInt64Ty(*llvmContext)
+        || *it == Type::getDoubleTy(*llvmContext)) {
       pop();
     }
     Value* tmp = pop();
     
-    const Type* type = it->get();
+    Type* type = *it;
     if (tmp->getType() != type) { // int8 or int16
       convertValue(tmp, type, currentBlock, false);
     }

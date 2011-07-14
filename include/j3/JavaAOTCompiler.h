@@ -102,10 +102,10 @@ private:
   llvm::Constant* getUTF8(const UTF8* val);
   
   template<typename T>
-  llvm::Constant* CreateConstantFromIntArray(const T* val, const llvm::Type* Ty);
+  llvm::Constant* CreateConstantFromIntArray(const T* val, llvm::Type* Ty);
   
   template<typename T>
-  llvm::Constant* CreateConstantFromFPArray(const T* val, const llvm::Type* Ty);
+  llvm::Constant* CreateConstantFromFPArray(const T* val, llvm::Type* Ty);
 
   llvm::Constant* CreateConstantFromObjectArray(const ArrayObject* val);
   

@@ -35,17 +35,17 @@
 using namespace j3;
 using namespace llvm;
 
-const Type* LLVMClassInfo::getVirtualType() {
+Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
-    std::vector<const llvm::Type*> fields;
+    std::vector<llvm::Type*> fields;
     const TargetData* targetData = mvm::MvmModule::TheTargetData;
     const StructLayout* sl = 0;
-    const StructType* structType = 0;
+    StructType* structType = 0;
     LLVMContext& context = Compiler->getLLVMModule()->getContext();
 
     if (classDef->super) {
       LLVMClassInfo* CLI = Compiler->getClassInfo(classDef->super);
-      const llvm::Type* Ty = CLI->getVirtualType()->getContainedType(0);
+      llvm::Type* Ty = CLI->getVirtualType()->getContainedType(0);
       fields.push_back(Ty);
     
       for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
@@ -63,7 +63,7 @@ const Type* LLVMClassInfo::getVirtualType() {
     } else {
       virtualType = Compiler->getIntrinsics()->JavaObjectType;
       assert(virtualType && "intrinsics not initalized");
-      structType = dyn_cast<const StructType>(virtualType->getContainedType(0));
+      structType = dyn_cast<StructType>(virtualType->getContainedType(0));
       sl = targetData->getStructLayout(structType);
       
     }
@@ -90,11 +90,11 @@ const Type* LLVMClassInfo::getVirtualType() {
   return virtualType;
 }
 
-const Type* LLVMClassInfo::getStaticType() {
+Type* LLVMClassInfo::getStaticType() {
   
   if (!staticType) {
     Class* cl = (Class*)classDef;
-    std::vector<const llvm::Type*> fields;
+    std::vector<llvm::Type*> fields;
     
     LLVMContext& context = Compiler->getLLVMModule()->getContext();
 
@@ -179,7 +179,7 @@ Function* LLVMMethodInfo::getMethod() {
   return methodFunction;
 }
 
-const FunctionType* LLVMMethodInfo::getFunctionType() {
+FunctionType* LLVMMethodInfo::getFunctionType() {
   if (!functionType) {
     Signdef* sign = methodDef->getSignature();
     LLVMSignatureInfo* LSI = Compiler->getSignatureInfo(sign);
@@ -219,11 +219,11 @@ Constant* LLVMFieldInfo::getOffset() {
   return offsetConstant;
 }
 
-const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
+llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
  if (!virtualType) {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
-    std::vector<const llvm::Type*> llvmArgs;
+    std::vector<llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
 
@@ -243,11 +243,11 @@ const llvm::FunctionType* LLVMSignatureInfo::getVirtualType() {
   return virtualType;
 }
 
-const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
+llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
  if (!staticType) {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
-    std::vector<const llvm::Type*> llvmArgs;
+    std::vector<llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
 
@@ -265,15 +265,15 @@ const llvm::FunctionType* LLVMSignatureInfo::getStaticType() {
   return staticType;
 }
 
-const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
+llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
   if (!nativeType) {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
-    std::vector<const llvm::Type*> llvmArgs;
+    std::vector<llvm::Type*> llvmArgs;
     uint32 size = signature->nbArguments;
     Typedef* const* arguments = signature->getArgumentsType();
    
-    const llvm::Type* Ty =
+    llvm::Type* Ty =
       PointerType::getUnqual(Compiler->getIntrinsics()->JavaObjectType);
 
     llvmArgs.push_back(Compiler->getIntrinsics()->ptrType); // JNIEnv
@@ -282,7 +282,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
     for (uint32 i = 0; i < size; ++i) {
       Typedef* type = arguments[i];
       LLVMAssessorInfo& LAI = Compiler->getTypedefInfo(type);
-      const llvm::Type* Ty = LAI.llvmType;
+      llvm::Type* Ty = LAI.llvmType;
       if (Ty == Compiler->getIntrinsics()->JavaObjectType) {
         llvmArgs.push_back(LAI.llvmTypePtr);
       } else {
@@ -292,7 +292,7 @@ const llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
 
     LLVMAssessorInfo& LAI =
       Compiler->getTypedefInfo(signature->getReturnType());
-    const llvm::Type* RetType =
+    llvm::Type* RetType =
       LAI.llvmType == Compiler->getIntrinsics()->JavaObjectType ?
         LAI.llvmTypePtr : LAI.llvmType;
     nativeType = FunctionType::get(RetType, llvmArgs, false);
@@ -564,21 +564,21 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   return stub;
 }
 
-const PointerType* LLVMSignatureInfo::getStaticPtrType() {
+PointerType* LLVMSignatureInfo::getStaticPtrType() {
   if (!staticPtrType) {
     staticPtrType = PointerType::getUnqual(getStaticType());
   }
   return staticPtrType;
 }
 
-const PointerType* LLVMSignatureInfo::getVirtualPtrType() {
+PointerType* LLVMSignatureInfo::getVirtualPtrType() {
   if (!virtualPtrType) {
     virtualPtrType = PointerType::getUnqual(getVirtualType());
   }
   return virtualPtrType;
 }
 
-const PointerType* LLVMSignatureInfo::getNativePtrType() {
+PointerType* LLVMSignatureInfo::getNativePtrType() {
   if (!nativePtrType) {
     nativePtrType = PointerType::getUnqual(getNativeType());
   }
@@ -586,11 +586,11 @@ const PointerType* LLVMSignatureInfo::getNativePtrType() {
 }
 
 
-const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
+FunctionType* LLVMSignatureInfo::getVirtualBufType() {
   if (!virtualBufType) {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
-    std::vector<const llvm::Type*> Args;
+    std::vector<llvm::Type*> Args;
     Args.push_back(Compiler->getIntrinsics()->ResolvedConstantPoolType); // ctp
     Args.push_back(getVirtualPtrType());
     Args.push_back(Compiler->getIntrinsics()->JavaObjectType);
@@ -603,11 +603,11 @@ const FunctionType* LLVMSignatureInfo::getVirtualBufType() {
   return virtualBufType;
 }
 
-const FunctionType* LLVMSignatureInfo::getStaticBufType() {
+FunctionType* LLVMSignatureInfo::getStaticBufType() {
   if (!staticBufType) {
     // Lock here because we are called by arbitrary code
     mvm::MvmModule::protectIR();
-    std::vector<const llvm::Type*> Args;
+    std::vector<llvm::Type*> Args;
     Args.push_back(Compiler->getIntrinsics()->ResolvedConstantPoolType); // ctp
     Args.push_back(getStaticPtrType());
     Args.push_back(Compiler->AssessorInfo[I_LONG].llvmTypePtr);

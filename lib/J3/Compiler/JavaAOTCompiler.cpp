@@ -71,7 +71,7 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
     native_class_iterator End = nativeClasses.end();
     native_class_iterator I = nativeClasses.find(classDef);
     if (I == End) {
-      const llvm::Type* Ty = 0;
+      llvm::Type* Ty = NULL;
       
       if (classDef->isArray()) {
         Ty = JavaIntrinsics.JavaClassArrayType->getContainedType(0); 
@@ -100,7 +100,7 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
     array_class_iterator End = arrayClasses.end();
     array_class_iterator I = arrayClasses.find(classDef->asArrayClass());
     if (I == End) {
-      const llvm::Type* Ty = JavaIntrinsics.JavaClassArrayType;
+      llvm::Type* Ty = JavaIntrinsics.JavaClassArrayType;
       Module& Mod = *getLLVMModule();
     
       GlobalVariable* varGV = 
@@ -120,7 +120,7 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaConstantPool(JavaConstantPool* ctp) {
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaConstantPoolType->getContainedType(0));
   Module& Mod = *getLLVMModule();
   
@@ -133,7 +133,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaConstantPool(JavaConstantPool* 
   Elemts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), ctp->ctpSize));
 
   // ctpType
-  const ArrayType* ATy = ArrayType::get(Type::getInt8Ty(getLLVMContext()), ctp->ctpSize);
+  ArrayType* ATy = ArrayType::get(Type::getInt8Ty(getLLVMContext()), ctp->ctpSize);
   std::vector<Constant*> Vals;
   for (uint32 i = 0; i < ctp->ctpSize; ++i) {
     Vals.push_back(ConstantInt::get(Type::getInt8Ty(getLLVMContext()), ctp->ctpType[i]));
@@ -177,7 +177,7 @@ Constant* JavaAOTCompiler::getResolvedConstantPool(JavaConstantPool* ctp) {
   if (I == End) {
     Module& Mod = *getLLVMModule();
 
-    const ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, ctp->ctpSize);
+    ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, ctp->ctpSize);
     std::vector<Constant*> Vals;
     for (uint32 i = 0; i < ctp->ctpSize; ++i) {
       Vals.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
@@ -218,7 +218,7 @@ Constant* JavaAOTCompiler::getMethodInClass(JavaMethod* meth) {
     std::string name(UTF8Buffer(cl->name).toCompileName()->cString());
     name += "_VirtualMethods";
     Module& Mod = *getLLVMModule();
-    const Type* ATy =
+    Type* ATy =
       ArrayType::get(JavaIntrinsics.JavaMethodType->getContainedType(0),
                      cl->nbVirtualMethods + cl->nbStaticMethods);
 
@@ -239,7 +239,7 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
   } else {
     assert(str && "No string given");
     LLVMClassInfo* LCI = getClassInfo(JavaObject::getClass(str)->asClass());
-    const llvm::Type* Ty = LCI->getVirtualType();
+    llvm::Type* Ty = LCI->getVirtualType();
     Module& Mod = *getLLVMModule();
     
     const char* name = JavaString::strToAsciiz(str);
@@ -264,7 +264,7 @@ Constant* JavaAOTCompiler::getStringPtr(JavaString** str) {
 Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
   Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
   LLVMClassInfo* LCI = getClassInfo(javaClass);
-  const llvm::Type* Ty = LCI->getVirtualType();
+  llvm::Type* Ty = LCI->getVirtualType();
 
   if (useCooperativeGC()) {
     return Constant::getNullValue(JavaIntrinsics.JavaObjectType);
@@ -342,8 +342,8 @@ Constant* JavaAOTCompiler::HandleMagic(JavaObject* obj, CommonClass* objCl) {
     intptr_t* realObj = (intptr_t*)obj;
     intptr_t size = realObj[0];
 
-    const ArrayType* ATy = ArrayType::get(JavaIntrinsics.JavaObjectType,
-                                          size + 1);
+    ArrayType* ATy = ArrayType::get(JavaIntrinsics.JavaObjectType,
+                                    size + 1);
   
     std::vector<Constant*> Vals;
     for (sint32 i = 0; i < size + 1; ++i) {
@@ -379,7 +379,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
   if (I == End) {
   
     if (mvm::Collector::begOf(obj)) {
-      const Type* Ty = 0;
+      Type* Ty = 0;
       CommonClass* cl = JavaObject::getClass(obj);
       
       if (cl->isArray()) {
@@ -409,8 +409,8 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
           Ty = JavaIntrinsics.JavaObjectType;
         }
         
-        std::vector<const Type*> Elemts;
-        const ArrayType* ATy = ArrayType::get(Ty, JavaArray::getSize(obj));
+        std::vector<Type*> Elemts;
+        ArrayType* ATy = ArrayType::get(Ty, JavaArray::getSize(obj));
         Elemts.push_back(JavaIntrinsics.JavaObjectType->getContainedType(0));
         Elemts.push_back(JavaIntrinsics.pointerSizeType);
         Elemts.push_back(ATy);
@@ -446,8 +446,8 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
 
 Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
   LLVMClassInfo* LCI = getClassInfo(cl);
-  const Type* Ty = LCI->getStaticType();
-  const StructType* STy = dyn_cast<StructType>(Ty->getContainedType(0));
+  Type* Ty = LCI->getStaticType();
+  StructType* STy = dyn_cast<StructType>(Ty->getContainedType(0));
   
   std::vector<Constant*> Elts;
   
@@ -455,7 +455,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
     JavaField& field = cl->staticFields[i];
     const Typedef* type = field.getSignature();
     LLVMAssessorInfo& LAI = getTypedefInfo(type);
-    const Type* Ty = LAI.llvmType;
+    Type* Ty = LAI.llvmType;
 
     Attribut* attribut = field.lookupAttribut(Attribut::constantAttribut);
 
@@ -550,7 +550,7 @@ Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
   if (I == End) {
     
     LLVMClassInfo* LCI = getClassInfo(classDef);
-    const Type* Ty = LCI->getStaticType();
+    Type* Ty = LCI->getStaticType();
     Ty = Ty->getContainedType(0);
     std::string name(UTF8Buffer(classDef->name).toCompileName()->cString());
     name += "_static";
@@ -589,9 +589,9 @@ Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
   virtual_table_iterator I = virtualTables.find(VT);
   if (I == End) {
     
-    const ArrayType* ATy = 
+    ArrayType* ATy = 
       dyn_cast<ArrayType>(JavaIntrinsics.VTType->getContainedType(0));
-    const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
+    PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
     ATy = ArrayType::get(PTy, size);
     std::string name(UTF8Buffer(classDef->name).toCompileName()->cString());
     name += "_VT";
@@ -624,7 +624,7 @@ Constant* JavaAOTCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
   if (I == End) {
     
     LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
-    const llvm::Type* valPtrType = LSI->getNativePtrType();
+    llvm::Type* valPtrType = LSI->getNativePtrType();
     
     Module& Mod = *getLLVMModule();
     varGV = new GlobalVariable(Mod, valPtrType, false,
@@ -640,7 +640,7 @@ Constant* JavaAOTCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
 
 Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
   assert(!useCooperativeGC());
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaObjectType->getContainedType(0));
   
   std::vector<Constant*> Elmts;
@@ -659,7 +659,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaClass(CommonClass* cl) {
   assert(!useCooperativeGC());
   Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
   LLVMClassInfo* LCI = getClassInfo(javaClass);
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
 
   std::vector<Constant*> Elmts;
@@ -737,7 +737,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
       TempElts.push_back(CurConstant);
       Class* curCl = cl->virtualVT->display[j]->cl->asClass();
       LLVMClassInfo* LCI = getClassInfo(curCl);
-      const StructType* STy = 
+      StructType* STy = 
         dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
 
       for (uint32 i = 0; i < curCl->nbVirtualFields; ++i) {
@@ -780,7 +780,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
             Constant* C = getFinalObject(val, FieldCl);
             TempElts.push_back(C);
           } else {
-            const llvm::Type* Ty = JavaIntrinsics.JavaObjectType;
+            llvm::Type* Ty = JavaIntrinsics.JavaObjectType;
             TempElts.push_back(Constant::getNullValue(Ty));
           }
         }
@@ -796,7 +796,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
   assert(!useCooperativeGC());
   Class* cl = JavaObject::getClass(str)->asClass();
   LLVMClassInfo* LCI = getClassInfo(cl);
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
 
   std::vector<Constant*> Elmts;
@@ -828,7 +828,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 
 
 Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.AttributType->getContainedType(0));
 
 
@@ -847,21 +847,21 @@ Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaCommonClassType->getContainedType(0));
   Module& Mod = *getLLVMModule();
   
-  const llvm::Type* TempTy = 0;
+  llvm::Type* TempTy = NULL;
 
   std::vector<Constant*> CommonClassElts;
   std::vector<Constant*> TempElmts;
 
   // delegatee
-  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(0));
+  ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(0));
   assert(ATy && "Malformed type");
 
   Constant* TCM[1] = { getJavaClass(cl) };
-  CommonClassElts.push_back(ConstantArray::get(ATy, TCM, 1));
+  CommonClassElts.push_back(ConstantArray::get(ATy, TCM));
   
   // access
   CommonClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->access));
@@ -882,7 +882,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
 
     CommonClassElts.push_back(interfaces);
   } else {
-    const Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaClassType);
+    Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaClassType);
     CommonClassElts.push_back(Constant::getNullValue(Ty));
   }
 
@@ -917,7 +917,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaFieldType->getContainedType(0));
   
   std::vector<Constant*> FieldElts;
@@ -937,8 +937,8 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   
   // attributs 
   if (field.nbAttributs) {
-    const llvm::Type* AttrTy = JavaIntrinsics.AttributType->getContainedType(0);
-    const ArrayType* ATy = ArrayType::get(AttrTy, field.nbAttributs);
+    llvm::Type* AttrTy = JavaIntrinsics.AttributType->getContainedType(0);
+    ArrayType* ATy = ArrayType::get(AttrTy, field.nbAttributs);
     for (uint32 i = 0; i < field.nbAttributs; ++i) {
       TempElts.push_back(CreateConstantFromAttribut(field.attributs[i]));
     }
@@ -972,7 +972,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaMethodType->getContainedType(0));
   Module& Mod = *getLLVMModule();
   
@@ -987,8 +987,8 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
  
   // attributs
   if (method.nbAttributs) {
-    const llvm::Type* AttrTy = JavaIntrinsics.AttributType->getContainedType(0);
-    const ArrayType* ATy = ArrayType::get(AttrTy, method.nbAttributs);
+    llvm::Type* AttrTy = JavaIntrinsics.AttributType->getContainedType(0);
+    ArrayType* ATy = ArrayType::get(AttrTy, method.nbAttributs);
     for (uint32 i = 0; i < method.nbAttributs; ++i) {
       TempElts.push_back(CreateConstantFromAttribut(method.attributs[i]));
     }
@@ -1044,9 +1044,9 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromClassPrimitive(ClassPrimitive* cl) {
-  const llvm::Type* JCPTy = 
+  llvm::Type* JCPTy = 
     JavaIntrinsics.JavaClassPrimitiveType->getContainedType(0);
-  const StructType* STy = dyn_cast<StructType>(JCPTy);
+  StructType* STy = dyn_cast<StructType>(JCPTy);
   
   std::vector<Constant*> ClassElts;
   
@@ -1060,7 +1060,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassPrimitive(ClassPrimitive* cl) 
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaClassArrayType->getContainedType(0));
   
   std::vector<Constant*> ClassElts;
@@ -1081,7 +1081,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
-  const StructType* STy = 
+  StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaClassType->getContainedType(0));
   Module& Mod = *getLLVMModule();
   
@@ -1100,10 +1100,10 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
                                        cl->alignment));
 
   // IsolateInfo
-  const ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(3));
+  ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(3));
   assert(ATy && "Malformed type");
   
-  const StructType* TCMTy = dyn_cast<StructType>(ATy->getContainedType(0));
+  StructType* TCMTy = dyn_cast<StructType>(ATy->getContainedType(0));
   assert(TCMTy && "Malformed type");
 
   uint32 status = cl->needsInitialisationCheck() ? vmjc : ready;
@@ -1114,7 +1114,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   TempElts.push_back(getStaticInstance(cl));
   Constant* CStr[1] = { ConstantStruct::get(TCMTy, TempElts) };
   TempElts.clear();
-  ClassElts.push_back(ConstantArray::get(ATy, CStr, 1));
+  ClassElts.push_back(ConstantArray::get(ATy, CStr));
 
   if (cl->nbVirtualFields + cl->nbStaticFields) {
     ATy = ArrayType::get(JavaIntrinsics.JavaFieldType->getContainedType(0),
@@ -1274,7 +1274,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
       TempElts.push_back(getNativeClass(cl->innerClasses[i]));
     }
 
-    const llvm::Type* TempTy = JavaIntrinsics.JavaClassType;
+    llvm::Type* TempTy = JavaIntrinsics.JavaClassType;
     ATy = ArrayType::get(TempTy, cl->nbInnerClasses);
     Constant* innerClasses = ConstantArray::get(ATy, TempElts);
     innerClasses = new GlobalVariable(*getLLVMModule(), ATy, true,
@@ -1285,7 +1285,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
 
     ClassElts.push_back(innerClasses);
   } else {
-    const Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaClassType);
+    Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaClassType);
     ClassElts.push_back(Constant::getNullValue(Ty));
   }
 
@@ -1318,12 +1318,12 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromClassBytes(ClassBytes* bytes) {
-  std::vector<const Type*> Elemts;
-  const ArrayType* ATy = ArrayType::get(Type::getInt8Ty(getLLVMContext()), bytes->size);
+  std::vector<Type*> Elemts;
+  ArrayType* ATy = ArrayType::get(Type::getInt8Ty(getLLVMContext()), bytes->size);
   Elemts.push_back(Type::getInt32Ty(getLLVMContext()));
   Elemts.push_back(ATy);
 
-  const StructType* STy = StructType::get(getLLVMContext(), Elemts);
+  StructType* STy = StructType::get(getLLVMContext(), Elemts);
   
   std::vector<Constant*> Cts;
   Cts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), bytes->size));
@@ -1339,17 +1339,17 @@ Constant* JavaAOTCompiler::CreateConstantFromClassBytes(ClassBytes* bytes) {
 }
 
 template<typename T>
-Constant* JavaAOTCompiler::CreateConstantFromIntArray(const T* val, const Type* Ty) {
+Constant* JavaAOTCompiler::CreateConstantFromIntArray(const T* val, Type* Ty) {
   assert(!useCooperativeGC());
-  std::vector<const Type*> Elemts;
-  const ArrayType* ATy = ArrayType::get(Ty, T::getSize(val));
+  std::vector<Type*> Elemts;
+  ArrayType* ATy = ArrayType::get(Ty, T::getSize(val));
   Elemts.push_back(JavaIntrinsics.JavaObjectType->getContainedType(0));
   Elemts.push_back(JavaIntrinsics.pointerSizeType);
   
 
   Elemts.push_back(ATy);
 
-  const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
+  StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
   
   std::vector<Constant*> Cts;
   Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
@@ -1366,17 +1366,17 @@ Constant* JavaAOTCompiler::CreateConstantFromIntArray(const T* val, const Type* 
 }
 
 template<typename T>
-Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, const Type* Ty) {
+Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, Type* Ty) {
   assert(!useCooperativeGC());
-  std::vector<const Type*> Elemts;
-  const ArrayType* ATy = ArrayType::get(Ty, T::getSize(val));
+  std::vector<Type*> Elemts;
+  ArrayType* ATy = ArrayType::get(Ty, T::getSize(val));
   Elemts.push_back(JavaIntrinsics.JavaObjectType->getContainedType(0));
   Elemts.push_back(JavaIntrinsics.pointerSizeType);
   
 
   Elemts.push_back(ATy);
 
-  const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
+  StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
   
   std::vector<Constant*> Cts;
   Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
@@ -1394,16 +1394,16 @@ Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, const Type* T
 
 Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val) {
   assert(!useCooperativeGC());
-  std::vector<const Type*> Elemts;
-  const llvm::Type* Ty = JavaIntrinsics.JavaObjectType;
-  const ArrayType* ATy = ArrayType::get(Ty, ArrayObject::getSize(val));
+  std::vector<Type*> Elemts;
+  llvm::Type* Ty = JavaIntrinsics.JavaObjectType;
+  ArrayType* ATy = ArrayType::get(Ty, ArrayObject::getSize(val));
   Elemts.push_back(JavaIntrinsics.JavaObjectType->getContainedType(0));
   Elemts.push_back(JavaIntrinsics.pointerSizeType);
   
 
   Elemts.push_back(ATy);
 
-  const StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
+  StructType* STy = StructType::get(getLLVMModule()->getContext(), Elemts);
   
   std::vector<Constant*> Cts;
   Cts.push_back(CreateConstantForBaseObject(JavaObject::getClass(val)));
@@ -1426,13 +1426,13 @@ Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val)
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
-  std::vector<const Type*> Elemts;
-  const ArrayType* ATy = ArrayType::get(Type::getInt16Ty(getLLVMContext()), val->size);
+  std::vector<Type*> Elemts;
+  ArrayType* ATy = ArrayType::get(Type::getInt16Ty(getLLVMContext()), val->size);
   Elemts.push_back(JavaIntrinsics.pointerSizeType);
 
   Elemts.push_back(ATy);
 
-  const StructType* STy = StructType::get(getLLVMModule()->getContext(),
+  StructType* STy = StructType::get(getLLVMModule()->getContext(),
                                           Elemts);
   
   std::vector<Constant*> Cts;
@@ -1495,9 +1495,9 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   JavaVirtualTable* RealVT = classDef->isClass() ? 
     VT : ClassArray::SuperArray->virtualVT;
 
-  const ArrayType* ATy = 
+  ArrayType* ATy = 
     dyn_cast<ArrayType>(JavaIntrinsics.VTType->getContainedType(0));
-  const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
+  PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
   ATy = ArrayType::get(PTy, size);
 
   ConstantPointerNull* N = ConstantPointerNull::get(PTy);
@@ -1572,8 +1572,8 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
         ConstantInt::get(Type::getInt64Ty(getLLVMContext()), VT->nbSecondaryTypes), PTy));
   
   // secondaryTypes
-  const ArrayType* DTy = ArrayType::get(JavaIntrinsics.VTType,
-                                        VT->nbSecondaryTypes);
+  ArrayType* DTy = ArrayType::get(JavaIntrinsics.VTType,
+                                  VT->nbSecondaryTypes);
   
   std::vector<Constant*> TempElmts;
   for (uint32 i = 0; i < VT->nbSecondaryTypes; ++i) {
@@ -1612,9 +1612,9 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
     classDef->asClass()->fillIMT(contents);
   
 
-    const ArrayType* ATy = 
+    ArrayType* ATy = 
       dyn_cast<ArrayType>(JavaIntrinsics.VTType->getContainedType(0));
-    const PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
+    PointerType* PTy = dyn_cast<PointerType>(ATy->getContainedType(0));
     ATy = ArrayType::get(PTy, InterfaceMethodTable::NumIndexes);
   
     ConstantPointerNull* N = ConstantPointerNull::get(PTy);
@@ -1656,7 +1656,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
 
           uint32_t length = 2 * size;
         
-          const ArrayType* ATy = 
+          ArrayType* ATy = 
             dyn_cast<ArrayType>(JavaIntrinsics.VTType->getContainedType(0));
           ATy = ArrayType::get(PTy, length);
           std::vector<Constant*> InternalElemts;
@@ -1725,10 +1725,10 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   compileRT = false;
   precompile = false;
 
-  std::vector<const llvm::Type*> llvmArgs;
+  std::vector<llvm::Type*> llvmArgs;
   llvmArgs.push_back(JavaIntrinsics.ptrType); // class loader.
-  const FunctionType* FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()),
-                                              llvmArgs, false);
+  FunctionType* FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()),
+                                        llvmArgs, false);
 
   StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
                                        "Init", getLLVMModule());
@@ -1799,10 +1799,10 @@ void JavaAOTCompiler::printStats() {
 
 void JavaAOTCompiler::CreateStaticInitializer() {
 
-  std::vector<const llvm::Type*> llvmArgs;
+  std::vector<llvm::Type*> llvmArgs;
   llvmArgs.push_back(JavaIntrinsics.ptrType); // class loader
   llvmArgs.push_back(JavaIntrinsics.JavaCommonClassType); // cl
-  const FunctionType* FTy =
+  FunctionType* FTy =
     FunctionType::get(Type::getVoidTy(getLLVMContext()), llvmArgs, false);
 
   Function* AddClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
@@ -1929,8 +1929,8 @@ Value* JavaAOTCompiler::addCallback(Class* cl, uint16 index,
 
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
   
-  const FunctionType* type = stat ? LSI->getStaticType() : 
-                                    LSI->getVirtualType();
+  FunctionType* type = stat ? LSI->getStaticType() : 
+                              LSI->getVirtualType();
   
   Value* func = ConstantExpr::getBitCast(Callback,
                                          PointerType::getUnqual(type));
@@ -2234,7 +2234,7 @@ void JavaAOTCompiler::compileAllStubs(Signdef* sign) {
 void JavaAOTCompiler::generateMain(const char* name, bool jit) {
 
   // Type Definitions
-  std::vector<const Type*> FuncArgs;
+  std::vector<Type*> FuncArgs;
   FuncArgs.push_back(Type::getInt32Ty(getLLVMContext()));
   FuncArgs.push_back(PointerType::getUnqual(JavaIntrinsics.ptrType));
   

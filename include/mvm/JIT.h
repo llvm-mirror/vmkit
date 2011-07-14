@@ -171,11 +171,11 @@ public:
   llvm::Constant* constantPtrOne;
   llvm::Constant* constantPtrZero;
   
-  const llvm::PointerType* ptrType;
-  const llvm::PointerType* ptr32Type;
-  const llvm::PointerType* ptrPtrType;
-  const llvm::Type* arrayPtrType;
-  const llvm::Type* pointerSizeType;
+  llvm::PointerType* ptrType;
+  llvm::PointerType* ptr32Type;
+  llvm::PointerType* ptrPtrType;
+  llvm::Type* arrayPtrType;
+  llvm::Type* pointerSizeType;
 };
 
 

@@ -35,8 +35,9 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   BaseIntrinsics(module) {
   j3::llvm_runtime::makeLLVMModuleContents(module);
   
-  VTType = PointerType::getUnqual(module->getTypeByName("VT"));
   LLVMContext& Context = module->getContext();
+  VTType = PointerType::getUnqual(ArrayType::get(
+        PointerType::getUnqual(FunctionType::get(Type::getInt32Ty(Context), true)), 0));
 
   ResolvedConstantPoolType = ptrPtrType;
  
