@@ -379,8 +379,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
                                     currentBlock);
   }
 
-  Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
-                                currentBlock);
+  Value* val = CallInst::Create(func, Args, "", currentBlock);
   if (!signature->getReturnType()->isVoid()) {
     ReturnInst::Create(context, val, currentBlock);
   } else {
@@ -452,8 +451,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
     Args.push_back(arg);
   }
 
-  Value* val = CallInst::Create(func, Args.begin(), Args.end(), "",
-                                currentBlock);
+  Value* val = CallInst::Create(func, Args, "", currentBlock);
   if (!signature->getReturnType()->isVoid()) {
     ReturnInst::Create(context, val, currentBlock);
   } else {
@@ -507,8 +505,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
         Intrinsics.constantPtrNull
       };
         
-      CallInst::Create(Intrinsics.llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
-                       currentBlock);
+      CallInst::Create(Intrinsics.llvm_gc_gcroot, GCArgs, "", currentBlock);
     }
     
     TempArgs.push_back(temp);
@@ -525,7 +522,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   Value* val = CallInst::Create(virt ? Intrinsics.ResolveVirtualStubFunction :
                                 special ? Intrinsics.ResolveSpecialStubFunction:
                                           Intrinsics.ResolveStaticStubFunction,
-                                Args.begin(), Args.end(), "", currentBlock);
+                                Args, "", currentBlock);
   
   Constant* nullValue = Constant::getNullValue(val->getType());
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
@@ -547,8 +544,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
     }
     FunctionArgs.push_back(temp);
   }
-  Value* res = CallInst::Create(Func, FunctionArgs.begin(), FunctionArgs.end(),
-                                "", currentBlock);
+  Value* res = CallInst::Create(Func, FunctionArgs, "", currentBlock);
   if (node) node->addIncoming(res, currentBlock);
   BranchInst::Create(endBlock, currentBlock);
 

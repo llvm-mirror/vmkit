@@ -92,7 +92,7 @@ void JavaJITListener::NotifyFunctionEmitted(const Function &F,
 
 
 Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
-  const llvm::Type* Ty = classDef->isClass() ? JavaIntrinsics.JavaClassType :
+  Type* Ty = classDef->isClass() ? JavaIntrinsics.JavaClassType :
                                                JavaIntrinsics.JavaCommonClassType;
   
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
@@ -122,7 +122,7 @@ Constant* JavaJITCompiler::getString(JavaString* str) {
 
 Constant* JavaJITCompiler::getStringPtr(JavaString** str) {
   assert(str && "No string given");
-  const llvm::Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaObjectType);
+  Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaObjectType);
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64(str));
   return ConstantExpr::getIntToPtr(CI, Ty);
@@ -139,7 +139,7 @@ Constant* JavaJITCompiler::getJavaClassPtr(CommonClass* cl) {
   assert(obj && "Delegatee not created");
   Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                   uint64(obj));
-  const Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaObjectType);
+  Type* Ty = PointerType::getUnqual(JavaIntrinsics.JavaObjectType);
   return ConstantExpr::getIntToPtr(CI, Ty);
 }
 
@@ -182,7 +182,7 @@ Constant* JavaJITCompiler::getVirtualTable(JavaVirtualTable* VT) {
 
 Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
   LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
-  const llvm::Type* valPtrType = LSI->getNativePtrType();
+  Type* valPtrType = LSI->getNativePtrType();
   
   assert(ptr && "No native function given");
 

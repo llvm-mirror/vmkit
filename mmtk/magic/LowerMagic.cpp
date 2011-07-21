@@ -459,7 +459,7 @@ bool LowerMagic::runOnFunction(Function& F) {
                        !strcmp(FCur->getName().data(), AddressStoreWordMethod)) {
               Value* Addr = Call.getArgument(0);
               Value* Obj = Call.getArgument(1);
-              const llvm::Type* Ty = PointerType::getUnqual(Obj->getType());
+              Type* Ty = PointerType::getUnqual(Obj->getType());
               Addr = new BitCastInst(Addr, Ty, "", CI);
               new StoreInst(Obj, Addr, CI);
               CI->eraseFromParent();
@@ -471,7 +471,7 @@ bool LowerMagic::runOnFunction(Function& F) {
                        !strcmp(FCur->getName().data(), AddressLoadIntMethod) ||
                        !strcmp(FCur->getName().data(), AddressPrepareWordMethod)) {
               Value* Addr = Call.getArgument(0);
-              const Type* Ty = PointerType::getUnqual(FCur->getReturnType());
+              Type* Ty = PointerType::getUnqual(FCur->getReturnType());
               Addr = new BitCastInst(Addr, Ty, "", CI);
               Value* LD = new LoadInst(Addr, "", CI);
               CI->replaceAllUsesWith(LD);
@@ -584,13 +584,13 @@ bool LowerMagic::runOnFunction(Function& F) {
               Ptr = new PtrToIntInst(Ptr, pointerSizeType, "", CI);
               Offset = new PtrToIntInst(Offset, pointerSizeType, "", CI);
               Ptr = BinaryOperator::CreateAdd(Ptr, Offset, "", CI);
-              const Type* Ty = PointerType::getUnqual(pointerSizeType);
+              Type* Ty = PointerType::getUnqual(pointerSizeType);
               Ptr = new IntToPtrInst(Ptr, Ty, "", CI);
               Old = new PtrToIntInst(Old, pointerSizeType, "", CI);
               Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
               
               Value* Args[3] = { Ptr, Old, Val };
-              Value* res = CallInst::Create(CASPtr, Args, Args + 3, "", CI);
+              Value* res = CallInst::Create(CASPtr, Args, "", CI);
               res = new ICmpInst(CI, ICmpInst::ICMP_EQ, res, Old, "");
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
 
@@ -601,13 +601,13 @@ bool LowerMagic::runOnFunction(Function& F) {
               Value* Old = Call.getArgument(1);
               Value* Val = Call.getArgument(2);
 
-              const Type* Ty = PointerType::getUnqual(pointerSizeType);
+              Type* Ty = PointerType::getUnqual(pointerSizeType);
               Ptr = new BitCastInst(Ptr, Ty, "", CI);
               Old = new PtrToIntInst(Old, pointerSizeType, "", CI);
               Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
               
               Value* Args[3] = { Ptr, Old, Val };
-              Value* res = CallInst::Create(CASPtr, Args, Args + 3, "", CI);
+              Value* res = CallInst::Create(CASPtr, Args, "", CI);
               res = new ICmpInst(CI, ICmpInst::ICMP_EQ, res, Old, "");
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
 
@@ -626,7 +626,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               Ptr = new PtrToIntInst(Ptr, pointerSizeType, "", CI);
               Offset = new PtrToIntInst(Offset, pointerSizeType, "", CI);
               Ptr = BinaryOperator::CreateAdd(Ptr, Offset, "", CI);
-              const Type* Ty = PointerType::getUnqual(FCur->getReturnType());
+              Type* Ty = PointerType::getUnqual(FCur->getReturnType());
               Ptr = new IntToPtrInst(Ptr, Ty, "", CI);
               Value* res = new LoadInst(Ptr, "", CI);
 
@@ -643,7 +643,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               Ptr = new PtrToIntInst(Ptr, pointerSizeType, "", CI);
               Offset = new PtrToIntInst(Offset, pointerSizeType, "", CI);
               Ptr = BinaryOperator::CreateAdd(Ptr, Offset, "", CI);
-              const Type* Ty = PointerType::getUnqual(Val->getType());
+              Type* Ty = PointerType::getUnqual(Val->getType());
               Ptr = new IntToPtrInst(Ptr, Ty, "", CI);
               new StoreInst(Val, Ptr, CI);
 
@@ -1197,7 +1197,7 @@ bool LowerMagic::runOnFunction(Function& F) {
               Length = BinaryOperator::CreateShl(Length, constantPtrLogSize, "", CI);
               Val = new IntToPtrInst(Val, ptrType, "", CI);
               Value* args[2] = { Length, Val };
-              Value* res = CallInst::Create(MMalloc, args, args + 2, "", CI);
+              Value* res = CallInst::Create(MMalloc, args, "", CI);
               res = new BitCastInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();

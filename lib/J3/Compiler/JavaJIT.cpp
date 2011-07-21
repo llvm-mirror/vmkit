@@ -114,9 +114,9 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Typedef* retTypedef = signature->getReturnType();
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
-  const llvm::FunctionType* virtualType = LSI->getVirtualType();
+  llvm::FunctionType* virtualType = LSI->getVirtualType();
   FunctionType::param_iterator it  = virtualType->param_end();
-  const llvm::Type* retType = virtualType->getReturnType();
+  llvm::Type* retType = virtualType->getReturnType();
 
   bool needsInit = false;
   if (canBeDirect && meth && !TheCompiler->needsCallback(meth, &needsInit)) {
@@ -173,8 +173,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
                                  currentBlock);
  
-    Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, indexes2 + 2, "",
-                                               currentBlock);
+    Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, indexes2 + 2, "", currentBlock);
     
     Value* Func = new LoadInst(FuncPtr, "", currentBlock);
   
@@ -277,8 +276,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   bool stat = isStatic(compilingMethod->access);
 
-  const FunctionType *funcType = llvmFunction->getFunctionType();
-  const llvm::Type* returnType = funcType->getReturnType();
+  FunctionType *funcType = llvmFunction->getFunctionType();
+  Type* returnType = funcType->getReturnType();
   
   bool j3 = false;
   
@@ -329,8 +328,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
          i++) {
       args.push_back(i);
     }
-    Value* res = CallInst::Create(
-        callee, args.begin(), args.end(), "", currentBlock);
+    Value* res = CallInst::Create(callee, args, "", currentBlock);
     if (returnType != Type::getVoidTy(*llvmContext)) {
       ReturnInst::Create(*llvmContext, res, currentBlock);
     } else {
@@ -384,7 +382,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     if (i->getType() == intrinsics->JavaObjectType) {
       BasicBlock* BB = createBasicBlock("");
       BasicBlock* NotZero = createBasicBlock("");
-      const Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
+      Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
       PHINode* node = PHINode::Create(Ty, 2, "", BB);
 
       Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, i,
@@ -408,7 +406,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
           intrinsics->constantPtrNull
         };
         
-        CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+        CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, "",
                          func->begin()->getTerminator());
       }
       
@@ -437,7 +435,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
         intrinsics->constantPtrNull
       };
       
-      CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
+      CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, "",
                        currentBlock);
     } else {
       new StoreInst(intrinsics->JavaObjectNullConstant, ResultObject, "",
@@ -455,7 +453,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     BasicBlock* unloadedBlock = createBasicBlock("");
     BasicBlock* endBlock = createBasicBlock("");
     Value* test = new LoadInst(nativeFunc, "", currentBlock);
-    const llvm::Type* Ty = test->getType();
+    Type* Ty = test->getType();
     PHINode* node = PHINode::Create(Ty, 2, "", endBlock);
     node->addIncoming(test, currentBlock);
     Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test,
@@ -480,14 +478,13 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   Value* Args4[3] = { temp, oldCLIN, Frame };
 
-  CallInst::Create(intrinsics->StartJNIFunction, Args4, Args4 + 3, "",
-                   currentBlock);
+  CallInst::Create(intrinsics->StartJNIFunction, Args4, "", currentBlock);
   
-  Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs.begin(),
-                                         nativeArgs.end(), "", currentBlock);
+  Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs, "",
+                                         currentBlock);
 
   if (returnType == intrinsics->JavaObjectType) {
-    const Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
+    Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
     Constant* C = Constant::getNullValue(Ty);
     Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, result, C, "");
     BasicBlock* loadBlock = createBasicBlock("");
@@ -512,7 +509,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
  
   Value* Args2[1] = { oldCLIN };
 
-  CallInst::Create(intrinsics->EndJNIFunction, Args2, Args2 + 1, "", currentBlock);
+  CallInst::Create(intrinsics->EndJNIFunction, Args2, "", currentBlock);
   
   // Synchronize after leaving native.
   if (isSynchro(compilingMethod->access))
@@ -560,8 +557,7 @@ void JavaJIT::monitorEnter(Value* obj) {
 
   // Do the atomic compare and swap.
   Value* atomic = CallInst::Create(intrinsics->llvm_atomic_lcs_ptr,
-                                   atomicArgs.begin(), atomicArgs.end(), "",
-                                   currentBlock);
+                                   atomicArgs, "", currentBlock);
   
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
                             lock, "");
@@ -609,8 +605,7 @@ void JavaJIT::monitorExit(Value* obj) {
 
   // Do the atomic compare and swap.
   Value* atomic = CallInst::Create(intrinsics->llvm_atomic_lcs_ptr,
-                                   atomicArgs.begin(), atomicArgs.end(), "",
-                                   currentBlock);
+                                   atomicArgs, "", currentBlock);
   
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
                             oldValMask, "");
@@ -685,8 +680,7 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
         Instruction* I = new BitCastInst(temp, intrinsics->ptrPtrType, "");
         I->insertAfter(temp);
         Value* GCArgs[2] = { I, intrinsics->constantPtrNull };
-        Instruction* C = CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs,
-                                          GCArgs + 2, "");
+        Instruction* C = CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, "");
         C->insertAfter(I);
       }
     }
@@ -724,7 +718,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   assert(LMI);
   Function* func = LMI->getMethod();
 
-  const Type* returnType = func->getReturnType();
+  Type* returnType = func->getReturnType();
   endBlock = createBasicBlock("end");
 
   currentBlock = curBB;
@@ -818,7 +812,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   for (;count < max; ++i, ++index, ++count, ++type) {
     
     const Typedef* cur = arguments[type];
-    const Type* curType = (*i)->getType();
+    Type* curType = (*i)->getType();
 
     if (curType == Type::getInt64Ty(*llvmContext)){
       new StoreInst(*i, longLocals[index], false, currentBlock);
@@ -905,8 +899,8 @@ llvm::Function* JavaJIT::javaCompile() {
   
   reader.seek(codeLen, Reader::SeekCur);
 
-  const FunctionType *funcType = llvmFunction->getFunctionType();
-  const Type* returnType = funcType->getReturnType();
+  FunctionType *funcType = llvmFunction->getFunctionType();
+  Type* returnType = funcType->getReturnType();
   
   Function* func = llvmFunction;
 
@@ -929,8 +923,7 @@ llvm::Function* JavaJIT::javaCompile() {
         new BitCastInst(returnValue, intrinsics->ptrPtrType, "", currentBlock);
     Value* GCArgs[2] = { cast, intrinsics->constantPtrNull };
         
-    CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, GCArgs + 2, "",
-        currentBlock);
+    CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, "", currentBlock);
   }
 
   for (int i = 0; i < maxLocals; i++) {
@@ -980,7 +973,7 @@ llvm::Function* JavaJIT::javaCompile() {
   for (;count < max; ++i, ++index, ++count, ++type) {
     
     const Typedef* cur = arguments[type];
-    const llvm::Type* curType = i->getType();
+    Type* curType = i->getType();
 
     if (curType == Type::getInt64Ty(*llvmContext)){
       new StoreInst(i, longLocals[index], false, currentBlock);
@@ -1174,7 +1167,7 @@ llvm::Function* JavaJIT::javaCompile() {
   return llvmFunction;
 }
 
-void JavaJIT::compareFP(Value* val1, Value* val2, const Type* ty, bool l) {
+void JavaJIT::compareFP(Value* val1, Value* val2, Type* ty, bool l) {
   Value* one = intrinsics->constantOne;
   Value* zero = intrinsics->constantZero;
   Value* minus = intrinsics->constantMinusOne;
@@ -1208,7 +1201,7 @@ void JavaJIT::loadConstant(uint16 index) {
         push(val, false, upcalls->newString);
       } else {
         // Lookup the constant pool cache
-        const llvm::Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
+        Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
         Value* val = getConstantPoolAt(index, intrinsics->StringLookupFunction,
                                        Ty, 0, false);
         val = new LoadInst(val, "", currentBlock);
@@ -1261,7 +1254,7 @@ void JavaJIT::JITVerifyNull(Value* obj) {
 }
 
 Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
-                                    const Type* arrayType, bool verif) {
+                                    Type* arrayType, bool verif) {
   JITVerifyNull(obj);
   
   if (index->getType() != Type::getInt32Ty(*llvmContext)) {
@@ -1395,8 +1388,7 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->atan2)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_atan2_f64, 
-                                  args.begin(), args.end(), "tmp1",
-                                  currentBlock);
+                                  args, "tmp1", currentBlock);
   } else if (name->equals(loader->exp)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_exp_f64, args[0],
                                   "tmp1", currentBlock);
@@ -1404,8 +1396,8 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
     return llvm::CallInst::Create(intrinsics->func_llvm_log_f64, args[0],
                                   "tmp1", currentBlock);
   } else if (name->equals(loader->pow)) {
-    return llvm::CallInst::Create(intrinsics->func_llvm_pow_f64, args.begin(),
-                                  args.end(), "tmp1", currentBlock);
+    return llvm::CallInst::Create(intrinsics->func_llvm_pow_f64, args,
+                                  "tmp1", currentBlock);
   } else if (name->equals(loader->ceil)) {
     return llvm::CallInst::Create(intrinsics->func_llvm_ceil_f64, args[0], "tmp1",
                                   currentBlock);
@@ -1468,7 +1460,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
 
   ctpInfo->nameOfStaticOrSpecialMethod(index, cl, name, signature);
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
-  const llvm::FunctionType* virtualType = LSI->getVirtualType();
+  FunctionType* virtualType = LSI->getVirtualType();
   meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
 
   Value* func = 0;
@@ -1506,7 +1498,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
     val = invoke(func, args, "", currentBlock);
   }
   
-  const llvm::Type* retType = virtualType->getReturnType();
+  Type* retType = virtualType->getReturnType();
   if (retType != Type::getVoidTy(*llvmContext)) {
     if (retType == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
@@ -1528,7 +1520,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   const UTF8* className = 0;
   ctpInfo->nameOfStaticOrSpecialMethod(index, className, name, signature);
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
-  const llvm::FunctionType* staticType = LSI->getStaticType();
+  FunctionType* staticType = LSI->getStaticType();
   ctpInfo->markAsStaticCall(index);
   JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
   llvm::Instruction* val = 0;
@@ -1574,7 +1566,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     }
   }
 
-  const llvm::Type* retType = staticType->getReturnType();
+  Type* retType = staticType->getReturnType();
   if (retType != Type::getVoidTy(*llvmContext)) {
     if (retType == intrinsics->JavaObjectType) {
       JnjvmClassLoader* JCL = compilingClass->classLoader;
@@ -1590,7 +1582,7 @@ void JavaJIT::invokeStatic(uint16 index) {
 }
 
 Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
-                                  const Type* returnType,
+                                  Type* returnType,
                                   Value* additionalArg, bool doThrow) {
 
 // This makes unswitch loop very unhappy time-wise, but makes GVN happy
@@ -1611,11 +1603,11 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
     res = invoke(intrinsics->GetConstantPoolAtFunction, Args, "",
                  currentBlock);
   } else {
-    res = CallInst::Create(intrinsics->GetConstantPoolAtFunction, Args.begin(),
-                           Args.end(), "", currentBlock);
+    res = CallInst::Create(intrinsics->GetConstantPoolAtFunction, Args,
+                           "", currentBlock);
   }
   
-  const Type* realType = 
+  Type* realType = 
     intrinsics->GetConstantPoolAtFunction->getReturnType();
   if (returnType == Type::getInt32Ty(*llvmContext)) {
     return new PtrToIntInst(res, Type::getInt32Ty(*llvmContext), "", currentBlock);
@@ -1725,14 +1717,14 @@ void JavaJIT::invokeNew(uint16 index) {
 }
 
 Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object, 
-                           const Type* fieldTypePtr) {
+                           Type* fieldTypePtr) {
   JavaConstantPool* info = compilingClass->ctpInfo;
   
   JavaField* field = info->lookupField(index, stat);
   if (field && field->classDef->isResolved()) {
     LLVMClassInfo* LCI = TheCompiler->getClassInfo(field->classDef);
     LLVMFieldInfo* LFI = TheCompiler->getFieldInfo(field);
-    const Type* type = 0;
+    Type* type = NULL;
     if (stat) {
       type = LCI->getStaticType();
       Value* Cl = TheCompiler->getNativeClass(field->classDef);
@@ -1762,13 +1754,13 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     return ptr;
   }
 
-  const Type* Pty = intrinsics->arrayPtrType;
+  Type* Pty = intrinsics->arrayPtrType;
   Constant* zero = intrinsics->constantZero;
     
   Function* func = stat ? intrinsics->StaticFieldLookupFunction :
                           intrinsics->VirtualFieldLookupFunction;
     
-  const Type* returnType = 0;
+  Type* returnType = NULL;
   if (stat) {
     returnType = intrinsics->ptrType;
   } else {
@@ -1787,9 +1779,9 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   return new BitCastInst(ptr, fieldTypePtr, "", currentBlock);
 }
 
-void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock,
+void JavaJIT::convertValue(Value*& val, Type* t1, BasicBlock* currentBlock,
                            bool usign) {
-  const Type* t2 = val->getType();
+  Type* t2 = val->getType();
   if (t1 != t2) {
     if (t1->isIntegerTy() && t2->isIntegerTy()) {
       if (t2->getPrimitiveSizeInBits() < t1->getPrimitiveSizeInBits()) {
@@ -1817,7 +1809,7 @@ void JavaJIT::convertValue(Value*& val, const Type* t1, BasicBlock* currentBlock
 void JavaJIT::setStaticField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
-  const Type* type = LAI.llvmType;
+  Type* type = LAI.llvmType;
    
   Value* ptr = ldResolved(index, true, NULL, LAI.llvmTypePtr);
 
@@ -1835,7 +1827,7 @@ void JavaJIT::setStaticField(uint16 index) {
     ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
     val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
     Value* args[2] = { ptr, val };
-    CallInst::Create(intrinsics->NonHeapWriteBarrierFunction, args, args + 2, "", currentBlock);
+    CallInst::Create(intrinsics->NonHeapWriteBarrierFunction, args, "", currentBlock);
   } else {
     new StoreInst(val, ptr, false, currentBlock);
   }
@@ -1844,7 +1836,7 @@ void JavaJIT::setStaticField(uint16 index) {
 void JavaJIT::getStaticField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
-  const Type* type = LAI.llvmType;
+  Type* type = LAI.llvmType;
   
   Value* ptr = ldResolved(index, true, NULL, LAI.llvmTypePtr);
   
@@ -1916,7 +1908,7 @@ void JavaJIT::getStaticField(uint16 index) {
 void JavaJIT::setVirtualField(uint16 index) {
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
-  const Type* type = LAI.llvmType;
+  Type* type = LAI.llvmType;
   int stackIndex = currentStackIndex - 2;
   if (type == Type::getInt64Ty(*llvmContext) ||
       type == Type::getDoubleTy(*llvmContext)) {
@@ -1942,7 +1934,7 @@ void JavaJIT::setVirtualField(uint16 index) {
     object = new LoadInst(object, "", currentBlock);
     object = new BitCastInst(object, intrinsics->ptrType, "", currentBlock);
     Value* args[3] = { object, ptr, val };
-    CallInst::Create(intrinsics->FieldWriteBarrierFunction, args, args + 3, "", currentBlock);
+    CallInst::Create(intrinsics->FieldWriteBarrierFunction, args, "", currentBlock);
   } else {
     new StoreInst(val, ptr, false, currentBlock);
   }
@@ -1954,7 +1946,7 @@ void JavaJIT::getVirtualField(uint16 index) {
   CommonClass* cl = sign->findAssocClass(JCL);
   
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
-  const Type* type = LAI.llvmType;
+  Type* type = LAI.llvmType;
   Value* obj = objectStack[currentStackIndex - 1];
   pop(); // Pop the object
   
@@ -2012,10 +2004,10 @@ void JavaJIT::invokeInterface(uint16 index) {
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
   
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
-  const llvm::FunctionType* virtualType = LSI->getVirtualType();
-  const llvm::PointerType* virtualPtrType = LSI->getVirtualPtrType();
+  FunctionType* virtualType = LSI->getVirtualType();
+  PointerType* virtualPtrType = LSI->getVirtualPtrType();
  
-  const llvm::Type* retType = virtualType->getReturnType();
+  Type* retType = virtualType->getReturnType();
    
   CommonClass* cl = 0;
   JavaMethod* meth = 0;
@@ -2079,7 +2071,7 @@ void JavaJIT::invokeInterface(uint16 index) {
   Constant* MinusTwo = ConstantInt::get(intrinsics->pointerSizeType, -2);
   BinaryOperator* int32_25 = BinaryOperator::Create(Instruction::And, int32_19,
                                                     MinusTwo, "", currentBlock);
-  const PointerType* Ty = PointerType::getUnqual(intrinsics->JavaMethodType);
+  PointerType* Ty = PointerType::getUnqual(intrinsics->JavaMethodType);
   CastInst* ptr_26 = new IntToPtrInst(int32_25, Ty, "", currentBlock);
   LoadInst* int32_27 = new LoadInst(ptr_26, "", false, currentBlock);
   ICmpInst* int1_28 = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, int32_27,
@@ -2402,8 +2394,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
                        const char* Name,
                        BasicBlock *InsertAtEnd) {
   
-  Instruction* res = CallInst::Create(F, args.begin(), args.end(), Name,
-                                      InsertAtEnd);
+  Instruction* res = CallInst::Create(F, args, Name, InsertAtEnd);
   DebugLoc DL = CreateLocation();
   res->setDebugLoc(DL);
   
@@ -2503,7 +2494,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
 
   Value* args[2] = { arg1, arg2 };
   
-  Instruction* res = CallInst::Create(F, args, args + 2, Name, InsertAtEnd);
+  Instruction* res = CallInst::Create(F, args, Name, InsertAtEnd);
   DebugLoc DL = CreateLocation();
   res->setDebugLoc(DL);
   
@@ -2629,7 +2620,7 @@ void JavaJIT::throwException(Value* obj) {
 
 void JavaJIT::throwException(llvm::Function* F, Value** args,
                              uint32 nbArgs) {
-  Instruction* obj = CallInst::Create(F, args, args + nbArgs, "", currentBlock);
+  Instruction* obj = CallInst::Create(F, ArrayRef<Value*>(args, nbArgs), "", currentBlock);
   DebugLoc DL = CreateLocation();
   obj->setDebugLoc(DL);
 
@@ -2794,8 +2785,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
       Value* classArgs[2] = { objVT, VTVar };
           
       cmp = CallInst::Create(intrinsics->IsSecondaryClassFunction,
-                             classArgs, classArgs + 2, "",
-                             currentBlock);
+                             classArgs, "", currentBlock);
 
     } else {
      
@@ -2804,8 +2794,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
             
       Value* displayArgs[2] = { inDisplay, depthCl };
       Value* VTInDisplay = CallInst::Create(intrinsics->GetVTInDisplayFunction,
-                                            displayArgs, displayArgs + 2, "",
-                                            currentBlock);
+                                            displayArgs, "", currentBlock);
              
       cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, VTInDisplay, VTVar,
                          "");

@@ -91,7 +91,7 @@ Value* JavaLLVMLazyJITCompiler::addCallback(Class* cl, uint16 index,
   F = TheModule->getFunction(key);
   if (F) return F;
   
-  const FunctionType* type = stat ? LSI->getStaticType() : 
+  FunctionType* type = stat ? LSI->getStaticType() : 
                                     LSI->getVirtualType();
   
   F = Function::Create(type, GlobalValue::ExternalWeakLinkage, key, TheModule);

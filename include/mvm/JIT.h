@@ -189,7 +189,7 @@ public:
    static llvm::ExecutionEngine* executionEngine;
    //static unsigned MetadataTypeKind;
 
-   static uint64 getTypeSize(const llvm::Type* type);
+   static uint64 getTypeSize(llvm::Type* type);
    static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
    static void initialise(llvm::CodeGenOpt::Level = llvm::CodeGenOpt::Default,
                          llvm::Module* TheModule = 0,

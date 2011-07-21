@@ -164,7 +164,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       };
     
     
-      CallInst::Create(intrinsics->PrintExecutionFunction, args, args + 3, "",
+      CallInst::Create(intrinsics->PrintExecutionFunction, args, "",
                        currentBlock);
     }
 #endif
@@ -707,7 +707,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           Value* VTArgs[2] = { valVT, objVT };
           
           Value* res = CallInst::Create(intrinsics->IsAssignableFromFunction,
-                                        VTArgs, VTArgs + 2, "", currentBlock);
+                                        VTArgs, "", currentBlock);
 
           BranchInst::Create(endBlock, exceptionBlock, res, currentBlock);
           
@@ -726,7 +726,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
           obj = new BitCastInst(obj, intrinsics->ptrType, "", currentBlock);
           Value* args[3] = { obj, ptr, val };
-          CallInst::Create(intrinsics->ArrayWriteBarrierFunction, args, args + 3, "", currentBlock);
+          CallInst::Create(intrinsics->ArrayWriteBarrierFunction, args, "", currentBlock);
         } else {
           new StoreInst(val, ptr, false, currentBlock);
         }
@@ -748,7 +748,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
       case CASTORE : {
         Value* val = pop();
-        const Type* type = val->getType();
+        Type* type = val->getType();
         if (type == Type::getInt32Ty(*llvmContext)) {
           val = new TruncInst(val, Type::getInt16Ty(*llvmContext), "", currentBlock);
         } else if (type == Type::getInt8Ty(*llvmContext)) {
@@ -764,7 +764,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
       case SASTORE : {
         Value* val = pop();
-        const Type* type = val->getType();
+        Type* type = val->getType();
         if (type == Type::getInt32Ty(*llvmContext)) {
           val = new TruncInst(val, Type::getInt16Ty(*llvmContext), "", currentBlock);
         } else if (type == Type::getInt8Ty(*llvmContext)) {
@@ -1635,7 +1635,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
 
         Value* op = pop();
-        const Type* type = op->getType();
+        Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, op,
                                          val, "");
@@ -1652,7 +1652,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         
         Value* op = pop();
-        const Type* type = op->getType();
+        Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, op,
                                          val, "");
@@ -1668,7 +1668,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
-        const Type* type = op->getType();
+        Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLT, op,
                                          val, "");
@@ -1684,7 +1684,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
-        const Type* type = op->getType();
+        Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGE, op,
                                          val, "");
@@ -1700,7 +1700,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
-        const Type* type = op->getType();
+        Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGT, op,
                                          val, "");
@@ -1716,7 +1716,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         i += 2;
         BasicBlock* ifTrue = ifTrueInfo.newBlock;
         Value* op = pop();
-        const Type* type = op->getType();
+        Type* type = op->getType();
         Constant* val = Constant::getNullValue(type);
         llvm::Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_SLE, op,
                                          val, "");
@@ -1902,7 +1902,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         
         Value* index = pop(); 
         
-        const llvm::Type* type = index->getType();
+        Type* type = index->getType();
         for (sint32 cur = low; cur < high; ++cur) {
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
                                     ConstantInt::get(type, cur), index, "");
@@ -2071,7 +2071,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           Value* args[2] = { isolateLocal,
                              ConstantInt::get(Type::getInt32Ty(*llvmContext), id - 4) };
           valCl = CallInst::Create(intrinsics->GetJnjvmArrayClassFunction,
-                                   args, args + 2, "", currentBlock);
+                                   args, "", currentBlock);
 #endif
 
           LLVMAssessorInfo& LAI = TheCompiler->AssessorInfo[charId];
@@ -2111,13 +2111,13 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
             }
 
           } else {
-            const llvm::Type* Ty = 
+            Type* Ty = 
               PointerType::getUnqual(intrinsics->VTType);
             Value* args[3]= { TheCompiler->getNativeClass(compilingClass),
                               ConstantInt::get(Type::getInt32Ty(*llvmContext), index),
                               Constant::getNullValue(Ty) };
             TheVT = CallInst::Create(intrinsics->GetArrayClassFunction, args,
-                                     args + 3, "", currentBlock);
+                                     "", currentBlock);
           }
 
           sizeElement = intrinsics->constantPtrLogSize;
@@ -2248,8 +2248,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         if (cl) {
           if (cl->isSecondaryClass()) {
             res = CallInst::Create(intrinsics->IsSecondaryClassFunction,
-                                   classArgs, classArgs + 2, "",
-                                   currentBlock);
+                                   classArgs, "", currentBlock);
           } else {
             Value* inDisplay = CallInst::Create(intrinsics->GetDisplayFunction,
                                                 objVT, "", currentBlock);
@@ -2259,16 +2258,14 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
             Value* displayArgs[2] = { inDisplay, CI };
             Value* VTInDisplay = 
               CallInst::Create(intrinsics->GetVTInDisplayFunction,
-                               displayArgs, displayArgs + 2, "",
-                               currentBlock);
+                               displayArgs, "", currentBlock);
              
             res = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, VTInDisplay,
                                TheVT, "");
           }
         } else {
           res = CallInst::Create(intrinsics->IsAssignableFromFunction,
-                                 classArgs, classArgs + 2, "",
-                                 currentBlock);
+                                 classArgs, "", currentBlock);
         }
 
         node->addIncoming(res, currentBlock);

@@ -310,7 +310,7 @@ mvm::LockRecursive MvmModule::protectEngine;
 mvm::BumpPtrAllocator* MvmModule::Allocator;
 //unsigned MvmModule::MetadataTypeKind;
 
-uint64 MvmModule::getTypeSize(const llvm::Type* type) {
+uint64 MvmModule::getTypeSize(llvm::Type* type) {
   return TheTargetData->getTypeAllocSize(type);
 }
 

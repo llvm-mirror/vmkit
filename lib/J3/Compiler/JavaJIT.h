@@ -134,7 +134,7 @@ private:
   }
   
   /// convertValue - Convert a value to a new type.
-  void convertValue(llvm::Value*& val, const llvm::Type* t1,
+  void convertValue(llvm::Value*& val, llvm::Type* t1,
                     llvm::BasicBlock* currentBlock, bool usign);
  
   /// getMutatorThreadPtr - Emit code to get a pointer to the current MutatorThread.
@@ -222,11 +222,11 @@ private:
   /// verifyAndComputePtr - Computes the address in the array. If out of bounds
   /// throw an exception.
   llvm::Value* verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
-                                   const llvm::Type* arrayType,
+                                   llvm::Type* arrayType,
                                    bool verif = true);
 
   /// compareFP - Do float comparisons.
-  void compareFP(llvm::Value*, llvm::Value*, const llvm::Type*, bool l);
+  void compareFP(llvm::Value*, llvm::Value*, llvm::Type*, bool l);
   
 
 //===------------------------- Stack manipulation -------------------------===//
@@ -242,7 +242,7 @@ private:
 
   /// push - Push a new value in the stack.
   void push(llvm::Value* val, bool unsign, CommonClass* cl = 0) {
-    const llvm::Type* type = val->getType();
+    llvm::Type* type = val->getType();
     if (unsign) {
       val = new llvm::ZExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "", currentBlock);
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
@@ -435,7 +435,7 @@ private:
 
   /// ldResolved - Emit code to get a pointer to a field.
   llvm::Value* ldResolved(uint16 index, bool stat, llvm::Value* object,
-                          const llvm::Type* fieldTypePtr);
+                          llvm::Type* fieldTypePtr);
 
 //===--------------------- Constant pool accesses  ------------------------===//
  
@@ -454,7 +454,7 @@ private:
   /// pool. The generated code invokes the resolver if the constant pool
   /// contains no value at the index.
   llvm::Value* getConstantPoolAt(uint32 index, llvm::Function* resolver,
-                                 const llvm::Type* returnType,
+                                 llvm::Type* returnType,
                                  llvm::Value* addArg, bool doThrow = true);
 
 //===----------------------- Java method calls  ---------------------------===//

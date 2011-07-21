@@ -290,7 +290,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                                 intrinsics->OffsetDisplayInVTConstant };
           Value* DisplayPtr = GetElementPtrInst::Create(val, indexes,
                                                         indexes + 2, "", CI);
-          const llvm::Type* Ty = PointerType::getUnqual(intrinsics->VTType);
+          Type* Ty = PointerType::getUnqual(intrinsics->VTType);
           DisplayPtr = new BitCastInst(DisplayPtr, Ty, "", CI);
           CI->replaceAllUsesWith(DisplayPtr);
           CI->eraseFromParent();
@@ -363,8 +363,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             BasicBlock* UI = Invoke->getUnwindDest();
 
             res = InvokeInst::Create(intrinsics->InitialiseClassFunction,
-                                     trueCl, UI, Args, Args + 1,
-                                     "", falseCl);
+                                     trueCl, UI, Args, "", falseCl);
 
             // For some reason, an LLVM pass may add PHI nodes to the
             // exception destination.
@@ -403,7 +402,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == intrinsics->GetConstantPoolAtFunction) {
           Function* resolver = dyn_cast<Function>(Call.getArgument(0));
           assert(resolver && "Wrong use of GetConstantPoolAt");
-          const Type* returnType = resolver->getReturnType();
+          Type* returnType = resolver->getReturnType();
           Value* CTP = Call.getArgument(1);
           Value* Index = Call.getArgument(3);
           Changed = true;
@@ -438,8 +437,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Instruction* res = 0;
           if (InvokeInst* Invoke = dyn_cast<InvokeInst>(CI)) {
             BasicBlock* UI = Invoke->getUnwindDest();
-            res = InvokeInst::Create(resolver, trueCl, UI, Args.begin(),
-                                     Args.end(), "", falseCl);
+            res = InvokeInst::Create(resolver, trueCl, UI, Args, "", falseCl);
 
             // For some reason, an LLVM pass may add PHI nodes to the
             // exception destination.
@@ -462,8 +460,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             }
 
           } else {
-            res = CallInst::Create(resolver, Args.begin(), Args.end(), "",
-                                   falseCl);
+            res = CallInst::Create(resolver, Args, "", falseCl);
             BranchInst::Create(trueCl, falseCl);
           }
           
@@ -475,7 +472,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BranchInst::Create(NBB, trueCl);
           break;
         } else if (V == intrinsics->GetArrayClassFunction) {
-          const llvm::Type* Ty = PointerType::getUnqual(intrinsics->VTType);
+          Type* Ty = PointerType::getUnqual(intrinsics->VTType);
           Constant* nullValue = Constant::getNullValue(Ty);
           // Check if we have already proceed this call.
           if (Call.getArgument(2) == nullValue) { 
@@ -502,7 +499,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
             Value* args[3] = { Call.getArgument(0), Call.getArgument(1), GV };
             Instruction* res = CallInst::Create(intrinsics->GetArrayClassFunction, args,
-                                                args + 3, "", NotOKBlock);
+                                                "", NotOKBlock);
             res->setDebugLoc(CI->getDebugLoc());
             BranchInst::Create(OKBlock, NotOKBlock);
             node->addIncoming(res, NotOKBlock);
@@ -561,7 +558,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
 
           Value* Args[2] = { VT1, VT2 };
           res = CallInst::Create(intrinsics->IsSecondaryClassFunction, Args,
-                                 Args + 2, "", FailedBlock);
+                                 "", FailedBlock);
           res->setDebugLoc(CI->getDebugLoc());
          
           node->addIncoming(res, FailedBlock);
@@ -592,7 +589,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BasicBlock* BB6 = BasicBlock::Create(*Context, "BB6", &F);
           BasicBlock* BB7 = BasicBlock::Create(*Context, "BB7", &F);
           BasicBlock* BB9 = BasicBlock::Create(*Context, "BB9", &F);
-          const Type* Ty = PointerType::getUnqual(intrinsics->VTType);
+          Type* Ty = PointerType::getUnqual(intrinsics->VTType);
           
           PHINode* resFwd = PHINode::Create(Type::getInt32Ty(*Context), 2, "", BB7);
    

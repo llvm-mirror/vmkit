@@ -1841,7 +1841,7 @@ void JavaAOTCompiler::CreateStaticInitializer() {
     for (string_iterator i = strings.begin(), e = strings.end(); i != e; ++i) {
       Args[0] = loader;
       Args[1] = i->second;
-      CallInst::Create(AddString, Args, Args + 2, "", currentBlock);
+      CallInst::Create(AddString, ArrayRef<Value*>(Args, 2), "", currentBlock);
     }
   }
  
@@ -1851,7 +1851,7 @@ void JavaAOTCompiler::CreateStaticInitializer() {
       Args[0] = loader;
       Args[1] = ConstantExpr::getBitCast(i->second,
                                          JavaIntrinsics.JavaCommonClassType);
-      CallInst::Create(AddClass, Args, Args + 2, "", currentBlock);
+      CallInst::Create(AddClass, ArrayRef<Value*>(Args, 2), "", currentBlock);
     }
   }
   
@@ -1860,7 +1860,7 @@ void JavaAOTCompiler::CreateStaticInitializer() {
     Args[0] = loader;
     Args[1] = i->second;
     Args[2] = getUTF8(i->first->name);
-    CallInst::Create(GetClassArray, Args, Args + 3, "", currentBlock);
+    CallInst::Create(GetClassArray, ArrayRef<Value*>(Args, 3), "", currentBlock);
   }
   
 
@@ -2272,7 +2272,7 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
                      jit ? "StartJnjvmWithJIT" : "StartJnjvmWithoutJIT",
                      TheModule);
 
-  Value* res = CallInst::Create(CalledFunc, Args, Args + 3, "", currentBlock);
+  Value* res = CallInst::Create(CalledFunc, ArrayRef<Value*>(Args, 3), "", currentBlock);
   ReturnInst::Create(getLLVMContext(), res, currentBlock);
 
 }
