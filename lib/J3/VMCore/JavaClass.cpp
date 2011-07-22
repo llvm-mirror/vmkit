@@ -53,7 +53,7 @@ Attribut::Attribut(const UTF8* name, uint32 length,
   this->name     = name;
 }
 
-Attribut* Class::lookupAttribut(const UTF8* key ) {
+Attribut* Class::lookupAttribut(const UTF8* key) {
   for (uint32 i = 0; i < nbAttributs; ++i) {
     Attribut* cur = &(attributs[i]);
     if (cur->name->equals(key)) return cur;
@@ -62,7 +62,7 @@ Attribut* Class::lookupAttribut(const UTF8* key ) {
   return 0;
 }
 
-Attribut* JavaField::lookupAttribut(const UTF8* key ) {
+Attribut* JavaField::lookupAttribut(const UTF8* key) {
   for (uint32 i = 0; i < nbAttributs; ++i) {
     Attribut* cur = &(attributs[i]);
     if (cur->name->equals(key)) return cur;
@@ -71,7 +71,7 @@ Attribut* JavaField::lookupAttribut(const UTF8* key ) {
   return 0;
 }
 
-Attribut* JavaMethod::lookupAttribut(const UTF8* key ) {
+Attribut* JavaMethod::lookupAttribut(const UTF8* key) {
   for (uint32 i = 0; i < nbAttributs; ++i) {
     Attribut* cur = &(attributs[i]);
     if (cur->name->equals(key)) return cur;

@@ -69,6 +69,7 @@ bool LowerJavaRT::runOnModule(Module& M) {
     if (!strncmp(GV.getName().data(), "JnJVM_java", 10) ||
         !strncmp(GV.getName().data(), "java", 4) ||
         !strncmp(GV.getName().data(), "JnJVM_gnu", 9) ||
+        !strncmp(GV.getName().data(), "_3", 2) ||
         !strncmp(GV.getName().data(), "gnu", 3)) {
       GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
       GV.eraseFromParent();
@@ -90,11 +91,6 @@ bool LowerJavaRT::runOnModule(Module& M) {
   Ma->eraseFromParent();
 
   return Changed;
-}
-
-
-ModulePass* createLowerJavaRT() {
-  return new LowerJavaRT();
 }
 
 }

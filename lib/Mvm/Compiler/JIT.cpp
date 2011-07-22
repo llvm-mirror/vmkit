@@ -48,12 +48,6 @@
 #include <dlfcn.h>
 #include <sys/mman.h>
 
-#if defined(__MACH__)
-#define SELF_HANDLE RTLD_DEFAULT
-#else
-#define SELF_HANDLE 0
-#endif
-
 using namespace mvm;
 using namespace llvm;
 
@@ -156,18 +150,15 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
  
 }
 
+extern "C" void MMTk_InlineMethods(llvm::Module* module);
+
 BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
 
   module->setDataLayout(MvmModule::globalModule->getDataLayout());
   module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
 
-  typedef void (*init_inline_t)(llvm::Module* module); 
-  static const char* MMTkSymbol = "MMTk_InlineMethods";
-  init_inline_t init_inline =
-      (init_inline_t)(uintptr_t)dlsym(SELF_HANDLE, MMTkSymbol);
-  if (init_inline != NULL) init_inline(module);
-
+  MMTk_InlineMethods(module);
   mvm::llvm_runtime::makeLLVMModuleContents(module);
 
   // Type declaration

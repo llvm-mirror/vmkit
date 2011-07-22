@@ -24,6 +24,7 @@
 
 #include "j3/JavaAOTCompiler.h"
 #include "j3/JavaJITCompiler.h"
+#include "../../lib/J3/VMCore/JavaThread.h"
 #include "../../lib/J3/VMCore/JnjvmClassLoader.h"
 #include "../../lib/J3/VMCore/Jnjvm.h"
 
@@ -39,6 +40,16 @@ using namespace mvm;
 CamlFrames* frametables[] = {
   #include "FrametablesSymbols.inc"
 };
+
+
+static void mainCompilerLoaderStart(JavaThread* th) {
+  Jnjvm* vm = th->getJVM();
+  JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
+  JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
+  M->compileClassLoader(bootstrapLoader);
+  vm->exit(); 
+}
+
 
 int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;
@@ -63,7 +74,13 @@ int main(int argc, char **argv, char **envp) {
 
   // Now AOT Compile all compiled methods.
   JavaAOTCompiler* AOT = new JavaAOTCompiler("AOT");
-  AOT->compileClassLoader(loader);
+  loader->setCompiler(AOT);
+
+  vm->doExit = false;
+  JavaThread* th = new JavaThread(vm);
+  vm->setMainThread(th);
+  th->start((void (*)(mvm::Thread*))mainCompilerLoaderStart);
+  vm->waitForExit();
 
   AOT->printStats();
 

@@ -406,7 +406,7 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
 
   Function* res = Function::Create(virt ? getVirtualBufType() :
                                           getStaticBufType(),
-                                   GlobalValue::InternalLinkage, name,
+                                   GlobalValue::ExternalLinkage, name,
                                    Compiler->getLLVMModule());
   LLVMContext& context = Compiler->getLLVMModule()->getContext();
   
@@ -480,7 +480,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
 
   Function* stub = Function::Create((virt || special) ? getVirtualType() :
                                                         getStaticType(),
-                                   GlobalValue::InternalLinkage, name,
+                                   GlobalValue::ExternalLinkage, name,
                                    Compiler->getLLVMModule());
   LLVMContext& context = Compiler->getLLVMModule()->getContext();
   

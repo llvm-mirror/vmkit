@@ -16,19 +16,19 @@
 namespace mmtk {
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ (MMTkObject* M) {
-  return (uintptr_t)0x30000000;
+  return (uintptr_t)0x60000000;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapEndConstant__ (MMTkObject* M) {
-  return (uintptr_t)0x60000000;
+  return (uintptr_t)0xa0000000;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (MMTkObject* M) {
-  return (uintptr_t)0x30000000;
+  return (uintptr_t)0x60000000;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableEndConstant__ (MMTkObject* M) {
-  return (uintptr_t)0x60000000;
+  return (uintptr_t)0xa0000000;
 }
 
 extern "C" sint32

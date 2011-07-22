@@ -57,7 +57,7 @@ void JavaAOTCompiler::AddInitializerToClass(GlobalVariable* varGV, CommonClass* 
   } else if (classDef->isArray()) {
     Constant* C = CreateConstantFromClassArray(classDef->asArrayClass());
     varGV->setInitializer(C);
-  } else if (classDef->isPrimitive()) {
+  } else if (classDef->isPrimitive() && compileRT) {
     Constant* C = 
       CreateConstantFromClassPrimitive(classDef->asPrimitiveClass());
     varGV->setInitializer(C);
@@ -2186,7 +2186,6 @@ void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {
 }
 
 void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
-  loader->setCompiler(this);
   compileRT = true;
   precompile = true;
   addJavaPasses();
@@ -2215,10 +2214,19 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     parseFunction(meth);
   }
 
-  for (native_class_iterator i = nativeClasses.begin(), 
-       e = nativeClasses.end(); i != e; ++i) {
-    AddInitializerToClass(i->second, i->first);
-  }
+  bool changed = false;
+  do {
+    changed = false;
+    for (native_class_iterator i = nativeClasses.begin(), 
+         e = nativeClasses.end(); i != e; ++i) {
+      if (!i->second->hasInitializer()) {
+        changed = true;
+        AddInitializerToClass(i->second, i->first);
+      }
+    }
+  } while (changed);
+
+  CreateStaticInitializer();
 }
 
 /// compileAllStubs - Compile all the native -> Java stubs. 

@@ -1198,10 +1198,6 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
       JavaField& field = realCl->staticFields[i];
       JCL->hashUTF8->insert(field.name);
       JCL->hashUTF8->insert(field.type);
-      if (field.getSignature()->isReference()
-          && (field.lookupAttribut(Attribut::constantAttribut) != NULL)) {
-        field.InitStaticField(JCL->getIsolate());
-      }
     }
     
     for (uint32 i = 0; i< realCl->nbVirtualFields; ++i) {

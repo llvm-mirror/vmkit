@@ -35,11 +35,11 @@ namespace mmtk_non_heap_write {
   #include "MMTkNonHeapWriteInline.inc"
 }
 
-extern "C" void MMTk_InlineMethods(llvm::Module* module) {
-  mmtk_malloc::makeLLVMFunction(module);
-  //mmtk_field_write::makeLLVMFunction(module);
-  //mmtk_array_write::makeLLVMFunction(module);
-  //mmtk_non_heap_write::makeLLVMFunction(module);
 }
 
+extern "C" void MMTk_InlineMethods(llvm::Module* module) {
+  //mmtk::mmtk_malloc::makeLLVMFunction(module);
+  //mmtk::mmtk_field_write::makeLLVMFunction(module);
+  //mmtk::mmtk_array_write::makeLLVMFunction(module);
+  //mmtk::mmtk_non_heap_write::makeLLVMFunction(module);
 }

@@ -224,3 +224,6 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+// Because MMTk has not been created yet, provide this method in order to link.
+extern "C" void MMTk_InlineMethods(llvm::Module* module) {
+}
