@@ -1344,8 +1344,6 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc,
     }
     end = end->prev;
   }
-
-  bootstrapLoader->insertAllMethodsInVM(this);  
 }
 
 Jnjvm::~Jnjvm() {

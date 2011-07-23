@@ -47,7 +47,6 @@ class TypeMap;
 class VMClassLoader;
 class ZipArchive;
 
-
 /// JnjvmClassLoader - Runtime representation of a class loader. It contains
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
@@ -359,23 +358,11 @@ public:
   
   virtual JavaString** UTF8ToStr(const UTF8* utf8);
 
-  /// nativeHandle - Non-null handle if boot classes were static compiled in
-  /// a dynamic library
-  ///
-  void* nativeHandle;
-
   /// upcalls - Upcall classes, fields and methods so that C++ code can call
   /// Java code.
   ///
   Classpath* upcalls;
   
-  /// InterfacesArray - The interfaces that array classes implement.
-  ///
-  UserClass** InterfacesArray;
-
-  /// SuperArray - The super of array classes.
-  UserClass* SuperArray;
-
   /// Lists of UTF8s used internaly in VMKit.
   const UTF8* NoClassDefFoundError;
   const UTF8* initName;
@@ -429,6 +416,14 @@ public:
   virtual ~JnjvmBootstrapLoader();
 
   friend class ClArgumentsInfo;
+};
+
+
+/// Precompiled - A helper class to initialize a class loader in case
+/// it has been precompiled.
+class Precompiled {
+ public:
+  static bool Init(JnjvmBootstrapLoader* loader);
 };
 
 /// VMClassLoader - The vmdata object that will be placed in and will only
@@ -503,26 +498,11 @@ private:
 
 public:
   StringList() {
-    prev = 0;
+    prev = NULL;
     length = 0;
   }
 
-  JavaString** addString(JnjvmClassLoader* JCL, JavaString* obj) {
-    llvm_gcroot(obj, 0);
-    if (length == MAXIMUM_STRINGS) {
-      StringList* next = new(JCL->allocator, "StringList") StringList();
-      next->prev = this;
-      JCL->strings = next;
-      return next->addString(JCL, obj);
-    } else {
-      JCL->lock.lock();
-      mvm::Collector::objectReferenceNonHeapWriteBarrier(
-          (gc**)&(strings[length]), (gc*)obj);
-      JavaString** res = &strings[length++];
-      JCL->lock.unlock();
-      return res;
-    }
-  }
+  JavaString** addString(JnjvmClassLoader* JCL, JavaString* obj);
 };
 
 } // end namespace j3

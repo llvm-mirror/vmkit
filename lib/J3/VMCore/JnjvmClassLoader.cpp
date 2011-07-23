@@ -23,7 +23,6 @@
 
 #include <string>
 
-
 #if defined(__MACH__)
 #define SELF_HANDLE RTLD_DEFAULT
 #define DYLD_EXTENSION ".dylib"
@@ -87,57 +86,16 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   bootstrapLoader = this;
    
   // Try to find if we have a pre-compiled rt.jar
+  bool bootLoaded = false;
   if (dlLoad) {
-    SuperArray = (Class*)dlsym(SELF_HANDLE, "java_lang_Object");
-    if (!SuperArray) {
-      nativeHandle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
-      if (nativeHandle) {
-        // Found it!
-        SuperArray = (Class*)dlsym(nativeHandle, "java_lang_Object");
-      }
-    }
-    
-    if (SuperArray) {
-      assert(TheCompiler && 
-					   "Loading libvmjc"DYLD_EXTENSION" requires a compiler");
-			ClassArray::SuperArray = (Class*)SuperArray->getInternal();
-      
-      // Get the native classes.
-      upcalls->OfVoid = (ClassPrimitive*)dlsym(nativeHandle, "void");
-      upcalls->OfBool = (ClassPrimitive*)dlsym(nativeHandle, "boolean");
-      upcalls->OfByte = (ClassPrimitive*)dlsym(nativeHandle, "byte");
-      upcalls->OfChar = (ClassPrimitive*)dlsym(nativeHandle, "char");
-      upcalls->OfShort = (ClassPrimitive*)dlsym(nativeHandle, "short");
-      upcalls->OfInt = (ClassPrimitive*)dlsym(nativeHandle, "int");
-      upcalls->OfFloat = (ClassPrimitive*)dlsym(nativeHandle, "float");
-      upcalls->OfLong = (ClassPrimitive*)dlsym(nativeHandle, "long");
-      upcalls->OfDouble = (ClassPrimitive*)dlsym(nativeHandle, "double");
-      
-      
-      // We have the java/lang/Object class, execute the static initializer.
-      static_init_t init = (static_init_t)(uintptr_t)SuperArray->classLoader;
-      assert(init && "Loaded the wrong boot library");
-      init(this);
-      
-      // Get the base object arrays after the init, because init puts arrays
-      // in the class loader map.
-      upcalls->ArrayOfString = 
-        constructArray(asciizConstructUTF8("[Ljava/lang/String;"));
-  
-      upcalls->ArrayOfObject = 
-        constructArray(asciizConstructUTF8("[Ljava/lang/Object;"));
-      
-      InterfacesArray = upcalls->ArrayOfObject->interfaces;
-      ClassArray::InterfacesArray = InterfacesArray;
-
-    }
+    bootLoaded = Precompiled::Init(this);
   }
-   
-  if (!upcalls->OfChar) {
-    // Allocate interfaces.
-    InterfacesArray = (Class**)allocator.Allocate(2 * sizeof(UserClass*),
-                                                  "Interface array");
-    ClassArray::InterfacesArray = InterfacesArray;
+ 
+  if (!bootLoaded) {
+    // Allocate the interfaces array for array classes, so that VT construction
+    // can use it right away.
+    ClassArray::InterfacesArray =
+      (Class**)allocator.Allocate(2 * sizeof(UserClass*), "Interface array");
 
     // Create the primitive classes.
     upcalls->OfChar = UPCALL_PRIMITIVE_CLASS(this, "char", 1);
@@ -249,9 +207,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   DEF_UTF8(tanh);
   DEF_UTF8(finalize);
 
-#undef DEF_UTF8
-  
-  
+#undef DEF_UTF8 
 }
 
 JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
@@ -1065,185 +1021,20 @@ intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
   return res;
 }
 
-class JavaStaticMethodInfo : public mvm::CamlMethodInfo {
-public:
-  virtual void print(void* ip, void* addr);
-  virtual bool isHighLevelMethod() {
-    return true;
+
+JavaString** StringList::addString(JnjvmClassLoader* JCL, JavaString* obj) {
+  llvm_gcroot(obj, 0);
+  if (length == MAXIMUM_STRINGS) {
+    StringList* next = new(JCL->allocator, "StringList") StringList();
+    next->prev = this;
+    JCL->strings = next;
+    return next->addString(JCL, obj);
+  } else {
+    JCL->lock.lock();
+    mvm::Collector::objectReferenceNonHeapWriteBarrier(
+        (gc**)&(strings[length]), (gc*)obj);
+    JavaString** res = &strings[length++];
+    JCL->lock.unlock();
+    return res;
   }
-  
-  JavaStaticMethodInfo(mvm::CamlMethodInfo* super, void* ip, JavaMethod* M) :
-    mvm::CamlMethodInfo(super->CF) {
-    MetaInfo = M;
-    Owner = M->classDef->classLoader->getCompiler();
-  }
-};
-
-void JavaStaticMethodInfo::print(void* ip, void* addr) {
-  void* new_ip = NULL;
-  if (ip) new_ip = mvm::MethodInfo::isStub(ip, addr);
-  JavaMethod* meth = (JavaMethod*)MetaInfo;
-  fprintf(stderr, "; %p in %s.%s", new_ip,
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
-  if (ip != new_ip) fprintf(stderr, " (from stub)");
-  fprintf(stderr, "\n");
-}
-
-void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
-  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
-       i != e; ++i) {
-    CommonClass* cl = i->second;
-    if (cl->isClass()) {
-      Class* C = cl->asClass();
-      
-      for (uint32 i = 0; i < C->nbVirtualMethods; ++i) {
-        JavaMethod& meth = C->virtualMethods[i];
-        if (!isAbstract(meth.access) && meth.code) {
-          JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
-            JavaStaticMethodInfo(0, meth.code, &meth);
-          vm->FunctionsCache.addMethodInfo(MI, meth.code);
-        }
-      }
-      
-      for (uint32 i = 0; i < C->nbStaticMethods; ++i) {
-        JavaMethod& meth = C->staticMethods[i];
-        if (!isAbstract(meth.access) && meth.code) {
-          JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
-            JavaStaticMethodInfo(0, meth.code, &meth);
-          vm->FunctionsCache.addMethodInfo(MI, meth.code);
-        }
-      }
-    }
-  }
-}
-
-void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
-                                      const char* file) {
-
-  mvm::ThreadAllocator threadAllocator;
-  char* soName = (char*)threadAllocator.Allocate(
-      strlen(name) + strlen(DYLD_EXTENSION));
-  const char* ptr = strrchr(name, '/');
-  sprintf(soName, "%s%s", ptr ? ptr + 1 : name, DYLD_EXTENSION);
-  void* handle = dlopen(soName, RTLD_LAZY | RTLD_LOCAL);
-  if (handle) {
-    Class* cl = (Class*)dlsym(handle, file);
-    if (cl) {
-      static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
-      assert(init && "Loaded the wrong library");
-      init(this);
-      insertAllMethodsInVM(vm);
-    }
-  }
-}
-
-void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
-  mvm::ThreadAllocator threadAllocator;
-  assert(classes->map.size() == 0);
-  char* soName = (char*)threadAllocator.Allocate(
-      strlen(name) + strlen(DYLD_EXTENSION));
-  sprintf(soName, "%s%s", name, DYLD_EXTENSION);
-  void* handle = dlopen(soName, RTLD_LAZY | RTLD_LOCAL);
-  if (handle) {
-    Class* cl = (Class*)dlsym(handle, name);
-    if (cl) {
-      static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
-      init(this);
-      insertAllMethodsInVM(vm);
-    }
-  }
-}
-
-Class* JnjvmClassLoader::loadClassFromSelf(Jnjvm* vm, const char* name) {
-  assert(classes->map.size() == 0);
-  Class* cl = (Class*)dlsym(SELF_HANDLE, name);
-  if (cl) {
-    static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
-    init(this);
-    insertAllMethodsInVM(vm);
-  }
-  return cl;
-}
-
-
-// Extern "C" functions called by the vmjc static intializer.
-extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
-                                        CommonClass* cl) {
-  cl->classLoader = JCL;
-  
-  JCL->hashUTF8->insert(cl->name);
-
-  if (cl->isClass()) {
-    Class* realCl = cl->asClass();
-		// To avoid data alignment in the llvm assembly emitter, we set the
-  	// staticMethods and staticFields fields here.
-    realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
-    realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
-  	cl->virtualVT->setNativeTracer(cl->virtualVT->tracer, "");
-
-    for (uint32 i = 0; i< realCl->nbStaticMethods; ++i) {
-      JavaMethod& meth = realCl->staticMethods[i];
-      JCL->hashUTF8->insert(meth.name);
-      JCL->hashUTF8->insert(meth.type);
-    }
-    
-    for (uint32 i = 0; i< realCl->nbVirtualMethods; ++i) {
-      JavaMethod& meth = realCl->virtualMethods[i];
-      JCL->hashUTF8->insert(meth.name);
-      JCL->hashUTF8->insert(meth.type);
-    }
-    
-    for (uint32 i = 0; i< realCl->nbStaticFields; ++i) {
-      JavaField& field = realCl->staticFields[i];
-      JCL->hashUTF8->insert(field.name);
-      JCL->hashUTF8->insert(field.type);
-    }
-    
-    for (uint32 i = 0; i< realCl->nbVirtualFields; ++i) {
-      JavaField& field = realCl->virtualFields[i];
-      JCL->hashUTF8->insert(field.name);
-      JCL->hashUTF8->insert(field.type);
-    }
-  }
-
-	if (!cl->isPrimitive()) {
-	  JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
-  }
-}
-
-extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
-                                  const UTF8* name) {
-  JCL->hashUTF8->insert(name);
-  *ptr = JCL->constructArray(name);
-}
-
-extern "C" void vmjcAddUTF8(JnjvmClassLoader* JCL, const UTF8* val) {
-  JCL->hashUTF8->insert(val);
-}
-
-extern "C" void vmjcAddString(JnjvmClassLoader* JCL, JavaString* val) {
-  JCL->strings->addString(JCL, val);
-}
-
-extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
-  bool j3 = false;
-  const UTF8* jniConsClName = meth->classDef->name;
-  const UTF8* jniConsName = meth->name;
-  const UTF8* jniConsType = meth->type;
-  sint32 clen = jniConsClName->size;
-  sint32 mnlen = jniConsName->size;
-  sint32 mtlen = jniConsType->size;
-
-  mvm::ThreadAllocator threadAllocator;
-  char* buf = (char*)threadAllocator.Allocate(
-      3 + JNI_NAME_PRE_LEN + 1 + ((mnlen + clen + mtlen) << 3));
-  intptr_t res = meth->classDef->classLoader->nativeLookup(meth, j3, buf);
-  assert(res && "Could not find required native method");
-  return res;
-}
-
-extern "C" void staticCallback() {
-  fprintf(stderr, "Implement me");
-  abort();
 }
