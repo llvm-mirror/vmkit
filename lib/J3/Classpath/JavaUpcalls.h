@@ -56,8 +56,11 @@ namespace j3 {
 class Jnjvm;
 class JavaField;
 class JavaMethod;
+class JavaObject;
+class JavaThread;
 class Class;
 class ClassArray;
+class JnjvmClassLoader;
 
 class Classpath : public mvm::PermanentObject {
 public: 

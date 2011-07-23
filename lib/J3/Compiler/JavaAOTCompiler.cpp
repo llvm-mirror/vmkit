@@ -1022,8 +1022,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   MethodElts.push_back(ConstantInt::get(Type::getInt8Ty(getLLVMContext()), method.canBeInlined));
 
   // code
-  if (isAbstract(method.access)
-      || (precompile && getMethodInfo(&method)->getMethod()->hasExternalWeakLinkage())) {
+  if (method.code == NULL) {
     MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
   } else {
     Function* func = getMethod(&method);
@@ -1032,7 +1031,15 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   }
   
   // codeInfo
-  MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.CodeLineInfoType));
+  if (useCooperativeGC() && method.code != NULL) {
+    Twine name = getMethodInfo(&method)->getMethod()->getName() + "_frame";
+    GlobalVariable* frame = new GlobalVariable(
+        Mod, JavaIntrinsics.CodeLineInfoType->getContainedType(0), false,
+        GlobalValue::ExternalLinkage, NULL, name);
+    MethodElts.push_back(frame);
+  } else {
+    MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.CodeLineInfoType));
+  }
   
   // codeInfoLength
   MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), 0));
@@ -1106,11 +1113,10 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   StructType* TCMTy = dyn_cast<StructType>(ATy->getContainedType(0));
   assert(TCMTy && "Malformed type");
 
-  uint32 status = cl->needsInitialisationCheck() ? vmjc : ready;
   TempElts.push_back(ConstantInt::get(Type::getInt8Ty(getLLVMContext()),
-                                      status));
+                                      cl->getInitializationState()));
   TempElts.push_back(ConstantInt::get(Type::getInt1Ty(getLLVMContext()),
-                                      status == ready ? 1 : 0));
+                                      cl->isReady() ? 1 : 0));
   TempElts.push_back(getStaticInstance(cl));
   Constant* CStr[1] = { ConstantStruct::get(TCMTy, TempElts) };
   TempElts.clear();
@@ -2190,6 +2196,25 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
   precompile = true;
   addJavaPasses();
 
+  // Make sure that the native classes are emitted.
+  getNativeClass(loader->upcalls->OfVoid);
+  getNativeClass(loader->upcalls->OfBool);
+  getNativeClass(loader->upcalls->OfByte);
+  getNativeClass(loader->upcalls->OfChar);
+  getNativeClass(loader->upcalls->OfShort);
+  getNativeClass(loader->upcalls->OfInt);
+  getNativeClass(loader->upcalls->OfFloat);
+  getNativeClass(loader->upcalls->OfLong);
+  getNativeClass(loader->upcalls->OfDouble);
+
+  // First set classes that have been more than resolved to resolved.
+  for (ClassMap::iterator i = loader->getClasses()->map.begin(),
+       e = loader->getClasses()->map.end(); i!= e; ++i) {
+    if (i->second->isClass() && i->second->asClass()->isResolved()) {
+      i->second->asClass()->setResolved();
+    }
+  }
+
   for (ClassMap::iterator i = loader->getClasses()->map.begin(),
        e = loader->getClasses()->map.end(); i!= e; ++i) {
     getNativeClass(i->second);
@@ -2197,12 +2222,20 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
       Class* cl = i->second->asClass();
       for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
         JavaMethod& meth = cl->virtualMethods[i];
-        if (meth.code != NULL) parseFunction(&meth);
+        if (meth.code != NULL) {
+          Function* Func = parseFunction(&meth);
+          Func->clearGC();
+          Func->setGC("java_aot");
+        }
       }
   
       for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
         JavaMethod& meth = cl->staticMethods[i];
-        if (meth.code != NULL) parseFunction(&meth);
+        if (meth.code != NULL) {
+          Function* Func = parseFunction(&meth);
+          Func->clearGC();
+          Func->setGC("java_aot");
+        }
       }
     }
   }
@@ -2211,7 +2244,11 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     JavaMethod* meth = toCompile.back();
     toCompile.pop_back();
     getNativeClass(meth->classDef);
-    parseFunction(meth);
+    Function* Func = parseFunction(meth);
+    Func->clearGC();
+    Func->setGC("java_aot");
+    // Also update code to notify that this function has been emitted.
+    meth->code = Func;
   }
 
   bool changed = false;

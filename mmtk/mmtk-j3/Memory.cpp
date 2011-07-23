@@ -20,7 +20,7 @@ extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ (MMTkObject*
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapEndConstant__ (MMTkObject* M) {
-  return (uintptr_t)0xa0000000;
+  return (uintptr_t)0x90000000;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (MMTkObject* M) {
@@ -28,7 +28,7 @@ extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (MMTkOb
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableEndConstant__ (MMTkObject* M) {
-  return (uintptr_t)0xa0000000;
+  return (uintptr_t)0x90000000;
 }
 
 extern "C" sint32

@@ -424,6 +424,7 @@ public:
 class Precompiled {
  public:
   static bool Init(JnjvmBootstrapLoader* loader);
+  static void ReadFrames(Jnjvm* vm, JnjvmClassLoader* loader);
 };
 
 /// VMClassLoader - The vmdata object that will be placed in and will only

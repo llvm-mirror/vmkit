@@ -1,16 +1,15 @@
-##===- tools/Makefile --------------------------------------*- Makefile -*-===##
-# 
-#                     The vmkit project
+##===- lib/J3/Compiler/AOT/Makefile ------------------------*- Makefile -*-===##
+#
+#                            The VMKit project
 #
 # This file is distributed under the University of Illinois Open Source
 # License. See LICENSE.TXT for details.
-# 
+#
 ##===----------------------------------------------------------------------===##
-LEVEL = ..
 
-include $(LEVEL)/Makefile.config
-
-PARALLEL_DIRS = j3 vmjc llcj
+LEVEL = ../../../..
+LIBRARYNAME = StaticJ3GC
+LOADABLE_MODULE = 1
 
 include $(LEVEL)/Makefile.common
 

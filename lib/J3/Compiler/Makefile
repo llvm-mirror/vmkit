@@ -10,6 +10,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
+DIRS = AOT
 MODULE_WITH_GC = J3Compiler
 
 include $(LEVEL)/Makefile.common

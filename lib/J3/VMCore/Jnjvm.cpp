@@ -115,7 +115,6 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //    now in progress by the current thread and release the lock on the
     //    Class object.
     setOwnerClass(self);
-    bool vmjced = (getInitializationState() == vmjc);
     setInitializationState(inClinit);
     UserClass* cl = (UserClass*)this;
     
@@ -162,17 +161,11 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
     PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", mvm::PrintString(this).cString());
 
-
-
-    if (!vmjced) {
-      JavaField* fields = cl->getStaticFields();
-      for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
-        fields[i].InitStaticField(vm);
-      }
+    JavaField* fields = cl->getStaticFields();
+    for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
+      fields[i].InitStaticField(vm);
     }
   
-      
-      
     JavaMethod* meth = lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
                                              vm->bootstrapLoader->clinitType,
                                              true, false, 0);
@@ -1325,25 +1318,17 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc,
   VirtualMachine(Alloc, frames), lockSystem(Alloc) {
 
   classpath = getenv("CLASSPATH");
-  if (!classpath) classpath = ".";
+  if (classpath == NULL) classpath = ".";
   
-  appClassLoader = 0;
+  appClassLoader = NULL;
   jniEnv = &JNI_JNIEnvTable;
   javavmEnv = &JNI_JavaVMTable;
   
   bootstrapLoader = loader;
   upcalls = bootstrapLoader->upcalls;
-
   throwable = upcalls->newThrowable;
 
-  StringList* end = loader->strings;
-  while (end) {
-    for (uint32 i = 0; i < end->length; ++i) {
-      JavaString* obj = end->strings[i];
-      hashStr.insert(obj);
-    }
-    end = end->prev;
-  }
+  Precompiled::ReadFrames(this, this->bootstrapLoader);
 }
 
 Jnjvm::~Jnjvm() {

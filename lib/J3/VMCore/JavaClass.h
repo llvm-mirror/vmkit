@@ -713,6 +713,7 @@ public:
   /// setStaticInstance - Set the memory that holds static variables.
   ///
   void setStaticInstance(void* val) {
+    assert(getCurrentTaskClassMirror().staticInstance == NULL);
     getCurrentTaskClassMirror().staticInstance = val;
   }
   

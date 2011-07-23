@@ -270,7 +270,14 @@ CommonClass* JavaConstantPool::isClassLoaded(uint32 entry) {
             UTF8Buffer(classDef->name).cString());
     abort();
   }
-  return (CommonClass*)ctpRes[entry];
+
+  CommonClass* res = (CommonClass*)ctpRes[entry];
+  if (res == NULL) {
+    JnjvmClassLoader* loader = classDef->classLoader;
+    const UTF8* name = UTF8At(ctpDef[entry]);
+    res = loader->lookupClassOrArray(name);
+  }
+  return res;
 }
 
 const UTF8* JavaConstantPool::resolveClassName(uint32 index) {
@@ -298,12 +305,6 @@ CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
 
 CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
   CommonClass* temp = isClassLoaded(index);
-  if (!temp) {
-    JnjvmClassLoader* loader = classDef->classLoader;
-    assert(loader && "Class has no loader?");
-    const UTF8* name = UTF8At(ctpDef[index]);
-    temp = loader->lookupClassOrArray(name);
-  }
 
   if (classDef->classLoader->getCompiler()->isStaticCompiling()) {
     if (temp == NULL) {

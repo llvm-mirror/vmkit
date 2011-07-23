@@ -44,6 +44,8 @@ bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   if (javaLangObject == NULL) {
     return false;
   }
+
+  ClassArray::SuperArray = javaLangObject;
     
   // Get the native classes.
   Classpath* upcalls = loader->upcalls;
@@ -75,58 +77,11 @@ bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   return true;
 }
 
-class JavaStaticMethodInfo : public mvm::CamlMethodInfo {
-public:
-  virtual void print(void* ip, void* addr);
-  virtual bool isHighLevelMethod() {
-    return true;
-  }
-  
-  JavaStaticMethodInfo(mvm::CamlMethodInfo* super, void* ip, JavaMethod* M) :
-    mvm::CamlMethodInfo(super->CF) {
-    MetaInfo = M;
-    Owner = M->classDef->classLoader->getCompiler();
-  }
-};
-
-void JavaStaticMethodInfo::print(void* ip, void* addr) {
-  void* new_ip = NULL;
-  if (ip) new_ip = mvm::MethodInfo::isStub(ip, addr);
-  JavaMethod* meth = (JavaMethod*)MetaInfo;
-  fprintf(stderr, "; %p in %s.%s", new_ip,
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
-  if (ip != new_ip) fprintf(stderr, " (from stub)");
-  fprintf(stderr, "\n");
-}
 
 void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
-  for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end();
-       i != e; ++i) {
-    CommonClass* cl = i->second;
-    if (cl->isClass()) {
-      Class* C = cl->asClass();
-      
-      for (uint32 i = 0; i < C->nbVirtualMethods; ++i) {
-        JavaMethod& meth = C->virtualMethods[i];
-        if (!isAbstract(meth.access) && meth.code) {
-          JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
-            JavaStaticMethodInfo(0, meth.code, &meth);
-          vm->FunctionsCache.addMethodInfo(MI, meth.code);
-        }
-      }
-      
-      for (uint32 i = 0; i < C->nbStaticMethods; ++i) {
-        JavaMethod& meth = C->staticMethods[i];
-        if (!isAbstract(meth.access) && meth.code) {
-          JavaStaticMethodInfo* MI = new (allocator, "JavaStaticMethodInfo")
-            JavaStaticMethodInfo(0, meth.code, &meth);
-          vm->FunctionsCache.addMethodInfo(MI, meth.code);
-        }
-      }
-    }
-  }
+  UNIMPLEMENTED();
 }
+
 
 void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
                                       const char* file) {
@@ -148,6 +103,7 @@ void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
   }
 }
 
+
 void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
   mvm::ThreadAllocator threadAllocator;
   assert(classes->map.size() == 0);
@@ -164,6 +120,7 @@ void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
     }
   }
 }
+
 
 Class* JnjvmClassLoader::loadClassFromSelf(Jnjvm* vm, const char* name) {
   assert(classes->map.size() == 0);
@@ -222,6 +179,7 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
   }
 }
 
+
 extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
                                   const UTF8* name) {
   JCL->hashUTF8->insert(name);
@@ -256,6 +214,161 @@ extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
 extern "C" void staticCallback() {
   fprintf(stderr, "Implement me");
   abort();
+}
+
+
+class StaticJ3Frame {
+public:
+  void* ReturnAddress;
+  uint16_t BytecodeIndex;
+  uint16_t FrameSize;
+  uint16_t NumLiveOffsets;
+  int16_t LiveOffsets[1];
+};
+
+class StaticJ3Frames {
+public:
+  void* FunctionAddress;
+  uint16_t NumDescriptors;
+  StaticJ3Frame* frames() const; 
+};
+
+class StaticJ3FrameDecoder {
+public:
+  StaticJ3Frames* frames ;
+  uint32 currentDescriptor;
+  StaticJ3Frame* currentFrame;
+
+  StaticJ3FrameDecoder(StaticJ3Frames* frames) {
+    this->frames = frames;
+    currentDescriptor = 0;
+    currentFrame = frames->frames();
+  }
+
+  bool hasNext() {
+    return currentDescriptor < frames->NumDescriptors;
+  }
+
+  void advance() {
+    ++currentDescriptor;
+    if (!hasNext()) return;
+    intptr_t ptr = 
+    ptr = reinterpret_cast<intptr_t>(currentFrame)
+      + currentFrame->NumLiveOffsets * sizeof(uint16_t)
+      + sizeof(void*)       // ReturnAddress
+      + sizeof(uint16_t)    // BytecodeIndex
+      + sizeof(uint16_t)    // FrameSize
+      + sizeof(uint16_t);   // NumLiveOffsets
+    if (ptr & 2) {
+      ptr += sizeof(uint16_t);
+    }
+    currentFrame = reinterpret_cast<StaticJ3Frame*>(ptr);
+  }
+
+  StaticJ3Frame* next() {
+    assert(hasNext());
+    StaticJ3Frame* result = currentFrame;
+    advance();
+    return result;
+  }
+};
+
+StaticJ3Frame* StaticJ3Frames::frames() const {
+  intptr_t ptr = reinterpret_cast<intptr_t>(this) + sizeof(void*) + sizeof(uint16_t);
+  // If the frames structure was not 4-aligned, manually do it here.
+  if (ptr & 2) {
+    ptr += sizeof(uint16_t);
+  }
+  return reinterpret_cast<StaticJ3Frame*>(ptr);
+}
+
+class JavaStaticMethodInfo : public mvm::MethodInfo {
+private:
+  StaticJ3Frame* frame;
+public:
+  virtual void print(void* ip, void* addr);
+  virtual bool isHighLevelMethod() {
+    return true;
+  }
+
+  virtual void scan(uintptr_t closure, void* ip, void* addr) {
+    assert(frame != NULL);
+    //uintptr_t spaddr = (uintptr_t)addr + CF->FrameSize + sizeof(void*);
+    uintptr_t spaddr = ((uintptr_t*)addr)[0];
+    for (uint16 i = 0; i < frame->NumLiveOffsets; ++i) {
+      mvm::Collector::scanObject((void**)(spaddr + frame->LiveOffsets[i]), closure);
+    }
+  }
+
+  JavaStaticMethodInfo(StaticJ3Frame* F, JavaMethod* M) {
+    frame = F;
+    MetaInfo = M;
+    Owner = M->classDef->classLoader->getCompiler();
+  }
+};
+
+
+void JavaStaticMethodInfo::print(void* ip, void* addr) {
+  JavaMethod* meth = (JavaMethod*)MetaInfo;
+  CodeLineInfo* info = meth->lookupCodeLineInfo((uintptr_t)ip);
+  if (info != NULL) {
+    fprintf(stderr, "; %p (%p) in %s.%s (AOT line %d, bytecode %d, code start %p)", ip, addr,
+            UTF8Buffer(meth->classDef->name).cString(),
+            UTF8Buffer(meth->name).cString(),
+            meth->lookupLineNumber((uintptr_t)ip),
+            info->bytecodeIndex, meth->code);
+  } else {
+    fprintf(stderr, "; %p (%p) in %s.%s (native method, code start %p)", ip, addr,
+            UTF8Buffer(meth->classDef->name).cString(),
+            UTF8Buffer(meth->name).cString(), meth->code);
+  }
+  fprintf(stderr, "\n");
+}
+
+
+static void ReadFrame(Jnjvm* vm, JnjvmClassLoader* loader, JavaMethod* meth) {
+  StaticJ3Frames* frames = reinterpret_cast<StaticJ3Frames*>(meth->codeInfo);
+  StaticJ3FrameDecoder decoder(frames);
+  mvm::BumpPtrAllocator& allocator = loader->allocator;
+  meth->codeInfoLength = frames->NumDescriptors;
+  if (frames->NumDescriptors > 0) {
+    meth->codeInfo = new(allocator, "CodeLineInfo") CodeLineInfo[frames->NumDescriptors];
+  } else {
+    meth->codeInfo = NULL;
+  }
+
+  int codeInfoIndex = 0;
+  while (decoder.hasNext()) {
+    StaticJ3Frame* frame = decoder.next();
+    mvm::MethodInfo* MI = new(allocator, "JavaStaticMethodInfo") JavaStaticMethodInfo(frame, meth);
+    vm->FunctionsCache.addMethodInfo(MI, frame->ReturnAddress);
+    meth->codeInfo[codeInfoIndex].address = reinterpret_cast<uintptr_t>(frame->ReturnAddress);
+    meth->codeInfo[codeInfoIndex++].bytecodeIndex = frame->BytecodeIndex;
+  }
+}
+
+
+void Precompiled::ReadFrames(Jnjvm* vm, JnjvmClassLoader* loader) {
+  for (ClassMap::iterator i = loader->getClasses()->map.begin(),
+       e = loader->getClasses()->map.end(); i != e; ++i) {
+    CommonClass* cl = i->second;
+    if (cl->isClass()) {
+      Class* C = cl->asClass(); 
+      for (uint32 i = 0; i < C->nbVirtualMethods; ++i) {
+        JavaMethod& meth = C->virtualMethods[i];
+        if (meth.code != NULL) {
+          ReadFrame(vm, loader, &meth);
+        }
+      }
+      
+      for (uint32 i = 0; i < C->nbStaticMethods; ++i) {
+        JavaMethod& meth = C->staticMethods[i];
+        if (meth.code != NULL) {
+          ReadFrame(vm, loader, &meth);
+        }
+      }
+    }
+  }
 }
 
 }

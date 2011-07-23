@@ -18,7 +18,16 @@ include $(LEVEL)/Makefile.common
 
 PRECOMPILER := $(ToolDir)/precompiler$(EXEEXT)
 
-generated.bc: $(PRECOMPILER) HelloWorld.java
+generated.bc: $(PRECOMPILER) HelloWorld.java $(LibDir)/StaticJ3GC$(SHLIBEXT) $(LibDir)/StaticGCPass$(SHLIBEXT)
 	$(Echo) "Building precompiled bootstrap code"
 	$(Verb) javac HelloWorld.java
 	$(Verb) $(PRECOMPILER) -cp $$PWD HelloWorld
+	$(Verb) $(MKDIR) $(ObjDir)
+	$(Verb) $(LOPT) generated.bc -load=$(LibDir)/StaticGCPass$(SHLIBEXT) -StaticGCPass -o $(LibDir)/Precompiled.bc
+	$(Verb) $(LLC) -O0 -fast-isel=false -load=$(LibDir)/StaticJ3GC$(SHLIBEXT) -disable-fp-elim $(LibDir)/Precompiled.bc -o $(ObjDir)/Precompiled.s
+	$(Verb) $(Compile.C) $(ObjDir)/Precompiled.s -o $(ObjDir)/Precompiled.o
+	$(Verb) $(Archive) $(LibDir)/libPrecompiled.a $(ObjDir)/Precompiled.o
+	$(Verb) $(Ranlib) $(LibDir)/libPrecompiled.a
+
+clean-local::
+	$(Verb) $(RM) -f HelloWorld.class generated.bc

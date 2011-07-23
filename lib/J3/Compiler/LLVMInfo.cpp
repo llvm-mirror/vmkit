@@ -172,7 +172,7 @@ Function* LLVMMethodInfo::getMethod() {
     methodFunction->setGC("vmkit");
     
     Compiler->functions.insert(std::make_pair(methodFunction, methodDef));
-    if (Compiler != JCL->getCompiler() && methodDef->code) {
+    if (!Compiler->isStaticCompiling() && methodDef->code) {
       Compiler->setMethod(methodFunction, methodDef->code, methodFunction->getName().data());
     }
   }
