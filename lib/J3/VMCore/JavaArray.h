@@ -95,13 +95,7 @@ public:
     return self->elements[i];
   }
 
-  static void setElement(ArrayObject* self, JavaObject* value, uint32_t i) {
-    llvm_gcroot(self, 0);
-    llvm_gcroot(value, 0);
-    if (value != NULL) assert(value->getVirtualTable());
-    mvm::Collector::objectReferenceArrayWriteBarrier(
-        (gc*)self, (gc**)&(self->elements[i]), (gc*)value);
-  }
+  static void setElement(ArrayObject* self, JavaObject* value, uint32_t i);
 
   static JavaObject** getElements(ArrayObject* self) {
     llvm_gcroot(self, 0);

@@ -34,3 +34,11 @@ const unsigned int JavaArray::T_BYTE = 8;
 const unsigned int JavaArray::T_SHORT = 9;
 const unsigned int JavaArray::T_INT = 10;
 const unsigned int JavaArray::T_LONG = 11;
+
+void ArrayObject::setElement(ArrayObject* self, JavaObject* value, uint32_t i) {
+  llvm_gcroot(self, 0);
+  llvm_gcroot(value, 0);
+  if (value != NULL) assert(value->getVirtualTable());
+  mvm::Collector::objectReferenceArrayWriteBarrier(
+      (gc*)self, (gc**)&(self->elements[i]), (gc*)value);
+}

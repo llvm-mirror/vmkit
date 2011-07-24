@@ -1246,13 +1246,7 @@ public:
     return ((JavaObject**)ptr)[0];
   }
 
-  void setStaticObjectField(JavaObject* val) {
-    llvm_gcroot(val, 0);
-    if (val != NULL) assert(val->getVirtualTable());
-    assert(classDef->isResolved());
-    JavaObject** ptr = (JavaObject**)((uint64)classDef->getStaticInstance() + ptrOffset);
-    mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
-  }
+  void setStaticObjectField(JavaObject* val);
 
   JavaObject* getInstanceObjectField(JavaObject* obj) {
     llvm_gcroot(obj, 0);

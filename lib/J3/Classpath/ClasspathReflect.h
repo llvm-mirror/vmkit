@@ -104,11 +104,7 @@ public:
     mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
   
-  static JavaMethod* getInternalMethod(JavaObjectMethod* self) {
-    llvm_gcroot(self, 0);
-    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
-    return &(cls->asClass()->virtualMethods[self->slot]);
-  }
+  static JavaMethod* getInternalMethod(JavaObjectMethod* self);
   
   static UserClass* getClass(JavaObjectMethod* self) {
     llvm_gcroot(self, 0);
@@ -129,11 +125,7 @@ public:
     mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
   
-  static JavaMethod* getInternalMethod(JavaObjectConstructor* self) {
-    llvm_gcroot(self, 0);
-    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
-    return &(cls->asClass()->virtualMethods[self->slot]);
-  }
+  static JavaMethod* getInternalMethod(JavaObjectConstructor* self);
   
   static UserClass* getClass(JavaObjectConstructor* self) {
     llvm_gcroot(self, 0);

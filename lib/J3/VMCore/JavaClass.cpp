@@ -1790,3 +1790,11 @@ void JavaField::setInstanceObjectField(JavaObject* obj, JavaObject* val) {
   JavaObject** ptr = (JavaObject**)((uint64)obj + ptrOffset);
   mvm::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)val);
 }
+
+void JavaField::setStaticObjectField(JavaObject* val) {
+  llvm_gcroot(val, 0);
+  if (val != NULL) assert(val->getVirtualTable());
+  assert(classDef->isResolved());
+  JavaObject** ptr = (JavaObject**)((uint64)classDef->getStaticInstance() + ptrOffset);
+  mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
+}
