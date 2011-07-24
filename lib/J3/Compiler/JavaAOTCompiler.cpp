@@ -1775,31 +1775,31 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
 }
 
 void JavaAOTCompiler::printStats() {
-  fprintf(stderr, "----------------- Info from the module -----------------\n");
-  fprintf(stderr, "Number of native classes            : %llu\n", 
+  fprintf(stdout, "----------------- Info from the module -----------------\n");
+  fprintf(stdout, "Number of native classes            : %llu\n", 
           (unsigned long long int) nativeClasses.size());
-  fprintf(stderr, "Number of Java classes              : %llu\n",
+  fprintf(stdout, "Number of Java classes              : %llu\n",
           (unsigned long long int) javaClasses.size());
-  fprintf(stderr, "Number of external array classes    : %llu\n",
+  fprintf(stdout, "Number of external array classes    : %llu\n",
           (unsigned long long int) arrayClasses.size());
-  fprintf(stderr, "Number of virtual tables            : %llu\n", 
+  fprintf(stdout, "Number of virtual tables            : %llu\n", 
           (unsigned long long int) virtualTables.size());
-  fprintf(stderr, "Number of static instances          : %llu\n", 
+  fprintf(stdout, "Number of static instances          : %llu\n", 
           (unsigned long long int) staticInstances.size());
-  fprintf(stderr, "Number of constant pools            : %llu\n", 
+  fprintf(stdout, "Number of constant pools            : %llu\n", 
           (unsigned long long int) resolvedConstantPools.size());
-  fprintf(stderr, "Number of strings                   : %llu\n", 
+  fprintf(stdout, "Number of strings                   : %llu\n", 
           (unsigned long long int) strings.size());
-  fprintf(stderr, "Number of native functions          : %llu\n", 
+  fprintf(stdout, "Number of native functions          : %llu\n", 
           (unsigned long long int) nativeFunctions.size());
-  fprintf(stderr, "----------------- Total size in .data ------------------\n");
+  fprintf(stdout, "----------------- Total size in .data ------------------\n");
   uint64 size = 0;
   Module* Mod = getLLVMModule();
   for (Module::const_global_iterator i = Mod->global_begin(),
        e = Mod->global_end(); i != e; ++i) {
     size += mvm::MvmModule::getTypeSize(i->getType());
   }
-  fprintf(stderr, "%lluB\n", (unsigned long long int)size);
+  fprintf(stdout, "%lluB\n", (unsigned long long int)size);
 }
 
 
