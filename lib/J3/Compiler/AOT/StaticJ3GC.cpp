@@ -87,7 +87,9 @@ void StaticJ3GCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
     GCFunctionInfo &FI = **I;
 
     // Emit the frame symbol
-    MCSymbol *Sym = AP.OutContext.GetOrCreateSymbol(FI.getFunction().getName() + "_frame");
+    SmallString<128> TmpStr;
+    AP.Mang->getNameWithPrefix(TmpStr, FI.getFunction().getName() + "_frame");
+    MCSymbol *Sym = AP.OutContext.GetOrCreateSymbol(TmpStr);
     AP.OutStreamer.EmitSymbolAttribute(Sym, MCSA_Global);
     AP.OutStreamer.EmitLabel(Sym);
 

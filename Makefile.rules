@@ -79,7 +79,7 @@ ifeq ($(COMPILE_MMTK), 1)
 	$(Verb) $(LOPT) $(LibDir)/FinalMMTk.bc -load=$(LibDir)/StaticGCPass$(SHLIBEXT) -std-compile-opts -StaticGCPass -o $(LibDir)/FinalMMTk.bc
 	$(Verb) $(MKDIR) $(ObjDir)
 	$(Verb) $(LLC) -disable-fp-elim -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) $(LibDir)/FinalMMTk.bc -o $(ObjDir)/FinalMMTk.s
-	$(Verb) $(Compile.C) $(ObjDir)/FinalMMTk.s -o $(ObjDir)/FinalMMTk.o
+	$(Verb) $(Compile.Wrapper) $(LLVMCC) $(CPP.Flags) $(C.Flags) $(CFLAGS) $(CPPFLAGS) $(TargetCommonOpts) $(CompileCommonOpts) -c $(ObjDir)/FinalMMTk.s -o $(ObjDir)/FinalMMTk.o
 	$(Verb) $(Archive) $(LibDir)/libFinalMMTk.a $(ObjDir)/FinalMMTk.o
 	$(Verb) $(Ranlib) $(LibDir)/libFinalMMTk.a
 	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=gcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkMallocInline.inc
@@ -136,10 +136,10 @@ endif
 ifdef BUILD_FRAMETABLE
 
 FrametablesExterns.inc: $(ProjLibsPaths)
-	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\)\s\([a-zA-Z]*\)\s\([a-zA-Z0-9_]*\)/extern "C" CamlFrames \3;/' > $@
+	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) [_?]\([a-zA-Z0-9_]*\)/extern "C" CamlFrames \3;/' > $@
 
 FrametablesSymbols.inc: $(ProjLibsPaths)
-	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\)\s\([a-zA-Z]*\)\s\([a-zA-Z0-9_]*\)/\&\3,/' > $@
+	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) [_?]\([a-zA-Z0-9_]*\)/\&\3,/' > $@
 
 all-local:: FrametablesExterns.inc FrametablesSymbols.inc
 
