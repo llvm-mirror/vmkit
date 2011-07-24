@@ -17,7 +17,7 @@ namespace mvm {
 
 class MethodInfo : public PermanentObject {
 public:
-  virtual void print(void* ip, void* addr) = 0;
+  virtual void print(void* ip, void* addr);
   virtual void scan(uintptr_t closure, void* ip, void* addr) = 0;
   virtual bool isHighLevelMethod() {
     return false;
@@ -57,21 +57,8 @@ public:
   }
 };
 
-class StaticCamlMethodInfo : public CamlMethodInfo {
-  const char* name;
-public:
-  virtual void print(void* ip, void* addr);
-  StaticCamlMethodInfo(CamlFrame* CF, const char* n) :
-    CamlMethodInfo(CF) {
-    Owner = NULL;
-    MetaInfo = NULL;
-    name = n;
-  }
-};
-
 class DefaultMethodInfo : public MethodInfo {
 public:
-  virtual void print(void* ip, void* addr);
   virtual void scan(uintptr_t closure, void* ip, void* addr);
   static DefaultMethodInfo DM;
     

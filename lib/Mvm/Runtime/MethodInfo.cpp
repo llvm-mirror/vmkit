@@ -26,11 +26,7 @@ void CamlMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
   }
 }
 
-void StaticCamlMethodInfo::print(void* ip, void* addr) {
-  fprintf(stderr, "; %p (%p) in %s static method\n", ip, addr, name);
-}
-
-void DefaultMethodInfo::print(void* ip, void* addr) {
+void MethodInfo::print(void* ip, void* addr) {
   Dl_info info;
   int res = dladdr(ip, &info);
   if (res != 0 && info.dli_sname != NULL) {
@@ -95,13 +91,10 @@ FunctionMap::FunctionMap(CamlFrames** allFrames) {
   CamlFrames* frames = NULL;
   while ((frames = allFrames[i++]) != NULL) {
     CamlFrameDecoder decoder(frames);
-    Dl_info info;
     while (decoder.hasNext()) {
       CamlFrame* frame = decoder.next();
-      int res = dladdr(frame->ReturnAddress, &info);
-      assert(res != 0 && "No frame");
-      StaticCamlMethodInfo* MI = new(*StaticAllocator, "StaticCamlMethodInfo")
-          StaticCamlMethodInfo(frame, info.dli_sname);
+      CamlMethodInfo* MI =
+          new(*StaticAllocator, "CamlMethodInfo") CamlMethodInfo(frame);
       addMethodInfo(MI, frame->ReturnAddress);
     }
   }
