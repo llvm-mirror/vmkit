@@ -39,10 +39,6 @@ namespace {
   RegisterPass<StaticGCPass> X("StaticGCPass",
                       "Add GC information in files compiled with llvm-gcc");
 
-static bool HasVmkitGC(Function* F) {
-  return !strcmp(F->getGC(), "vmkit");
-}
-
 bool StaticGCPass::runOnModule(Module& M) {
 
   Function* F = M.getFunction("__llvm_gcroot");
@@ -59,12 +55,8 @@ bool StaticGCPass::runOnModule(Module& M) {
     if (Instruction* II = dyn_cast<Instruction>(*I)) {
       Function* F = II->getParent()->getParent();
       if (!F->hasGC()) {
-        F->setGC("ocaml");
-      } else if (HasVmkitGC(F)) {
-        F->clearGC();
-        F->setGC("ocaml");
+        F->setGC("vmkit");
       }
-      assert(F->hasGC());
     }
   }
 
@@ -75,7 +67,6 @@ bool StaticGCPass::runOnModule(Module& M) {
                       "Functions using gc_root should not have static linkage.\n",
                       I->getName().data());
     }
-    if (I->hasGC() && HasVmkitGC(I)) I->setGC("ocaml");
   }
 
   if (error) abort();
