@@ -157,20 +157,6 @@ void Collector::collect() {
 }
 
 void Collector::initialise() {
-  // Allocate the memory for MMTk right now, to avoid conflicts with
-  // other allocators.
-#if defined (__MACH__)
-  uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
-#else
-  uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
-#endif
-  void* baseAddr = mmap((void*)0x60000000, 0x30000000, PROT_READ | PROT_WRITE,
-                        flags, -1, 0);
-  if (baseAddr == MAP_FAILED) {
-    perror("mmap");
-    abort();
-  }
-  
   JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(128 * 1024 * 1024, 1024 * 1024 * 1024);
 }
 

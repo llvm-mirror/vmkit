@@ -15,20 +15,43 @@
 
 namespace mmtk {
 
+static const uintptr_t MemoryStart = 0x50000000;
+static const uintptr_t MemorySize = 0x40000000;
+
+class InitCollector {
+public:
+  InitCollector() {
+#if defined (__MACH__)
+    uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
+#else
+    uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
+#endif
+    void* baseAddr = mmap((void*)MemoryStart, MemorySize, PROT_READ | PROT_WRITE,
+                          flags, -1, 0);
+    if (baseAddr == MAP_FAILED) {
+      perror("mmap");
+      abort();
+    }
+  }
+};
+
+// Allocate the memory for MMTk right now, to avoid conflicts with other allocators.
+InitCollector initCollector;
+
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ (MMTkObject* M) {
-  return (uintptr_t)0x60000000;
+  return MemoryStart;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapEndConstant__ (MMTkObject* M) {
-  return (uintptr_t)0x90000000;
+  return MemoryStart + MemorySize;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (MMTkObject* M) {
-  return (uintptr_t)0x60000000;
+  return Java_org_j3_mmtk_Memory_getHeapStartConstant__ (M);
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableEndConstant__ (MMTkObject* M) {
-  return (uintptr_t)0x90000000;
+  return Java_org_j3_mmtk_Memory_getHeapEndConstant__ (M);
 }
 
 extern "C" sint32
