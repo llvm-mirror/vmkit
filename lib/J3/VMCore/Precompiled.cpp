@@ -252,8 +252,7 @@ public:
   void advance() {
     ++currentDescriptor;
     if (!hasNext()) return;
-    intptr_t ptr = 
-    ptr = reinterpret_cast<intptr_t>(currentFrame)
+    uintptr_t ptr = reinterpret_cast<uintptr_t>(currentFrame)
       + currentFrame->NumLiveOffsets * sizeof(uint16_t)
       + sizeof(void*)       // ReturnAddress
       + sizeof(uint16_t)    // BytecodeIndex
