@@ -10,6 +10,8 @@
 #ifndef MVM_VIRTUALMACHINE_H
 #define MVM_VIRTUALMACHINE_H
 
+#include "llvm/ADT/DenseMap.h"
+
 #include "mvm/Allocator.h"
 #include "mvm/Threads/CollectionRV.h"
 #include "mvm/Threads/Locks.h"
@@ -29,7 +31,7 @@ public:
   /// used when walking the stack so that VMKit knows which applicative method
   /// is executing on the stack.
   ///
-  std::map<void*, MethodInfo*> Functions;
+  llvm::DenseMap<void*, MethodInfo*> Functions;
 
   /// FunctionMapLock - Spin lock to protect the Functions map.
   ///
@@ -42,6 +44,9 @@ public:
   /// addMethodInfo - A new instruction pointer in the function map.
   ///
   void addMethodInfo(MethodInfo* meth, void* ip);
+  void addMethodInfoNoLock(MethodInfo* meth, void* ip) {
+    Functions[ip] = meth;
+  }
 
   /// removeMethodInfos - Remove all MethodInfo owned by the given owner.
   void removeMethodInfos(void* owner);

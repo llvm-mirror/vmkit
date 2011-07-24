@@ -7,6 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/DenseSet.h"
+
 #include "mvm/Allocator.h"
 #include "mvm/MethodInfo.h"
 #include "mvm/VirtualMachine.h"
@@ -95,14 +98,14 @@ FunctionMap::FunctionMap(CamlFrames** allFrames) {
       CamlFrame* frame = decoder.next();
       CamlMethodInfo* MI =
           new(*StaticAllocator, "CamlMethodInfo") CamlMethodInfo(frame);
-      addMethodInfo(MI, frame->ReturnAddress);
+      addMethodInfoNoLock(MI, frame->ReturnAddress);
     }
   }
 }
 
 MethodInfo* FunctionMap::IPToMethodInfo(void* ip) {
   FunctionMapLock.acquire();
-  std::map<void*, MethodInfo*>::iterator I = Functions.find(ip);
+  llvm::DenseMap<void*, MethodInfo*>::iterator I = Functions.find(ip);
   MethodInfo* res = NULL;
   if (I != Functions.end()) {
     res = I->second;
@@ -113,24 +116,29 @@ MethodInfo* FunctionMap::IPToMethodInfo(void* ip) {
   return res;
 }
 
+
 void FunctionMap::addMethodInfo(MethodInfo* meth, void* ip) {
   FunctionMapLock.acquire();
-  Functions.insert(std::make_pair(ip, meth));
+  addMethodInfoNoLock(meth, ip);
   FunctionMapLock.release();
 }
 
 
 void FunctionMap::removeMethodInfos(void* owner) {
   FunctionMapLock.acquire();
-  std::map<void*, mvm::MethodInfo*>::iterator temp;
-  for (std::map<void*, mvm::MethodInfo*>::iterator i = Functions.begin(),
+  llvm::DenseSet<void*> toRemove;
+  for (llvm::DenseMap<void*, MethodInfo*>::iterator i = Functions.begin(),
        e = Functions.end(); i != e;) {
     mvm::MethodInfo* MI = i->second;
-    temp = i;
-    i++;
     if (MI->Owner == owner) {
-      Functions.erase(temp);
+      toRemove.insert(i->first);
     }
   }
+
+  for (llvm::DenseSet<void*>::iterator i = toRemove.begin(),
+       e = toRemove.end(); i != e;) {
+    Functions.erase(*i);
+  }
+
   FunctionMapLock.release();
 }

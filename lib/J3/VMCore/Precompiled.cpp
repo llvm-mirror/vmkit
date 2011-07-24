@@ -340,7 +340,8 @@ static void ReadFrame(Jnjvm* vm, JnjvmClassLoader* loader, JavaMethod* meth) {
   while (decoder.hasNext()) {
     StaticJ3Frame* frame = decoder.next();
     mvm::MethodInfo* MI = new(allocator, "JavaStaticMethodInfo") JavaStaticMethodInfo(frame, meth);
-    vm->FunctionsCache.addMethodInfo(MI, frame->ReturnAddress);
+    assert(loader->bootstrapLoader == loader && "Can only add frame without lock for the bootstrap loader");
+    vm->FunctionsCache.addMethodInfoNoLock(MI, frame->ReturnAddress);
     meth->codeInfo[codeInfoIndex].address = reinterpret_cast<uintptr_t>(frame->ReturnAddress);
     meth->codeInfo[codeInfoIndex++].bytecodeIndex = frame->BytecodeIndex;
   }
