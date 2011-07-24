@@ -10,8 +10,6 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-MODULE_WITH_GC = Precompiled
-
 BUILT_SOURCES = Precompiled.bc
 
 include $(LEVEL)/Makefile.common
