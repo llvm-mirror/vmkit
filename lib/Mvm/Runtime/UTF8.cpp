@@ -67,22 +67,6 @@ static bool readerEqual(const UTF8* val, const uint16* buf, sint32 size) {
   else return !(memcmp(val->elements, buf, len * sizeof(uint16)));
 }
 
-void UTF8Map::replace(const UTF8* oldUTF8, const UTF8* newUTF8) {
-  lock.lock();
-  uint32 key = oldUTF8->hash();
-  std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
-  
-  for (UTF8Map::iterator i = p.first; i != p.second; i++) {
-    if (i->second == oldUTF8) {
-      map.erase(i);
-      break;
-    }
-  }
-  map.insert(std::make_pair(key, newUTF8));
-  lock.unlock();
-
-}
-
 const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   sint32 size = strlen(asciiz);
   uint32 key = asciizHasher(asciiz, size);

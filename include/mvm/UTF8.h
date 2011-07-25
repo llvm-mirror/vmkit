@@ -89,13 +89,6 @@ public:
     }
   }
 
-  void copy(UTF8Map* newMap) {
-    for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      newMap->map.insert(*i);
-    }
-  }
-  
-  void replace(const UTF8* oldUTF8, const UTF8* newUTF8);
   void insert(const UTF8* val);
 };
 
