@@ -71,17 +71,9 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   javaSignatures = new(allocator, "SignMap") SignMap();
   strings = new(allocator, "StringList") StringList();
   
-  bootClasspathEnv = getenv("JNJVM_BOOTCLASSPATH");
-  if (!bootClasspathEnv) {
-    bootClasspathEnv = GNUClasspathGlibj;
-  }
-  
-  libClasspathEnv = getenv("JNJVM_LIBCLASSPATH");
-  if (!libClasspathEnv) {
-    libClasspathEnv = GNUClasspathLibs;
-  }
-  
-  
+  bootClasspathEnv = GNUClasspathGlibj;
+  libClasspathEnv = GNUClasspathLibs;
+   
   upcalls = new(allocator, "Classpath") Classpath();
   bootstrapLoader = this;
    
@@ -92,6 +84,10 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   }
  
   if (!bootLoaded) {
+    // Analyze the boot classpath, we know bootstrap classes are not in the
+    // executable.
+    analyseClasspathEnv(bootClasspathEnv);
+
     // Allocate the interfaces array for array classes, so that VT construction
     // can use it right away.
     ClassArray::InterfacesArray =
@@ -243,7 +239,10 @@ void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
 }
 
 ClassBytes* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
-  ClassBytes* res = 0;
+  ClassBytes* res = reinterpret_cast<ClassBytes*>(dlsym(SELF_HANDLE,
+      UTF8Buffer(utf8).toCompileName(".class_bytes")->cString()));
+  if (res != NULL) return res;
+
   mvm::ThreadAllocator threadAllocator;
 
   char* asciiz = (char*)threadAllocator.Allocate(utf8->size + 1);
@@ -261,7 +260,7 @@ ClassBytes* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
 
     sprintf(buf, "%s%s.class", str, asciiz);
     res = Reader::openFile(this, buf);
-    if (res) return res;
+    if (res != NULL) return res;
   }
 
   for (std::vector<ZipArchive*>::iterator i = bootArchives.begin(),
@@ -271,10 +270,10 @@ ClassBytes* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
     char* buf = (char*)threadAllocator.Allocate(alen + 7);
     sprintf(buf, "%s.class", asciiz);
     res = Reader::openZip(this, archive, buf);
-    if (res) return res;
+    if (res != NULL) return res;
   }
 
-  return 0;
+  return NULL;
 }
 
 

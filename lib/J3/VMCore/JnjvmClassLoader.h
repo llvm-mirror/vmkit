@@ -416,6 +416,7 @@ public:
   virtual ~JnjvmBootstrapLoader();
 
   friend class ClArgumentsInfo;
+  friend class JavaAOTCompiler;
 };
 
 

@@ -256,6 +256,22 @@ Constant* JavaAOTCompiler::getString(JavaString* str) {
   }
 }
 
+Constant* JavaAOTCompiler::getClassBytes(const UTF8* className, ClassBytes* bytes) {
+  class_bytes_iterator CI = classBytes.find(bytes);
+  if (CI != classBytes.end()) {
+    return CI->second;
+  }
+
+  std::string name(UTF8Buffer(className).toCompileName()->cString());
+  name += "_bytes";
+  Constant* C = CreateConstantFromClassBytes(bytes);
+  GlobalVariable* varGV = new GlobalVariable(*getLLVMModule(), C->getType(), false,
+                                             GlobalValue::ExternalLinkage,
+                                             C, name);
+  classBytes[bytes] = varGV;
+  return varGV;
+}
+
 Constant* JavaAOTCompiler::getStringPtr(JavaString** str) {
   fprintf(stderr, "Implement me");
   abort();
@@ -1234,20 +1250,16 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // ownerClass
   ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
   
-  // bytes
-  Constant* bytes = CreateConstantFromClassBytes(cl->bytes);
-  GlobalVariable* varGV = new GlobalVariable(*getLLVMModule(), bytes->getType(), false,
-                                             GlobalValue::InternalLinkage,
-                                             bytes, "");
- 
-	bytes = ConstantExpr::getBitCast(varGV, JavaIntrinsics.ClassBytesType);
+  // bytes 
+  Constant* bytes = ConstantExpr::getBitCast(getClassBytes(cl->name, cl->bytes),
+                                             JavaIntrinsics.ClassBytesType);
   ClassElts.push_back(bytes);
 
   // ctpInfo
   Constant* ctpInfo = CreateConstantFromJavaConstantPool(cl->ctpInfo);
-  varGV = new GlobalVariable(*getLLVMModule(), ctpInfo->getType(), false,
-                             GlobalValue::InternalLinkage,
-                             ctpInfo, "");
+  Constant* varGV = new GlobalVariable(*getLLVMModule(), ctpInfo->getType(), false,
+                                       GlobalValue::InternalLinkage,
+                                       ctpInfo, "");
   ClassElts.push_back(varGV);
 
   // attributs
@@ -2262,6 +2274,18 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
       }
     }
   } while (changed);
+
+  for (std::vector<ZipArchive*>::iterator i = loader->bootArchives.begin(),
+       e = loader->bootArchives.end(); i != e; ++i) {
+    ZipArchive* archive = *i;
+    for (ZipArchive::table_iterator zi = archive->filetable.begin(),
+         ze = archive->filetable.end(); zi != ze; zi++) {
+      const char* name = zi->first;
+      ClassBytes* bytes = Reader::openZip(loader, archive, name);
+      getClassBytes(loader->asciizConstructUTF8(name), bytes);
+    }
+  }
+
 
   CreateStaticInitializer();
 }

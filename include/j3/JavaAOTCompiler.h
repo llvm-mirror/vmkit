@@ -59,6 +59,7 @@ public:
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl);
   virtual JavaObject* getFinalObject(llvm::Value* C);
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
+  virtual llvm::Constant* getClassBytes(const UTF8* name, ClassBytes* bytes);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClassPtr(CommonClass* cl);
   virtual llvm::Constant* getStaticInstance(Class* cl);
@@ -110,6 +111,7 @@ private:
   llvm::Constant* CreateConstantFromObjectArray(const ArrayObject* val);
   
   std::map<CommonClass*, llvm::GlobalVariable*> nativeClasses;
+  std::map<ClassBytes*, llvm::GlobalVariable*> classBytes;
   std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;
   std::map<const CommonClass*, llvm::Constant*> javaClasses;
   std::map<const JavaVirtualTable*, llvm::Constant*> virtualTables;
@@ -134,6 +136,9 @@ private:
   
   typedef std::map<CommonClass*, llvm::GlobalVariable*>::iterator
     native_class_iterator; 
+  
+  typedef std::map<ClassBytes*, llvm::GlobalVariable*>::iterator
+    class_bytes_iterator; 
   
   typedef std::map<const ClassArray*, llvm::GlobalVariable*>::iterator
     array_class_iterator;

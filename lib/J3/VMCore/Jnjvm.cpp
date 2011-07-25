@@ -1246,7 +1246,6 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   llvm_gcroot(exc, 0);
 
   Jnjvm* vm = thread->getJVM();
-  vm->bootstrapLoader->analyseClasspathEnv(vm->bootstrapLoader->bootClasspathEnv);
   vm->argumentsInfo.readArgs(vm);
   if (vm->argumentsInfo.className == NULL) {
     vm->threadSystem.leave();

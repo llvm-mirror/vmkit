@@ -29,10 +29,11 @@ public:
 
   /// toCompileName - Change the utf8 following JNI conventions.
   ///
-  UTF8Buffer* toCompileName() {
+  UTF8Buffer* toCompileName(const char* suffix = "") {
 		const char *buffer = cString();
     uint32 len = strlen(buffer);
-    char* newBuffer = new char[(len << 1) + 1];
+    uint32 suffixLen = strlen(suffix);
+    char* newBuffer = new char[(len << 1) + suffixLen + 1];
     uint32 j = 0;
     for (uint32 i = 0; i < len; ++i) {
       if (buffer[i] == '/') {
@@ -52,6 +53,9 @@ public:
       } else {
         newBuffer[j++] = buffer[i];
       }
+    }
+    for (uint32 i = 0; i < suffixLen; i++) {
+      newBuffer[j++] = suffix[i];
     }
     newBuffer[j] = 0;
 		replaceWith(newBuffer);
