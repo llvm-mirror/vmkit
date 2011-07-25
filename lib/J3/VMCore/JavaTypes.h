@@ -428,6 +428,8 @@ private:
   /// type.
   ///
   Typedef* arguments[1];
+
+  friend class JavaAOTCompiler;
 };
 
 } // end namespace j3

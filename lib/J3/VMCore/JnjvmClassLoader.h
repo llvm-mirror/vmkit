@@ -305,6 +305,7 @@ public:
   friend class Class;
   friend class CommonClass;
   friend class StringList;
+  friend class JavaAOTCompiler;
 };
 
 /// JnjvmBootstrapLoader - This class is for the bootstrap class loader, which

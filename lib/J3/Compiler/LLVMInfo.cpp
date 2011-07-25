@@ -72,7 +72,9 @@ Type* LLVMClassInfo::getVirtualType() {
     virtualSizeConstant = ConstantInt::get(Type::getInt32Ty(context), size);
     
     // TODO: put that elsewhere.
-    if (Compiler == classDef->classLoader->getCompiler()) { 
+    // The class is resolved if it was precompiled.
+    if ((!classDef->isResolved() || Compiler->isStaticCompiling())
+        && Compiler == classDef->classLoader->getCompiler()) { 
       for (uint32 i = 0; i < classDef->nbVirtualFields; ++i) {
         JavaField& field = classDef->virtualFields[i];
         field.ptrOffset = sl->getElementOffset(i + 1);
@@ -396,18 +398,23 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   std::vector<Value*> Args;
   
   J3Intrinsics& Intrinsics = *Compiler->getIntrinsics();
-  std::string name;
+  Function* res = NULL;
   if (Compiler->isStaticCompiling()) {
-    name += UTF8Buffer(signature->keyName).cString();
-    name += virt ? "virtual_ap" : "static_ap";
-  } else {
-    name = "";
-  }
+    mvm::ThreadAllocator allocator;
+    const char* type = virt ? "virtual_ap" : "static_ap";
+    char* buf = (char*)allocator.Allocate(
+        (signature->keyName->size << 1) + 1 + 11);
+    signature->nativeName(buf, type);
+    res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
+                           GlobalValue::ExternalLinkage, buf,
+                           Compiler->getLLVMModule());
+  
 
-  Function* res = Function::Create(virt ? getVirtualBufType() :
-                                          getStaticBufType(),
-                                   GlobalValue::ExternalLinkage, name,
-                                   Compiler->getLLVMModule());
+  } else {
+    res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
+                           GlobalValue::ExternalLinkage, "",
+                           Compiler->getLLVMModule());
+  }
   LLVMContext& context = Compiler->getLLVMModule()->getContext();
   
   BasicBlock* currentBlock = BasicBlock::Create(context, "enter", res);
@@ -470,18 +477,23 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   std::vector<Value*> TempArgs;
   
   J3Intrinsics& Intrinsics = *Compiler->getIntrinsics();
-  std::string name;
+  Function* stub = NULL;
   if (Compiler->isStaticCompiling()) {
-    name += UTF8Buffer(signature->keyName).cString();
-    name += virt ? "virtual_stub" : special ? "special_stub" : "static_stub";
-  } else {
-    name = "";
-  }
+    mvm::ThreadAllocator allocator;
+    const char* type = virt ? "virtual_stub" : special ? "special_stub" : "static_stub";
+    char* buf = (char*)allocator.Allocate(
+        (signature->keyName->size << 1) + 1 + 11);
+    signature->nativeName(buf, type);
+    stub = Function::Create((virt || special)? getVirtualType() : getStaticType(),
+                            GlobalValue::ExternalLinkage, buf,
+                            Compiler->getLLVMModule());
+  
 
-  Function* stub = Function::Create((virt || special) ? getVirtualType() :
-                                                        getStaticType(),
-                                   GlobalValue::ExternalLinkage, name,
-                                   Compiler->getLLVMModule());
+  } else {
+    stub = Function::Create((virt || special)? getVirtualType() : getStaticType(),
+                            GlobalValue::ExternalLinkage, "",
+                            Compiler->getLLVMModule());
+  }
   LLVMContext& context = Compiler->getLLVMModule()->getContext();
   
   BasicBlock* currentBlock = BasicBlock::Create(context, "enter", stub);

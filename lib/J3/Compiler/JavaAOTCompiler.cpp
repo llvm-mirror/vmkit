@@ -2275,6 +2275,7 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     }
   } while (changed);
 
+  // Add the bootstrap classes to the image.
   for (std::vector<ZipArchive*>::iterator i = loader->bootArchives.begin(),
        e = loader->bootArchives.end(); i != e; ++i) {
     ZipArchive* archive = *i;
@@ -2286,6 +2287,38 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     }
   }
 
+  // Finally add used stubs to the image.
+  for (SignMap::iterator i = loader->javaSignatures->map.begin(),
+       e = loader->javaSignatures->map.end(); i != e; i++) {
+    Signdef* signature = i->second;
+    LLVMSignatureInfo* LSI = getSignatureInfo(signature);
+    if (signature->_staticCallBuf != 0) {
+      LSI->getStaticBuf();
+    }
+    if (signature->_virtualCallBuf != 0) {
+      LSI->getVirtualBuf();
+    }
+    if (signature->_staticCallAP != 0) {
+      LSI->getStaticAP();
+    }
+    if (signature->_virtualCallAP != 0) {
+      LSI->getVirtualAP();
+    }
+    if (signature->_virtualCallStub != 0) {
+      LSI->getVirtualStub();
+    }
+    if (signature->_specialCallStub != 0) {
+      LSI->getSpecialStub();
+    }
+    if (signature->_staticCallStub != 0) {
+      LSI->getStaticStub();
+    }
+  }
+
+  // Finally emit the stub for the main signature.
+  Signdef* mainSignature =
+    loader->constructSign(loader->asciizConstructUTF8("([Ljava/lang/String;)V"));
+  getSignatureInfo(mainSignature)->getStaticBuf();
 
   CreateStaticInitializer();
 }
