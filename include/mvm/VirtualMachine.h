@@ -51,7 +51,7 @@ public:
   /// removeMethodInfos - Remove all MethodInfo owned by the given owner.
   void removeMethodInfos(void* owner);
 
-  FunctionMap(CamlFrames** frames);
+  FunctionMap(BumpPtrAllocator& allocator, CamlFrames** frames);
 };
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
@@ -60,7 +60,7 @@ public:
 class VirtualMachine : public mvm::PermanentObject {
 protected:
   VirtualMachine(mvm::BumpPtrAllocator &Alloc, mvm::CamlFrames** frames) :
-		  allocator(Alloc), FunctionsCache(frames) {
+		  allocator(Alloc), FunctionsCache(Alloc, frames) {
     mainThread = NULL;
     numberOfThreads = 0;
     doExit = false;

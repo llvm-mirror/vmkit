@@ -87,9 +87,9 @@ CamlFrame* CamlFrames::frames() const {
 
 static BumpPtrAllocator* StaticAllocator = NULL;
 
-FunctionMap::FunctionMap(CamlFrames** allFrames) {
+FunctionMap::FunctionMap(BumpPtrAllocator& allocator, CamlFrames** allFrames) {
   if (allFrames == NULL) return;
-  StaticAllocator = new BumpPtrAllocator();
+  Functions.resize(40000); // Make sure the cache is big enough.
   int i = 0;
   CamlFrames* frames = NULL;
   while ((frames = allFrames[i++]) != NULL) {
@@ -97,7 +97,7 @@ FunctionMap::FunctionMap(CamlFrames** allFrames) {
     while (decoder.hasNext()) {
       CamlFrame* frame = decoder.next();
       CamlMethodInfo* MI =
-          new(*StaticAllocator, "CamlMethodInfo") CamlMethodInfo(frame);
+          new(allocator, "CamlMethodInfo") CamlMethodInfo(frame);
       addMethodInfoNoLock(MI, frame->ReturnAddress);
     }
   }
