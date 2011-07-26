@@ -173,7 +173,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
                                  currentBlock);
  
-    Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, indexes2 + 2, "", currentBlock);
+    Value* FuncPtr = GetElementPtrInst::Create(VT, indexes2, "", currentBlock);
     
     Value* Func = new LoadInst(FuncPtr, "", currentBlock);
   
@@ -224,7 +224,7 @@ llvm::Value* JavaJIT::getIsolateIDPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetIsolateIDInThreadConstant };
     
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getVMPtr(llvm::Value* mutatorThreadPtr) { 
@@ -232,7 +232,7 @@ llvm::Value* JavaJIT::getVMPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetVMInThreadConstant };
     
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) {
@@ -240,7 +240,7 @@ llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetDoYieldInThreadConstant };
     
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getCXXExceptionPtr(llvm::Value* mutatorThreadPtr) { 
@@ -248,21 +248,21 @@ llvm::Value* JavaJIT::getCXXExceptionPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetCXXExceptionInThreadConstant };
     
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, GEP + 3, "", currentBlock);
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getJNIEnvPtr(llvm::Value* javaThreadPtr) { 
 	Value* GEP[2] = { intrinsics->constantZero,
 										intrinsics->OffsetJNIInJavaThreadConstant };
     
-	return GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
+	return GetElementPtrInst::Create(javaThreadPtr, GEP, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getJavaExceptionPtr(llvm::Value* javaThreadPtr) { 
 	Value* GEP[2] = { intrinsics->constantZero,
 										intrinsics->OffsetJavaExceptionInJavaThreadConstant };
     
-	return GetElementPtrInst::Create(javaThreadPtr, GEP, GEP + 2, "", currentBlock);
+	return GetElementPtrInst::Create(javaThreadPtr, GEP, "", currentBlock);
 }
 
 
@@ -531,8 +531,7 @@ void JavaJIT::monitorEnter(Value* obj) {
   std::vector<Value*> gep;
   gep.push_back(intrinsics->constantZero);
   gep.push_back(intrinsics->JavaObjectLockOffsetConstant);
-  Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
-                                             currentBlock);
+  Value* lockPtr = GetElementPtrInst::Create(obj, gep, "", currentBlock);
   
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
   lock = new PtrToIntInst(lock, intrinsics->pointerSizeType, "", currentBlock);
@@ -579,8 +578,7 @@ void JavaJIT::monitorExit(Value* obj) {
   std::vector<Value*> gep;
   gep.push_back(intrinsics->constantZero);
   gep.push_back(intrinsics->JavaObjectLockOffsetConstant);
-  Value* lockPtr = GetElementPtrInst::Create(obj, gep.begin(), gep.end(), "",
-                                             currentBlock);
+  Value* lockPtr = GetElementPtrInst::Create(obj, gep, "", currentBlock);
   lockPtr = new BitCastInst(lockPtr, 
                             PointerType::getUnqual(intrinsics->pointerSizeType),
                             "", currentBlock);
@@ -1282,8 +1280,7 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
   Value* val = new BitCastInst(obj, arrayType, "", currentBlock);
   
   Value* indexes[3] = { zero, intrinsics->JavaArrayElementsOffsetConstant, index };
-  Value* ptr = GetElementPtrInst::Create(val, indexes, indexes + 3, "",
-                                         currentBlock);
+  Value* ptr = GetElementPtrInst::Create(val, indexes, "", currentBlock);
 
   return ptr;
 
@@ -1748,8 +1745,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     Value* objectConvert = new BitCastInst(object, type, "", currentBlock);
 
     Value* args[2] = { intrinsics->constantZero, LFI->getOffset() };
-    Value* ptr = llvm::GetElementPtrInst::Create(objectConvert,
-                                                 args, args + 2, "",
+    Value* ptr = llvm::GetElementPtrInst::Create(objectConvert, args, "",
                                                  currentBlock);
     return ptr;
   }
@@ -1773,7 +1769,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
         object, "", TheCompiler->useCooperativeGC(), currentBlock);
     Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
     Value* args[2] = { zero, ptr };
-    ptr = GetElementPtrInst::Create(tmp, args, args + 2, "", currentBlock);
+    ptr = GetElementPtrInst::Create(tmp, args, "", currentBlock);
   }
     
   return new BitCastInst(ptr, fieldTypePtr, "", currentBlock);
@@ -2046,7 +2042,7 @@ void JavaJIT::invokeInterface(uint16 index) {
 
 
   Value* indices[2] = { intrinsics->constantZero, Index };
-  Instruction* ptr_18 = GetElementPtrInst::Create(IMT, indices, indices + 2, "",
+  Instruction* ptr_18 = GetElementPtrInst::Create(IMT, indices, "",
                                                   currentBlock);
   Instruction* int32_19 = new LoadInst(ptr_18, "", false, currentBlock);
   int32_19 = new PtrToIntInst(int32_19, intrinsics->pointerSizeType, "",
@@ -2198,8 +2194,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   ptr_21_indices.push_back(intrinsics->constantZero);
   ptr_21_indices.push_back(intrinsics->OffsetAccessInCommonClassConstant);
   Instruction* ptr_21 =
-    GetElementPtrInst::Create(ptr_20, ptr_21_indices.begin(),
-                              ptr_21_indices.end(), "", label_bb);
+    GetElementPtrInst::Create(ptr_20, ptr_21_indices, "", label_bb);
   LoadInst* int32_22 = new LoadInst(ptr_21, "", false, label_bb);
   Value* cmp = BinaryOperator::CreateAnd(int32_22, intrinsics->IsArrayConstant, "",
                                          label_bb);
@@ -2255,16 +2250,14 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
                                intrinsics->OffsetBaseClassInArrayClassConstant };
   Instruction* temp = new BitCastInst(ptr_20, intrinsics->JavaClassArrayType, "",
                                       log_label_entry);
-  Instruction* ptr_10 = GetElementPtrInst::Create(temp, ptr_10_indices,
-                                                  ptr_10_indices + 2, "",
+  Instruction* ptr_10 = GetElementPtrInst::Create(temp, ptr_10_indices, "",
                                                   log_label_entry);
 
   LoadInst* ptr_11 = new LoadInst(ptr_10, "", false, log_label_entry);
     
   Value* ptr_12_indices[2] = { intrinsics->constantZero,
                                intrinsics->OffsetAccessInCommonClassConstant };
-  Instruction* ptr_12 = GetElementPtrInst::Create(ptr_11, ptr_12_indices,
-                                                  ptr_12_indices + 2, "",
+  Instruction* ptr_12 = GetElementPtrInst::Create(ptr_11, ptr_12_indices, "",
                                                   log_label_entry);
   LoadInst* int16_13 = new LoadInst(ptr_12, "", false, log_label_entry);
 
@@ -2282,8 +2275,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   temp = new BitCastInst(ptr_11, intrinsics->JavaClassPrimitiveType, "",
                          log_label_bb);
   GetElementPtrInst* ptr_18 = GetElementPtrInst::Create(temp, ptr_11_indices,
-                                                        ptr_11_indices + 2, "",
-                                                        log_label_bb);
+                                                        "", log_label_bb);
   LoadInst* int32_20 = new LoadInst(ptr_18, "", false, log_label_bb);
    
   int32_start = BinaryOperator::CreateShl(int32_start, int32_20, "",
@@ -2302,11 +2294,11 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   Value* indexes[3] = { intrinsics->constantZero,
                         intrinsics->JavaArrayElementsOffsetConstant,
                         int32_start };
-  Instruction* ptr_42 = GetElementPtrInst::Create(ptr_src, indexes, indexes + 3,
+  Instruction* ptr_42 = GetElementPtrInst::Create(ptr_src, indexes,
                                                   "", log_label_bb);
   
   indexes[2] = int32_start2;
-  Instruction* ptr_44 = GetElementPtrInst::Create(ptr_dst, indexes, indexes + 3,
+  Instruction* ptr_44 = GetElementPtrInst::Create(ptr_dst, indexes,
                                                   "", log_label_bb);
  
   BranchInst::Create(label_memmove, log_label_bb);

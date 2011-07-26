@@ -39,12 +39,11 @@ namespace j3 {
 static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
   Value* GEP[2] = { intrinsics->constantZero,
                     intrinsics->OffsetTaskClassMirrorInClassConstant };
-  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, "", CI);
   
   Value* GEP2[2] = { intrinsics->constantZero, intrinsics->constantZero };
 
-  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
-                                         CI);
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, "", CI);
   return TCM;
 
 }
@@ -52,12 +51,11 @@ static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
 static Value* getDelegatee(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
   Value* GEP[2] = { intrinsics->constantZero,
                     intrinsics->constantZero };
-  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, GEP + 2, "", CI);
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, "", CI);
   
   Value* GEP2[2] = { intrinsics->constantZero, intrinsics->constantZero };
 
-  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, GEP2 + 2, "",
-                                         CI);
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, "", CI);
   return new LoadInst(TCM, "", CI);
 
 }
@@ -170,8 +168,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
                                          "", CI);
           Value* args[2] = { intrinsics->constantZero, 
                              intrinsics->JavaArraySizeOffsetConstant };
-          Value* ptr = GetElementPtrInst::Create(array, args, args + 2,
-                                                 "", CI);
+          Value* ptr = GetElementPtrInst::Create(array, args, "", CI);
           Value* load = new LoadInst(ptr, "", CI);
           load = new PtrToIntInst(load, Type::getInt32Ty(*Context), "", CI);
           CI->replaceAllUsesWith(load);
@@ -180,8 +177,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
           Value* indexes[2] = { intrinsics->constantZero, intrinsics->constantZero };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
-                                                   "", CI);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
@@ -190,8 +186,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0); // get the VT
           Value* indexes[2] = { intrinsics->constantZero,
                                 intrinsics->OffsetIMTInVTConstant };
-          Value* IMTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
-                                                    "", CI);
+          Value* IMTPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* IMT = new LoadInst(IMTPtr, "", CI);
           IMT = new BitCastInst(IMT, CI->getType(), "", CI);
           CI->replaceAllUsesWith(IMT);
@@ -201,14 +196,12 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0); // get the object
           Value* args2[2] = { intrinsics->constantZero,
                               intrinsics->JavaObjectVTOffsetConstant };
-          Value* VTPtr = GetElementPtrInst::Create(val, args2, args2 + 2,
-                                                   "", CI);
+          Value* VTPtr = GetElementPtrInst::Create(val, args2, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           Value* args3[2] = { intrinsics->constantZero,
                               intrinsics->OffsetClassInVTConstant };
 
-          Value* clPtr = GetElementPtrInst::Create(VT, args3, args3 + 2,
-                                                   "", CI);
+          Value* clPtr = GetElementPtrInst::Create(VT, args3, "", CI);
           Value* cl = new LoadInst(clPtr, "", CI);
           cl = new BitCastInst(cl, intrinsics->JavaCommonClassType, "", CI);
 
@@ -221,8 +214,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* indexes[3] = { intrinsics->constantZero, 
                                 intrinsics->constantZero, 
                                 intrinsics->OffsetVTInClassConstant };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
-                                                   "", CI);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
@@ -232,8 +224,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0);
           Value* indexes[2] = { intrinsics->constantZero, 
                                 intrinsics->OffsetVTInClassConstant };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
-                                                   "", CI);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
@@ -244,8 +235,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* indexes[3] = { intrinsics->constantZero,
                                 intrinsics->constantZero,
                                 intrinsics->OffsetVTInClassConstant };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 3,
-                                                   "", CI);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);
           CI->eraseFromParent();
@@ -255,8 +245,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0);
           Value* indexes[2] = { intrinsics->constantZero,
                                 intrinsics->OffsetBaseClassVTInVTConstant };
-          Value* VTPtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
-                                                   "", CI);
+          Value* VTPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           VT = new BitCastInst(VT, intrinsics->VTType, "", CI);
           CI->replaceAllUsesWith(VT);
@@ -267,8 +256,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0); 
           Value* indexes[2] = { intrinsics->constantZero, 
                                 intrinsics->OffsetObjectSizeInClassConstant };
-          Value* SizePtr = GetElementPtrInst::Create(val, indexes, indexes + 2,
-                                                     "", CI);
+          Value* SizePtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* Size = new LoadInst(SizePtr, "", CI);
           CI->replaceAllUsesWith(Size);
           CI->eraseFromParent();
@@ -277,8 +265,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0); 
           Value* indexes[2] = { intrinsics->constantZero,
                                 intrinsics->OffsetDepthInVTConstant };
-          Value* DepthPtr = GetElementPtrInst::Create(val, indexes,
-                                                      indexes + 2, "", CI);
+          Value* DepthPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* Depth = new LoadInst(DepthPtr, "", CI);
           Depth = new PtrToIntInst(Depth, Type::getInt32Ty(*Context), "", CI);
           CI->replaceAllUsesWith(Depth);
@@ -288,8 +275,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0);
           Value* indexes[2] = { intrinsics->constantZero,
                                 intrinsics->OffsetDisplayInVTConstant };
-          Value* DisplayPtr = GetElementPtrInst::Create(val, indexes,
-                                                        indexes + 2, "", CI);
+          Value* DisplayPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Type* Ty = PointerType::getUnqual(intrinsics->VTType);
           DisplayPtr = new BitCastInst(DisplayPtr, Ty, "", CI);
           CI->replaceAllUsesWith(DisplayPtr);
@@ -345,8 +331,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* GEP[2] = 
             { intrinsics->constantZero,
               intrinsics->OffsetInitializedInTaskClassMirrorConstant };
-          Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP, GEP + 2, "",
-                                                       CI);
+          Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP, "", CI);
           
           Value* test = new LoadInst(StatusPtr, "", CI);
           
@@ -540,13 +525,11 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           ConstantInt* CC = ConstantInt::get(Type::getInt32Ty(*Context),
               JavaVirtualTable::getOffsetIndex());
           Value* indices[2] = { intrinsics->constantZero, CC };
-          Value* Offset = GetElementPtrInst::Create(VT2, indices, indices + 2,
-                                                    "", CI);
+          Value* Offset = GetElementPtrInst::Create(VT2, indices, "", CI);
           Offset = new LoadInst(Offset, "", false, CI);
           Offset = new PtrToIntInst(Offset, Type::getInt32Ty(*Context), "", CI);
           indices[1] = Offset;
-          Value* CurVT = GetElementPtrInst::Create(VT1, indices, indices + 2,
-                                                   "", CI);
+          Value* CurVT = GetElementPtrInst::Create(VT1, indices, "", CI);
           CurVT = new LoadInst(CurVT, "", false, CI);
           CurVT = new BitCastInst(CurVT, intrinsics->VTType, "", CI);
              
@@ -599,8 +582,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           ConstantInt* cacheIndex = 
             ConstantInt::get(Type::getInt32Ty(*Context), JavaVirtualTable::getCacheIndex());
           Value* indices[2] = { intrinsics->constantZero, cacheIndex };
-          Instruction* CachePtr = 
-            GetElementPtrInst::Create(VT1, indices, indices + 2, "", CI);
+          Instruction* CachePtr = GetElementPtrInst::Create(VT1, indices, "", CI);
           CachePtr = new BitCastInst(CachePtr, Ty, "", CI);
           Value* Cache = new LoadInst(CachePtr, "", false, CI);
           ICmpInst* cmp1 = new ICmpInst(CI, ICmpInst::ICMP_EQ, Cache, VT2, "");
@@ -618,9 +600,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           ConstantInt* sizeIndex = ConstantInt::get(Type::getInt32Ty(*Context), 
               JavaVirtualTable::getNumSecondaryTypesIndex());
           indices[1] = sizeIndex;
-          Instruction* Size = GetElementPtrInst::Create(VT1, indices,
-                                                        indices + 2, "",
-                                                        Preheader);
+          Instruction* Size = GetElementPtrInst::Create(VT1, indices, "", Preheader);
           Size = new LoadInst(Size, "", false, Preheader);
           Size = new PtrToIntInst(Size, Type::getInt32Ty(*Context), "", Preheader);
     
@@ -628,7 +608,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               JavaVirtualTable::getSecondaryTypesIndex());
           indices[1] = secondaryTypesIndex;
           Instruction* secondaryTypes = 
-            GetElementPtrInst::Create(VT1, indices, indices + 2, "", Preheader);
+            GetElementPtrInst::Create(VT1, indices, "", Preheader);
           secondaryTypes = new LoadInst(secondaryTypes, "", false, Preheader);
           secondaryTypes = new BitCastInst(secondaryTypes, Ty, "", Preheader);
           BranchInst::Create(BB7, Preheader);

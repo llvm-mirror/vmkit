@@ -2162,8 +2162,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         // Set the size
         Value* gep4[2] = { intrinsics->constantZero,
                            intrinsics->JavaArraySizeOffsetConstant };
-        Value* GEP = GetElementPtrInst::Create(cast, gep4, gep4 + 2,
-                                               "", currentBlock);
+        Value* GEP = GetElementPtrInst::Create(cast, gep4, "", currentBlock);
         
         arg1 = new IntToPtrInst(arg1, intrinsics->ptrType, "", currentBlock);
         new StoreInst(arg1, GEP, currentBlock);
