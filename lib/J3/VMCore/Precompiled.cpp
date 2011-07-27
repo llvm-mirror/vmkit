@@ -147,7 +147,6 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
   	// staticMethods and staticFields fields here.
     realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
     realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
-  	cl->virtualVT->setNativeTracer(cl->virtualVT->tracer, "");
 
     for (uint32 i = 0; i< realCl->nbStaticMethods; ++i) {
       JavaMethod& meth = realCl->staticMethods[i];
