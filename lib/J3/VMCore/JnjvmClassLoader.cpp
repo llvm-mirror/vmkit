@@ -551,7 +551,10 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str) {
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClass(const UTF8* utf8) {
-  return classes->lookup(utf8);
+  classes->lock.lock();
+  UserCommonClass* cl = classes->map.lookup(utf8);
+  classes->lock.unlock();
+  return cl;
 }
 
 UserCommonClass* JnjvmClassLoader::loadBaseClass(const UTF8* name,
@@ -604,12 +607,9 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
   UserClass* res = NULL;
   lock.lock();
   classes->lock.lock();
-  ClassMap::iterator End = classes->map.end();
-  ClassMap::iterator I = classes->map.find(name);
+  res = (UserClass*) classes->map.lookup(name);
   classes->lock.unlock();
-  if (I != End) {
-    res = ((UserClass*)(I->second));
-  } else {
+  if (res == NULL) {
     TRY {
       const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
       res = new(allocator, "Class") UserClass(this, internalName, bytes);
@@ -620,18 +620,18 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
       classes->lock.lock();
       assert(res->getDelegatee() == NULL);
       assert(res->getStaticInstance() == NULL);
-      bool success = classes->map.insert(std::make_pair(internalName, res)).second;
+      assert(classes->map.lookup(internalName) == NULL);
+      classes->map[internalName] = res;
       classes->lock.unlock();
-      assert(success && "Could not add class in map");
     } CATCH {
       excp = JavaThread::get()->pendingException;
       JavaThread::get()->clearException();    
     } END_CATCH;
   }
+  lock.unlock();
   if (excp != NULL) {
     JavaThread::get()->throwException(excp);
   }
-  lock.unlock();
 
   if (res->super == NULL) {
     // java.lang.Object just got created, initialise VTs of arrays.
@@ -645,17 +645,14 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   assert(baseClass && "constructing an array class without a base class");
   assert(baseClass->classLoader == this && 
          "constructing an array with wrong loader");
-  classes->lock.lock();
-  ClassMap::iterator End = classes->map.end();
-  ClassMap::iterator I = classes->map.find(name);
   UserClassArray* res = 0;
-  if (I == End) {
+  classes->lock.lock();
+  res = (UserClassArray*) classes->map.lookup(name);
+  if (res == NULL) {
     const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
     res = new(allocator, "Array class") UserClassArray(this, internalName,
                                                        baseClass);
     classes->map.insert(std::make_pair(internalName, res));
-  } else {
-    res = ((UserClassArray*)(I->second));
   }
   classes->lock.unlock();
   return res;
@@ -686,10 +683,10 @@ Typedef* JnjvmClassLoader::internalConstructType(const UTF8* name) {
 
 Typedef* JnjvmClassLoader::constructType(const UTF8* name) {
   javaTypes->lock.lock();
-  Typedef* res = javaTypes->lookup(name);
+  Typedef* res = javaTypes->map.lookup(name);
   if (res == 0) {
     res = internalConstructType(name);
-    javaTypes->hash(name, res);
+    javaTypes->map[name] = res;
   }
   javaTypes->lock.unlock();
   return res;
@@ -762,7 +759,7 @@ static bool analyseIntern(const UTF8* name, uint32 pos, uint32 meth,
 
 Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
   javaSignatures->lock.lock();
-  Signdef* res = javaSignatures->lookup(name);
+  Signdef* res = javaSignatures->map.lookup(name);
   if (res == 0) {
     std::vector<Typedef*> buf;
     uint32 len = (uint32)name->size;
@@ -792,7 +789,7 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
     
     res = new(allocator, buf.size()) Signdef(name, this, buf, ret);
 
-    javaSignatures->hash(name, res);
+    javaSignatures->map[name] = res;
   }
   javaSignatures->lock.unlock();
   return res;

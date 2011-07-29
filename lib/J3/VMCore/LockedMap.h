@@ -16,6 +16,8 @@
 #ifndef JNJVM_LOCKED_MAP_H
 #define JNJVM_LOCKED_MAP_H
 
+#include "llvm/ADT/DenseMap.h"
+
 #include <map>
 
 #include <cstring>
@@ -26,10 +28,28 @@
 #include "mvm/Threads/Locks.h"
 #include "UTF8.h"
 
-#include "JavaArray.h" // for comparing UTF8s
+namespace llvm {
+// Provide DenseMapInfo for UTF8.
+template<>
+struct DenseMapInfo<const j3::UTF8*> {
+  static inline const j3::UTF8* getEmptyKey() {
+    static j3::UTF8 emptyKey(0);
+    return &emptyKey;
+  }
+  static inline const j3::UTF8* getTombstoneKey() {
+    static j3::UTF8 tombstoneKey(0);
+    return &tombstoneKey;
+  }
+  static unsigned getHashValue(const j3::UTF8* PtrVal) {
+    return PtrVal->hash();
+  }
+  static bool isEqual(const j3::UTF8* LHS, const j3::UTF8* RHS) { return LHS->equals(RHS); }
+};
+}
 
 namespace j3 {
 
+class ArrayUInt16;
 class JavaString;
 class JnjvmClassLoader;
 class Signdef;
@@ -37,155 +57,95 @@ class Typedef;
 class UserCommonClass;
 class UserClassArray;
 
-struct ltutf8 {
-  bool operator()(const UTF8* s1, const UTF8* s2) const;
-};
-
 struct ltarray16 {
   bool operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const;
 };
 
-class MapNoGC {
+class StringMap : public mvm::PermanentObject {
 public:
-  static void gcroot(void* val, void* unused) 
-    __attribute__ ((always_inline)) {}
+  typedef std::map<const ArrayUInt16*, JavaString*, ltarray16>::iterator iterator;
+  typedef JavaString* (*funcCreate)(const ArrayUInt16*& V, Jnjvm* vm);
 
-};  
-
-class MapWithGC {
-public:
-  static void gcroot(void* val, void* unused) 
-    __attribute__ ((always_inline)) {
-    llvm_gcroot(val, unused);
-  }   
+  mvm::LockNormal lock;
+  std::map<const ArrayUInt16*, JavaString*, ltarray16,
+           std::allocator<std::pair<const ArrayUInt16*, JavaString*> > > map;
   
-};  
-
-
-template<class Key, class Container, class Compare, class Meta, class TLock,
-         class IsGC>
-class LockedMap : public mvm::PermanentObject {
-public:
-  typedef typename std::map<const Key, Container, Compare>::iterator iterator;
-  typedef Container (*funcCreate)(Key& V, Meta meta);
-
-  TLock lock;
-  std::map<const Key, Container, Compare,
-           std::allocator<std::pair<const Key, Container> > > map;
-  
-  inline Container lookupOrCreate(Key& V, Meta meta, funcCreate func) {
-    Container res = 0;
-    IsGC::gcroot(res, 0);
-    IsGC::gcroot((void*)V, 0);
+  inline JavaString* lookupOrCreate(const ArrayUInt16* array, Jnjvm* vm, funcCreate func) {
+    JavaString* res = 0;
+    llvm_gcroot(res, 0);
+    llvm_gcroot(array, 0);
     lock.lock();
     iterator End = map.end();
-    iterator I = map.find(V);
+    iterator I = map.find(array);
     if (I == End) {
-      res = func(V, meta);
-      map.insert(std::make_pair(V, res));
+      res = func(array, vm);
+      map.insert(std::make_pair(array, res));
       lock.unlock();
       return res;
     } else {
       lock.unlock();
-      return ((Container)(I->second));
+      return ((JavaString*)(I->second));
     }
   }
   
-  inline void remove(Key V) {
-    IsGC::gcroot(V, 0);
+  inline void remove(const ArrayUInt16* array) {
+    llvm_gcroot(array, 0);
     lock.lock();
-    map.erase(V);
+    map.erase(array);
     lock.unlock();
   }
   
-  inline void remove(Key V, Container C) {
-    IsGC::gcroot(C, 0);
-    IsGC::gcroot(V, 0);
+  inline JavaString* lookup(const ArrayUInt16* array) {
+    llvm_gcroot(array, 0);
     lock.lock();
-    removeUnlocked(V, C); 
-    lock.unlock();
-  }
-  
-  inline void removeUnlocked(Key V, Container C) {
-    IsGC::gcroot(C, 0);
-    IsGC::gcroot((void*)V, 0);
     iterator End = map.end();
-    iterator I = map.find(V);
+    iterator I = map.find(array);
+    lock.unlock();
+    return I != End ? ((JavaString*)(I->second)) : 0; 
+  }
+
+  inline void hash(const ArrayUInt16* array, JavaString* str) {
+    llvm_gcroot(array, 0);
+    llvm_gcroot(str, 0);
+    lock.lock();
+    map.insert(std::make_pair(array, str));
+    lock.unlock();
+  }
+
+  inline void removeUnlocked(const ArrayUInt16* array, JavaString* str) {
+    llvm_gcroot(str, 0);
+    llvm_gcroot(array, 0);
+    iterator End = map.end();
+    iterator I = map.find(array);
     
-    if (I != End && I->second == C)
-        map.erase(I); 
+    if (I != End && I->second == str) map.erase(I); 
   }
 
-  inline Container lookup(Key V) {
-    IsGC::gcroot((void*)V, 0);
-    lock.lock();
-    iterator End = map.end();
-    iterator I = map.find(V);
-    lock.unlock();
-    return I != End ? ((Container)(I->second)) : 0; 
-  }
+  ~StringMap() {}
 
-  inline void hash(Key k, Container c) {
-    IsGC::gcroot(c, 0);
-    IsGC::gcroot(k, 0);
-    lock.lock();
-    map.insert(std::make_pair(k, c));
-    lock.unlock();
-  }
-
-  ~LockedMap() {}
-};
-
-class ClassMap : 
-  public LockedMap<const UTF8*, UserCommonClass*, ltutf8, JnjvmClassLoader*,
-                   mvm::LockRecursive, MapNoGC > {
-
-};
-
-class StringMap :
-  public LockedMap<const ArrayUInt16*, JavaString*, ltarray16, Jnjvm*,
-                   mvm::LockNormal, MapWithGC> {
-
-public:
   void insert(JavaString* str);
+};
 
+
+class ClassMap : public mvm::PermanentObject {
+public:
+  mvm::LockRecursive lock;
+  llvm::DenseMap<const UTF8*, UserCommonClass*> map;
+  typedef llvm::DenseMap<const UTF8*, UserCommonClass*>::iterator iterator;
 };
 
 class TypeMap : public mvm::PermanentObject {
 public:
   mvm::LockNormal lock;
-  
-  std::map<const UTF8*, Typedef*, ltutf8> map;
-  typedef std::map<const UTF8*, Typedef*, ltutf8>::iterator iterator;
-  
-  inline Typedef* lookup(const UTF8* V) {
-    iterator End = map.end();
-    iterator I = map.find(V);
-    return I != End ? I->second : 0; 
-  }
-
-  inline void hash(const UTF8* k, Typedef* c) {
-    map.insert(std::make_pair(k, c));
-  }
+  llvm::DenseMap<const UTF8*, Typedef*> map;
+  typedef llvm::DenseMap<const UTF8*, Typedef*>::iterator iterator;
 };
 
 class SignMap : public mvm::PermanentObject {
 public:
   mvm::LockNormal lock;
-  
-  std::map<const UTF8*, Signdef*, ltutf8> map;
-  typedef std::map<const UTF8*, Signdef*, ltutf8>::iterator iterator;
-  
-  inline Signdef* lookup(const UTF8* V) {
-    iterator End = map.end();
-    iterator I = map.find(V);
-    return I != End ? I->second : 0; 
-  }
-
-  inline void hash(const UTF8* k, Signdef* c) {
-    map.insert(std::make_pair(k, c));
-  }
-  
+  llvm::DenseMap<const UTF8*, Signdef*> map;
+  typedef llvm::DenseMap<const UTF8*, Signdef*>::iterator iterator;
 };
 
 } // end namespace j3

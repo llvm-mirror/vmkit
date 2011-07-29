@@ -19,10 +19,6 @@ private:
     return allocator.Allocate(sizeof(UTF8) + (n - 1) * sizeof(uint16), "UTF8");
   }
   
-  UTF8(sint32 n) {
-    size = n;
-  }
-
 public:
   /// size - The (constant) size of the array.
   ssize_t size;
@@ -63,7 +59,10 @@ public:
 	uint32_t hash() const {
 		return readerHasher(elements, size);
 	}
-
+  
+  UTF8(sint32 n) {
+    size = n;
+  }
 };
 
 
