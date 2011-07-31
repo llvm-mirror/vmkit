@@ -63,6 +63,8 @@
 %JavaClassPrimitive = type { %JavaCommonClass, i32 }
 %JavaClassArray = type { %JavaCommonClass, %JavaCommonClass* }
 
+%J3DenseMap = type { i32, i8*, i32, i32, i1 }
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;; Make sure all named types are emitted ;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -91,7 +93,8 @@ declare void @listAllTypes(%JavaObject,
                            %Attribut,
                            %JavaThread,
                            %MutatorThread,
-                           %CodeLineInfo);
+                           %CodeLineInfo,
+                           %J3DenseMap);
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;; Constant calls for J3 runtime internal objects field accesses ;;;;;;;;;

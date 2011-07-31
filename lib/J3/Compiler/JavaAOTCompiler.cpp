@@ -64,7 +64,7 @@ void JavaAOTCompiler::AddInitializerToClass(GlobalVariable* varGV, CommonClass* 
   }
 }
 
-Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
+GlobalVariable* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
 
   if (classDef->isClass() || isCompiling(classDef) || assumeCompiled) {
 
@@ -88,7 +88,7 @@ Constant* JavaAOTCompiler::getNativeClass(CommonClass* classDef) {
     
       nativeClasses.insert(std::make_pair(classDef, varGV));
 
-      if (!precompile) {
+      if (!precompile || classDef->isPrimitive()) {
         AddInitializerToClass(varGV, classDef);
       }
 
@@ -916,11 +916,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
     CommonClassElts.push_back(Constant::getNullValue(TempTy));
   }
 
-  // classLoader: store the static initializer, it will be overriden once
-  // the class is loaded.
-  Constant* loader = ConstantExpr::getBitCast(StaticInitializer,
-                                              JavaIntrinsics.ptrType);
-  CommonClassElts.push_back(loader);
+  CommonClassElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
   
   // virtualTable
   if (cl->virtualVT) {
@@ -1103,6 +1099,59 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
   return ConstantStruct::get(STy, ClassElts);
 }
 
+Constant* JavaAOTCompiler::CreateConstantFromClassMap(const J3DenseMap<const UTF8*, CommonClass*>& map) {
+  StructType* STy = 
+    dyn_cast<StructType>(JavaIntrinsics.J3DenseMapType->getContainedType(0));
+  Module& Mod = *getLLVMModule();
+
+  std::vector<Constant*> elements;
+  elements.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), map.NumBuckets));
+
+  Constant* buckets;
+  if (map.NumBuckets > 0) {
+    std::vector<Constant*> TempElts;
+    ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, map.NumBuckets * 2);
+
+    for (uint32 i = 0; i < map.NumBuckets; ++i) {
+      J3Pair<const UTF8*, CommonClass*> pair = map.Buckets[i];
+      if (pair.first == &TombstoneKey) {
+        static GlobalVariable* gv =
+          new GlobalVariable(Mod, JavaIntrinsics.UTF8Type->getContainedType(0),
+                             false, GlobalValue::ExternalLinkage, NULL,
+                             "TombstoneKey");
+        TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, gv, JavaIntrinsics.ptrType));
+        TempElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
+      } else if (pair.first == &EmptyKey) {
+        static GlobalVariable* gv =
+          new GlobalVariable(Mod, JavaIntrinsics.UTF8Type->getContainedType(0),
+                             false, GlobalValue::ExternalLinkage, NULL,
+                             "EmptyKey");
+        TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, gv, JavaIntrinsics.ptrType));
+        TempElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
+      } else {
+        TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, getUTF8(pair.first), JavaIntrinsics.ptrType));
+        TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, getNativeClass(pair.second), JavaIntrinsics.ptrType));
+      }
+    }
+
+    buckets = ConstantArray::get(ATy, TempElts);
+
+    GlobalVariable* gv = new GlobalVariable(Mod, ATy, false, GlobalValue::InternalLinkage, buckets, "");
+    buckets = ConstantExpr::getCast(Instruction::BitCast, gv, JavaIntrinsics.ptrType);
+  } else {
+    buckets = Constant::getNullValue(JavaIntrinsics.ptrType);
+  }
+
+  elements.push_back(buckets);
+  elements.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), map.NumEntries));
+  elements.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), map.NumTombstones));
+  elements.push_back(ConstantInt::get(Type::getInt1Ty(getLLVMContext()), 1));
+
+  return new GlobalVariable(Mod, STy, false,
+                            GlobalValue::ExternalLinkage,
+                            ConstantStruct::get(STy, elements), "ClassMap");
+}
+
 Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaClassType->getContainedType(0));
@@ -1145,25 +1194,20 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
 
   // virtualFields
   if (cl->nbVirtualFields) {
-
     for (uint32 i = 0; i < cl->nbVirtualFields; ++i) {
       TempElts.push_back(CreateConstantFromJavaField(cl->virtualFields[i]));
     }
-
   } 
   
   // staticFields
   if (cl->nbStaticFields) {
-
     for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
       TempElts.push_back(CreateConstantFromJavaField(cl->staticFields[i]));
     }
-
   }
 
   Constant* fields = 0;
   if (cl->nbStaticFields + cl->nbVirtualFields) {
-  
     fields = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
     fields = new GlobalVariable(Mod, ATy, false,
@@ -1744,15 +1788,8 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   precompile = false;
 
   std::vector<llvm::Type*> llvmArgs;
-  llvmArgs.push_back(JavaIntrinsics.ptrType); // class loader.
-  FunctionType* FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()),
-                                        llvmArgs, false);
-
-  StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
-                                       "Init", getLLVMModule());
-  
-  llvmArgs.clear();
-  FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()), llvmArgs, false);
+  FunctionType* FTy = FunctionType::get(
+      Type::getVoidTy(getLLVMContext()), llvmArgs, false);
   Callback = Function::Create(FTy, GlobalValue::ExternalLinkage,
                               "staticCallback", getLLVMModule());
 
@@ -1826,6 +1863,13 @@ void JavaAOTCompiler::CreateStaticInitializer() {
   Function* AddClass = Function::Create(FTy, GlobalValue::ExternalLinkage,
                                         "vmjcAddPreCompiledClass",
                                         getLLVMModule());
+
+  llvmArgs.clear();
+  llvmArgs.push_back(JavaIntrinsics.ptrType); // class loader.
+  FTy = FunctionType::get(Type::getVoidTy(getLLVMContext()), llvmArgs, false);
+
+  StaticInitializer = Function::Create(FTy, GlobalValue::InternalLinkage,
+                                       "Init", getLLVMModule());
  
   llvmArgs.clear();
   // class loader
@@ -2219,11 +2263,15 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
   getNativeClass(loader->upcalls->OfLong);
   getNativeClass(loader->upcalls->OfDouble);
 
-  // First set classes that have been more than resolved to resolved.
+  // First set all classes to resolved.
   for (ClassMap::iterator i = loader->getClasses()->map.begin(),
        e = loader->getClasses()->map.end(); i!= e; ++i) {
-    if (i->second->isClass() && i->second->asClass()->isResolved()) {
-      i->second->asClass()->setResolved();
+    if (i->second->isClass()) {
+      if (i->second->asClass()->isResolved()) {
+        i->second->asClass()->setResolved();
+      } else {
+        i->second->asClass()->resolveClass();
+      }
     }
   }
 
@@ -2263,17 +2311,12 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     meth->code = Func;
   }
 
-  bool changed = false;
-  do {
-    changed = false;
-    for (native_class_iterator i = nativeClasses.begin(), 
-         e = nativeClasses.end(); i != e; ++i) {
-      if (!i->second->hasInitializer()) {
-        changed = true;
-        AddInitializerToClass(i->second, i->first);
-      }
-    }
-  } while (changed);
+  // Add all class initializers.
+  for (ClassMap::iterator i = loader->getClasses()->map.begin(),
+       e = loader->getClasses()->map.end(); i!= e; ++i) {
+    GlobalVariable* gv = getNativeClass(i->second);
+    AddInitializerToClass(gv, i->second);
+  }
 
   // Add the bootstrap classes to the image.
   for (std::vector<ZipArchive*>::iterator i = loader->bootArchives.begin(),
@@ -2320,7 +2363,8 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     loader->constructSign(loader->asciizConstructUTF8("([Ljava/lang/String;)V"));
   getSignatureInfo(mainSignature)->getStaticBuf();
 
-  CreateStaticInitializer();
+  // Emit the class map.
+  CreateConstantFromClassMap(loader->classes->map);
 }
 
 /// compileAllStubs - Compile all the native -> Java stubs. 

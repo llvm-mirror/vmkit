@@ -418,6 +418,7 @@ public:
 
   friend class ClArgumentsInfo;
   friend class JavaAOTCompiler;
+  friend class Precompiled;
 };
 
 

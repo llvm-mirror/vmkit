@@ -21,7 +21,7 @@ static const uintptr_t MemoryStart = 0x30000000;
 static const uintptr_t MemoryStart = 0x50000000;
 #endif
 
-static const uintptr_t MemorySize = 0x40000000;
+static const uintptr_t MemorySize = 0x30000000;
 
 class InitCollector {
 public:

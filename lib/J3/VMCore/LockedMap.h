@@ -16,7 +16,7 @@
 #ifndef JNJVM_LOCKED_MAP_H
 #define JNJVM_LOCKED_MAP_H
 
-#include "llvm/ADT/DenseMap.h"
+#include "j3/J3DenseMap.h"
 
 #include <map>
 
@@ -28,26 +28,26 @@
 #include "mvm/Threads/Locks.h"
 #include "UTF8.h"
 
-namespace llvm {
-// Provide DenseMapInfo for UTF8.
+extern "C" const j3::UTF8 TombstoneKey;
+extern "C" const j3::UTF8 EmptyKey;
+
+namespace j3 {
+
+// Provide J3DenseMapInfo for UTF8.
 template<>
-struct DenseMapInfo<const j3::UTF8*> {
+struct J3DenseMapInfo<const j3::UTF8*> {
   static inline const j3::UTF8* getEmptyKey() {
-    static j3::UTF8 emptyKey(0);
-    return &emptyKey;
+    return &EmptyKey;
   }
   static inline const j3::UTF8* getTombstoneKey() {
-    static j3::UTF8 tombstoneKey(0);
-    return &tombstoneKey;
+    return &TombstoneKey;
   }
   static unsigned getHashValue(const j3::UTF8* PtrVal) {
     return PtrVal->hash();
   }
   static bool isEqual(const j3::UTF8* LHS, const j3::UTF8* RHS) { return LHS->equals(RHS); }
 };
-}
 
-namespace j3 {
 
 class ArrayUInt16;
 class JavaString;
@@ -129,23 +129,26 @@ public:
 
 class ClassMap : public mvm::PermanentObject {
 public:
+  ClassMap() {}
+  ClassMap(J3DenseMap<const UTF8*, UserCommonClass*>* precompiled) : map(*precompiled) {}
+
   mvm::LockRecursive lock;
-  llvm::DenseMap<const UTF8*, UserCommonClass*> map;
-  typedef llvm::DenseMap<const UTF8*, UserCommonClass*>::iterator iterator;
+  J3DenseMap<const UTF8*, UserCommonClass*> map;
+  typedef J3DenseMap<const UTF8*, UserCommonClass*>::iterator iterator;
 };
 
 class TypeMap : public mvm::PermanentObject {
 public:
   mvm::LockNormal lock;
-  llvm::DenseMap<const UTF8*, Typedef*> map;
-  typedef llvm::DenseMap<const UTF8*, Typedef*>::iterator iterator;
+  J3DenseMap<const UTF8*, Typedef*> map;
+  typedef J3DenseMap<const UTF8*, Typedef*>::iterator iterator;
 };
 
 class SignMap : public mvm::PermanentObject {
 public:
   mvm::LockNormal lock;
-  llvm::DenseMap<const UTF8*, Signdef*> map;
-  typedef llvm::DenseMap<const UTF8*, Signdef*>::iterator iterator;
+  J3DenseMap<const UTF8*, Signdef*> map;
+  typedef J3DenseMap<const UTF8*, Signdef*>::iterator iterator;
 };
 
 } // end namespace j3

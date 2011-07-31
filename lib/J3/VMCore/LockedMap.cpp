@@ -13,7 +13,10 @@
 #include "JavaString.h"
 #include "LockedMap.h"
 
-using namespace j3;
+namespace j3 {
+
+extern "C" const UTF8 TombstoneKey(0);
+extern "C" const UTF8 EmptyKey(0);
 
 bool ltarray16::operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const {
   llvm_gcroot(s1, 0);
@@ -35,4 +38,6 @@ void StringMap::insert(JavaString* str) {
   assert(map.find(array)->first == array);
   assert(&(map.find(array)->second) == &(it->second));
   assert(&(map.find(array)->first) == &(it->first));
+}
+
 }

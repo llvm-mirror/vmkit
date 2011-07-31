@@ -97,6 +97,10 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
   CodeLineInfoType =
     PointerType::getUnqual(module->getTypeByName("CodeLineInfo"));
   
+  J3DenseMapType =
+    PointerType::getUnqual(module->getTypeByName("J3DenseMap"));
+  
+  
   JavaObjectNullConstant =
     Constant::getNullValue(J3Intrinsics::JavaObjectType);
   MaxArraySizeConstant = ConstantInt::get(Type::getInt32Ty(Context),

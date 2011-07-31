@@ -30,54 +30,6 @@ namespace j3 {
 
 typedef void (*static_init_t)(JnjvmClassLoader*);
 
-bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
-  Class* javaLangObject = (Class*)dlsym(SELF_HANDLE, "java_lang_Object");
-  void* nativeHandle = SELF_HANDLE;
-  if (javaLangObject == NULL) {
-    void* handle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
-    if (handle != NULL) {
-      nativeHandle = handle;
-      javaLangObject = (Class*)dlsym(nativeHandle, "java_lang_Object");
-    }
-  }
-
-  if (javaLangObject == NULL) {
-    return false;
-  }
-
-  ClassArray::SuperArray = javaLangObject;
-    
-  // Get the native classes.
-  Classpath* upcalls = loader->upcalls;
-  upcalls->OfVoid = (ClassPrimitive*)dlsym(nativeHandle, "void");
-  upcalls->OfBool = (ClassPrimitive*)dlsym(nativeHandle, "boolean");
-  upcalls->OfByte = (ClassPrimitive*)dlsym(nativeHandle, "byte");
-  upcalls->OfChar = (ClassPrimitive*)dlsym(nativeHandle, "char");
-  upcalls->OfShort = (ClassPrimitive*)dlsym(nativeHandle, "short");
-  upcalls->OfInt = (ClassPrimitive*)dlsym(nativeHandle, "int");
-  upcalls->OfFloat = (ClassPrimitive*)dlsym(nativeHandle, "float");
-  upcalls->OfLong = (ClassPrimitive*)dlsym(nativeHandle, "long");
-  upcalls->OfDouble = (ClassPrimitive*)dlsym(nativeHandle, "double");
-   
-  // We have the java/lang/Object class, execute the static initializer.
-  static_init_t init = (static_init_t)(uintptr_t)javaLangObject->classLoader;
-  assert(init && "Loaded the wrong boot library");
-  init(loader);
-  
-  // Get the base object arrays after the init, because init puts arrays
-  // in the class loader map.
-  upcalls->ArrayOfString = 
-    loader->constructArray(loader->asciizConstructUTF8("[Ljava/lang/String;"));
-
-  upcalls->ArrayOfObject = 
-    loader->constructArray(loader->asciizConstructUTF8("[Ljava/lang/Object;"));
-  
-  ClassArray::InterfacesArray = upcalls->ArrayOfObject->interfaces;
-
-  return true;
-}
-
-
 void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
   UNIMPLEMENTED();
 }
@@ -171,10 +123,6 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
       JCL->hashUTF8->insert(field.name);
       JCL->hashUTF8->insert(field.type);
     }
-  }
-
-  if (!cl->isPrimitive()) {
-    JCL->getClasses()->map.insert(std::make_pair(cl->name, cl));
   }
 }
 
@@ -368,6 +316,65 @@ void Precompiled::ReadFrames(Jnjvm* vm, JnjvmClassLoader* loader) {
       }
     }
   }
+}
+
+bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
+  Class* javaLangObject = (Class*)dlsym(SELF_HANDLE, "java_lang_Object");
+  void* nativeHandle = SELF_HANDLE;
+  if (javaLangObject == NULL) {
+    void* handle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
+    if (handle != NULL) {
+      nativeHandle = handle;
+      javaLangObject = (Class*)dlsym(nativeHandle, "java_lang_Object");
+    }
+  }
+
+  if (javaLangObject == NULL) {
+    return false;
+  }
+
+  ClassArray::SuperArray = javaLangObject;
+    
+  // Get the native classes.
+  Classpath* upcalls = loader->upcalls;
+  upcalls->OfVoid = (ClassPrimitive*)dlsym(nativeHandle, "void");
+  upcalls->OfBool = (ClassPrimitive*)dlsym(nativeHandle, "boolean");
+  upcalls->OfByte = (ClassPrimitive*)dlsym(nativeHandle, "byte");
+  upcalls->OfChar = (ClassPrimitive*)dlsym(nativeHandle, "char");
+  upcalls->OfShort = (ClassPrimitive*)dlsym(nativeHandle, "short");
+  upcalls->OfInt = (ClassPrimitive*)dlsym(nativeHandle, "int");
+  upcalls->OfFloat = (ClassPrimitive*)dlsym(nativeHandle, "float");
+  upcalls->OfLong = (ClassPrimitive*)dlsym(nativeHandle, "long");
+  upcalls->OfDouble = (ClassPrimitive*)dlsym(nativeHandle, "double");
+  upcalls->OfVoid->classLoader = loader;
+  upcalls->OfBool->classLoader = loader;
+  upcalls->OfByte->classLoader = loader;
+  upcalls->OfChar->classLoader = loader;
+  upcalls->OfShort->classLoader = loader;
+  upcalls->OfInt->classLoader = loader;
+  upcalls->OfFloat->classLoader = loader;
+  upcalls->OfLong->classLoader = loader;
+  upcalls->OfDouble->classLoader = loader;
+  
+  J3DenseMap<const UTF8*, CommonClass*>* precompiledClassMap =
+    reinterpret_cast<J3DenseMap<const UTF8*, CommonClass*>*>(dlsym(nativeHandle, "ClassMap"));
+  loader->classes = new (loader->allocator, "ClassMap") ClassMap(precompiledClassMap);
+  for (ClassMap::iterator i = loader->getClasses()->map.begin(),
+       e = loader->getClasses()->map.end(); i != e; i++) {
+    vmjcAddPreCompiledClass(loader, i->second);
+  }
+  
+  // Get the base object arrays after the init, because init puts arrays
+  // in the class loader map.
+  upcalls->ArrayOfString = 
+    loader->constructArray(loader->asciizConstructUTF8("[Ljava/lang/String;"));
+
+  upcalls->ArrayOfObject = 
+    loader->constructArray(loader->asciizConstructUTF8("[Ljava/lang/Object;"));
+  
+  ClassArray::InterfacesArray = upcalls->ArrayOfObject->interfaces;
+
+  return true;
 }
 
 }

@@ -11,6 +11,7 @@
 #define J3_AOT_COMPILER_H
 
 #include "j3/JavaLLVMCompiler.h"
+#include "j3/J3DenseMap.h"
 
 namespace j3 {
 
@@ -58,7 +59,7 @@ public:
   llvm::Constant* HandleMagic(JavaObject* obj, CommonClass* cl);
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl);
   virtual JavaObject* getFinalObject(llvm::Value* C);
-  virtual llvm::Constant* getNativeClass(CommonClass* cl);
+  virtual llvm::GlobalVariable* getNativeClass(CommonClass* cl);
   virtual llvm::Constant* getClassBytes(const UTF8* name, ClassBytes* bytes);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClassPtr(CommonClass* cl);
@@ -99,6 +100,7 @@ private:
   llvm::Constant* CreateConstantFromJavaObject(JavaObject* obj);
   llvm::Constant* CreateConstantFromClassBytes(ClassBytes* bytes);
   llvm::Constant* CreateConstantFromJavaConstantPool(JavaConstantPool* ctp);
+  llvm::Constant* CreateConstantFromClassMap(const J3DenseMap<const UTF8*, CommonClass*>& map);
   void AddInitializerToClass(llvm::GlobalVariable* varGV, CommonClass* classDef);
   llvm::Constant* getUTF8(const UTF8* val);
   

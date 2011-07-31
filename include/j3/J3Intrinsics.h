@@ -45,6 +45,7 @@ public:
   llvm::Type* AttributType;
   llvm::Type* JavaThreadType;
   llvm::Type* MutatorThreadType;
+  llvm::Type* J3DenseMapType;
   
   llvm::Function* StartJNIFunction;
   llvm::Function* EndJNIFunction;
