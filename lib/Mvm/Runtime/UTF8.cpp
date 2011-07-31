@@ -34,15 +34,6 @@ const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
   return map->lookupOrCreateReader(buf, len);
 }
 
-static uint32 asciizHasher(const char* asciiz, sint32 size) {
-  uint32 r0 = 0, r1 = 0;
-  for (sint32 i = 0; i < size; i++) {
-    char c = asciiz[i];
-    r0 += c;
-    r1 ^= c;
-  }
-  return (r1 & 255) + ((r0 & 255) << 8);
-}
 
 uint32 UTF8::readerHasher(const uint16* buf, sint32 size) {
   uint32 r0 = 0, r1 = 0;
@@ -54,117 +45,63 @@ uint32 UTF8::readerHasher(const uint16* buf, sint32 size) {
   return (r1 & 255) + ((r0 & 255) << 8);
 }
 
-static bool asciizEqual(const UTF8* val, const char* asciiz, sint32 size) {
-  sint32 len = val->size;
-  if (len != size) return false;
-  else {
-    for (sint32 i = 0; i < len; i++) {
-      if (asciiz[i] != val->elements[i]) return false;
-    }
-    return true;
-  }
-}
-
-static bool readerEqual(const UTF8* val, const uint16* buf, sint32 size) {
-  sint32 len = val->size;
-  if (len != size) return false;
-  else return !(memcmp(val->elements, buf, len * sizeof(uint16)));
-}
 
 const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   sint32 size = strlen(asciiz);
-  uint32 key = asciizHasher(asciiz, size);
-  const UTF8* res = 0;
-  lock.lock();
-  
-  std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
-  
-  for (UTF8Map::iterator i = p.first; i != p.second; i++) {
-    if (asciizEqual(i->second, asciiz, size)) {
-      res = i->second;
-      break;
-    }
+  ThreadAllocator tempAllocator;
+  uint16_t* data = reinterpret_cast<uint16_t*>(
+      tempAllocator.Allocate(size * sizeof(uint16_t)));
+  for (int i = 0; i < size; i++) {
+    data[i] = asciiz[i];
   }
-
-  if (res == 0) {
-    UTF8* tmp = new(allocator, size) UTF8(size);
-    for (sint32 i = 0; i < size; i++) {
-      tmp->elements[i] = asciiz[i];
-    }
-    res = (const UTF8*)tmp;
-    map.insert(std::make_pair(key, res));
-  }
-  
-  lock.unlock();
-  return res;
+  return lookupOrCreateReader(data, size);
 }
+
 
 const UTF8* UTF8Map::lookupOrCreateReader(const uint16* buf, uint32 len) {
   sint32 size = (sint32)len;
-  uint32 key = UTF8::readerHasher(buf, size);
-  const UTF8* res = 0;
+  UTF8MapKey key(buf, size);
   lock.lock();
-  
-  std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
 
-  for (UTF8Map::iterator i = p.first; i != p.second; i++) {
-    if (readerEqual(i->second, buf, size)) {
-      res = i->second;
-      break;
-    }
-  }
-
-  if (res == 0) {
+  const UTF8* res = map.lookup(key);
+  if (res == NULL) {
     UTF8* tmp = new(allocator, size) UTF8(size);
     memcpy(tmp->elements, buf, len * sizeof(uint16));
     res = (const UTF8*)tmp;
-    map.insert(std::make_pair(key, res));
+    key.data = res->elements;
+    map[key] = res;
   }
   
   lock.unlock();
   return res;
 }
+
 
 const UTF8* UTF8Map::lookupAsciiz(const char* asciiz) {
   sint32 size = strlen(asciiz);
-  uint32 key = asciizHasher(asciiz, size);
-  const UTF8* res = 0;
-  lock.lock();
-  
-  std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
-  
-  for (UTF8Map::iterator i = p.first; i != p.second; i++) {
-    if (asciizEqual(i->second, asciiz, size)) {
-      res = i->second;
-      break;
-    }
+  ThreadAllocator tempAllocator;
+  uint16_t* data = reinterpret_cast<uint16_t*>(
+      tempAllocator.Allocate(size * sizeof(uint16_t)));
+  for (int i = 0; i < size; i++) {
+    data[i] = asciiz[i];
   }
-
-  lock.unlock();
-  return res;
+  return lookupReader(data, size);
 }
+
 
 const UTF8* UTF8Map::lookupReader(const uint16* buf, uint32 len) {
   sint32 size = (sint32)len;
-  uint32 key = UTF8::readerHasher(buf, size);
-  const UTF8* res = 0;
+  UTF8MapKey key(buf, size);
   lock.lock();
-  
-  std::pair<UTF8Map::iterator, UTF8Map::iterator> p = map.equal_range(key);
-
-  for (UTF8Map::iterator i = p.first; i != p.second; i++) {
-    if (readerEqual(i->second, buf, size)) {
-      res = i->second;
-      break;
-    }
-  }
-
+  const UTF8* res = map.lookup(key);
   lock.unlock();
   return res;
 }
 
+
 void UTF8Map::insert(const UTF8* val) {
-  map.insert(std::make_pair(val->hash(), val));
+  UTF8MapKey key(val->elements, val->size);
+  map[key] = val;
 }
 
-}
+} // namespace mvm

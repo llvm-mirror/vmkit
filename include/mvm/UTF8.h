@@ -85,35 +85,44 @@ struct MvmDenseMapInfo<const UTF8*> {
 
 
 struct UTF8MapKey {
-  uint32_t hash;
-  const UTF8* data;
-  UTF8MapKey(uint32_t h, const UTF8* d) : hash(h), data(d) {}
+  ssize_t length;
+  const uint16_t* data;
+
+  UTF8MapKey(const uint16_t* d, ssize_t l) {
+    data = d;
+    length = l;
+  }
 };
 
 // Provide MvmDenseMapInfo for UTF8MapKey.
 template<>
 struct MvmDenseMapInfo<UTF8MapKey> {
   static inline const UTF8MapKey getEmptyKey() {
-    static UTF8MapKey EmptyKey(0, NULL);
+    static UTF8MapKey EmptyKey(NULL, -1);
     return EmptyKey;
   }
   static inline const UTF8MapKey getTombstoneKey() {
-    static UTF8MapKey TombstoneKey(-1, NULL);
+    static UTF8MapKey TombstoneKey(NULL, -2);
     return TombstoneKey;
   }
   static unsigned getHashValue(const UTF8MapKey& key) {
-    return key.data->hash();
+    return UTF8::readerHasher(key.data, key.length);
   }
-  static bool isEqual(const UTF8MapKey& LHS, const UTF8MapKey& RHS) { return LHS.data->equals(RHS.data); }
+  static bool isEqual(const UTF8MapKey& LHS, const UTF8MapKey& RHS) {
+    if (LHS.data == RHS.data) return true;
+    if (LHS.length != RHS.length) return false;
+    return !memcmp(LHS.data, RHS.data, RHS.length * sizeof(uint16));
+  }
 };
 
 class UTF8Map : public mvm::PermanentObject {
 private:
-  typedef std::multimap<const uint32, const UTF8*>::iterator iterator;
+  typedef MvmDenseMap<UTF8MapKey, const UTF8*>::iterator iterator;
   
-  mvm::LockNormal lock;
-  mvm::BumpPtrAllocator& allocator;
-  std::multimap<const uint32, const UTF8*> map;
+  LockNormal lock;
+  BumpPtrAllocator& allocator;
+  // TODO(ngeoffray): This should really be a set.
+  MvmDenseMap<UTF8MapKey, const UTF8*> map;
 public:
 
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
@@ -121,7 +130,7 @@ public:
   const UTF8* lookupAsciiz(const char* asciiz); 
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
-  UTF8Map(mvm::BumpPtrAllocator& A) : allocator(A) {}
+  UTF8Map(BumpPtrAllocator& A) : allocator(A) {}
 
   ~UTF8Map() {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
