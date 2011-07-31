@@ -1228,9 +1228,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(nbVirtualFields);
   
   // staticFields
-  // Output null, getLLVMModule() will be set in  the initializer. Otherwise, the
-  // assembly emitter of LLVM will try to align the data.
-  ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.JavaFieldType));
+  ClassElts.push_back(ConstantExpr::getGetElementPtr(fields, nbVirtualFields));
 
   // nbStaticFields
   ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->nbStaticFields));
@@ -1285,8 +1283,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(nbVirtualMethods);
   
   // staticMethods
-  // Output null, getLLVMModule() will be set in  the initializer.
-  ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.JavaMethodType));
+  ClassElts.push_back(ConstantExpr::getGetElementPtr(methods, nbVirtualMethods));
 
   // nbStaticMethods
   ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->nbStaticMethods));

@@ -95,10 +95,6 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
 
   if (cl->isClass()) {
     Class* realCl = cl->asClass();
-		// To avoid data alignment in the llvm assembly emitter, we set the
-  	// staticMethods and staticFields fields here.
-    realCl->staticMethods = realCl->virtualMethods + realCl->nbVirtualMethods;
-    realCl->staticFields = realCl->virtualFields + realCl->nbVirtualFields;
 
     for (uint32 i = 0; i< realCl->nbStaticMethods; ++i) {
       JavaMethod& meth = realCl->staticMethods[i];
