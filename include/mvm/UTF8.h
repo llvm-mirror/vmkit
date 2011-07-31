@@ -3,6 +3,7 @@
 
 #include <map>
 #include "mvm/Allocator.h"
+#include "mvm/MvmDenseMap.h"
 
 namespace mvm {
 
@@ -20,15 +21,14 @@ private:
   }
   
 public:
-  /// size - The (constant) size of the array.
+  /// size - The (constant) size of the UTF8.
   ssize_t size;
 
-  /// elements - Elements of this array. The size here is different than the
-  /// actual size of the Java array. This is to facilitate Java array accesses
-  /// in JnJVM code. The size should be set to zero, but this is invalid C99.
+  /// elements - Elements of this UTF8.
+  /// The size should be set to zero, but this is invalid C99.
   uint16 elements[1];
   
-  /// extract - Similar, but creates it in the map.
+  /// extract - Extracts an UTF8 from the current UTF8
   const UTF8* extract(UTF8Map* map, uint32 start, uint32 len) const;
  
   /// equals - Are the two UTF8s equal?
@@ -65,6 +65,47 @@ public:
   }
 };
 
+extern "C" const UTF8 TombstoneKey;
+extern "C" const UTF8 EmptyKey;
+
+// Provide MvmDenseMapInfo for UTF8.
+template<>
+struct MvmDenseMapInfo<const UTF8*> {
+  static inline const UTF8* getEmptyKey() {
+    return &EmptyKey;
+  }
+  static inline const UTF8* getTombstoneKey() {
+    return &TombstoneKey;
+  }
+  static unsigned getHashValue(const UTF8* PtrVal) {
+    return PtrVal->hash();
+  }
+  static bool isEqual(const UTF8* LHS, const UTF8* RHS) { return LHS->equals(RHS); }
+};
+
+
+struct UTF8MapKey {
+  uint32_t hash;
+  const UTF8* data;
+  UTF8MapKey(uint32_t h, const UTF8* d) : hash(h), data(d) {}
+};
+
+// Provide MvmDenseMapInfo for UTF8MapKey.
+template<>
+struct MvmDenseMapInfo<UTF8MapKey> {
+  static inline const UTF8MapKey getEmptyKey() {
+    static UTF8MapKey EmptyKey(0, NULL);
+    return EmptyKey;
+  }
+  static inline const UTF8MapKey getTombstoneKey() {
+    static UTF8MapKey TombstoneKey(-1, NULL);
+    return TombstoneKey;
+  }
+  static unsigned getHashValue(const UTF8MapKey& key) {
+    return key.data->hash();
+  }
+  static bool isEqual(const UTF8MapKey& LHS, const UTF8MapKey& RHS) { return LHS.data->equals(RHS.data); }
+};
 
 class UTF8Map : public mvm::PermanentObject {
 private:

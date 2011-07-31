@@ -1099,7 +1099,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
   return ConstantStruct::get(STy, ClassElts);
 }
 
-Constant* JavaAOTCompiler::CreateConstantFromClassMap(const J3DenseMap<const UTF8*, CommonClass*>& map) {
+Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::MvmDenseMap<const UTF8*, CommonClass*>& map) {
   StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.J3DenseMapType->getContainedType(0));
   Module& Mod = *getLLVMModule();
@@ -1113,15 +1113,15 @@ Constant* JavaAOTCompiler::CreateConstantFromClassMap(const J3DenseMap<const UTF
     ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, map.NumBuckets * 2);
 
     for (uint32 i = 0; i < map.NumBuckets; ++i) {
-      J3Pair<const UTF8*, CommonClass*> pair = map.Buckets[i];
-      if (pair.first == &TombstoneKey) {
+      mvm::MvmPair<const UTF8*, CommonClass*> pair = map.Buckets[i];
+      if (pair.first == &mvm::TombstoneKey) {
         static GlobalVariable* gv =
           new GlobalVariable(Mod, JavaIntrinsics.UTF8Type->getContainedType(0),
                              false, GlobalValue::ExternalLinkage, NULL,
                              "TombstoneKey");
         TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, gv, JavaIntrinsics.ptrType));
         TempElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
-      } else if (pair.first == &EmptyKey) {
+      } else if (pair.first == &mvm::EmptyKey) {
         static GlobalVariable* gv =
           new GlobalVariable(Mod, JavaIntrinsics.UTF8Type->getContainedType(0),
                              false, GlobalValue::ExternalLinkage, NULL,

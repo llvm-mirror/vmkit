@@ -16,7 +16,6 @@
 #ifndef JNJVM_LOCKED_MAP_H
 #define JNJVM_LOCKED_MAP_H
 
-#include "j3/J3DenseMap.h"
 
 #include <map>
 
@@ -25,29 +24,11 @@
 #include "types.h"
 
 #include "mvm/Allocator.h"
+#include "mvm/MvmDenseMap.h"
 #include "mvm/Threads/Locks.h"
 #include "UTF8.h"
 
-extern "C" const j3::UTF8 TombstoneKey;
-extern "C" const j3::UTF8 EmptyKey;
-
 namespace j3 {
-
-// Provide J3DenseMapInfo for UTF8.
-template<>
-struct J3DenseMapInfo<const j3::UTF8*> {
-  static inline const j3::UTF8* getEmptyKey() {
-    return &EmptyKey;
-  }
-  static inline const j3::UTF8* getTombstoneKey() {
-    return &TombstoneKey;
-  }
-  static unsigned getHashValue(const j3::UTF8* PtrVal) {
-    return PtrVal->hash();
-  }
-  static bool isEqual(const j3::UTF8* LHS, const j3::UTF8* RHS) { return LHS->equals(RHS); }
-};
-
 
 class ArrayUInt16;
 class JavaString;
@@ -130,25 +111,25 @@ public:
 class ClassMap : public mvm::PermanentObject {
 public:
   ClassMap() {}
-  ClassMap(J3DenseMap<const UTF8*, UserCommonClass*>* precompiled) : map(*precompiled) {}
+  ClassMap(mvm::MvmDenseMap<const mvm::UTF8*, UserCommonClass*>* precompiled) : map(*precompiled) {}
 
   mvm::LockRecursive lock;
-  J3DenseMap<const UTF8*, UserCommonClass*> map;
-  typedef J3DenseMap<const UTF8*, UserCommonClass*>::iterator iterator;
+  mvm::MvmDenseMap<const mvm::UTF8*, UserCommonClass*> map;
+  typedef mvm::MvmDenseMap<const mvm::UTF8*, UserCommonClass*>::iterator iterator;
 };
 
 class TypeMap : public mvm::PermanentObject {
 public:
   mvm::LockNormal lock;
-  J3DenseMap<const UTF8*, Typedef*> map;
-  typedef J3DenseMap<const UTF8*, Typedef*>::iterator iterator;
+  mvm::MvmDenseMap<const mvm::UTF8*, Typedef*> map;
+  typedef mvm::MvmDenseMap<const mvm::UTF8*, Typedef*>::iterator iterator;
 };
 
 class SignMap : public mvm::PermanentObject {
 public:
   mvm::LockNormal lock;
-  J3DenseMap<const UTF8*, Signdef*> map;
-  typedef J3DenseMap<const UTF8*, Signdef*>::iterator iterator;
+  mvm::MvmDenseMap<const mvm::UTF8*, Signdef*> map;
+  typedef mvm::MvmDenseMap<const mvm::UTF8*, Signdef*>::iterator iterator;
 };
 
 } // end namespace j3

@@ -11,7 +11,11 @@
 #include "mvm/UTF8.h"
 #include "mvm/PrintBuffer.h"
 
-using namespace mvm;
+namespace mvm {
+
+extern "C" const UTF8 TombstoneKey(0);
+extern "C" const UTF8 EmptyKey(0);
+
 
 void UTF8::print(PrintBuffer *pb) const {
 	pb->writeUTF8(this);
@@ -161,4 +165,6 @@ const UTF8* UTF8Map::lookupReader(const uint16* buf, uint32 len) {
 
 void UTF8Map::insert(const UTF8* val) {
   map.insert(std::make_pair(val->hash(), val));
+}
+
 }

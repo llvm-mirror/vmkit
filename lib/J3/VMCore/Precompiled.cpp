@@ -352,8 +352,8 @@ bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   upcalls->OfLong->classLoader = loader;
   upcalls->OfDouble->classLoader = loader;
   
-  J3DenseMap<const UTF8*, CommonClass*>* precompiledClassMap =
-    reinterpret_cast<J3DenseMap<const UTF8*, CommonClass*>*>(dlsym(nativeHandle, "ClassMap"));
+  mvm::MvmDenseMap<const UTF8*, CommonClass*>* precompiledClassMap =
+    reinterpret_cast<mvm::MvmDenseMap<const UTF8*, CommonClass*>*>(dlsym(nativeHandle, "ClassMap"));
   loader->classes = new (loader->allocator, "ClassMap") ClassMap(precompiledClassMap);
   for (ClassMap::iterator i = loader->getClasses()->map.begin(),
        e = loader->getClasses()->map.end(); i != e; i++) {

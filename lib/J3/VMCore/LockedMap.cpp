@@ -15,9 +15,6 @@
 
 namespace j3 {
 
-extern "C" const UTF8 TombstoneKey(0);
-extern "C" const UTF8 EmptyKey(0);
-
 bool ltarray16::operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const {
   llvm_gcroot(s1, 0);
   llvm_gcroot(s2, 0);
