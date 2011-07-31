@@ -646,18 +646,18 @@ void Jnjvm::noClassDefFoundError(UserClass* cl, const UTF8* name) {
   uint32 i = 0;
 
 
-  ArrayUInt16::setElement(msg, 't', i);
-  ArrayUInt16::setElement(msg, 'r', i);
-  ArrayUInt16::setElement(msg, 'y', i);
-  ArrayUInt16::setElement(msg, ' ', i);
-  ArrayUInt16::setElement(msg, 't', i);
-  ArrayUInt16::setElement(msg, 'o', i);
-  ArrayUInt16::setElement(msg, ' ', i);
-  ArrayUInt16::setElement(msg, 'l', i);
-  ArrayUInt16::setElement(msg, 'o', i);
-  ArrayUInt16::setElement(msg, 'a', i);
-  ArrayUInt16::setElement(msg, 'd', i);
-  ArrayUInt16::setElement(msg, ' ', i);
+  ArrayUInt16::setElement(msg, 't', i); i++;
+  ArrayUInt16::setElement(msg, 'r', i); i++;
+  ArrayUInt16::setElement(msg, 'y', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 't', i); i++;
+  ArrayUInt16::setElement(msg, 'o', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
+  ArrayUInt16::setElement(msg, 'l', i); i++;
+  ArrayUInt16::setElement(msg, 'o', i); i++;
+  ArrayUInt16::setElement(msg, 'a', i); i++;
+  ArrayUInt16::setElement(msg, 'd', i); i++;
+  ArrayUInt16::setElement(msg, ' ', i); i++;
 
   for (sint32 j = 0; j < cl->name->size; ++j) {
     if (cl->name->elements[j] == '/') {
