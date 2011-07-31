@@ -313,8 +313,8 @@ bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   upcalls->OfLong->classLoader = loader;
   upcalls->OfDouble->classLoader = loader;
 
-  mvm::MvmDenseMap<mvm::UTF8MapKey, const UTF8*>* precompiledUTF8Map =
-    reinterpret_cast<mvm::MvmDenseMap<mvm::UTF8MapKey, const UTF8*>*>(dlsym(nativeHandle, "UTF8Map"));
+  mvm::MvmDenseSet<mvm::UTF8MapKey, const UTF8*>* precompiledUTF8Map =
+    reinterpret_cast<mvm::MvmDenseSet<mvm::UTF8MapKey, const UTF8*>*>(dlsym(nativeHandle, "UTF8Map"));
   loader->hashUTF8 = new (loader->allocator, "UTF8Map") UTF8Map(loader->allocator, precompiledUTF8Map);
   
   mvm::MvmDenseMap<const UTF8*, CommonClass*>* precompiledClassMap =

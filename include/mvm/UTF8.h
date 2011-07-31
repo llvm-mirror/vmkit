@@ -4,6 +4,7 @@
 #include <map>
 #include "mvm/Allocator.h"
 #include "mvm/MvmDenseMap.h"
+#include "mvm/MvmDenseSet.h"
 
 namespace mvm {
 
@@ -68,6 +69,16 @@ public:
 extern "C" const UTF8 TombstoneKey;
 extern "C" const UTF8 EmptyKey;
 
+struct UTF8MapKey {
+  ssize_t length;
+  const uint16_t* data;
+
+  UTF8MapKey(const uint16_t* d, ssize_t l) {
+    data = d;
+    length = l;
+  }
+};
+
 // Provide MvmDenseMapInfo for UTF8.
 template<>
 struct MvmDenseMapInfo<const UTF8*> {
@@ -81,18 +92,14 @@ struct MvmDenseMapInfo<const UTF8*> {
     return PtrVal->hash();
   }
   static bool isEqual(const UTF8* LHS, const UTF8* RHS) { return LHS->equals(RHS); }
-};
-
-
-struct UTF8MapKey {
-  ssize_t length;
-  const uint16_t* data;
-
-  UTF8MapKey(const uint16_t* d, ssize_t l) {
-    data = d;
-    length = l;
+  static bool isEqualKey(const UTF8* LHS, const UTF8MapKey& Key) {
+    return LHS->equals(Key.data, Key.length);
+  }
+  static UTF8MapKey toKey(const UTF8* utf8) {
+    return UTF8MapKey(utf8->elements, utf8->size);
   }
 };
+
 
 // Provide MvmDenseMapInfo for UTF8MapKey.
 template<>
@@ -117,12 +124,11 @@ struct MvmDenseMapInfo<UTF8MapKey> {
 
 class UTF8Map : public mvm::PermanentObject {
 public:
-  typedef MvmDenseMap<UTF8MapKey, const UTF8*>::iterator iterator;
+  typedef MvmDenseSet<UTF8MapKey, const UTF8*>::iterator iterator;
   
   LockNormal lock;
   BumpPtrAllocator& allocator;
-  // TODO(ngeoffray): This should really be a set.
-  MvmDenseMap<UTF8MapKey, const UTF8*> map;
+  MvmDenseSet<UTF8MapKey, const UTF8*> map;
 
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
@@ -130,12 +136,12 @@ public:
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
   UTF8Map(BumpPtrAllocator& A) : allocator(A) {}
-  UTF8Map(BumpPtrAllocator& A, MvmDenseMap<UTF8MapKey, const UTF8*>* m)
+  UTF8Map(BumpPtrAllocator& A, MvmDenseSet<UTF8MapKey, const UTF8*>* m)
       : allocator(A), map(*m) {}
 
   ~UTF8Map() {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {
-      allocator.Deallocate((void*)i->second);
+      allocator.Deallocate((void*)*i);
     }
   }
 

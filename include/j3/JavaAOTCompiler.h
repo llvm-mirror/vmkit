@@ -102,7 +102,7 @@ private:
   llvm::Constant* CreateConstantFromClassBytes(ClassBytes* bytes);
   llvm::Constant* CreateConstantFromJavaConstantPool(JavaConstantPool* ctp);
   llvm::Constant* CreateConstantFromClassMap(const mvm::MvmDenseMap<const UTF8*, CommonClass*>& map);
-  llvm::Constant* CreateConstantFromUTF8Map(const mvm::MvmDenseMap<mvm::UTF8MapKey, const UTF8*>& map);
+  llvm::Constant* CreateConstantFromUTF8Map(const mvm::MvmDenseSet<mvm::UTF8MapKey, const UTF8*>& set);
   void AddInitializerToClass(llvm::GlobalVariable* varGV, CommonClass* classDef);
   llvm::Constant* getUTF8(const UTF8* val);
   
@@ -178,6 +178,8 @@ public:
   llvm::Function* RegularObjectTracer;
   llvm::Function* JavaObjectTracer;
   llvm::Function* ReferenceObjectTracer;
+  llvm::GlobalVariable* UTF8TombstoneGV;
+  llvm::GlobalVariable* UTF8EmptyGV;
   
   bool generateStubs;
   bool assumeCompiled;
