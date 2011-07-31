@@ -15,6 +15,7 @@
 #include "llvm/PassManager.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "mvm/UTF8.h"
 #include "mvm/Threads/Thread.h"
 
 #include "j3/J3Intrinsics.h"
@@ -1150,6 +1151,60 @@ Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::MvmDenseMap<con
   return new GlobalVariable(Mod, STy, false,
                             GlobalValue::ExternalLinkage,
                             ConstantStruct::get(STy, elements), "ClassMap");
+}
+
+Constant* JavaAOTCompiler::CreateConstantFromUTF8Map(const mvm::MvmDenseMap<mvm::UTF8MapKey, const UTF8*>& map) {
+  StructType* STy = 
+    dyn_cast<StructType>(JavaIntrinsics.J3DenseMapType->getContainedType(0));
+  Module& Mod = *getLLVMModule();
+
+  std::vector<Constant*> elements;
+  elements.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), map.NumBuckets));
+
+  Constant* buckets;
+  if (map.NumBuckets > 0) {
+    std::vector<Constant*> TempElts;
+    ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, map.NumBuckets * 3);
+
+    for (uint32 i = 0; i < map.NumBuckets; ++i) {
+      mvm::MvmPair<mvm::UTF8MapKey, const UTF8*>& pair = map.Buckets[i];
+      TempElts.push_back(ConstantExpr::getCast(
+            Instruction::IntToPtr,
+            ConstantInt::get(JavaIntrinsics.pointerSizeType, pair.first.length),
+            JavaIntrinsics.ptrType));
+
+      if (mvm::MvmDenseMapInfo<mvm::UTF8MapKey>::isEqual(pair.first,
+                mvm::MvmDenseMapInfo<mvm::UTF8MapKey>::getEmptyKey())
+          || mvm::MvmDenseMapInfo<mvm::UTF8MapKey>::isEqual(pair.first,
+                mvm::MvmDenseMapInfo<mvm::UTF8MapKey>::getTombstoneKey())) {
+        TempElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
+        TempElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
+      } else {
+        Constant* gv = getUTF8(pair.second);
+        Constant* GEP[2] = { JavaIntrinsics.constantZero, JavaIntrinsics.constantOne };
+
+        TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast,
+              ConstantExpr::getGetElementPtr(gv, GEP, 2), JavaIntrinsics.ptrType));
+        TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, gv, JavaIntrinsics.ptrType));
+      }
+    }
+
+    buckets = ConstantArray::get(ATy, TempElts);
+
+    GlobalVariable* gv = new GlobalVariable(Mod, ATy, false, GlobalValue::InternalLinkage, buckets, "");
+    buckets = ConstantExpr::getCast(Instruction::BitCast, gv, JavaIntrinsics.ptrType);
+  } else {
+    buckets = Constant::getNullValue(JavaIntrinsics.ptrType);
+  }
+
+  elements.push_back(buckets);
+  elements.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), map.NumEntries));
+  elements.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), map.NumTombstones));
+  elements.push_back(ConstantInt::get(Type::getInt1Ty(getLLVMContext()), 1));
+
+  return new GlobalVariable(Mod, STy, false,
+                            GlobalValue::ExternalLinkage,
+                            ConstantStruct::get(STy, elements), "UTF8Map");
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
@@ -2362,6 +2417,9 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
 
   // Emit the class map.
   CreateConstantFromClassMap(loader->classes->map);
+
+  // Emit the UTF8 map.
+  CreateConstantFromUTF8Map(loader->hashUTF8->map);
 }
 
 /// compileAllStubs - Compile all the native -> Java stubs. 

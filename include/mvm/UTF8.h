@@ -116,14 +116,13 @@ struct MvmDenseMapInfo<UTF8MapKey> {
 };
 
 class UTF8Map : public mvm::PermanentObject {
-private:
+public:
   typedef MvmDenseMap<UTF8MapKey, const UTF8*>::iterator iterator;
   
   LockNormal lock;
   BumpPtrAllocator& allocator;
   // TODO(ngeoffray): This should really be a set.
   MvmDenseMap<UTF8MapKey, const UTF8*> map;
-public:
 
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
@@ -131,6 +130,8 @@ public:
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
   UTF8Map(BumpPtrAllocator& A) : allocator(A) {}
+  UTF8Map(BumpPtrAllocator& A, MvmDenseMap<UTF8MapKey, const UTF8*>* m)
+      : allocator(A), map(*m) {}
 
   ~UTF8Map() {
     for (iterator i = map.begin(), e = map.end(); i!= e; ++i) {

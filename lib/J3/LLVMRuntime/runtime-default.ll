@@ -49,7 +49,7 @@
 
 %Attribut = type { %UTF8*, i32, i32 }
 
-%UTF8 = type { %JavaObject, i8*, [0 x i16] }
+%UTF8 = type { i8*, [0 x i16] }
 
 
 %JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i32,

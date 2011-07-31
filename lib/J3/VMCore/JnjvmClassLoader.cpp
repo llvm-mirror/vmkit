@@ -65,7 +65,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   
 	TheCompiler = Comp;
   
-  hashUTF8 = new(allocator, "UTF8Map") UTF8Map(allocator);
   javaTypes = new(allocator, "TypeMap") TypeMap(); 
   javaSignatures = new(allocator, "SignMap") SignMap();
   strings = new(allocator, "StringList") StringList();
@@ -84,6 +83,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
  
   if (!bootLoaded) {
     classes = new(allocator, "ClassMap") ClassMap();
+    hashUTF8 = new(allocator, "UTF8Map") UTF8Map(allocator);
     // Analyze the boot classpath, we know bootstrap classes are not in the
     // executable.
     analyseClasspathEnv(bootClasspathEnv);
