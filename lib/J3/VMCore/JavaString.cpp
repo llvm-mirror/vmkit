@@ -19,7 +19,7 @@ using namespace j3;
 
 JavaVirtualTable* JavaString::internStringVT = 0;
 
-JavaString* JavaString::stringDup(const ArrayUInt16*& _array, Jnjvm* vm) {
+JavaString* JavaString::stringDup(const ArrayUInt16 *const& _array, Jnjvm* vm) {
   
   JavaString* res = 0;
   const ArrayUInt16* array = _array;

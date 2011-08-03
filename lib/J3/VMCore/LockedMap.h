@@ -39,19 +39,19 @@ class UserCommonClass;
 class UserClassArray;
 
 struct ltarray16 {
-  bool operator()(const ArrayUInt16* s1, const ArrayUInt16* s2) const;
+  bool operator()(const ArrayUInt16 *const s1, const ArrayUInt16 *const s2) const;
 };
 
 class StringMap : public mvm::PermanentObject {
 public:
-  typedef std::map<const ArrayUInt16*, JavaString*, ltarray16>::iterator iterator;
-  typedef JavaString* (*funcCreate)(const ArrayUInt16*& V, Jnjvm* vm);
+  typedef std::map<const ArrayUInt16 *const, JavaString*, ltarray16>::iterator iterator;
+  typedef JavaString* (*funcCreate)(const ArrayUInt16 *const& V, Jnjvm* vm);
 
   mvm::LockNormal lock;
-  std::map<const ArrayUInt16*, JavaString*, ltarray16,
-           std::allocator<std::pair<const ArrayUInt16*, JavaString*> > > map;
+  std::map<const ArrayUInt16 *const, JavaString*, ltarray16,
+           std::allocator<std::pair<const ArrayUInt16 *const, JavaString*> > > map;
   
-  inline JavaString* lookupOrCreate(const ArrayUInt16* array, Jnjvm* vm, funcCreate func) {
+  inline JavaString* lookupOrCreate(const ArrayUInt16 *const array, Jnjvm* vm, funcCreate func) {
     JavaString* res = 0;
     llvm_gcroot(res, 0);
     llvm_gcroot(array, 0);
@@ -69,14 +69,14 @@ public:
     }
   }
   
-  inline void remove(const ArrayUInt16* array) {
+  inline void remove(const ArrayUInt16 *const array) {
     llvm_gcroot(array, 0);
     lock.lock();
     map.erase(array);
     lock.unlock();
   }
-  
-  inline JavaString* lookup(const ArrayUInt16* array) {
+
+  inline JavaString* lookup(const ArrayUInt16 *const array) {
     llvm_gcroot(array, 0);
     lock.lock();
     iterator End = map.end();
@@ -85,7 +85,7 @@ public:
     return I != End ? ((JavaString*)(I->second)) : 0; 
   }
 
-  inline void hash(const ArrayUInt16* array, JavaString* str) {
+  inline void hash(const ArrayUInt16 *const array, JavaString* str) {
     llvm_gcroot(array, 0);
     llvm_gcroot(str, 0);
     lock.lock();
@@ -93,12 +93,12 @@ public:
     lock.unlock();
   }
 
-  inline void removeUnlocked(const ArrayUInt16* array, JavaString* str) {
+  inline void removeUnlocked(const ArrayUInt16 *const array, JavaString* str) {
     llvm_gcroot(str, 0);
     llvm_gcroot(array, 0);
     iterator End = map.end();
     iterator I = map.find(array);
-    
+
     if (I != End && I->second == str) map.erase(I); 
   }
 

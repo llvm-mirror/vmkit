@@ -40,7 +40,7 @@ class JavaString : public JavaObject {
     return self->value;
   }
   
-  static JavaString* stringDup(const ArrayUInt16*& array, Jnjvm* vm);
+  static JavaString* stringDup(const ArrayUInt16 *const & array, Jnjvm* vm);
 
   /// internalToJava - Creates a copy of the UTF8 at its given offset and size
   /// with all its '.' replaced by '/'. The JVM bytecode reference classes in
