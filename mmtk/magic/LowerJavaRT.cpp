@@ -95,6 +95,12 @@ bool LowerJavaRT::runOnModule(Module& M) {
   Ma->replaceAllUsesWith(NewFunction);
   Ma->eraseFromParent();
 
+  // Finally, remove GC info from the methods. They must not have any
+  // gcroot.
+  for (Module::iterator I = M.begin(), E = M.end(); I != E; I++) {
+    I->clearGC();
+  }
+
   return Changed;
 }
 
