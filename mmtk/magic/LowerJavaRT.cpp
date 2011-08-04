@@ -75,9 +75,14 @@ bool LowerJavaRT::runOnModule(Module& M) {
       GV.eraseFromParent();
     }
   }
+
+  // Replace finalization calls with null.
+  Function* F = M.getFunction("addFinalizationCandidate");
+  F->replaceAllUsesWith(Constant::getNullValue(F->getType()));
+  F->eraseFromParent();
  
   // Replace gcmalloc with the allocator of MMTk objects in VMKit
-  Function* F = M.getFunction("gcmalloc");
+  F = M.getFunction("gcmalloc");
   Function* Ma = M.getFunction("AllocateMagicArray");
 
   Function* NewFunction = 
