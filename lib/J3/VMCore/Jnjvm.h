@@ -131,6 +131,8 @@ private:
   virtual void addFinalizationCandidate(gc* obj);
   virtual size_t getObjectSize(gc* obj);
   virtual const char* getObjectTypeName(gc* obj);
+  virtual void printMethod(mvm::FrameInfo* FI, void* ip, void* addr);
+
 
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
@@ -337,7 +339,7 @@ public:
   /// Jnjvm - Allocates a new JVM.
   ///
   Jnjvm(mvm::BumpPtrAllocator& Alloc,
-        mvm::CamlFrames** frames,
+        mvm::CompiledFrames** frames,
         JnjvmBootstrapLoader* loader);
   
   /// runApplication - Runs the application with the given command line.

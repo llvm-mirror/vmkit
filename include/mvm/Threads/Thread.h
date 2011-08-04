@@ -29,7 +29,7 @@
 
 namespace mvm {
 
-class MethodInfo;
+class FrameInfo;
 class VirtualMachine;
 
 /// CircularBase - This class represents a circular list. Classes that extend
@@ -334,7 +334,7 @@ public:
   jmp_buf buffer;
 };
 
-/// StackWalker - This class walks the stack of threads, returning a MethodInfo
+/// StackWalker - This class walks the stack of threads, returning a FrameInfo
 /// object at each iteration.
 ///
 class StackWalker {
@@ -347,7 +347,7 @@ public:
   StackWalker(mvm::Thread* th) __attribute__ ((noinline));
   void operator++();
   void* operator*();
-  MethodInfo* get();
+  FrameInfo* get();
 
 };
 

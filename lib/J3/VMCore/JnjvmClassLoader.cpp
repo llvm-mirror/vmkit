@@ -843,7 +843,7 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 JnjvmClassLoader::~JnjvmClassLoader() {
 
   if (isolate) {
-    isolate->removeMethodInfos(TheCompiler);
+    isolate->removeFrameInfos(TheCompiler);
   }
 
   if (classes) {

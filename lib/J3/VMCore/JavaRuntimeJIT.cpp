@@ -560,13 +560,12 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
   ++Walker; // Remove the stub.
-  mvm::MethodInfo* MI = Walker.get();
-  assert(MI->isHighLevelMethod() && "Wrong stack trace");
-  JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
-  void* ip = *Walker;
+  mvm::FrameInfo* FI = Walker.get();
+  assert(FI->Metadata != NULL && "Wrong stack trace");
+  JavaMethod* meth = (JavaMethod*)FI->Metadata;
 
   // Lookup the method info in the constant pool of the caller.
-  uint16 ctpIndex = meth->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
+  uint16 ctpIndex = meth->lookupCtpIndex(FI);
   assert(ctpIndex && "No constant pool index");
   JavaConstantPool* ctpInfo = meth->classDef->getConstantPool();
   CommonClass* ctpCl = 0;
@@ -621,13 +620,12 @@ extern "C" void* j3ResolveStaticStub() {
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
   ++Walker; // Remove the stub.
-  mvm::MethodInfo* MI = Walker.get();
-  assert(MI->isHighLevelMethod() && "Wrong stack trace");
-  JavaMethod* caller = (JavaMethod*)MI->MetaInfo;
-  void* ip = *Walker;
+  mvm::FrameInfo* FI = Walker.get();
+  assert(FI->Metadata != NULL && "Wrong stack trace");
+  JavaMethod* caller = (JavaMethod*)FI->Metadata;
 
   // Lookup the method info in the constant pool of the caller.
-  uint16 ctpIndex = caller->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
+  uint16 ctpIndex = caller->lookupCtpIndex(FI);
   assert(ctpIndex && "No constant pool index");
   JavaConstantPool* ctpInfo = caller->classDef->getConstantPool();
   CommonClass* cl = 0;
@@ -659,13 +657,12 @@ extern "C" void* j3ResolveSpecialStub() {
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
   ++Walker; // Remove the stub.
-  mvm::MethodInfo* MI = Walker.get();
-  assert(MI->isHighLevelMethod() && "Wrong stack trace");
-  JavaMethod* caller = (JavaMethod*)MI->MetaInfo;
-  void* ip = *Walker;
+  mvm::FrameInfo* FI = Walker.get();
+  assert(FI->Metadata != NULL && "Wrong stack trace");
+  JavaMethod* caller = (JavaMethod*)FI->Metadata;
 
   // Lookup the method info in the constant pool of the caller.
-  uint16 ctpIndex = caller->lookupCtpIndex(reinterpret_cast<uintptr_t>(ip));
+  uint16 ctpIndex = caller->lookupCtpIndex(FI);
   assert(ctpIndex && "No constant pool index");
   JavaConstantPool* ctpInfo = caller->classDef->getConstantPool();
   CommonClass* cl = 0;

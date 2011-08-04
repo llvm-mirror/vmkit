@@ -634,7 +634,7 @@ void JavaMethod::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
   access = A;
   canBeInlined = false;
   offset = 0;
-  codeInfo = NULL;
+  frames = NULL;
 }
 
 void JavaField::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
@@ -1699,59 +1699,51 @@ void AnnotationReader::readElementValue() {
   }
 }
 
-CodeLineInfo* JavaMethod::lookupCodeLineInfo(uintptr_t ip) {
-  for(uint16 i = 0; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address == ip) {
-      return &(codeInfo[i]);
-    }
-  }
-  return NULL;
-}
-
-uint16 JavaMethod::lookupLineNumber(uintptr_t ip) {
-  for(uint16 i = 0; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address == ip) {
-      Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);      
-      if (codeAtt == NULL) return 0;
-      Reader reader(codeAtt, classDef->bytes);
-      reader.readU2(); // max_stack
-      reader.readU2(); // max_locals;
-      uint32_t codeLength = reader.readU4();
-      reader.seek(codeLength, Reader::SeekCur);
-      uint16_t exceptionTableLength = reader.readU2();
-      reader.seek(8 * exceptionTableLength, Reader::SeekCur);
-      uint16_t nba = reader.readU2();
-      for (uint16 att = 0; att < nba; ++att) {
-        const UTF8* attName = classDef->ctpInfo->UTF8At(reader.readU2());
-        uint32 attLen = reader.readU4();
-        if (attName->equals(Attribut::lineNumberTableAttribut)) {
-          uint16_t lineLength = reader.readU2();
-          uint16_t currentLine = 0;
-          for (uint16 j = 0; j < lineLength; ++j) {
-            uint16 pc = reader.readU2();
-            if (pc > codeInfo[i].bytecodeIndex + 1) return currentLine;
-            currentLine = reader.readU2();
-          }
-          return currentLine;
-        } else {
-          reader.seek(attLen, Reader::SeekCur);      
-        }
+uint16 JavaMethod::lookupLineNumber(mvm::FrameInfo* info) {
+  Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);      
+  if (codeAtt == NULL) return 0;
+  Reader reader(codeAtt, classDef->bytes);
+  reader.readU2(); // max_stack
+  reader.readU2(); // max_locals;
+  uint32_t codeLength = reader.readU4();
+  reader.seek(codeLength, Reader::SeekCur);
+  uint16_t exceptionTableLength = reader.readU2();
+  reader.seek(8 * exceptionTableLength, Reader::SeekCur);
+  uint16_t nba = reader.readU2();
+  for (uint16 att = 0; att < nba; ++att) {
+    const UTF8* attName = classDef->ctpInfo->UTF8At(reader.readU2());
+    uint32 attLen = reader.readU4();
+    if (attName->equals(Attribut::lineNumberTableAttribut)) {
+      uint16_t lineLength = reader.readU2();
+      uint16_t currentLine = 0;
+      for (uint16 j = 0; j < lineLength; ++j) {
+        uint16 pc = reader.readU2();
+        if (pc > info->SourceIndex + 1) return currentLine;
+        currentLine = reader.readU2();
       }
+      return currentLine;
+    } else {
+      reader.seek(attLen, Reader::SeekCur);      
     }
   }
   return 0;
 }
 
-uint16 JavaMethod::lookupCtpIndex(uintptr_t ip) {
-  for(uint16 i = 0; i < codeInfoLength; ++i) {
-    if (codeInfo[i].address == ip) {
-      Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);
-      Reader reader(codeAtt, classDef->bytes);
-      reader.cursor = reader.cursor + 2 + 2 + 4 + codeInfo[i].bytecodeIndex + 1;
-      return reader.readU2();
-    }
+uint16 JavaMethod::lookupCtpIndex(mvm::FrameInfo* FI) {
+  Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);
+  Reader reader(codeAtt, classDef->bytes);
+  reader.cursor = reader.cursor + 2 + 2 + 4 + FI->SourceIndex + 1;
+  return reader.readU2();
+}
+
+
+void JavaMethod::updateFrames() {
+  mvm::FrameIterator iterator(*frames);
+
+  while (iterator.hasNext()) {
+    mvm::FrameInfo* frame = iterator.next();
+    frame->Metadata = this;
   }
-  return 0;
 }
 
 void Class::acquire() {

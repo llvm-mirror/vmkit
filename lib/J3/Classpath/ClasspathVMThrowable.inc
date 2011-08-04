@@ -83,7 +83,7 @@ JavaObject* throwable) {
 }
 
 
-JavaObject* consStackElement(JavaMethod* meth, void* ip) {
+JavaObject* consStackElement(mvm::FrameInfo* FI, void* ip) {
 
   JavaString* methodName = 0;
   JavaString* className = 0;
@@ -95,6 +95,7 @@ JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   llvm_gcroot(res, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaMethod* meth = (JavaMethod*)FI->Metadata;
   methodName = vm->internalUTF8ToStr(meth->name);
   Class* cl = meth->classDef;
   className = JavaString::internalToJava(cl->name, vm);
@@ -109,7 +110,7 @@ JavaObject* consStackElement(JavaMethod* meth, void* ip) {
   }
 
   bool native = isNative(meth->access);
-  uint16 lineNumber = meth->lookupLineNumber(reinterpret_cast<uintptr_t>(ip));
+  uint16 lineNumber = meth->lookupLineNumber(FI);
 
   UserClass* newS = vm->upcalls->newStackTraceElement;
   res = newS->doNew(vm);
@@ -143,10 +144,10 @@ JavaObject* vmthrow, JavaObject* throwable) {
   // on the stack.
   sint32 index = 2;;
   while (index != JavaArray::getSize(stack)) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
-    if (!MI->isHighLevelMethod()) ++index;
+    mvm::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
+    if (FI->Metadata == NULL) ++index;
     else {
-      JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
+      JavaMethod* meth = (JavaMethod*)FI->Metadata;
       assert(meth && "Wrong stack trace");
       if (meth->classDef->isAssignableFrom(vm->upcalls->newThrowable)) {
         ++index;
@@ -157,9 +158,9 @@ JavaObject* vmthrow, JavaObject* throwable) {
   sint32 size = 0;
   sint32 cur = index;
   while (cur < JavaArray::getSize(stack)) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
+    mvm::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
     ++cur;
-    if (MI->isHighLevelMethod()) ++size;
+    if (FI->Metadata != NULL) ++size;
   }
 
   result = (ArrayObject*)
@@ -167,10 +168,9 @@ JavaObject* vmthrow, JavaObject* throwable) {
   
   cur = 0;
   for (sint32 i = index; i < JavaArray::getSize(stack); ++i) {
-    mvm::MethodInfo* MI = vm->IPToMethodInfo(ArrayPtr::getElement((ArrayPtr*)stack, i));
-    if (MI->isHighLevelMethod()) {
-      JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
-      ArrayObject::setElement(result, consStackElement(meth, ArrayPtr::getElement((ArrayPtr*)stack, i)), cur);
+    mvm::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, i));
+    if (FI->Metadata != NULL) {
+      ArrayObject::setElement(result, consStackElement(FI, ArrayPtr::getElement((ArrayPtr*)stack, i)), cur);
       cur++;
     }
   }

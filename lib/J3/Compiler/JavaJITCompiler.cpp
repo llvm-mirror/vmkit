@@ -40,42 +40,6 @@
 using namespace j3;
 using namespace llvm;
 
-class JavaJITMethodInfo : public mvm::JITMethodInfo {
-public:
-  virtual void print(void* ip, void* addr);
-  virtual bool isHighLevelMethod() {
-    return true;
-  }
-  
-  JavaJITMethodInfo(llvm::GCFunctionInfo* GFI,
-                    JavaMethod* m) :
-      mvm::JITMethodInfo(GFI) {
-    MetaInfo = m;
-    Owner = m->classDef->classLoader->getCompiler();
-  }
-};
-
-void JavaJITMethodInfo::print(void* ip, void* addr) {
-  void* new_ip = NULL;
-  if (ip) new_ip = isStub(ip, addr);
-  JavaMethod* meth = (JavaMethod*)MetaInfo;
-  CodeLineInfo* info = meth->lookupCodeLineInfo((uintptr_t)ip);
-  if (info != NULL) {
-    fprintf(stderr, "; %p (%p) in %s.%s (line %d, bytecode %d, code start %p)", new_ip, addr,
-            UTF8Buffer(meth->classDef->name).cString(),
-            UTF8Buffer(meth->name).cString(),
-            meth->lookupLineNumber((uintptr_t)ip),
-            info->bytecodeIndex, meth->code);
-  } else {
-    fprintf(stderr, "; %p (%p) in %s.%s (native method, code start %p)", new_ip, addr,
-            UTF8Buffer(meth->classDef->name).cString(),
-            UTF8Buffer(meth->name).cString(), meth->code);
-  }
-  if (ip != new_ip) fprintf(stderr, " (from stub)");
-  fprintf(stderr, "\n");
-}
-
-
 void JavaJITListener::NotifyFunctionEmitted(const Function &F,
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
@@ -347,33 +311,9 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
     assert((GFI != NULL) && "No GC information");
   
     Jnjvm* vm = JavaThread::get()->getJVM();
-    mvm::JITMethodInfo* MI = 
-      new(allocator, "JavaJITMethodInfo") JavaJITMethodInfo(GFI, meth);
-    MI->addToVM(vm, (JIT*)executionEngine);
-
-    uint32_t infoLength = GFI->size();
-    meth->codeInfoLength = infoLength;
-    if (infoLength == 0) {
-      meth->codeInfo = NULL;
-    } else {
-      mvm::BumpPtrAllocator& JavaAlloc = meth->classDef->classLoader->allocator;
-      CodeLineInfo* infoTable =
-        new(JavaAlloc, "CodeLineInfo") CodeLineInfo[infoLength];
-      uint32_t index = 0;
-      for (GCFunctionInfo::iterator I = GFI->begin(), E = GFI->end();
-           I != E;
-           I++, index++) {
-        DebugLoc DL = I->Loc;
-        uint32_t bytecodeIndex = DL.getLine();
-        uint32_t second = DL.getCol();
-        assert(second == 0 && "Wrong column number");
-        uintptr_t address =
-            ((JIT*)executionEngine)->getCodeEmitter()->getLabelAddress(I->Label);
-        infoTable[index].address = address;
-        infoTable[index].bytecodeIndex = bytecodeIndex;
-      }
-      meth->codeInfo = infoTable;
-    }
+    mvm::Frames* frames = mvm::MvmModule::addToVM(vm, GFI, (JIT*)executionEngine, allocator);
+    meth->frames = frames;
+    meth->updateFrames();
   }
     // Now that it's compiled, we don't need the IR anymore
   func->deleteBody();
@@ -389,9 +329,7 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
   assert((GFI != NULL) && "No GC information");
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  mvm::JITMethodInfo* MI = 
-    new(allocator, "JITMethodInfo") mvm::MvmJITMethodInfo(GFI, F, this);
-  MI->addToVM(vm, (JIT*)executionEngine);
+  mvm::MvmModule::addToVM(vm, GFI, (JIT*)executionEngine, allocator);
   
   // Now that it's compiled, we don't need the IR anymore
   F->deleteBody();

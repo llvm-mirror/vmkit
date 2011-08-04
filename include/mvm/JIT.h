@@ -195,6 +195,11 @@ public:
                          llvm::Module* TheModule = 0,
                          llvm::TargetMachine* TheTarget = 0);
 
+   static Frames* addToVM(VirtualMachine* VM,
+                          llvm::GCFunctionInfo* GFI,
+                          llvm::JIT* jit,
+                          mvm::BumpPtrAllocator& allocator);
+
    static int disassemble(unsigned int* addr);
   
    static void protectIR();
@@ -203,26 +208,6 @@ public:
    static void addCommandLinePasses(llvm::FunctionPassManager* PM);
 
    static const char* getHostTriple();
-};
-
-class JITMethodInfo : public MethodInfo {
-  llvm::GCFunctionInfo* GCInfo;
-public:
-  virtual void scan(uintptr_t closure, void* ip, void* addr);
-  JITMethodInfo(llvm::GCFunctionInfo* GFI) : GCInfo(GFI) {}
-  void addToVM(VirtualMachine* vm, llvm::JIT* jit);
-};
-
-class MvmJITMethodInfo : public JITMethodInfo {
-public:
-  virtual void print(void* ip, void* addr);
-  MvmJITMethodInfo(llvm::GCFunctionInfo* GFI,
-                   const llvm::Function* F,
-                   void* owner) :
-    JITMethodInfo(GFI) {
-      MetaInfo = const_cast<llvm::Function*>(F);
-      Owner = owner;
-  }
 };
 
 } // end namespace mvm

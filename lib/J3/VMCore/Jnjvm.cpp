@@ -1312,7 +1312,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
 }
 
 Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc,
-             mvm::CamlFrames** frames,
+             mvm::CompiledFrames** frames,
              JnjvmBootstrapLoader* loader) : 
   VirtualMachine(Alloc, frames), lockSystem(Alloc) {
 
@@ -1443,4 +1443,23 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   vm->waitForExit();
   
   return 0; 
+}
+
+void Jnjvm::printMethod(mvm::FrameInfo* FI, void* ip, void* addr) {
+  void* new_ip = NULL;
+  if (ip) new_ip = mvm::MethodInfoHelper::isStub(ip, addr);
+  if (FI->Metadata == NULL) {
+    mvm::MethodInfoHelper::print(ip, addr);
+    return;
+  }
+  JavaMethod* meth = (JavaMethod*)FI->Metadata;
+
+  fprintf(stderr, "; %p (%p) in %s.%s (line %d, bytecode %d, code start %p)", new_ip, addr,
+          UTF8Buffer(meth->classDef->name).cString(),
+          UTF8Buffer(meth->name).cString(),
+          meth->lookupLineNumber(FI),
+          FI->SourceIndex, meth->code);
+
+  if (ip != new_ip) fprintf(stderr, " (from stub)");
+  fprintf(stderr, "\n");
 }

@@ -136,7 +136,7 @@ endif
 ifdef BUILD_FRAMETABLE
 
 FrametablesExterns.inc: $(ProjLibsPaths)
-	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CamlFrames \3;/' > $@
+	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
 
 FrametablesSymbols.inc: $(ProjLibsPaths)
 	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@

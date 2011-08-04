@@ -66,11 +66,6 @@ const char* MvmModule::getHostTriple() {
   return LLVM_HOSTTRIPLE;
 }
 
-void MvmJITMethodInfo::print(void* ip, void* addr) {
-  fprintf(stderr, "; %p (%p) in %s LLVM method\n", ip, addr,
-      ((llvm::Function*)MetaInfo)->getName().data());
-}
-
 class MvmJITListener : public llvm::JITEventListener {
 public:
   virtual void NotifyFunctionEmitted(const Function &F,
@@ -86,22 +81,53 @@ public:
     assert(&(*I)->getFunction() == &F &&
         "GC Info and method do not correspond");
     llvm::GCFunctionInfo* GFI = *I;
-    JITMethodInfo* MI = new(*MvmModule::Allocator, "MvmJITMethodInfo")
-        MvmJITMethodInfo(GFI, &F, MvmModule::executionEngine);
-    MI->addToVM(mvm::Thread::get()->MyVM, (JIT*)MvmModule::executionEngine);
+    MvmModule::addToVM(mvm::Thread::get()->MyVM, GFI, (JIT*)MvmModule::executionEngine, *MvmModule::Allocator);
   }
 };
 
-void JITMethodInfo::addToVM(VirtualMachine* VM, JIT* jit) {
+Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, BumpPtrAllocator& allocator) {
   JITCodeEmitter* JCE = jit->getCodeEmitter();
-  assert(GCInfo != NULL);
-  for (GCFunctionInfo::iterator I = GCInfo->begin(), E = GCInfo->end();
-       I != E;
-       I++) {
-    uintptr_t address = JCE->getLabelAddress(I->Label);
-    assert(address != 0);
-    VM->FunctionsCache.addMethodInfo(this, (void*)address);
+  int NumDescriptors = 0;
+  for (GCFunctionInfo::iterator J = FI->begin(), JE = FI->end(); J != JE; ++J) {
+    NumDescriptors++;
   }
+  // Currently, all frames have the same number of stack offsets.
+  size_t LiveCount = FI->live_size(FI->begin());
+
+  Frames* frames = new (allocator, NumDescriptors, LiveCount) Frames();
+  frames->NumDescriptors = NumDescriptors;
+  FrameIterator iterator(*frames);
+
+  GCFunctionInfo::iterator I = FI->begin();
+  while (iterator.hasNext()) {
+    // Manually do the iteration, because NumLiveOffsets has not been set
+    // on the frames yet.
+    FrameInfo* frame = iterator.currentFrame;
+    iterator.advance(LiveCount);
+
+    frame->NumLiveOffsets = LiveCount;
+    frame->FrameSize = FI->getFrameSize();
+    frame->Metadata = NULL;
+    frame->SourceIndex = I->Loc.getLine();
+    frame->ReturnAddress = reinterpret_cast<void*>(JCE->getLabelAddress(I->Label));
+    int i = 0;
+    for (llvm::GCFunctionInfo::live_iterator KI = FI->live_begin(I),
+         KE = FI->live_end(I); KI != KE; ++KI) {
+      frame->LiveOffsets[i++] = KI->StackOffset;
+    }
+    VM->FunctionsCache.addFrameInfo(frame->ReturnAddress, frame);
+    I++;
+  }
+   {
+    FrameIterator iterator(*frames);
+    while (iterator.hasNext()) {
+      FrameInfo* frame = iterator.next();
+      FrameInfo* other = VM->IPToFrameInfo(frame->ReturnAddress);
+      assert(frame->ReturnAddress == other->ReturnAddress);
+    }
+  }
+
+  return frames;
 }
 
 static MvmJITListener JITListener;
@@ -425,22 +451,4 @@ void MvmModule::protectIR() {
 
 void MvmModule::unprotectIR() {
   protectEngine.unlock();
-}
-
-void JITMethodInfo::scan(uintptr_t closure, void* ip, void* addr) {
-  if (GCInfo) {
-    DEBUG(llvm::errs() << GCInfo->getFunction().getName() << '\n');
-    // All safe points have the same informations currently in LLVM.
-    llvm::GCFunctionInfo::iterator J = GCInfo->begin();
-    //uintptr_t spaddr = (uintptr_t)addr + GFI->getFrameSize() + sizeof(void*);
-    uintptr_t spaddr = ((uintptr_t*)addr)[0];
-    for (llvm::GCFunctionInfo::live_iterator K = GCInfo->live_begin(J),
-         KE = GCInfo->live_end(J); K != KE; ++K) {
-      intptr_t obj = *(intptr_t*)(spaddr + K->StackOffset);
-      // Verify that obj does not come from a JSR bytecode.
-      if (!(obj & 1)) {
-        Collector::scanObject((void**)(spaddr + K->StackOffset), closure);
-      }
-    }
-  }
 }

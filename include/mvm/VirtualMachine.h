@@ -22,8 +22,9 @@
 
 namespace mvm {
 
-class CamlFrames;
-class MethodInfo;
+class CompiledFrames;
+class FrameInfo;
+class Frames;
 
 class FunctionMap {
 public:
@@ -31,27 +32,26 @@ public:
   /// used when walking the stack so that VMKit knows which applicative method
   /// is executing on the stack.
   ///
-  llvm::DenseMap<void*, MethodInfo*> Functions;
+  llvm::DenseMap<void*, FrameInfo*> Functions;
 
   /// FunctionMapLock - Spin lock to protect the Functions map.
   ///
   mvm::SpinLock FunctionMapLock;
 
-  /// IPToMethodInfo - Map a code start instruction instruction to the MethodInfo.
+  /// IPToFrameInfo - Map a code start instruction instruction to the FrameInfo.
   ///
-  MethodInfo* IPToMethodInfo(void* ip);
+  FrameInfo* IPToFrameInfo(void* ip);
 
-  /// addMethodInfo - A new instruction pointer in the function map.
+  /// addFrameInfo - A new instruction pointer in the function map.
   ///
-  void addMethodInfo(MethodInfo* meth, void* ip);
-  void addMethodInfoNoLock(MethodInfo* meth, void* ip) {
+  void addFrameInfo(void* ip, FrameInfo* meth);
+  void addFrameInfoNoLock(void* ip, FrameInfo* meth) {
     Functions[ip] = meth;
   }
+  /// removeFrameInfos - Remove all FrameInfo owned by the given owner.
+  void removeFrameInfos(void* owner) {} /* TODO */
 
-  /// removeMethodInfos - Remove all MethodInfo owned by the given owner.
-  void removeMethodInfos(void* owner);
-
-  FunctionMap(BumpPtrAllocator& allocator, CamlFrames** frames);
+  FunctionMap(BumpPtrAllocator& allocator, CompiledFrames** frames);
 };
 
 /// VirtualMachine - This class is the root of virtual machine classes. It
@@ -59,7 +59,7 @@ public:
 ///
 class VirtualMachine : public mvm::PermanentObject {
 protected:
-  VirtualMachine(mvm::BumpPtrAllocator &Alloc, mvm::CamlFrames** frames) :
+  VirtualMachine(BumpPtrAllocator &Alloc, CompiledFrames** frames) :
 		  allocator(Alloc), FunctionsCache(Alloc, frames) {
     mainThread = NULL;
     numberOfThreads = 0;
@@ -208,12 +208,14 @@ public:
 //===----------------------------------------------------------------------===//
 
   FunctionMap FunctionsCache;
-  MethodInfo* IPToMethodInfo(void* ip) {
-    return FunctionsCache.IPToMethodInfo(ip);
+  FrameInfo* IPToFrameInfo(void* ip) {
+    return FunctionsCache.IPToFrameInfo(ip);
   }
-  void removeMethodInfos(void* owner) {
-    FunctionsCache.removeMethodInfos(owner);
+  void removeFrameInfos(void* owner) {
+    FunctionsCache.removeFrameInfos(owner);
   }
+
+  virtual void printMethod(FrameInfo* FI, void* ip, void* addr) = 0;
   
 //===----------------------------------------------------------------------===//
 // (4) Launch-related methods.

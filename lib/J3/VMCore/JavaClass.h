@@ -821,16 +821,6 @@ public:
   
 };
 
-class CodeLineInfo : public mvm::PermanentObject {
-public:
-  uintptr_t address;
-  uint16 bytecodeIndex;
-  // TODO: Use these fields when inlining.
-  JavaMethod* executingMethod;
-  // The code where the inlined method starts.
-  CodeLineInfo* inlineLocation;
-};
-
 /// JavaMethod - This class represents Java methods.
 ///
 class JavaMethod : public mvm::PermanentObject {
@@ -899,11 +889,13 @@ public:
   ///
   void* code;
  
-  /// codeInfo - Array of CodeLineInfo objects.
+  /// frames - Frames for this method.
+  /// TODO: Deprecate?
   ///
-  CodeLineInfo* codeInfo;
+  mvm::Frames* frames;
 
   /// codeInfoLength - Number of entries in the codeInfo field.
+  /// TODO: Deprecate.
   ///
   uint16 codeInfoLength;
 
@@ -911,26 +903,24 @@ public:
   ///
   uint32 offset;
 
+  /// updateFrames - Set the meta information on frames.
+  ///
+  void updateFrames();
+
   /// lookupAttribut - Look up an attribut in the method's attributs. Returns
   /// null if the attribut is not found.
   ///
   Attribut* lookupAttribut(const UTF8* key);
 
-  /// lookupLineNumber - Find the line number based on the given instruction
-  /// pointer.
+  /// lookupLineNumber - Find the line number based on the given frame info.
   ///
-  uint16 lookupLineNumber(uintptr_t ip);
+  uint16 lookupLineNumber(mvm::FrameInfo* FI);
   
   /// lookupCtpIndex - Lookup the constant pool index pointed by the opcode
-  /// related to the given instruction pointer.
+  /// related to the given frame info.
   ///
-  uint16 lookupCtpIndex(uintptr_t ip);
+  uint16 lookupCtpIndex(mvm::FrameInfo* FI);
   
-  /// lookupCodeLineInfo - Lookup the code line info related to the given
-  /// instruction pointer.
-  ///
-  CodeLineInfo* lookupCodeLineInfo(uintptr_t ip);
-
   /// getSignature - Get the signature of thes method, resolving it if
   /// necessary.
   ///

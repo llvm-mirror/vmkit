@@ -104,8 +104,8 @@ void Thread::internalThrowException() {
 void Thread::printBacktrace() {
   StackWalker Walker(this);
 
-  while (MethodInfo* MI = Walker.get()) {
-    MI->print(Walker.ip, Walker.addr);
+  while (FrameInfo* FI = Walker.get()) {
+    MyVM->printMethod(FI, Walker.ip, Walker.addr);
     ++Walker;
   }
 }
@@ -131,12 +131,12 @@ uint32_t Thread::getFrameContextLength() {
   return i;
 }
 
-MethodInfo* StackWalker::get() {
+FrameInfo* StackWalker::get() {
   if (addr == thread->baseSP) return 0;
   ip = FRAME_IP(addr);
   bool isStub = ((unsigned char*)ip)[0] == 0xCE;
   if (isStub) ip = addr[2];
-  return thread->MyVM->IPToMethodInfo(ip);
+  return thread->MyVM->IPToFrameInfo(ip);
 }
 
 void* StackWalker::operator*() {
@@ -186,8 +186,8 @@ StackWalker::StackWalker(mvm::Thread* th) {
 
 void Thread::scanStack(uintptr_t closure) {
   StackWalker Walker(this);
-  while (MethodInfo* MI = Walker.get()) {
-    MI->scan(closure, Walker.ip, Walker.addr);
+  while (FrameInfo* MI = Walker.get()) {
+    MethodInfoHelper::scan(closure, MI, Walker.ip, Walker.addr);
     ++Walker;
   }
 }

@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file defines the MvmDenseMap copied from llvm/ADT/DenseMap.h, but
+// This file defines the MvmDenseSet class copied from llvm/ADT/DenseMap.h, but
 // without storing pairs.
 //
 //===----------------------------------------------------------------------===//

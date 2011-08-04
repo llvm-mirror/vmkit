@@ -70,9 +70,9 @@ uint32 JavaThread::getJavaFrameContext(void** buffer) {
   mvm::StackWalker Walker(this);
   uint32 i = 0;
 
-  while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->isHighLevelMethod()) {
-      JavaMethod* M = (JavaMethod*)MI->MetaInfo;
+  while (mvm::FrameInfo* FI = Walker.get()) {
+    if (FI->Metadata != NULL) {
+      JavaMethod* M = (JavaMethod*)FI->Metadata;
       buffer[i++] = M;
     }
     ++Walker;
@@ -84,10 +84,10 @@ JavaMethod* JavaThread::getCallingMethodLevel(uint32 level) {
   mvm::StackWalker Walker(this);
   uint32 index = 0;
 
-  while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->isHighLevelMethod()) {
+  while (mvm::FrameInfo* FI = Walker.get()) {
+    if (FI->Metadata != NULL) {
       if (index == level) {
-        return (JavaMethod*)MI->MetaInfo;
+        return (JavaMethod*)FI->Metadata;
       }
       ++index;
     }
@@ -109,9 +109,9 @@ JavaObject* JavaThread::getNonNullClassLoader() {
   
   mvm::StackWalker Walker(this);
 
-  while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->isHighLevelMethod() == 1) {
-      JavaMethod* meth = (JavaMethod*)MI->MetaInfo;
+  while (mvm::FrameInfo* FI = Walker.get()) {
+    if (FI->Metadata != NULL) {
+      JavaMethod* meth = (JavaMethod*)FI->Metadata;
       JnjvmClassLoader* loader = meth->classDef->classLoader;
       obj = loader->getJavaClassLoader();
       if (obj) return obj;
@@ -125,9 +125,10 @@ JavaObject* JavaThread::getNonNullClassLoader() {
 void JavaThread::printJavaBacktrace() {
   mvm::StackWalker Walker(this);
 
-  while (mvm::MethodInfo* MI = Walker.get()) {
-    if (MI->isHighLevelMethod())
-      MI->print(Walker.ip, Walker.addr);
+  while (mvm::FrameInfo* FI = Walker.get()) {
+    if (FI->Metadata != NULL) {
+      MyVM->printMethod(FI, Walker.ip, Walker.addr);
+    }
     ++Walker;
   }
 }

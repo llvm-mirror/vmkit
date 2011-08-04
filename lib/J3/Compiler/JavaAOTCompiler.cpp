@@ -2325,18 +2325,14 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
       for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
         JavaMethod& meth = cl->virtualMethods[i];
         if (meth.code != NULL) {
-          Function* Func = parseFunction(&meth);
-          Func->clearGC();
-          Func->setGC("java_aot");
+          parseFunction(&meth);
         }
       }
   
       for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
         JavaMethod& meth = cl->staticMethods[i];
         if (meth.code != NULL) {
-          Function* Func = parseFunction(&meth);
-          Func->clearGC();
-          Func->setGC("java_aot");
+          parseFunction(&meth);
         }
       }
     }
@@ -2347,8 +2343,6 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     toCompile.pop_back();
     getNativeClass(meth->classDef);
     Function* Func = parseFunction(meth);
-    Func->clearGC();
-    Func->setGC("java_aot");
     // Also update code to notify that this function has been emitted.
     meth->code = Func;
   }
