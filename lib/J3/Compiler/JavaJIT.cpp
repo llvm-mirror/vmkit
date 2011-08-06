@@ -243,14 +243,6 @@ llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) {
 	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
 }
 
-llvm::Value* JavaJIT::getCXXExceptionPtr(llvm::Value* mutatorThreadPtr) { 
-	Value* GEP[3] = { intrinsics->constantZero,
-										intrinsics->OffsetThreadInMutatorThreadConstant,
-										intrinsics->OffsetCXXExceptionInThreadConstant };
-    
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
-}
-
 llvm::Value* JavaJIT::getJNIEnvPtr(llvm::Value* javaThreadPtr) { 
 	Value* GEP[2] = { intrinsics->constantZero,
 										intrinsics->OffsetJNIInJavaThreadConstant };
@@ -265,8 +257,6 @@ llvm::Value* JavaJIT::getJavaExceptionPtr(llvm::Value* javaThreadPtr) {
 	return GetElementPtrInst::Create(javaThreadPtr, GEP, "", currentBlock);
 }
 
-
-extern "C" void j3ThrowExceptionFromJIT();
 
 llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   

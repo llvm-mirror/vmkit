@@ -149,9 +149,6 @@ private:
   /// getDoYieldPtr - Emit code to get a pointer to doYield.
 	llvm::Value* getDoYieldPtr(llvm::Value* mutatorThreadPtr);
 
-  /// getCXXExceptionPtr - Emit code to get a pointer to internalPendingException.
-	llvm::Value* getCXXExceptionPtr(llvm::Value* mutatorThreadPtr);
-
   /// getJavaThreadPtr - Emit code to get a pointer to the current JavaThread.
 	llvm::Value* getJavaThreadPtr(llvm::Value* mutatorThreadPtr);
 
