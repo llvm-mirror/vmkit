@@ -109,23 +109,6 @@ WithClinit("with-clinit", cl::desc("Classes to clinit"), cl::ZeroOrMore,
            cl::CommaSeparated);
 
 
-static cl::list<std::string> 
-LoadBytecodeFiles("load-bc", cl::desc("Load bytecode file"), cl::ZeroOrMore,
-                  cl::CommaSeparated);
-
-static void loadBytecodeFile(const std::string& str) {
-  SMDiagnostic Err;
-  Module* M = ParseIRFile(str, Err, mvm::MvmModule::globalModule->getContext());
-  if (M) {
-    M->setTargetTriple(mvm::MvmModule::getHostTriple());
-    Linker::LinkModules(mvm::MvmModule::globalModule, M, 0);
-    delete M;
-  } else {
-    Err.Print("load bytecode", errs());
-  }
-}
-
-
 int main(int argc, char **argv) {
   llvm_shutdown_obj X;  // Call llvm_shutdown() on exit.
   cl::ParseCommandLineOptions(argc, argv, "vmkit .class -> .ll compiler\n");
@@ -140,11 +123,6 @@ int main(int argc, char **argv) {
   }
    
   mvm::MvmModule::initialise();
-
-  for (std::vector<std::string>::iterator i = LoadBytecodeFiles.begin(),
-       e = LoadBytecodeFiles.end(); i != e; ++i) {
-    loadBytecodeFile(*i); 
-  }
 
   JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
 

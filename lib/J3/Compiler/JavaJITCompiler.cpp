@@ -35,7 +35,6 @@
 
 #include "j3/JavaJITCompiler.h"
 #include "j3/J3Intrinsics.h"
-#include "j3/LLVMMaterializer.h"
 
 using namespace j3;
 using namespace llvm;
@@ -408,14 +407,6 @@ JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)
     : JavaJITCompiler(ModuleID) {}
 
 
-static llvm::cl::opt<bool> LLVMLazy("llvm-lazy", 
-                     cl::desc("Use LLVM lazy stubs"),
-                     cl::init(false));
-
 JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID) {
-  // This is called for the first compiler.
-  if (LLVMLazy) {
-    return new JavaLLVMLazyJITCompiler(ModuleID);
-  }
   return new JavaJ3LazyJITCompiler(ModuleID);
 }

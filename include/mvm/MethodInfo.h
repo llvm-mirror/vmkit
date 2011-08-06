@@ -31,12 +31,6 @@ public:
 
   static void scan(uintptr_t closure, FrameInfo* FI, void* ip, void* addr);
   
-  static void* isStub(void* ip, void* addr) {
-    bool isStub = ((unsigned char*)ip)[0] == 0xCE;
-    if (isStub) ip = ((void**)addr)[2];
-    return ip;
-  }
-
   static uint32_t FrameInfoSize(uint32_t NumOffsets) {
     uint32_t FrameInfoSize = sizeof(FrameInfo) + (NumOffsets - 1) * sizeof(int16_t);
     if (FrameInfoSize & 2) {
