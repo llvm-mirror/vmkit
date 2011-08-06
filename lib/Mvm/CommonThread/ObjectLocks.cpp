@@ -86,7 +86,7 @@ FatLock* ThinLock::changeToFatlock(gc* object, LockSystem& table) {
 void printDebugMessage(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   fprintf(stderr,
-      "WARNING: [%p] has been waiting really long for %p (header = %x)\n",
+      "WARNING: [%p] has been waiting really long for %p (header = %lx)\n",
       (void*)mvm::Thread::get(),
       (void*)object,
       object->header);

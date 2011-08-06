@@ -27,7 +27,7 @@ Precompiled.bc: $(PRECOMPILER) HelloWorld.java $(LibDir)/StaticGCPass$(SHLIBEXT)
 	$(Verb) $(MKDIR) $(ObjDir)
 	$(Verb) $(LOPT) generated.bc -load=$(LibDir)/StaticGCPass$(SHLIBEXT) -StaticGCPass -o $(LibDir)/Precompiled.bc
 	$(Verb) $(LLC) -disable-cfi -O0 -fast-isel=false -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) -disable-fp-elim $(LibDir)/Precompiled.bc -o $(ObjDir)/Precompiled.s
-	$(Verb) $(LLVMCC) -c $(ObjDir)/Precompiled.s -o $(ObjDir)/Precompiled.o
+	$(Verb) $(CC) -c $(ObjDir)/Precompiled.s -o $(ObjDir)/Precompiled.o
 	$(Verb) $(Archive) $(LibDir)/libPrecompiled.a $(ObjDir)/Precompiled.o
 	$(Verb) $(Ranlib) $(LibDir)/libPrecompiled.a
 	$(Verb) $(MV) generated.bc Precompiled.bc

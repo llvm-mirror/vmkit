@@ -78,7 +78,7 @@ extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_Objec
 }
 
 extern "C" uintptr_t JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
-    gc* obj, VirtualTable* VT, int size, int allocator) ALWAYS_INLINE;
+    gc* obj, VirtualTable* VT, int size, int allocator);
 
 extern "C" uintptr_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
     MMTkObject* OM, gc* src, int allocator) ALWAYS_INLINE;

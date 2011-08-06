@@ -45,7 +45,7 @@ void MethodInfoHelper::print(void* ip, void* addr) {
 
 FunctionMap::FunctionMap(BumpPtrAllocator& allocator, CompiledFrames** allFrames) {
   if (allFrames == NULL) return;
-  Functions.resize(40000); // Make sure the cache is big enough.
+  Functions.resize(32000); // Make sure the cache is big enough.
   int i = 0;
   CompiledFrames* compiledFrames = NULL;
   while ((compiledFrames = allFrames[i++]) != NULL) {
