@@ -7,6 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/Constants.h"
+#include "llvm/DerivedTypes.h"
+#include "llvm/Type.h"
 #include "llvm/CodeGen/GCs.h"
 #include "llvm/CodeGen/GCStrategy.h"
 #include "llvm/CodeGen/AsmPrinter.h"
@@ -24,7 +27,9 @@
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FormattedStream.h"
+#include "llvm/Support/raw_ostream.h"
 #include <cctype>
+#include <cstdio>
 
 using namespace llvm;
 
@@ -112,6 +117,37 @@ static void EmitVmkitGlobal(const Module &M, AsmPrinter &AP, const char *Id) {
   AP.OutStreamer.EmitLabel(Sym);
 }
 
+Constant* FindMetadata(const Function& F) {
+  LLVMContext& context = F.getParent()->getContext();
+  for (Value::const_use_iterator I = F.use_begin(), E = F.use_end(); I != E; ++I) {
+    if (const Constant* C = dyn_cast<Constant>(*I)) {
+      if (PointerType* PTy = dyn_cast<PointerType>(C->getType())) {
+        if (isa<IntegerType>(PTy->getContainedType(0))) {
+          // We have found the bitcast constant that casts the method in a i8*
+          for (Value::const_use_iterator CI = C->use_begin(), CE = C->use_end(); CI != CE; ++CI) {
+            if (StructType* STy = dyn_cast<StructType>((*CI)->getType())) {
+              if (STy->getName().equals("JavaMethod")) {
+                const Constant* Method = dyn_cast<Constant>(*CI);
+                const Constant* Array = dyn_cast<Constant>(*((*CI)->use_begin()));
+                Constant* VirtualMethods = dyn_cast<Constant>(const_cast<User*>((*(Array->use_begin()))));
+                uint32_t index = 0;
+                for (; index < Array->getNumOperands(); index++) {
+                  if (Array->getOperand(index) == Method) break;
+                }
+                assert(index != Array->getNumOperands());
+                Constant* GEPs[2] = { ConstantInt::get(Type::getInt32Ty(context), 0),
+                                      ConstantInt::get(Type::getInt32Ty(context), index) };
+                return ConstantExpr::getGetElementPtr(VirtualMethods, GEPs, 2);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
 /// emitAssembly - Print the frametable. The ocaml frametable format is thus:
 ///
 ///   extern "C" struct align(sizeof(intptr_t)) {
@@ -145,6 +181,8 @@ void VmkitAOTGCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
 
   for (iterator I = begin(), IE = end(); I != IE; ++I) {
     GCFunctionInfo &FI = **I;
+
+    Constant* Metadata = FindMetadata(FI.getFunction());
 
     // Emit the frame symbol
     SmallString<128> TmpStr;
@@ -189,11 +227,16 @@ void VmkitAOTGCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
       DebugLoc DL = J->Loc;
       uint32_t sourceIndex = DL.getLine();
 
-      // Metada
-      AP.EmitInt32(0);
-      if (IntPtrSize == 8) {
+      // Metadata
+      if (Metadata != NULL) {
+        AP.EmitGlobalConstant(Metadata);
+      } else {
         AP.EmitInt32(0);
+        if (IntPtrSize == 8) {
+          AP.EmitInt32(0);
+        }
       }
+
       // Return address
       AP.OutStreamer.EmitSymbolValue(J->Label, IntPtrSize, 0);
       AP.EmitInt16(sourceIndex);

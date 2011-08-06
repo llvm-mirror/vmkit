@@ -1326,8 +1326,6 @@ Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc,
   bootstrapLoader = loader;
   upcalls = bootstrapLoader->upcalls;
   throwable = upcalls->newThrowable;
-
-  Precompiled::ReadFrames(this, this->bootstrapLoader);
 }
 
 Jnjvm::~Jnjvm() {

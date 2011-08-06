@@ -121,29 +121,6 @@ extern "C" void staticCallback() {
 }
 
 
-void Precompiled::ReadFrames(Jnjvm* vm, JnjvmClassLoader* loader) {
-  for (ClassMap::iterator i = loader->getClasses()->map.begin(),
-       e = loader->getClasses()->map.end(); i != e; ++i) {
-    CommonClass* cl = i->second;
-    if (cl->isClass()) {
-      Class* C = cl->asClass(); 
-      for (uint32 i = 0; i < C->nbVirtualMethods; ++i) {
-        JavaMethod& meth = C->virtualMethods[i];
-        if (meth.code != NULL) {
-          meth.updateFrames();
-        }
-      }
-      
-      for (uint32 i = 0; i < C->nbStaticMethods; ++i) {
-        JavaMethod& meth = C->staticMethods[i];
-        if (meth.code != NULL) {
-          meth.updateFrames();
-        }
-      }
-    }
-  }
-}
-
 bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   Class* javaLangObject = (Class*)dlsym(SELF_HANDLE, "java_lang_Object");
   void* nativeHandle = SELF_HANDLE;

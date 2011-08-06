@@ -902,10 +902,6 @@ public:
   ///
   uint32 offset;
 
-  /// updateFrames - Set the meta information on frames.
-  ///
-  void updateFrames();
-
   /// lookupAttribut - Look up an attribut in the method's attributs. Returns
   /// null if the attribut is not found.
   ///

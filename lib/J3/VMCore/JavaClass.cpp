@@ -1737,15 +1737,6 @@ uint16 JavaMethod::lookupCtpIndex(mvm::FrameInfo* FI) {
 }
 
 
-void JavaMethod::updateFrames() {
-  mvm::FrameIterator iterator(*frames);
-
-  while (iterator.hasNext()) {
-    mvm::FrameInfo* frame = iterator.next();
-    frame->Metadata = this;
-  }
-}
-
 void Class::acquire() {
   JavaObject* delegatee = NULL;
   llvm_gcroot(delegatee, 0);
