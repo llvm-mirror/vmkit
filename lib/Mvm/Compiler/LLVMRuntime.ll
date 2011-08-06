@@ -1,11 +1,4 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Common types ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;; A virtual table is an array of function pointers.
-%VT = type [0 x i32 (...)*]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Printing functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -14,19 +7,6 @@ declare void @printDouble(double)
 declare void @printLong(i64)
 declare void @printInt(i32)
 declare void @printObject(i8*)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Exceptions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-declare void @_Unwind_Resume_or_Rethrow(i8*)
-declare i8*  @llvm.eh.exception() nounwind
-declare i32  @llvm.eh.selector.i32(i8*, i8*, ...) nounwind
-declare i64  @llvm.eh.selector.i64(i8*, i8*, ...) nounwind
-declare void @__gxx_personality_v0()
-declare i8*  @__cxa_begin_catch(i8*)
-declare void @__cxa_end_catch()
-declare i32  @setjmp(i8*)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Math ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -74,13 +54,13 @@ declare i16 @llvm.atomic.cmp.swap.i16.p0i16(i16*, i16, i16) nounwind
 declare i32 @llvm.atomic.cmp.swap.i32.p0i32(i32*, i32, i32) nounwind
 declare i64 @llvm.atomic.cmp.swap.i64.p0i64(i64*, i64, i64) nounwind
 
-declare void @unconditionalSafePoint() nounwind
-declare void @conditionalSafePoint() nounwind
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GC ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+declare void @unconditionalSafePoint() nounwind
+declare void @conditionalSafePoint() nounwind
 declare void @llvm.gcroot(i8**, i8*)
 declare i8* @gcmalloc(i32, i8*)
 declare i8* @gcmallocUnresolved(i32, i8*)

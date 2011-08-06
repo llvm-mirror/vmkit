@@ -67,20 +67,11 @@ public:
   
   void init(llvm::Module*);
  
-  llvm::Function* exceptionEndCatch;
-  llvm::Function* exceptionBeginCatch;
-  llvm::Function* unwindResume;
-  llvm::Function* exceptionSelector;
-  llvm::Function* personality;
-  llvm::Function* llvmGetException;
-
   llvm::Function* printFloatLLVM;
   llvm::Function* printDoubleLLVM;
   llvm::Function* printLongLLVM;
   llvm::Function* printIntLLVM;
   llvm::Function* printObjectLLVM;
-
-  llvm::Function* setjmpLLVM;
 
   llvm::Function* func_llvm_fabs_f32;
   llvm::Function* func_llvm_fabs_f64;

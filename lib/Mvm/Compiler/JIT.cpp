@@ -202,15 +202,6 @@ void BaseIntrinsics::init(llvm::Module* module) {
   printIntLLVM = module->getFunction("printInt");
   printObjectLLVM = module->getFunction("printObject");
 
-  unwindResume = module->getFunction("_Unwind_Resume_or_Rethrow");
-  
-  llvmGetException = module->getFunction("llvm.eh.exception");
-  exceptionSelector = module->getFunction("llvm.eh.selector"); 
-  
-  personality = module->getFunction("__gxx_personality_v0");
-  exceptionEndCatch = module->getFunction("__cxa_end_catch");
-  exceptionBeginCatch = module->getFunction("__cxa_begin_catch");
-
   func_llvm_sqrt_f64 = module->getFunction("llvm.sqrt.f64");
   func_llvm_sin_f64 = module->getFunction("llvm.sin.f64");
   func_llvm_cos_f64 = module->getFunction("llvm.cos.f64");
@@ -239,8 +230,6 @@ void BaseIntrinsics::init(llvm::Module* module) {
     
   func_llvm_fabs_f32 = module->getFunction("fabsf");
 
-  setjmpLLVM = module->getFunction("setjmp");
-  
   llvm_memcpy_i32 = module->getFunction("llvm.memcpy.i32");
   llvm_memset_i32 = module->getFunction("llvm.memset.i32");
   llvm_frameaddress = module->getFunction("llvm.frameaddress");
