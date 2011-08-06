@@ -183,7 +183,15 @@ Constant* JavaAOTCompiler::getResolvedConstantPool(JavaConstantPool* ctp) {
     ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, ctp->ctpSize);
     std::vector<Constant*> Vals;
     for (uint32 i = 0; i < ctp->ctpSize; ++i) {
-      Vals.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
+      if (ctp->typeAt(i) == JavaConstantPool::ConstantUTF8) {
+        Vals.push_back(ConstantExpr::getBitCast(getUTF8(ctp->UTF8At(i)), JavaIntrinsics.ptrType));
+      } else if (ctp->typeAt(i) == JavaConstantPool::ConstantClass
+                  && (ctp->isClassLoaded(i) != NULL)) {
+        Vals.push_back(ConstantExpr::getBitCast(
+            getNativeClass(ctp->isClassLoaded(i)), JavaIntrinsics.ptrType));
+      } else {
+        Vals.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
+      }
     }
 
     Constant* Array = ConstantArray::get(ATy, Vals);
@@ -2370,6 +2378,15 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     Function* Func = parseFunction(meth);
     // Also update code to notify that this function has been emitted.
     meth->code = Func;
+  }
+
+  // Make sure classes and arrays already referenced in constant pools
+  // are loaded.
+  for (ClassMap::iterator i = loader->getClasses()->map.begin(),
+       e = loader->getClasses()->map.end(); i!= e; ++i) {
+    if (i->second->isClass()) {
+      getResolvedConstantPool(i->second->asClass()->ctpInfo);
+    }
   }
 
   // Add all class initializers.
