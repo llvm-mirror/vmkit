@@ -2098,13 +2098,17 @@ void extractFiles(ClassBytes* bytes,
 
 static const char* name;
 
+extern "C" void UnreachableMagicMMTk() {
+  UNREACHABLE();
+}
+
 void mainCompilerStart(JavaThread* th) {
   
   Jnjvm* vm = th->getJVM();
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
   JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
-  JavaJITCompiler* Comp = 0;
-  mvm::ThreadAllocator allocator;
+  M->addJavaPasses();
+
   bootstrapLoader->analyseClasspathEnv(vm->bootstrapLoader->bootClasspathEnv);
   uint32 size = strlen(name);
   if (size > 4 && 
@@ -2112,6 +2116,7 @@ void mainCompilerStart(JavaThread* th) {
     bootstrapLoader->analyseClasspathEnv(name);
   }
 
+  JavaJITCompiler* Comp = NULL;
   if (!M->clinits->empty()) {
     Comp = JavaJITCompiler::CreateCompiler("JIT");
     Comp->EmitFunctionName = true;
@@ -2138,9 +2143,6 @@ void mainCompilerStart(JavaThread* th) {
     }
 
     extractFiles(bytes, M, bootstrapLoader, classes);
-    // Now that we know if we can trust this compiler, add the Java passes.
-    M->addJavaPasses();
-
 
     // First resolve everyone so that there can not be unknown references in
     // constant pools.
@@ -2157,65 +2159,90 @@ void mainCompilerStart(JavaThread* th) {
       for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
         M->getMethod(&cl->staticMethods[i]);
       }
-
     }
 
     if (!M->clinits->empty()) {
       vm->loadBootstrap();
-
-      for (std::vector<std::string>::iterator i = M->clinits->begin(),
-           e = M->clinits->end(); i != e; ++i) {
-        
-        if (i->at(i->length() - 1) == '*') {
-          for (std::vector<Class*>::iterator ii = classes.begin(),
-               ee = classes.end(); ii != ee; ++ii) {
-            Class* cl = *ii;
-            if (!strncmp(UTF8Buffer(cl->name).cString(), i->c_str(),
-                         i->length() - 1)) {
-              TRY {
-                cl->asClass()->initialiseClass(vm);
-              } CATCH {
-                fprintf(stderr, "Error when initializing %s\n",
-                        UTF8Buffer(cl->name).cString());
-                abort();
-              } END_CATCH;
+      
+      // First, if we have the magic classes available, make sure we
+      // compile them so that we can call them directly and let
+      // LowerMagic lower them later on.
+      for (std::vector<Class*>::iterator ii = classes.begin(),
+           ee = classes.end(); ii != ee; ++ii) {
+        Class* cl = *ii;
+        static const std::string magic = "org/vmmagic";
+        static void* ptr = (void*)(uintptr_t)UnreachableMagicMMTk;
+        if (!strncmp(UTF8Buffer(cl->name).cString(),
+                     magic.c_str(),
+                     magic.length() - 1)) {
+          for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
+            if (!isAbstract(cl->virtualMethods[i].access)) {
+              Function* F = M->getMethod(&cl->virtualMethods[i]);
+              M->setMethod(F, ptr, F->getName().data());
+              cl->virtualMethods[i].compiledPtr();
             }
           }
-        } else {
 
-          const UTF8* name = bootstrapLoader->asciizConstructUTF8(i->c_str());
-          CommonClass* cl = bootstrapLoader->lookupClass(name);
-          if (cl && cl->isClass()) {
-            TRY {
-              cl->asClass()->initialiseClass(vm);
-            } CATCH {
-              fprintf(stderr, "Error when initializing %s\n",
-                      UTF8Buffer(cl->name).cString());
-              abort();
-            } END_CATCH;
-          } else {
-            fprintf(stderr, "Class %s does not exist or is an array class.\n",
-                    i->c_str());
+          for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
+            if (!isAbstract(cl->staticMethods[i].access)) {
+              Function* F = M->getMethod(&cl->staticMethods[i]);
+              M->setMethod(F, ptr, F->getName().data());
+              cl->staticMethods[i].compiledPtr();
+            }
           }
         }
       }
+
+      // Initialize all classes given with with the -with-clinit
+      // command line argument.
+      for (std::vector<std::string>::iterator i = M->clinits->begin(),
+           e = M->clinits->end(); i != e; ++i) {
+        Class* cl = NULL;
+        TRY {
+          if (i->at(i->length() - 1) == '*') {
+            for (std::vector<Class*>::iterator ii = classes.begin(),
+                 ee = classes.end(); ii != ee; ++ii) {
+              cl = *ii;
+              if (!strncmp(UTF8Buffer(cl->name).cString(), i->c_str(),
+                           i->length() - 1)) {
+                cl->initialiseClass(vm);
+              }
+            }
+          } else {
+            const UTF8* name = bootstrapLoader->asciizConstructUTF8(i->c_str());
+            CommonClass* cls = bootstrapLoader->lookupClass(name);
+            if (cls && cls->isClass()) {
+              cl = cls->asClass();
+              cl->initialiseClass(vm);
+            } else {
+              fprintf(stderr, "Class %s does not exist or is an array class.\n",
+                      i->c_str());
+            }
+          }
+        } CATCH {
+          fprintf(stderr, "Error when initializing %s\n",
+                  UTF8Buffer(cl->name).cString());
+          abort();
+        } END_CATCH;
+      }
       bootstrapLoader->setCompiler(M);
     }
-    
+   
+    // Set the thread as the owner of the classes, so that it knows it
+    // has to compile them. 
     for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
          i != e; ++i) {
-      Class* cl = *i;
-      cl->setOwnerClass(JavaThread::get());
+      (*i)->setOwnerClass(JavaThread::get());
     }
     
+    // Finally, compile all classes.
     for (std::vector<Class*>::iterator i = classes.begin(), e = classes.end();
          i != e; ++i) {
-      Class* cl = *i;
-      M->compileClass(cl);
+      M->compileClass(*i);
     }
 
   } else {
-    M->addJavaPasses();
+    mvm::ThreadAllocator allocator;
     char* realName = (char*)allocator.Allocate(size + 1);
     if (size > 6 && !strcmp(&name[size - 6], ".class")) {
       memcpy(realName, name, size - 6);

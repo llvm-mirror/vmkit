@@ -62,6 +62,16 @@ bool LowerJavaRT::runOnModule(Module& M) {
     }
   }
 
+  // Remove all references to magic methods.
+  for (Module::iterator I = M.begin(), E = M.end(); I != E;) {
+    Function& GV = *I;
+    ++I;
+    if (!strncmp(GV.getName().data(), "JnJVM_org_vmmagic", 17)) {
+      GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
+      GV.eraseFromParent();
+    }
+  }
+
   for (Module::global_iterator I = M.global_begin(), E = M.global_end();
        I != E;) {
     GlobalValue& GV = *I;
@@ -69,7 +79,7 @@ bool LowerJavaRT::runOnModule(Module& M) {
     if (!strncmp(GV.getName().data(), "JnJVM_java", 10) ||
         !strncmp(GV.getName().data(), "java", 4) ||
         !strncmp(GV.getName().data(), "JnJVM_gnu", 9) ||
-        !strncmp(GV.getName().data(), "_3", 2) ||
+        !strncmp(GV.getName().data(), "_3", 2) || // Arrays
         !strncmp(GV.getName().data(), "gnu", 3)) {
       GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
       GV.eraseFromParent();
