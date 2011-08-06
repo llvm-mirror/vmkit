@@ -1045,20 +1045,6 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
                                                JavaIntrinsics.ptrType));
   }
   
-  // codeInfo
-  if (useCooperativeGC() && method.code != NULL) {
-    Twine name = getMethodInfo(&method)->getMethod()->getName() + "_frame";
-    GlobalVariable* frame = new GlobalVariable(
-        Mod, JavaIntrinsics.CodeLineInfoType->getContainedType(0), false,
-        GlobalValue::ExternalLinkage, NULL, name);
-    MethodElts.push_back(frame);
-  } else {
-    MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.CodeLineInfoType));
-  }
-  
-  // codeInfoLength
-  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), 0));
-
   // offset
   MethodElts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), method.offset));
 

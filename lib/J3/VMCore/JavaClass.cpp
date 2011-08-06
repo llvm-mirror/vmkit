@@ -634,7 +634,6 @@ void JavaMethod::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
   access = A;
   canBeInlined = false;
   offset = 0;
-  frames = NULL;
 }
 
 void JavaField::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {

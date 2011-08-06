@@ -312,7 +312,7 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
     llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*func);
   
     Jnjvm* vm = JavaThread::get()->getJVM();
-    meth->frames = mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, meth);
+    mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, meth);
   }
     // Now that it's compiled, we don't need the IR anymore
   func->deleteBody();

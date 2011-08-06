@@ -888,16 +888,6 @@ public:
   ///
   void* code;
  
-  /// frames - Frames for this method.
-  /// TODO: Deprecate?
-  ///
-  mvm::Frames* frames;
-
-  /// codeInfoLength - Number of entries in the codeInfo field.
-  /// TODO: Deprecate.
-  ///
-  uint16 codeInfoLength;
-
   /// offset - The index of the method in the virtual table.
   ///
   uint32 offset;

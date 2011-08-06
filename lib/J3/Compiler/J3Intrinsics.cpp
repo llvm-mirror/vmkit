@@ -95,9 +95,6 @@ void J3Intrinsics::init(llvm::Module* module) {
   MutatorThreadType =
     PointerType::getUnqual(module->getTypeByName("MutatorThread"));
   
-  CodeLineInfoType =
-    PointerType::getUnqual(module->getTypeByName("CodeLineInfo"));
-  
   J3DenseMapType =
     PointerType::getUnqual(module->getTypeByName("J3DenseMap"));
   

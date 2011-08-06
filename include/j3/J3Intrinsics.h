@@ -40,7 +40,6 @@ public:
   llvm::Type* ClassBytesType;
   llvm::Type* JavaConstantPoolType;
   llvm::Type* ResolvedConstantPoolType;
-  llvm::Type* CodeLineInfoType;
   llvm::Type* UTF8Type;
   llvm::Type* JavaMethodType;
   llvm::Type* JavaFieldType;
