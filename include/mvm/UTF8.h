@@ -8,7 +8,6 @@
 
 namespace mvm {
 
-class PrintBuffer;
 class UTF8Map;
 
 class UTF8 {
@@ -52,8 +51,6 @@ public:
     else return memcmp((const char*)elements, (const char*)other->elements, 
                        size * sizeof(uint16)) < 0;
   }
-
-	void print(PrintBuffer *pb) const;
 
 	static uint32_t readerHasher(const uint16* buf, sint32 size);
 	
@@ -144,8 +141,6 @@ public:
       allocator.Deallocate((void*)*i);
     }
   }
-
-  void insert(const UTF8* val);
 };
 
 class UTF8Builder {

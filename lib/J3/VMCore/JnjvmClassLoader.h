@@ -18,7 +18,6 @@
 
 
 #include "mvm/Allocator.h"
-#include "mvm/Object.h"
 
 #include "JavaObject.h"
 #include "JnjvmConfig.h"

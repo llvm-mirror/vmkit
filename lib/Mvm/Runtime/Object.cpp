@@ -11,8 +11,6 @@
 #include <cstdlib>
 
 #include "MvmGC.h"
-#include "mvm/Object.h"
-#include "mvm/PrintBuffer.h"
 #include "mvm/VirtualMachine.h"
 
 using namespace mvm;
@@ -35,25 +33,6 @@ extern "C" void printInt(sint32 i) {
 
 extern "C" void printObject(void* ptr) {
   fprintf(stderr, "%p\n", ptr);
-}
-
-extern "C" void write_ptr(PrintBuffer* buf, void* obj) {
-  buf->writePtr(obj);
-}
-
-extern "C" void write_int(PrintBuffer* buf, int a) {
-  buf->writeS4(a);
-}
-
-extern "C" void write_str(PrintBuffer* buf, char* a) {
-  buf->write(a);
-}
-
-void Object::default_print(const gc *o, PrintBuffer *buf) {
-	llvm_gcroot(o, 0);
-  buf->write("<Object@");
-  buf->writePtr((void*)o);
-  buf->write(">");
 }
 
 void VirtualMachine::waitForExit() {   

@@ -13,7 +13,6 @@
 #include "types.h"
 
 #include "mvm/UTF8.h"
-#include "mvm/PrintBuffer.h"
 
 namespace j3 {
 	using mvm::UTF8;
@@ -22,15 +21,27 @@ namespace j3 {
 /// UTF8Buffer - Helper class to create char* buffers suitable for
 /// printf.
 ///
-class UTF8Buffer : public mvm::PrintBuffer {
+class UTF8Buffer {
 public:
+  char* contents;
+
   /// UTF8Buffer - Create a buffer with the following UTF8.
-  UTF8Buffer(const UTF8* val) : mvm::PrintBuffer(val) {}
+  UTF8Buffer(const UTF8* val) {
+    contents = new char[val->size + 1];
+    for (int i = 0; i < val->size; i++) {
+      contents[i] = (char)val->elements[i];
+    }
+    contents[val->size] = 0;
+  }
+
+  char* cString() const {
+    return contents;
+  }
 
   /// toCompileName - Change the utf8 following JNI conventions.
   ///
   UTF8Buffer* toCompileName(const char* suffix = "") {
-		const char *buffer = cString();
+		const char *buffer = contents;
     uint32 len = strlen(buffer);
     uint32 suffixLen = strlen(suffix);
     char* newBuffer = new char[(len << 1) + suffixLen + 1];
@@ -58,8 +69,13 @@ public:
       newBuffer[j++] = suffix[i];
     }
     newBuffer[j] = 0;
-		replaceWith(newBuffer);
+    delete[] contents;
+		contents = newBuffer;
     return this;
+  }
+
+  ~UTF8Buffer() {
+    delete[] contents;
   }
 };
 

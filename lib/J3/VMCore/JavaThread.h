@@ -10,7 +10,6 @@
 #ifndef JNJVM_JAVA_THREAD_H
 #define JNJVM_JAVA_THREAD_H
 
-#include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/ObjectLocks.h"

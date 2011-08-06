@@ -9,17 +9,11 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/UTF8.h"
-#include "mvm/PrintBuffer.h"
 
 namespace mvm {
 
 extern "C" const UTF8 TombstoneKey(0);
 extern "C" const UTF8 EmptyKey(0);
-
-
-void UTF8::print(PrintBuffer *pb) const {
-	pb->writeUTF8(this);
-}
 
 
 const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
@@ -96,12 +90,6 @@ const UTF8* UTF8Map::lookupReader(const uint16* buf, uint32 len) {
   const UTF8* res = map.lookup(key);
   lock.unlock();
   return res;
-}
-
-
-void UTF8Map::insert(const UTF8* val) {
-  UTF8MapKey key(val->elements, val->size);
-  map[key] = val;
 }
 
 } // namespace mvm

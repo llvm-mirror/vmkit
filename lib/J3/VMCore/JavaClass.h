@@ -15,7 +15,6 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/MethodInfo.h"
-#include "mvm/Object.h"
 #include "mvm/Threads/Cond.h"
 #include "mvm/Threads/Locks.h"
 

@@ -11,10 +11,10 @@
 #define JNJVM_JAVA_OBJECT_H
 
 #include "mvm/Allocator.h"
-#include "mvm/Object.h"
 #include "mvm/UTF8.h"
 #include "mvm/Threads/Locks.h"
 #include "mvm/Threads/Thread.h"
+#include "MvmGC.h"
 
 #include "types.h"
 
