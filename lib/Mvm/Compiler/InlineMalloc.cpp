@@ -16,6 +16,7 @@
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Target/TargetData.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
 #include "mvm/JIT.h"
@@ -41,6 +42,7 @@ bool InlineMalloc::runOnFunction(Function& F) {
   Function* ArrayWriteBarrier = F.getParent()->getFunction("arrayWriteBarrier");
   Function* NonHeapWriteBarrier = F.getParent()->getFunction("nonHeapWriteBarrier");
   bool Changed = false;
+  const TargetData *TD = getAnalysisIfAvailable<TargetData>();
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
@@ -54,14 +56,14 @@ bool InlineMalloc::runOnFunction(Function& F) {
       Function* Temp = Call.getCalledFunction();
       if (Temp == Malloc) {
         if (dyn_cast<Constant>(Call.getArgument(0))) {
-          InlineFunctionInfo IFI(NULL, mvm::MvmModule::TheTargetData);
+          InlineFunctionInfo IFI(NULL, TD);
           Changed |= InlineFunction(Call, IFI);
           break;
         }
       } else if (Temp == FieldWriteBarrier ||
                  Temp == NonHeapWriteBarrier ||
                  Temp == ArrayWriteBarrier) {
-        InlineFunctionInfo IFI(NULL, mvm::MvmModule::TheTargetData);
+        InlineFunctionInfo IFI(NULL, TD);
         Changed |= InlineFunction(Call, IFI);
         break;
       }

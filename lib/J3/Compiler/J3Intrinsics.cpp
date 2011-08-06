@@ -31,8 +31,9 @@ namespace j3 {
   }
 }
 
-J3Intrinsics::J3Intrinsics(llvm::Module* module) :
-  BaseIntrinsics(module) {
+void J3Intrinsics::init(llvm::Module* module) {
+  BaseIntrinsics::init(module);
+
   j3::llvm_runtime::makeLLVMModuleContents(module);
   
   LLVMContext& Context = module->getContext();
@@ -231,6 +232,5 @@ J3Intrinsics::J3Intrinsics(llvm::Module* module) :
 
   GetLockFunction = module->getFunction("getLock");
   ThrowExceptionFromJITFunction =
-    module->getFunction("j3ThrowExceptionFromJIT");
- 
+    module->getFunction("j3ThrowExceptionFromJIT"); 
 }

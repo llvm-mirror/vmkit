@@ -65,7 +65,7 @@ class BaseIntrinsics {
 
 public:
   
-  explicit BaseIntrinsics(llvm::Module*);
+  void init(llvm::Module*);
  
   llvm::Function* exceptionEndCatch;
   llvm::Function* exceptionBeginCatch;
@@ -181,24 +181,16 @@ public:
 
 class MvmModule {
 public:
-   static llvm::GCStrategy* TheGCStrategy;
    static mvm::LockRecursive protectEngine;
-   static llvm::Module *globalModule;
-   static const llvm::TargetData* TheTargetData;
-   static mvm::BumpPtrAllocator* Allocator;
-   static llvm::ExecutionEngine* executionEngine;
-   //static unsigned MetadataTypeKind;
 
-   static uint64 getTypeSize(llvm::Type* type);
    static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
-   static void initialise(llvm::CodeGenOpt::Level = llvm::CodeGenOpt::Default,
-                         llvm::Module* TheModule = 0,
-                         llvm::TargetMachine* TheTarget = 0);
+   static void initialise();
 
    static Frames* addToVM(VirtualMachine* VM,
                           llvm::GCFunctionInfo* GFI,
                           llvm::JIT* jit,
-                          mvm::BumpPtrAllocator& allocator);
+                          mvm::BumpPtrAllocator& allocator,
+                          void* meta);
 
    static int disassemble(unsigned int* addr);
   

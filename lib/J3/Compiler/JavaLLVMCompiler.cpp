@@ -26,12 +26,10 @@ using namespace llvm;
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   TheModule(new llvm::Module(str, *(new LLVMContext()))),
-  DebugFactory(new DIBuilder(*TheModule)),
-  JavaIntrinsics(TheModule) {
+  DebugFactory(new DIBuilder(*TheModule)) {
 
   enabledException = true;
   cooperativeGC = true;
-  initialiseAssessorInfo();
 }
   
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
@@ -125,6 +123,7 @@ void JavaLLVMCompiler::addJavaPasses() {
     JavaFunctionPasses->add(mvm::createLoopSafePointsPass());
   // Add other passes after the loop pass, because safepoints may move objects.
   // Moving objects disable many optimizations.
+  JavaFunctionPasses->add(new TargetData(TheModule));
   mvm::MvmModule::addCommandLinePasses(JavaFunctionPasses);
 
   // Re-enable this when the pointers in stack-allocated objects can

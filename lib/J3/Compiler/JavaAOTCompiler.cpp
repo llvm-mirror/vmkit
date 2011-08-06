@@ -14,6 +14,8 @@
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Target/TargetData.h"
+#include "llvm/Target/TargetRegistry.h"
 
 #include "mvm/UTF8.h"
 #include "mvm/Threads/Thread.h"
@@ -1813,7 +1815,17 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
 
 JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   JavaLLVMCompiler(ModuleID) {
- 
+
+  std::string Error;
+  const Target* TheTarget(TargetRegistry::lookupTarget(mvm::MvmModule::getHostTriple(), Error));
+  TargetMachine* TM = TheTarget->createTargetMachine(mvm::MvmModule::getHostTriple(), "", "");
+  TheTargetData = TM->getTargetData();
+  TheModule->setDataLayout(TheTargetData->getStringRepresentation());
+  TheModule->setTargetTriple(TM->getTargetTriple());
+  JavaIntrinsics.init(TheModule);
+  initialiseAssessorInfo();  
+
+
   generateStubs = true;
   assumeCompiled = false;
   compileRT = false;
@@ -1888,7 +1900,7 @@ void JavaAOTCompiler::printStats() {
   Module* Mod = getLLVMModule();
   for (Module::const_global_iterator i = Mod->global_begin(),
        e = Mod->global_end(); i != e; ++i) {
-    size += mvm::MvmModule::getTypeSize(i->getType());
+    size += TheTargetData->getTypeAllocSize(i->getType());
   }
   fprintf(stdout, "%lluB\n", (unsigned long long int)size);
 }
@@ -2487,20 +2499,6 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
   Value* res = CallInst::Create(CalledFunc, ArrayRef<Value*>(Args, 3), "", currentBlock);
   ReturnInst::Create(getLLVMContext(), res, currentBlock);
 
-}
-
-
-// Use a FakeFunction to return from loadMethod, so that the compiler thinks
-// the method is defined by J3.
-extern "C" void __JavaAOTFakeFunction__() {}
-
-void* JavaAOTCompiler::loadMethod(void* handle, const char* symbol) {
-  Function* F = mvm::MvmModule::globalModule->getFunction(symbol);
-  if (F) {
-    return (void*)(uintptr_t)__JavaAOTFakeFunction__;
-  }
-
-  return JavaCompiler::loadMethod(handle, symbol);
 }
 
 // TODO: clean up to have a better interface with the fake GC.

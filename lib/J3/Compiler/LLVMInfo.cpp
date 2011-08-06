@@ -38,7 +38,7 @@ using namespace llvm;
 Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<llvm::Type*> fields;
-    const TargetData* targetData = mvm::MvmModule::TheTargetData;
+    const TargetData* targetData = Compiler->TheTargetData;
     const StructLayout* sl = 0;
     StructType* structType = 0;
     LLVMContext& context = Compiler->getLLVMModule()->getContext();
@@ -68,7 +68,7 @@ Type* LLVMClassInfo::getVirtualType() {
       
     }
     
-    uint64 size = mvm::MvmModule::getTypeSize(structType);
+    uint64 size = targetData->getTypeAllocSize(structType);
     virtualSizeConstant = ConstantInt::get(Type::getInt32Ty(context), size);
     
     // TODO: put that elsewhere.
@@ -109,7 +109,7 @@ Type* LLVMClassInfo::getStaticType() {
   
     StructType* structType = StructType::get(context, fields, false);
     staticType = PointerType::getUnqual(structType);
-    const TargetData* targetData = mvm::MvmModule::TheTargetData;
+    const TargetData* targetData = Compiler->TheTargetData;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     // TODO: put that elsewhere.
@@ -120,7 +120,7 @@ Type* LLVMClassInfo::getStaticType() {
         field.ptrOffset = sl->getElementOffset(i);
       }
     
-      uint64 size = mvm::MvmModule::getTypeSize(structType);
+      uint64 size = targetData->getTypeAllocSize(structType);
       cl->staticSize = size;
     }
   }

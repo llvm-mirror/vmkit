@@ -22,6 +22,7 @@
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Target/TargetData.h"
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 
 #include "MvmGC.h"
@@ -43,14 +44,11 @@ void JavaJITListener::NotifyFunctionEmitted(const Function &F,
                                      void *Code, size_t Size,
                                      const EmittedFunctionDetails &Details) {
 
-  // The following is necessary for -load-bc.
-  if (F.getParent() != TheCompiler->getLLVMModule()) return;
   assert(F.hasGC());
-  if (TheCompiler->GCInfo != NULL) {
-    assert(TheCompiler->GCInfo == Details.MF->getGMI());
-    return;
+  if (TheCompiler->GCInfo == NULL) {
+    TheCompiler->GCInfo = Details.MF->getGMI();
   }
-  TheCompiler->GCInfo = Details.MF->getGMI();
+  assert(TheCompiler->GCInfo == Details.MF->getGMI());
 }
 
 
@@ -163,6 +161,11 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   executionEngine = ExecutionEngine::createJIT(TheModule, 0,
                                                0, llvm::CodeGenOpt::Default, false);
   executionEngine->RegisterJITEventListener(&listener);
+  TheTargetData = executionEngine->getTargetData();
+  TheModule->setDataLayout(TheTargetData->getStringRepresentation());
+  TheModule->setTargetTriple(mvm::MvmModule::getHostTriple());
+  JavaIntrinsics.init(TheModule);
+  initialiseAssessorInfo();  
 
   addJavaPasses();
 }
@@ -306,13 +309,10 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   void* res = executionEngine->getPointerToGlobal(func);
  
   if (!func->isDeclaration()) {
-    llvm::GCFunctionInfo* GFI = &(GCInfo->getFunctionInfo(*func));
-    assert((GFI != NULL) && "No GC information");
+    llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*func);
   
     Jnjvm* vm = JavaThread::get()->getJVM();
-    mvm::Frames* frames = mvm::MvmModule::addToVM(vm, GFI, (JIT*)executionEngine, allocator);
-    meth->frames = frames;
-    meth->updateFrames();
+    meth->frames = mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, meth);
   }
     // Now that it's compiled, we don't need the IR anymore
   func->deleteBody();
@@ -324,11 +324,10 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
   mvm::MvmModule::protectIR();
   void* res = executionEngine->getPointerToGlobal(F);
   
-  llvm::GCFunctionInfo* GFI = &(GCInfo->getFunctionInfo(*F));
-  assert((GFI != NULL) && "No GC information");
+  llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*F);
   
   Jnjvm* vm = JavaThread::get()->getJVM();
-  mvm::MvmModule::addToVM(vm, GFI, (JIT*)executionEngine, allocator);
+  mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, NULL);
   
   // Now that it's compiled, we don't need the IR anymore
   F->deleteBody();

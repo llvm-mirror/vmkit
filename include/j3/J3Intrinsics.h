@@ -17,6 +17,8 @@ namespace j3 {
 class J3Intrinsics : public mvm::BaseIntrinsics {
 
 public:
+  void init(llvm::Module* M);
+
   llvm::Type* JavaArrayUInt8Type;
   llvm::Type* JavaArraySInt8Type;
   llvm::Type* JavaArrayUInt16Type;
@@ -149,12 +151,6 @@ public:
   llvm::Function* ArrayStoreExceptionFunction;
   llvm::Function* ArithmeticExceptionFunction;
   llvm::Function* ThrowExceptionFromJITFunction;
-  
-
-  J3Intrinsics(llvm::Module*);
-  
-  static void initialise();
-
 };
 
 }

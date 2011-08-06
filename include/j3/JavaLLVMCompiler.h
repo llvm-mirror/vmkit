@@ -48,6 +48,7 @@ protected:
   llvm::Module* TheModule;
   llvm::DIBuilder* DebugFactory;  
   J3Intrinsics JavaIntrinsics;
+  const llvm::TargetData* TheTargetData;
 
 private:  
   bool enabledException;
@@ -180,7 +181,7 @@ public:
       return I->second;
     }
   }
-  
+
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl) = 0;
   virtual JavaObject* getFinalObject(llvm::Value* C) = 0;
   virtual llvm::Constant* getNativeClass(CommonClass* cl) = 0;

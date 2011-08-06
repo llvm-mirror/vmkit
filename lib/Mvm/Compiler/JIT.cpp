@@ -66,26 +66,7 @@ const char* MvmModule::getHostTriple() {
   return LLVM_HOSTTRIPLE;
 }
 
-class MvmJITListener : public llvm::JITEventListener {
-public:
-  virtual void NotifyFunctionEmitted(const Function &F,
-                                     void *Code, size_t Size,
-                                     const EmittedFunctionDetails &Details) {
-    assert(F.getParent() == MvmModule::globalModule);
-    assert(F.hasGC());
-    // We know the last GC info is for this method.
-    GCStrategy::iterator I = mvm::MvmModule::TheGCStrategy->end();
-    I--;
-    DEBUG(errs() << (*I)->getFunction().getName() << '\n');
-    DEBUG(errs() << F.getName() << '\n');
-    assert(&(*I)->getFunction() == &F &&
-        "GC Info and method do not correspond");
-    llvm::GCFunctionInfo* GFI = *I;
-    MvmModule::addToVM(mvm::Thread::get()->MyVM, GFI, (JIT*)MvmModule::executionEngine, *MvmModule::Allocator);
-  }
-};
-
-Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, BumpPtrAllocator& allocator) {
+Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, BumpPtrAllocator& allocator, void* meta) {
   JITCodeEmitter* JCE = jit->getCodeEmitter();
   int NumDescriptors = 0;
   for (GCFunctionInfo::iterator J = FI->begin(), JE = FI->end(); J != JE; ++J) {
@@ -107,7 +88,7 @@ Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, Bum
 
     frame->NumLiveOffsets = LiveCount;
     frame->FrameSize = FI->getFrameSize();
-    frame->Metadata = NULL;
+    frame->Metadata = meta;
     frame->SourceIndex = I->Loc.getLine();
     frame->ReturnAddress = reinterpret_cast<void*>(JCE->getLabelAddress(I->Label));
     int i = 0;
@@ -130,13 +111,7 @@ Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, Bum
   return frames;
 }
 
-static MvmJITListener JITListener;
-
-typedef void (*BootType)(uintptr_t Plan);
-typedef void (*BootHeapType)(intptr_t initial, intptr_t max);
-
-void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
-                           TargetMachine* T) {
+void MvmModule::initialise() {
   mvm::linkVmkitGC();
   
   llvm_start_multithreaded();
@@ -150,38 +125,13 @@ void MvmModule::initialise(CodeGenOpt::Level level, Module* M,
   const char* commands[2] = { "vmkit", "-disable-branch-fold" };
   llvm::cl::ParseCommandLineOptions(2, const_cast<char**>(commands));
 
-  if (!M) {
-    globalModule = new Module("bootstrap module", *(new LLVMContext()));
-
-    InitializeNativeTarget();
-
-    executionEngine = ExecutionEngine::createJIT(globalModule, 0,
-                                                 0, level, false);
-
-    Allocator = new BumpPtrAllocator();
-    executionEngine->RegisterJITEventListener(&JITListener);    
-    std::string str = 
-      executionEngine->getTargetData()->getStringRepresentation();
-    globalModule->setDataLayout(str);
-    globalModule->setTargetTriple(getHostTriple());
-  
-    TheTargetData = executionEngine->getTargetData();
-  } else {
-    globalModule = M;
-    TheTargetData = T->getTargetData();
-  }
-
-  //LLVMContext& Context = globalModule->getContext();
-  //MetadataTypeKind = Context.getMDKindID("HighLevelType");
- 
+  InitializeNativeTarget(); 
 }
 
 extern "C" void MMTk_InlineMethods(llvm::Module* module);
 
-BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
+void BaseIntrinsics::init(llvm::Module* module) {
 
-  module->setDataLayout(MvmModule::globalModule->getDataLayout());
-  module->setTargetTriple(MvmModule::globalModule->getTargetTriple());
   LLVMContext& Context = module->getContext();
 
   MMTk_InlineMethods(module);
@@ -319,17 +269,7 @@ BaseIntrinsics::BaseIntrinsics(llvm::Module* module) {
   NonHeapWriteBarrierFunction = module->getFunction("nonHeapWriteBarrier");
 }
 
-const llvm::TargetData* MvmModule::TheTargetData;
-llvm::GCStrategy* MvmModule::TheGCStrategy;
-llvm::Module *MvmModule::globalModule;
-llvm::ExecutionEngine* MvmModule::executionEngine;
 mvm::LockRecursive MvmModule::protectEngine;
-mvm::BumpPtrAllocator* MvmModule::Allocator;
-//unsigned MvmModule::MetadataTypeKind;
-
-uint64 MvmModule::getTypeSize(llvm::Type* type) {
-  return TheTargetData->getTypeAllocSize(type);
-}
 
 void MvmModule::runPasses(llvm::Function* func,
                           llvm::FunctionPassManager* pm) {
@@ -402,8 +342,6 @@ namespace mvm {
 }
 
 void MvmModule::addCommandLinePasses(FunctionPassManager* PM) {
-  addPass(PM, new TargetData(*MvmModule::TheTargetData));
-
   addPass(PM, createVerifierPass());        // Verify that input is correct
 
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code

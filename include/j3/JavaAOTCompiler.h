@@ -78,8 +78,6 @@ public:
 
   virtual ~JavaAOTCompiler() {}
   
-  virtual void* loadMethod(void* handle, const char* symbol);
-
   virtual CommonClass* getUniqueBaseClass(CommonClass* cl);
 
 private:
