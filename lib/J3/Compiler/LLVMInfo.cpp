@@ -311,21 +311,26 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   LLVMContext& context = Compiler->getLLVMModule()->getContext();
   J3Intrinsics& Intrinsics = *Compiler->getIntrinsics();
   Function* res = 0;
+  FunctionType* FTy = virt ? getVirtualBufType() : getStaticBufType();
+  if (virt) {
+    res = Compiler->virtualBufs[FTy];
+  } else {
+    res = Compiler->staticBufs[FTy];
+  }
+  if (res != NULL) {
+    return res;
+  }
   if (Compiler->isStaticCompiling()) {
     mvm::ThreadAllocator allocator;
     const char* type = virt ? "virtual_buf" : "static_buf";
     char* buf = (char*)allocator.Allocate(
         (signature->keyName->size << 1) + 1 + 11);
     signature->nativeName(buf, type);
-    res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
-                           GlobalValue::ExternalLinkage, buf,
-                           Compiler->getLLVMModule());
-  
-
+    res = Function::Create(
+        FTy, GlobalValue::ExternalLinkage, buf, Compiler->getLLVMModule());
   } else {
-    res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
-                           GlobalValue::ExternalLinkage, "",
-                           Compiler->getLLVMModule());
+    res = Function::Create(
+        FTy, GlobalValue::ExternalLinkage, "", Compiler->getLLVMModule());
   }
 
   BasicBlock* currentBlock = BasicBlock::Create(context, "enter", res);
@@ -390,6 +395,12 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   
   res->setGC("vmkit");
 
+  if (virt) {
+    Compiler->virtualBufs[FTy] = res;
+  } else {
+    Compiler->staticBufs[FTy] = res;
+  }
+
   return res;
 }
 
@@ -399,21 +410,26 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   
   J3Intrinsics& Intrinsics = *Compiler->getIntrinsics();
   Function* res = NULL;
+  FunctionType* FTy = virt ? getVirtualBufType() : getStaticBufType();
+  if (virt) {
+    res = Compiler->virtualAPs[FTy];
+  } else {
+    res = Compiler->staticAPs[FTy];
+  }
+  if (res != NULL) {
+    return res;
+  }
   if (Compiler->isStaticCompiling()) {
     mvm::ThreadAllocator allocator;
     const char* type = virt ? "virtual_ap" : "static_ap";
     char* buf = (char*)allocator.Allocate(
         (signature->keyName->size << 1) + 1 + 11);
     signature->nativeName(buf, type);
-    res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
-                           GlobalValue::ExternalLinkage, buf,
-                           Compiler->getLLVMModule());
-  
-
+    res = Function::Create(
+        FTy, GlobalValue::ExternalLinkage, buf, Compiler->getLLVMModule());
   } else {
-    res = Function::Create(virt ? getVirtualBufType() : getStaticBufType(),
-                           GlobalValue::ExternalLinkage, "",
-                           Compiler->getLLVMModule());
+    res = Function::Create(
+        FTy, GlobalValue::ExternalLinkage, "", Compiler->getLLVMModule());
   }
   LLVMContext& context = Compiler->getLLVMModule()->getContext();
   
@@ -467,6 +483,11 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   
   res->setGC("vmkit");
   
+  if (virt) {
+    Compiler->virtualAPs[FTy] = res;
+  } else {
+    Compiler->staticAPs[FTy] = res;
+  }
   return res;
 }
 
@@ -478,21 +499,30 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   
   J3Intrinsics& Intrinsics = *Compiler->getIntrinsics();
   Function* stub = NULL;
+  FunctionType* FTy = (virt || special)? getVirtualType() : getStaticType();
+  if (virt) {
+    stub = Compiler->virtualStubs[FTy];
+  } else if (special) {
+    stub = Compiler->specialStubs[FTy];
+  } else {
+    stub = Compiler->staticStubs[FTy];
+  }
+  if (stub != NULL) {
+    return stub;
+  }
   if (Compiler->isStaticCompiling()) {
     mvm::ThreadAllocator allocator;
     const char* type = virt ? "virtual_stub" : special ? "special_stub" : "static_stub";
     char* buf = (char*)allocator.Allocate(
         (signature->keyName->size << 1) + 1 + 11);
     signature->nativeName(buf, type);
-    stub = Function::Create((virt || special)? getVirtualType() : getStaticType(),
-                            GlobalValue::ExternalLinkage, buf,
-                            Compiler->getLLVMModule());
+    stub = Function::Create(
+        FTy, GlobalValue::ExternalLinkage, buf, Compiler->getLLVMModule());
   
 
   } else {
-    stub = Function::Create((virt || special)? getVirtualType() : getStaticType(),
-                            GlobalValue::ExternalLinkage, "",
-                            Compiler->getLLVMModule());
+    stub = Function::Create(
+        FTy, GlobalValue::ExternalLinkage, "", Compiler->getLLVMModule());
   }
   LLVMContext& context = Compiler->getLLVMModule()->getContext();
   
@@ -568,7 +598,14 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   }
   
   stub->setGC("vmkit");
-  
+ 
+  if (virt) {
+    Compiler->virtualStubs[FTy] = stub;
+  } else if (special) {
+    Compiler->specialStubs[FTy] = stub;
+  } else {
+    Compiler->staticStubs[FTy] = stub;
+  }
   return stub;
 }
 

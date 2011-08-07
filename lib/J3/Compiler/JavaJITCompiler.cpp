@@ -313,9 +313,10 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
   
     Jnjvm* vm = JavaThread::get()->getJVM();
     mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, meth);
-  }
+
     // Now that it's compiled, we don't need the IR anymore
-  func->deleteBody();
+    func->deleteBody();
+  }
   mvm::MvmModule::unprotectIR();
   return res;
 }
@@ -323,14 +324,18 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
 void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
   mvm::MvmModule::protectIR();
   void* res = executionEngine->getPointerToGlobal(F);
+ 
+  // If the stub was already generated through an equivalent signature,
+  // The body has been deleted, so the function just becomes a declaration.
+  if (!F->isDeclaration()) {
+    llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*F);
   
-  llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*F);
+    Jnjvm* vm = JavaThread::get()->getJVM();
+    mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, NULL);
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, NULL);
-  
-  // Now that it's compiled, we don't need the IR anymore
-  F->deleteBody();
+    // Now that it's compiled, we don't need the IR anymore
+    F->deleteBody();
+  }
   mvm::MvmModule::unprotectIR();
   return res;
 }

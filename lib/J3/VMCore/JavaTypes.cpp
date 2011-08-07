@@ -170,37 +170,18 @@ intptr_t Signdef::staticCallStub() {
 }
 
 void Signdef::nativeName(char* ptr, const char* ext) const {
-  sint32 i = 0;
-  while (i < keyName->size) {
-    char c = keyName->elements[i++];
-    if (c == I_PARG) {
-      ptr[0] = '_';
-      ptr[1] = '_';
-      ptr += 2;
-    } else if (c == '/') {
-      ptr[0] = '_';
-      ++ptr;
-    } else if (c == '_') {
-      ptr[0] = '_';
-      ptr[1] = '1';
-      ptr += 2;
-    } else if (c == I_END_REF) {
-      ptr[0] = '_';
-      ptr[1] = '2';
-      ptr += 2;
-    } else if (c == I_TAB) {
-      ptr[0] = '_';
-      ptr[1] = '3';
-      ptr += 2;
-    } else if (c == I_PARD) {
-      ptr[0] = '_';
-      ptr[1] = '_';
-      ptr += 2;
-    } else {
-      ptr[0] = c;
-      ++ptr;
-    }
+  ptr[0] = '_';
+  ptr[1] = '_';
+  ptr += 2;
+  for (uint32_t i = 0; i < nbArguments; i++) {
+    ptr[0] = arguments[i + 1]->getId();
+    ++ptr;
   }
+  ptr[0] = '_';
+  ptr[1] = '_';
+  ptr += 2;
+  ptr[0] = arguments[0]->getId();
+  ++ptr;
 
   assert(ext && "I need an extension");
   memcpy(ptr, ext, strlen(ext) + 1);

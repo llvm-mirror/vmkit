@@ -141,6 +141,8 @@ public:
   const UTF8* getKey() const {
     return keyName;
   }
+
+  virtual char getId() const = 0;
   
   virtual ~Typedef() {}
 };
@@ -152,6 +154,10 @@ private:
   char charId;
   
 public:
+
+  virtual char getId() const {
+    return charId;
+  }
   
   virtual bool trace() const {
     return false;
@@ -231,6 +237,10 @@ public:
   ArrayTypedef(const UTF8* name) {
     keyName = name;
   }
+
+  virtual char getId() const {
+    return I_REF;
+  }
 };
 
 class ObjectTypedef : public Typedef {
@@ -254,6 +264,9 @@ public:
     return pseudoAssocClassName;
   }
 
+  virtual char getId() const {
+    return I_REF;
+  }
 };
 
 

@@ -14,6 +14,7 @@
 #include "j3/J3Intrinsics.h"
 #include "j3/LLVMInfo.h"
 
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 
@@ -43,6 +44,7 @@ class Signdef;
 class JavaLLVMCompiler : public JavaCompiler {
   friend class LLVMClassInfo;
   friend class LLVMMethodInfo;
+  friend class LLVMSignatureInfo;
 
 protected:
   llvm::Module* TheModule;
@@ -74,6 +76,14 @@ private:
 
   std::map<llvm::MDNode*, JavaMethod*> DbgInfos;
   typedef std::map<llvm::MDNode*, JavaMethod*>::iterator dbg_iterator;
+
+  llvm::DenseMap<llvm::FunctionType*, llvm::Function*> virtualStubs;
+  llvm::DenseMap<llvm::FunctionType*, llvm::Function*> specialStubs;
+  llvm::DenseMap<llvm::FunctionType*, llvm::Function*> staticStubs;
+  llvm::DenseMap<llvm::FunctionType*, llvm::Function*> virtualBufs;
+  llvm::DenseMap<llvm::FunctionType*, llvm::Function*> staticBufs;
+  llvm::DenseMap<llvm::FunctionType*, llvm::Function*> virtualAPs;
+  llvm::DenseMap<llvm::FunctionType*, llvm::Function*> staticAPs;
 
 public:
   JavaLLVMCompiler(const std::string &ModuleID);
