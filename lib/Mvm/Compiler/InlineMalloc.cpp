@@ -29,6 +29,9 @@ namespace mvm {
   public:
     static char ID;
     InlineMalloc() : FunctionPass(ID) {}
+    virtual const char* getPassName() const {
+      return "Inline malloc and barriers";
+    }
 
     virtual bool runOnFunction(Function &F);
   private:
