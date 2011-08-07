@@ -184,13 +184,6 @@ void VmkitAOTGCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
 
     Constant* Metadata = FindMetadata(FI.getFunction());
 
-    // Emit the frame symbol
-    SmallString<128> TmpStr;
-    AP.Mang->getNameWithPrefix(TmpStr, FI.getFunction().getName() + "_frame");
-    MCSymbol *Sym = AP.OutContext.GetOrCreateSymbol(TmpStr);
-    AP.OutStreamer.EmitSymbolAttribute(Sym, MCSA_Global);
-    AP.OutStreamer.EmitLabel(Sym);
-
     int NumDescriptors = 0;
     for (GCFunctionInfo::iterator J = FI.begin(), JE = FI.end(); J != JE; ++J) {
       NumDescriptors++;
