@@ -35,7 +35,7 @@ Precompiled.bc: HelloWorld.class $(LibDir)/StaticGCPass$(SHLIBEXT) $(LibDir)/Sta
 	$(Verb) $(CC) -c $(ObjDir)/Precompiled.s -o $(ObjDir)/Precompiled.o
 	$(Verb) $(Archive) $(LibDir)/libPrecompiled.a $(ObjDir)/Precompiled.o
 	$(Verb) $(Ranlib) $(LibDir)/libPrecompiled.a
-	$(Verb) $(MV) generated.bc Precompiled.bc
+	$(Verb) $(CP) generated.bc Precompiled.bc
 
 classes.bc: $(PRECOMPILER)
 	$(Echo) "Pre-compiling classes"
@@ -48,7 +48,7 @@ BootstrapClasses.bc: classes.bc
 	$(Verb) $(CC) -c $(ObjDir)/BootstrapClasses.s -o $(ObjDir)/BootstrapClasses.o
 	$(Verb) $(Archive) $(LibDir)/libBootstrapClasses.a $(ObjDir)/BootstrapClasses.o
 	$(Verb) $(Ranlib) $(LibDir)/libBootstrapClasses.a
-	$(Verb) $(MV) classes.bc BootstrapClasses.bc
+	$(Verb) $(CP) classes.bc BootstrapClasses.bc
 
 clean-local::
-	$(Verb) $(RM) -f HelloWorld.class Precompiled.bc BootstrapClasses.bc
+	$(Verb) $(RM) -f HelloWorld.class generated.bc classes.bc Precompiled.bc BootstrapClasses.bc
