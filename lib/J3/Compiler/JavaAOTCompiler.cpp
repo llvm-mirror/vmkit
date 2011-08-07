@@ -638,9 +638,9 @@ Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
                                 JavaIntrinsics.VTType);
     virtualTables.insert(std::make_pair(VT, res));
   
-    if (isCompiling(classDef) || assumeCompiled) {
-      Constant* C = CreateConstantFromVT(VT);
-      varGV->setInitializer(C);
+    if ((precompile && classDef->isPrimitive())
+        || (!precompile && (isCompiling(classDef) || assumeCompiled))) {
+      varGV->setInitializer(CreateConstantFromVT(VT));
     }
     
     return res;
@@ -2399,11 +2399,13 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     }
   }
 
-  // Add all class initializers.
+  // Add all class and VT initializers.
   for (ClassMap::iterator i = loader->getClasses()->map.begin(),
        e = loader->getClasses()->map.end(); i!= e; ++i) {
-    GlobalVariable* gv = getNativeClass(i->second);
-    AddInitializerToClass(gv, i->second);
+    AddInitializerToClass(getNativeClass(i->second), i->second);
+    JavaVirtualTable* VT = i->second->virtualVT;
+    GlobalVariable* gv = dyn_cast<GlobalVariable>(getVirtualTable(VT)->getOperand(0));
+    gv->setInitializer(CreateConstantFromVT(VT));
   }
 
   // Finally add used stubs to the image.
