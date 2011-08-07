@@ -24,17 +24,19 @@ using namespace llvm;
 
 namespace j3 {
 
-  class LowerConstantCalls : public FunctionPass {
-  public:
-    static char ID;
-    JavaLLVMCompiler* TheCompiler;
-    LowerConstantCalls(JavaLLVMCompiler* Compiler) : FunctionPass(ID),
-      TheCompiler(Compiler) { }
+class LowerConstantCalls : public FunctionPass {
+public:
+  static char ID;
+  JavaLLVMCompiler* TheCompiler;
+  LowerConstantCalls(JavaLLVMCompiler* Compiler) : FunctionPass(ID),
+    TheCompiler(Compiler) { }
 
-    virtual bool runOnFunction(Function &F);
-  private:
-  };
-  char LowerConstantCalls::ID = 0;
+  const char* getPassName() const { return "Lower Java calls"; }
+
+  virtual bool runOnFunction(Function &F);
+private:
+};
+char LowerConstantCalls::ID = 0;
 
 static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
   Value* GEP[2] = { intrinsics->constantZero,
