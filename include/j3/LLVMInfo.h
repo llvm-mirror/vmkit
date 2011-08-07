@@ -105,6 +105,8 @@ public:
     functionType = 0;
     DbgSubprogram = 0;
   }
+
+  friend class JavaAOTCompiler;
 };
 
 

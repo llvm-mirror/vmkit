@@ -1569,8 +1569,9 @@ Constant* JavaAOTCompiler::getUTF8(const UTF8* val) {
 
 Function* JavaAOTCompiler::getMethodOrStub(JavaMethod* meth) {
   assert(!isStatic(meth->access));
-  // TODO: check if llvm Function is populated instead of checking code is NULL
-  if (precompile && (meth->code == NULL)) {
+  if (precompile
+      && (meth->code == NULL)
+      && (getMethodInfo(meth)->methodFunction == NULL)) {
     LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
     return LSI->getVirtualStub();
   } else {

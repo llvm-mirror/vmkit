@@ -193,7 +193,9 @@ void Signdef::nativeName(char* ptr, const char* ext) const {
       ptr[1] = '3';
       ptr += 2;
     } else if (c == I_PARD) {
-      break;
+      ptr[0] = '_';
+      ptr[1] = '_';
+      ptr += 2;
     } else {
       ptr[0] = c;
       ++ptr;
