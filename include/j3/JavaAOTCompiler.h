@@ -183,6 +183,7 @@ public:
   bool assumeCompiled;
   bool compileRT;
   bool precompile;
+  bool emitClassBytes;
 
   std::vector<std::string>* clinits;
   
@@ -196,6 +197,7 @@ public:
   void compileFile(Jnjvm* vm, const char* name);
   void compileClass(Class* cl);
   void compileClassLoader(JnjvmBootstrapLoader* loader);
+  void generateClassBytes(JnjvmBootstrapLoader* loader);
   void generateMain(const char* name, bool jit);
 
 private:

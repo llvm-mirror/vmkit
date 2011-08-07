@@ -273,10 +273,15 @@ Constant* JavaAOTCompiler::getClassBytes(const UTF8* className, ClassBytes* byte
     return CI->second;
   }
 
-  std::string name(UTF8Buffer(className).toCompileName()->cString());
-  name += "_bytes";
-  Constant* C = CreateConstantFromClassBytes(bytes);
-  GlobalVariable* varGV = new GlobalVariable(*getLLVMModule(), C->getType(), false,
+  std::vector<Type*> Elemts;
+  ArrayType* ATy = ArrayType::get(Type::getInt8Ty(getLLVMContext()), bytes->size);
+  Elemts.push_back(Type::getInt32Ty(getLLVMContext()));
+  Elemts.push_back(ATy);
+  StructType* STy = StructType::get(getLLVMContext(), Elemts);
+
+  std::string name(UTF8Buffer(className).toCompileName("_bytes")->cString());
+  Constant* C = emitClassBytes ? CreateConstantFromClassBytes(bytes) : NULL;
+  GlobalVariable* varGV = new GlobalVariable(*getLLVMModule(), STy, false,
                                              GlobalValue::ExternalLinkage,
                                              C, name);
   classBytes[bytes] = varGV;
@@ -1323,9 +1328,12 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
   
   // bytes 
-  Constant* bytes = ConstantExpr::getBitCast(getClassBytes(cl->name, cl->bytes),
-                                             JavaIntrinsics.ClassBytesType);
-  ClassElts.push_back(bytes);
+  if (precompile) {
+    ClassElts.push_back(ConstantExpr::getBitCast(getClassBytes(cl->name, cl->bytes),
+                                                 JavaIntrinsics.ClassBytesType));
+  } else {
+    ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.ClassBytesType));
+  }
 
   // ctpInfo
   Constant* ctpInfo = CreateConstantFromJavaConstantPool(cl->ctpInfo);
@@ -1824,6 +1832,7 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   assumeCompiled = false;
   compileRT = false;
   precompile = false;
+  emitClassBytes = false;
 
   std::vector<llvm::Type*> llvmArgs;
   FunctionType* FTy = FunctionType::get(
@@ -2396,18 +2405,6 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     AddInitializerToClass(gv, i->second);
   }
 
-  // Add the bootstrap classes to the image.
-  for (std::vector<ZipArchive*>::iterator i = loader->bootArchives.begin(),
-       e = loader->bootArchives.end(); i != e; ++i) {
-    ZipArchive* archive = *i;
-    for (ZipArchive::table_iterator zi = archive->filetable.begin(),
-         ze = archive->filetable.end(); zi != ze; zi++) {
-      const char* name = zi->first;
-      ClassBytes* bytes = Reader::openZip(loader, archive, name);
-      getClassBytes(loader->asciizConstructUTF8(name), bytes);
-    }
-  }
-
   // Finally add used stubs to the image.
   for (SignMap::iterator i = loader->javaSignatures->map.begin(),
        e = loader->javaSignatures->map.end(); i != e; i++) {
@@ -2447,6 +2444,24 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
   // Emit the UTF8 map.
   CreateConstantFromUTF8Map(loader->hashUTF8->map);
 }
+
+void JavaAOTCompiler::generateClassBytes(JnjvmBootstrapLoader* loader) {
+  emitClassBytes = true;
+  // Add the bootstrap classes to the image.
+  for (std::vector<ZipArchive*>::iterator i = loader->bootArchives.begin(),
+       e = loader->bootArchives.end(); i != e; ++i) {
+    ZipArchive* archive = *i;
+    for (ZipArchive::table_iterator zi = archive->filetable.begin(),
+         ze = archive->filetable.end(); zi != ze; zi++) {
+      // Remove the '.class'.
+      const char* name = zi->first;
+      std::string str(name, strlen(name) - strlen(".class"));
+      ClassBytes* bytes = Reader::openZip(loader, archive, name);
+      getClassBytes(loader->asciizConstructUTF8(str.c_str()), bytes);
+    }
+  }
+}
+
 
 /// compileAllStubs - Compile all the native -> Java stubs. 
 /// TODO: Once LLVM supports va_arg, enable AP.

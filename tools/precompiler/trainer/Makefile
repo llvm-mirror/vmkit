@@ -10,7 +10,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-BUILT_SOURCES = Precompiled.bc
+BUILT_SOURCES = Precompiled.bc BootstrapClasses.bc
 
 include $(LEVEL)/Makefile.common
 
@@ -20,17 +20,35 @@ ifndef VERBOSE
   J3.Flags := > /dev/null
 endif
 
-Precompiled.bc: $(PRECOMPILER) HelloWorld.java $(LibDir)/StaticGCPass$(SHLIBEXT) $(LibDir)/StaticGCPrinter$(SHLIBEXT)
-	$(Echo) "Building precompiled bootstrap code"
+HelloWorld.class: HelloWorld.java
+	$(Echo) "Compiling trainer"
 	$(Verb) javac HelloWorld.java
+
+generated.bc: $(PRECOMPILER) HelloWorld.class
+	$(Echo) "Pre-compiling bootstrap code"
 	$(Verb) $(PRECOMPILER) -cp $$PWD HelloWorld $(J3.Flags)
+
+Precompiled.bc: HelloWorld.class $(LibDir)/StaticGCPass$(SHLIBEXT) $(LibDir)/StaticGCPrinter$(SHLIBEXT) generated.bc
+	$(Echo) "Building precompiled bootstrap code"
 	$(Verb) $(MKDIR) $(ObjDir)
-	$(Verb) $(LOPT) generated.bc -load=$(LibDir)/StaticGCPass$(SHLIBEXT) -StaticGCPass -o $(LibDir)/Precompiled.bc
-	$(Verb) $(LLC) -disable-cfi -O0 -fast-isel=false -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) -disable-fp-elim $(LibDir)/Precompiled.bc -o $(ObjDir)/Precompiled.s
+	$(Verb) $(LLC) -disable-branch-fold -disable-cfi -O0 -fast-isel=false -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) -disable-fp-elim generated.bc -o $(ObjDir)/Precompiled.s
 	$(Verb) $(CC) -c $(ObjDir)/Precompiled.s -o $(ObjDir)/Precompiled.o
 	$(Verb) $(Archive) $(LibDir)/libPrecompiled.a $(ObjDir)/Precompiled.o
 	$(Verb) $(Ranlib) $(LibDir)/libPrecompiled.a
 	$(Verb) $(MV) generated.bc Precompiled.bc
 
+classes.bc: $(PRECOMPILER)
+	$(Echo) "Pre-compiling classes"
+	$(Verb) $(PRECOMPILER) -emit-class-bytes $(J3.Flags)
+
+BootstrapClasses.bc: classes.bc
+	$(Echo) "Building precompiled classes"
+	$(Verb) $(MKDIR) $(ObjDir)
+	$(Verb) $(LLC) classes.bc -o $(ObjDir)/BootstrapClasses.s
+	$(Verb) $(CC) -c $(ObjDir)/BootstrapClasses.s -o $(ObjDir)/BootstrapClasses.o
+	$(Verb) $(Archive) $(LibDir)/libBootstrapClasses.a $(ObjDir)/BootstrapClasses.o
+	$(Verb) $(Ranlib) $(LibDir)/libBootstrapClasses.a
+	$(Verb) $(MV) classes.bc BootstrapClasses.bc
+
 clean-local::
-	$(Verb) $(RM) -f HelloWorld.class Precompiled.bc
+	$(Verb) $(RM) -f HelloWorld.class Precompiled.bc BootstrapClasses.bc

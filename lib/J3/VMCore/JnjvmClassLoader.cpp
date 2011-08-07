@@ -240,7 +240,7 @@ void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
 
 ClassBytes* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
   ClassBytes* res = reinterpret_cast<ClassBytes*>(dlsym(SELF_HANDLE,
-      UTF8Buffer(utf8).toCompileName(".class_bytes")->cString()));
+      UTF8Buffer(utf8).toCompileName("_bytes")->cString()));
   if (res != NULL) return res;
 
   mvm::ThreadAllocator threadAllocator;

@@ -50,9 +50,18 @@ static void mainCompilerLoaderStart(JavaThread* th) {
   vm->exit(); 
 }
 
-
 int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;
+  bool EmitClassBytes = false;
+  static const char* EmitClassBytesStr = "-emit-class-bytes";
+  for (int i = 0; i < argc; i++) {
+    if (!strncmp(argv[i], EmitClassBytesStr, strlen(EmitClassBytesStr))) {
+      EmitClassBytes = true;
+      break;
+    }
+  }
+
+  std::string OutputFilename;
 
   // Initialize base components.  
   MvmModule::initialise();
@@ -60,32 +69,39 @@ int main(int argc, char **argv, char **envp) {
   
   // Tell the compiler to run all optimizations.
   StandardCompileOpts = true;
- 
+
   // Create the allocator that will allocate the bootstrap loader and the JVM.
   mvm::BumpPtrAllocator Allocator;
-  JavaJITCompiler* JIT = JavaJITCompiler::CreateCompiler("JIT");
-  JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
-    JnjvmBootstrapLoader(Allocator, JIT, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, frametables, loader);
- 
-  // Run the application. 
-  vm->runApplication(argc, argv);
-  vm->waitForExit();
-
-  // Now AOT Compile all compiled methods.
   JavaAOTCompiler* AOT = new JavaAOTCompiler("AOT");
-  loader->setCompiler(AOT);
+  if (EmitClassBytes) {
+    OutputFilename = "classes.bc";
+    JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
+      JnjvmBootstrapLoader(Allocator, AOT, true);
+    AOT->generateClassBytes(loader);
+  } else {
+    OutputFilename = "generated.bc";
+    JavaJITCompiler* JIT = JavaJITCompiler::CreateCompiler("JIT");
+    JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
+      JnjvmBootstrapLoader(Allocator, JIT, true);
+    Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, frametables, loader);
+ 
+    // Run the application. 
+    vm->runApplication(argc, argv);
+    vm->waitForExit();
 
-  vm->doExit = false;
-  JavaThread* th = new JavaThread(vm);
-  vm->setMainThread(th);
-  th->start((void (*)(mvm::Thread*))mainCompilerLoaderStart);
-  vm->waitForExit();
+    // Now AOT Compile all compiled methods.
+    loader->setCompiler(AOT);
+
+    vm->doExit = false;
+    JavaThread* th = new JavaThread(vm);
+    vm->setMainThread(th);
+    th->start((void (*)(mvm::Thread*))mainCompilerLoaderStart);
+    vm->waitForExit();
+  }
 
   AOT->printStats();
 
   // Emit the bytecode in file.
-  std::string OutputFilename = "generated.bc";
   std::string ErrorInfo;
   std::auto_ptr<llvm::raw_ostream> Out 
     (new llvm::raw_fd_ostream(OutputFilename.c_str(), ErrorInfo,
