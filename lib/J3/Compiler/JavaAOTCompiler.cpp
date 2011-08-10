@@ -1987,24 +1987,6 @@ void JavaAOTCompiler::CreateStaticInitializer() {
   ReturnInst::Create(getLLVMContext(), currentBlock);
 }
 
-void JavaAOTCompiler::setNoInline(Class* cl) {
-  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-    JavaMethod& meth = cl->virtualMethods[i];
-    if (!isAbstract(meth.access)) {
-      Function* func = getMethod(&meth);
-      func->addFnAttr(Attribute::NoInline);
-    }
-  }
-  
-  for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-    JavaMethod& meth = cl->staticMethods[i];
-    if (!isAbstract(meth.access)) {
-      Function* func = getMethod(&meth);
-      func->addFnAttr(Attribute::NoInline);
-    }
-  }
-}
-
 void JavaAOTCompiler::makeVT(Class* cl) {
   JavaVirtualTable* VT = cl->virtualVT;
   
@@ -2296,25 +2278,6 @@ void mainCompilerStart(JavaThread* th) {
     M->getNativeClass(bootstrapLoader->upcalls->OfFloat);
     M->getNativeClass(bootstrapLoader->upcalls->OfLong);
     M->getNativeClass(bootstrapLoader->upcalls->OfDouble);
-
-    // Also do not allow inling of some functions.
-#define SET_INLINE(NAME) { \
-    const UTF8* name = bootstrapLoader->asciizConstructUTF8(NAME); \
-    Class* cl = (Class*)bootstrapLoader->lookupClass(name); \
-    if (cl) M->setNoInline(cl); }
-
-    SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater")
-    SET_INLINE("java/util/concurrent/atomic/AtomicReferenceFieldUpdater"
-               "$AtomicReferenceFieldUpdaterImpl")
-    SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater")
-    SET_INLINE("java/util/concurrent/atomic/AtomicIntegerFieldUpdater"
-               "$AtomicIntegerFieldUpdaterImpl")
-    SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater")
-    SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
-               "$CASUpdater")
-    SET_INLINE("java/util/concurrent/atomic/AtomicLongFieldUpdater"
-               "$LockedUpdater")
-#undef SET_INLINE
   }
 
   M->CreateStaticInitializer();
@@ -2404,7 +2367,8 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
        e = loader->getClasses()->map.end(); i!= e; ++i) {
     AddInitializerToClass(getNativeClass(i->second), i->second);
     JavaVirtualTable* VT = i->second->virtualVT;
-    GlobalVariable* gv = dyn_cast<GlobalVariable>(getVirtualTable(VT)->getOperand(0));
+    GlobalVariable* gv =
+        dyn_cast<GlobalVariable>(getVirtualTable(VT)->getOperand(0));
     gv->setInitializer(CreateConstantFromVT(VT));
   }
 

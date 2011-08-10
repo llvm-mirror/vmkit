@@ -190,8 +190,6 @@ public:
   
   void CreateStaticInitializer();
   
-  void setNoInline(Class* cl);
-  
   void printStats();
   
   void compileFile(Jnjvm* vm, const char* name);

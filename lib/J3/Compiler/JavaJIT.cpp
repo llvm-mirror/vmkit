@@ -1145,6 +1145,7 @@ llvm::Function* JavaJIT::javaCompile() {
       const UTF8* name =
         compilingClass->ctpInfo->UTF8At(AR.AnnotationNameIndex);
       if (name->equals(TheCompiler->InlinePragma)) {
+        llvmFunction->removeFnAttr(Attribute::NoInline);
         llvmFunction->addFnAttr(Attribute::AlwaysInline);
       } else if (name->equals(TheCompiler->NoInlinePragma)) {
         llvmFunction->addFnAttr(Attribute::NoInline);
