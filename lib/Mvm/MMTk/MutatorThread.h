@@ -20,6 +20,7 @@ class MutatorThread : public mvm::Thread {
 public:
   MutatorThread() : mvm::Thread() {
     MutatorContext = 0;
+    CollectionAttempts = 0;
   }
   mvm::ThreadAllocator Allocator;
   uintptr_t MutatorContext;
@@ -27,6 +28,8 @@ public:
   /// realRoutine - The function to invoke when the thread starts.
   ///
   void (*realRoutine)(mvm::Thread*);
+
+  uint32_t CollectionAttempts;
 
   static void init(Thread* _th);
 

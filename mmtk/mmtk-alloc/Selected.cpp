@@ -157,7 +157,7 @@ void Collector::collect() {
 }
 
 void Collector::initialise() {
-  JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(128 * 1024 * 1024, 1024 * 1024 * 1024);
+  JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(20 * 1024 * 1024, 100 * 1024 * 1024);
 }
 
 extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {

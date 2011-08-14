@@ -14,25 +14,20 @@
 
 namespace mmtk {
 
-extern "C" void JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
-extern "C" void JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
-extern "C" void JnJVM_org_mmtk_plan_Plan_collectionComplete__();
-extern "C" uint8_t JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
-extern "C" void JnJVM_org_mmtk_utility_heap_HeapGrowthManager_reset__();
-extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ ();
-extern "C" void JnJVM_org_mmtk_utility_heap_HeapGrowthManager_recordGCTime__D(double);
-
 extern "C" bool Java_org_j3_mmtk_Collection_isEmergencyAllocation__ (MMTkObject* C) {
   // TODO: emergency when OOM.
   return false;
 }
 
 extern "C" void Java_org_j3_mmtk_Collection_reportAllocationSuccess__ (MMTkObject* C) {
-  // TODO: clear internal data.
+  mvm::MutatorThread::get()->CollectionAttempts = 0;
 }
 
+extern "C" void JnJVM_org_j3_bindings_Bindings_collect__I(int why);
+
 extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C, int why) {
-  mvm::Thread* th = mvm::Thread::get();
+  mvm::MutatorThread* th = mvm::MutatorThread::get();
+  if (why > 2) th->CollectionAttempts++;
 
   // Verify that another collection is not happening.
   th->MyVM->rendezvous.startRV();
@@ -43,34 +38,8 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
   } else {
     th->MyVM->startCollection();
     th->MyVM->rendezvous.synchronize();
-  
-    JnJVM_org_mmtk_plan_Plan_setCollectionTriggered__();
 
-    // Record the starting time
-    int64_t startTime = Java_org_j3_mmtk_Statistics_nanoTime__();
-
-    // Collect!
-    JnJVM_org_j3_config_Selected_00024Collector_staticCollect__();
-
-    // Record the time to GC.
-    int64_t elapsedTime = Java_org_j3_mmtk_Statistics_nanoTime__() - startTime;
-
-    JnJVM_org_mmtk_utility_heap_HeapGrowthManager_recordGCTime__D(((double)elapsedTime) / 1000000);
-
-    // 2 means called by System.gc();
-    if (why != 2)
-      JnJVM_org_mmtk_utility_heap_HeapGrowthManager_considerHeapSize__();
-
-    JnJVM_org_mmtk_utility_heap_HeapGrowthManager_reset__();
-
-    JnJVM_org_mmtk_plan_Plan_collectionComplete__();
-    
-    if (mvm::Collector::verbose > 0) {
-      static int collectionNum = 1;
-      if (why == 2) fprintf(stderr, "[Forced] ");
-      fprintf(stderr, "Collection %d finished in %lld ms.\n", collectionNum++,
-              elapsedTime / 1000000);
-    }
+    JnJVM_org_j3_bindings_Bindings_collect__I(why);
 
     th->MyVM->rendezvous.finishRV();
     th->MyVM->endCollection();
@@ -89,7 +58,18 @@ extern "C" int Java_org_j3_mmtk_Collection_rendezvous__I (MMTkObject* C, int whe
 }
 
 extern "C" int Java_org_j3_mmtk_Collection_maximumCollectionAttempt__ (MMTkObject* C) {
-  return 0;
+  mvm::MutatorThread* th = mvm::MutatorThread::get();
+  mvm::MutatorThread* tcur = th;
+
+  uint32_t max = 0; 
+  do {
+    if (tcur->CollectionAttempts > max) {
+      max = tcur->CollectionAttempts;
+    }
+    tcur = (mvm::MutatorThread*)tcur->next();
+  } while (tcur != th);
+
+  return max;
 }
 
 extern "C" void Java_org_j3_mmtk_Collection_prepareCollector__Lorg_mmtk_plan_CollectorContext_2 (MMTkObject* C, MMTkObject* CC) {

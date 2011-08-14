@@ -4,4 +4,5 @@
 ;;; field 1: allocator
 ;;; field 2: MutatorContext
 ;;; field 3: realRoutine
-%MutatorThread = type { %Thread, %ThreadAllocator, i8*, i8* }
+;;; field 4: CollectionAttempts
+%MutatorThread = type { %Thread, %ThreadAllocator, i8*, i8*, i32 }

@@ -16,6 +16,10 @@ import org.mmtk.plan.TraceLocal;
 import org.mmtk.plan.TransitiveClosure;
 import org.mmtk.utility.heap.HeapGrowthManager;
 import org.mmtk.utility.Constants;
+import org.mmtk.utility.Log;
+import org.mmtk.utility.options.Options;
+import org.mmtk.vm.Collection;
+import org.mmtk.vm.VM;
 import org.vmmagic.pragma.Inline;
 import org.vmmagic.unboxed.Address;
 import org.vmmagic.unboxed.Extent;
@@ -163,5 +167,38 @@ public final class Bindings {
   @Inline
   private static boolean needsNonHeapWriteBarrier() {
     return Selected.Constraints.get().needsObjectReferenceNonHeapWriteBarrier();
+  }
+
+  @Inline
+  private static void collect(int why) {
+    boolean userTriggered = why == Collection.EXTERNAL_GC_TRIGGER;
+    boolean internalPhaseTriggered = why == Collection.INTERNAL_PHASE_GC_TRIGGER;
+
+    if (Options.verbose.getValue() == 1 || Options.verbose.getValue() == 2) {
+      if (userTriggered) {
+        Log.write("[Forced GC]");
+      } else if (internalPhaseTriggered) {
+        Log.write("[Phase GC]");
+      }
+    }
+
+    Plan.setCollectionTriggered();
+    Plan.setCollectionTrigger(why);
+
+    long startTime = VM.statistics.nanoTime();
+    Selected.Collector.staticCollect();
+    long elapsedTime = VM.statistics.nanoTime() - startTime;
+
+    HeapGrowthManager.recordGCTime(((double)elapsedTime) / 1000000);
+
+    if (Selected.Plan.get().lastCollectionFullHeap() && !internalPhaseTriggered) {
+      if (Options.variableSizeHeap.getValue() && !userTriggered) {
+        // Don't consider changing the heap size if gc was forced by System.gc()
+        HeapGrowthManager.considerHeapSize();
+      }
+      HeapGrowthManager.reset();
+    }
+
+    Plan.collectionComplete();
   }
 }
