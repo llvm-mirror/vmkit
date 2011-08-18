@@ -14,6 +14,6 @@ EXTRA_DIST = libvmjc
 
 TOOLNAME = vmjc
 USEDLIBS = J3.a Classpath.a J3.a J3Compiler.a Mvm.a MvmCompiler.a MMTk.a CommonThread.a
-LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter bitreader asmparser linker
+LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter
 
 include $(LEVEL)/Makefile.common

@@ -76,7 +76,7 @@ ifeq ($(COMPILE_MMTK), 1)
 	$(Verb) $(LLVMLD) -r -o $(LibDir)/FinalMMTk.bc $(LibDir)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LibDir)/MMTKRuntime.bc
 	$(Verb) $(LOPT) $(LibDir)/FinalMMTk.bc -load=$(LibDir)/StaticGCPass$(SHLIBEXT) -std-compile-opts -StaticGCPass -o $(LibDir)/FinalMMTk.bc
 	$(Verb) $(MKDIR) $(ObjDir)
-	$(Verb) $(LLC) -disable-fp-elim -disable-cfi -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) $(LibDir)/FinalMMTk.bc -o $(ObjDir)/FinalMMTk.s
+	$(Verb) $(LLC) -disable-fp-elim -disable-cfi -disable-debug-info-print -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) $(LibDir)/FinalMMTk.bc -o $(ObjDir)/FinalMMTk.s
 	$(Verb) $(LLVMCC) -c $(ObjDir)/FinalMMTk.s -o $(ObjDir)/FinalMMTk.o
 	$(Verb) $(Archive) $(LibDir)/libFinalMMTk.a $(ObjDir)/FinalMMTk.o
 	$(Verb) $(Ranlib) $(LibDir)/libFinalMMTk.a
