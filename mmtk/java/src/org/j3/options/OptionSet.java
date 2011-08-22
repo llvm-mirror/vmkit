@@ -124,7 +124,10 @@ public final class OptionSet extends org.vmutil.options.OptionSet {
    * @param message The message associated with the warning.
    */
   protected void warn(Option o, String message) {
-    VM.sysWriteln("WARNING: Option '" + o.getKey() + "' : " + message);
+    VM.sysWrite("WARNING: Option '");
+    VM.sysWrite(o.getKey());
+    VM.sysWrite("' : ");
+    VM.sysWriteln(message);
   }
 
   /**
@@ -135,7 +138,11 @@ public final class OptionSet extends org.vmutil.options.OptionSet {
    * @param message The error message associated with the failure.
    */
   protected void fail(Option o, String message) {
-    VM.sysFail("ERROR: Option '" + o.getKey() + "' : " + message);
+    VM.sysWrite("Error: Option '");
+    VM.sysWrite(o.getKey());
+    VM.sysWrite("' : ");
+    VM.sysWriteln(message);
+    VM.sysFail("");
   }
 
   /**
@@ -157,5 +164,326 @@ public final class OptionSet extends org.vmutil.options.OptionSet {
   @Uninterruptible
   protected Extent pagesToBytes(int pages) {
     return Word.fromIntZeroExtend(pages).lsh(Constants.LOG_BYTES_IN_PAGE).toExtent();
+  }
+
+  public static void parseOptions(String[] args) {
+    for (int i = 0; i < args.length; i++) {
+      gc.parseOption(args[i]);
+    }
+  }
+
+  private boolean parseOption(String arg) {
+    // First handle the "option commands"
+    if (arg.equals("help")) {
+       printHelp();
+       return true;
+    }
+    if (arg.equals("printOptions")) {
+       printOptions();
+       return true;
+    }
+    if (arg.length() == 0) {
+      printHelp();
+      return true;
+    }
+
+    // Required format of arg is 'name=value'
+    // Split into 'name' and 'value' strings
+    int split = arg.indexOf('=');
+    if (split == -1) {
+      VM.sysWrite("Illegal option specification: ");
+      VM.sysWrite(arg);
+      VM.sysWriteln(". Must be specified as a name-value pair in the form of option=value");
+      return false;
+    }
+
+    String name = arg.substring(0, split);
+    String value = arg.substring(split + 1);
+
+    Option o = getOption(name);
+
+    if (o == null) return false;
+
+    switch (o.getType()) {
+      case Option.BOOLEAN_OPTION:
+        if (value.equals("true")) {
+          ((BooleanOption) o).setValue(true);
+          return true;
+        } else if (value.equals("false")) {
+          ((BooleanOption) o).setValue(false);
+          return true;
+        }
+        return false;
+
+      case Option.INT_OPTION: {
+        int ival = parseInt(value, (IntOption) o);
+        ((IntOption) o).setValue(ival);
+        return true;
+      }
+      case Option.ADDRESS_OPTION: {
+        int ival = parseInt(value, null);
+        if (ival != 0) {
+          ((AddressOption) o).setValue(ival);
+        } else {
+          VM.sysWrite("Invalid value for ");
+          VM.sysWriteln(o.getName());
+        }
+        return true;
+      }
+      case Option.FLOAT_OPTION: {
+        float fval = parseFloat(value, (FloatOption) o);
+        ((FloatOption) o).setValue(fval);
+        return true;
+      }
+      case Option.STRING_OPTION:
+        ((StringOption) o).setValue(value);
+        return true;
+
+      case Option.ENUM_OPTION:
+        ((EnumOption) o).setValue(value);
+        return true;
+
+      case Option.PAGES_OPTION:
+        long pval = parseMemorySize(o.getName(), name, "b", 1, arg, value);
+        if (pval < 0) return false;
+        ((PagesOption) o).setBytes(Extent.fromIntSignExtend((int)pval));
+        return true;
+
+      case Option.MICROSECONDS_OPTION:
+        int mval = parseInt(value, null);
+        ((MicrosecondsOption) o).setMicroseconds(mval);
+        return true;
+    }
+
+    // None of the above tests matched, so this wasn't an option
+    return false;
+  }
+
+  private static int parseNumber(String arg, int base, int start, int end) {
+    int value = 0;
+    for (int i = start; i < end; i++) {
+      value = value * base;
+      char c = arg.charAt(i);
+      switch (c) {
+        case '0': break;
+        case '1': value += 1; break;
+        case '2': value += 2; break;
+        case '3': value += 3; break;
+        case '4': value += 4; break;
+        case '5': value += 5; break;
+        case '6': value += 6; break;
+        case '7': value += 7; break;
+        case '8': value += 8; break;
+        case '9': value += 9; break;
+        default:
+          return -1;
+      }
+    }
+    return value;
+  }
+
+  private static int parseInt(String arg, IntOption option) {
+    int base = 10;
+    int i = 0;
+    boolean isNegative = false;
+    if (arg.charAt(0) == '-') {
+      i++;
+      isNegative = true;
+    } else if (arg.length() > 1 && arg.charAt(0) == '0' && arg.charAt(1) == 'x') {
+      i += 2;
+      base = 16;
+    }
+    int value = parseNumber(arg, base, i, arg.length());
+    if (value == -1) {
+      if (option != null) {
+        VM.sysWrite("Invalid value for ");
+        VM.sysWriteln(option.getName());
+        return option.getValue();
+      } else {
+        return 0;
+      }
+    }
+    return isNegative ? -value : value;
+  }
+
+  private static float parseFloat(String arg, FloatOption option) {
+    boolean isNegative = false;
+    int start = 0;
+    if (arg.charAt(0) == '-') {
+      start++;
+      isNegative = true;
+    }
+    int dot = arg.indexOf('.');
+    if (dot == -1) {
+      int value = parseNumber(arg, 10, start, arg.length());
+      if (value == -1) {
+        VM.sysWrite("Invalid value for ");
+        VM.sysWriteln(option.getName());
+        return option.getValue();
+      }
+      return (float) (isNegative ? -value : value);
+    } else {
+      int value = parseNumber(arg, 10, start, dot);
+      if (value == -1) {
+        VM.sysWrite("Invalid value for ");
+        VM.sysWriteln(option.getName());
+        return option.getValue();
+      }
+      int intDecimal = parseNumber(arg, 10, dot + 1, arg.length());
+      if (intDecimal == -1) {
+        VM.sysWrite("Invalid value for ");
+        VM.sysWriteln(option.getName());
+        return option.getValue();
+      }
+      double divide = 1;
+      for (int i = 1; i < arg.length() - dot; i++) {
+        divide *= 10;
+      }
+      double decimal = ((double) intDecimal) / divide;
+      return (float)(decimal + value);
+    }
+  }
+
+  private static long parseMemorySize(String sizeName,
+                                      String sizeFlag,
+                                      String defaultFactor,
+                                      int roundTo,
+                                      String fullArg,
+                                      String subArg) {
+    return 0L;
+  }
+
+
+  private void printHelp() {
+    VM.sysWriteln("Commands");
+    VM.sysWrite(prefix);
+    VM.sysWriteln("[:help]\t\t\tPrint brief description of arguments");
+    VM.sysWrite(prefix);
+    VM.sysWriteln(":printOptions\t\tPrint the current values of options");
+    VM.sysWriteln();
+
+    //Begin generated help messages
+    VM.sysWrite("Boolean Options (");
+    VM.sysWrite(prefix);
+    VM.sysWrite(":<option>=true or ");
+    VM.sysWrite(prefix);
+    VM.sysWriteln(":<option>=false)");
+    VM.sysWriteln("Option                                 Description");
+
+    Option o = getFirst();
+    while (o != null) {
+      if (o.getType() == Option.BOOLEAN_OPTION) {
+        String key = o.getKey();
+        VM.sysWrite(key);
+        for (int c = key.length(); c < 39;c++) {
+          VM.sysWrite(" ");
+        }
+        VM.sysWriteln(o.getDescription());
+      }
+      o = o.getNext();
+    }
+
+    VM.sysWrite("\nValue Options (");
+    VM.sysWrite(prefix);
+    VM.sysWriteln(":<option>=<value>)");
+    VM.sysWriteln("Option                         Type    Description");
+
+    o = getFirst();
+    while (o != null) {
+      if (o.getType() != Option.BOOLEAN_OPTION &&
+          o.getType() != Option.ENUM_OPTION) {
+        String key = o.getKey();
+        VM.sysWrite(key);
+        for (int c = key.length(); c < 31;c++) {
+          VM.sysWrite(" ");
+        }
+        switch (o.getType()) {
+          case Option.INT_OPTION:          VM.sysWrite("int     "); break;
+          case Option.ADDRESS_OPTION:      VM.sysWrite("address "); break;
+          case Option.FLOAT_OPTION:        VM.sysWrite("float   "); break;
+          case Option.MICROSECONDS_OPTION: VM.sysWrite("usec    "); break;
+          case Option.PAGES_OPTION:        VM.sysWrite("bytes   "); break;
+          case Option.STRING_OPTION:       VM.sysWrite("string  "); break;
+        }
+        VM.sysWriteln(o.getDescription());
+      }
+      o = o.getNext();
+    }
+
+    VM.sysWriteln("\nSelection Options (set option to one of an enumeration of possible values)");
+
+    o = getFirst();
+    while (o != null) {
+      if (o.getType() == Option.ENUM_OPTION) {
+        String key = o.getKey();
+        VM.sysWrite(key);
+        for (int c = key.length(); c < 31; c++) {
+          VM.sysWrite(" ");
+        }
+        VM.sysWriteln(o.getDescription());
+        VM.sysWrite("    { ");
+        boolean first = true;
+        for (String val : ((EnumOption)o).getValues()) {
+          VM.sysWrite(first ? "" : ", ");
+          VM.sysWrite(val);
+          first = false;
+        }
+        VM.sysWriteln(" }");
+      }
+      o = o.getNext();
+    }
+  }
+
+  private void printOptions() {
+    VM.sysWriteln("Current value of GC options");
+
+    Option o = getFirst();
+    while (o != null) {
+      if (o.getType() == Option.BOOLEAN_OPTION) {
+        String key = o.getKey();
+        VM.sysWrite("\t");
+        VM.sysWrite(key);
+        for (int c = key.length(); c < 31; c++) {
+          VM.sysWrite(" ");
+        }
+        VM.sysWrite(" = ");
+        logValue(o, false);
+        VM.sysWriteln();
+      }
+      o = o.getNext();
+    }
+
+    o = getFirst();
+    while (o != null) {
+      if (o.getType() != Option.BOOLEAN_OPTION &&
+          o.getType() != Option.ENUM_OPTION) {
+        String key = o.getKey();
+        VM.sysWrite("\t");
+        VM.sysWrite(key);
+        for (int c = key.length(); c < 31; c++) {
+          VM.sysWrite(" ");
+        }
+        VM.sysWrite(" = ");
+        logValue(o, false);
+        VM.sysWriteln();
+      }
+      o = o.getNext();
+    }
+
+    o = getFirst();
+    while (o != null) {
+      if (o.getType() == Option.ENUM_OPTION) {
+        String key = o.getKey();
+        VM.sysWrite("\t");
+        VM.sysWrite(key);
+        for (int c = key.length(); c < 31; c++) {
+          VM.sysWrite(" ");
+        }
+        VM.sysWrite(" = ");
+        logValue(o, false);
+        VM.sysWriteln();
+      }
+      o = o.getNext();
+    }
   }
 }

@@ -10,6 +10,7 @@
 package org.j3.bindings;
 
 import org.j3.config.Selected;
+import org.j3.options.OptionSet;
 import org.mmtk.plan.MutatorContext;
 import org.mmtk.plan.Plan;
 import org.mmtk.plan.TraceLocal;
@@ -24,6 +25,17 @@ import org.vmmagic.pragma.Inline;
 import org.vmmagic.unboxed.Address;
 import org.vmmagic.unboxed.Extent;
 import org.vmmagic.unboxed.ObjectReference;
+
+import org.vmutil.options.AddressOption;
+import org.vmutil.options.BooleanOption;
+import org.vmutil.options.EnumOption;
+import org.vmutil.options.FloatOption;
+import org.vmutil.options.IntOption;
+import org.vmutil.options.MicrosecondsOption;
+import org.vmutil.options.Option;
+import org.vmutil.options.PagesOption;
+import org.vmutil.options.StringOption;
+
 
 public final class Bindings {
   @Inline
@@ -94,7 +106,10 @@ public final class Bindings {
   }
 
   @Inline
-  private static void boot(Extent minSize, Extent maxSize) {
+  private static void boot(Extent minSize, Extent maxSize, String[] arguments) {
+    if (arguments != null) {
+      OptionSet.parseOptions(arguments);
+    }
     HeapGrowthManager.boot(minSize, maxSize);
     Plan plan = Selected.Plan.get();
     plan.boot();

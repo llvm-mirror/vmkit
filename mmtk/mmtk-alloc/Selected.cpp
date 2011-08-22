@@ -9,6 +9,7 @@
 
 #include "MutatorThread.h"
 #include "MvmGC.h"
+#include "../mmtk-j3/MMTkObject.h"
 
 #include "mvm/VirtualMachine.h"
 
@@ -24,7 +25,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I(uintptr_t, int3
 
 extern "C" intptr_t JnJVM_org_j3_bindings_Bindings_allocateMutator__I(int32_t) ALWAYS_INLINE;
 extern "C" void JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(intptr_t) ALWAYS_INLINE;
-extern "C" void JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(intptr_t, intptr_t) ALWAYS_INLINE;
+extern "C" void JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2_3Ljava_lang_String_2(intptr_t, intptr_t, mmtk::MMTkObjectArray*) ALWAYS_INLINE;
 
 extern "C" void JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(
     uintptr_t closure, void* source, void* slot) ALWAYS_INLINE;
@@ -156,8 +157,52 @@ void Collector::collect() {
   Java_org_j3_mmtk_Collection_triggerCollection__I(NULL, 2);
 }
 
-void Collector::initialise() {
-  JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2(20 * 1024 * 1024, 100 * 1024 * 1024);
+int argc;
+char** argv;
+
+void Collector::initialise(int argc, char** argv) {
+  static const char* kPrefix = "-X:gc:";
+  static const int kPrefixLength = strlen(kPrefix);
+
+  int i = 1;
+  int count = 0;
+  ThreadAllocator allocator;
+  mmtk::MMTkObjectArray* arguments = NULL;
+  while (i < argc && argv[i][0] == '-') {
+    if (!strncmp(argv[i], kPrefix, kPrefixLength)) {
+      count++;
+    }
+    i++;
+  }
+
+  if (count > 0) {
+    arguments = reinterpret_cast<mmtk::MMTkObjectArray*>(
+        malloc(sizeof(mmtk::MMTkObjectArray) + count * sizeof(mmtk::MMTkString*)));
+    arguments->size = count;
+    i = 1;
+    int arrayIndex = 0;
+    while (i < argc && argv[i][0] == '-') {
+      if (!strncmp(argv[i], kPrefix, kPrefixLength)) {
+        int size = strlen(argv[i]) - kPrefixLength;
+        mmtk::MMTkArray* array = reinterpret_cast<mmtk::MMTkArray*>(
+            allocator.Allocate(sizeof(mmtk::MMTkArray) + size * sizeof(uint16_t)));
+        array->size = size;
+        for (uint32_t j = 0; j < array->size; j++) {
+          array->elements[j] = argv[i][j + kPrefixLength];
+        }
+        mmtk::MMTkString* str = reinterpret_cast<mmtk::MMTkString*>(
+            allocator.Allocate(sizeof(mmtk::MMTkString)));
+        str->value = array;
+        str->count = array->size;
+        str->offset = 0;
+        arguments->elements[arrayIndex++] = str;
+      }
+      i++;
+    }
+    assert(arrayIndex == count);
+  }
+
+  JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2_3Ljava_lang_String_2(20 * 1024 * 1024, 100 * 1024 * 1024, arguments);
 }
 
 extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {

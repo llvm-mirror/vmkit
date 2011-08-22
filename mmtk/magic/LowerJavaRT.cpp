@@ -55,6 +55,36 @@ bool LowerJavaRT::runOnModule(Module& M) {
           F = Function::Create(GV.getFunctionType(),
                                GlobalValue::ExternalLinkage, "MMTkGetClass", &M);
       	GV.replaceAllUsesWith(F);
+      } else if (!strcmp(GV.getName().data(), "JnJVM_java_lang_String_equals__Ljava_lang_Object_2")) {
+  	    Function* F = M.getFunction("MMTkStringEquals");
+	      if (!F) 
+          F = Function::Create(GV.getFunctionType(),
+                               GlobalValue::ExternalLinkage, "MMTkStringEquals", &M);
+      	GV.replaceAllUsesWith(F);
+      } else if (!strcmp(GV.getName().data(), "JnJVM_java_lang_String_length__")) {
+  	    Function* F = M.getFunction("MMTkStringLength");
+	      if (!F) 
+          F = Function::Create(GV.getFunctionType(),
+                               GlobalValue::ExternalLinkage, "MMTkStringLength", &M);
+      	GV.replaceAllUsesWith(F);
+      } else if (!strcmp(GV.getName().data(), "JnJVM_java_lang_String_indexOf__I")) {
+  	    Function* F = M.getFunction("MMTkStringIndexOf");
+	      if (!F) 
+          F = Function::Create(GV.getFunctionType(),
+                               GlobalValue::ExternalLinkage, "MMTkStringIndexOf", &M);
+      	GV.replaceAllUsesWith(F);
+      } else if (!strcmp(GV.getName().data(), "JnJVM_java_lang_String_substring__II")) {
+  	    Function* F = M.getFunction("MMTkStringSubstringII");
+	      if (!F) 
+          F = Function::Create(GV.getFunctionType(),
+                               GlobalValue::ExternalLinkage, "MMTkStringSubstringII", &M);
+      	GV.replaceAllUsesWith(F);
+      } else if (!strcmp(GV.getName().data(), "JnJVM_java_lang_String_substring__I")) {
+  	    Function* F = M.getFunction("MMTkStringSubstringI");
+	      if (!F) 
+          F = Function::Create(GV.getFunctionType(),
+                               GlobalValue::ExternalLinkage, "MMTkStringSubstringI", &M);
+      	GV.replaceAllUsesWith(F);
       } else {
         GV.replaceAllUsesWith(Constant::getNullValue(GV.getType()));
       }

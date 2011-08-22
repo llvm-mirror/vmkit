@@ -143,7 +143,7 @@ void Collector::collect() {
   // Do nothing.
 }
 
-void Collector::initialise() {
+void Collector::initialise(int argc, char** argv) {
 }
 
 bool Collector::needsWriteBarrier() {

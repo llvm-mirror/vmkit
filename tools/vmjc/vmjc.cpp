@@ -122,10 +122,9 @@ int main(int argc, char **argv) {
   }
    
   mvm::MvmModule::initialise();
+  mvm::Collector::initialise(argc, argv);
 
   JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
-
-  mvm::Collector::initialise();
 
   mvm::BumpPtrAllocator allocator;
   JnjvmBootstrapLoader* loader = new(allocator, "Bootstrap loader")

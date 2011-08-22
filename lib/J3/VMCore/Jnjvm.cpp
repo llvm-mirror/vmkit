@@ -1423,7 +1423,7 @@ const char* Jnjvm::getObjectTypeName(gc* object) {
 
 // Helper function to run J3 without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
-  mvm::Collector::initialise();
+  mvm::Collector::initialise(argc, argv);
  
   mvm::ThreadAllocator allocator; 
   char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));

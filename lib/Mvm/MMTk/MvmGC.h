@@ -84,7 +84,7 @@ public:
 
   static void collect();
   
-  static void initialise();
+  static void initialise(int argc, char** argv);
   
   static int getMaxMemory() {
     return 0;

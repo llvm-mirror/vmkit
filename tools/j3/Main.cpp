@@ -37,7 +37,7 @@ int main(int argc, char **argv, char **envp) {
 
   // Initialize base components.  
   MvmModule::initialise();
-  Collector::initialise();
+  Collector::initialise(argc, argv);
   
   // Tell the compiler to run all optimizations.
   StandardCompileOpts = true;

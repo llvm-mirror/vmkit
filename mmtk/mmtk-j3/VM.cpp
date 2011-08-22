@@ -12,13 +12,38 @@
 
 namespace mmtk {
 
-extern "C" void Java_org_j3_runtime_VM_sysWrite__Lorg_vmmagic_unboxed_Extent_2 (uintptr_t e) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_runtime_VM_sysWrite__Lorg_vmmagic_unboxed_Address_2 (uintptr_t a) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_runtime_VM_sysWrite__F (float f) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_runtime_VM_sysWrite__I (int i) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_runtime_VM_sysWrite__Ljava_lang_String_2 (MMTkString* msg) { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_runtime_VM_sysWriteln__ () { UNIMPLEMENTED(); }
-extern "C" void Java_org_j3_runtime_VM_sysWriteln__Ljava_lang_String_2 (MMTkString* msg) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_runtime_VM_sysWrite__Lorg_vmmagic_unboxed_Extent_2 (void* e) {
+  fprintf(stderr, "%p", e);
+}
+
+extern "C" void Java_org_j3_runtime_VM_sysWrite__Lorg_vmmagic_unboxed_Address_2 (void* a) {
+  fprintf(stderr, "%p", a);
+}
+
+extern "C" void Java_org_j3_runtime_VM_sysWrite__F (float f) {
+  fprintf(stderr, "%f", f);
+}
+
+extern "C" void Java_org_j3_runtime_VM_sysWrite__I (int i) {
+  fprintf(stderr, "%d", i);
+}
+
+extern "C" void Java_org_j3_runtime_VM_sysWrite__Ljava_lang_String_2 (MMTkString* msg) {
+  for (int i = 0; i < msg->count; i++) {
+    fprintf(stderr, "%c", msg->value->elements[i + msg->offset]);
+  }
+}
+
+extern "C" void Java_org_j3_runtime_VM_sysWriteln__Ljava_lang_String_2 (MMTkString* msg) {
+  for (int i = 0; i < msg->count; i++) {
+    fprintf(stderr, "%c", msg->value->elements[i + msg->offset]);
+  }
+  fprintf(stderr, "\n");
+}
+
+extern "C" void Java_org_j3_runtime_VM_sysWriteln__ () {
+  fprintf(stderr, "\n");
+}
 
 extern "C" void Java_org_j3_runtime_VM__1assert__ZLjava_lang_String_2 (bool cond, MMTkString* msg) {
   ABORT();

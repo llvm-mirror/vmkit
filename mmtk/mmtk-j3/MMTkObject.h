@@ -36,6 +36,11 @@ struct MMTkArray : public MMTkObject {
   uint16_t elements[1];
 };
 
+struct MMTkObjectArray : public MMTkObject {
+  uintptr_t size;
+  MMTkObject* elements[1];
+};
+
 struct MMTkString : public MMTkObject {
   MMTkArray* value;
   int32_t count;
