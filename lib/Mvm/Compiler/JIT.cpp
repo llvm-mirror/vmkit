@@ -31,10 +31,10 @@
 #include <llvm/Support/MutexGuard.h>
 #include <llvm/Support/PassNameParser.h>
 #include <llvm/Support/SourceMgr.h>
+#include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetData.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-#include <llvm/Target/TargetSelect.h>
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 
 #include "mvm/JIT.h"

@@ -14,8 +14,8 @@
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/TargetRegistry.h"
 #include "llvm/Target/TargetData.h"
-#include "llvm/Target/TargetRegistry.h"
 
 #include "mvm/UTF8.h"
 #include "mvm/Threads/Thread.h"
