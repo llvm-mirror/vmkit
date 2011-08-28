@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     return 0;
   }
    
-  mvm::MvmModule::initialise();
+  mvm::MvmModule::initialise(argc, argv);
   mvm::Collector::initialise(argc, argv);
 
   JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");

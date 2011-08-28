@@ -51,10 +51,6 @@
 using namespace mvm;
 using namespace llvm;
 
-cl::opt<bool> EmitDebugInfo("emit-debug-info", 
-                  cl::desc("Emit debugging information"),
-                  cl::init(false));
-
 namespace mvm {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
@@ -66,66 +62,190 @@ const char* MvmModule::getHostTriple() {
   return LLVM_HOSTTRIPLE;
 }
 
-Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, BumpPtrAllocator& allocator, void* meta) {
-  JITCodeEmitter* JCE = jit->getCodeEmitter();
-  int NumDescriptors = 0;
-  for (GCFunctionInfo::iterator J = FI->begin(), JE = FI->end(); J != JE; ++J) {
-    NumDescriptors++;
-  }
-  // Currently, all frames have the same number of stack offsets.
-  size_t LiveCount = FI->live_size(FI->begin());
+cl::opt<bool>
+StandardCompileOpts("std-compile-opts", 
+                   cl::desc("Include the standard compile time optimizations"));
 
-  Frames* frames = new (allocator, NumDescriptors, LiveCount) Frames();
-  frames->NumDescriptors = NumDescriptors;
-  FrameIterator iterator(*frames);
+static cl::opt<bool>
+DisableOptimizations("disable-opt",
+                     cl::desc("Do not run any optimization passes"));
 
-  GCFunctionInfo::iterator I = FI->begin();
-  while (iterator.hasNext()) {
-    // Manually do the iteration, because NumLiveOffsets has not been set
-    // on the frames yet.
-    FrameInfo* frame = iterator.currentFrame;
-    iterator.advance(LiveCount);
+// The OptimizationList is automatically populated with registered Passes by the
+// PassNameParser.
+//
+static llvm::cl::list<const llvm::PassInfo*, bool, llvm::PassNameParser>
+PassList(llvm::cl::desc("Optimizations available:"));
 
-    frame->NumLiveOffsets = LiveCount;
-    frame->FrameSize = FI->getFrameSize();
-    frame->Metadata = meta;
-    frame->SourceIndex = I->Loc.getLine();
-    frame->ReturnAddress = reinterpret_cast<void*>(JCE->getLabelAddress(I->Label));
-    int i = 0;
-    for (llvm::GCFunctionInfo::live_iterator KI = FI->live_begin(I),
-         KE = FI->live_end(I); KI != KE; ++KI) {
-      frame->LiveOffsets[i++] = KI->StackOffset;
+void MvmModule::initialise(int argc, char** argv) {
+  linkVmkitGC(); 
+  llvm_start_multithreaded();
+
+  // Initialize passes
+  PassRegistry &Registry = *PassRegistry::getPassRegistry();
+  initializeCore(Registry);
+  initializeScalarOpts(Registry);
+  initializeIPO(Registry);
+  initializeAnalysis(Registry);
+  initializeIPA(Registry);
+  initializeTransformUtils(Registry);
+  initializeInstCombine(Registry);
+  initializeInstrumentation(Registry);
+  initializeTarget(Registry);
+  InitializeNativeTarget(); 
+  
+  NoFramePointerElim = true;
+  DisablePrettyStackTrace = true;
+
+  ThreadAllocator allocator;
+  static const char* kPrefix = "-X:llvm:";
+  static const int kPrefixLength = strlen(kPrefix);
+  int count = 0;
+
+  int i = 1;
+  while (i < argc && argv[i][0] == '-') {
+    if (!strncmp(argv[i], kPrefix, kPrefixLength)) {
+      count++;
     }
-    VM->FunctionsCache.addFrameInfo(frame->ReturnAddress, frame);
-    I++;
-  }
-   {
-    FrameIterator iterator(*frames);
-    while (iterator.hasNext()) {
-      FrameInfo* frame = iterator.next();
-      FrameInfo* other = VM->IPToFrameInfo(frame->ReturnAddress);
-      assert(frame->ReturnAddress == other->ReturnAddress);
-    }
+    i++;
   }
 
-  return frames;
+  const char** llvm_argv = reinterpret_cast<const char**>(
+      allocator.Allocate((count + 3) * sizeof(char**)));
+  int arrayIndex = 0;
+  llvm_argv[arrayIndex++] = "vmkit";
+
+  if (count > 0) {
+    i = 1;
+    while (i < argc && argv[i][0] == '-') {
+      if (!strncmp(argv[i], kPrefix, kPrefixLength)) {
+        argv[i][kPrefixLength - 1] = '-';
+        llvm_argv[arrayIndex++] = argv[i] + kPrefixLength - 1;
+      }
+      i++;
+    }
+  } else {
+    StandardCompileOpts = true;
+  }
+  // Disable branch fold for accurate line numbers.
+  llvm_argv[arrayIndex++] = "-disable-branch-fold";
+ 
+  cl::ParseCommandLineOptions(arrayIndex, const_cast<char**>(llvm_argv));
 }
 
-void MvmModule::initialise() {
-  mvm::linkVmkitGC();
-  
-  llvm_start_multithreaded();
-  
-  llvm::NoFramePointerElim = true;
-  llvm::DisablePrettyStackTrace = true;
-  llvm::JITEmitDebugInfo = EmitDebugInfo;
-  llvm::JITExceptionHandling = false;
-  
-  // Disable branch fold for accurate line numbers.
-  const char* commands[2] = { "vmkit", "-disable-branch-fold" };
-  llvm::cl::ParseCommandLineOptions(2, const_cast<char**>(commands));
 
-  InitializeNativeTarget(); 
+void MvmModule::runPasses(llvm::Function* func,
+                          llvm::FunctionPassManager* pm) {
+  pm->run(*func);
+}
+
+static void addPass(FunctionPassManager *PM, Pass *P) {
+  // Add the pass to the pass manager...
+  PM->add(P);
+}
+
+// This is equivalent to:
+// opt -simplifycfg -mem2reg -instcombine -jump-threading -simplifycfg
+//     -scalarrepl -instcombine -condprop -simplifycfg -predsimplify 
+//     -reassociate -licm -loop-unswitch -indvars -loop-deletion -loop-unroll 
+//     -instcombine -gvn -sccp -simplifycfg -instcombine -condprop -dse -adce 
+//     -simplifycfg
+//
+static void AddStandardCompilePasses(FunctionPassManager* PM) { 
+   
+  addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
+  addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas
+  
+  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
+  addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
+  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
+  addPass(PM, createJumpThreadingPass());        // Thread jumps.
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
+  
+  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
+  addPass(PM, createReassociatePass());          // Reassociate expressions
+  addPass(PM, createLoopRotatePass());           // Rotate loops.
+  addPass(PM, createLICMPass());                 // Hoist loop invariants
+  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
+  addPass(PM, createInstructionCombiningPass()); 
+  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
+  addPass(PM, createLoopDeletionPass());         // Delete dead loops
+  addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
+  addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
+  addPass(PM, createGVNPass());                  // Remove redundancies
+  addPass(PM, createMemCpyOptPass());             // Remove memcpy / form memset  
+  addPass(PM, createSCCPPass());                 // Constant prop with SCCP
+
+  // Run instcombine after redundancy elimination to exploit opportunities
+  // opened up by them.
+  addPass(PM, createInstructionCombiningPass());
+  addPass(PM, createJumpThreadingPass());         // Thread jumps
+  addPass(PM, createDeadStoreEliminationPass());  // Delete dead stores
+  addPass(PM, createAggressiveDCEPass());         // Delete dead instructions
+  addPass(PM, createCFGSimplificationPass());     // Merge & remove BBs
+}
+
+namespace mvm {
+  llvm::FunctionPass* createInlineMallocPass();
+}
+
+void MvmModule::addCommandLinePasses(FunctionPassManager* PM) {
+  addPass(PM, createVerifierPass());        // Verify that input is correct
+
+  addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
+  addPass(PM, createInlineMallocPass());
+
+  if (DisableOptimizations) {
+    PM->doInitialization();
+    return;
+  }
+ 
+  bool addedStandardCompileOpts = false;
+  // Create a new optimization pass for each one specified on the command line
+  for (unsigned i = 0; i < PassList.size(); ++i) {
+    // Check to see if -std-compile-opts was specified before this option.  If
+    // so, handle it.
+    if (StandardCompileOpts && 
+        !addedStandardCompileOpts &&
+        StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
+      AddStandardCompilePasses(PM);
+      addedStandardCompileOpts = true;
+    }
+      
+    const PassInfo *PassInf = PassList[i];
+    Pass *P = 0;
+    if (PassInf->getNormalCtor())
+      P = PassInf->getNormalCtor()();
+    else
+      errs() << "cannot create pass: "
+           << PassInf->getPassName() << "\n";
+    if (P) {
+        bool isModulePass = (P->getPassKind() == PT_Module);
+        if (isModulePass) 
+          errs() << "vmkit does not support module pass: "
+             << PassInf->getPassName() << "\n";
+        else addPass(PM, P);
+    }
+  }
+    
+  // If -std-compile-opts was specified at the end of the pass list, add them.
+  if (StandardCompileOpts && !addedStandardCompileOpts) {
+    AddStandardCompilePasses(PM);
+  }
+
+  PM->doInitialization();
+}
+
+LockRecursive MvmModule::protectEngine;
+
+// We protect the creation of IR with the protectEngine. Note that
+// codegen'ing a function may also create IR objects.
+void MvmModule::protectIR() {
+  protectEngine.lock();
+}
+
+void MvmModule::unprotectIR() {
+  protectEngine.unlock();
 }
 
 extern "C" void MMTk_InlineMethods(llvm::Module* module);
@@ -135,7 +255,7 @@ void BaseIntrinsics::init(llvm::Module* module) {
   LLVMContext& Context = module->getContext();
 
   MMTk_InlineMethods(module);
-  mvm::llvm_runtime::makeLLVMModuleContents(module);
+  llvm_runtime::makeLLVMModuleContents(module);
 
   // Type declaration
   ptrType = PointerType::getUnqual(Type::getInt8Ty(Context));
@@ -258,124 +378,50 @@ void BaseIntrinsics::init(llvm::Module* module) {
   NonHeapWriteBarrierFunction = module->getFunction("nonHeapWriteBarrier");
 }
 
-mvm::LockRecursive MvmModule::protectEngine;
 
-void MvmModule::runPasses(llvm::Function* func,
-                          llvm::FunctionPassManager* pm) {
-  pm->run(*func);
-}
+Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, BumpPtrAllocator& allocator, void* meta) {
+  JITCodeEmitter* JCE = jit->getCodeEmitter();
+  int NumDescriptors = 0;
+  for (GCFunctionInfo::iterator J = FI->begin(), JE = FI->end(); J != JE; ++J) {
+    NumDescriptors++;
+  }
+  // Currently, all frames have the same number of stack offsets.
+  size_t LiveCount = FI->live_size(FI->begin());
 
-static void addPass(FunctionPassManager *PM, Pass *P) {
-  // Add the pass to the pass manager...
-  PM->add(P);
-}
+  Frames* frames = new (allocator, NumDescriptors, LiveCount) Frames();
+  frames->NumDescriptors = NumDescriptors;
+  FrameIterator iterator(*frames);
 
-// This is equivalent to:
-// opt -simplifycfg -mem2reg -instcombine -jump-threading -simplifycfg
-//     -scalarrepl -instcombine -condprop -simplifycfg -predsimplify 
-//     -reassociate -licm -loop-unswitch -indvars -loop-deletion -loop-unroll 
-//     -instcombine -gvn -sccp -simplifycfg -instcombine -condprop -dse -adce 
-//     -simplifycfg
-//
-static void AddStandardCompilePasses(FunctionPassManager* PM) { 
-   
-  addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
-  addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas
-  
-  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
-  addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
-  addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
-  addPass(PM, createJumpThreadingPass());        // Thread jumps.
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
-  
-  addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
-  addPass(PM, createReassociatePass());          // Reassociate expressions
-  addPass(PM, createLoopRotatePass());           // Rotate loops.
-  addPass(PM, createLICMPass());                 // Hoist loop invariants
-  addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
-  addPass(PM, createInstructionCombiningPass()); 
-  addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
-  addPass(PM, createLoopDeletionPass());         // Delete dead loops
-  addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
-  addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
-  addPass(PM, createGVNPass());                  // Remove redundancies
-  addPass(PM, createMemCpyOptPass());             // Remove memcpy / form memset  
-  addPass(PM, createSCCPPass());                 // Constant prop with SCCP
+  GCFunctionInfo::iterator I = FI->begin();
+  while (iterator.hasNext()) {
+    // Manually do the iteration, because NumLiveOffsets has not been set
+    // on the frames yet.
+    FrameInfo* frame = iterator.currentFrame;
+    iterator.advance(LiveCount);
 
-  // Run instcombine after redundancy elimination to exploit opportunities
-  // opened up by them.
-  addPass(PM, createInstructionCombiningPass());
-  addPass(PM, createJumpThreadingPass());         // Thread jumps
-  addPass(PM, createDeadStoreEliminationPass());  // Delete dead stores
-  addPass(PM, createAggressiveDCEPass());         // Delete dead instructions
-  addPass(PM, createCFGSimplificationPass());     // Merge & remove BBs
-}
-
-static cl::opt<bool> 
-DisableOptimizations("disable-opt", 
-                     cl::desc("Do not run any optimization passes"));
-
-cl::opt<bool>
-StandardCompileOpts("std-compile-opts", 
-                   cl::desc("Include the standard compile time optimizations"));
-
-// The OptimizationList is automatically populated with registered Passes by the
-// PassNameParser.
-//
-static llvm::cl::list<const llvm::PassInfo*, bool, llvm::PassNameParser>
-PassList(llvm::cl::desc("Optimizations available:"));
-
-namespace mvm {
-  llvm::FunctionPass* createInlineMallocPass();
-}
-
-void MvmModule::addCommandLinePasses(FunctionPassManager* PM) {
-  addPass(PM, createVerifierPass());        // Verify that input is correct
-
-  addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
-  addPass(PM, createInlineMallocPass());
-  
-  // Create a new optimization pass for each one specified on the command line
-  for (unsigned i = 0; i < PassList.size(); ++i) {
-    // Check to see if -std-compile-opts was specified before this option.  If
-    // so, handle it.
-    if (StandardCompileOpts && 
-        StandardCompileOpts.getPosition() < PassList.getPosition(i)) {
-      if (!DisableOptimizations) AddStandardCompilePasses(PM);
-      StandardCompileOpts = false;
+    frame->NumLiveOffsets = LiveCount;
+    frame->FrameSize = FI->getFrameSize();
+    frame->Metadata = meta;
+    frame->SourceIndex = I->Loc.getLine();
+    frame->ReturnAddress = reinterpret_cast<void*>(JCE->getLabelAddress(I->Label));
+    int i = 0;
+    for (llvm::GCFunctionInfo::live_iterator KI = FI->live_begin(I),
+         KE = FI->live_end(I); KI != KE; ++KI) {
+      frame->LiveOffsets[i++] = KI->StackOffset;
     }
-      
-    const PassInfo *PassInf = PassList[i];
-    Pass *P = 0;
-    if (PassInf->getNormalCtor())
-      P = PassInf->getNormalCtor()();
-    else
-      errs() << "cannot create pass: "
-           << PassInf->getPassName() << "\n";
-    if (P) {
-        bool isModulePass = (P->getPassKind() == PT_Module);
-        if (isModulePass) 
-          errs() << "vmkit does not support module pass: "
-             << PassInf->getPassName() << "\n";
-        else addPass(PM, P);
-
+    VM->FunctionsCache.addFrameInfo(frame->ReturnAddress, frame);
+    I++;
+  }
+#ifdef DEBUG
+  {
+    FrameIterator iterator(*frames);
+    while (iterator.hasNext()) {
+      FrameInfo* frame = iterator.next();
+      FrameInfo* other = VM->IPToFrameInfo(frame->ReturnAddress);
+      assert(frame->ReturnAddress == other->ReturnAddress);
     }
   }
-    
-  // If -std-compile-opts was specified at the end of the pass list, add them.
-  if (StandardCompileOpts) {
-    AddStandardCompilePasses(PM);
-  }
-  PM->doInitialization();
-}
+#endif
 
-// We protect the creation of IR with the executionEngine lock because
-// codegen'ing a function may also create IR objects.
-void MvmModule::protectIR() {
-  protectEngine.lock();
-}
-
-void MvmModule::unprotectIR() {
-  protectEngine.unlock();
+  return frames;
 }

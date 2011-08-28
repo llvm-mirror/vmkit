@@ -344,7 +344,7 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
 extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   llvm::llvm_shutdown_obj X; 
    
-  mvm::MvmModule::initialise();
+  mvm::MvmModule::initialise(argc, argv);
   mvm::Collector::initialise(argc, argv);
  
   mvm::ThreadAllocator allocator;

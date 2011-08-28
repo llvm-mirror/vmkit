@@ -36,8 +36,6 @@ namespace {
   };
 
   char LoopSafePoints::ID = 0;
-  RegisterPass<LoopSafePoints> X("LoopSafePoints",
-                                 "Add safe points in loop headers");
 
 void LoopSafePoints::insertSafePoint(BasicBlock* BB, Function* SafeFunction,
                                      Value* YieldPtr, Loop* L, LoopInfo* LI) {

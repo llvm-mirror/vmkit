@@ -20,8 +20,6 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 
-extern llvm::cl::opt<bool> StandardCompileOpts;
-
 using namespace j3;
 using namespace mvm;
 
@@ -36,11 +34,8 @@ int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;
 
   // Initialize base components.  
-  MvmModule::initialise();
+  MvmModule::initialise(argc, argv);
   Collector::initialise(argc, argv);
-  
-  // Tell the compiler to run all optimizations.
-  StandardCompileOpts = true;
  
   // Create the allocator that will allocate the bootstrap loader and the JVM.
   mvm::BumpPtrAllocator Allocator;

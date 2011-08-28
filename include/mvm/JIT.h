@@ -175,7 +175,7 @@ public:
    static mvm::LockRecursive protectEngine;
 
    static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
-   static void initialise();
+   static void initialise(int argc, char** argv);
 
    static Frames* addToVM(VirtualMachine* VM,
                           llvm::GCFunctionInfo* GFI,

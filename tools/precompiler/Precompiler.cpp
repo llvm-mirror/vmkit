@@ -29,8 +29,6 @@
 
 #include <string>
 
-extern llvm::cl::opt<bool> StandardCompileOpts;
-
 using namespace j3;
 using namespace mvm;
 
@@ -64,12 +62,9 @@ int main(int argc, char **argv, char **envp) {
   std::string OutputFilename;
 
   // Initialize base components.  
-  MvmModule::initialise();
+  MvmModule::initialise(argc, argv);
   Collector::initialise(argc, argv);
   
-  // Tell the compiler to run all optimizations.
-  StandardCompileOpts = true;
-
   // Create the allocator that will allocate the bootstrap loader and the JVM.
   mvm::BumpPtrAllocator Allocator;
   JavaAOTCompiler* AOT = new JavaAOTCompiler("AOT");

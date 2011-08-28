@@ -1918,7 +1918,7 @@ void JavaJIT::setVirtualField(uint16 index) {
   if (mvm::Collector::needsWriteBarrier() && type == intrinsics->JavaObjectType) {
     ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
     val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
-    object = new LoadInst(object, "", currentBlock);
+    object = new LoadInst(object, "", true, currentBlock);
     object = new BitCastInst(object, intrinsics->ptrType, "", currentBlock);
     Value* args[3] = { object, ptr, val };
     CallInst::Create(intrinsics->FieldWriteBarrierFunction, args, "", currentBlock);

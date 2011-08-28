@@ -136,13 +136,15 @@ Value* LLVMClassInfo::getVirtualSize() {
   return virtualSizeConstant;
 }
 
-extern llvm::cl::opt<bool> EmitDebugInfo;
+namespace llvm {
+  extern bool JITEmitDebugInfo;
+}
 
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
     mvm::ThreadAllocator allocator;
     JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
-    if (Compiler->emitFunctionName() || EmitDebugInfo) {
+    if (Compiler->emitFunctionName() || JITEmitDebugInfo) {
       const UTF8* jniConsClName = methodDef->classDef->name;
       const UTF8* jniConsName = methodDef->name;
       const UTF8* jniConsType = methodDef->type;
