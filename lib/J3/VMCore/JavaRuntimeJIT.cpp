@@ -348,7 +348,7 @@ extern "C" void* j3StartJNI(uint32* localReferencesNumber,
                             mvm::KnownFrame* Frame) 
   __attribute__((noinline));
 
-// Never throws. Does not call Java code. Can not yied a GC.
+// Never throws. Does not call Java code. Can not yield a GC. May join a GC.
 extern "C" void* j3StartJNI(uint32* localReferencesNumber,
                             uint32** oldLocalReferencesNumber,
                             mvm::KnownFrame* Frame) {

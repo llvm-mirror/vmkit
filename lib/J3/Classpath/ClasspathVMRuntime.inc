@@ -81,6 +81,14 @@ extern "C" void  j3StartJNI(uint32* num, uint32** old, mvm::KnownFrame* Frame);
 extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm)
   __attribute__ ((noinline));
 
+extern "C" int doCall(onLoad_t func, void* res, Jnjvm* vm)
+  __attribute__ ((noinline));
+
+extern "C" int doCall(onLoad_t func, void* res, Jnjvm* vm) {
+  func(&vm->javavmEnv, res);
+  return 1;
+}
+
 // Calls the JNI_OnLoad function of a dynamic library.
 extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
 
@@ -92,7 +100,7 @@ extern "C" void callOnLoad(void* res, JnjvmClassLoader* loader, Jnjvm* vm) {
     mvm::KnownFrame Frame;
     
     j3StartJNI(&num, &old, &Frame);
-    onLoad(&vm->javavmEnv, res);
+    doCall(onLoad, res, vm);
     j3EndJNI(&old);
   }
 }

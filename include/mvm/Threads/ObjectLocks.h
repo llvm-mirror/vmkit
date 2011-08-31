@@ -161,7 +161,7 @@ public:
   //    1           11                    12                  8
   // fat lock    thread id       thin lock count + hash     GC bits
 
-  static const uint64_t FatMask = 1 << ((sizeof(size_t) << 3) - 1);
+  static const uint64_t FatMask = 1 << 31;
 
   static const uint32_t NonLockBits = HashBits + GCBits;
   static const uint64_t NonLockBitsMask = ((1 << NonLockBits) - 1);

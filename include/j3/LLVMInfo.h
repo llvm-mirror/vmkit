@@ -168,6 +168,7 @@ public:
   llvm::FunctionType* getVirtualType();
   llvm::FunctionType* getStaticType();
   llvm::FunctionType* getNativeType();
+  llvm::FunctionType* getNativeStubType();
 
   llvm::FunctionType* getVirtualBufType();
   llvm::FunctionType* getStaticBufType();

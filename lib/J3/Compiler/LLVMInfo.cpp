@@ -307,6 +307,41 @@ llvm::FunctionType* LLVMSignatureInfo::getNativeType() {
   return nativeType;
 }
 
+llvm::FunctionType* LLVMSignatureInfo::getNativeStubType() {
+  // Lock here because we are called by arbitrary code
+  mvm::MvmModule::protectIR();
+  std::vector<llvm::Type*> llvmArgs;
+  uint32 size = signature->nbArguments;
+  Typedef* const* arguments = signature->getArgumentsType();
+ 
+  llvm::Type* Ty =
+    PointerType::getUnqual(Compiler->getIntrinsics()->JavaObjectType);
+
+  llvmArgs.push_back(PointerType::getUnqual(getNativeType())); // method
+  llvmArgs.push_back(Compiler->getIntrinsics()->ptrType); // JNIEnv
+  llvmArgs.push_back(Ty); // Class
+
+  for (uint32 i = 0; i < size; ++i) {
+    Typedef* type = arguments[i];
+    LLVMAssessorInfo& LAI = Compiler->getTypedefInfo(type);
+    llvm::Type* Ty = LAI.llvmType;
+    if (Ty == Compiler->getIntrinsics()->JavaObjectType) {
+      llvmArgs.push_back(LAI.llvmTypePtr);
+    } else {
+      llvmArgs.push_back(LAI.llvmType);
+    }
+  }
+
+  LLVMAssessorInfo& LAI =
+    Compiler->getTypedefInfo(signature->getReturnType());
+  llvm::Type* RetType =
+    LAI.llvmType == Compiler->getIntrinsics()->JavaObjectType ?
+      LAI.llvmTypePtr : LAI.llvmType;
+  FunctionType* FTy = FunctionType::get(RetType, llvmArgs, false);
+  mvm::MvmModule::unprotectIR();
+  return FTy;
+}
+
 
 Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   

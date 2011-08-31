@@ -134,16 +134,12 @@ uint32_t Thread::getFrameContextLength() {
 FrameInfo* StackWalker::get() {
   if (addr == thread->baseSP) return 0;
   ip = FRAME_IP(addr);
-  bool isStub = ((unsigned char*)ip)[0] == 0xCE;
-  if (isStub) ip = addr[2];
   return thread->MyVM->IPToFrameInfo(ip);
 }
 
 void* StackWalker::operator*() {
   if (addr == thread->baseSP) return 0;
   ip = FRAME_IP(addr);
-  bool isStub = ((unsigned char*)ip)[0] == 0xCE;
-  if (isStub) ip = addr[2];
   return ip;
 }
 
@@ -260,7 +256,7 @@ uintptr_t Thread::baseAddr = 0;
 #define STACK_SIZE 0x100000
 #define NR_THREADS 255
 
-#if (__WORDSIZE == 64)
+#if 0//(__WORDSIZE == 64)
 #define START_ADDR 0x110000000
 #define END_ADDR 0x170000000
 #else

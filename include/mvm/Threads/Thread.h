@@ -253,7 +253,7 @@ public:
 
   /// IDMask - Apply this mask to the stack pointer to get the Thread object.
   ///
-#if (__WORDSIZE == 64)
+#if 0//(__WORDSIZE == 64)
   static const uint64_t IDMask = 0xF7FF00000;
 #else
   static const uint64_t IDMask = 0x7FF00000;

@@ -257,6 +257,36 @@ llvm::Value* JavaJIT::getJavaExceptionPtr(llvm::Value* javaThreadPtr) {
 	return GetElementPtrInst::Create(javaThreadPtr, GEP, "", currentBlock);
 }
 
+static llvm::Function* GetNativeCallee(JavaLLVMCompiler* TheCompiler,
+                                       JavaMethod* compilingMethod) {
+  LLVMSignatureInfo* LSI =
+    TheCompiler->getSignatureInfo(compilingMethod->getSignature());
+  FunctionType* FTy = LSI->getNativeStubType();
+  Function* callee = Function::Create(FTy,
+                                      GlobalValue::ExternalLinkage,
+                                      "",
+                                      TheCompiler->getLLVMModule());
+  std::vector<Value*> args;
+  Function::arg_iterator i = callee->arg_begin();
+  Value* nativeFunc = i;
+  i++;
+  for (Function::arg_iterator e = callee->arg_end(); i != e; i++) {
+    args.push_back(i);
+  }
+
+  LLVMContext& llvmContext = TheCompiler->getLLVMContext();
+  BasicBlock* BB = BasicBlock::Create(llvmContext, "", callee);
+  Value* res = CallInst::Create(nativeFunc, args, "", BB);
+  if (callee->getFunctionType()->getReturnType() != Type::getVoidTy(llvmContext)) {
+    ReturnInst::Create(llvmContext, res, BB);
+  } else {
+    ReturnInst::Create(llvmContext, BB);
+  }
+  callee->setGC("vmkit");
+
+  TheCompiler->GenerateStub(callee);
+  return callee;
+}
 
 llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
@@ -327,7 +357,6 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     return llvmFunction;
   }
 
-
   currentExceptionBlock = endExceptionBlock = 0;
   currentBlock = createBasicBlock("start");
   endBlock = createBasicBlock("end block");
@@ -350,6 +379,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
   
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
   std::vector<Value*> nativeArgs;
+  nativeArgs.push_back(NULL); // Will contain the callee
   
   
   Value* jniEnv = getJNIEnvPtr(getJavaThreadPtr(getMutatorThreadPtr()));
@@ -433,9 +463,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     }
   }
   
-  Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod,
-                                                     (void*)natPtr);
-
+  Value* nativeFunc = TheCompiler->getNativeFunction(compilingMethod, (void*)natPtr);
   if (TheCompiler->isStaticCompiling()) {
     Value* Arg = TheCompiler->getMethodInClass(compilingMethod); 
     
@@ -461,6 +489,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
     currentBlock = endBlock;
     nativeFunc = node;
   }
+  nativeArgs[0] = nativeFunc;
 
   // Synchronize before saying we're entering native
   if (isSynchro(compilingMethod->access))
@@ -470,8 +499,8 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
   CallInst::Create(intrinsics->StartJNIFunction, Args4, "", currentBlock);
   
-  Value* result = llvm::CallInst::Create(nativeFunc, nativeArgs, "",
-                                         currentBlock);
+  Function* callee = GetNativeCallee(TheCompiler, compilingMethod);
+  Value* result = llvm::CallInst::Create(callee, nativeArgs, "", currentBlock);
 
   if (returnType == intrinsics->JavaObjectType) {
     Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
