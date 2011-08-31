@@ -178,6 +178,7 @@ void VmkitAOTGCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
     NumMethodFrames++;
   }
   AP.EmitInt32(NumMethodFrames);
+  AP.EmitAlignment(IntPtrSize == 4 ? 2 : 3);
 
   for (iterator I = begin(), IE = end(); I != IE; ++I) {
     GCFunctionInfo &FI = **I;

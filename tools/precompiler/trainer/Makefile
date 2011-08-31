@@ -22,7 +22,7 @@ endif
 
 HelloWorld.class: HelloWorld.java
 	$(Echo) "Compiling trainer"
-	$(Verb) javac $<
+	$(Verb) javac $< -d .
 
 generated.bc: $(PRECOMPILER) HelloWorld.class
 	$(Echo) "Pre-compiling bootstrap code"

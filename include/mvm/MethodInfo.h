@@ -11,6 +11,7 @@
 #define MVM_METHODINFO_H
 
 #include "mvm/Allocator.h"
+#include "mvm/System.h"
 #include "mvm/GC/GC.h"
 
 namespace mvm {
@@ -33,9 +34,7 @@ public:
   
   static uint32_t FrameInfoSize(uint32_t NumOffsets) {
     uint32_t FrameInfoSize = sizeof(FrameInfo) + (NumOffsets - 1) * sizeof(int16_t);
-    if (FrameInfoSize & 2) {
-      FrameInfoSize += sizeof(int16_t);
-    }
+    FrameInfoSize = System::WordAlignUp(FrameInfoSize);
     return FrameInfoSize;
   }
 };
@@ -46,13 +45,13 @@ public:
   uint32_t NumDescriptors;
   FrameInfo* frames() const {
     return reinterpret_cast<FrameInfo*>(
-        reinterpret_cast<uintptr_t>(this) + sizeof(Frames));
+        reinterpret_cast<uintptr_t>(this) + kWordSize);
   }
 
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator, uint32_t NumDescriptors, uint32_t NumOffsets) {
     Frames* res = reinterpret_cast<Frames*>(
-        allocator.Allocate(sizeof(Frames) + NumDescriptors * MethodInfoHelper::FrameInfoSize(NumOffsets), "Frames"));
-    assert((reinterpret_cast<uintptr_t>(res) & 2) == 0);
+        allocator.Allocate(kWordSize + NumDescriptors * MethodInfoHelper::FrameInfoSize(NumOffsets), "Frames"));
+    assert(System::IsWordAligned(reinterpret_cast<uintptr_t>(res)));
     return res;
   }
 };

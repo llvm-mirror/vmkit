@@ -55,6 +55,7 @@ FunctionMap::FunctionMap(BumpPtrAllocator& allocator, CompiledFrames** allFrames
       FrameInfo* frame = NULL;
       while (iterator.hasNext()) {
         frame = iterator.next();
+        assert(frame->ReturnAddress);
         addFrameInfoNoLock(frame->ReturnAddress, frame);
       }
       if (frame != NULL) {
