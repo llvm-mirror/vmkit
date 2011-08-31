@@ -24,7 +24,7 @@ public:
   }
 
   static intptr_t WordAlignUp(intptr_t ptr) {
-    if (!IsWorldAligned(ptr)) {
+    if (!IsWordAligned(ptr)) {
       return (ptr & ~(kWordSize - 1)) + kWordSize;
     }
     return ptr;
