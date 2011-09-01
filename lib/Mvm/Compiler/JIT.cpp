@@ -112,7 +112,7 @@ void MvmModule::initialise(int argc, char** argv) {
   const char** llvm_argv = reinterpret_cast<const char**>(
       allocator.Allocate((count + 3) * sizeof(char**)));
   int arrayIndex = 0;
-  llvm_argv[arrayIndex++] = "vmkit";
+  llvm_argv[arrayIndex++] = argv[0];
 
   if (count > 0) {
     i = 1;
