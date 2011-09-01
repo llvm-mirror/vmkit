@@ -63,8 +63,6 @@ void Thread::joinRVAfterLeave(void* savedSP) {
 void Thread::startKnownFrame(KnownFrame& F) {
   // Get the caller of this function
   void** cur = (void**)FRAME_PTR();
-  // Get the caller of the caller.
-  cur = (void**)cur[0];
   F.previousFrame = lastKnownFrame;
   F.currentFP = cur;
   // This is used as a marker.
