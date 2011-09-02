@@ -9,15 +9,6 @@
 
 // for dlopen and dlsym
 #include <dlfcn.h> 
-
-#if defined(__MACH__)
-#define SELF_HANDLE RTLD_DEFAULT
-#define DYLD_EXTENSION ".dylib"
-#else
-#define SELF_HANDLE 0
-#define DYLD_EXTENSION ".so"
-#endif
-
 #include "mvm/MethodInfo.h"
 
 #include "JavaClass.h"
@@ -123,7 +114,7 @@ extern "C" void staticCallback() {
 
 bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   Class* javaLangObject = (Class*)dlsym(SELF_HANDLE, "java_lang_Object");
-  void* nativeHandle = SELF_HANDLE;
+  void* nativeHandle = mvm::System::GetSelfHandle();
   if (javaLangObject == NULL) {
     void* handle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
     if (handle != NULL) {

@@ -10,17 +10,12 @@
 #ifndef MVM_ALLOCATOR_H
 #define MVM_ALLOCATOR_H
 
-#include <cstdlib>
-#include <cstring>
-#include <limits>
-
 #include "llvm/Support/Allocator.h"
-
 #include "mvm/Threads/Locks.h"
 
-class VirtualTable;
+#include <cstring>
 
-#define declare_gcroot(type, name) type name; llvm_gcroot(name, 0); name
+class VirtualTable;
 
 namespace mvm {
 
@@ -78,14 +73,6 @@ public:
   void operator delete[](void* ptr) {
     return free(ptr);
   }
-};
-
-/// JITInfo - This class can be derived from to hold private JIT-specific
-/// information. Objects of type are accessed/created with
-/// <Class>::getInfo and destroyed when the <Class> object is destroyed.
-struct JITInfo : public mvm::PermanentObject {
-  virtual ~JITInfo() {}
-  virtual void clear() {}
 };
 
 } // end namespace mvm

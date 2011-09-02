@@ -23,14 +23,6 @@
 
 #include <string>
 
-#if defined(__MACH__)
-#define SELF_HANDLE RTLD_DEFAULT
-#define DYLD_EXTENSION ".dylib"
-#else
-#define SELF_HANDLE 0
-#define DYLD_EXTENSION ".so"
-#endif
-
 #include "debug.h"
 #include "mvm/Allocator.h"
 
@@ -170,7 +162,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   clinitType = asciizConstructUTF8("()V");
   runName = asciizConstructUTF8("run");
   prelib = asciizConstructUTF8("lib");
-  postlib = asciizConstructUTF8(DYLD_EXTENSION);
+  postlib = asciizConstructUTF8(mvm::System::GetDyLibExtension());
   mathName = asciizConstructUTF8("java/lang/Math");
   stackWalkerName = asciizConstructUTF8("gnu/classpath/VMStackWalker");
   NoClassDefFoundError = asciizConstructUTF8("java/lang/NoClassDefFoundError");
@@ -239,7 +231,7 @@ void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
 }
 
 ClassBytes* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
-  ClassBytes* res = reinterpret_cast<ClassBytes*>(dlsym(SELF_HANDLE,
+  ClassBytes* res = reinterpret_cast<ClassBytes*>(dlsym(mvm::System::GetSelfHandle(),
       UTF8Buffer(utf8).toCompileName("_bytes")->cString()));
   if (res != NULL) return res;
 
@@ -977,7 +969,7 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
 }
 
 intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& j3) {
-  uintptr_t res = (uintptr_t)TheCompiler->loadMethod(SELF_HANDLE, buf);
+  uintptr_t res = (uintptr_t)TheCompiler->loadMethod(mvm::System::GetSelfHandle(), buf);
   
   if (!res) {
     for (std::vector<void*>::iterator i = nativeLibs.begin(),

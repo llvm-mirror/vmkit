@@ -9,6 +9,8 @@
 
 #include <jni.h>
 
+#include "mvm/System.h"
+
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
@@ -3602,11 +3604,11 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
 
   res = BB->doNew(myvm);
 
-#if (__WORDSIZE == 32)
+#if ARCH_32
   UserClass* PP = myvm->upcalls->newPointer32;
   p = PP->doNew(myvm);
   myvm->upcalls->dataPointer32->setInstanceInt32Field(p, (uint32)address);
-#else
+#elif ARCH_64
   UserClass* PP = myvm->upcalls->newPointer64;
   p = PP->doNew(myvm);
   myvm->upcalls->dataPointer64->setInstanceLongField(p, (jlong)address);

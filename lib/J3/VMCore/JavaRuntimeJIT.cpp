@@ -343,15 +343,15 @@ extern "C" void j3EndJNI(uint32** oldLRN) {
   th->currentAddedReferences = *oldLRN;
 }
 
-extern "C" void* j3StartJNI(uint32* localReferencesNumber,
-                            uint32** oldLocalReferencesNumber,
-                            mvm::KnownFrame* Frame) 
+extern "C" intptr_t j3StartJNI(uint32* localReferencesNumber,
+                               uint32** oldLocalReferencesNumber,
+                               mvm::KnownFrame* Frame) 
   __attribute__((noinline));
 
 // Never throws. Does not call Java code. Can not yield a GC. May join a GC.
-extern "C" void* j3StartJNI(uint32* localReferencesNumber,
-                            uint32** oldLocalReferencesNumber,
-                            mvm::KnownFrame* Frame) {
+extern "C" intptr_t j3StartJNI(uint32* localReferencesNumber,
+                               uint32** oldLocalReferencesNumber,
+                               mvm::KnownFrame* Frame) {
   
   JavaThread* th = JavaThread::get();
  

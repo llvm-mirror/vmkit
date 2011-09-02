@@ -64,15 +64,11 @@ extern "C" void Java_org_j3_runtime_VM__1assert__Z (uint8_t cond) {
 }
 
 extern "C" bool Java_org_j3_runtime_VM_buildFor64Addr__ () { 
-#if (__WORDSIZE==64)
-  return true;
-#else
-  return false;
-#endif
+  return mvm::kWordSize == 8;
 }
 
 extern "C" bool Java_org_j3_runtime_VM_buildForIA32__ () { 
-#if defined(__i386__) || defined(i386) || defined(_M_IX86)
+#if ARCH_X86
   return true;
 #else
   return false;

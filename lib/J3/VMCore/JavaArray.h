@@ -117,7 +117,7 @@ ARRAYCLASS(ArraySInt32, sint32);
 ARRAYCLASS(ArrayLong,   sint64);
 ARRAYCLASS(ArrayFloat,  float);
 ARRAYCLASS(ArrayDouble, double);
-ARRAYCLASS(ArrayPtr, void*);
+ARRAYCLASS(ArrayPtr, intptr_t);
 
 #undef ARRAYCLASS
 

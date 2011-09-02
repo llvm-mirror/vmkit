@@ -50,7 +50,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   mvm::StackWalker Walker(th);
   uint32_t i = 0;
 
-  while (void* ip = *Walker) {
+  while (intptr_t ip = *Walker) {
     ArrayPtr::setElement(result, ip, i);
     ++i;
     ++Walker;
@@ -83,7 +83,7 @@ JavaObject* throwable) {
 }
 
 
-JavaObject* consStackElement(mvm::FrameInfo* FI, void* ip) {
+JavaObject* consStackElement(mvm::FrameInfo* FI, intptr_t ip) {
 
   JavaString* methodName = 0;
   JavaString* className = 0;

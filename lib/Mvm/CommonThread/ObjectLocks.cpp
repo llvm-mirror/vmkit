@@ -20,7 +20,7 @@
 #include <pthread.h>
 
 
-using namespace mvm;
+namespace mvm {
 
 void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
@@ -109,7 +109,7 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
   uintptr_t newValue = 0;
   uintptr_t yieldedValue = 0;
 
-  if ((object->header & Thread::IDMask) == id) {
+  if ((object->header & System::GetThreadIDMask()) == id) {
     assert(owner(object, table) && "Inconsistent lock");
     if ((object->header & ThinCountMask) != ThinCountMask) {
       uint32 count = object->header & ThinCountMask;
@@ -225,7 +225,7 @@ bool ThinLock::owner(gc* object, LockSystem& table) {
     if (obj != NULL) return obj->owner();
   } else {
     uint64 id = mvm::Thread::get()->getThreadID();
-    if ((object->header & Thread::IDMask) == id) return true;
+    if ((object->header & System::GetThreadIDMask()) == id) return true;
   }
   return false;
 }
@@ -533,4 +533,6 @@ void LockingThread::notifyAll(gc* self, LockSystem& table) {
   } while (cur != l->firstThread);
   l->firstThread = NULL;
   assert(mvm::ThinLock::owner(self, table) && "Not owner after notifyAll");
+}
+
 }

@@ -130,7 +130,7 @@ private:
   virtual void addFinalizationCandidate(gc* obj);
   virtual size_t getObjectSize(gc* obj);
   virtual const char* getObjectTypeName(gc* obj);
-  virtual void printMethod(mvm::FrameInfo* FI, void* ip, void* addr);
+  virtual void printMethod(mvm::FrameInfo* FI, intptr_t ip, intptr_t addr);
 
 
   /// CreateError - Creates a Java object of the specified exception class

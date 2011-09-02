@@ -17,10 +17,7 @@
 #include "mvm/Threads/Thread.h"
 
 #include <cassert>
-#include <csetjmp>
 #include <cstdio>
-#include <ctime>
-#include <dlfcn.h>
 #include <errno.h>
 #include <pthread.h>
 #include <sys/mman.h>
@@ -56,47 +53,43 @@ void Thread::joinRVBeforeEnter() {
   MyVM->rendezvous.joinBeforeUncooperative(); 
 }
 
-void Thread::joinRVAfterLeave(void* savedSP) {
+void Thread::joinRVAfterLeave(intptr_t savedSP) {
   MyVM->rendezvous.joinAfterUncooperative(savedSP); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {
   // Get the caller of this function
-  void** cur = (void**)FRAME_PTR();
+  intptr_t cur = System::GetCallerAddress();
   F.previousFrame = lastKnownFrame;
   F.currentFP = cur;
   // This is used as a marker.
-  F.currentIP = NULL;
+  F.currentIP = 0;
   lastKnownFrame = &F;
 }
 
 void Thread::endKnownFrame() {
-  assert(lastKnownFrame->currentIP == NULL);
+  assert(lastKnownFrame->currentIP == 0);
   lastKnownFrame = lastKnownFrame->previousFrame;
 }
 
 void Thread::startUnknownFrame(KnownFrame& F) {
   // Get the caller of this function
-  void** cur = (void**)FRAME_PTR();
+  intptr_t cur = System::GetCallerAddress();
   // Get the caller of the caller.
-  cur = (void**)cur[0];
+  cur = System::GetCallerOfAddress(cur);
   F.previousFrame = lastKnownFrame;
   F.currentFP = cur;
-  F.currentIP = FRAME_IP(cur);
+  F.currentIP = System::GetIPFromCallerAddress(cur);
   lastKnownFrame = &F;
 }
 
 void Thread::endUnknownFrame() {
-  assert(lastKnownFrame->currentIP != NULL);
+  assert(lastKnownFrame->currentIP != 0);
   lastKnownFrame = lastKnownFrame->previousFrame;
 }
 
 void Thread::internalThrowException() {
-#if defined(__MACH__)
-  _longjmp(lastExceptionBuffer->buffer, 1);
-#else
-  longjmp(lastExceptionBuffer->buffer, 1);
-#endif
+  LONGJMP(lastExceptionBuffer->buffer, 1);
 }
 
 void Thread::printBacktrace() {
@@ -108,11 +101,11 @@ void Thread::printBacktrace() {
   }
 }
 
-void Thread::getFrameContext(void** buffer) {
+void Thread::getFrameContext(intptr_t* buffer) {
   mvm::StackWalker Walker(this);
   uint32_t i = 0;
 
-  while (void* ip = *Walker) {
+  while (intptr_t ip = *Walker) {
     buffer[i++] = ip;
     ++Walker;
   }
@@ -131,29 +124,29 @@ uint32_t Thread::getFrameContextLength() {
 
 FrameInfo* StackWalker::get() {
   if (addr == thread->baseSP) return 0;
-  ip = FRAME_IP(addr);
+  ip = System::GetIPFromCallerAddress(addr);
   return thread->MyVM->IPToFrameInfo(ip);
 }
 
-void* StackWalker::operator*() {
+intptr_t StackWalker::operator*() {
   if (addr == thread->baseSP) return 0;
-  ip = FRAME_IP(addr);
+  ip = System::GetIPFromCallerAddress(addr);
   return ip;
 }
 
 void StackWalker::operator++() {
   if (addr != thread->baseSP) {
     assert((addr < thread->baseSP) && "Corrupted stack");
-    assert((addr < addr[0]) && "Corrupted stack");
+    assert((addr < System::GetCallerOfAddress(addr)) && "Corrupted stack");
     if ((frame != NULL) && (addr == frame->currentFP)) {
-      assert(frame->currentIP == NULL);
+      assert(frame->currentIP == 0);
       frame = frame->previousFrame;
       assert(frame != NULL);
-      assert(frame->currentIP != NULL);
-      addr = (void**)frame->currentFP;
+      assert(frame->currentIP != 0);
+      addr = frame->currentFP;
       frame = frame->previousFrame;
     } else {
-      addr = (void**)addr[0];
+      addr = System::GetCallerOfAddress(addr);
     }
   }
 }
@@ -162,16 +155,16 @@ StackWalker::StackWalker(mvm::Thread* th) {
   thread = th;
   frame = th->lastKnownFrame;
   if (mvm::Thread::get() == th) {
-    addr = (void**)FRAME_PTR();
-    addr = (void**)addr[0];
+    addr = System::GetCallerAddress();
+    addr = System::GetCallerOfAddress(addr);
   } else {
-    addr = (void**)th->waitOnSP();
+    addr = th->waitOnSP();
     if (frame) {
       assert(frame->currentFP >= addr);
     }
     if (frame && (addr == frame->currentFP)) {
       frame = frame->previousFrame;
-      assert((frame == NULL) || (frame->currentIP == NULL));
+      assert((frame == NULL) || (frame->currentIP == 0));
     }
   }
   assert(addr && "No address to start with");
@@ -191,10 +184,10 @@ void Thread::enterUncooperativeCode(unsigned level) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
       // Get the caller.
-      void* temp = FRAME_PTR();
+      intptr_t temp = System::GetCallerAddress();
       // Make sure to at least get the caller of the caller.
       ++level;
-      while (level--) temp = ((void**)temp)[0];
+      while (level--) temp = System::GetCallerOfAddress(temp);
       // The cas is not necessary, but it does a memory barrier.
       __sync_bool_compare_and_swap(&lastSP, 0, temp);
       if (doYield) joinRVBeforeEnter();
@@ -203,7 +196,7 @@ void Thread::enterUncooperativeCode(unsigned level) {
   }
 }
 
-void Thread::enterUncooperativeCode(void* SP) {
+void Thread::enterUncooperativeCode(intptr_t SP) {
   if (isMvmThread()) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
@@ -219,7 +212,7 @@ void Thread::leaveUncooperativeCode() {
   if (isMvmThread()) {
     if (!inRV) {
       assert(lastSP && "No last SP when leaving uncooperative code");
-      void* savedSP = lastSP;
+      intptr_t savedSP = lastSP;
       // The cas is not necessary, but it does a memory barrier.
       __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
       // A rendezvous has just been initiated, join it.
@@ -229,9 +222,9 @@ void Thread::leaveUncooperativeCode() {
   }
 }
 
-void* Thread::waitOnSP() {
+intptr_t Thread::waitOnSP() {
   // First see if we can get lastSP directly.
-  void* sp = lastSP;
+  intptr_t sp = lastSP;
   if (sp) return sp;
   
   // Then loop a fixed number of iterations to get lastSP.
@@ -241,9 +234,9 @@ void* Thread::waitOnSP() {
   }
   
   // Finally, yield until lastSP is not set.
-  while ((sp = lastSP) == NULL) mvm::Thread::yield();
+  while ((sp = lastSP) == 0) mvm::Thread::yield();
 
-  assert(sp != NULL && "Still no sp");
+  assert(sp != 0 && "Still no sp");
   return sp;
 }
 
@@ -253,14 +246,6 @@ uintptr_t Thread::baseAddr = 0;
 // These could be set at runtime.
 #define STACK_SIZE 0x100000
 #define NR_THREADS 255
-
-#if 0//(__WORDSIZE == 64)
-#define START_ADDR 0x110000000
-#define END_ADDR 0x170000000
-#else
-#define START_ADDR 0x10000000
-#define END_ADDR 0x70000000
-#endif
 
 /// StackThreadManager - This class allocates all stacks for threads. Because
 /// we want fast access to thread local data, and can not rely on platform
@@ -282,13 +267,9 @@ public:
 
   StackThreadManager() {
     baseAddr = 0;
-    uintptr_t ptr = START_ADDR;
+    uintptr_t ptr = kThreadStart;
 
-#if defined (__MACH__)
     uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
-#else
-    uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
-#endif
     baseAddr = (uintptr_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
                                PROT_READ | PROT_WRITE, flags, -1, 0);
 
@@ -344,7 +325,7 @@ extern void sigsegvHandler(int, siginfo_t*, void*);
 /// given routine of th.
 ///
 void Thread::internalThreadStart(mvm::Thread* th) {
-  th->baseSP  = FRAME_PTR();
+  th->baseSP  = System::GetCallerAddress();
 
   // Set the SIGSEGV handler to diagnose errors.
   struct sigaction sa;
@@ -405,7 +386,7 @@ void Thread::releaseThread(mvm::Thread* th) {
     // Wait for the thread to die.
     pthread_join((pthread_t)thread_id, NULL);
   }
-  uintptr_t index = ((uintptr_t)th & Thread::IDMask);
+  uintptr_t index = ((uintptr_t)th & System::GetThreadIDMask());
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
 }

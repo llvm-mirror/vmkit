@@ -19,7 +19,7 @@
 #include <pthread.h>
 
 
-using namespace mvm;
+namespace mvm {
 
 Lock::Lock() {
   pthread_mutexattr_t attr;
@@ -186,4 +186,6 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
   l->unsafeLock(n);
 
   return res;
+}
+
 }

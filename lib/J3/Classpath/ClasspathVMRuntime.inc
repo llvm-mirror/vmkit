@@ -21,7 +21,6 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
-#include <csetjmp>
 #include <cstring>
 #include <unistd.h>
 

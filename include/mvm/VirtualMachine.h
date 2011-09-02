@@ -32,7 +32,7 @@ public:
   /// used when walking the stack so that VMKit knows which applicative method
   /// is executing on the stack.
   ///
-  llvm::DenseMap<void*, FrameInfo*> Functions;
+  llvm::DenseMap<intptr_t, FrameInfo*> Functions;
 
   /// FunctionMapLock - Spin lock to protect the Functions map.
   ///
@@ -40,12 +40,12 @@ public:
 
   /// IPToFrameInfo - Map a code start instruction instruction to the FrameInfo.
   ///
-  FrameInfo* IPToFrameInfo(void* ip);
+  FrameInfo* IPToFrameInfo(intptr_t ip);
 
   /// addFrameInfo - A new instruction pointer in the function map.
   ///
-  void addFrameInfo(void* ip, FrameInfo* meth);
-  void addFrameInfoNoLock(void* ip, FrameInfo* meth) {
+  void addFrameInfo(intptr_t ip, FrameInfo* meth);
+  void addFrameInfoNoLock(intptr_t ip, FrameInfo* meth) {
     Functions[ip] = meth;
   }
   /// removeFrameInfos - Remove all FrameInfo owned by the given owner.
@@ -208,14 +208,14 @@ public:
 //===----------------------------------------------------------------------===//
 
   FunctionMap FunctionsCache;
-  FrameInfo* IPToFrameInfo(void* ip) {
+  FrameInfo* IPToFrameInfo(intptr_t ip) {
     return FunctionsCache.IPToFrameInfo(ip);
   }
   void removeFrameInfos(void* owner) {
     FunctionsCache.removeFrameInfos(owner);
   }
 
-  virtual void printMethod(FrameInfo* FI, void* ip, void* addr) = 0;
+  virtual void printMethod(FrameInfo* FI, intptr_t ip, intptr_t addr) = 0;
   
 //===----------------------------------------------------------------------===//
 // (4) Launch-related methods.

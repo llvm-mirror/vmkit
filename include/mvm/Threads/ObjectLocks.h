@@ -166,7 +166,7 @@ public:
   static const uint32_t NonLockBits = HashBits + GCBits;
   static const uint64_t NonLockBitsMask = ((1 << NonLockBits) - 1);
 
-  static const uint64_t ThinCountMask = ~(FatMask + Thread::IDMask + NonLockBitsMask);
+  static const uint64_t ThinCountMask = ~(FatMask + kThreadIDMask + NonLockBitsMask);
   static const uint64_t ThinCountShift = NonLockBits;
   static const uint64_t ThinCountAdd = 1 << NonLockBits;
 

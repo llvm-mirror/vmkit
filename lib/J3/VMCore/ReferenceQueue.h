@@ -57,11 +57,11 @@ public:
     if (CurrentIndex >= QueueLength) {
       uint32 newLength = QueueLength * GROW_FACTOR;
       gc** newQueue = new gc*[newLength];
-      memset(newQueue, 0, newLength * sizeof(gc*));
       if (!newQueue) {
         fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
         abort();
       }
+      memset(newQueue, 0, newLength * sizeof(gc*));
       for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = References[i];
       delete[] References;
       References = newQueue;

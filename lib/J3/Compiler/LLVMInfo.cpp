@@ -157,7 +157,7 @@ Function* LLVMMethodInfo::getMethod() {
       
       bool j3 = false;
       if (isNative(methodDef->access)) {
-        // Verify if it's defined by JnJVM
+        // Verify if it's defined by J3
         JCL->nativeLookup(methodDef, j3, buf);
       }
 

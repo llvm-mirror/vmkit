@@ -59,32 +59,12 @@ public:
   }
 
   static double readDouble(int first, int second) {
-    int values[2];
-    double res[1];
-#if defined(__PPC__)
-    values[0] = second;
-    values[1] = first;
-#else
-    values[0] = first;
-    values[1] = second;
-#endif
-    memcpy(res, values, 8); 
-    return res[0];
-  }
+    return mvm::System::ReadDouble(first, second);
+   }
 
 
   static sint64 readLong(int first, int second) {
-    int values[2];
-    sint64 res[1];
-#if defined(__PPC__)
-    values[0] = second;
-    values[1] = first;
-#else
-    values[0] = first;
-    values[1] = second;
-#endif
-    memcpy(res, values, 8); 
-    return res[0];
+    return mvm::System::ReadLong(first, second);
   }
 
   static const int SeekSet;
@@ -149,7 +129,6 @@ public:
   }
   
   void seek(uint32 pos, int from);
-
 };
 
 } // end namespace j3

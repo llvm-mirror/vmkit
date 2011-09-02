@@ -39,6 +39,7 @@
 
 #include "mvm/JIT.h"
 #include "mvm/Threads/Locks.h"
+#include "mvm/Threads/ObjectLocks.h"
 #include "mvm/Threads/Thread.h"
 #include "mvm/VirtualMachine.h"
 #include "mvm/GC/GC.h"
@@ -303,17 +304,16 @@ void BaseIntrinsics::init(llvm::Module* module) {
   constantDoubleMinusInfinity = ConstantFP::get(Type::getDoubleTy(Context), MinDouble);
   constantDoubleMinusZero = ConstantFP::get(Type::getDoubleTy(Context), -0.0);
   constantFloatMinusZero = ConstantFP::get(Type::getFloatTy(Context), -0.0f);
-  constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::Thread::IDMask);
+  constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::System::GetThreadIDMask());
   constantStackOverflowMask = 
-    ConstantInt::get(pointerSizeType, mvm::Thread::StackOverflowMask);
-  constantFatMask = ConstantInt::get(pointerSizeType, 
-      pointerSizeType == Type::getInt32Ty(Context) ? 0x80000000 : 0x8000000000000000LL);
+    ConstantInt::get(pointerSizeType, Thread::StackOverflowMask);
+  constantFatMask = ConstantInt::get(pointerSizeType, ThinLock::FatMask);
   constantPtrOne = ConstantInt::get(pointerSizeType, 1);
   constantPtrZero = ConstantInt::get(pointerSizeType, 0);
 
   constantPtrNull = Constant::getNullValue(ptrType); 
   constantPtrLogSize = 
-    ConstantInt::get(Type::getInt32Ty(Context), sizeof(void*) == 8 ? 3 : 2);
+    ConstantInt::get(Type::getInt32Ty(Context), kWordSizeLog2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::getInt8Ty(Context), 0));
   
   printFloatLLVM = module->getFunction("printFloat");
@@ -403,7 +403,7 @@ Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, Bum
     frame->FrameSize = FI->getFrameSize();
     frame->Metadata = meta;
     frame->SourceIndex = I->Loc.getLine();
-    frame->ReturnAddress = reinterpret_cast<void*>(JCE->getLabelAddress(I->Label));
+    frame->ReturnAddress = JCE->getLabelAddress(I->Label);
     int i = 0;
     for (llvm::GCFunctionInfo::live_iterator KI = FI->live_begin(I),
          KE = FI->live_end(I); KI != KE; ++KI) {

@@ -17,15 +17,8 @@
 #include "debug.h"
 #include "types.h"
 
-#include <csetjmp>
-#if defined(__MACH__)
-  #define TRY { mvm::ExceptionBuffer __buffer__; if (!_setjmp(__buffer__.buffer))
-#else
-  #define TRY { mvm::ExceptionBuffer __buffer__; if (!setjmp(__buffer__.buffer))
-#endif
-#define CATCH else
-#define IGNORE else { mvm::Thread::get()->clearException(); }}
-#define END_CATCH }
+#include "mvm/System.h"
+
 
 namespace mvm {
 
@@ -106,27 +99,10 @@ public:
 };
 
 
-
-#if defined(__MACH__) && (defined(__PPC__) || defined(__ppc__))
-#define FRAME_IP(fp) (fp[2])
-#else
-#define FRAME_IP(fp) (fp[1])
-#endif
-
-// Apparently gcc for i386 and family considers __builtin_frame_address(0) to
-// return the caller, not the current function.
-#if defined(__i386__) || defined(i386) || defined(_M_IX86) || \
-    defined(__x86_64__) || defined(_M_AMD64)
-#define FRAME_PTR() __builtin_frame_address(0)
-#else
-#define FRAME_PTR() (((void**)__builtin_frame_address(0))[0])
-#endif
-
-
 class KnownFrame {
 public:
-  void* currentFP;
-  void* currentIP;
+  intptr_t currentFP;
+  intptr_t currentIP;
   KnownFrame* previousFrame;
 };
 
@@ -177,7 +153,7 @@ public:
 
   /// baseSP - The base stack pointer.
   ///
-  void* baseSP;
+  intptr_t baseSP;
  
   /// doYield - Flag to tell the thread to yield for GC reasons.
   ///
@@ -194,7 +170,7 @@ public:
   /// get - Get the thread specific data of the current thread.
   ///
   static Thread* get() {
-    return (Thread*)((uintptr_t)__builtin_frame_address(0) & IDMask);
+    return (Thread*)(System::GetCallerAddress() & System::GetThreadIDMask());
   }
   
 private:
@@ -203,7 +179,7 @@ private:
   /// interrupted, lastSP is not null and contains the value of the
   /// stack pointer before entering native.
   ///
-  void* lastSP;
+  intptr_t lastSP;
  
   /// internalThreadID - The implementation specific thread id.
   ///
@@ -226,16 +202,16 @@ public:
   virtual void tracer(uintptr_t closure) {}
   void scanStack(uintptr_t closure);
   
-  void* getLastSP() { return lastSP; }
-  void  setLastSP(void* V) { lastSP = V; }
+  intptr_t getLastSP() { return lastSP; }
+  void  setLastSP(intptr_t V) { lastSP = V; }
   
   void joinRVBeforeEnter();
-  void joinRVAfterLeave(void* savedSP);
+  void joinRVAfterLeave(intptr_t savedSP);
 
   void enterUncooperativeCode(unsigned level = 0) __attribute__ ((noinline));
-  void enterUncooperativeCode(void* SP);
+  void enterUncooperativeCode(intptr_t SP);
   void leaveUncooperativeCode();
-  void* waitOnSP();
+  intptr_t waitOnSP();
 
 
   /// clearException - Clear any pending exception of the current thread.
@@ -245,23 +221,11 @@ public:
 
   bool isMvmThread() {
     if (!baseAddr) return false;
-    else return (((uintptr_t)this) & MvmThreadMask) == baseAddr;
+    else return (((uintptr_t)this) & System::GetMvmThreadMask()) == baseAddr;
   }
 
   /// baseAddr - The base address for all threads.
   static uintptr_t baseAddr;
-
-  /// IDMask - Apply this mask to the stack pointer to get the Thread object.
-  ///
-#if 0//(__WORDSIZE == 64)
-  static const uint64_t IDMask = 0xF7FF00000;
-#else
-  static const uint64_t IDMask = 0x7FF00000;
-#endif
-  /// MvmThreadMask - Apply this mask to verify that the current thread was
-  /// created by Mvm.
-  ///
-  static const uint64_t MvmThreadMask = 0xF0000000;
 
   /// OverflowMask - Apply this mask to implement overflow checks. For
   /// efficiency, we lower the available size of the stack: it can never go
@@ -272,7 +236,7 @@ public:
   /// stackOverflow - Returns if there is a stack overflow in Java land.
   ///
   bool stackOverflow() {
-    return ((uintptr_t)__builtin_frame_address(0) & StackOverflowMask) == 0;
+    return (System::GetCallerAddress() & StackOverflowMask) == 0;
   }
 
   /// operator new - Allocate the Thread object as well as the stack for this
@@ -295,7 +259,7 @@ public:
  
   /// getFrameContext - Fill the buffer with frames currently on the stack.
   ///
-  void getFrameContext(void** buffer);
+  void getFrameContext(intptr_t* buffer);
   
   /// getFrameContextLength - Get the length of the frame context.
   ///
@@ -339,14 +303,14 @@ public:
 ///
 class StackWalker {
 public:
-  void** addr;
-  void*  ip;
+  intptr_t addr;
+  intptr_t ip;
   KnownFrame* frame;
   mvm::Thread* thread;
 
   StackWalker(mvm::Thread* th) __attribute__ ((noinline));
   void operator++();
-  void* operator*();
+  intptr_t operator*();
   FrameInfo* get();
 
 };

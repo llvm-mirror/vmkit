@@ -15,26 +15,14 @@
 
 namespace mmtk {
 
-#if defined (__MACH__)
-static const uintptr_t MemoryStart = 0x30000000;
-#else
-static const uintptr_t MemoryStart = 0x50000000;
-#endif
-
-static const uintptr_t MemorySize = 0x30000000;
-
 class InitCollector {
 public:
   InitCollector() {
-#if defined (__MACH__)
     uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
-#else
-    uint32 flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED;
-#endif
-    void* baseAddr = mmap((void*)MemoryStart, MemorySize, PROT_READ | PROT_WRITE,
+    void* baseAddr = mmap((void*)mvm::kGCMemoryStart, mvm::kGCMemorySize, PROT_READ | PROT_WRITE,
                           flags, -1, 0);
     if (baseAddr == MAP_FAILED) {
-      perror("mmap");
+      perror("mmap for GC memory");
       abort();
     }
   }
@@ -44,11 +32,11 @@ public:
 InitCollector initCollector;
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ (MMTkObject* M) {
-  return MemoryStart;
+  return mvm::kGCMemoryStart;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getHeapEndConstant__ (MMTkObject* M) {
-  return MemoryStart + MemorySize;
+  return mvm::kGCMemoryStart + mvm::kGCMemorySize;
 }
 
 extern "C" uintptr_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (MMTkObject* M) {

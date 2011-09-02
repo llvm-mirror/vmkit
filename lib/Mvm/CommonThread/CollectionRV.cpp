@@ -15,11 +15,11 @@
 
 #include "debug.h"
 
-using namespace mvm;
+namespace mvm {
 
 void CollectionRV::another_mark() {
   mvm::Thread* th = mvm::Thread::get();
-  assert(th->getLastSP() != NULL);
+  assert(th->getLastSP() != 0);
   assert(nbJoined < th->MyVM->numberOfThreads);
   nbJoined++;
   if (nbJoined == th->MyVM->numberOfThreads) {
@@ -29,7 +29,7 @@ void CollectionRV::another_mark() {
 
 void CollectionRV::waitEndOfRV() {
   mvm::Thread* th = mvm::Thread::get();
-  assert(th->getLastSP() != NULL);
+  assert(th->getLastSP() != 0);
 
   while (th->doYield) {
     condEndRV.wait(&_lockRV);
@@ -85,12 +85,12 @@ void CooperativeCollectionRV::synchronize() {
 void CooperativeCollectionRV::join() {
   mvm::Thread* th = mvm::Thread::get();
   assert(th->doYield && "No yield");
-  assert((th->getLastSP() == NULL) && "SP present in cooperative code");
+  assert((th->getLastSP() == 0) && "SP present in cooperative code");
 
   th->inRV = true;
   
   lockRV();
-  th->setLastSP(FRAME_PTR());
+  th->setLastSP(System::GetCallerAddress());
   th->joinedRV = true;
   another_mark();
   waitEndOfRV();
@@ -102,7 +102,7 @@ void CooperativeCollectionRV::join() {
 
 void CooperativeCollectionRV::joinBeforeUncooperative() {
   mvm::Thread* th = mvm::Thread::get();
-  assert((th->getLastSP() != NULL) &&
+  assert((th->getLastSP() != 0) &&
          "SP not set before entering uncooperative code");
 
   th->inRV = true;
@@ -120,9 +120,9 @@ void CooperativeCollectionRV::joinBeforeUncooperative() {
   th->inRV = false;
 }
 
-void CooperativeCollectionRV::joinAfterUncooperative(void* SP) {
+void CooperativeCollectionRV::joinAfterUncooperative(intptr_t SP) {
   mvm::Thread* th = mvm::Thread::get();
-  assert((th->getLastSP() == NULL) &&
+  assert((th->getLastSP() == 0) &&
          "SP set after entering uncooperative code");
 
   th->inRV = true;
@@ -135,7 +135,7 @@ void CooperativeCollectionRV::joinAfterUncooperative(void* SP) {
       another_mark();
     }
     waitEndOfRV();
-    th->setLastSP(NULL);
+    th->setLastSP(0);
   }
   unlockRV();
 
@@ -171,4 +171,6 @@ void CooperativeCollectionRV::finishRV() {
 
 void CooperativeCollectionRV::addThread(Thread* th) {
   // Nothing to do.
+}
+
 }

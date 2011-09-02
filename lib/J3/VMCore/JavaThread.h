@@ -39,7 +39,7 @@ class Jnjvm;
 
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
-  void* SP = th->getLastSP(); \
+  intptr_t SP = th->getLastSP(); \
   th->leaveUncooperativeCode(); \
   mvm::KnownFrame Frame; \
   th->startKnownFrame(Frame); \
@@ -157,7 +157,7 @@ public:
 
   /// throwFromJNI - Throw an exception after executing JNI code.
   ///
-  void throwFromJNI(void* SP) {
+  void throwFromJNI(intptr_t SP) {
     endKnownFrame();
     enterUncooperativeCode(SP);
   }

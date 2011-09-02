@@ -40,19 +40,11 @@ extern "C" gc* Java_org_j3_mmtk_ObjectModel_refToAddress__Lorg_vmmagic_unboxed_O
 }
 
 extern "C" uint8_t Java_org_j3_mmtk_ObjectModel_readAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
-#if defined(__PPC__)
-  return ((uint8_t*)obj)[2 * mvm::kWordSize - 1];
-#else
-  return ((uint8_t*)obj)[mvm::kWordSize];
-#endif
+  return *mvm::System::GetLastBytePtr(reinterpret_cast<intptr_t>(obj));
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2B (MMTkObject* OM, gc* obj, uint8_t val) {
-#if defined(__PPC__)
-  ((uint8_t*)obj)[2 * mvm::kWordSize - 1] = val;
-#else
-  ((uint8_t*)obj)[mvm::kWordSize] = val;
-#endif
+  *mvm::System::GetLastBytePtr(reinterpret_cast<intptr_t>(obj)) = val;
 }
 
 extern "C" gc* Java_org_j3_mmtk_ObjectModel_getObjectFromStartAddress__Lorg_vmmagic_unboxed_Address_2 (MMTkObject* OM, gc* obj) {

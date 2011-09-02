@@ -1443,14 +1443,16 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   return 0; 
 }
 
-void Jnjvm::printMethod(mvm::FrameInfo* FI, void* ip, void* addr) {
+void Jnjvm::printMethod(mvm::FrameInfo* FI, intptr_t ip, intptr_t addr) {
   if (FI->Metadata == NULL) {
     mvm::MethodInfoHelper::print(ip, addr);
     return;
   }
   JavaMethod* meth = (JavaMethod*)FI->Metadata;
 
-  fprintf(stderr, "; %p (%p) in %s.%s (line %d, bytecode %d, code start %p)", ip, addr,
+  fprintf(stderr, "; %p (%p) in %s.%s (line %d, bytecode %d, code start %p)",
+          (void*)ip,
+          (void*)addr,
           UTF8Buffer(meth->classDef->name).cString(),
           UTF8Buffer(meth->name).cString(),
           meth->lookupLineNumber(FI),
