@@ -68,16 +68,16 @@ const intptr_t kMvmThreadMask = 0xF0000000;
   #define SETJMP _setjmp
   #define DYLD_EXTENSION ".dylib"
   #define SELF_HANDLE RTLD_DEFAULT
-  const intptr_t kGCMemoryStart = 0x30000000;
+  const uintptr_t kGCMemoryStart = 0x30000000;
 #else
   #define LONGJMP longjmp
   #define SETJMP setjmp
   #define DYLD_EXTENSION ".so"
   #define SELF_HANDLE 0
-  const intptr_t kGCMemoryStart = 0x50000000;
+  const uintptr_t kGCMemoryStart = 0x50000000;
 #endif
 
-static const intptr_t kGCMemorySize = 0x30000000;  
+static const uintptr_t kGCMemorySize = 0x30000000;  
 
 #define TRY { mvm::ExceptionBuffer __buffer__; if (!SETJMP(__buffer__.buffer))
 #define CATCH else
