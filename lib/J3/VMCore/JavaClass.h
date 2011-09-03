@@ -1155,7 +1155,7 @@ public:
   Attribut* lookupAttribut(const UTF8* key);
 
   JavaObject** getStaticObjectFieldPtr() {
-    assert(classDef->isResolved());
+    assert(classDef->getStaticInstance());
     return (JavaObject**)((uint64)classDef->getStaticInstance() + ptrOffset);
   }
 
