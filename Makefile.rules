@@ -44,7 +44,7 @@ glibj-optimized.zip.bc : glibj.zip.bc
 
 glibj.zip.s : glibj-optimized.zip.bc
 	$(Echo) "Compiling glibj.zip.bc to native"
-	$(Verb) $(LLC) -relocation-model=pic -disable-fp-elim glibj-optimized.zip.bc -o glibj.zip.s
+	$(Verb) $(LLC) -disable-cfi -relocation-model=pic -disable-fp-elim glibj-optimized.zip.bc -o glibj.zip.s
 
 $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
@@ -108,7 +108,7 @@ $(ObjectsBCWithGC): $(ObjDir)/%_gc.bc: $(ObjDir)/%.ll $(LOPT)
 
 $(ObjectsSWithGC): $(ObjDir)/%_gc.s: $(ObjDir)/%_gc.bc $(LLC)
 	$(Echo) "Compiling $*.bc to $*.s for $(BuildMode) build"
-	$(Verb) $(LLC) -disable-fp-elim -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) $< -o $@
+	$(Verb) $(LLC) -disable-cfi -disable-fp-elim -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) $< -o $@
 
 $(ObjectsWithGC): $(ObjDir)/%_gc.o: $(ObjDir)/%_gc.s $(ObjDir)/.dir
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
