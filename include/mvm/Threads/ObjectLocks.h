@@ -80,7 +80,7 @@ public:
   uintptr_t getID();
   int tryAcquire() { return internalLock.tryLock(); }
   bool acquire(gc* object);
-  void acquireAll(gc* object, uint32_t count);
+  void acquireAll(gc* object, uintptr_t count);
   void release(gc* object, LockSystem& table);
   mvm::Thread* getOwner();
   bool owner();
@@ -161,14 +161,14 @@ public:
   //    1           11                    12                  8
   // fat lock    thread id       thin lock count + hash     GC bits
 
-  static const uint64_t FatMask = 1 << 31;
+  static const uint64_t FatMask = 1LL << (kThreadStart > 0xFFFFFFFFLL ? 61LL : 31LL);
 
   static const uint32_t NonLockBits = HashBits + GCBits;
-  static const uint64_t NonLockBitsMask = ((1 << NonLockBits) - 1);
+  static const uint64_t NonLockBitsMask = ((1LL << NonLockBits) - 1LL);
 
   static const uint64_t ThinCountMask = ~(FatMask + kThreadIDMask + NonLockBitsMask);
   static const uint64_t ThinCountShift = NonLockBits;
-  static const uint64_t ThinCountAdd = 1 << NonLockBits;
+  static const uint64_t ThinCountAdd = 1LL << NonLockBits;
 
   /// initialise - Initialise the value of the lock.
   ///

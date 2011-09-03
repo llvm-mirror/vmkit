@@ -240,7 +240,7 @@ FatLock* ThinLock::getFatLock(gc* object, LockSystem& table) {
   }
 }
 
-void FatLock::acquireAll(gc* object, uint32 nb) {
+void FatLock::acquireAll(gc* object, uintptr_t nb) {
   assert(associatedObject == object);
   llvm_gcroot(object, 0);
   internalLock.lockAll(nb);

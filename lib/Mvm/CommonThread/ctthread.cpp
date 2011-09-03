@@ -318,24 +318,12 @@ public:
 /// machine specific.
 StackThreadManager TheStackManager;
 
-extern void sigsegvHandler(int, siginfo_t*, void*);
-
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
 /// given routine of th.
 ///
 void Thread::internalThreadStart(mvm::Thread* th) {
   th->baseSP  = System::GetCallerAddress();
-
-  // Set the SIGSEGV handler to diagnose errors.
-  struct sigaction sa;
-  sigset_t mask;
-  sigfillset(&mask);
-  sa.sa_flags = SA_SIGINFO;
-  sa.sa_mask = mask;
-  sa.sa_sigaction = sigsegvHandler;
-  sigaction(SIGSEGV, &sa, NULL);
-
 
   assert(th->MyVM && "VM not set in a thread");
   th->MyVM->rendezvous.addThread(th);

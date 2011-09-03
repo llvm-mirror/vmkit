@@ -12,7 +12,6 @@
 
 #include <csetjmp>
 #include <cstring>
-#include <csetjmp>
 #include <dlfcn.h>
 #include <stdint.h>
 
@@ -53,10 +52,10 @@ const int kWordSizeLog2 = kWordSize == 4 ? 2 : 3;
 
 
 
-#if 0//def ARCH_X64
-const intptr_t kThreadStart = 0x110000000;
-const intptr_t kThreadIDMask = 0xF7FF00000;
-const uintptr_t kMvmThreadMask = 0xFF0000000;
+#if MACOS_OS && ARCH_X64
+const intptr_t kThreadStart = 0x110000000LL;
+const intptr_t kThreadIDMask = 0xF7FF00000LL;
+const uintptr_t kMvmThreadMask = 0xFF0000000LL;
 #else
 const intptr_t kThreadStart = 0x10000000;
 const intptr_t kThreadIDMask = 0x7FF00000;
@@ -68,16 +67,24 @@ const intptr_t kMvmThreadMask = 0xF0000000;
   #define SETJMP _setjmp
   #define DYLD_EXTENSION ".dylib"
   #define SELF_HANDLE RTLD_DEFAULT
-  const uintptr_t kGCMemoryStart = 0x30000000;
 #else
   #define LONGJMP longjmp
   #define SETJMP setjmp
   #define DYLD_EXTENSION ".so"
   #define SELF_HANDLE 0
+#endif
+
+#if MACOS_OS
+  #if ARCH_X64
+    const uintptr_t kGCMemoryStart = 0x300000000LL;
+  #else
+    const uintptr_t kGCMemoryStart = 0x30000000;
+  #endif
+#else
   const uintptr_t kGCMemoryStart = 0x50000000;
 #endif
 
-static const uintptr_t kGCMemorySize = 0x30000000;  
+const uintptr_t kGCMemorySize = 0x30000000;  
 
 #define TRY { mvm::ExceptionBuffer __buffer__; if (!SETJMP(__buffer__.buffer))
 #define CATCH else
