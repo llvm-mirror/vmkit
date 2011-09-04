@@ -694,10 +694,6 @@ extern "C" void* j3ResolveSpecialStub() {
 extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t index) {
   uintptr_t result = NULL;
   InterfaceMethodTable* IMT = JavaObject::getClass(obj)->virtualVT->IMT;
-  assert(JavaObject::instanceOf(obj, meth->classDef));
-  assert(meth->classDef->isInterface() ||
-      (meth->classDef == meth->classDef->classLoader->bootstrapLoader->upcalls->OfObject));
-  assert(index == InterfaceMethodTable::getIndex(meth->name, meth->type));
   if ((IMT->contents[index] & 1) == 0) {
     result = IMT->contents[index];
   } else {
@@ -707,7 +703,15 @@ extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t 
     assert(table[i] != 0);
     result = table[i + 1];
   }
-  assert((result != 0) && "Bad IMT");
+  // TODO(ngeoffray): This code is too performance critical to get asserts.
+  // Ideally, it would be inlined by the compiler, so this method is
+  // only for debugging.
+  //
+  // assert(JavaObject::instanceOf(obj, meth->classDef));
+  // assert(meth->classDef->isInterface() ||
+  //    (meth->classDef == meth->classDef->classLoader->bootstrapLoader->upcalls->OfObject));
+  // assert(index == InterfaceMethodTable::getIndex(meth->name, meth->type));
+  // assert((result != 0) && "Bad IMT");
   return (void*)result;
 }
 
