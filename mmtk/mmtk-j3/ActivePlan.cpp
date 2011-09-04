@@ -36,8 +36,9 @@ extern "C" void Java_org_j3_mmtk_ActivePlan_resetMutatorIterator__(MMTkActivePla
   A->current = NULL;
 }
 
-extern "C" void Java_org_j3_mmtk_ActivePlan_collectorCount__ (MMTkActivePlan* A) {
-  UNIMPLEMENTED();
+extern "C" int Java_org_j3_mmtk_ActivePlan_collectorCount__ (MMTkActivePlan* A) {
+  // We do not support parallel GC yet.
+  return 1;
 }
 
 }
