@@ -429,6 +429,7 @@ bool LockingThread::wait(
       varcondThread.wait(&l->internalLock);
     }
   }
+  assert(mvm::ThinLock::owner(self, table) && "Not owner after wait");
       
   l->waitingThreads--;
      

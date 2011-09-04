@@ -61,7 +61,7 @@ public:
   uint32_t NumCompiledFrames;
   Frames* frames() const {
     return reinterpret_cast<Frames*>(
-        reinterpret_cast<uintptr_t>(this) + sizeof(CompiledFrames));
+        reinterpret_cast<uintptr_t>(this) + kWordSize);
   }
 };
 

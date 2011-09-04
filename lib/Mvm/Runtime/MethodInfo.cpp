@@ -61,8 +61,8 @@ FunctionMap::FunctionMap(BumpPtrAllocator& allocator, CompiledFrames** allFrames
         currentFrames = reinterpret_cast<Frames*>(
             reinterpret_cast<uintptr_t>(frame) + MethodInfoHelper::FrameInfoSize(frame->NumLiveOffsets));
       } else {
-        currentFrames = reinterpret_cast<Frames*>(
-            reinterpret_cast<uintptr_t>(currentFrames) + sizeof(Frames));
+        currentFrames = reinterpret_cast<Frames*>(System::WordAlignUp(
+            reinterpret_cast<uintptr_t>(currentFrames) + sizeof(Frames)));
       }
     }
   }
