@@ -275,6 +275,12 @@ public final class OptionSet extends org.vmutil.options.OptionSet {
         case '7': value += 7; break;
         case '8': value += 8; break;
         case '9': value += 9; break;
+        case 'a': value += 0xa; break;
+        case 'b': value += 0xb; break;
+        case 'c': value += 0xc; break;
+        case 'd': value += 0xd; break;
+        case 'e': value += 0xe; break;
+        case 'f': value += 0xf; break;
         default:
           return -1;
       }
