@@ -1053,7 +1053,7 @@ void Jnjvm::loadBootstrap() {
   JavaObject* javaLoader = NULL;
   llvm_gcroot(obj, 0);
   llvm_gcroot(javaLoader, 0);
-  JnjvmClassLoader* loader = bootstrapLoader;
+  JnjvmBootstrapLoader* loader = bootstrapLoader;
   
   // First create system threads.
   finalizerThread = new FinalizerThread(this);
@@ -1159,8 +1159,7 @@ void Jnjvm::loadBootstrap() {
                                                    obj, &javaLoader);
   // load and initialise math since it is responsible for dlopen'ing 
   // libjavalang.so and we are optimizing some math operations
-  UserCommonClass* math = loader->loadName(
-      loader->asciizConstructUTF8("java/lang/Math"), true, true, NULL);
+  UserCommonClass* math = loader->loadName(loader->mathName, true, true, NULL);
   math->asClass()->initialiseClass(this);
 }
 

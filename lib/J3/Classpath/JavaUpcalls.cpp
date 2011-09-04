@@ -746,6 +746,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
   isArray->setNative();
 
+  // Make sure classes the JIT optimizes on are loaded.
+  UPCALL_CLASS(loader, "java/lang/VMFloat");
+  UPCALL_CLASS(loader, "java/lang/VMDouble");
 
   UPCALL_REFLECT_CLASS_EXCEPTION(loader, InvocationTargetException);
   UPCALL_CLASS_EXCEPTION(loader, ArrayStoreException);

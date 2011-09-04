@@ -373,6 +373,8 @@ public:
   const UTF8* prelib; 
   const UTF8* postlib; 
   const UTF8* mathName;
+  const UTF8* VMFloatName;
+  const UTF8* VMDoubleName;
   const UTF8* stackWalkerName;
   const UTF8* abs;
   const UTF8* sqrt;
@@ -398,6 +400,10 @@ public:
   const UTF8* sinh;
   const UTF8* tanh;
   const UTF8* finalize;
+  const UTF8* floatToRawIntBits;
+  const UTF8* doubleToRawLongBits;
+  const UTF8* intBitsToFloat;
+  const UTF8* longBitsToDouble;
 
   /// primitiveMap - Map of primitive classes, hashed by id.
   std::map<const char, UserClassPrimitive*> primitiveMap;

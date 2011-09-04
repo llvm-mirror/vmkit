@@ -164,6 +164,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   prelib = asciizConstructUTF8("lib");
   postlib = asciizConstructUTF8(mvm::System::GetDyLibExtension());
   mathName = asciizConstructUTF8("java/lang/Math");
+  VMFloatName = asciizConstructUTF8("java/lang/VMFloat");
+  VMDoubleName = asciizConstructUTF8("java/lang/VMDouble");
   stackWalkerName = asciizConstructUTF8("gnu/classpath/VMStackWalker");
   NoClassDefFoundError = asciizConstructUTF8("java/lang/NoClassDefFoundError");
 
@@ -194,6 +196,10 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   DEF_UTF8(sinh);
   DEF_UTF8(tanh);
   DEF_UTF8(finalize);
+  DEF_UTF8(floatToRawIntBits);
+  DEF_UTF8(doubleToRawLongBits);
+  DEF_UTF8(intBitsToFloat);
+  DEF_UTF8(longBitsToDouble);
 
 #undef DEF_UTF8 
 }

@@ -1451,7 +1451,29 @@ Instruction* JavaJIT::lowerMathOps(const UTF8* name,
   }
   
   return 0;
+}
 
+
+Instruction* JavaJIT::lowerFloatOps(const UTF8* name, 
+                                    std::vector<Value*>& args) {
+  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
+  if (name->equals(loader->floatToRawIntBits)) {
+    return new BitCastInst(args[0], Type::getInt32Ty(*llvmContext), "", currentBlock);
+  } else if (name->equals(loader->intBitsToFloat)) {
+    return new BitCastInst(args[0], Type::getFloatTy(*llvmContext), "", currentBlock);
+  }
+  return NULL;
+}
+
+Instruction* JavaJIT::lowerDoubleOps(const UTF8* name, 
+                                    std::vector<Value*>& args) {
+  JnjvmBootstrapLoader* loader = compilingClass->classLoader->bootstrapLoader;
+  if (name->equals(loader->doubleToRawLongBits)) {
+    return new BitCastInst(args[0], Type::getInt64Ty(*llvmContext), "", currentBlock);
+  } else if (name->equals(loader->longBitsToDouble)) {
+    return new BitCastInst(args[0], Type::getDoubleTy(*llvmContext), "", currentBlock);
+  }
+  return NULL;
 }
 
 
@@ -1573,6 +1595,10 @@ void JavaJIT::invokeStatic(uint16 index) {
 
   if (className->equals(loader->mathName)) {
     val = lowerMathOps(name, args);
+  } else if (className->equals(loader->VMFloatName)) {
+    val = lowerFloatOps(name, args);
+  } else if (className->equals(loader->VMDoubleName)) {
+    val = lowerDoubleOps(name, args);
   }
     
   if (val == NULL) {
