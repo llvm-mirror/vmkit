@@ -14,6 +14,7 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <stdint.h>
+#include <unistd.h>
 
 namespace mvm {
 
@@ -62,7 +63,7 @@ const intptr_t kThreadIDMask = 0x7FF00000;
 const intptr_t kMvmThreadMask = 0xF0000000;
 #endif
 
-#if defined(MACOS_OS)
+#if MACOS_OS
   #define LONGJMP _longjmp
   #define SETJMP _setjmp
   #define DYLD_EXTENSION ".dylib"
@@ -197,6 +198,10 @@ public:
 #else
   return ((uint8_t*)ptr) + mvm::kWordSize;
 #endif
+  }
+
+  static int GetNumberOfProcessors() {
+    return sysconf(_SC_NPROCESSORS_ONLN);
   }
 };
 

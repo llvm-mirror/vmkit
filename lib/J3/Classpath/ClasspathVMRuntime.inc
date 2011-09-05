@@ -223,7 +223,7 @@ JNIEXPORT jint Java_java_lang_VMRuntime_availableProcessors(){
 JNIEnv *env,
 jclass clazz,
 #endif
-  return 1;
+  return mvm::System::GetNumberOfProcessors();
 }
 }
 
