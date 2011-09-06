@@ -686,6 +686,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           Value* obj = new LoadInst(objectStack[currentStackIndex - 3], "",
                                     TheCompiler->useCooperativeGC(),
                                     currentBlock);
+          JITVerifyNull(obj);
           Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
                                     intrinsics->JavaObjectNullConstant, "");
 
@@ -720,7 +721,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         Value* index = pop();
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index,
-                                         intrinsics->JavaArrayObjectType);
+                                         intrinsics->JavaArrayObjectType, false);
         if (mvm::Collector::needsWriteBarrier()) {
           ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
           val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);

@@ -129,6 +129,9 @@ JavaObject* pd) {
   llvm_gcroot(excp, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
+  
+  // We need a name, which is unfortunately not required by the spec.
+  verifyNull(str);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
 

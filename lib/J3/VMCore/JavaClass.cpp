@@ -1717,7 +1717,7 @@ uint16 JavaMethod::lookupLineNumber(mvm::FrameInfo* info) {
       uint16_t currentLine = 0;
       for (uint16 j = 0; j < lineLength; ++j) {
         uint16 pc = reader.readU2();
-        if (pc > info->SourceIndex + 1) return currentLine;
+        if (pc > info->SourceIndex) return currentLine;
         currentLine = reader.readU2();
       }
       return currentLine;

@@ -1272,8 +1272,10 @@ void JavaJIT::JITVerifyNull(Value* obj) {
 }
 
 Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
-                                    Type* arrayType, bool verif) {
-  JITVerifyNull(obj);
+                                    Type* arrayType, bool doNullCheck) {
+  if (doNullCheck) {
+    JITVerifyNull(obj);
+  }
   
   if (index->getType() != Type::getInt32Ty(*llvmContext)) {
     index = new SExtInst(index, Type::getInt32Ty(*llvmContext), "", currentBlock);
@@ -1813,6 +1815,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   if (!stat) {
     object = new LoadInst(
         object, "", TheCompiler->useCooperativeGC(), currentBlock);
+    JITVerifyNull(object);
     Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
     Value* args[2] = { zero, ptr };
     ptr = GetElementPtrInst::Create(tmp, args, "", currentBlock);

@@ -220,7 +220,7 @@ private:
   /// throw an exception.
   llvm::Value* verifyAndComputePtr(llvm::Value* obj, llvm::Value* index,
                                    llvm::Type* arrayType,
-                                   bool verif = true);
+                                   bool doNullCheck = true);
 
   /// compareFP - Do float comparisons.
   void compareFP(llvm::Value*, llvm::Value*, llvm::Type*, bool l);
