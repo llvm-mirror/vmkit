@@ -47,7 +47,7 @@ int main(int argc, char **argv, char **envp) {
   // Run the application. 
   vm->runApplication(argc, argv);
   vm->waitForExit();
-  exit(0);
+  System::Exit(0);
 
   // Destroy everyone.
   // vm->~Jnjvm();

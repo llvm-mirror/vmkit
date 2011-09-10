@@ -203,6 +203,10 @@ public:
   static int GetNumberOfProcessors() {
     return sysconf(_SC_NPROCESSORS_ONLN);
   }
+
+  static void Exit(int value) {
+    _exit(value);
+  }
 };
 
 }

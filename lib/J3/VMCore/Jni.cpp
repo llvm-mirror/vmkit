@@ -146,6 +146,7 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   
   BEGIN_JNI_EXCEPTION
  
+  verifyNull(_Cl);
   // Local object references.
   JavaObject* Cl = *(JavaObject**)_Cl;
   JavaObject* res = 0;
@@ -156,7 +157,6 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
   
   Jnjvm* vm = JavaThread::get()->getJVM();
   
-  verifyNull(Cl);
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, true);
   if (!cl->isClass()) RETURN_FROM_JNI(0);
 
@@ -231,9 +231,9 @@ void DeleteLocalRef(JNIEnv *env, jobject localRef) {
 jboolean IsSameObject(JNIEnv *env, jobject ref1, jobject ref2) {
   
   BEGIN_JNI_EXCEPTION
-
-  JavaObject* Ref1 = *(JavaObject**)ref1;
-  JavaObject* Ref2 = *(JavaObject**)ref2;
+  
+  JavaObject* Ref1 = ref1 ? *(JavaObject**)ref1 : NULL;
+  JavaObject* Ref2 = ref2 ? *(JavaObject**)ref2 : NULL;
   llvm_gcroot(Ref1, 0);
   llvm_gcroot(Ref2, 0);
 
@@ -492,11 +492,29 @@ jobject CallObjectMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 }
 
 
-jobject CallObjectMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
+jobject CallObjectMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                           const jvalue * args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  JavaObject* res = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(res, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  res = meth->invokeJavaObjectVirtualBuf(vm, cl, obj, (void*)args);
+
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -551,11 +569,26 @@ jboolean CallBooleanMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 }
 
 
-jboolean CallBooleanMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
+jboolean CallBooleanMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                             const jvalue * args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  jboolean res = (jboolean)meth->invokeIntVirtualBuf(vm, cl, obj, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -588,11 +621,26 @@ jbyte CallByteMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 }
 
 
-jbyte CallByteMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
+jbyte CallByteMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                       const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  jbyte res = (jbyte)meth->invokeIntVirtualBuf(vm, cl, obj, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -626,11 +674,26 @@ jchar CallCharMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 }
 
 
-jchar CallCharMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
+jchar CallCharMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                       const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  jchar res = (jchar)meth->invokeIntVirtualBuf(vm, cl, obj, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -664,11 +727,26 @@ jshort CallShortMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 }
 
 
-jshort CallShortMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
+jshort CallShortMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                         const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  jshort res = (jshort)meth->invokeIntVirtualBuf(vm, cl, obj, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -726,9 +804,24 @@ jint CallIntMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 jint CallIntMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                     const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  jint res = (jint)meth->invokeIntVirtualBuf(vm, cl, obj, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -763,11 +856,26 @@ jlong CallLongMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 }
 
 
-jlong CallLongMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
+jlong CallLongMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                       const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  jlong res = (jlong)meth->invokeLongVirtualBuf(vm, cl, obj, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -822,9 +930,24 @@ jfloat CallFloatMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 jfloat CallFloatMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                         const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  jfloat res = (jfloat)meth->invokeFloatVirtualBuf(vm, cl, obj, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0.0f);
 }
 
 
@@ -879,9 +1002,24 @@ jdouble CallDoubleMethodV(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 jdouble CallDoubleMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
                           const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj)); 
+  jdouble res = (jdouble)meth->invokeDoubleVirtualBuf(vm, cl, obj, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  
+  RETURN_FROM_JNI(0.0);
 }
 
 
@@ -1679,11 +1817,27 @@ jobject CallStaticObjectMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 }
 
 
-jobject CallStaticObjectMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+jobject CallStaticObjectMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                                 const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  JavaObject* res = 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(res, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+
+  res = meth->invokeJavaObjectStaticBuf(vm, cl, (void*)args);
+
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1731,11 +1885,23 @@ jboolean CallStaticBooleanMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID
 }
 
 
-jboolean CallStaticBooleanMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+jboolean CallStaticBooleanMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                                   const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  jboolean res = (jboolean) meth->invokeIntStaticBuf(vm, cl, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1781,11 +1947,23 @@ jbyte CallStaticByteMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 }
 
 
-jbyte CallStaticByteMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+jbyte CallStaticByteMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                             const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  jbyte res = (jbyte) meth->invokeIntStaticBuf(vm, cl, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1833,9 +2011,21 @@ jchar CallStaticCharMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 
 jchar CallStaticCharMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                             const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  jchar res = (jchar) meth->invokeIntStaticBuf(vm, cl, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1883,11 +2073,23 @@ jshort CallStaticShortMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 }
 
 
-jshort CallStaticShortMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+jshort CallStaticShortMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                               const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  jshort res = (jshort) meth->invokeIntStaticBuf(vm, cl, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1934,11 +2136,23 @@ jint CallStaticIntMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 }
 
 
-jint CallStaticIntMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+jint CallStaticIntMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                           const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  jint res = (jint) meth->invokeIntStaticBuf(vm, cl, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -1986,11 +2200,23 @@ jlong CallStaticLongMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 }
 
 
-jlong CallStaticLongMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+jlong CallStaticLongMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                             const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  jlong res = (jlong) meth->invokeLongStaticBuf(vm, cl, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2040,11 +2266,23 @@ jfloat CallStaticFloatMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 }
 
 
-jfloat CallStaticFloatMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+jfloat CallStaticFloatMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                               const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  jfloat res = (jfloat) meth->invokeFloatStaticBuf(vm, cl, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2092,11 +2330,23 @@ jdouble CallStaticDoubleMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 }
 
 
-jdouble CallStaticDoubleMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+jdouble CallStaticDoubleMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                                 const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  jdouble res = (jdouble) meth->invokeDoubleStaticBuf(vm, cl, (void*)args);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -2147,10 +2397,24 @@ void CallStaticVoidMethodV(JNIEnv *env, jclass _clazz, jmethodID methodID,
 }
 
 
-void CallStaticVoidMethodA(JNIEnv *env, jclass clazz, jmethodID methodID,
+void CallStaticVoidMethodA(JNIEnv *env, jclass _clazz, jmethodID methodID,
                            const jvalue * args) {
-  fprintf(stderr, "Implement me\n");
-  abort();
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references.
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  llvm_gcroot(clazz, 0);
+  
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromStaticMethod(vm, meth, clazz); 
+  meth->invokeIntStaticBuf(vm, cl, (void*)args);
+
+  RETURN_VOID_FROM_JNI;
+
+  END_JNI_EXCEPTION
+  
+  RETURN_VOID_FROM_JNI;
 }
 
 
@@ -2461,10 +2725,17 @@ jstring NewString(JNIEnv *env, const jchar *buf, jsize len) {
 }
 
 
-jsize GetStringLength(JNIEnv *env, jstring str) {
-  fprintf(stderr, "Implement me\n");
-  abort();
-  return 0;
+jsize GetStringLength(JNIEnv *env, jstring _str) {
+  BEGIN_JNI_EXCEPTION
+  
+  // Local object references.
+  JavaString* str = *(JavaString**)_str;
+  llvm_gcroot(str, 0);
+
+  RETURN_FROM_JNI(str->count);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 

@@ -188,7 +188,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 jint par1) {
-  exit(par1);
+  mvm::System::Exit(par1);
 }
 
 JNIEXPORT jlong Java_java_lang_VMRuntime_freeMemory(

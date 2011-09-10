@@ -1193,6 +1193,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
       method->invokeIntStatic(this, method->classDef, &args);
     } else {
       fprintf(stderr, "Main method not public.\n");
+      mvm::System::Exit(1);
     }
   } CATCH {
   } END_CATCH;
@@ -1210,6 +1211,8 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
       fprintf(stderr, "Exception in thread \"main\": "
                       "Can not print stack trace.\n");
     } END_CATCH;
+    // Program failed. Exit with return code not 0.
+    mvm::System::Exit(1);
   }
 }
 
