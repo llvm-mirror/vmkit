@@ -110,6 +110,7 @@ void ZipArchive::findOfscd() {
           this->ofscd = readEndianDep4(reader);
           return;
         }
+        searchPtr--;
       }
     }
   }
