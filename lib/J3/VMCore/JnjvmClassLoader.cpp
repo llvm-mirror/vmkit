@@ -316,9 +316,8 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
     cl = JavaObjectClass::getClass(((JavaObjectClass*)obj));
   }
   
-  if (cl) {
-    assert(!cl->isArray());
-    if (doResolve) cl->asClass()->resolveClass();
+  if (cl && doResolve && cl->isClass()) {
+    cl->asClass()->resolveClass();
   }
 
   return (UserClass*)cl;

@@ -63,7 +63,7 @@ JavaObject* loader) {
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
   UserCommonClass* cl = JCL->loadClassFromJavaString(str, true, false);
 
-  if (cl != 0) {
+  if (cl != NULL && !cl->isPrimitive()) {
     if (clinit && cl->asClass()) {
       cl->asClass()->initialiseClass(vm);
     }

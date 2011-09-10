@@ -53,13 +53,13 @@ const int kWordSizeLog2 = kWordSize == 4 ? 2 : 3;
 
 
 
-#if MACOS_OS && ARCH_X64
-const intptr_t kThreadStart = 0x110000000LL;
-const intptr_t kThreadIDMask = 0xF7FF00000LL;
-const uintptr_t kMvmThreadMask = 0xFF0000000LL;
+#if ARCH_X64
+const intptr_t kThreadStart   = 0x0000000110000000LL;
+const intptr_t kThreadIDMask  = 0xFFFFFFFFFFF00000LL;
+const intptr_t kMvmThreadMask = 0xFFFFFFFFF0000000LL;
 #else
-const intptr_t kThreadStart = 0x10000000;
-const intptr_t kThreadIDMask = 0x7FF00000;
+const intptr_t kThreadStart   = 0x10000000;
+const intptr_t kThreadIDMask  = 0x7FF00000;
 const intptr_t kMvmThreadMask = 0xF0000000;
 #endif
 

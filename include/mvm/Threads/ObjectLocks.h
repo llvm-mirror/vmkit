@@ -163,10 +163,10 @@ public:
 
   static const uint64_t FatMask = 1LL << (kThreadStart > 0xFFFFFFFFLL ? 61LL : 31LL);
 
-  static const uint32_t NonLockBits = HashBits + GCBits;
+  static const uint64_t NonLockBits = HashBits + GCBits;
   static const uint64_t NonLockBitsMask = ((1LL << NonLockBits) - 1LL);
 
-  static const uint32_t ThinCountMask = ~((1 << 31) + kThreadIDMask + NonLockBitsMask);
+  static const uint64_t ThinCountMask = 0xFFFFFFFFLL & ~(FatMask | kThreadIDMask | NonLockBitsMask);
   static const uint64_t ThinCountShift = NonLockBits;
   static const uint64_t ThinCountAdd = 1LL << NonLockBits;
 

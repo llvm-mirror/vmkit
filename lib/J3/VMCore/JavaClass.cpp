@@ -1594,27 +1594,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
         // Put Cloneable[...] and Serializable[...] at the end of the list.
         secondaryTypes[index] = firstInterface->virtualVT;
         secondaryTypes[index + 1] = secondInterface->virtualVT;
-
-        // If the depth is greater than the display size, 
-        // Cloneable[...] and Serializable[...] have their own list of
-        // secondary types, and we must therefore tell them that they
-        // implement themselves.
-        // If the depth is less than than the display size, there is nothing
-        // to do: the array of secondary types has been created before loading
-        // the interface arrays, so the interface arrays already reference
-        // the array.
-        if (outOfDepth) {
-          firstInterface->virtualVT->secondaryTypes[index] =
-            firstInterface->virtualVT;
-          firstInterface->virtualVT->secondaryTypes[index + 1] =
-            secondInterface->virtualVT;
-          secondInterface->virtualVT->secondaryTypes[index] =
-            firstInterface->virtualVT;
-          secondInterface->virtualVT->secondaryTypes[index + 1] =
-            secondInterface->virtualVT;
-        }
       }
-
     } else {
       // This is java.lang.Object[].
       depth = 1;

@@ -260,6 +260,12 @@ JavaObject* arrayType, jint arrayLength) {
     UserCommonClass::resolvedImplClass(vm, arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
+  // -1 because we're adding a new dimension in this method.
+  const int kLimit = 255 - 1;
+  const uint16* elements = name->elements;
+  if (name->size > kLimit && elements[kLimit] == '[') {
+    vm->illegalArgumentException("Too many dimensions for array");
+  }
   const UTF8* arrayName = loader->constructArrayName(1, name);
   UserClassArray* array = loader->constructArray(arrayName, base);
   res = array->doNew(arrayLength, vm);

@@ -12,8 +12,8 @@
 
 namespace mvm {
 
-extern "C" const UTF8 TombstoneKey(0);
-extern "C" const UTF8 EmptyKey(0);
+extern "C" const UTF8 TombstoneKey(-1);
+extern "C" const UTF8 EmptyKey(-1);
 
 
 const UTF8* UTF8::extract(UTF8Map* map, uint32 start, uint32 end) const {
