@@ -103,6 +103,7 @@ public:
   ISOLATE_STATIC UserClass*  newDirectByteBuffer;
   ISOLATE_STATIC JavaMethod* InitDirectByteBuffer;
   ISOLATE_STATIC JavaField*  vmdataClassLoader;
+  ISOLATE_STATIC UserClass*  enumClass;
 
   ISOLATE_STATIC JavaField* boolValue;
   ISOLATE_STATIC JavaField* byteValue;
@@ -263,6 +264,8 @@ public:
   
   ISOLATE_STATIC JavaMethod* EnqueueReference;
   ISOLATE_STATIC Class*      newReference;
+
+  ISOLATE_STATIC UserClass*  EnumClass;
 
 private:
   ISOLATE_STATIC void CreateJavaThread(Jnjvm* vm, JavaThread* myth,

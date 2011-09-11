@@ -190,6 +190,7 @@ JavaMethod* Classpath::IntToString;
 JavaMethod* Classpath::SystemArraycopy;
 JavaMethod* Classpath::VMSystemArraycopy;
 Class*      Classpath::SystemClass;
+Class*      Classpath::EnumClass;
 
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
 JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
@@ -838,6 +839,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                                   ACC_STATIC);
   
   SystemClass = UPCALL_CLASS(loader, "java/lang/System");
+  EnumClass = UPCALL_CLASS(loader, "java/lang/Enum");
 
   newThread = 
     UPCALL_CLASS(loader, "java/lang/Thread");

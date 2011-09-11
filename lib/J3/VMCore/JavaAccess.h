@@ -32,10 +32,11 @@ namespace j3 {
 #define ACC_ABSTRACT     0x0400
 #define ACC_STRICT       0x0800
 #define ACC_SYNTHETIC    0x1000
+#define ACC_ENUM         0x4000
 
-#define JNJVM_CLASS      0x1000
-#define JNJVM_ARRAY      0x2000
-#define JNJVM_PRIMITIVE  0x4000
+#define JNJVM_CLASS      0x10000
+#define JNJVM_ARRAY      0x20000
+#define JNJVM_PRIMITIVE  0x40000
 
 #define MK_VERIFIER(name, flag)                   \
   inline bool name(unsigned int param) {          \
@@ -53,6 +54,7 @@ MK_VERIFIER(isProtected,  ACC_PROTECTED)
 MK_VERIFIER(isFinal,      ACC_FINAL)
 MK_VERIFIER(isSuper,      ACC_SUPER)
 MK_VERIFIER(isSynthetic,  ACC_SYNTHETIC)
+MK_VERIFIER(isEnum,       ACC_ENUM)
 
 
 inline bool isVirtual(unsigned int param) {

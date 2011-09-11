@@ -168,13 +168,8 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       exc = th->getJavaException();                                            \
     } END_CATCH;                                                               \
     if (exc) {                                                                 \
-      if (JavaObject::getClass(exc)->isAssignableFrom(                         \
-              vm->upcalls->newException)) {                                    \
-        th->clearException();                                                  \
-        th->getJVM()->invocationTargetException(exc);                          \
-      } else {                                                                 \
-        th->throwPendingException();                                           \
-      }                                                                        \
+      th->clearException();                                                    \
+      th->getJVM()->invocationTargetException(exc);                            \
       return NULL;                                                             \
     }
     

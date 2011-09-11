@@ -896,7 +896,7 @@ Constant* JavaAOTCompiler::CreateConstantFromCommonClass(CommonClass* cl) {
   CommonClassElts.push_back(ConstantArray::get(ATy, TCM));
   
   // access
-  CommonClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->access));
+  CommonClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), cl->access));
  
   // interfaces
   if (cl->nbInterfaces) {

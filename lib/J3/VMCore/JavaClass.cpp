@@ -884,7 +884,7 @@ void Class::readClass() {
   uint32 ctpSize = reader.readU2();
   ctpInfo = new(classLoader->allocator, ctpSize) JavaConstantPool(this, reader,
                                                                   ctpSize);
-  access |= (reader.readU2() & 0x0FFF);
+  access |= reader.readU2();
   
   if (!isPublic(access)) access |= ACC_PRIVATE;
 
@@ -1559,7 +1559,14 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
         } else {
           // If the super is not a secondary type and the base class does not
           // implement any interface, we can reuse the list of secondary types
-          // of super.
+          // of super. If the base class is a primitive, the array class shares
+          // the same secondary types than the super of the current superVT
+          // (eg Object[][] for int[][]).
+          if (base->isPrimitive()) {
+            const UTF8* superName = JCL->constructArrayName(dim + 1, C->super->name);
+            super = JCL->constructArray(superName);
+            superVT = super->virtualVT;
+          }
           nbSecondaryTypes = superVT->nbSecondaryTypes;
           secondaryTypes = superVT->secondaryTypes;
         }

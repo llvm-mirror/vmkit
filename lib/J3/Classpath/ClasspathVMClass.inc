@@ -216,6 +216,11 @@ jboolean ignore) {
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
   res = cl->getAccess();
 
+  if (isEnum(res) && cl->getSuper() != vm->upcalls->EnumClass) {
+    // javac may put that flag to inner classes of enum classes. 
+    res &= ~ACC_ENUM;
+  }
+
   END_NATIVE_EXCEPTION
   return res;
 }

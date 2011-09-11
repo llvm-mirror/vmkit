@@ -174,7 +174,7 @@ public:
 
   /// access - {public, private, protected}.
   ///
-  uint16 access;
+  uint32 access;
   
   /// interfaces - The interfaces this class implements.
   ///
@@ -209,7 +209,7 @@ public:
   }
 
   // Assessor methods.
-  uint32 getAccess() const      { return access; }
+  uint32 getAccess() const      { return access & 0xFFFF; }
   Class** getInterfaces() const { return interfaces; }
   const UTF8* getName() const   { return name; }
   Class* getSuper() const       { return super; }
