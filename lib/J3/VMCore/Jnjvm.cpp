@@ -506,7 +506,7 @@ JavaString* CreateNoSuchMsg(CommonClass* cl, const UTF8* name,
       ArrayUInt16::setElement(msg, '.', i);
       i++;
     } else {
-      ArrayUInt16::setElement(msg, cl->name->elements[i], i);
+      ArrayUInt16::setElement(msg, cl->name->elements[j], i);
       i++;
     }
   }
@@ -1166,12 +1166,12 @@ void Jnjvm::loadBootstrap() {
 void Jnjvm::executeClass(const char* className, ArrayObject* args) {
   JavaObject* exc = NULL;
   JavaObject* obj = NULL;
-  JavaObject* group = NULL;
+  JavaObject* handler = NULL;
   
   llvm_gcroot(args, 0);
   llvm_gcroot(exc, 0);
   llvm_gcroot(obj, 0);
-  llvm_gcroot(group, 0);
+  llvm_gcroot(handler, 0);
 
   TRY {
     // First try to see if we are a self-contained executable.
@@ -1203,10 +1203,10 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
     JavaThread* th = JavaThread::get();
     th->clearException();
     obj = th->currentThread();
-    group = upcalls->group->getInstanceObjectField(obj);
     TRY {
-      upcalls->uncaughtException->invokeIntSpecial(this, upcalls->threadGroup,
-                                                   group, &obj, &exc);
+      handler = upcalls->getUncaughtExceptionHandler->invokeJavaObjectVirtual(this, upcalls->newThread, obj);
+      verifyNull(handler);
+      upcalls->uncaughtException->invokeIntVirtual(this, upcalls->uncaughtException->classDef, handler, &obj, &exc);
     } CATCH {
       fprintf(stderr, "Exception in thread \"main\": "
                       "Can not print stack trace.\n");

@@ -137,6 +137,7 @@ public:
   ISOLATE_STATIC JavaField* assocThread;
   ISOLATE_STATIC JavaField* vmdataVMThread;
   ISOLATE_STATIC JavaMethod* finaliseCreateInitialThread;
+  ISOLATE_STATIC JavaMethod* initThread;
   ISOLATE_STATIC JavaMethod* initVMThread;
   ISOLATE_STATIC JavaMethod* runVMThread;
   ISOLATE_STATIC JavaMethod* groupAddThread;
@@ -150,6 +151,7 @@ public:
   ISOLATE_STATIC UserClass* threadGroup;
   ISOLATE_STATIC JavaField* rootGroup;
   ISOLATE_STATIC JavaField* vmThread;
+  ISOLATE_STATIC JavaMethod* getUncaughtExceptionHandler;
   ISOLATE_STATIC JavaMethod* uncaughtException;
   ISOLATE_STATIC UserClass*  inheritableThreadLocal;
   

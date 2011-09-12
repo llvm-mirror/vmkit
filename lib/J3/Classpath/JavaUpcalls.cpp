@@ -37,6 +37,7 @@ JavaField*  Classpath::assocThread;
 JavaField*  Classpath::vmdataVMThread;
 JavaMethod* Classpath::finaliseCreateInitialThread;
 JavaMethod* Classpath::initVMThread;
+JavaMethod* Classpath::initThread;
 JavaMethod* Classpath::groupAddThread;
 JavaField*  Classpath::threadName;
 JavaField*  Classpath::groupName;
@@ -48,6 +49,7 @@ JavaField*  Classpath::running;
 Class*      Classpath::threadGroup;
 JavaField*  Classpath::rootGroup;
 JavaField*  Classpath::vmThread;
+JavaMethod* Classpath::getUncaughtExceptionHandler;
 JavaMethod* Classpath::uncaughtException;
 Class*      Classpath::inheritableThreadLocal;
 
@@ -240,10 +242,8 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   myth->javaThread = th;
   vmth = (JavaObjectVMThread*)newVMThread->doNew(vm);
   name = vm->asciizToStr(thName);
-  
-  threadName->setInstanceObjectField(th, name);
-  priority->setInstanceInt32Field(th, (uint32)1);
-  daemon->setInstanceInt8Field(th, (uint32)0);
+
+  initThread->invokeIntSpecial(vm, newThread, th, &vmth, &name, 1, 0); 
   vmThread->setInstanceObjectField(th, vmth);
   assocThread->setInstanceObjectField(vmth, th);
   running->setInstanceInt8Field(vmth, (uint32)1);
@@ -862,6 +862,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/InheritableThreadLocal", "newChildThread",
                   "(Ljava/lang/Thread;)V", ACC_STATIC);
   
+  initThread = 
+    UPCALL_METHOD(loader, "java/lang/Thread", "<init>",
+                  "(Ljava/lang/VMThread;Ljava/lang/String;IZ)V", ACC_VIRTUAL);
+  
   initVMThread = 
     UPCALL_METHOD(loader, "java/lang/VMThread", "<init>",
                   "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
@@ -911,8 +915,13 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_FIELD(loader, "java/lang/Thread", "vmThread",
                  "Ljava/lang/VMThread;", ACC_VIRTUAL);
   
+  getUncaughtExceptionHandler = 
+    UPCALL_METHOD(loader, "java/lang/Thread", "getUncaughtExceptionHandler",
+                  "()Ljava/lang/Thread$UncaughtExceptionHandler;", ACC_VIRTUAL);
+  
   uncaughtException = 
-    UPCALL_METHOD(loader, "java/lang/ThreadGroup",  "uncaughtException",
+    UPCALL_METHOD(loader, "java/lang/Thread$UncaughtExceptionHandler",
+                  "uncaughtException",
                   "(Ljava/lang/Thread;Ljava/lang/Throwable;)V", ACC_VIRTUAL);
 
   

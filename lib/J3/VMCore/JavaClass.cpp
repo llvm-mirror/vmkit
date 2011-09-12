@@ -247,7 +247,8 @@ ClassArray::ClassArray(JnjvmClassLoader* loader, const UTF8* n,
   uint32 size = JavaVirtualTable::getBaseSize();
   virtualVT = new(loader->allocator, size) JavaVirtualTable(this);
   
-  access = ACC_FINAL | ACC_ABSTRACT | ACC_PUBLIC | JNJVM_ARRAY;
+  access = ACC_FINAL | ACC_ABSTRACT | JNJVM_ARRAY | base->getAccess();
+  access &= ~ACC_INTERFACE;
 }
 
 JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {

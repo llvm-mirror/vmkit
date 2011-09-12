@@ -217,7 +217,28 @@ void JavaJITCompiler::makeVT(Class* cl) {
 }
 
 extern "C" void ThrowUnfoundInterface() {
-  abort();
+  JavaThread *th = JavaThread::get();
+
+  BEGIN_NATIVE_EXCEPTION(1);
+
+  // Lookup the caller of this class.
+  mvm::StackWalker Walker(th);
+  mvm::FrameInfo* FI = Walker.get();
+  assert(FI->Metadata != NULL && "Wrong stack trace");
+  JavaMethod* meth = (JavaMethod*)FI->Metadata;
+
+  // Lookup the method info in the constant pool of the caller.
+  uint16 ctpIndex = meth->lookupCtpIndex(FI);
+  assert(ctpIndex && "No constant pool index");
+  JavaConstantPool* ctpInfo = meth->classDef->getConstantPool();
+  CommonClass* ctpCl = 0;
+  const UTF8* utf8 = 0;
+  Signdef* sign = 0;
+  ctpInfo->resolveMethod(ctpIndex, ctpCl, utf8, sign);
+
+  JavaThread::get()->getJVM()->abstractMethodError(ctpCl, utf8);
+
+  END_NATIVE_EXCEPTION
 }
 
 void JavaJITCompiler::makeIMT(Class* cl) {

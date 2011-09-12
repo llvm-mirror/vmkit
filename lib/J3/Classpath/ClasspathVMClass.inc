@@ -168,6 +168,7 @@ jboolean publicOnly) {
       JavaMethod* meth = &realCl->virtualMethods[i];
       bool pub = isPublic(meth->access);
       if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
+          !(meth->name->equals(classLoader->bootstrapLoader->clinitName)) && 
           (!publicOnly || pub)) {
         ++size; 
       }
@@ -182,6 +183,7 @@ jboolean publicOnly) {
       JavaMethod* meth = &realCl->virtualMethods[i];
       bool pub = isPublic(meth->access);
       if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
+          !(meth->name->equals(classLoader->bootstrapLoader->clinitName)) && 
           (!publicOnly || pub)) {
         // TODO: check parameter types
         UserClass* Meth = vm->upcalls->newMethod;

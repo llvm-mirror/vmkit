@@ -579,6 +579,10 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
   JavaMethod* Virt = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
 
+  if (isAbstract(Virt->access)) {
+    JavaThread::get()->getJVM()->abstractMethodError(Virt->classDef, Virt->name);
+  }
+
   // Compile the found method.
   result = Virt->compiledPtr();
 
@@ -677,6 +681,9 @@ extern "C" void* j3ResolveSpecialStub() {
   
   if (!callee) {
     th->getJVM()->noSuchMethodError(lookup, utf8);
+  }
+  if (isAbstract(callee->access)) {
+    JavaThread::get()->getJVM()->abstractMethodError(callee->classDef, callee->name);
   }
 
   // Compile the found method.
