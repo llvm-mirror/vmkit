@@ -1176,6 +1176,8 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case ISHL : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
+        Value* mask = ConstantInt::get(Type::getInt32Ty(*llvmContext), 0x1F);
+        val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         push(BinaryOperator::CreateShl(val1, val2, "", currentBlock),
              false);
         break;
@@ -1194,6 +1196,8 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case ISHR : {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
+        Value* mask = ConstantInt::get(Type::getInt32Ty(*llvmContext), 0x1F);
+        val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         push(BinaryOperator::CreateAShr(val1, val2, "", currentBlock),
              false);
         break;
