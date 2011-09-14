@@ -334,8 +334,6 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 
 
 /// start - Called by the creator of the thread to run the new thread.
-/// The thread is in a detached state, because each virtual machine has
-/// its own way of waiting for created threads.
 int Thread::start(void (*fct)(mvm::Thread*)) {
   pthread_attr_t attributs;
   pthread_attr_init(&attributs);
@@ -346,7 +344,6 @@ int Thread::start(void (*fct)(mvm::Thread*)) {
   MyVM->addThread(this);
   int res = pthread_create((pthread_t*)(void*)(&internalThreadID), &attributs,
                            (void* (*)(void *))internalThreadStart, this);
-  pthread_detach((pthread_t)internalThreadID);
   pthread_attr_destroy(&attributs);
   return res;
 }
