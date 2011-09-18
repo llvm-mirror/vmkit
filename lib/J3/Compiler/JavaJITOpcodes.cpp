@@ -3314,9 +3314,20 @@ bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
         break;
       }
 
-      case INVOKEVIRTUAL :
+      case INVOKEVIRTUAL : {
+        if (isStatic(compilingMethod->access)) return false;
+        uint16 index = reader.readU2();
+        CommonClass* cl = NULL;
+        JavaMethod* meth = NULL;
+        ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
         i += 2;
-        return false;
+        if (meth == NULL) return false;
+        if (getReceiver(stack, meth->getSignature()) != ALOAD_0) return false;
+        if (!(isFinal(cl->access) || isFinal(meth->access))) return false;
+        if (!canBeInlined(meth)) return false;
+        updateStack(stack, meth->getSignature(), bytecode);
+        break;
+      }
 
       case INVOKESPECIAL : {
         if (isStatic(compilingMethod->access)) return false;
