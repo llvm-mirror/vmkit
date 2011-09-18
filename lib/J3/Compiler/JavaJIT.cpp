@@ -44,7 +44,7 @@
 using namespace j3;
 using namespace llvm;
 
-static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
+bool JavaJIT::needsInitialisationCheck(Class* cl) {
   if (cl->isReadyForCompilation() || 
       (!cl->isInterface() && compilingClass->isAssignableFrom(cl))) {
     return false;
@@ -61,11 +61,29 @@ static bool needsInitialisationCheck(Class* cl, Class* compilingClass) {
 }
 
 bool JavaJIT::canBeInlined(JavaMethod* meth) {
-  JnjvmClassLoader* loader = meth->classDef->classLoader;
-  return (meth->canBeInlined &&
-          meth != compilingMethod && inlineMethods[meth] == 0 &&
-          (loader == compilingClass->classLoader ||
-           loader == compilingClass->classLoader->bootstrapLoader));
+  if (inlineMethods[meth]) return false;
+  if (isSynchro(meth->access)) return false;
+  if (isNative(meth->access)) return false;
+
+  Attribut* codeAtt = meth->lookupAttribut(Attribut::codeAttribut);
+  if (codeAtt == NULL) return false;
+
+  Reader reader(codeAtt, meth->classDef->bytes);
+  /* uint16 maxStack = */ reader.readU2();
+  /* uint16 maxLocals = */ reader.readU2();
+  uint32 codeLen = reader.readU4();
+  uint32 start = reader.cursor; 
+  reader.seek(codeLen, Reader::SeekCur);
+  uint16 nbHandlers = reader.readU2();
+  if (nbHandlers != 0) return false;
+  reader.cursor = start;
+
+  JavaJIT jit(TheCompiler, meth, llvmFunction);
+  jit.inlineMethods = inlineMethods;
+  jit.inlineMethods[meth] = true;
+  if (!jit.analyzeForInlining(reader, codeLen)) return false;
+  jit.inlineMethods[meth] = false;
+  return true;
 }
 
 void JavaJIT::invokeVirtual(uint16 index) {
@@ -119,7 +137,11 @@ void JavaJIT::invokeVirtual(uint16 index) {
   llvm::Type* retType = virtualType->getReturnType();
 
   bool needsInit = false;
-  if (canBeDirect && meth && !TheCompiler->needsCallback(meth, &needsInit)) {
+  if (canBeDirect && canBeInlined(meth)) {
+    makeArgs(it, index, args, signature->nbArguments + 1);
+    JITVerifyNull(args[0]);
+    val = invokeInline(meth, args);
+  } else if (canBeDirect && !TheCompiler->needsCallback(meth, &needsInit)) {
     makeArgs(it, index, args, signature->nbArguments + 1);
     JITVerifyNull(args[0]);
     val = invoke(TheCompiler->getMethod(meth), args, "", currentBlock);
@@ -707,35 +729,18 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
 Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
                                     std::vector<Value*>& args) {
-  DbgSubprogram = TheCompiler->GetDbgSubprogram(compilingMethod);
-
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "inline compile %s.%s\n",
-              UTF8Buffer(compilingClass->name).cString(),
-              UTF8Buffer(compilingMethod->name).cString());
-  
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
-  
-  if (!codeAtt) {
-    fprintf(stderr, "I haven't verified your class file and it's malformed:"
-                    " no code attribut found for %s.%s!\n",
-                    UTF8Buffer(compilingClass->name).cString(),
-                    UTF8Buffer(compilingMethod->name).cString());
-    abort();
-  }
-
   Reader reader(codeAtt, compilingClass->bytes);
   uint16 maxStack = reader.readU2();
   uint16 maxLocals = reader.readU2();
   uint32 codeLen = reader.readU4();
-  uint32 start = reader.cursor;
-  
+  uint32 start = reader.cursor; 
   reader.seek(codeLen, Reader::SeekCur);
   
-  LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(compilingMethod);
-  assert(LMI);
-  Function* func = LMI->getMethod();
+  LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(
+      compilingMethod->getSignature()->getReturnType());
+  Type* returnType = LAI.llvmType;
 
-  Type* returnType = func->getReturnType();
   endBlock = createBasicBlock("end");
 
   currentBlock = curBB;
@@ -888,7 +893,6 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
 
   delete[] opcodeInfos;
   return endNode;
-    
 }
 
 llvm::Function* JavaJIT::javaCompile() {
@@ -1157,11 +1161,7 @@ llvm::Function* JavaJIT::javaCompile() {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
-  
-  if (codeLen < 5 && !callsStackWalker && !TheCompiler->isStaticCompiling()) {
-    compilingMethod->canBeInlined = false;
-  }
-  
+   
   Attribut* annotationsAtt =
     compilingMethod->lookupAttribut(Attribut::annotationsAttribut);
   
@@ -1486,6 +1486,17 @@ Instruction* JavaJIT::invokeInline(JavaMethod* meth,
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
   jit.inlining = true;
+  jit.DbgSubprogram = DbgSubprogram;
+#if DEBUG
+  static int inlineNb = 0;
+  fprintf(stderr, "inline compile %d %s.%s%s from %s.%s\n", inlineNb++,
+              UTF8Buffer(meth->classDef->name).cString(),
+              UTF8Buffer(meth->name).cString(),
+              UTF8Buffer(meth->getSignature()->keyName).cString(),
+              UTF8Buffer(compilingClass->name).cString(),
+              UTF8Buffer(compilingMethod->name).cString());
+#endif
+  
   Instruction* ret = jit.inlineCompile(currentBlock, 
                                        currentExceptionBlock, args);
   inlineMethods[meth] = false;
@@ -1577,7 +1588,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
   UserClass* cl = 0;
   Value* Cl = getResolvedClass(clIndex, true, true, &cl);
-  if (!meth || (cl && needsInitialisationCheck(cl, compilingClass))) {
+  if (!meth || (cl && needsInitialisationCheck(cl))) {
     CallInst::Create(intrinsics->ForceInitialisationCheckFunction, Cl, "",
                      currentBlock);
   }
@@ -1701,7 +1712,7 @@ Value* JavaJIT::getResolvedClass(uint16 index, bool clinit, bool doThrow,
   if (cl && cl->isResolved()) {
     if (alreadyResolved) (*alreadyResolved) = cl;
     node = TheCompiler->getNativeClass(cl);
-    needsInit = needsInitialisationCheck(cl, compilingClass);
+    needsInit = needsInitialisationCheck(cl);
   } else {
     node = getConstantPoolAt(index, intrinsics->ClassLookupFunction,
                              intrinsics->JavaClassType, 0, doThrow);
@@ -1732,7 +1743,7 @@ void JavaJIT::invokeNew(uint16 index) {
     LLVMClassInfo* LCI = TheCompiler->getClassInfo(cl);
     Size = LCI->getVirtualSize();
     
-    bool needsCheck = needsInitialisationCheck(cl, compilingClass);
+    bool needsCheck = needsInitialisationCheck(cl);
     if (needsCheck) {
       Cl = invoke(intrinsics->ForceInitialisationCheckFunction, Cl, "",
                   currentBlock);
@@ -1773,8 +1784,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     if (stat) {
       type = LCI->getStaticType();
       Value* Cl = TheCompiler->getNativeClass(field->classDef);
-      bool needsCheck = needsInitialisationCheck(field->classDef,
-                                                 compilingClass);
+      bool needsCheck = needsInitialisationCheck(field->classDef);
       if (needsCheck) {
         Cl = invoke(intrinsics->InitialisationCheckFunction, Cl, "",
                     currentBlock);
@@ -2434,6 +2444,7 @@ DebugLoc JavaJIT::CreateLocation() {
 Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
                        const char* Name,
                        BasicBlock *InsertAtEnd) {
+  assert(!inlining);
   
   Instruction* res = CallInst::Create(F, args, Name, InsertAtEnd);
   DebugLoc DL = CreateLocation();
@@ -2487,6 +2498,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
 
 Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
                        BasicBlock *InsertAtEnd) {
+  assert(!inlining);
 
   Instruction* res = CallInst::Create(F, arg1, Name, InsertAtEnd);
   DebugLoc DL = CreateLocation();
@@ -2532,6 +2544,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
 
 Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
                        const char* Name, BasicBlock *InsertAtEnd) {
+  assert(!inlining);
 
   Value* args[2] = { arg1, arg2 };
   
@@ -2579,6 +2592,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
 
 Instruction* JavaJIT::invoke(Value *F, const char* Name,
                        BasicBlock *InsertAtEnd) {
+  assert(!inlining);
   Instruction* res = llvm::CallInst::Create(F, Name, InsertAtEnd);
   DebugLoc DL = CreateLocation();
   res->setDebugLoc(DL);

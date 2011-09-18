@@ -2178,6 +2178,8 @@ void mainCompilerStart(JavaThread* th) {
               Function* F = M->getMethod(&cl->virtualMethods[i]);
               M->setMethod(F, ptr, F->getName().data());
               cl->virtualMethods[i].compiledPtr();
+              // Set native so that we don't try to inline it.
+              cl->virtualMethods[i].setNative();
             }
           }
 
@@ -2186,6 +2188,8 @@ void mainCompilerStart(JavaThread* th) {
               Function* F = M->getMethod(&cl->staticMethods[i]);
               M->setMethod(F, ptr, F->getName().data());
               cl->staticMethods[i].compiledPtr();
+              // Set native so that we don't try to inline it.
+              cl->staticMethods[i].setNative();
             }
           }
         }
@@ -2372,7 +2376,7 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     gv->setInitializer(CreateConstantFromVT(VT));
   }
 
-  // Finally add used stubs to the image.
+  // Add used stubs to the image.
   for (SignMap::iterator i = loader->javaSignatures->map.begin(),
        e = loader->javaSignatures->map.end(); i != e; i++) {
     Signdef* signature = i->second;
@@ -2400,7 +2404,7 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     }
   }
 
-  // Finally emit the stub for the main signature.
+  // Emit the stub for the main signature.
   Signdef* mainSignature =
     loader->constructSign(loader->asciizConstructUTF8("([Ljava/lang/String;)V"));
   getSignatureInfo(mainSignature)->getStaticBuf();
@@ -2410,6 +2414,13 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
 
   // Emit the UTF8 map.
   CreateConstantFromUTF8Map(loader->hashUTF8->map);
+
+  // Check that we have compiled everything.
+  for (Module::iterator I = TheModule->begin(), E = TheModule->end();
+       I != E;
+       I++) {
+    assert(!I->hasExternalWeakLinkage());
+  }
 }
 
 void JavaAOTCompiler::generateClassBytes(JnjvmBootstrapLoader* loader) {

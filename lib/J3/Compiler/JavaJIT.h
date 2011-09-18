@@ -157,7 +157,8 @@ private:
 
   /// getJavaExceptionPtr - Emit code to get a pointer to the Java pending exception
 	llvm::Value* getJavaExceptionPtr(llvm::Value* javaThreadPtr);
-	
+
+  bool needsInitialisationCheck(Class* cl);  
 
 //===------------------------- Debugging support --------------------------===//
   
@@ -193,7 +194,9 @@ private:
   /// then this method can not be inlined.
   bool callsStackWalker;
 
-  
+  bool analyzeForInlining(Reader& reader, uint32_t codeLength);
+  bool canInlineLoadConstant(uint16 index);
+
 //===------------------------- Bytecode parsing ---------------------------===//
 
   /// compileOpcodes - Parse the bytecode and create LLVM instructions.

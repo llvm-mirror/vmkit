@@ -36,9 +36,7 @@
 
 #include "j3/J3Intrinsics.h"
 
-#if DEBUG > 0 && (JNJVM_COMPILE > 0 || JNJVM_EXECUTE > 0)
 #include "j3/OpcodeNames.def"
-#endif
 
 using namespace j3;
 using namespace llvm;
@@ -2727,4 +2725,680 @@ void JavaJIT::exploreOpcodes(Reader& reader, uint32 codeLength) {
       }
     }
   }
+}
+
+bool JavaJIT::canInlineLoadConstant(uint16 index) {
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
+  uint8 type = ctpInfo->typeAt(index);
+  if (type == JavaConstantPool::ConstantString
+      || type == JavaConstantPool::ConstantClass) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+static uint8 getReceiver(const std::vector<uint8>& stack, Signdef* signature) {
+  uint32_t index = stack.size() - 1;
+  Typedef* const* arguments = signature->getArgumentsType();
+  for (uint32 i = 0; i < signature->nbArguments; i++) {
+    index--;
+    if (arguments[i]->isDouble() || arguments[i]->isLong()) {
+      index--;
+    }
+  }
+  return stack[index];
+}
+
+static void updateStack(std::vector<uint8>& stack, Signdef* signature, uint8 bytecode) {
+  Typedef* const* arguments = signature->getArgumentsType();
+  if (bytecode != INVOKESTATIC) {
+    stack.pop_back();
+  }
+  for (uint32 i = 0; i < signature->nbArguments; i++) {
+    stack.pop_back();
+    if (arguments[i]->isDouble() || arguments[i]->isLong()) {
+      stack.pop_back();
+    }
+  }
+  if (!signature->getReturnType()->isVoid()) {
+    stack.push_back(bytecode);
+    if (signature->getReturnType()->isLong()
+        || signature->getReturnType()->isDouble()) {
+      stack.push_back(bytecode);
+    }
+  }
+}
+
+bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
+  JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
+  bool wide = false;
+  uint32 start = reader.cursor;
+  std::vector<uint8_t> stack;
+  for(uint32 i = 0; i < codeLength; ++i) {
+    reader.cursor = start + i;
+    uint8 bytecode = reader.readU1();
+    
+    switch (bytecode) { 
+      case NOP :
+        break;
+
+      case ACONST_NULL :
+      case ICONST_M1 :
+      case ICONST_0 :
+      case ICONST_1 :
+      case ICONST_2 :
+      case ICONST_3 :
+      case ICONST_4 :
+      case ICONST_5 :
+      case FCONST_0 :
+      case FCONST_1 : 
+      case FCONST_2 :
+        stack.push_back(bytecode);
+        break;
+
+      case LCONST_0 :
+      case LCONST_1 :
+      case DCONST_0 :
+      case DCONST_1 :
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        break;
+
+      case BIPUSH :
+        ++i;
+        stack.push_back(bytecode);
+        break;
+      
+      case SIPUSH :
+        i += 2;
+        stack.push_back(bytecode);
+        break;
+      
+      case LDC :
+        i++;
+        stack.push_back(bytecode);
+        if (!canInlineLoadConstant(reader.readU1())) return false;
+        break;
+
+      case LDC_W :
+        i += 2;
+        stack.push_back(bytecode);
+        if (!canInlineLoadConstant(reader.readS2())) return false;
+        break;
+      
+
+      case LDC2_W :
+        i += 2;
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        if (!canInlineLoadConstant(reader.readS2())) return false;
+        break;
+      
+      case ILOAD :
+      case FLOAD :
+      case ALOAD :
+        i += WCALC(1, wide);
+        stack.push_back(bytecode);
+        break;
+
+      case LLOAD :
+      case DLOAD :
+        i += WCALC(1, wide);
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        break;
+      
+      case ILOAD_0 :
+      case ILOAD_1 :
+      case ILOAD_2 :
+      case ILOAD_3 :
+      case FLOAD_0 :
+      case FLOAD_1 :
+      case FLOAD_2 :
+      case FLOAD_3 :
+      case ALOAD_0 :
+      case ALOAD_1 :
+      case ALOAD_2 :
+      case ALOAD_3 :
+        stack.push_back(bytecode);
+        break;
+
+      case LLOAD_0 :
+      case LLOAD_1 :
+      case LLOAD_2 :
+      case LLOAD_3 :
+      case DLOAD_0 :
+      case DLOAD_1 :
+      case DLOAD_2 :
+      case DLOAD_3 :
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        break;
+
+      case IALOAD :
+      case FALOAD :
+      case AALOAD :
+      case BALOAD :
+      case CALOAD :
+      case SALOAD :
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        return false;
+
+      case LALOAD :
+      case DALOAD :
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        return false;
+
+      case ISTORE :
+      case FSTORE :
+      case ASTORE :
+        stack.pop_back();
+        i += WCALC(1, wide);
+        break;
+
+      case LSTORE :
+      case DSTORE :
+        stack.pop_back();
+        stack.pop_back();
+        i += WCALC(1, wide);
+        break;
+      
+      case ISTORE_0 :
+      case ISTORE_1 :
+      case ISTORE_2 :
+      case ISTORE_3 :
+      case FSTORE_0 :
+      case FSTORE_1 :
+      case FSTORE_2 :
+      case FSTORE_3 :
+      case ASTORE_0 :
+      case ASTORE_1 :
+      case ASTORE_2 :
+      case ASTORE_3 :
+        stack.pop_back();
+        break;
+
+      case DSTORE_0 :
+      case DSTORE_1 :
+      case DSTORE_2 :
+      case DSTORE_3 :
+      case LSTORE_0 :
+      case LSTORE_1 :
+      case LSTORE_2 :
+      case LSTORE_3 :
+        stack.pop_back();
+        stack.pop_back();
+        break;
+
+      case IASTORE :
+      case FASTORE :
+      case AASTORE :
+      case BASTORE :
+      case CASTORE :
+      case SASTORE :
+        stack.pop_back();
+        stack.pop_back();
+        stack.pop_back();
+        return false;
+
+      case LASTORE :
+      case DASTORE :
+        stack.pop_back();
+        stack.pop_back();
+        stack.pop_back();
+        stack.pop_back();
+        return false;
+
+      case POP :
+        stack.pop_back();
+        break;
+
+      case POP2 :
+        stack.pop_back();
+        stack.pop_back();
+        break;
+
+      case DUP :
+        stack.push_back(stack.back());
+        break;
+
+      case DUP_X1 : {
+        uint8 one = stack.back(); stack.pop_back();
+        uint8 two = stack.back(); stack.pop_back();
+        
+        stack.push_back(one);
+        stack.push_back(two);
+        stack.push_back(one);
+        break;
+      }
+
+      case DUP_X2 : {
+        uint8 one = stack.back(); stack.pop_back();
+        uint8 two = stack.back(); stack.pop_back();
+        uint8 three = stack.back(); stack.pop_back();
+
+        stack.push_back(one);
+        stack.push_back(three);
+        stack.push_back(two);
+        stack.push_back(one);
+        break;
+      }
+
+      case DUP2 : {
+        uint8 one = stack.back(); stack.pop_back();
+        uint8 two = stack.back(); stack.pop_back();
+        
+        stack.push_back(two);
+        stack.push_back(one);
+        stack.push_back(two);
+        stack.push_back(one);
+        break;
+      }
+
+      case DUP2_X1 : {
+        uint8 one = stack.back(); stack.pop_back();
+        uint8 two = stack.back(); stack.pop_back();
+        uint8 three = stack.back(); stack.pop_back();
+
+        stack.push_back(two);
+        stack.push_back(one);
+        stack.push_back(three);
+        stack.push_back(two);
+        stack.push_back(one);
+
+        break;
+      }
+
+      case DUP2_X2 : {
+        uint8 one = stack.back(); stack.pop_back();
+        uint8 two = stack.back(); stack.pop_back();
+        uint8 three = stack.back(); stack.pop_back();
+        uint8 four = stack.back(); stack.pop_back();
+
+        stack.push_back(two);
+        stack.push_back(one);
+        stack.push_back(four);
+        stack.push_back(three);
+        stack.push_back(two);
+        stack.push_back(one);
+
+        break;
+      }
+
+      case SWAP : {
+        uint8 one = stack.back(); stack.pop_back();
+        uint8 two = stack.back(); stack.pop_back();
+        stack.push_back(one);
+        stack.push_back(two);
+        break;
+      }
+
+      case IADD :
+      case FADD :
+      case ISUB :
+      case FSUB :
+      case IMUL :
+      case FMUL :
+      case FDIV :
+      case FREM :
+      case ISHL :
+      case ISHR :
+      case IUSHR :
+      case IAND :
+      case IOR :
+      case IXOR :
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        break;
+
+      case LADD :
+      case DADD :
+      case DDIV :
+      case LMUL :
+      case DMUL :
+      case DREM :
+      case LSUB :
+      case DSUB :
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        break;
+
+      case IREM :
+      case IDIV :
+      case LREM :
+      case LDIV :
+        return false;
+
+      case INEG :
+      case FNEG :
+        stack.pop_back();
+        stack.push_back(bytecode);
+        break;
+
+      case LNEG :
+      case DNEG :
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        break;
+
+      case LSHL :
+      case LSHR :
+      case LUSHR :
+      case LAND :
+      case LOR :
+      case LXOR :
+        stack.pop_back();
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        break;
+
+      case IINC :
+        i += WCALC(2, wide);
+        break;
+      
+      case I2L :
+      case I2D :
+      case F2L :
+      case F2D :
+        stack.pop_back();
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        break;
+
+      case I2F :
+      case F2I :
+      case I2B :
+      case I2C :
+      case I2S :
+        stack.pop_back();
+        stack.push_back(bytecode);
+        break;
+
+      case L2I :
+      case L2F :
+      case D2I :
+      case D2F :
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        break;
+
+      case L2D :
+      case D2L :
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        stack.push_back(bytecode);
+        break;
+
+      case FCMPL :
+      case FCMPG :
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        break;
+
+      case LCMP :
+      case DCMPL :
+      case DCMPG :
+        stack.pop_back();
+        stack.pop_back();
+        stack.pop_back();
+        stack.pop_back();
+        stack.push_back(bytecode);
+        break;
+
+      case IFEQ :
+      case IFNE :
+      case IFLT :
+      case IFGE :
+      case IFGT :
+      case IFLE : {
+        i += 2;
+        stack.pop_back();
+        if (stack.size() > 0) return false;
+        break;
+      }
+
+      case IF_ICMPEQ :
+      case IF_ICMPNE :
+      case IF_ICMPLT :
+      case IF_ICMPGE :
+      case IF_ICMPGT :
+      case IF_ICMPLE :
+      case IF_ACMPEQ :
+      case IF_ACMPNE : {
+        i += 2;
+        stack.pop_back();
+        stack.pop_back();
+        if (stack.size() > 0) return false;
+        break;
+      }
+      case GOTO : {
+        i += 2;
+        if (stack.size() > 0) return false;
+        break;
+      }
+      
+      case JSR : {
+        i += 2;
+        return false;
+      }
+
+      case RET : {
+        ++i;
+        return false;
+      }
+
+      case TABLESWITCH : {
+        stack.pop_back();
+        if (stack.size() > 0) return false;
+        uint32 tmp = i;
+        uint32 reste = (i + 1) & 3;
+        uint32 filled = reste ?  (4 - reste) : 0;
+        i += filled;
+        reader.cursor += filled;
+        reader.readU4();
+        i += 4;
+
+        sint32 low = reader.readS4();
+        i += 4;
+        sint32 high = reader.readS4() + 1;
+        i += 4;
+        for (sint32 cur = low; cur < high; ++cur) {
+          reader.readU4();
+          i += 4;
+        }
+       
+        i = tmp + 12 + filled + ((high - low) << 2); 
+        break;
+      }
+
+      case LOOKUPSWITCH : {
+        stack.pop_back();
+        if (stack.size() > 0) return false;
+        uint32 tmp = i;
+        uint32 filled = (3 - i) & 3;
+        i += filled;
+        reader.cursor += filled;
+        reader.readU4();
+        i += 4;
+        uint32 nbs = reader.readU4();
+        i += 4;
+        for (uint32 cur = 0; cur < nbs; ++cur) {
+          i += 4;
+          reader.cursor += 4;
+          reader.readU4();
+          i += 4;
+        }
+        
+        i = tmp + 8 + filled + (nbs << 3);
+        break;
+      }
+
+      case IRETURN :
+      case FRETURN :
+      case ARETURN :
+        stack.pop_back();
+        break;
+
+      case RETURN :
+        break;
+      
+      case LRETURN :
+      case DRETURN :
+        stack.pop_back();
+        stack.pop_back();
+        break;
+      
+      case GETSTATIC :
+      case PUTSTATIC : {
+        uint16 index = reader.readU2();
+        Typedef* sign = ctpInfo->infoOfField(index);
+        JavaField* field = ctpInfo->lookupField(index, true);
+        if (field == NULL) return false;
+        if (needsInitialisationCheck(field->classDef)) return false;
+        if (bytecode == GETSTATIC) {
+          stack.push_back(bytecode);
+          if (sign->isDouble() || sign->isLong()) {
+            stack.push_back(bytecode);
+          }
+        } else {
+          stack.pop_back();
+          if (sign->isDouble() || sign->isLong()) {
+            stack.pop_back();
+          }
+        }
+        i += 2;
+        break;
+      }
+
+      case PUTFIELD : {
+        if (isStatic(compilingMethod->access)) return false;
+        i += 2;
+        stack.pop_back(); // value
+        uint16 index = reader.readU2();
+        Typedef* sign = ctpInfo->infoOfField(index);
+        if (sign->isDouble() || sign->isLong()) {
+          stack.pop_back(); // value
+        }
+        if (stack.back() != ALOAD_0) return false;
+        stack.pop_back(); // object
+        break;
+      }
+
+      case GETFIELD : {
+        if (isStatic(compilingMethod->access)) return false;
+        if (stack.back() != ALOAD_0) return false;
+        i += 2;
+        stack.pop_back(); // object
+        uint16 index = reader.readU2();
+        Typedef* sign = ctpInfo->infoOfField(index);
+        stack.push_back(bytecode);
+        if (sign->isDouble() || sign->isLong()) {
+          stack.push_back(bytecode);
+        }
+        break;
+      }
+
+      case INVOKEVIRTUAL :
+        i += 2;
+        return false;
+
+      case INVOKESPECIAL : {
+        if (isStatic(compilingMethod->access)) return false;
+        uint16 index = reader.readU2();
+        CommonClass* cl = NULL;
+        JavaMethod* meth = NULL;
+        ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
+        i += 2;
+        if (meth == NULL) return false;
+        if (getReceiver(stack, meth->getSignature()) != ALOAD_0) return false;
+        if (!canBeInlined(meth)) return false;
+        updateStack(stack, meth->getSignature(), bytecode);
+        break;
+      }
+
+      case INVOKESTATIC : {
+        uint16 index = reader.readU2();
+        CommonClass* cl = NULL;
+        JavaMethod* meth = NULL;
+        ctpInfo->infoOfMethod(index, ACC_STATIC, cl, meth);
+        i += 2;
+        if (meth == NULL) return false;
+        if (!canBeInlined(meth)) return false;
+        if (needsInitialisationCheck(cl->asClass())) return false;
+        updateStack(stack, meth->getSignature(), bytecode);
+        break;
+      }
+      
+      case INVOKEINTERFACE :
+        i += 4;
+        return false;
+
+      case NEW :
+        i += 2;
+        return false;
+
+      case NEWARRAY :
+        ++i;
+        return false;
+      
+      case ANEWARRAY :
+        i += 2;
+        return false;
+
+      case ARRAYLENGTH :
+        stack.pop_back();
+        stack.push_back(bytecode);
+        break;
+
+      case ATHROW :
+        return false;
+
+      case CHECKCAST :
+        i += 2;
+        return false;
+
+      case INSTANCEOF :
+        i += 2;
+        return false;
+      
+      case MONITORENTER :
+      case MONITOREXIT :
+        return false;
+      
+      case MULTIANEWARRAY :
+        i += 3;
+        return false;
+
+      case WIDE :
+        wide = true;
+        break;
+
+      case IFNULL :
+      case IFNONNULL :
+        stack.pop_back();
+        i += 2;
+        if (stack.size() > 0) return false;
+        break;
+
+      default :
+        return false;
+    }
+  }
+  return true;
 }
