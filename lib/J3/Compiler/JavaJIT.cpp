@@ -1767,7 +1767,7 @@ void JavaJIT::invokeNew(uint16 index) {
 
   // Make sure to add the object to the finalization list after it has been
   // pushed.
-  if (cl && cl->virtualVT->destructor) {
+  if (cl && cl->virtualVT->hasDestructor()) {
     CallInst::Create(intrinsics->AddFinalizationCandidate, val, "", currentBlock);
   }
 }

@@ -203,9 +203,7 @@ void JavaJITCompiler::makeVT(Class* cl) {
     // Special handling for finalize method. Don't put a finalizer
     // if there is none, or if it is empty.
     if (meth.offset == 0) {
-      if (!cl->super) {
-        meth.canBeInlined = true;
-      } else {
+      if (cl->super != NULL) {
         VT->destructor = getPointerOrStub(meth, JavaMethod::Virtual);
       }
     } else {

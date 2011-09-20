@@ -14,6 +14,8 @@
 #include "mvm/GC/GC.h"
 #include <cstdlib>
 
+extern "C" void EmptyDestructor();
+
 class VirtualTable {
  public:
   uintptr_t destructor;
@@ -39,7 +41,13 @@ class VirtualTable {
     tracer = t;
   }
 
-  VirtualTable() {}
+  VirtualTable() {
+    destructor = reinterpret_cast<uintptr_t>(EmptyDestructor);
+  }
+
+  bool hasDestructor() {
+    return destructor != reinterpret_cast<uintptr_t>(EmptyDestructor);
+  }
 
   static void emptyTracer(void*) {}
 };

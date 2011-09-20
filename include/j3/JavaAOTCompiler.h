@@ -175,6 +175,7 @@ public:
   llvm::Function* ArrayObjectTracer;
   llvm::Function* RegularObjectTracer;
   llvm::Function* JavaObjectTracer;
+  llvm::Function* EmptyDestructorFunction;
   llvm::Function* ReferenceObjectTracer;
   llvm::GlobalVariable* UTF8TombstoneGV;
   llvm::GlobalVariable* UTF8EmptyGV;

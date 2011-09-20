@@ -35,6 +35,9 @@ extern "C" void printObject(void* ptr) {
   fprintf(stderr, "%p\n", ptr);
 }
 
+extern "C" void EmptyDestructor() {
+}
+
 void VirtualMachine::waitForExit() {   
   threadLock.lock();
   

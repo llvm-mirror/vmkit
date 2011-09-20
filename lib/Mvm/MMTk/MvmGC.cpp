@@ -36,7 +36,7 @@ extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
   gc* res = (gc*)gcmalloc(sz, VT);
-  if (VT->destructor)
+  if (VT->hasDestructor())
     mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
   return res;
 }

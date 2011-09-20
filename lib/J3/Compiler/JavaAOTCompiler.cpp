@@ -1603,14 +1603,15 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   std::vector<Constant*> Elemts;
    
   // Destructor
-  Function* Finalizer = 0;
-  JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
-  if (meth) {
+  Function* Finalizer = NULL;
+  if (VT->hasDestructor()) {
+    JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
     Finalizer = getMethodOrStub(meth);
+  } else {
+    Finalizer = EmptyDestructorFunction;
   }
   
-  Elemts.push_back(Finalizer ? 
-      ConstantExpr::getCast(Instruction::BitCast, Finalizer, PTy) : N);
+  Elemts.push_back(ConstantExpr::getCast(Instruction::BitCast, Finalizer, PTy));
   
   // Delete
   Elemts.push_back(N);
@@ -1869,6 +1870,12 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
                                            GlobalValue::ExternalLinkage,
                                            "ReferenceObjectTracer",
                                            getLLVMModule());
+  
+  EmptyDestructorFunction = Function::Create(FTy,
+                                             GlobalValue::ExternalLinkage,
+                                             "EmptyDestructor",
+                                             getLLVMModule());
+
 
   UTF8EmptyGV = new GlobalVariable(*getLLVMModule(),
                                    JavaIntrinsics.UTF8Type->getContainedType(0),
@@ -2004,7 +2011,7 @@ void JavaAOTCompiler::makeVT(Class* cl) {
     ((void**)VT)[meth.offset] = &meth;
   }
 
-  if (!cl->super) VT->destructor = 0;
+  if (!cl->super) VT->destructor = reinterpret_cast<uintptr_t>(EmptyDestructor);
 }
 
 void JavaAOTCompiler::makeIMT(Class* cl) {

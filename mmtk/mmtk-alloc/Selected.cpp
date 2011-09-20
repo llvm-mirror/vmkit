@@ -74,7 +74,7 @@ extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
   gc* res = 0;
   llvm_gcroot(res, 0);
   res = (gc*)gcmalloc(sz, VT);
-  if (VT->destructor) addFinalizationCandidate(res);
+  if (VT->hasDestructor()) addFinalizationCandidate(res);
   return res;
 }
 

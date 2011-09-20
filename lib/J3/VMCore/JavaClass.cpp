@@ -1367,7 +1367,6 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     } else {
       tracer = (uintptr_t)RegularObjectTracer;
     }
-    destructor = 0;
     operatorDelete = 0;
     
     // Set IMT.
@@ -1436,7 +1435,6 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
   } else {
     // Set the tracer, destructor and delete.
     tracer = (uintptr_t)JavaObjectTracer;
-    destructor = 0;
     operatorDelete = 0;
     
     // Set the class of this VT.
@@ -1447,7 +1445,6 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     offset = getCacheIndex() + 1;
     depth = 0;
     display[0] = this;
-    destructor = 0;
     nbSecondaryTypes = 0;
   }
 }
@@ -1635,7 +1632,6 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
   } else {
     // Set the tracer, destructor and delete
     tracer = (uintptr_t)JavaObjectTracer;
-    destructor = 0;
     operatorDelete = 0;
     
     // Set the class of this VT.
