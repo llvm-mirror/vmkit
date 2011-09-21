@@ -2917,11 +2917,15 @@ bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
       case FSTORE_1 :
       case FSTORE_2 :
       case FSTORE_3 :
-      case ASTORE_0 :
       case ASTORE_1 :
       case ASTORE_2 :
       case ASTORE_3 :
         stack.pop_back();
+        break;
+
+      case ASTORE_0 :
+        stack.pop_back();
+        if (!isStatic(compilingMethod->access)) return false;
         break;
 
       case DSTORE_0 :
