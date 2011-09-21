@@ -3375,7 +3375,7 @@ bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
       case ARRAYLENGTH :
         stack.pop_back();
         stack.push_back(bytecode);
-        break;
+        return false;
 
       case ATHROW :
         return false;
