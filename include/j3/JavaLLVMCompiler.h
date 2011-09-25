@@ -42,6 +42,7 @@ class Typedef;
 class Signdef;
 
 class JavaLLVMCompiler : public JavaCompiler {
+  friend class JavaAOTCompiler;
   friend class LLVMClassInfo;
   friend class LLVMMethodInfo;
   friend class LLVMSignatureInfo;

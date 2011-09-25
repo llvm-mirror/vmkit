@@ -43,8 +43,9 @@ CompiledFrames* frametables[] = {
 static void mainCompilerLoaderStart(JavaThread* th) {
   Jnjvm* vm = th->getJVM();
   JnjvmBootstrapLoader* bootstrapLoader = vm->bootstrapLoader;
-  JavaAOTCompiler* M = (JavaAOTCompiler*)bootstrapLoader->getCompiler();
-  M->compileClassLoader(bootstrapLoader);
+  JavaAOTCompiler* AOT = new JavaAOTCompiler("AOT");
+  AOT->compileClassLoader(bootstrapLoader);
+  AOT->printStats();
   vm->exit(); 
 }
 
@@ -67,8 +68,9 @@ int main(int argc, char **argv, char **envp) {
   
   // Create the allocator that will allocate the bootstrap loader and the JVM.
   mvm::BumpPtrAllocator Allocator;
-  JavaAOTCompiler* AOT = new JavaAOTCompiler("AOT");
+  JavaAOTCompiler* AOT;
   if (EmitClassBytes) {
+    AOT = new JavaAOTCompiler("AOT");
     OutputFilename = "classes.bc";
     JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
       JnjvmBootstrapLoader(Allocator, AOT, true);
@@ -85,16 +87,15 @@ int main(int argc, char **argv, char **envp) {
     vm->waitForExit();
 
     // Now AOT Compile all compiled methods.
-    loader->setCompiler(AOT);
-
     vm->doExit = false;
     JavaThread* th = new JavaThread(vm);
     vm->setMainThread(th);
     th->start((void (*)(mvm::Thread*))mainCompilerLoaderStart);
     vm->waitForExit();
+
+    AOT = (JavaAOTCompiler*)loader->getCompiler();
   }
 
-  AOT->printStats();
 
   // Emit the bytecode in file.
   std::string ErrorInfo;

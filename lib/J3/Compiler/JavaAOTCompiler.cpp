@@ -2307,6 +2307,8 @@ void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {
 }
 
 void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
+  JavaJITCompiler* jitCompiler = (JavaJITCompiler*)loader->getCompiler();
+  loader->setCompiler(this);
   compileRT = true;
   precompile = true;
   addJavaPasses();
@@ -2334,34 +2336,15 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
     }
   }
 
-  for (ClassMap::iterator i = loader->getClasses()->map.begin(),
-       e = loader->getClasses()->map.end(); i!= e; ++i) {
-    getNativeClass(i->second);
-    if (i->second->isClass()) {
-      Class* cl = i->second->asClass();
-      for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-        JavaMethod& meth = cl->virtualMethods[i];
-        if (meth.code != NULL) {
-          parseFunction(&meth);
-        }
-      }
-  
-      for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-        JavaMethod& meth = cl->staticMethods[i];
-        if (meth.code != NULL) {
-          parseFunction(&meth);
-        }
-      }
-    }
+  for (method_info_iterator I = jitCompiler->method_infos.begin(),
+       E = jitCompiler->method_infos.end(); I != E; I++) {
+    if (!isAbstract(I->first->access)) parseFunction(I->first);
   }
 
   while (!toCompile.empty()) {
     JavaMethod* meth = toCompile.back();
     toCompile.pop_back();
-    getNativeClass(meth->classDef);
-    Function* Func = parseFunction(meth);
-    // Also update code to notify that this function has been emitted.
-    meth->code = Func;
+    parseFunction(meth);
   }
 
   // Make sure classes and arrays already referenced in constant pools
