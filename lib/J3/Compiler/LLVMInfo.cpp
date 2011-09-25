@@ -142,8 +142,6 @@ namespace llvm {
 
 Function* LLVMMethodInfo::getMethod() {
   if (!methodFunction) {
-    mvm::ThreadAllocator allocator;
-    JnjvmClassLoader* JCL = methodDef->classDef->classLoader;
     if (Compiler->emitFunctionName() || JITEmitDebugInfo) {
       const UTF8* jniConsClName = methodDef->classDef->name;
       const UTF8* jniConsName = methodDef->name;
@@ -152,15 +150,10 @@ Function* LLVMMethodInfo::getMethod() {
       sint32 mnlen = jniConsName->size;
       sint32 mtlen = jniConsType->size;
 
+      mvm::ThreadAllocator allocator;
       char* buf = (char*)allocator.Allocate(
           3 + JNI_NAME_PRE_LEN + 1 + ((mnlen + clen + mtlen) << 3));
       
-      bool j3 = false;
-      if (isNative(methodDef->access)) {
-        // Verify if it's defined by J3
-        JCL->nativeLookup(methodDef, j3, buf);
-      }
-
       methodDef->jniConsFromMethOverloaded(buf + 1);
       memcpy(buf, "JnJVM", 5);
 

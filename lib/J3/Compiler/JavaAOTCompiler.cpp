@@ -1050,7 +1050,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   MethodElts.push_back(ConstantInt::get(Type::getInt8Ty(getLLVMContext()), method.canBeInlined));
 
   // code
-  if (method.code == NULL) {
+  if (getMethodInfo(&method)->methodFunction == NULL) {
     MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
   } else {
     Function* func = getMethod(&method);
@@ -2343,6 +2343,8 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
 
   while (!toCompile.empty()) {
     JavaMethod* meth = toCompile.back();
+    // parseFunction may introduce new functions to compile, so
+    // pop toCompile before calling parseFunction.
     toCompile.pop_back();
     parseFunction(meth);
   }
