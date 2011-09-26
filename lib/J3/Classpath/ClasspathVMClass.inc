@@ -566,11 +566,13 @@ JavaObject* Cl, bool publicOnly) {
     }
 
     result = (ArrayObject*)array->doNew(sizeArray, vm);
+    int index = 0;
     for (uint16 i = 0; i < cl->nbInnerClasses; ++i) {
       UserClass* klass = cl->innerClasses[i];
       if (!publicOnly || isPublic(klass->innerAccess))
-        ArrayObject::setElement(result, klass->getClassDelegatee(vm), i); 
+        ArrayObject::setElement(result, klass->getClassDelegatee(vm), index++); 
     }
+    assert(index == sizeArray);
   }
   
 

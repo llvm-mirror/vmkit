@@ -53,11 +53,13 @@ public:
   
   static T getElement(const TJavaArray* self, uint32_t i) {
     llvm_gcroot(self, 0);
+    assert(i < self->size);
     return self->elements[i];
   }
 
   static void setElement(TJavaArray* self, T value, uint32_t i) {
     llvm_gcroot(self, 0);
+    assert(i < self->size);
     self->elements[i] = value;
   }
 
@@ -92,6 +94,7 @@ public:
   
   static JavaObject* getElement(const ArrayObject* self, uint32_t i) {
     llvm_gcroot(self, 0);
+    assert(i < self->size);
     return self->elements[i];
   }
 
