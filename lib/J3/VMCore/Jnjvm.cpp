@@ -1267,7 +1267,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
   } END_CATCH;
 
   if (exc != NULL) {
-    fprintf(stderr, "Exception %s while bootstrapping VM.",
+    fprintf(stderr, "Exception %s while bootstrapping VM.\n",
         UTF8Buffer(JavaObject::getClass(exc)->name).cString());
   } else {
     ClArgumentsInfo& info = vm->argumentsInfo;

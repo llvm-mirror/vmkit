@@ -845,7 +845,7 @@ public:
   /// compiledPtr - Return a pointer to the compiled code of this Java method,
   /// compiling it if necessary.
   ///
-  void* compiledPtr();
+  void* compiledPtr(Class* customizeFor = NULL);
 
   /// setNative - Set the method as native.
   ///
@@ -880,9 +880,9 @@ public:
   ///
   const UTF8* type;
 
-  /// canBeInlined - Can the method be inlined?
+  /// isCustomizable - Can the method be customizable?
   ///
-  bool canBeInlined;
+  bool isCustomizable;
 
   /// code - Pointer to the compiled code of this method.
   ///

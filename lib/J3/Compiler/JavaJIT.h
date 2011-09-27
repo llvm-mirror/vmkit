@@ -36,6 +36,12 @@ class Class;
 class JavaMethod;
 class Reader;
 
+struct MetaInfo {
+  MetaInfo(CommonClass* t, uint8 b) : type(t), bytecode(b) {}
+  CommonClass* type;
+  uint8 bytecode;
+};
+
 /// Opinfo - This class gives for each opcode if it starts a new block and
 /// its exception destination.
 ///
@@ -57,9 +63,8 @@ struct Opinfo {
 
   /// stack - The stack at this location if there is a new block
   ///
-  std::vector<CommonClass*> stack;
+  std::vector<MetaInfo> stack;
 };
-
 
 /// JavaJIT - The compilation engine of J3. Parses the bycode and returns
 /// its LLVM representation.
@@ -68,7 +73,10 @@ class JavaJIT {
 public:
  
   /// JavaJIT - Default constructor.
-  JavaJIT(JavaLLVMCompiler* C, JavaMethod* meth, llvm::Function* func) {
+  JavaJIT(JavaLLVMCompiler* C,
+          JavaMethod* meth,
+          llvm::Function* func,
+          Class* customized) {
     compilingMethod = meth;
     compilingClass = meth->classDef;
     upcalls = compilingClass->classLoader->bootstrapLoader->upcalls;
@@ -81,7 +89,11 @@ public:
     endNode = 0;
     currentStackIndex = 0;
     currentBytecodeIndex = 0;
+    currentBytecode = 0;
     thisObject = NULL;
+    customizeFor = customized;
+    isCustomizable = false;
+    overridesThis = false;
   }
 
   /// javaCompile - Compile the Java method.
@@ -89,14 +101,25 @@ public:
   
   /// nativeCompile - Compile the native method.
   llvm::Function* nativeCompile(intptr_t natPtr = 0);
+  
+  /// isCustomizable - Whether we found the method to be customizable.
+  bool isCustomizable;
 
 private:
+  /// Whether the method overrides 'this'.
+  bool overridesThis;
+  
+  /// currentBytecode - The current bytecode being processed.
+  uint16 currentBytecode;
   
   /// compilingClass - The class that is defining the method being compiled.
   Class* compilingClass;
 
   /// compilingMethod - The method being compiled.
   JavaMethod* compilingMethod;
+
+  /// customizeFor - The class we're currently customizing this method for.
+  Class* customizeFor;
 
   /// upcalls - Upcalls used tp type the stack and locals.
   Classpath* upcalls;
@@ -188,7 +211,7 @@ private:
   bool inlining;
   
   /// canBeInlined - Can this method's body be inlined?
-  bool canBeInlined(JavaMethod* meth);
+  bool canBeInlined(JavaMethod* meth, bool customizing);
 
   /// callsStackWalker - Is the method calling a stack walker method? If it is,
   /// then this method can not be inlined.
@@ -232,7 +255,7 @@ private:
 //===------------------------- Stack manipulation -------------------------===//
 
   /// stack - The compiler stack.
-  std::vector<CommonClass*> stack;
+  std::vector<MetaInfo> stack;
   uint32 currentStackIndex;
   std::vector<llvm::AllocaInst*> objectStack;
   std::vector<llvm::AllocaInst*> intStack;
@@ -247,36 +270,36 @@ private:
       val = new llvm::ZExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "", currentBlock);
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(upcalls->OfInt);
+      stack.push_back(MetaInfo(upcalls->OfInt, currentBytecode));
     } else if (type == llvm::Type::getInt8Ty(*llvmContext) ||
                type == llvm::Type::getInt16Ty(*llvmContext)) {
       val = new llvm::SExtInst(val, llvm::Type::getInt32Ty(*llvmContext), "",
                                currentBlock);
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(upcalls->OfInt);
+      stack.push_back(MetaInfo(upcalls->OfInt, currentBytecode));
     } else if (type == llvm::Type::getInt32Ty(*llvmContext)) {
       new llvm::StoreInst(val, intStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(upcalls->OfInt);
+      stack.push_back(MetaInfo(upcalls->OfInt, currentBytecode));
     } else if (type == llvm::Type::getInt64Ty(*llvmContext)) {
       new llvm::StoreInst(val, longStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(upcalls->OfLong);
+      stack.push_back(MetaInfo(upcalls->OfLong, currentBytecode));
     } else if (type == llvm::Type::getFloatTy(*llvmContext)) {
       new llvm::StoreInst(val, floatStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(upcalls->OfFloat);
+      stack.push_back(MetaInfo(upcalls->OfFloat, currentBytecode));
     } else if (type == llvm::Type::getDoubleTy(*llvmContext)) {
       new llvm::StoreInst(val, doubleStack[currentStackIndex++], false,
                           currentBlock);
-      stack.push_back(upcalls->OfDouble);
+      stack.push_back(MetaInfo(upcalls->OfDouble, currentBytecode));
     } else {
       assert(type == intrinsics->JavaObjectType && "Can't handle this type");
       llvm::Instruction* V = new 
         llvm::StoreInst(val, objectStack[currentStackIndex++], false,
                         currentBlock);
-      stack.push_back(cl ? cl : upcalls->OfObject);
+      stack.push_back(MetaInfo(cl ? cl : upcalls->OfObject, currentBytecode));
       addHighLevelType(V, topTypeInfo());
       if (llvm::Instruction* I = llvm::dyn_cast<llvm::Instruction>(val)) {
         addHighLevelType(I, topTypeInfo());
@@ -305,7 +328,7 @@ private:
 
   /// top - Return the value on top of the stack.
   llvm::Value* top() {
-    CommonClass* cl = stack.back();
+    CommonClass* cl = stack.back().type;
     if (cl == upcalls->OfInt) {
       return new llvm::LoadInst(intStack[currentStackIndex - 1], "", false,
                                 currentBlock);
@@ -326,6 +349,10 @@ private:
   
   /// topTypeInfo - Return the type of the value on top of the stack.
   CommonClass* topTypeInfo() {
+    return stack.back().type;
+  }
+
+  MetaInfo topInfo() {
     return stack.back();
   }
  
@@ -378,22 +405,20 @@ private:
   llvm::BasicBlock* createBasicBlock(const char* name = "") {
     return llvm::BasicBlock::Create(*llvmContext, name, llvmFunction);
   }
+
+  void updateStackInfo(Opinfo& info);
  
   /// branch - Branch based on a boolean value.
   void branch(llvm::Value* test, llvm::BasicBlock* ifTrue, 
               llvm::BasicBlock* ifFalse, llvm::BasicBlock* insert,
               Opinfo& info) {
-    if (stackSize())
-      if (!info.stack.size())
-        info.stack = stack;
+    updateStackInfo(info);
     llvm::BranchInst::Create(ifTrue, ifFalse, test, insert);
   }
 
   /// branch - Branch to a new block.
   void branch(Opinfo& info, llvm::BasicBlock* insert) {
-    if (stackSize())
-      if (!info.stack.size())
-        info.stack = stack;
+    updateStackInfo(info);
     llvm::BranchInst::Create(info.newBlock, insert);
   }
   
@@ -484,7 +509,8 @@ private:
 
   /// invokeInline - Instead of calling the method, inline it.
   llvm::Instruction* invokeInline(JavaMethod* meth, 
-                                  std::vector<llvm::Value*>& args);
+                                  std::vector<llvm::Value*>& args,
+                                  bool customized);
 
   /// lowerMathOps - Map Java Math operations to LLVM intrinsics.
   llvm::Instruction* lowerMathOps(const UTF8* name, 

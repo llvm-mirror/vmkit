@@ -584,7 +584,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   }
 
   // Compile the found method.
-  result = Virt->compiledPtr();
+  result = Virt->compiledPtr(lookup);
 
   // Update the virtual table.
   assert(lookup->isResolved() && "Class not resolved");

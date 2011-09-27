@@ -40,7 +40,7 @@ public:
     return this;
   }
   
-  virtual void* materializeFunction(JavaMethod* meth) {
+  virtual void* materializeFunction(JavaMethod* meth, Class* customizeFor) {
     fprintf(stderr, "Materializing a function in an empty compiler");
     abort();
     return 0;

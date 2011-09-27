@@ -48,18 +48,18 @@ void JavaLLVMCompiler::resolveStaticClass(Class* cl) {
   mvm::MvmModule::unprotectIR();
 }
 
-Function* JavaLLVMCompiler::getMethod(JavaMethod* meth) {
-  return getMethodInfo(meth)->getMethod();
+Function* JavaLLVMCompiler::getMethod(JavaMethod* meth, Class* customizeFor) {
+  return getMethodInfo(meth)->getMethod(customizeFor);
 }
 
-Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
+Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor) {
   LLVMMethodInfo* LMI = getMethodInfo(meth);
-  Function* func = LMI->getMethod();
+  Function* func = LMI->getMethod(customizeFor);
   
   // We are jitting. Take the lock.
   mvm::MvmModule::protectIR();
   if (func->getLinkage() == GlobalValue::ExternalWeakLinkage) {
-    JavaJIT jit(this, meth, func);
+    JavaJIT jit(this, meth, func, customizeFor);
     if (isNative(meth->access)) {
       jit.nativeCompile();
       mvm::MvmModule::runPasses(func, JavaNativeFunctionPasses);
@@ -68,6 +68,15 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth) {
       mvm::MvmModule::runPasses(func, JavaFunctionPasses);
     }
     func->setLinkage(GlobalValue::ExternalLinkage);
+    if (!LMI->isCustomizable && jit.isCustomizable) {
+      // It's the first time we parsed the method and we just found
+      // out it can be customized.
+      meth->isCustomizable = true;
+      LMI->isCustomizable = true;
+      if (customizeFor != NULL) {
+        LMI->setCustomizedVersion(customizeFor, func);
+      }
+    }
   }
   mvm::MvmModule::unprotectIR();
 
@@ -79,18 +88,6 @@ JavaMethod* JavaLLVMCompiler::getJavaMethod(const llvm::Function& F) {
   function_iterator I = functions.find(&F);
   if (I == E) return 0;
   return I->second;
-}
-
-MDNode* JavaLLVMCompiler::GetDbgSubprogram(JavaMethod* meth) {
-  if (getMethodInfo(meth)->getDbgSubprogram() == NULL) {
-    MDNode* node = DebugFactory->createFunction(DIDescriptor(), "",
-                                                "", DIFile(), 0,
-                                                DIType(), false,
-                                                false);
-    DbgInfos.insert(std::make_pair(node, meth));
-    getMethodInfo(meth)->setDbgSubprogram(node);
-  }
-  return getMethodInfo(meth)->getDbgSubprogram();
 }
 
 JavaLLVMCompiler::~JavaLLVMCompiler() {

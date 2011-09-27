@@ -85,26 +85,27 @@ private:
   llvm::Function* methodFunction;
   llvm::Constant* offsetConstant;
   llvm::FunctionType* functionType;
-  llvm::MDNode* DbgSubprogram;
+  std::map<Class*, llvm::Function*> customizedVersions;
   
 public:
-  llvm::Function* getMethod();
+  llvm::Function* getMethod(Class* customizeFor);
   llvm::Constant* getOffset();
   llvm::FunctionType* getFunctionType();
+  bool isCustomizable;
     
   LLVMMethodInfo(JavaMethod* M, JavaLLVMCompiler* comp) :  Compiler(comp),
     methodDef(M), methodFunction(0), offsetConstant(0), functionType(0),
-    DbgSubprogram(0) {}
+    isCustomizable(false) {}
  
-  void setDbgSubprogram(llvm::MDNode* node) { DbgSubprogram = node; }
-  llvm::MDNode* getDbgSubprogram() { return DbgSubprogram; }
-
   virtual void clear() {
     methodFunction = 0;
     offsetConstant = 0;
     functionType = 0;
-    DbgSubprogram = 0;
+    customizedVersions.clear();
+    isCustomizable = false;
   }
+
+  void setCustomizedVersion(Class* customizeFor, llvm::Function* F);
 
   friend class JavaAOTCompiler;
 };

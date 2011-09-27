@@ -136,7 +136,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         assert(isa<PHINode>(I) && "Handler marlformed");
         // If it's a handler, put the exception object in the stack.
         new StoreInst(I, objectStack[0], "", currentBlock);
-        stack.push_back(upcalls->OfObject);
+        stack.push_back(MetaInfo(upcalls->OfObject, NOP));
         currentStackIndex = 1;
       } else {
         stack = opinfo->stack;
@@ -147,6 +147,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
     currentExceptionBlock = opinfo->exceptionBlock;
     
     currentBytecodeIndex = i;
+    currentBytecode = bytecode;
 
     // To prevent a gcj bug with useless goto
     if (currentBlock->getTerminator() != 0) { 
@@ -786,6 +787,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         break;
 
       case DUP :
+        // TODO: The following bytecodes should push a MetaInfo.
         push(top(), false, topTypeInfo());
         break;
 
@@ -2464,7 +2466,6 @@ void JavaJIT::exploreOpcodes(Reader& reader, uint32 codeLength) {
       case DSTORE_1 :
       case DSTORE_2 :
       case DSTORE_3 :
-      case ASTORE_0 :
       case ASTORE_1 :
       case ASTORE_2 :
       case ASTORE_3 :
@@ -2521,6 +2522,10 @@ void JavaJIT::exploreOpcodes(Reader& reader, uint32 codeLength) {
       case LOR :
       case IXOR :
       case LXOR : break;
+      
+      case ASTORE_0 :
+        if (!isStatic(compilingMethod->access)) overridesThis = true;
+        break;
 
       case IINC :
         i += WCALC(2, wide);
@@ -3327,8 +3332,17 @@ bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
         i += 2;
         if (meth == NULL) return false;
         if (getReceiver(stack, meth->getSignature()) != ALOAD_0) return false;
-        if (!(isFinal(cl->access) || isFinal(meth->access))) return false;
-        if (!canBeInlined(meth)) return false;
+        bool customized = false;
+        if (!(isFinal(cl->access) || isFinal(meth->access))) {
+          if (customizeFor == NULL) return false;
+          meth = customizeFor->lookupMethodDontThrow(
+              meth->name, meth->type, false, true, NULL);
+          assert(meth);
+          assert(!meth->classDef->isInterface());
+          assert(!isAbstract(meth->access));
+          customized = true;
+        }
+        if (!canBeInlined(meth, customized)) return false;
         updateStack(stack, meth->getSignature(), bytecode);
         break;
       }
@@ -3342,7 +3356,7 @@ bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
         i += 2;
         if (meth == NULL) return false;
         if (getReceiver(stack, meth->getSignature()) != ALOAD_0) return false;
-        if (!canBeInlined(meth)) return false;
+        if (!canBeInlined(meth, false)) return false;
         updateStack(stack, meth->getSignature(), bytecode);
         break;
       }
@@ -3354,7 +3368,7 @@ bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
         ctpInfo->infoOfMethod(index, ACC_STATIC, cl, meth);
         i += 2;
         if (meth == NULL) return false;
-        if (!canBeInlined(meth)) return false;
+        if (!canBeInlined(meth, false)) return false;
         if (needsInitialisationCheck(cl->asClass())) return false;
         updateStack(stack, meth->getSignature(), bytecode);
         break;

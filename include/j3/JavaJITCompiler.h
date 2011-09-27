@@ -57,7 +57,7 @@ public:
   virtual void makeVT(Class* cl);
   virtual void makeIMT(Class* cl);
   
-  virtual void* materializeFunction(JavaMethod* meth);
+  virtual void* materializeFunction(JavaMethod* meth, Class* customizeFor);
   
   virtual llvm::Constant* getFinalObject(JavaObject* obj, CommonClass* cl);
   virtual JavaObject* getFinalObject(llvm::Value* C);

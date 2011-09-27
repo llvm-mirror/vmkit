@@ -140,8 +140,17 @@ namespace llvm {
   extern bool JITEmitDebugInfo;
 }
 
-Function* LLVMMethodInfo::getMethod() {
-  if (!methodFunction) {
+Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
+  bool customizing = false;
+  Function* result = NULL;
+  if (customizeFor != NULL && isCustomizable) {
+    customizing = true;
+    result = customizedVersions[customizeFor];
+  } else {
+    result = methodFunction;
+  }
+
+  if (result == NULL) {
     if (Compiler->emitFunctionName() || JITEmitDebugInfo) {
       const UTF8* jniConsClName = methodDef->classDef->name;
       const UTF8* jniConsName = methodDef->name;
@@ -157,25 +166,37 @@ Function* LLVMMethodInfo::getMethod() {
       methodDef->jniConsFromMethOverloaded(buf + 1);
       memcpy(buf, "JnJVM", 5);
 
-      methodFunction = Function::Create(getFunctionType(), 
-                                        GlobalValue::ExternalWeakLinkage, buf,
-                                        Compiler->getLLVMModule());
+      result = Function::Create(getFunctionType(), 
+                                GlobalValue::ExternalWeakLinkage, buf,
+                                Compiler->getLLVMModule());
     } else {
-      methodFunction = Function::Create(getFunctionType(), 
-                                        GlobalValue::ExternalWeakLinkage,
-                                        "", Compiler->getLLVMModule());
+      result = Function::Create(getFunctionType(), 
+                                GlobalValue::ExternalWeakLinkage,
+                                "", Compiler->getLLVMModule());
     }
     
-    methodFunction->setGC("vmkit");
-    methodFunction->addFnAttr(Attribute::NoInline);
-    methodFunction->addFnAttr(Attribute::NoUnwind);
+    result->setGC("vmkit");
+    result->addFnAttr(Attribute::NoInline);
+    result->addFnAttr(Attribute::NoUnwind);
     
-    Compiler->functions.insert(std::make_pair(methodFunction, methodDef));
-    if (!Compiler->isStaticCompiling() && methodDef->code) {
-      Compiler->setMethod(methodFunction, methodDef->code, methodFunction->getName().data());
+    Compiler->functions.insert(std::make_pair(result, methodDef));
+    if (!Compiler->isStaticCompiling() && !customizing && methodDef->code) {
+      Compiler->setMethod(result, methodDef->code, result->getName().data());
     }
   }
-  return methodFunction;
+
+  if (customizing) {
+    customizedVersions[customizeFor] = result;
+  } else {
+    methodFunction = result;
+  }
+  return result;
+}
+
+void LLVMMethodInfo::setCustomizedVersion(Class* cl, llvm::Function* F) {
+  assert(customizedVersions.size() == 0);
+  methodFunction = NULL;
+  customizedVersions[cl] = F;
 }
 
 FunctionType* LLVMMethodInfo::getFunctionType() {

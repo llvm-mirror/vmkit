@@ -185,33 +185,19 @@ void JavaJITCompiler::makeVT(Class* cl) {
     // is nothing left to do!
     return;
   }
-  
-  if (cl->super) {
-    // Copy the super VT into the current VT.
-    uint32 size = cl->super->virtualTableSize - 
-        JavaVirtualTable::getFirstJavaMethodIndex();
-    memcpy(VT->getFirstJavaMethod(), cl->super->virtualVT->getFirstJavaMethod(),
-           size * sizeof(uintptr_t));
-    VT->destructor = cl->super->virtualVT->destructor;
-  }
-
-
-  // Fill the virtual table with function pointers.
-  for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-    JavaMethod& meth = cl->virtualMethods[i];
-
-    // Special handling for finalize method. Don't put a finalizer
-    // if there is none, or if it is empty.
-    if (meth.offset == 0) {
-      if (cl->super != NULL) {
-        VT->destructor = getPointerOrStub(meth, JavaMethod::Virtual);
+ 
+  Class* current = cl;
+  uintptr_t* functions = VT->getFunctions();
+  while (current != NULL) {
+    // Fill the virtual table with function pointers.
+    for (uint32 i = 0; i < current->nbVirtualMethods; ++i) {
+      JavaMethod& meth = current->virtualMethods[i];
+      if (meth.offset != 0 || current->super != NULL) {
+        functions[meth.offset] = getPointerOrStub(meth, JavaMethod::Virtual);
       }
-    } else {
-      VT->getFunctions()[meth.offset] = getPointerOrStub(meth,
-                                                         JavaMethod::Virtual);
     }
+    current = current->super;
   }
-
 }
 
 extern "C" void ThrowUnfoundInterface() {
@@ -322,9 +308,9 @@ void JavaJITCompiler::setMethod(Function* func, void* ptr, const char* name) {
   executionEngine->updateGlobalMapping(func, ptr);
 }
 
-void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
+void* JavaJITCompiler::materializeFunction(JavaMethod* meth, Class* customizeFor) {
   mvm::MvmModule::protectIR();
-  Function* func = parseFunction(meth);
+  Function* func = parseFunction(meth, customizeFor);
   void* res = executionEngine->getPointerToGlobal(func);
  
   if (!func->isDeclaration()) {
@@ -337,6 +323,9 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth) {
     func->deleteBody();
   }
   mvm::MvmModule::unprotectIR();
+  if (customizeFor == NULL || !getMethodInfo(meth)->isCustomizable) {
+    meth->code = res;
+  }
   return res;
 }
 

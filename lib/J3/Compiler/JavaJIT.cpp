@@ -21,6 +21,7 @@
 #include <llvm/Module.h>
 #include <llvm/Type.h>
 #include <llvm/Analysis/DebugInfo.h>
+#include "llvm/Analysis/DIBuilder.h"
 #include <llvm/Support/CFG.h>
 
 #include "mvm/JIT.h"
@@ -44,6 +45,20 @@
 using namespace j3;
 using namespace llvm;
 
+void JavaJIT::updateStackInfo(Opinfo& info) {
+  if (stackSize()) {
+    if (!info.stack.size()) {
+      info.stack = stack;
+    } else {
+      int size = stack.size();
+      info.stack.clear();
+      for (int i = 0 ; i < size; i++) {
+        info.stack.push_back(MetaInfo(stack[i].type, NOP));
+      }
+    }
+  }
+}
+
 bool JavaJIT::needsInitialisationCheck(Class* cl) {
   if (cl->isReadyForCompilation() || 
       (!cl->isInterface() && compilingClass->isAssignableFrom(cl))) {
@@ -60,7 +75,7 @@ bool JavaJIT::needsInitialisationCheck(Class* cl) {
   return true;
 }
 
-bool JavaJIT::canBeInlined(JavaMethod* meth) {
+bool JavaJIT::canBeInlined(JavaMethod* meth, bool customizing) {
   if (inlineMethods[meth]) return false;
   if (isSynchro(meth->access)) return false;
   if (isNative(meth->access)) return false;
@@ -78,7 +93,7 @@ bool JavaJIT::canBeInlined(JavaMethod* meth) {
   if (nbHandlers != 0) return false;
   reader.cursor = start;
 
-  JavaJIT jit(TheCompiler, meth, llvmFunction);
+  JavaJIT jit(TheCompiler, meth, llvmFunction, customizing ? customizeFor : NULL);
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
   if (!jit.analyzeForInlining(reader, codeLen)) return false;
@@ -94,10 +109,31 @@ void JavaJIT::invokeVirtual(uint16 index) {
   ctpInfo->infoOfMethod(index, ACC_VIRTUAL, cl, meth);
   bool canBeDirect = false;
   Value* val = NULL;  // The return from the method.
+  const UTF8* name = 0;
+  Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
  
   if ((cl && isFinal(cl->access)) || 
       (meth && (isFinal(meth->access) || isPrivate(meth->access)))) {
     canBeDirect = true;
+  }
+
+  bool customized = false;
+  if (!canBeDirect) {
+    if (!overridesThis
+        && (stack[stackSize() - signature->nbArguments - 1].bytecode == ALOAD_0)
+        && !isStatic(compilingMethod->access)) {
+      assert(meth != NULL);
+      isCustomizable = true;
+      if (customizeFor != NULL) {
+        meth = customizeFor->lookupMethodDontThrow(
+            meth->name, meth->type, false, true, NULL);
+        assert(meth);
+        canBeDirect = true;
+        customized = true;
+        assert(!meth->classDef->isInterface());
+        assert(!isAbstract(meth->access));
+      }
+    }
   }
 
   if (meth && isInterface(meth->classDef->access)) {
@@ -106,8 +142,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
 		return invokeInterface(index);
 	}
  
-  const UTF8* name = 0;
-  Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
  
   if (TheCompiler->isStaticCompiling()) {
     Value* obj = objectStack[stack.size() - signature->nbArguments - 1];
@@ -137,14 +171,14 @@ void JavaJIT::invokeVirtual(uint16 index) {
   llvm::Type* retType = virtualType->getReturnType();
 
   bool needsInit = false;
-  if (canBeDirect && canBeInlined(meth)) {
+  if (canBeDirect && canBeInlined(meth, customized)) {
     makeArgs(it, index, args, signature->nbArguments + 1);
     JITVerifyNull(args[0]);
-    val = invokeInline(meth, args);
+    val = invokeInline(meth, args, customized);
   } else if (canBeDirect && !TheCompiler->needsCallback(meth, &needsInit)) {
     makeArgs(it, index, args, signature->nbArguments + 1);
     JITVerifyNull(args[0]);
-    val = invoke(TheCompiler->getMethod(meth), args, "", currentBlock);
+    val = invoke(TheCompiler->getMethod(meth, NULL), args, "", currentBlock);
   } else {
 
     BasicBlock* endBlock = 0;
@@ -900,7 +934,8 @@ llvm::Function* JavaJIT::javaCompile() {
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
 
-  DbgSubprogram = TheCompiler->GetDbgSubprogram(compilingMethod);
+  DbgSubprogram = TheCompiler->getDebugFactory()->createFunction(
+      DIDescriptor(), "", "", DIFile(), 0, DIType(), false, false);
 
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
@@ -1480,8 +1515,9 @@ Instruction* JavaJIT::lowerDoubleOps(const UTF8* name,
 
 
 Instruction* JavaJIT::invokeInline(JavaMethod* meth, 
-                                   std::vector<Value*>& args) {
-  JavaJIT jit(TheCompiler, meth, llvmFunction);
+                                   std::vector<Value*>& args,
+                                   bool customized) {
+  JavaJIT jit(TheCompiler, meth, llvmFunction, customized ? customizeFor : NULL);
   jit.unifiedUnreachable = unifiedUnreachable;
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
@@ -1489,12 +1525,13 @@ Instruction* JavaJIT::invokeInline(JavaMethod* meth,
   jit.DbgSubprogram = DbgSubprogram;
 #if DEBUG
   static int inlineNb = 0;
-  fprintf(stderr, "inline compile %d %s.%s%s from %s.%s\n", inlineNb++,
+  fprintf(stderr, "inline compile %d %s.%s%s from %s.%s (%d)\n", inlineNb++,
               UTF8Buffer(meth->classDef->name).cString(),
               UTF8Buffer(meth->name).cString(),
               UTF8Buffer(meth->getSignature()->keyName).cString(),
               UTF8Buffer(compilingClass->name).cString(),
-              UTF8Buffer(compilingMethod->name).cString());
+              UTF8Buffer(compilingMethod->name).cString(),
+              customized);
 #endif
   
   Instruction* ret = jit.inlineCompile(currentBlock, 
@@ -1531,7 +1568,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
     func = TheCompiler->addCallback(compilingClass, index, signature, false,
                                     currentBlock);
   } else {
-    func = TheCompiler->getMethod(meth);
+    func = TheCompiler->getMethod(meth, NULL);
   }
 
   std::vector<Value*> args;
@@ -1544,8 +1581,8 @@ void JavaJIT::invokeSpecial(uint16 index) {
   }
 
   llvm::Instruction* val = 0;
-  if (meth && canBeInlined(meth)) {
-    val = invokeInline(meth, args);
+  if (meth && canBeInlined(meth, false)) {
+    val = invokeInline(meth, args, false);
   } else {
     val = invoke(func, args, "", currentBlock);
   }
@@ -1599,7 +1636,7 @@ void JavaJIT::invokeStatic(uint16 index) {
     func = TheCompiler->addCallback(compilingClass, index, signature,
                                     true, currentBlock);
   } else {
-    func = TheCompiler->getMethod(meth);
+    func = TheCompiler->getMethod(meth, NULL);
   }
 
   std::vector<Value*> args; // size = [signature->nbIn + 2]; 
@@ -1615,8 +1652,8 @@ void JavaJIT::invokeStatic(uint16 index) {
   }
     
   if (val == NULL) {
-    if (meth != NULL && canBeInlined(meth)) {
-      val = invokeInline(meth, args);
+    if (meth != NULL && canBeInlined(meth, false)) {
+      val = invokeInline(meth, args, false);
     } else {
       val = invoke(func, args, "", currentBlock);
     }
@@ -2209,7 +2246,7 @@ void JavaJIT::invokeInterface(uint16 index) {
 }
 
 void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
-  Function* meth = TheCompiler->getMethod(upcalls->VMSystemArraycopy);
+  Function* meth = TheCompiler->getMethod(upcalls->VMSystemArraycopy, NULL);
 
   Value* ptr_src = args[0];
   Value* int32_start = args[1];

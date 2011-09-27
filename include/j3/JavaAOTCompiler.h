@@ -40,7 +40,7 @@ public:
     return new JavaAOTCompiler(ModuleID);
   }
   
-  virtual void* materializeFunction(JavaMethod* meth) {
+  virtual void* materializeFunction(JavaMethod* meth, Class* customizeFor) {
     fprintf(stderr, "Can not materiale a function in AOT mode.");
     abort();
   }
@@ -52,7 +52,7 @@ public:
   
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert);
-  virtual llvm::Function* getMethod(JavaMethod* meth);
+  virtual llvm::Function* getMethod(JavaMethod* meth, Class* customizeFor);
   
   virtual void makeVT(Class* cl);
   virtual void makeIMT(Class* cl);
@@ -125,7 +125,7 @@ private:
   std::map<const Class*, llvm::Constant*> virtualMethods;
   std::map<const JavaObject*, llvm::Constant*> finalObjects;
   std::map<const llvm::Constant*, JavaObject*> reverseFinalObjects;
-  std::vector<JavaMethod*> toCompile;
+  std::vector<std::pair<JavaMethod*, Class*> > toCompile;
   
   typedef std::map<const JavaObject*, llvm::Constant*>::iterator
     final_object_iterator;
@@ -201,7 +201,7 @@ public:
 
 private:
   void compileAllStubs(Signdef* sign);
-  llvm::Function* getMethodOrStub(JavaMethod* meth);
+  llvm::Function* getMethodOrStub(JavaMethod* meth, Class* customizeFor);
 };
 
 } // end namespace j3

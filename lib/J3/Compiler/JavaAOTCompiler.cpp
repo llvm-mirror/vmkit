@@ -1047,13 +1047,13 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   MethodElts.push_back(getUTF8(method.type));
   
   // canBeInlined
-  MethodElts.push_back(ConstantInt::get(Type::getInt8Ty(getLLVMContext()), method.canBeInlined));
+  MethodElts.push_back(ConstantInt::get(Type::getInt8Ty(getLLVMContext()), method.isCustomizable));
 
   // code
   if (getMethodInfo(&method)->methodFunction == NULL) {
     MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
   } else {
-    Function* func = getMethod(&method);
+    Function* func = getMethod(&method, NULL);
     MethodElts.push_back(ConstantExpr::getCast(Instruction::BitCast, func,
                                                JavaIntrinsics.ptrType));
   }
@@ -1567,22 +1567,51 @@ Constant* JavaAOTCompiler::getUTF8(const UTF8* val) {
   }
 }
 
-Function* JavaAOTCompiler::getMethodOrStub(JavaMethod* meth) {
+Function* JavaAOTCompiler::getMethodOrStub(JavaMethod* meth, Class* customizeFor) {
   assert(!isStatic(meth->access));
-  if (precompile
-      && (meth->code == NULL)
-      && (getMethodInfo(meth)->methodFunction == NULL)) {
-    LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
-    return LSI->getVirtualStub();
+  LLVMMethodInfo* LMI = getMethodInfo(meth);
+  LLVMSignatureInfo* LSI = getSignatureInfo(meth->getSignature());
+  if (precompile) {
+    if (customizeFor != NULL) {
+      if (LMI->isCustomizable) {
+        if (LMI->customizedVersions[customizeFor] != NULL) {
+          // We have a customized version, get it.
+          return getMethod(meth, customizeFor);
+        } else {
+          // No customized version, even if there is an uncustomized version,
+          // we return the stub, so that we get a customized version at
+          // runtime.
+          return LSI->getVirtualStub();
+        }
+      } else {
+        // If we have created a method for it, we know the method is not customizable,
+        // and we can use the 'general' method.
+        if (LMI->methodFunction) {
+          return getMethod(meth, NULL);
+        } else {
+          // Otherwise, no method has been created for it.
+          return LSI->getVirtualStub();
+        }
+      }
+    } else {
+      // If we have created a method for it, take it.
+      if (LMI->methodFunction) {
+        return getMethod(meth, NULL);
+      } else {
+        // Otherwise, no method has been created for it.
+        return LSI->getVirtualStub();
+      }
+    }
   } else {
-    return getMethod(meth);
+    // We're not precompiling, get the method.
+    return getMethod(meth, customizeFor);
   }
 }
 
-Function* JavaAOTCompiler::getMethod(JavaMethod* meth) {
-  Function* func = getMethodInfo(meth)->getMethod();
+Function* JavaAOTCompiler::getMethod(JavaMethod* meth, Class* customizeFor) {
+  Function* func = getMethodInfo(meth)->getMethod(customizeFor);
   if (func->hasExternalWeakLinkage()) {
-    toCompile.push_back(meth);
+    toCompile.push_back(std::make_pair(meth, customizeFor));
   }
   return func;
 }
@@ -1593,6 +1622,8 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
                                       JavaVirtualTable::getBaseSize();
   JavaVirtualTable* RealVT = classDef->isClass() ? 
     VT : ClassArray::SuperArray->virtualVT;
+
+  Class* maybeCustomize = classDef->isClass() ? classDef->asClass() : NULL;
 
   ArrayType* ATy = 
     dyn_cast<ArrayType>(JavaIntrinsics.VTType->getContainedType(0));
@@ -1606,7 +1637,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   Function* Finalizer = NULL;
   if (VT->hasDestructor()) {
     JavaMethod* meth = (JavaMethod*)(RealVT->destructor);
-    Finalizer = getMethodOrStub(meth);
+    Finalizer = getMethodOrStub(meth, maybeCustomize);
   } else {
     Finalizer = EmptyDestructorFunction;
   }
@@ -1729,7 +1760,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
                                                      Imeth->type,
                                                      false, true, 0);
         assert(meth && "No method found");
-        Function* func = getMethodOrStub(meth);
+        Function* func = getMethodOrStub(meth, maybeCustomize);
         IElemts.push_back(ConstantExpr::getBitCast(func, PTy));
       } else if (size > 1) {
         std::vector<JavaMethod*> methods;
@@ -1750,7 +1781,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
 
         if (SameMethod) {
           assert(methods[0] && "No method found");
-          Function* func = getMethodOrStub(methods[0]);
+          Function* func = getMethodOrStub(methods[0], maybeCustomize);
           IElemts.push_back(ConstantExpr::getBitCast(func, PTy));
         } else {
 
@@ -1769,7 +1800,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
             JavaMethod* Cmeth = *it;
             assert(Cmeth && "No method found");
 
-            Function* func = getMethodOrStub(Cmeth);
+            Function* func = getMethodOrStub(Cmeth, maybeCustomize);
             InternalElemts.push_back(
               ConstantExpr::getBitCast(getMethodInClass(Imeth), PTy));
             InternalElemts.push_back(ConstantExpr::getBitCast(func, PTy));
@@ -1804,10 +1835,10 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   // methods
   for (uint32 i = JavaVirtualTable::getFirstJavaMethodIndex(); i < size; ++i) {
     JavaMethod* meth = ((JavaMethod**)RealVT)[i];
-    Function* F = getMethodOrStub(meth);
     if (isAbstract(meth->access)) {
       Elemts.push_back(Constant::getNullValue(PTy));
     } else {
+      Function* F = getMethodOrStub(meth, maybeCustomize);
       Elemts.push_back(ConstantExpr::getCast(Instruction::BitCast, F, PTy));
     }
   }
@@ -2054,13 +2085,13 @@ void JavaAOTCompiler::compileClass(Class* cl) {
 
   for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
     JavaMethod& meth = cl->virtualMethods[i];
-    if (!isAbstract(meth.access)) parseFunction(&meth);
+    if (!isAbstract(meth.access)) parseFunction(&meth, NULL);
     if (generateStubs) compileAllStubs(meth.getSignature());
   }
   
   for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
     JavaMethod& meth = cl->staticMethods[i];
-    if (!isAbstract(meth.access)) parseFunction(&meth);
+    if (!isAbstract(meth.access)) parseFunction(&meth, NULL);
     if (generateStubs) compileAllStubs(meth.getSignature());
   }
 }
@@ -2158,11 +2189,11 @@ void mainCompilerStart(JavaThread* th) {
       cl->setOwnerClass(JavaThread::get());
       
       for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-        M->getMethod(&cl->virtualMethods[i]);
+        M->getMethod(&cl->virtualMethods[i], NULL);
       }
 
       for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-        M->getMethod(&cl->staticMethods[i]);
+        M->getMethod(&cl->staticMethods[i], NULL);
       }
     }
 
@@ -2182,7 +2213,7 @@ void mainCompilerStart(JavaThread* th) {
                      magic.length() - 1)) {
           for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
             if (!isAbstract(cl->virtualMethods[i].access)) {
-              Function* F = M->getMethod(&cl->virtualMethods[i]);
+              Function* F = M->getMethod(&cl->virtualMethods[i], NULL);
               M->setMethod(F, ptr, F->getName().data());
               cl->virtualMethods[i].compiledPtr();
               // Set native so that we don't try to inline it.
@@ -2192,7 +2223,7 @@ void mainCompilerStart(JavaThread* th) {
 
           for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
             if (!isAbstract(cl->staticMethods[i].access)) {
-              Function* F = M->getMethod(&cl->staticMethods[i]);
+              Function* F = M->getMethod(&cl->staticMethods[i], NULL);
               M->setMethod(F, ptr, F->getName().data());
               cl->staticMethods[i].compiledPtr();
               // Set native so that we don't try to inline it.
@@ -2338,15 +2369,26 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
 
   for (method_info_iterator I = jitCompiler->method_infos.begin(),
        E = jitCompiler->method_infos.end(); I != E; I++) {
-    if (!isAbstract(I->first->access)) parseFunction(I->first);
+    if (!isAbstract(I->first->access)) {
+      LLVMMethodInfo* LMI = I->second;
+      if (LMI->methodFunction) {
+        parseFunction(I->first, NULL);
+      }
+      for (std::map<Class*, Function*>::iterator
+           CI = LMI->customizedVersions.begin(),
+           CE = LMI->customizedVersions.end(); CI != CE; CI++) {
+        parseFunction(I->first, NULL);
+      }
+    }
   }
 
   while (!toCompile.empty()) {
-    JavaMethod* meth = toCompile.back();
+    JavaMethod* meth = toCompile.back().first;
+    // Class* customizeFor = toCompile.back().second;
     // parseFunction may introduce new functions to compile, so
     // pop toCompile before calling parseFunction.
     toCompile.pop_back();
-    parseFunction(meth);
+    parseFunction(meth, NULL);
   }
 
   // Make sure classes and arrays already referenced in constant pools
@@ -2367,6 +2409,8 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
         dyn_cast<GlobalVariable>(getVirtualTable(VT)->getOperand(0));
     gv->setInitializer(CreateConstantFromVT(VT));
   }
+
+  assert(toCompile.size() == 0);
 
   // Add used stubs to the image.
   for (SignMap::iterator i = loader->javaSignatures->map.begin(),

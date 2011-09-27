@@ -75,9 +75,6 @@ private:
   std::map<Class*, LLVMClassInfo*> class_infos;
   typedef std::map<Class*, LLVMClassInfo*>::iterator class_info_iterator;
 
-  std::map<llvm::MDNode*, JavaMethod*> DbgInfos;
-  typedef std::map<llvm::MDNode*, JavaMethod*>::iterator dbg_iterator;
-
   llvm::DenseMap<llvm::FunctionType*, llvm::Function*> virtualStubs;
   llvm::DenseMap<llvm::FunctionType*, llvm::Function*> specialStubs;
   llvm::DenseMap<llvm::FunctionType*, llvm::Function*> staticStubs;
@@ -131,11 +128,10 @@ public:
   virtual ~JavaLLVMCompiler();
 
   JavaMethod* getJavaMethod(const llvm::Function&);
-  llvm::MDNode* GetDbgSubprogram(JavaMethod* meth);
 
   void resolveVirtualClass(Class* cl);
   void resolveStaticClass(Class* cl);
-  virtual llvm::Function* getMethod(JavaMethod* meth);
+  virtual llvm::Function* getMethod(JavaMethod* meth, Class* customizeFor);
 
   void initialiseAssessorInfo();
   std::map<const char, LLVMAssessorInfo> AssessorInfo;
@@ -209,8 +205,9 @@ public:
   
   virtual void setMethod(llvm::Function* func, void* ptr, const char* name) = 0;
   
-  virtual void* materializeFunction(JavaMethod* meth) = 0;
-  llvm::Function* parseFunction(JavaMethod* meth);
+  virtual void* materializeFunction(JavaMethod* meth,
+                                    Class* customizeFor) = 0;
+  llvm::Function* parseFunction(JavaMethod* meth, Class* customizeFor);
    
   llvm::FunctionPassManager* JavaFunctionPasses;
   llvm::FunctionPassManager* JavaNativeFunctionPasses;

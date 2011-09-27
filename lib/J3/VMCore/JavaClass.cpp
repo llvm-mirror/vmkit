@@ -269,9 +269,9 @@ JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   return res;
 }
 
-void* JavaMethod::compiledPtr() {
-  if (code == 0) {
-    code = classDef->classLoader->getCompiler()->materializeFunction(this);
+void* JavaMethod::compiledPtr(Class* customizeFor) {
+  if ((isCustomizable && customizeFor != NULL) || code == 0) {
+    return classDef->classLoader->getCompiler()->materializeFunction(this, customizeFor);
   }
   return code;
 }
@@ -633,7 +633,7 @@ void JavaMethod::initialise(Class* cl, const UTF8* N, const UTF8* T, uint16 A) {
   _signature = 0;
   code = 0;
   access = A;
-  canBeInlined = false;
+  isCustomizable = false;
   offset = 0;
 }
 
