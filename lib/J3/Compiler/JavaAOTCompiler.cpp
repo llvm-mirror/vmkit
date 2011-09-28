@@ -2377,18 +2377,18 @@ void JavaAOTCompiler::compileClassLoader(JnjvmBootstrapLoader* loader) {
       for (std::map<Class*, Function*>::iterator
            CI = LMI->customizedVersions.begin(),
            CE = LMI->customizedVersions.end(); CI != CE; CI++) {
-        parseFunction(I->first, NULL);
+        parseFunction(I->first, CI->first);
       }
     }
   }
 
   while (!toCompile.empty()) {
     JavaMethod* meth = toCompile.back().first;
-    // Class* customizeFor = toCompile.back().second;
+    Class* customizeFor = toCompile.back().second;
     // parseFunction may introduce new functions to compile, so
     // pop toCompile before calling parseFunction.
     toCompile.pop_back();
-    parseFunction(meth, NULL);
+    parseFunction(meth, customizeFor);
   }
 
   // Make sure classes and arrays already referenced in constant pools

@@ -1059,7 +1059,7 @@ void JavaMethod::jniConsFromMeth(char* buf, const UTF8* jniConsClName,
   
   memcpy(buf, JNI_NAME_PRE, JNI_NAME_PRE_LEN);
   
-  for (sint32 i =0; i < clen; ++i) {
+  for (sint32 i = 0; i < clen; ++i) {
     cur = jniConsClName->elements[i];
     if (cur == '/') {
       ptr[0] = '_';
@@ -1085,7 +1085,7 @@ void JavaMethod::jniConsFromMeth(char* buf, const UTF8* jniConsClName,
   ptr[0] = '_';
   ++ptr;
   
-  for (sint32 i =0; i < mnlen; ++i) {
+  for (sint32 i = 0; i < mnlen; ++i) {
     cur = jniConsName->elements[i];
     if (cur == '/') {
       ptr[0] = '_';
@@ -1130,7 +1130,7 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
   
   memcpy(buf, JNI_NAME_PRE, JNI_NAME_PRE_LEN);
   
-  for (sint32 i =0; i < clen; ++i) {
+  for (sint32 i = 0; i < clen; ++i) {
     cur = jniConsClName->elements[i];
     if (cur == '/') {
       ptr[0] = '_';
@@ -1156,7 +1156,7 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
   ptr[0] = '_';
   ++ptr;
 
-  for (sint32 i =0; i < mnlen; ++i) {
+  for (sint32 i = 0; i < mnlen; ++i) {
     cur = jniConsName->elements[i];
     if (cur == '/') ptr[0] = '_';
     else if (cur == '_') {
@@ -1228,7 +1228,6 @@ void JavaMethod::jniConsFromMethOverloaded(char* buf, const UTF8* jniConsClName,
     ++ptr;
   }
   ptr[0] = 0;
-
 }
 
 

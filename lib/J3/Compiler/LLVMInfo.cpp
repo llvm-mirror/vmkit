@@ -140,6 +140,32 @@ namespace llvm {
   extern bool JITEmitDebugInfo;
 }
 
+static char* GetMethodName(mvm::ThreadAllocator& allocator,
+                           JavaMethod* methodDef,
+                           Class* customizeFor) {
+  const UTF8* jniConsClName = methodDef->classDef->name;
+  const UTF8* jniConsName = methodDef->name;
+  const UTF8* jniConsType = methodDef->type;
+  sint32 clen = jniConsClName->size;
+  sint32 mnlen = jniConsName->size;
+  sint32 mtlen = jniConsType->size;
+
+  char* buf = (char*)allocator.Allocate(
+      3 + JNI_NAME_PRE_LEN + 1 + ((mnlen + clen + mtlen) << 3));
+  
+  methodDef->jniConsFromMethOverloaded(buf + 1);
+  memcpy(buf, "JnJVM", 5);
+
+  if (customizeFor != NULL) {
+    int len = strlen(buf);
+    buf[len] = '_';
+    buf[len + 1] = '_';
+    buf[len + 2] = 0;
+  }
+
+  return buf;
+}
+
 Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
   bool customizing = false;
   Function* result = NULL;
@@ -152,20 +178,9 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
 
   if (result == NULL) {
     if (Compiler->emitFunctionName() || JITEmitDebugInfo) {
-      const UTF8* jniConsClName = methodDef->classDef->name;
-      const UTF8* jniConsName = methodDef->name;
-      const UTF8* jniConsType = methodDef->type;
-      sint32 clen = jniConsClName->size;
-      sint32 mnlen = jniConsName->size;
-      sint32 mtlen = jniConsType->size;
-
       mvm::ThreadAllocator allocator;
-      char* buf = (char*)allocator.Allocate(
-          3 + JNI_NAME_PRE_LEN + 1 + ((mnlen + clen + mtlen) << 3));
-      
-      methodDef->jniConsFromMethOverloaded(buf + 1);
-      memcpy(buf, "JnJVM", 5);
-
+      char* buf = GetMethodName(
+          allocator, methodDef, customizing ? customizeFor : NULL);
       result = Function::Create(getFunctionType(), 
                                 GlobalValue::ExternalWeakLinkage, buf,
                                 Compiler->getLLVMModule());
@@ -195,6 +210,9 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
 
 void LLVMMethodInfo::setCustomizedVersion(Class* cl, llvm::Function* F) {
   assert(customizedVersions.size() == 0);
+  mvm::ThreadAllocator allocator;
+  char* buf = GetMethodName(allocator, methodDef, cl);
+  F->setName(buf);
   methodFunction = NULL;
   customizedVersions[cl] = F;
 }

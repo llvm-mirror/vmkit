@@ -117,6 +117,58 @@ static void EmitVmkitGlobal(const Module &M, AsmPrinter &AP, const char *Id) {
   AP.OutStreamer.EmitLabel(Sym);
 }
 
+static bool methodNameMatches(StringRef compiledName,
+                              Constant* name,
+                              Constant* type) {
+  uint32_t size = compiledName.size();
+  std::string str;
+
+  for (uint32_t i = 0; i < name->getNumOperands(); ++i) {
+    int16_t cur = cast<ConstantInt>(name->getOperand(i))->getZExtValue();
+    if (cur == '/') {
+      str += '_';
+    } else if (cur == '_') {
+      str += "_1";
+    } else if (cur == '<') {
+      str += "_0003C";
+    } else if (cur == '>') {
+      str += "_0003E";
+    } else {
+      str += (char)cur;
+    }
+  }
+
+  for (uint32_t i = 0; i < type->getNumOperands(); ++i) {
+    int16_t cur = cast<ConstantInt>(type->getOperand(i))->getZExtValue();
+    if (cur == '(') {
+      str += "__";
+    } else if (cur == '/') {
+      str += '_';
+    } else if (cur == '_') {
+      str += "_1";
+    } else if (cur == '$') {
+      str += "_00024";
+    } else if (cur == ';') {
+      str += "_2";
+    } else if (cur == '[') {
+      str += "_3";
+    } else if (cur == ')') {
+      break;
+    } else {
+      str += (char)cur;
+    }
+  }
+
+  if (str.length() > size) return false;
+  if (str.compare(compiledName) == 0) return true;
+
+  str += 'S';
+
+  if (str.compare(compiledName) == 0) return true;
+
+  return false;
+}
+
 Constant* FindMetadata(const Function& F) {
   LLVMContext& context = F.getParent()->getContext();
   for (Value::const_use_iterator I = F.use_begin(), E = F.use_end(); I != E; ++I) {
@@ -144,6 +196,39 @@ Constant* FindMetadata(const Function& F) {
         }
       }
     }
+  }
+
+  StringRef name = F.getName();
+  if (name.startswith("JnJVM")) {
+    // Metadata for customized methods.
+    StringRef methods = name.substr(0, name.find("__"));
+    StringRef methodName = name.substr(methods.rfind('_') + 1);
+    methodName = methodName.substr(0, methodName.rfind("__"));
+    methods = methods.substr(6, methods.rfind('_') - 5);
+    methods = std::string(methods) + "VirtualMethods";
+    Constant* VirtualMethods = cast<Constant>(F.getParent()->getNamedValue(methods));
+    assert(VirtualMethods);
+    Constant* MethodsArray = cast<Constant>(VirtualMethods->getOperand(0));
+    for (uint32_t index = 0; index < MethodsArray->getNumOperands(); index++) {
+      Constant* method = cast<Constant>(MethodsArray->getOperand(index));
+
+      Constant* name = cast<ConstantExpr>(method->getOperand(5));
+      name = cast<Constant>(name->getOperand(0));
+      name = cast<Constant>(name->getOperand(0));
+      name = cast<Constant>(name->getOperand(1));
+
+      Constant* type = cast<ConstantExpr>(method->getOperand(6));
+      type = cast<Constant>(type->getOperand(0));
+      type = cast<Constant>(type->getOperand(0));
+      type = cast<Constant>(type->getOperand(1));
+
+      if (methodNameMatches(methodName, name, type)) {
+        Constant* GEPs[2] = { ConstantInt::get(Type::getInt32Ty(context), 0),
+                              ConstantInt::get(Type::getInt32Ty(context), index) };
+        return ConstantExpr::getGetElementPtr(VirtualMethods, GEPs, 2);
+      }
+    }
+    assert(0 && "Should have found a JavaMethod");
   }
   return NULL;
 }
