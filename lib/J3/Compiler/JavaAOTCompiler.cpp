@@ -1053,6 +1053,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   if (getMethodInfo(&method)->methodFunction == NULL) {
     MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
   } else {
+    assert(!isAbstract(method.access));
     Function* func = getMethod(&method, NULL);
     MethodElts.push_back(ConstantExpr::getCast(Instruction::BitCast, func,
                                                JavaIntrinsics.ptrType));
@@ -1604,7 +1605,7 @@ Function* JavaAOTCompiler::getMethodOrStub(JavaMethod* meth, Class* customizeFor
     }
   } else {
     // We're not precompiling, get the method.
-    return getMethod(meth, customizeFor);
+    return getMethod(meth, NULL);
   }
 }
 
@@ -2189,7 +2190,9 @@ void mainCompilerStart(JavaThread* th) {
       cl->setOwnerClass(JavaThread::get());
       
       for (uint32 i = 0; i < cl->nbVirtualMethods; ++i) {
-        M->getMethod(&cl->virtualMethods[i], NULL);
+        if (!isAbstract(cl->virtualMethods[i].access)) {
+          M->getMethod(&cl->virtualMethods[i], NULL);
+        }
       }
 
       for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
@@ -2222,13 +2225,11 @@ void mainCompilerStart(JavaThread* th) {
           }
 
           for (uint32 i = 0; i < cl->nbStaticMethods; ++i) {
-            if (!isAbstract(cl->staticMethods[i].access)) {
-              Function* F = M->getMethod(&cl->staticMethods[i], NULL);
-              M->setMethod(F, ptr, F->getName().data());
-              cl->staticMethods[i].compiledPtr();
-              // Set native so that we don't try to inline it.
-              cl->staticMethods[i].setNative();
-            }
+            Function* F = M->getMethod(&cl->staticMethods[i], NULL);
+            M->setMethod(F, ptr, F->getName().data());
+            cl->staticMethods[i].compiledPtr();
+            // Set native so that we don't try to inline it.
+            cl->staticMethods[i].setNative();
           }
         }
       }

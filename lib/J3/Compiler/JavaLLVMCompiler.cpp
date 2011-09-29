@@ -53,6 +53,7 @@ Function* JavaLLVMCompiler::getMethod(JavaMethod* meth, Class* customizeFor) {
 }
 
 Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor) {
+  assert(!isAbstract(meth->access));
   LLVMMethodInfo* LMI = getMethodInfo(meth);
   Function* func = LMI->getMethod(customizeFor);
   

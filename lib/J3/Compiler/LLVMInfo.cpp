@@ -167,6 +167,7 @@ static char* GetMethodName(mvm::ThreadAllocator& allocator,
 }
 
 Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
+  assert(!isAbstract(methodDef->access));
   bool customizing = false;
   Function* result = NULL;
   if (customizeFor != NULL && isCustomizable) {
