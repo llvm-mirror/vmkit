@@ -158,9 +158,11 @@ static char* GetMethodName(mvm::ThreadAllocator& allocator,
 
   if (customizeFor != NULL) {
     int len = strlen(buf);
+    UTF8Buffer buffer(customizeFor->name);
+    buffer.toCompileName("_Customized");
     buf[len] = '_';
     buf[len + 1] = '_';
-    buf[len + 2] = 0;
+    memcpy(buf + len + 2, buffer.cString(), strlen(buffer.cString()) + 1);
   }
 
   return buf;
@@ -212,8 +214,10 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
 void LLVMMethodInfo::setCustomizedVersion(Class* cl, llvm::Function* F) {
   assert(customizedVersions.size() == 0);
   mvm::ThreadAllocator allocator;
-  char* buf = GetMethodName(allocator, methodDef, cl);
-  F->setName(buf);
+  if (Compiler->emitFunctionName() || JITEmitDebugInfo) {
+    char* buf = GetMethodName(allocator, methodDef, cl);
+    F->setName(buf);
+  }
   methodFunction = NULL;
   customizedVersions[cl] = F;
 }

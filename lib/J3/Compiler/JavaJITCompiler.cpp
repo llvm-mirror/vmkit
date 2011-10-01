@@ -410,9 +410,12 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
   return func;
 }
 
-bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth, bool* needsInit) {
+bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth,
+                                          Class* customizeFor,
+                                          bool* needsInit) {
   *needsInit = true;
-  return (meth == NULL || meth->code == NULL);
+  return (meth == NULL ||
+          getMethod(meth, customizeFor)->hasExternalWeakLinkage());
 }
 
 JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)

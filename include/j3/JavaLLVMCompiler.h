@@ -212,10 +212,13 @@ public:
   llvm::FunctionPassManager* JavaFunctionPasses;
   llvm::FunctionPassManager* JavaNativeFunctionPasses;
   
-  virtual bool needsCallback(JavaMethod* meth, bool* needsInit) {
+  virtual bool needsCallback(JavaMethod* meth,
+                             Class* customizeFor,
+                             bool* needsInit) {
     *needsInit = true;
     return meth == NULL;
   }
+
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert) = 0;
   

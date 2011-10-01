@@ -84,7 +84,7 @@ public:
 
 class JavaJ3LazyJITCompiler : public JavaJITCompiler {
 public:
-  virtual bool needsCallback(JavaMethod* meth, bool* needsInit);
+  virtual bool needsCallback(JavaMethod* meth, Class* customizeFor, bool* needsInit);
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert);
   virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);

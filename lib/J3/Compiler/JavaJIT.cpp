@@ -111,29 +111,27 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Value* val = NULL;  // The return from the method.
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
+
+  bool customized = false;
+  if (!overridesThis
+      && (stack[stackSize() - signature->nbArguments - 1].bytecode == ALOAD_0)
+      && !isStatic(compilingMethod->access)) {
+    assert(meth != NULL);
+    isCustomizable = true;
+    if (customizeFor != NULL) {
+      meth = customizeFor->lookupMethodDontThrow(
+          meth->name, meth->type, false, true, NULL);
+      assert(meth);
+      canBeDirect = true;
+      customized = true;
+      assert(!meth->classDef->isInterface());
+      assert(!isAbstract(meth->access));
+    }
+  }
  
   if ((cl && isFinal(cl->access)) || 
       (meth && (isFinal(meth->access) || isPrivate(meth->access)))) {
     canBeDirect = true;
-  }
-
-  bool customized = false;
-  if (!canBeDirect) {
-    if (!overridesThis
-        && (stack[stackSize() - signature->nbArguments - 1].bytecode == ALOAD_0)
-        && !isStatic(compilingMethod->access)) {
-      assert(meth != NULL);
-      isCustomizable = true;
-      if (customizeFor != NULL) {
-        meth = customizeFor->lookupMethodDontThrow(
-            meth->name, meth->type, false, true, NULL);
-        assert(meth);
-        canBeDirect = true;
-        customized = true;
-        assert(!meth->classDef->isInterface());
-        assert(!isAbstract(meth->access));
-      }
-    }
   }
 
   if (meth && isInterface(meth->classDef->access)) {
@@ -175,10 +173,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
     makeArgs(it, index, args, signature->nbArguments + 1);
     JITVerifyNull(args[0]);
     val = invokeInline(meth, args, customized);
-  } else if (canBeDirect && !TheCompiler->needsCallback(meth, &needsInit)) {
+  } else if (canBeDirect &&
+      !TheCompiler->needsCallback(meth, customized ? customizeFor : NULL, &needsInit)) {
     makeArgs(it, index, args, signature->nbArguments + 1);
     JITVerifyNull(args[0]);
-    val = invoke(TheCompiler->getMethod(meth, NULL), args, "", currentBlock);
+    val = invoke(TheCompiler->getMethod(meth, customized ? customizeFor : NULL),
+                 args, "", currentBlock);
   } else {
 
     BasicBlock* endBlock = 0;
@@ -1554,7 +1554,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
 
   Value* func = 0;
   bool needsInit = false;
-  if (TheCompiler->needsCallback(meth, &needsInit)) {
+  if (TheCompiler->needsCallback(meth, NULL, &needsInit)) {
     if (needsInit) {
       // Make sure the class is loaded before materializing the method.
       uint32 clIndex = ctpInfo->getClassIndexFromMethod(index);
@@ -1632,7 +1632,7 @@ void JavaJIT::invokeStatic(uint16 index) {
   
   Value* func = 0;
   bool needsInit = false;
-  if (TheCompiler->needsCallback(meth, &needsInit)) {
+  if (TheCompiler->needsCallback(meth, NULL, &needsInit)) {
     func = TheCompiler->addCallback(compilingClass, index, signature,
                                     true, currentBlock);
   } else {
