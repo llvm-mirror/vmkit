@@ -201,11 +201,11 @@ Constant* FindMetadata(const Function& F) {
   StringRef name = F.getName();
   if (name.startswith("JnJVM")) {
     // Metadata for customized methods.
-    StringRef methods = name.substr(0, name.find("__"));
-    StringRef methodName = name.substr(methods.rfind('_') + 1);
+    std::string methods = name.substr(0, name.find("__"));
+    std::string methodName = name.substr(methods.rfind('_') + 1);
     methodName = methodName.substr(0, methodName.rfind("__"));
     methods = methods.substr(6, methods.rfind('_') - 5);
-    methods = std::string(methods) + "VirtualMethods";
+    methods = methods + "VirtualMethods";
     Constant* VirtualMethods = cast<Constant>(F.getParent()->getNamedValue(methods));
     assert(VirtualMethods);
     Constant* MethodsArray = cast<Constant>(VirtualMethods->getOperand(0));
