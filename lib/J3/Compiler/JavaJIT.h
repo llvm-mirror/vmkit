@@ -219,6 +219,7 @@ private:
 
   bool analyzeForInlining(Reader& reader, uint32_t codeLength);
   bool canInlineLoadConstant(uint16 index);
+  bool isThisReference(int staciIndex);
 
 //===------------------------- Bytecode parsing ---------------------------===//
 
@@ -460,7 +461,7 @@ private:
 
   /// ldResolved - Emit code to get a pointer to a field.
   llvm::Value* ldResolved(uint16 index, bool stat, llvm::Value* object,
-                          llvm::Type* fieldTypePtr);
+                          llvm::Type* fieldTypePtr, bool thisReference = false);
 
 //===--------------------- Constant pool accesses  ------------------------===//
  

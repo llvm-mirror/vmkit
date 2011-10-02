@@ -101,6 +101,12 @@ bool JavaJIT::canBeInlined(JavaMethod* meth, bool customizing) {
   return true;
 }
 
+bool JavaJIT::isThisReference(int stackIndex) {
+  return !overridesThis
+      && (stack[stackIndex].bytecode == ALOAD_0)
+      && !isStatic(compilingMethod->access);
+}
+
 void JavaJIT::invokeVirtual(uint16 index) {
   
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
@@ -113,9 +119,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
 
   bool customized = false;
-  if (!overridesThis
-      && (stack[stackSize() - signature->nbArguments - 1].bytecode == ALOAD_0)
-      && !isStatic(compilingMethod->access)) {
+  bool thisReference = isThisReference(stackSize() - signature->nbArguments - 1);
+  if (thisReference) {
     assert(meth != NULL);
     isCustomizable = true;
     if (customizeFor != NULL) {
@@ -171,12 +176,12 @@ void JavaJIT::invokeVirtual(uint16 index) {
   bool needsInit = false;
   if (canBeDirect && canBeInlined(meth, customized)) {
     makeArgs(it, index, args, signature->nbArguments + 1);
-    JITVerifyNull(args[0]);
+    if (!thisReference) JITVerifyNull(args[0]);
     val = invokeInline(meth, args, customized);
   } else if (canBeDirect &&
       !TheCompiler->needsCallback(meth, customized ? customizeFor : NULL, &needsInit)) {
     makeArgs(it, index, args, signature->nbArguments + 1);
-    JITVerifyNull(args[0]);
+    if (!thisReference) JITVerifyNull(args[0]);
     val = invoke(TheCompiler->getMethod(meth, customized ? customizeFor : NULL),
                  args, "", currentBlock);
   } else {
@@ -225,7 +230,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     }
 
     makeArgs(it, index, args, signature->nbArguments + 1);
-    JITVerifyNull(args[0]);
+    if (!thisReference) JITVerifyNull(args[0]);
     Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
                                  currentBlock);
  
@@ -1290,7 +1295,6 @@ void JavaJIT::loadConstant(uint16 index) {
 }
 
 void JavaJIT::JITVerifyNull(Value* obj) {
-
   if (TheCompiler->hasExceptionsEnabled()) {
     Constant* zero = intrinsics->JavaObjectNullConstant;
     Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, zero, "");
@@ -1302,8 +1306,7 @@ void JavaJIT::JITVerifyNull(Value* obj) {
     currentBlock = exit;
     throwException(intrinsics->NullPointerExceptionFunction, 0, 0);
     currentBlock = cont;
-  }
- 
+  } 
 }
 
 Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
@@ -1551,6 +1554,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   FunctionType* virtualType = LSI->getVirtualType();
   meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
+  bool thisReference = isThisReference(stackSize() - signature->nbArguments - 1);
 
   Value* func = 0;
   bool needsInit = false;
@@ -1574,7 +1578,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   std::vector<Value*> args;
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
-  JITVerifyNull(args[0]); 
+  if (!thisReference) JITVerifyNull(args[0]);
   
   if (meth == compilingClass->classLoader->bootstrapLoader->upcalls->InitObject) {
     return;
@@ -1810,7 +1814,7 @@ void JavaJIT::invokeNew(uint16 index) {
 }
 
 Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object, 
-                           Type* fieldTypePtr) {
+                           Type* fieldTypePtr, bool thisReference) {
   JavaConstantPool* info = compilingClass->ctpInfo;
   
   JavaField* field = info->lookupField(index, stat);
@@ -1833,7 +1837,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
     } else {
       object = new LoadInst(
           object, "", TheCompiler->useCooperativeGC(), currentBlock);
-      JITVerifyNull(object);
+      if (!thisReference) JITVerifyNull(object);
       type = LCI->getVirtualType();
     }
     
@@ -1862,7 +1866,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   if (!stat) {
     object = new LoadInst(
         object, "", TheCompiler->useCooperativeGC(), currentBlock);
-    JITVerifyNull(object);
+    if (!thisReference) JITVerifyNull(object);
     Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
     Value* args[2] = { zero, ptr };
     ptr = GetElementPtrInst::Create(tmp, args, "", currentBlock);
@@ -2007,7 +2011,8 @@ void JavaJIT::setVirtualField(uint16 index) {
     stackIndex--;
   }
   Value* object = objectStack[stackIndex];
-  Value* ptr = ldResolved(index, false, object, LAI.llvmTypePtr);
+  bool thisReference = isThisReference(stackIndex);
+  Value* ptr = ldResolved(index, false, object, LAI.llvmTypePtr, thisReference);
 
   Value* val = pop();
   if (type == Type::getInt64Ty(*llvmContext) ||
@@ -2040,9 +2045,10 @@ void JavaJIT::getVirtualField(uint16 index) {
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   Type* type = LAI.llvmType;
   Value* obj = objectStack[currentStackIndex - 1];
+  bool thisReference = isThisReference(currentStackIndex - 1);
   pop(); // Pop the object
   
-  Value* ptr = ldResolved(index, false, obj, LAI.llvmTypePtr);
+  Value* ptr = ldResolved(index, false, obj, LAI.llvmTypePtr, thisReference);
   
   JnjvmBootstrapLoader* JBL = compilingClass->classLoader->bootstrapLoader;
   bool final = false;
@@ -2094,6 +2100,7 @@ void JavaJIT::invokeInterface(uint16 index) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
+  bool thisReference = isThisReference(stackSize() - signature->nbArguments - 1);
   
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   FunctionType* virtualType = LSI->getVirtualType();
@@ -2119,7 +2126,7 @@ void JavaJIT::invokeInterface(uint16 index) {
   Value* targetObject = getTarget(signature);
   targetObject = new LoadInst(
           targetObject, "", TheCompiler->useCooperativeGC(), currentBlock);
-  JITVerifyNull(targetObject);
+  if (!thisReference) JITVerifyNull(targetObject);
   // TODO: The following code needs more testing.
 #if 0
   BasicBlock* endBlock = createBasicBlock("end interface invoke");
@@ -2229,7 +2236,6 @@ void JavaJIT::invokeInterface(uint16 index) {
   std::vector<Value*> args; // size = [signature->nbIn + 3];
   FunctionType::param_iterator it  = virtualType->param_end();
   makeArgs(it, index, args, signature->nbArguments + 1);
-  JITVerifyNull(args[0]);
   Value* ret = invoke(node, args, "", currentBlock);
   if (retType != Type::getVoidTy(*llvmContext)) {
     if (ret->getType() == intrinsics->JavaObjectType) {

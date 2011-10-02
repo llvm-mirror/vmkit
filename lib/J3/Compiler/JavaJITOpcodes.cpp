@@ -2283,15 +2283,17 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       }
 
       case MONITORENTER : {
+        bool thisReference = isThisReference(currentStackIndex - 1);
         Value* obj = pop();
-        JITVerifyNull(obj);
+        if (!thisReference) JITVerifyNull(obj);
         monitorEnter(obj);
         break;
       }
 
       case MONITOREXIT : {
+        bool thisReference = isThisReference(currentStackIndex - 1);
         Value* obj = pop();
-        JITVerifyNull(obj);
+        if (!thisReference) JITVerifyNull(obj);
         monitorExit(obj);
         break;
       }
