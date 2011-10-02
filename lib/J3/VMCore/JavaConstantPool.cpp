@@ -276,6 +276,7 @@ CommonClass* JavaConstantPool::isClassLoaded(uint32 entry) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[entry]);
     res = loader->lookupClassOrArray(name);
+    ctpRes[entry] = res;
   }
   return res;
 }
@@ -295,7 +296,7 @@ CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
       temp = loader->constructArray(name);
     } else {
       temp = loader->loadName(name, resolve, false, NULL);
-    } 
+    }
     ctpRes[index] = temp;
   } else if (resolve && temp->isClass()) {
     temp->asClass()->resolveClass();
