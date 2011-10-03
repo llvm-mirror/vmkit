@@ -156,14 +156,11 @@ gc* Collector::getForwardedReferent(gc* val, uintptr_t closure) {
 void Collector::collect() {
   Java_org_j3_mmtk_Collection_triggerCollection__I(NULL, 2);
 }
-
-int argc;
-char** argv;
+  
+static const char* kPrefix = "-X:gc:";
+static const int kPrefixLength = strlen(kPrefix);
 
 void Collector::initialise(int argc, char** argv) {
-  static const char* kPrefix = "-X:gc:";
-  static const int kPrefixLength = strlen(kPrefix);
-
   int i = 1;
   int count = 0;
   ThreadAllocator allocator;
