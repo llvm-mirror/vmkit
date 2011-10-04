@@ -21,6 +21,9 @@ PROJ_INSTALL_ROOT := @prefix@
 # Define BYTECODE_LIBRARY before including LLVM's Makefile.common to get
 # dependencies right.
 BYTECODE_LIBRARY = 1
+LLVMCC_OPTION = "clang"
+ENABLE_BUILT_CLANG = 1
+LLVMCC_EMITIR_FLAG = "-emit-llvm"
 
 ifeq ($(BUILD_FRAMETABLE), 1)
   BUILT_SOURCES = FrametablesSymbols.inc FrametablesExterns.inc

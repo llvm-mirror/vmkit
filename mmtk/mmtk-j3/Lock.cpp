@@ -13,6 +13,7 @@
 
 namespace mmtk {
 
+extern "C" void Java_org_j3_mmtk_Lock_acquire__(MMTkLock* l) NO_INLINE;
 extern "C" void Java_org_j3_mmtk_Lock_acquire__(MMTkLock* l) {
   for (uint32 count = 0; count < 1000; ++count) {
     uint32 res = __sync_val_compare_and_swap(&(l->state), 0, 1); 

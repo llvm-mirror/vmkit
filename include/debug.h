@@ -77,6 +77,7 @@
 
 #undef ALWAYS_INLINE
 #define ALWAYS_INLINE __attribute__ ((always_inline))
+#define NO_INLINE __attribute__ ((noinline))
 
 #ifndef DEBUG
 #ifdef _DEBUG
