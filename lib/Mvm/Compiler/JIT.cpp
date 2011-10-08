@@ -355,14 +355,6 @@ void BaseIntrinsics::init(llvm::Module* module) {
   llvm_frameaddress = module->getFunction("llvm.frameaddress");
   llvm_gc_gcroot = module->getFunction("llvm.gcroot");
 
-  llvm_atomic_lcs_i8 = module->getFunction("llvm.atomic.cmp.swap.i8.p0i8");
-  llvm_atomic_lcs_i16 = module->getFunction("llvm.atomic.cmp.swap.i16.p0i16");
-  llvm_atomic_lcs_i32 = module->getFunction("llvm.atomic.cmp.swap.i32.p0i32");
-  llvm_atomic_lcs_i64 = module->getFunction("llvm.atomic.cmp.swap.i64.p0i64");
-
-  llvm_atomic_lcs_ptr = pointerSizeType == Type::getInt32Ty(Context) ? llvm_atomic_lcs_i32 :
-                                                           llvm_atomic_lcs_i64;
-
   unconditionalSafePoint = module->getFunction("unconditionalSafePoint");
   conditionalSafePoint = module->getFunction("conditionalSafePoint");
   AllocateFunction = module->getFunction("gcmalloc");

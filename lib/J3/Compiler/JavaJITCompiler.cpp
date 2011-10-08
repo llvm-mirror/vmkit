@@ -388,7 +388,7 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
     // Do a compare and swap, so that we do not overwrtie what a stub might
     // have just updated.
     uintptr_t val = (uintptr_t)
-      __sync_val_compare_and_swap(&(ctpInfo->ctpRes[index]), NULL, stub);
+      __sync_val_compare_and_swap(&(ctpInfo->ctpRes[index]), NULL, (void*)stub);
     // If there is something in the the constant pool that is not NULL nor
     // the stub, then it's the method.
     if (val != 0 && val != stub) {

@@ -201,9 +201,6 @@ static const char* WordLshMethod;
 static const char* WordRshlMethod;
 //static const char* WordRshaMethod;
 
-static Function* CASPtr;
-static Function* CASInt;
-
 static const char* AddressArrayClass = "JnJVM_org_vmmagic_unboxed_AddressArray_";
 static const char* ExtentArrayClass = "JnJVM_org_vmmagic_unboxed_ExtentArray_";
 static const char* ObjectReferenceArrayClass = "JnJVM_org_vmmagic_unboxed_ObjectReferenceArray_";
@@ -408,15 +405,6 @@ bool LowerMagic::runOnFunction(Function& F) {
   }
 
 
-  if (!CASPtr || CASPtr->getParent() != globalModule) {
-    if (pointerSizeType == Type::getInt32Ty(Context)) {
-      CASPtr = globalModule->getFunction("llvm.atomic.cmp.swap.i32.p0i32");
-    } else {
-      CASPtr = globalModule->getFunction("llvm.atomic.cmp.swap.i64.p0i64");
-    }
-    CASInt = globalModule->getFunction("llvm.atomic.cmp.swap.i32.p0i32");
-  }
-
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
@@ -589,8 +577,8 @@ bool LowerMagic::runOnFunction(Function& F) {
               Old = new PtrToIntInst(Old, pointerSizeType, "", CI);
               Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
               
-              Value* Args[3] = { Ptr, Old, Val };
-              Value* res = CallInst::Create(CASPtr, Args, "", CI);
+              Value* res = new AtomicCmpXchgInst(
+                  Ptr, Old, Val, SequentiallyConsistent, CrossThread, CI);
               res = new ICmpInst(CI, ICmpInst::ICMP_EQ, res, Old, "");
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
 
@@ -606,8 +594,8 @@ bool LowerMagic::runOnFunction(Function& F) {
               Old = new PtrToIntInst(Old, pointerSizeType, "", CI);
               Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
               
-              Value* Args[3] = { Ptr, Old, Val };
-              Value* res = CallInst::Create(CASPtr, Args, "", CI);
+              Value* res = new AtomicCmpXchgInst(
+                  Ptr, Old, Val, SequentiallyConsistent, CrossThread, CI);
               res = new ICmpInst(CI, ICmpInst::ICMP_EQ, res, Old, "");
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
 

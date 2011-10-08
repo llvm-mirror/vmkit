@@ -629,14 +629,10 @@ void JavaJIT::monitorEnter(Value* obj) {
   Value* newValMask = BinaryOperator::CreateOr(threadId, lock, "",
                                                currentBlock);
 
-  std::vector<Value*> atomicArgs;
-  atomicArgs.push_back(lockPtr);
-  atomicArgs.push_back(lock);
-  atomicArgs.push_back(newValMask);
-
   // Do the atomic compare and swap.
-  Value* atomic = CallInst::Create(intrinsics->llvm_atomic_lcs_ptr,
-                                   atomicArgs, "", currentBlock);
+  Value* atomic = new AtomicCmpXchgInst(
+      lockPtr, lock, newValMask, SequentiallyConsistent, CrossThread,
+      currentBlock);
   
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
                             lock, "");
@@ -682,8 +678,9 @@ void JavaJIT::monitorExit(Value* obj) {
   atomicArgs.push_back(lockedMask);
 
   // Do the atomic compare and swap.
-  Value* atomic = CallInst::Create(intrinsics->llvm_atomic_lcs_ptr,
-                                   atomicArgs, "", currentBlock);
+  Value* atomic = new AtomicCmpXchgInst(
+      lockPtr, oldValMask, lockedMask, SequentiallyConsistent, CrossThread,
+      currentBlock);
   
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
                             oldValMask, "");
