@@ -146,17 +146,6 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         }
         continue;
       }
-      // Make sure all Loads on objects are volatile to cooperate with the GC.
-      if (LoadInst* LI = dyn_cast<LoadInst>(I)) {
-        if (LI->getType() == intrinsics->JavaObjectType &&
-            dyn_cast<AllocaInst>(LI->getPointerOperand()) != NULL) {
-          if (TheCompiler->useCooperativeGC()) {
-            assert(LI->isVolatile());
-          } else {
-            assert(!LI->isVolatile());
-          }
-        }
-      }
 
       if ((I->getOpcode() == Instruction::Call ||
            I->getOpcode() == Instruction::Invoke)) { 

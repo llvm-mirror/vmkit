@@ -115,3 +115,8 @@ int main(int argc, char **argv, char **envp) {
 
   return 0;
 }
+
+// Because we don't want inlined methods to show up in the result
+// precompiled code, provide this method in order to link.
+extern "C" void MMTk_InlineMethods(llvm::Module* module) {
+}

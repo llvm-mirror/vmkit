@@ -12,7 +12,7 @@ include $(LEVEL)/Makefile.config
 
 DIRS = trainer
 TOOLNAME = precompiler
-USEDLIBS = Classpath.a J3.a J3Compiler.a Mvm.a MvmCompiler.a CommonThread.a FinalMMTk.a InlineMMTk.a
+USEDLIBS = Classpath.a J3.a J3Compiler.a Mvm.a MvmCompiler.a CommonThread.a FinalMMTk.a
 BUILD_FRAMETABLE = 1
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo asmparser linker bitwriter
 

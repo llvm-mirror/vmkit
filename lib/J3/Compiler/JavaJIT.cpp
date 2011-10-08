@@ -220,7 +220,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
       Args.push_back(GV);
       Value* targetObject = getTarget(signature);
       Args.push_back(new LoadInst(
-          targetObject, "", TheCompiler->useCooperativeGC(), currentBlock));
+          targetObject, "", false, currentBlock));
       load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
       node->addIncoming(load, currentBlock);
       BranchInst::Create(endResolveVirtual, currentBlock);
@@ -574,7 +574,7 @@ llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
 
     currentBlock = loadBlock;
     result = new LoadInst(
-        result, "", TheCompiler->useCooperativeGC(), currentBlock);
+        result, "", false, currentBlock);
     new StoreInst(result, ResultObject, "", currentBlock);
     endNode->addIncoming(result, currentBlock);
 
@@ -703,7 +703,7 @@ void JavaJIT::beginSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     assert(thisObject != NULL && "beginSynchronize without this");
     obj = new LoadInst(
-        thisObject, "", TheCompiler->useCooperativeGC(), currentBlock);
+        thisObject, "", false, currentBlock);
   } else {
     obj = TheCompiler->getJavaClassPtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
@@ -716,7 +716,7 @@ void JavaJIT::endSynchronize() {
   if (isVirtual(compilingMethod->access)) {
     assert(thisObject != NULL && "endSynchronize without this");
     obj = new LoadInst(
-        thisObject, "", TheCompiler->useCooperativeGC(), currentBlock);
+        thisObject, "", false, currentBlock);
   } else {
     obj = TheCompiler->getJavaClassPtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
@@ -1167,7 +1167,7 @@ llvm::Function* JavaJIT::javaCompile() {
     if (returnType != Type::getVoidTy(*llvmContext)) {
       if (returnValue != NULL) {
         Value* obj = new LoadInst(
-            returnValue, "", TheCompiler->useCooperativeGC(), currentBlock);
+            returnValue, "", false, currentBlock);
         ReturnInst::Create(*llvmContext, obj, currentBlock);
       } else {
         ReturnInst::Create(*llvmContext, endNode, currentBlock);
@@ -1833,7 +1833,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
       object = TheCompiler->getStaticInstance(field->classDef);
     } else {
       object = new LoadInst(
-          object, "", TheCompiler->useCooperativeGC(), currentBlock);
+          object, "", false, currentBlock);
       if (!thisReference) JITVerifyNull(object);
       type = LCI->getVirtualType();
     }
@@ -1862,7 +1862,7 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
   Value* ptr = getConstantPoolAt(index, func, returnType, 0, true);
   if (!stat) {
     object = new LoadInst(
-        object, "", TheCompiler->useCooperativeGC(), currentBlock);
+        object, "", false, currentBlock);
     if (!thisReference) JITVerifyNull(object);
     Value* tmp = new BitCastInst(object, Pty, "", currentBlock);
     Value* args[2] = { zero, ptr };
@@ -2025,7 +2025,7 @@ void JavaJIT::setVirtualField(uint16 index) {
   if (mvm::Collector::needsWriteBarrier() && type == intrinsics->JavaObjectType) {
     ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
     val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
-    object = new LoadInst(object, "", true, currentBlock);
+    object = new LoadInst(object, "", false, currentBlock);
     object = new BitCastInst(object, intrinsics->ptrType, "", currentBlock);
     Value* args[3] = { object, ptr, val };
     CallInst::Create(intrinsics->FieldWriteBarrierFunction, args, "", currentBlock);
@@ -2122,7 +2122,7 @@ void JavaJIT::invokeInterface(uint16 index) {
                                      tableIndex);
   Value* targetObject = getTarget(signature);
   targetObject = new LoadInst(
-          targetObject, "", TheCompiler->useCooperativeGC(), currentBlock);
+          targetObject, "", false, currentBlock);
   if (!thisReference) JITVerifyNull(targetObject);
   // TODO: The following code needs more testing.
 #if 0
@@ -2511,7 +2511,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
       // Make the load volatile to force the instruction after the call.
       // Otherwise, LLVM will merge the load with a previous load because
       // the function is readnone.
-      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
+      obj = new LoadInst(javaExceptionPtr, "", false, currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
@@ -2558,7 +2558,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
+      obj = new LoadInst(javaExceptionPtr, "", false, currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
@@ -2606,7 +2606,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
+      obj = new LoadInst(javaExceptionPtr, "", false, currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
@@ -2651,7 +2651,7 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
         F == intrinsics->GetConstantPoolAtFunction ||
         F == intrinsics->GetArrayClassFunction ||
         F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", TheCompiler->useCooperativeGC(), currentBlock);
+      obj = new LoadInst(javaExceptionPtr, "", false, currentBlock);
       test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
       test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
       Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");

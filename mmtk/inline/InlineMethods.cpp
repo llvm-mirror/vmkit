@@ -38,8 +38,8 @@ namespace mmtk_non_heap_write {
 }
 
 extern "C" void MMTk_InlineMethods(llvm::Module* module) {
-  //mmtk::mmtk_malloc::makeLLVMFunction(module);
-  //mmtk::mmtk_field_write::makeLLVMFunction(module);
-  //mmtk::mmtk_array_write::makeLLVMFunction(module);
-  //mmtk::mmtk_non_heap_write::makeLLVMFunction(module);
+  mmtk::mmtk_malloc::makeLLVMFunction(module);
+  mmtk::mmtk_field_write::makeLLVMFunction(module);
+  mmtk::mmtk_array_write::makeLLVMFunction(module);
+  mmtk::mmtk_non_heap_write::makeLLVMFunction(module);
 }

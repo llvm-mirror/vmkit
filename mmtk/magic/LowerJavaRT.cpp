@@ -141,6 +141,10 @@ bool LowerJavaRT::runOnModule(Module& M) {
     I->clearGC();
   }
 
+  // Rename JavaObject type to avoid collisions when inlining
+  // malloc and barriers.
+  M.getTypeByName("JavaObject")->setName("MMTk.JavaObject");
+
   return Changed;
 }
 
