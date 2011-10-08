@@ -119,7 +119,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
 
   bool customized = false;
-  bool thisReference = isThisReference(stackSize() - signature->nbArguments - 1);
+  bool thisReference =
+    isThisReference(stackSize() - signature->getNumberOfSlots() - 1);
   if (thisReference) {
     assert(meth != NULL);
     isCustomizable = true;
@@ -190,13 +191,14 @@ void JavaJIT::invokeVirtual(uint16 index) {
     PHINode* node = 0;
     Value* indexes2[2];
     indexes2[0] = intrinsics->constantZero;
+    bool nullChecked = false;
 
     if (meth) {
       LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(meth);
       Constant* Offset = LMI->getOffset();
       indexes2[1] = Offset;
     } else {
-   
+      nullChecked = true;
       GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),
                                               Type::getInt32Ty(*llvmContext),
                                               false,
@@ -219,8 +221,9 @@ void JavaJIT::invokeVirtual(uint16 index) {
       Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
       Args.push_back(GV);
       Value* targetObject = getTarget(signature);
-      Args.push_back(new LoadInst(
-          targetObject, "", false, currentBlock));
+      targetObject = new LoadInst(targetObject, "", false, currentBlock);
+      if (!thisReference) JITVerifyNull(targetObject);
+      Args.push_back(targetObject);
       load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
       node->addIncoming(load, currentBlock);
       BranchInst::Create(endResolveVirtual, currentBlock);
@@ -230,7 +233,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     }
 
     makeArgs(it, index, args, signature->nbArguments + 1);
-    if (!thisReference) JITVerifyNull(args[0]);
+    if (!nullChecked && !thisReference) JITVerifyNull(args[0]);
     Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
                                  currentBlock);
  
@@ -1551,7 +1554,8 @@ void JavaJIT::invokeSpecial(uint16 index) {
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   FunctionType* virtualType = LSI->getVirtualType();
   meth = ctpInfo->infoOfStaticOrSpecialMethod(index, ACC_VIRTUAL, signature);
-  bool thisReference = isThisReference(stackSize() - signature->nbArguments - 1);
+  bool thisReference =
+    isThisReference(stackSize() - signature->getNumberOfSlots() - 1);
 
   Value* func = 0;
   bool needsInit = false;
@@ -2097,7 +2101,8 @@ void JavaJIT::invokeInterface(uint16 index) {
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   const UTF8* name = 0;
   Signdef* signature = ctpInfo->infoOfInterfaceOrVirtualMethod(index, name);
-  bool thisReference = isThisReference(stackSize() - signature->nbArguments - 1);
+  bool thisReference =
+    isThisReference(stackSize() - signature->getNumberOfSlots() - 1);
   
   LLVMSignatureInfo* LSI = TheCompiler->getSignatureInfo(signature);
   FunctionType* virtualType = LSI->getVirtualType();

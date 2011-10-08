@@ -435,6 +435,16 @@ public:
     return &(arguments[1]);
   }
 
+  uint32 getNumberOfSlots() {
+    uint32 result = nbArguments;
+    for (uint32 i = 1; i < nbArguments + 1; i++) {
+      if (arguments[i]->isDouble() || arguments[i]->isLong()) {
+        result++;
+      }
+    }
+    return result;
+  }
+
 private:
 
   /// arguments - The list of arguments of the signature. First is the return
