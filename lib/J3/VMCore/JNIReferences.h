@@ -75,8 +75,8 @@ public:
   }
 
   void removeJNIReference(JavaObject** obj) {
-    if (((uintptr_t)obj >= (uintptr_t)globalReferences) &&
-        ((uintptr_t)obj) < (uintptr_t)(globalReferences + MAXIMUM_REFERENCES)) {
+    if (((word_t)obj >= (word_t)globalReferences) &&
+        ((word_t)obj) < (word_t)(globalReferences + MAXIMUM_REFERENCES)) {
       *obj = NULL;
       --count;
     } else {

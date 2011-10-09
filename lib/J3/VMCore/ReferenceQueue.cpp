@@ -108,7 +108,7 @@ void clearReferent(gc* _obj) {
   JavaObjectReference::setReferent(obj, NULL);
 }
 
-gc* ReferenceQueue::processReference(gc* reference, ReferenceThread* th, uintptr_t closure) {
+gc* ReferenceQueue::processReference(gc* reference, ReferenceThread* th, word_t closure) {
   if (!mvm::Collector::isLive(reference, closure)) {
     clearReferent(reference);
     return NULL;
@@ -143,7 +143,7 @@ gc* ReferenceQueue::processReference(gc* reference, ReferenceThread* th, uintptr
 }
 
 
-void ReferenceQueue::scan(ReferenceThread* th, uintptr_t closure) {
+void ReferenceQueue::scan(ReferenceThread* th, word_t closure) {
   uint32 NewIndex = 0;
 
   for (uint32 i = 0; i < CurrentIndex; ++i) {
@@ -210,7 +210,7 @@ void FinalizerThread::addFinalizationCandidate(gc* obj) {
 }
   
 
-void FinalizerThread::scanFinalizationQueue(uintptr_t closure) {
+void FinalizerThread::scanFinalizationQueue(word_t closure) {
   uint32 NewIndex = 0;
   for (uint32 i = 0; i < CurrentIndex; ++i) {
     gc* obj = FinalizationQueue[i];

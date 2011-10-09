@@ -492,27 +492,27 @@ extern "C" JavaObject* Java_java_lang_reflect_AccessibleObject_getDeclaredAnnota
 }
 
 extern "C" void nativeJavaObjectClassTracer(
-    JavaObjectClass* obj, uintptr_t closure) {
+    JavaObjectClass* obj, word_t closure) {
   JavaObjectClass::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectFieldTracer(
-    JavaObjectField* obj, uintptr_t closure) {
+    JavaObjectField* obj, word_t closure) {
   JavaObjectField::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectMethodTracer(
-    JavaObjectMethod* obj, uintptr_t closure) {
+    JavaObjectMethod* obj, word_t closure) {
   JavaObjectMethod::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectConstructorTracer(
-    JavaObjectConstructor* obj, uintptr_t closure) {
+    JavaObjectConstructor* obj, word_t closure) {
   JavaObjectConstructor::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectVMThreadTracer(
-    JavaObjectVMThread* obj, uintptr_t closure) {
+    JavaObjectVMThread* obj, word_t closure) {
   JavaObjectVMThread::staticTracer(obj, closure);
 }
 
@@ -1005,23 +1005,23 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   //===----------------------------------------------------------------------===//
  
   newClass->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectClassTracer,
+      (word_t)nativeJavaObjectClassTracer,
        "nativeJavaObjectClassTracer");
 
   newConstructor->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectConstructorTracer,
+      (word_t)nativeJavaObjectConstructorTracer,
       "nativeJavaObjectConstructorTracer");
 
    newMethod->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectMethodTracer,
+      (word_t)nativeJavaObjectMethodTracer,
       "nativeJavaObjectMethodTracer");
 
    newField->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectFieldTracer,
+      (word_t)nativeJavaObjectFieldTracer,
       "nativeJavaObjectFieldTracer"); 
    
    newVMThread->getVirtualVT()->setNativeTracer(
-      (uintptr_t)nativeJavaObjectVMThreadTracer,
+      (word_t)nativeJavaObjectVMThreadTracer,
       "nativeJavaObjectVMThreadTracer");
  
   newReference = UPCALL_CLASS(loader, "java/lang/ref/Reference");

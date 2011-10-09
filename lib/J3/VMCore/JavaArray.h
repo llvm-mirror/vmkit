@@ -120,7 +120,7 @@ ARRAYCLASS(ArraySInt32, sint32);
 ARRAYCLASS(ArrayLong,   sint64);
 ARRAYCLASS(ArrayFloat,  float);
 ARRAYCLASS(ArrayDouble, double);
-ARRAYCLASS(ArrayPtr, intptr_t);
+ARRAYCLASS(ArrayPtr, word_t);
 
 #undef ARRAYCLASS
 

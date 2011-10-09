@@ -16,10 +16,6 @@
 #include <stdint.h>
 #include <unistd.h>
 
-namespace mvm {
-
-const int kWordSize = sizeof(intptr_t);
-const int kWordSizeLog2 = kWordSize == 4 ? 2 : 3;
 
 #if defined(__linux__) || defined(__FreeBSD__)
 #define LINUX_OS 1
@@ -32,6 +28,8 @@ const int kWordSizeLog2 = kWordSize == 4 ? 2 : 3;
 #if (__WORDSIZE == 32)
 #define ARCH_32 1
 #elif (__WORDSIZE == 64)
+#define ARCH_64 1
+#elif defined(__LP64__)
 #define ARCH_64 1
 #else
 #error Word size not supported.
@@ -51,16 +49,25 @@ const int kWordSizeLog2 = kWordSize == 4 ? 2 : 3;
 #error Architecture detection failed.
 #endif
 
+#if ARCH_X64
+typedef uint64_t word_t;
+#else
+typedef uint32_t word_t;
+#endif
 
+namespace mvm {
+
+const int kWordSize = sizeof(word_t);
+const int kWordSizeLog2 = kWordSize == 4 ? 2 : 3;
 
 #if ARCH_X64
-const intptr_t kThreadStart   = 0x0000000110000000LL;
-const intptr_t kThreadIDMask  = 0xFFFFFFFFFFF00000LL;
-const intptr_t kMvmThreadMask = 0xFFFFFFFFF0000000LL;
+const word_t kThreadStart   = 0x0000000110000000LL;
+const word_t kThreadIDMask  = 0xFFFFFFFFFFF00000LL;
+const word_t kMvmThreadMask = 0xFFFFFFFFF0000000LL;
 #else
-const intptr_t kThreadStart   = 0x10000000;
-const intptr_t kThreadIDMask  = 0x7FF00000;
-const intptr_t kMvmThreadMask = 0xF0000000;
+const word_t kThreadStart   = 0x10000000;
+const word_t kThreadIDMask  = 0x7FF00000;
+const word_t kMvmThreadMask = 0xF0000000;
 #endif
 
 #if MACOS_OS
@@ -77,15 +84,15 @@ const intptr_t kMvmThreadMask = 0xF0000000;
 
 #if MACOS_OS
   #if ARCH_X64
-    const uintptr_t kGCMemoryStart = 0x300000000LL;
+    const word_t kGCMemoryStart = 0x300000000LL;
   #else
-    const uintptr_t kGCMemoryStart = 0x30000000;
+    const word_t kGCMemoryStart = 0x30000000;
   #endif
 #else
-  const uintptr_t kGCMemoryStart = 0x50000000;
+  const word_t kGCMemoryStart = 0x50000000;
 #endif
 
-const uintptr_t kGCMemorySize = 0x30000000;  
+const word_t kGCMemorySize = 0x30000000;  
 
 #define TRY { mvm::ExceptionBuffer __buffer__; if (!SETJMP(__buffer__.buffer))
 #define CATCH else
@@ -94,11 +101,11 @@ const uintptr_t kGCMemorySize = 0x30000000;
 
 class System {
 public:
-  static bool IsWordAligned(intptr_t ptr) {
+  static bool IsWordAligned(word_t ptr) {
     return (ptr & (kWordSize - 1)) == 0;
   }
 
-  static intptr_t WordAlignUp(intptr_t ptr) {
+  static word_t WordAlignUp(word_t ptr) {
     if (!IsWordAligned(ptr)) {
       return (ptr & ~(kWordSize - 1)) + kWordSize;
     }
@@ -106,37 +113,37 @@ public:
   }
 
   // Apply this mask to the stack pointer to get the Thread object.
-  static intptr_t GetThreadIDMask() {
+  static word_t GetThreadIDMask() {
     return kThreadIDMask;
   }
 
   // Apply this mask to verify that the current thread was created by Mvm.
-  static intptr_t GetMvmThreadMask() {
+  static word_t GetMvmThreadMask() {
     return kMvmThreadMask;
   }
 
   // Get the memory start of thread stack addresses.
-  static intptr_t GetThreadStart() {
+  static word_t GetThreadStart() {
     return kThreadStart;
   }
 
-  static intptr_t GetCallerAddress() {
+  static word_t GetCallerAddress() {
 #if defined(ARCH_X86) || defined(ARCH_X64)
-    return (intptr_t)__builtin_frame_address(0);
+    return (word_t)__builtin_frame_address(0);
 #else
-    return ((intptr_t*)__builtin_frame_address(0))[0];
+    return ((word_t*)__builtin_frame_address(0))[0];
 #endif
   }
 
-  static intptr_t GetCallerOfAddress(intptr_t addr) {
-    return ((intptr_t*)addr)[0];
+  static word_t GetCallerOfAddress(word_t addr) {
+    return ((word_t*)addr)[0];
   }
 
-  static intptr_t GetIPFromCallerAddress(intptr_t addr) {
+  static word_t GetIPFromCallerAddress(word_t addr) {
 #if defined(MACOS_OS) && defined(ARCH_PPC)
-    return ((intptr_t*)addr)[2];
+    return ((word_t*)addr)[2];
 #else
-    return ((intptr_t*)addr)[1];
+    return ((word_t*)addr)[1];
 #endif
   }
 
@@ -192,7 +199,7 @@ public:
     return res[0];
   }
 
-  static uint8_t* GetLastBytePtr(uintptr_t ptr) {
+  static uint8_t* GetLastBytePtr(word_t ptr) {
 #if ARCH_PPC
   return ((uint8_t*)ptr) + 2 * mvm::kWordSize - 1;
 #else

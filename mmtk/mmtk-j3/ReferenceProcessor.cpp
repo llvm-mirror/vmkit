@@ -14,7 +14,7 @@
 
 namespace mmtk {
 
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (MMTkReferenceProcessor* RP, uintptr_t TL, uint8_t nursery) {
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (MMTkReferenceProcessor* RP, word_t TL, uint8_t nursery) {
   mvm::Thread* th = mvm::Thread::get();
   uint32_t val = RP->ordinal;
 
@@ -28,7 +28,7 @@ extern "C" void Java_org_j3_mmtk_ReferenceProcessor_scan__Lorg_mmtk_plan_TraceLo
   }
 }
 
-extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z (MMTkReferenceProcessor* RP, uintptr_t TL, uint8_t nursery) { UNIMPLEMENTED(); }
+extern "C" void Java_org_j3_mmtk_ReferenceProcessor_forward__Lorg_mmtk_plan_TraceLocal_2Z (MMTkReferenceProcessor* RP, word_t TL, uint8_t nursery) { UNIMPLEMENTED(); }
 extern "C" void Java_org_j3_mmtk_ReferenceProcessor_clear__ (MMTkReferenceProcessor* RP) { UNIMPLEMENTED(); }
 extern "C" void Java_org_j3_mmtk_ReferenceProcessor_countWaitingReferences__ (MMTkReferenceProcessor* RP) { UNIMPLEMENTED(); }
 

@@ -23,7 +23,7 @@ public:
     CollectionAttempts = 0;
   }
   mvm::ThreadAllocator Allocator;
-  uintptr_t MutatorContext;
+  word_t MutatorContext;
   
   /// realRoutine - The function to invoke when the thread starts.
   ///

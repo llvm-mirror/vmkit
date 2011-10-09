@@ -12,14 +12,15 @@
 #define MVM_GC_H
 
 #include <stdint.h>
+#include "mvm/System.h"
 
 class VirtualTable;
 
 class gcRoot {
 public:
   virtual           ~gcRoot() {}
-  virtual void      tracer(uintptr_t closure) {}
-  uintptr_t header;
+  virtual void      tracer(word_t closure) {}
+  word_t header;
   
   /// getVirtualTable - Returns the virtual table of this object.
   ///

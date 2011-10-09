@@ -120,7 +120,7 @@ void CooperativeCollectionRV::joinBeforeUncooperative() {
   th->inRV = false;
 }
 
-void CooperativeCollectionRV::joinAfterUncooperative(intptr_t SP) {
+void CooperativeCollectionRV::joinAfterUncooperative(word_t SP) {
   mvm::Thread* th = mvm::Thread::get();
   assert((th->getLastSP() == 0) &&
          "SP set after entering uncooperative code");

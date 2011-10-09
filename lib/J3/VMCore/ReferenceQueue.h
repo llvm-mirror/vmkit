@@ -31,7 +31,7 @@ private:
   mvm::SpinLock QueueLock;
   uint8_t semantics;
 
-  gc* processReference(gc*, ReferenceThread*, uintptr_t closure);
+  gc* processReference(gc*, ReferenceThread*, word_t closure);
 public:
 
   static const uint8_t WEAK = 1;
@@ -79,7 +79,7 @@ public:
     QueueLock.release();
   }
 
-  void scan(ReferenceThread* thread, uintptr_t closure);
+  void scan(ReferenceThread* thread, word_t closure);
 };
 
 class ReferenceThread : public JavaThread {
@@ -197,7 +197,7 @@ public:
   /// scanFinalizationQueue - Scan objets with a finalized method and schedule
   /// them for finalization if they are not live.
   ///
-  void scanFinalizationQueue(uintptr_t closure);
+  void scanFinalizationQueue(word_t closure);
 
   FinalizerThread(Jnjvm* vm);
 

@@ -51,7 +51,7 @@ public:
     return cl->pd;
   }
 
-  static void staticTracer(JavaObjectClass* obj, uintptr_t closure) {
+  static void staticTracer(JavaObjectClass* obj, word_t closure) {
     mvm::Collector::markAndTrace(obj, &obj->pd, closure);
     mvm::Collector::markAndTrace(obj, &obj->signers, closure);
     mvm::Collector::markAndTrace(obj, &obj->constructor, closure);
@@ -71,7 +71,7 @@ private:
 
 public:
 
-  static void staticTracer(JavaObjectField* obj, uintptr_t closure) {
+  static void staticTracer(JavaObjectField* obj, word_t closure) {
     mvm::Collector::markAndTrace(obj, &obj->name, closure);
     mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
@@ -99,7 +99,7 @@ private:
 
 public:
   
-  static void staticTracer(JavaObjectMethod* obj, uintptr_t closure) {
+  static void staticTracer(JavaObjectMethod* obj, word_t closure) {
     mvm::Collector::markAndTrace(obj, &obj->name, closure);
     mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
@@ -121,7 +121,7 @@ private:
   uint32 slot;
 
 public:
-  static void staticTracer(JavaObjectConstructor* obj, uintptr_t closure) {
+  static void staticTracer(JavaObjectConstructor* obj, word_t closure) {
     mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
   
@@ -142,7 +142,7 @@ private:
   JavaThread* vmdata;
 
 public:
-  static void staticTracer(JavaObjectVMThread* obj, uintptr_t closure) {
+  static void staticTracer(JavaObjectVMThread* obj, word_t closure) {
     mvm::Collector::markAndTrace(obj, &obj->thread, closure);
   }
 

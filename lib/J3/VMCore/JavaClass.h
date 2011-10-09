@@ -280,7 +280,7 @@ public:
 
   /// tracer - The tracer of this GC-allocated class.
   ///
-  void tracer(uintptr_t closure);
+  void tracer(word_t closure);
   
   /// inheritName - Does this class in its class hierarchy inherits
   /// the given name? Equality is on the name. This function does not take
@@ -587,7 +587,7 @@ public:
   
   /// tracer - Tracer function of instances of Class.
   ///
-  void tracer(uintptr_t closure);
+  void tracer(word_t closure);
   
   ~Class();
   Class();

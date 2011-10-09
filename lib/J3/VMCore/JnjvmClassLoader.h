@@ -137,7 +137,7 @@ public:
 
   /// tracer - Traces a JnjvmClassLoader for GC.
   ///
-  virtual void tracer(uintptr_t closure);
+  virtual void tracer(word_t closure);
   
   /// getJnjvmLoaderFromJavaObject - Return the Jnjvm runtime representation
   /// of the given class loader.
@@ -266,11 +266,11 @@ public:
   /// by this class loader. The last argument tells if the returned method
   /// is defined in j3.
   ///
-  intptr_t loadInLib(const char* buf, bool& j3);
+  word_t loadInLib(const char* buf, bool& j3);
 
   /// loadInLib - Loads a native function out of the given native library.
   ///
-  intptr_t loadInLib(const char* buf, void* handle);
+  word_t loadInLib(const char* buf, void* handle);
 
   /// loadLib - Loads the library with the given name.
   ///
@@ -280,7 +280,7 @@ public:
   /// method. Also set in the j3 parameter is the function is defined in
   /// JnJVM.
   ///
-  intptr_t nativeLookup(JavaMethod* meth, bool& j3, char* buf);
+  word_t nativeLookup(JavaMethod* meth, bool& j3, char* buf);
 
   /// insertAllMethodsInVM - Insert all methods defined by this class loader
   /// in the VM.
@@ -334,7 +334,7 @@ public:
   
   /// tracer - Traces instances of this class.
   ///
-  virtual void tracer(uintptr_t closure);
+  virtual void tracer(word_t closure);
 
   /// libClasspathEnv - The paths for dynamic libraries of Classpath, separated
   /// by ':'.
@@ -469,7 +469,7 @@ public:
 
   /// staticTracer - Trace the internal class loader.
   ///
-  static void staticTracer(VMClassLoader* obj, uintptr_t closure) {
+  static void staticTracer(VMClassLoader* obj, word_t closure) {
     llvm_gcroot(obj, 0);
     if (obj->JCL != NULL) obj->JCL->tracer(closure);
   }

@@ -28,16 +28,16 @@ struct MMTkVirtualTable : public VirtualTable {
 
 struct MMTkObject {
   MMTkVirtualTable* virtualTable;
-  uintptr_t header;
+  word_t header;
 };
 
 struct MMTkArray : public MMTkObject {
-  uintptr_t size;
+  word_t size;
   uint16_t elements[1];
 };
 
 struct MMTkObjectArray : public MMTkObject {
-  uintptr_t size;
+  word_t size;
   MMTkObject* elements[1];
 };
 

@@ -343,13 +343,13 @@ extern "C" void j3EndJNI(uint32** oldLRN) {
   th->currentAddedReferences = *oldLRN;
 }
 
-extern "C" intptr_t j3StartJNI(uint32* localReferencesNumber,
+extern "C" word_t j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
                                mvm::KnownFrame* Frame) 
   __attribute__((noinline));
 
 // Never throws. Does not call Java code. Can not yield a GC. May join a GC.
-extern "C" intptr_t j3StartJNI(uint32* localReferencesNumber,
+extern "C" word_t j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
                                mvm::KnownFrame* Frame) {
   
@@ -598,15 +598,15 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
     InterfaceMethodTable* IMT = cl->virtualVT->IMT;
     uint32_t index = InterfaceMethodTable::getIndex(Virt->name, Virt->type);
     if ((IMT->contents[index] & 1) == 0) {
-      IMT->contents[index] = (uintptr_t)result;
+      IMT->contents[index] = (word_t)result;
     } else { 
       JavaMethod* Imeth = 
         ctpCl->asClass()->lookupInterfaceMethodDontThrow(utf8, sign->keyName);
       assert(Imeth && "Method not in hierarchy?");
-      uintptr_t* table = (uintptr_t*)(IMT->contents[index] & ~1);
+      word_t* table = (word_t*)(IMT->contents[index] & ~1);
       uint32 i = 0;
-      while (table[i] != (uintptr_t)Imeth) { i += 2; }
-      table[i + 1] = (uintptr_t)result;
+      while (table[i] != (word_t)Imeth) { i += 2; }
+      table[i + 1] = (word_t)result;
     }
   }
 
@@ -699,14 +699,14 @@ extern "C" void* j3ResolveSpecialStub() {
 
 // Does not throw an exception.
 extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t index) {
-  uintptr_t result = NULL;
+  word_t result = NULL;
   InterfaceMethodTable* IMT = JavaObject::getClass(obj)->virtualVT->IMT;
   if ((IMT->contents[index] & 1) == 0) {
     result = IMT->contents[index];
   } else {
-    uintptr_t* table = (uintptr_t*)(IMT->contents[index] & ~1);
+    word_t* table = (word_t*)(IMT->contents[index] & ~1);
     uint32 i = 0;
-    while (table[i] != (uintptr_t)meth && table[i] != 0) { i += 2; }
+    while (table[i] != (word_t)meth && table[i] != 0) { i += 2; }
     assert(table[i] != 0);
     result = table[i + 1];
   }

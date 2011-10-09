@@ -62,7 +62,7 @@ public:
   virtual void synchronize() = 0;
 
   virtual void join() = 0;
-  virtual void joinAfterUncooperative(intptr_t SP) = 0;
+  virtual void joinAfterUncooperative(word_t SP) = 0;
   virtual void joinBeforeUncooperative() = 0;
 
   virtual void addThread(Thread* th) = 0;
@@ -74,7 +74,7 @@ public:
   void synchronize();
 
   void join();
-  void joinAfterUncooperative(intptr_t SP);
+  void joinAfterUncooperative(word_t SP);
   void joinBeforeUncooperative();
   void addThread(Thread* th);
 

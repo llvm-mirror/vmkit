@@ -39,7 +39,7 @@ class Jnjvm;
 
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
-  intptr_t SP = th->getLastSP(); \
+  word_t SP = th->getLastSP(); \
   th->leaveUncooperativeCode(); \
   mvm::KnownFrame Frame; \
   th->startKnownFrame(Frame); \
@@ -106,7 +106,7 @@ public:
 
   /// tracer - Traces GC-objects pointed by this thread object.
   ///
-  virtual void tracer(uintptr_t closure);
+  virtual void tracer(word_t closure);
 
   /// JavaThread - Empty constructor, used to get the VT.
   ///
@@ -157,7 +157,7 @@ public:
 
   /// throwFromJNI - Throw an exception after executing JNI code.
   ///
-  void throwFromJNI(intptr_t SP) {
+  void throwFromJNI(word_t SP) {
     endKnownFrame();
     enterUncooperativeCode(SP);
   }

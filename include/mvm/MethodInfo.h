@@ -19,7 +19,7 @@ namespace mvm {
 class FrameInfo {
 public:
   void* Metadata;
-  intptr_t ReturnAddress;
+  word_t ReturnAddress;
   uint16_t SourceIndex;
   uint16_t FrameSize;
   uint16_t NumLiveOffsets;
@@ -28,9 +28,9 @@ public:
  
 class MethodInfoHelper {
 public:
-  static void print(intptr_t ip, intptr_t addr);
+  static void print(word_t ip, word_t addr);
 
-  static void scan(uintptr_t closure, FrameInfo* FI, intptr_t ip, intptr_t addr);
+  static void scan(word_t closure, FrameInfo* FI, word_t ip, word_t addr);
   
   static uint32_t FrameInfoSize(uint32_t NumOffsets) {
     uint32_t FrameInfoSize = sizeof(FrameInfo) + (NumOffsets - 1) * sizeof(int16_t);
@@ -45,13 +45,13 @@ public:
   uint32_t NumDescriptors;
   FrameInfo* frames() const {
     return reinterpret_cast<FrameInfo*>(
-        reinterpret_cast<uintptr_t>(this) + kWordSize);
+        reinterpret_cast<word_t>(this) + kWordSize);
   }
 
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator, uint32_t NumDescriptors, uint32_t NumOffsets) {
     Frames* res = reinterpret_cast<Frames*>(
         allocator.Allocate(kWordSize + NumDescriptors * MethodInfoHelper::FrameInfoSize(NumOffsets), "Frames"));
-    assert(System::IsWordAligned(reinterpret_cast<uintptr_t>(res)));
+    assert(System::IsWordAligned(reinterpret_cast<word_t>(res)));
     return res;
   }
 };
@@ -61,7 +61,7 @@ public:
   uint32_t NumCompiledFrames;
   Frames* frames() const {
     return reinterpret_cast<Frames*>(
-        reinterpret_cast<uintptr_t>(this) + kWordSize);
+        reinterpret_cast<word_t>(this) + kWordSize);
   }
 };
 
@@ -82,8 +82,8 @@ public:
   void advance(int NumLiveOffsets) {
     ++currentFrameNumber;
     if (!hasNext()) return;
-    uintptr_t ptr =
-      reinterpret_cast<uintptr_t>(currentFrame) + MethodInfoHelper::FrameInfoSize(NumLiveOffsets);
+    word_t ptr =
+      reinterpret_cast<word_t>(currentFrame) + MethodInfoHelper::FrameInfoSize(NumLiveOffsets);
     currentFrame = reinterpret_cast<FrameInfo*>(ptr);
   }
 

@@ -32,7 +32,7 @@ public:
   /// used when walking the stack so that VMKit knows which applicative method
   /// is executing on the stack.
   ///
-  llvm::DenseMap<intptr_t, FrameInfo*> Functions;
+  llvm::DenseMap<word_t, FrameInfo*> Functions;
 
   /// FunctionMapLock - Spin lock to protect the Functions map.
   ///
@@ -40,12 +40,12 @@ public:
 
   /// IPToFrameInfo - Map a code start instruction instruction to the FrameInfo.
   ///
-  FrameInfo* IPToFrameInfo(intptr_t ip);
+  FrameInfo* IPToFrameInfo(word_t ip);
 
   /// addFrameInfo - A new instruction pointer in the function map.
   ///
-  void addFrameInfo(intptr_t ip, FrameInfo* meth);
-  void addFrameInfoNoLock(intptr_t ip, FrameInfo* meth) {
+  void addFrameInfo(word_t ip, FrameInfo* meth);
+  void addFrameInfoNoLock(word_t ip, FrameInfo* meth) {
     Functions[ip] = meth;
   }
   /// removeFrameInfos - Remove all FrameInfo owned by the given owner.
@@ -164,22 +164,22 @@ public:
   /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
   /// before scanning the finalization queue.
   /// 
-  virtual void scanWeakReferencesQueue(uintptr_t closure) {}
+  virtual void scanWeakReferencesQueue(word_t closure) {}
   
   /// scanSoftReferencesQueue - Scan all soft references. Called by the GC
   /// before scanning the finalization queue.
   ///
-  virtual void scanSoftReferencesQueue(uintptr_t closure) {}
+  virtual void scanSoftReferencesQueue(word_t closure) {}
   
   /// scanPhantomReferencesQueue - Scan all phantom references. Called by the GC
   /// after the finalization queue.
   ///
-  virtual void scanPhantomReferencesQueue(uintptr_t closure) {}
+  virtual void scanPhantomReferencesQueue(word_t closure) {}
 
   /// scanFinalizationQueue - Scan objets with a finalized method and schedule
   /// them for finalization if they are not live.
   /// 
-  virtual void scanFinalizationQueue(uintptr_t closure) {}
+  virtual void scanFinalizationQueue(word_t closure) {}
 
   /// addFinalizationCandidate - Add an object to the queue of objects with
   /// a finalization method.
@@ -188,7 +188,7 @@ public:
 
   /// tracer - Trace this virtual machine's GC-objects.
   ///
-  virtual void tracer(uintptr_t closure) {}
+  virtual void tracer(word_t closure) {}
 
   /// getObjectSize - Get the size of this object. Used by copying collectors.
   ///
@@ -208,14 +208,14 @@ public:
 //===----------------------------------------------------------------------===//
 
   FunctionMap FunctionsCache;
-  FrameInfo* IPToFrameInfo(intptr_t ip) {
+  FrameInfo* IPToFrameInfo(word_t ip) {
     return FunctionsCache.IPToFrameInfo(ip);
   }
   void removeFrameInfos(void* owner) {
     FunctionsCache.removeFrameInfos(owner);
   }
 
-  virtual void printMethod(FrameInfo* FI, intptr_t ip, intptr_t addr) = 0;
+  virtual void printMethod(FrameInfo* FI, word_t ip, word_t addr) = 0;
   
 //===----------------------------------------------------------------------===//
 // (4) Launch-related methods.

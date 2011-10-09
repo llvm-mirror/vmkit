@@ -123,14 +123,14 @@ private:
 
   virtual void startCollection();
   virtual void endCollection();
-  virtual void scanWeakReferencesQueue(uintptr_t closure);
-  virtual void scanSoftReferencesQueue(uintptr_t closure);
-  virtual void scanPhantomReferencesQueue(uintptr_t closure);
-  virtual void scanFinalizationQueue(uintptr_t closure);
+  virtual void scanWeakReferencesQueue(word_t closure);
+  virtual void scanSoftReferencesQueue(word_t closure);
+  virtual void scanPhantomReferencesQueue(word_t closure);
+  virtual void scanFinalizationQueue(word_t closure);
   virtual void addFinalizationCandidate(gc* obj);
   virtual size_t getObjectSize(gc* obj);
   virtual const char* getObjectTypeName(gc* obj);
-  virtual void printMethod(mvm::FrameInfo* FI, intptr_t ip, intptr_t addr);
+  virtual void printMethod(mvm::FrameInfo* FI, word_t ip, word_t addr);
 
 
   /// CreateError - Creates a Java object of the specified exception class
@@ -178,7 +178,7 @@ public:
   
   /// tracer - Traces instances of this class.
   ///
-  virtual void tracer(uintptr_t closure);
+  virtual void tracer(word_t closure);
   
   /// dirSeparator - Directory separator for file paths, e.g. '\' for windows,
   /// '/' for Unix.

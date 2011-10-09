@@ -235,9 +235,9 @@ Constant* FindMetadata(const Function& F) {
 
 /// emitAssembly - Print the frametable. The ocaml frametable format is thus:
 ///
-///   extern "C" struct align(sizeof(intptr_t)) {
+///   extern "C" struct align(sizeof(word_t)) {
 ///     uint32_t NumDescriptors;
-///     struct align(sizeof(intptr_t)) {
+///     struct align(sizeof(word_t)) {
 ///       void *ReturnAddress;
 ///       void *Metadata;
 ///       uint16_t BytecodeIndex; 

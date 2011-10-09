@@ -101,8 +101,8 @@ public:
 
 class KnownFrame {
 public:
-  intptr_t currentFP;
-  intptr_t currentIP;
+  word_t currentFP;
+  word_t currentIP;
   KnownFrame* previousFrame;
 };
 
@@ -153,7 +153,7 @@ public:
 
   /// baseSP - The base stack pointer.
   ///
-  intptr_t baseSP;
+  word_t baseSP;
  
   /// doYield - Flag to tell the thread to yield for GC reasons.
   ///
@@ -179,7 +179,7 @@ private:
   /// interrupted, lastSP is not null and contains the value of the
   /// stack pointer before entering native.
   ///
-  intptr_t lastSP;
+  word_t lastSP;
  
   /// internalThreadID - The implementation specific thread id.
   ///
@@ -199,19 +199,19 @@ public:
   /// tracer - Does nothing. Used for child classes which may defined
   /// a tracer.
   ///
-  virtual void tracer(uintptr_t closure) {}
-  void scanStack(uintptr_t closure);
+  virtual void tracer(word_t closure) {}
+  void scanStack(word_t closure);
   
-  intptr_t getLastSP() { return lastSP; }
-  void  setLastSP(intptr_t V) { lastSP = V; }
+  word_t getLastSP() { return lastSP; }
+  void  setLastSP(word_t V) { lastSP = V; }
   
   void joinRVBeforeEnter();
-  void joinRVAfterLeave(intptr_t savedSP);
+  void joinRVAfterLeave(word_t savedSP);
 
   void enterUncooperativeCode(unsigned level = 0) __attribute__ ((noinline));
-  void enterUncooperativeCode(intptr_t SP);
+  void enterUncooperativeCode(word_t SP);
   void leaveUncooperativeCode();
-  intptr_t waitOnSP();
+  word_t waitOnSP();
 
 
   /// clearException - Clear any pending exception of the current thread.
@@ -221,11 +221,11 @@ public:
 
   bool isMvmThread() {
     if (!baseAddr) return false;
-    else return (((uintptr_t)this) & System::GetMvmThreadMask()) == baseAddr;
+    else return (((word_t)this) & System::GetMvmThreadMask()) == baseAddr;
   }
 
   /// baseAddr - The base address for all threads.
-  static uintptr_t baseAddr;
+  static word_t baseAddr;
 
   /// OverflowMask - Apply this mask to implement overflow checks. For
   /// efficiency, we lower the available size of the stack: it can never go
@@ -259,7 +259,7 @@ public:
  
   /// getFrameContext - Fill the buffer with frames currently on the stack.
   ///
-  void getFrameContext(intptr_t* buffer);
+  void getFrameContext(word_t* buffer);
   
   /// getFrameContextLength - Get the length of the frame context.
   ///
@@ -303,14 +303,14 @@ public:
 ///
 class StackWalker {
 public:
-  intptr_t addr;
-  intptr_t ip;
+  word_t addr;
+  word_t ip;
   KnownFrame* frame;
   mvm::Thread* thread;
 
   StackWalker(mvm::Thread* th) __attribute__ ((noinline));
   void operator++();
-  intptr_t operator*();
+  word_t operator*();
   FrameInfo* get();
 
 };

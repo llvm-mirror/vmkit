@@ -77,10 +77,10 @@ private:
   FatLock* nextFreeLock;
 public:
   FatLock(uint32_t index, gc* object);
-  uintptr_t getID();
+  word_t getID();
   int tryAcquire() { return internalLock.tryLock(); }
   bool acquire(gc* object);
-  void acquireAll(gc* object, uintptr_t count);
+  void acquireAll(gc* object, word_t count);
   void release(gc* object, LockSystem& table);
   mvm::Thread* getOwner();
   bool owner();
@@ -147,7 +147,7 @@ public:
     return LockTable[index >> BitIndex][index & BitMask];
   }
 
-  FatLock* getFatLockFromID(uintptr_t ID);
+  FatLock* getFatLockFromID(word_t ID);
 };
 
 class ThinLock {

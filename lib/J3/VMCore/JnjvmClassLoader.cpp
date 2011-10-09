@@ -973,13 +973,13 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   return res;
 }
 
-intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& j3) {
-  uintptr_t res = (uintptr_t)TheCompiler->loadMethod(mvm::System::GetSelfHandle(), buf);
+word_t JnjvmClassLoader::loadInLib(const char* buf, bool& j3) {
+  word_t res = (word_t)TheCompiler->loadMethod(mvm::System::GetSelfHandle(), buf);
   
   if (!res) {
     for (std::vector<void*>::iterator i = nativeLibs.begin(),
               e = nativeLibs.end(); i!= e; ++i) {
-      res = (uintptr_t)TheCompiler->loadMethod((*i), buf);
+      res = (word_t)TheCompiler->loadMethod((*i), buf);
       if (res) break;
     }
   } else {
@@ -989,7 +989,7 @@ intptr_t JnjvmClassLoader::loadInLib(const char* buf, bool& j3) {
   if (!res && this != bootstrapLoader)
     res = bootstrapLoader->loadInLib(buf, j3);
 
-  return (intptr_t)res;
+  return (word_t)res;
 }
 
 void* JnjvmClassLoader::loadLib(const char* buf) {
@@ -998,15 +998,15 @@ void* JnjvmClassLoader::loadLib(const char* buf) {
   return handle;
 }
 
-intptr_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
-  return (intptr_t)TheCompiler->loadMethod(handle, name);
+word_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
+  return (word_t)TheCompiler->loadMethod(handle, name);
 }
 
-intptr_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
+word_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
                                         char* buf) {
 
   meth->jniConsFromMeth(buf);
-  intptr_t res = loadInLib(buf, j3);
+  word_t res = loadInLib(buf, j3);
   if (!res) {
     meth->jniConsFromMethOverloaded(buf);
     res = loadInLib(buf, j3);

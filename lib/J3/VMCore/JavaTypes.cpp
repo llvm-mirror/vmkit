@@ -57,13 +57,13 @@ ObjectTypedef::ObjectTypedef(const UTF8* name, UTF8Map* map) {
   pseudoAssocClassName = name->extract(map, 1, name->size - 1);
 }
 
-intptr_t Signdef::staticCallBuf() {
+word_t Signdef::staticCallBuf() {
   if (!_staticCallBuf) {
     mvm::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_buf");
     bool unused = false;
-    intptr_t res = initialLoader->loadInLib(buf, unused);
+    word_t res = initialLoader->loadInLib(buf, unused);
     if (res) {
       _staticCallBuf = res;
     } else {
@@ -73,13 +73,13 @@ intptr_t Signdef::staticCallBuf() {
   return _staticCallBuf;
 }
 
-intptr_t Signdef::virtualCallBuf() {
+word_t Signdef::virtualCallBuf() {
   if (!_virtualCallBuf) {
     mvm::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_buf");
     bool unused = false;
-    intptr_t res = initialLoader->loadInLib(buf, unused);
+    word_t res = initialLoader->loadInLib(buf, unused);
     if (res) { 
       _virtualCallBuf = res;
     } else {
@@ -89,13 +89,13 @@ intptr_t Signdef::virtualCallBuf() {
   return _virtualCallBuf;
 }
 
-intptr_t Signdef::staticCallAP() {
+word_t Signdef::staticCallAP() {
   if (!_staticCallAP) {
     mvm::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_ap");
     bool unused = false;
-    intptr_t res = initialLoader->loadInLib(buf, unused);
+    word_t res = initialLoader->loadInLib(buf, unused);
     if (res) {
       _staticCallAP = res;
     } else {
@@ -105,13 +105,13 @@ intptr_t Signdef::staticCallAP() {
   return _staticCallAP;
 }
 
-intptr_t Signdef::virtualCallAP() {
+word_t Signdef::virtualCallAP() {
   if (!_virtualCallAP) {
     mvm::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_ap");
     bool unused = false;
-    intptr_t res = initialLoader->loadInLib(buf, unused);
+    word_t res = initialLoader->loadInLib(buf, unused);
     if (res) {
       _virtualCallAP = res;
     } else {
@@ -121,13 +121,13 @@ intptr_t Signdef::virtualCallAP() {
   return _virtualCallAP;
 }
 
-intptr_t Signdef::virtualCallStub() {
+word_t Signdef::virtualCallStub() {
   if (!_virtualCallAP) {
     mvm::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_stub");
     bool unused = false;
-    intptr_t res = initialLoader->loadInLib(buf, unused);
+    word_t res = initialLoader->loadInLib(buf, unused);
     if (res) {
       _virtualCallStub = res;
     } else {
@@ -137,13 +137,13 @@ intptr_t Signdef::virtualCallStub() {
   return _virtualCallStub;
 }
 
-intptr_t Signdef::specialCallStub() {
+word_t Signdef::specialCallStub() {
   if (!_specialCallStub) {
     mvm::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "special_stub");
     bool unused = false;
-    intptr_t res = initialLoader->loadInLib(buf, unused);
+    word_t res = initialLoader->loadInLib(buf, unused);
     if (res) {
       _specialCallStub = res;
     } else {
@@ -153,13 +153,13 @@ intptr_t Signdef::specialCallStub() {
   return _specialCallStub;
 }
 
-intptr_t Signdef::staticCallStub() {
+word_t Signdef::staticCallStub() {
   if (!_staticCallStub) {
     mvm::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_stub");
     bool unused = false;
-    intptr_t res = initialLoader->loadInLib(buf, unused);
+    word_t res = initialLoader->loadInLib(buf, unused);
     if (res) {
       _staticCallStub = res;
     } else {

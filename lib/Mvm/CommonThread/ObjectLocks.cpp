@@ -25,12 +25,12 @@ namespace mvm {
 void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   FatLock* obj = table.allocate(object);
-  uintptr_t ID = obj->getID();
+  word_t ID = obj->getID();
   // 1 because we start at 0, and 1 for this lock request.
   obj->acquireAll(object, (ThinCountMask >> ThinCountShift) + 2);
-  uintptr_t oldValue = 0;
-  uintptr_t newValue = 0;
-  uintptr_t yieldedValue = 0;
+  word_t oldValue = 0;
+  word_t newValue = 0;
+  word_t yieldedValue = 0;
   do {
     oldValue = object->header;
     newValue = obj->getID() | (oldValue & NonLockBitsMask);
@@ -45,10 +45,10 @@ void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
 void ThinLock::removeFatLock(FatLock* fatLock, LockSystem& table) {
   gc* object = fatLock->associatedObject;
   llvm_gcroot(object, 0);
-  uintptr_t ID = fatLock->getID();
-  uintptr_t oldValue = 0;
-  uintptr_t newValue = 0;
-  uintptr_t yieldedValue = 0;
+  word_t ID = fatLock->getID();
+  word_t oldValue = 0;
+  word_t newValue = 0;
+  word_t yieldedValue = 0;
   do {
     oldValue = object->header;
     newValue = oldValue & NonLockBitsMask;
@@ -64,10 +64,10 @@ FatLock* ThinLock::changeToFatlock(gc* object, LockSystem& table) {
     FatLock* obj = table.allocate(object);
     uint32 count = (object->header & ThinCountMask) >> ThinCountShift;
     obj->acquireAll(object, count + 1);
-    uintptr_t oldValue = 0;
-    uintptr_t newValue = 0;
-    uintptr_t yieldedValue = 0;
-    uintptr_t ID = obj->getID();
+    word_t oldValue = 0;
+    word_t newValue = 0;
+    word_t yieldedValue = 0;
+    word_t ID = obj->getID();
     do {
       oldValue = object->header;
       newValue = ID | (oldValue & NonLockBitsMask);
@@ -105,9 +105,9 @@ void printDebugMessage(gc* object, LockSystem& table) {
 void ThinLock::acquire(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   uint64_t id = mvm::Thread::get()->getThreadID();
-  uintptr_t oldValue = 0;
-  uintptr_t newValue = 0;
-  uintptr_t yieldedValue = 0;
+  word_t oldValue = 0;
+  word_t newValue = 0;
+  word_t yieldedValue = 0;
 
   if ((object->header & System::GetThreadIDMask()) == id) {
     assert(owner(object, table) && "Inconsistent lock");
@@ -192,9 +192,9 @@ void ThinLock::release(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   assert(owner(object, table) && "Not owner when entering release!");
   uint64 id = mvm::Thread::get()->getThreadID();
-  uintptr_t oldValue = 0;
-  uintptr_t newValue = 0;
-  uintptr_t yieldedValue = 0;
+  word_t oldValue = 0;
+  word_t newValue = 0;
+  word_t yieldedValue = 0;
   if ((object->header & ~NonLockBitsMask) == id) {
     do {
       oldValue = object->header;
@@ -240,7 +240,7 @@ FatLock* ThinLock::getFatLock(gc* object, LockSystem& table) {
   }
 }
 
-void FatLock::acquireAll(gc* object, uintptr_t nb) {
+void FatLock::acquireAll(gc* object, word_t nb) {
   assert(associatedObject == object);
   llvm_gcroot(object, 0);
   internalLock.lockAll(nb);
@@ -265,7 +265,7 @@ FatLock::FatLock(uint32_t i, gc* a) {
   nextFreeLock = NULL;
 }
 
-uintptr_t FatLock::getID() {
+word_t FatLock::getID() {
   return (index << ThinLock::NonLockBits) | ThinLock::FatMask;
 }
 
@@ -368,7 +368,7 @@ FatLock* LockSystem::allocate(gc* obj) {
 }
 
 
-FatLock* LockSystem::getFatLockFromID(uintptr_t ID) {
+FatLock* LockSystem::getFatLockFromID(word_t ID) {
   if (ID & ThinLock::FatMask) {
     uint32_t index = (ID & ~ThinLock::FatMask) >> ThinLock::NonLockBits;
     FatLock* res = getLock(index);

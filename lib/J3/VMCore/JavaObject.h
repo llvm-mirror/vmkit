@@ -33,7 +33,7 @@ class UserCommonClass;
 class InterfaceMethodTable : public mvm::PermanentObject {
 public:
 	static const uint32_t NumIndexes = 29;
-	uintptr_t contents[NumIndexes];
+	word_t contents[NumIndexes];
 
   static uint32_t getIndex(const mvm::UTF8* name, const mvm::UTF8* type) {
     return (name->hash() + type->hash()) % NumIndexes;
@@ -90,18 +90,18 @@ public:
   InterfaceMethodTable* IMT;
 
   /// Java methods for the virtual table functions.
-  uintptr_t init;
-  uintptr_t equals;
-  uintptr_t hashCode;
-  uintptr_t toString;
-  uintptr_t clone;
-  uintptr_t getClass;
-  uintptr_t notify;
-  uintptr_t notifyAll;
-  uintptr_t waitIndefinitely;
-  uintptr_t waitMs;
-  uintptr_t waitMsNs;
-  uintptr_t virtualMethods[1];
+  word_t init;
+  word_t equals;
+  word_t hashCode;
+  word_t toString;
+  word_t clone;
+  word_t getClass;
+  word_t notify;
+  word_t notifyAll;
+  word_t waitIndefinitely;
+  word_t waitMs;
+  word_t waitMsNs;
+  word_t virtualMethods[1];
 
   /// operator new - Allocates a JavaVirtualTable with the given size. The
   /// size must contain the additional information for type checking, as well
@@ -109,7 +109,7 @@ public:
   ///
   void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
                      uint32 nbMethods) {
-    return allocator.Allocate(sizeof(uintptr_t) * (nbMethods), "Virtual table");
+    return allocator.Allocate(sizeof(word_t) * (nbMethods), "Virtual table");
   }
 
   /// JavaVirtualTable - Create JavaVirtualTable objects for classes, array
@@ -123,7 +123,7 @@ public:
   /// getFirstJavaMethod - Get the byte offset of the first Java method
   /// (<init>).
   ///
-  uintptr_t* getFirstJavaMethod() {
+  word_t* getFirstJavaMethod() {
     return &init;
   }
   
@@ -216,12 +216,12 @@ public:
   /// setNativeTracer - Set the tracer of this virtual table as a method
   /// defined by JnJVM.
   ///
-  void setNativeTracer(uintptr_t tracer, const char* name);
+  void setNativeTracer(word_t tracer, const char* name);
   
   /// setNativeDestructor - Set the destructor of this virtual table as a method
   /// defined by JnJVM.
   ///
-  void setNativeDestructor(uintptr_t tracer, const char* name);
+  void setNativeDestructor(word_t tracer, const char* name);
 
 };
 

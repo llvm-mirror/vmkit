@@ -38,7 +38,7 @@ void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
   if (handle) {
     Class* cl = (Class*)dlsym(handle, file);
     if (cl) {
-      static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
+      static_init_t init = (static_init_t)(word_t)cl->classLoader;
       assert(init && "Loaded the wrong library");
       init(this);
       insertAllMethodsInVM(vm);
@@ -57,7 +57,7 @@ void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
   if (handle) {
     Class* cl = (Class*)dlsym(handle, name);
     if (cl) {
-      static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
+      static_init_t init = (static_init_t)(word_t)cl->classLoader;
       init(this);
       insertAllMethodsInVM(vm);
     }
@@ -69,7 +69,7 @@ Class* JnjvmClassLoader::loadClassFromSelf(Jnjvm* vm, const char* name) {
   assert(classes->map.size() == 0);
   Class* cl = (Class*)dlsym(SELF_HANDLE, name);
   if (cl) {
-    static_init_t init = (static_init_t)(uintptr_t)cl->classLoader;
+    static_init_t init = (static_init_t)(word_t)cl->classLoader;
     init(this);
     insertAllMethodsInVM(vm);
   }
@@ -89,7 +89,7 @@ extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
   *ptr = JCL->constructArray(name);
 }
 
-extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
+extern "C" word_t vmjcNativeLoader(JavaMethod* meth) {
   bool j3 = false;
   const UTF8* jniConsClName = meth->classDef->name;
   const UTF8* jniConsName = meth->name;
@@ -101,7 +101,7 @@ extern "C" intptr_t vmjcNativeLoader(JavaMethod* meth) {
   mvm::ThreadAllocator threadAllocator;
   char* buf = (char*)threadAllocator.Allocate(
       3 + JNI_NAME_PRE_LEN + 1 + ((mnlen + clen + mtlen) << 3));
-  intptr_t res = meth->classDef->classLoader->nativeLookup(meth, j3, buf);
+  word_t res = meth->classDef->classLoader->nativeLookup(meth, j3, buf);
   assert(res && "Could not find required native method");
   return res;
 }

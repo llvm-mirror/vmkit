@@ -100,7 +100,7 @@ public:
   llvm::Function* javaCompile();
   
   /// nativeCompile - Compile the native method.
-  llvm::Function* nativeCompile(intptr_t natPtr = 0);
+  llvm::Function* nativeCompile(word_t natPtr = 0);
   
   /// isCustomizable - Whether we found the method to be customizable.
   bool isCustomizable;

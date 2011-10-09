@@ -1081,7 +1081,7 @@ void Jnjvm::loadBootstrap() {
   upcalls->newString->resolveClass();
   if (JavaString::internStringVT == NULL) {
     JavaVirtualTable* stringVT = upcalls->newString->getVirtualVT();
-    uint32 size = upcalls->newString->virtualTableSize * sizeof(uintptr_t);
+    uint32 size = upcalls->newString->virtualTableSize * sizeof(word_t);
     
     JavaString::internStringVT = 
       (JavaVirtualTable*)bootstrapLoader->allocator.Allocate(size, "String VT");
@@ -1089,11 +1089,11 @@ void Jnjvm::loadBootstrap() {
     memcpy(JavaString::internStringVT, stringVT, size);
     
     JavaString::internStringVT->destructor = 
-      (uintptr_t)JavaString::stringDestructor;
+      (word_t)JavaString::stringDestructor;
 
     // Tell the finalizer that this is a native destructor.
     JavaString::internStringVT->operatorDelete = 
-      (uintptr_t)JavaString::stringDestructor;
+      (word_t)JavaString::stringDestructor;
   }
   upcalls->newString->initialiseClass(this);
 
@@ -1364,19 +1364,19 @@ void Jnjvm::endCollection() {
   referenceThread->EnqueueCond.broadcast();
 }
   
-void Jnjvm::scanWeakReferencesQueue(uintptr_t closure) {
+void Jnjvm::scanWeakReferencesQueue(word_t closure) {
   referenceThread->WeakReferencesQueue.scan(referenceThread, closure);
 }
   
-void Jnjvm::scanSoftReferencesQueue(uintptr_t closure) {
+void Jnjvm::scanSoftReferencesQueue(word_t closure) {
   referenceThread->SoftReferencesQueue.scan(referenceThread, closure);
 }
   
-void Jnjvm::scanPhantomReferencesQueue(uintptr_t closure) {
+void Jnjvm::scanPhantomReferencesQueue(word_t closure) {
   referenceThread->PhantomReferencesQueue.scan(referenceThread, closure);
 }
 
-void Jnjvm::scanFinalizationQueue(uintptr_t closure) {
+void Jnjvm::scanFinalizationQueue(word_t closure) {
   finalizerThread->scanFinalizationQueue(closure);
 }
 
@@ -1445,7 +1445,7 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   return 0; 
 }
 
-void Jnjvm::printMethod(mvm::FrameInfo* FI, intptr_t ip, intptr_t addr) {
+void Jnjvm::printMethod(mvm::FrameInfo* FI, word_t ip, word_t addr) {
   if (FI->Metadata == NULL) {
     mvm::MethodInfoHelper::print(ip, addr);
     return;

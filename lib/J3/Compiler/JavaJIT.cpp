@@ -352,7 +352,7 @@ static llvm::Function* GetNativeCallee(JavaLLVMCompiler* TheCompiler,
   return callee;
 }
 
-llvm::Function* JavaJIT::nativeCompile(intptr_t natPtr) {
+llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
   
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "native compile %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),

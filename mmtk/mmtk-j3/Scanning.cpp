@@ -21,19 +21,19 @@ extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_Tra
   mvm::Thread* tcur = th;
   
   do {
-    tcur->scanStack(reinterpret_cast<uintptr_t>(TL));
+    tcur->scanStack(reinterpret_cast<word_t>(TL));
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) { 
-  mvm::Thread::get()->MyVM->tracer(reinterpret_cast<uintptr_t>(TL));
+  mvm::Thread::get()->MyVM->tracer(reinterpret_cast<word_t>(TL));
   
 	mvm::Thread* th = mvm::Thread::get();
   mvm::Thread* tcur = th;
   
   do {
-    tcur->tracer(reinterpret_cast<uintptr_t>(TL));
+    tcur->tracer(reinterpret_cast<word_t>(TL));
     tcur = (mvm::Thread*)tcur->next();
   } while (tcur != th);
 }
@@ -52,7 +52,7 @@ extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan
   assert(obj && "No object to trace");
   assert(obj->getVirtualTable() && "No virtual table");
   assert(obj->getVirtualTable()->tracer && "No tracer in VT");
-  obj->tracer(reinterpret_cast<uintptr_t>(TC));
+  obj->tracer(reinterpret_cast<word_t>(TC));
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) {
@@ -60,7 +60,7 @@ extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_Tra
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_scanObject__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (
-    MMTkObject* Scanning, uintptr_t TC, gc* obj) {
+    MMTkObject* Scanning, word_t TC, gc* obj) {
   assert(obj && "No object to trace");
   assert(obj->getVirtualTable() && "No virtual table");
   assert(obj->getVirtualTable()->tracer && "No tracer in VT");
@@ -68,6 +68,6 @@ extern "C" void Java_org_j3_mmtk_Scanning_scanObject__Lorg_mmtk_plan_TransitiveC
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_precopyChildren__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2 (
-    MMTkObject* Scanning, MMTkObject TL, uintptr_t ref) { UNIMPLEMENTED(); }
+    MMTkObject* Scanning, MMTkObject TL, word_t ref) { UNIMPLEMENTED(); }
 
 }

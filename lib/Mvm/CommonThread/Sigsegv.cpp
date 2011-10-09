@@ -21,7 +21,7 @@ using namespace mvm;
 #endif
 
 void sigsegvHandler(int n, siginfo_t *_info, void *context) {
-  uintptr_t addr = (uintptr_t)_info->si_addr;
+  word_t addr = (word_t)_info->si_addr;
 #if defined(__i386__)
   struct frame {
     struct frame *caller;
@@ -47,7 +47,7 @@ void sigsegvHandler(int n, siginfo_t *_info, void *context) {
 #endif
 
   mvm::Thread* th = mvm::Thread::get();
-  if (addr > (uintptr_t)th->getThreadID() && addr < (uintptr_t)th->baseSP) {
+  if (addr > (word_t)th->getThreadID() && addr < (word_t)th->baseSP) {
     fprintf(stderr, "Stack overflow in VM code or in JNI code. If it is from\n"
                     "the VM, it is either from the JIT, the GC or the runtime."
                     "\nThis has to be fixed in the VM: VMKit makes sure that\n"

@@ -280,11 +280,11 @@ void JavaMethod::setNative() {
   access |= ACC_NATIVE;
 }
 
-void JavaVirtualTable::setNativeTracer(uintptr_t ptr, const char* name) {
+void JavaVirtualTable::setNativeTracer(word_t ptr, const char* name) {
   tracer = ptr;
 }
 
-void JavaVirtualTable::setNativeDestructor(uintptr_t ptr, const char* name) {
+void JavaVirtualTable::setNativeDestructor(word_t ptr, const char* name) {
 	if (!cl->classLoader->getCompiler()->isStaticCompiling()) {
 	  destructor = ptr;
   	operatorDelete = ptr;
@@ -1336,7 +1336,7 @@ void ClassArray::initialiseVT(Class* javaLangObject) {
   #define COPY(CLASS) \
     memcpy(CLASS->virtualVT->getFirstJavaMethod(), \
            javaLangObject->virtualVT->getFirstJavaMethod(), \
-           sizeof(uintptr_t) * JavaVirtualTable::getNumJavaMethods()); \
+           sizeof(word_t) * JavaVirtualTable::getNumJavaMethods()); \
     CLASS->super = javaLangObject; \
     CLASS->virtualVT->display[0] = javaLangObject->virtualVT; \
     CLASS->virtualVT->secondaryTypes = \
@@ -1362,9 +1362,9 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     Class* referenceClass = 
         C->classLoader->bootstrapLoader->upcalls->newReference;
     if (referenceClass != NULL && C->super->isAssignableFrom(referenceClass)) {
-      tracer = (uintptr_t)ReferenceObjectTracer;
+      tracer = (word_t)ReferenceObjectTracer;
     } else {
-      tracer = (uintptr_t)RegularObjectTracer;
+      tracer = (word_t)RegularObjectTracer;
     }
     operatorDelete = 0;
     
@@ -1433,7 +1433,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
 
   } else {
     // Set the tracer, destructor and delete.
-    tracer = (uintptr_t)JavaObjectTracer;
+    tracer = (word_t)JavaObjectTracer;
     operatorDelete = 0;
     
     // Set the class of this VT.
@@ -1460,8 +1460,8 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
     uint32 size = (getBaseSize() - getFirstJavaMethodIndex());
     memcpy(this->getFirstJavaMethod(),
            C->super->virtualVT->getFirstJavaMethod(),
-           size * sizeof(uintptr_t));
-    tracer = (uintptr_t)ArrayObjectTracer;
+           size * sizeof(word_t));
+    tracer = (word_t)ArrayObjectTracer;
     
     // Set the class of this VT.
     cl = C;
@@ -1630,7 +1630,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
 
   } else {
     // Set the tracer, destructor and delete
-    tracer = (uintptr_t)JavaObjectTracer;
+    tracer = (word_t)JavaObjectTracer;
     operatorDelete = 0;
     
     // Set the class of this VT.

@@ -21,31 +21,31 @@
 using namespace mvm;
 
 int Collector::verbose = 0;
-extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I(uintptr_t, int32_t) ALWAYS_INLINE;
+extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I(word_t, int32_t) ALWAYS_INLINE;
 
-extern "C" intptr_t JnJVM_org_j3_bindings_Bindings_allocateMutator__I(int32_t) ALWAYS_INLINE;
-extern "C" void JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(intptr_t) ALWAYS_INLINE;
-extern "C" void JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2_3Ljava_lang_String_2(intptr_t, intptr_t, mmtk::MMTkObjectArray*) ALWAYS_INLINE;
+extern "C" word_t JnJVM_org_j3_bindings_Bindings_allocateMutator__I(int32_t) ALWAYS_INLINE;
+extern "C" void JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(word_t) ALWAYS_INLINE;
+extern "C" void JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2_3Ljava_lang_String_2(word_t, word_t, mmtk::MMTkObjectArray*) ALWAYS_INLINE;
 
 extern "C" void JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(
-    uintptr_t closure, void* source, void* slot) ALWAYS_INLINE;
+    word_t closure, void* source, void* slot) ALWAYS_INLINE;
 
 extern "C" void JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(
-    uintptr_t TraceLocal, void** slot) ALWAYS_INLINE;
+    word_t TraceLocal, void** slot) ALWAYS_INLINE;
 extern "C" void JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(
-    uintptr_t TraceLocal, void* slot, uint8_t untraced) ALWAYS_INLINE;
+    word_t TraceLocal, void* slot, uint8_t untraced) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_retainForFinalize__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
+    word_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_retainReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
+    word_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedReference__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
+    word_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
+    word_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" gc* JnJVM_org_j3_bindings_Bindings_getForwardedFinalizable__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
+    word_t TraceLocal, void* obj) ALWAYS_INLINE;
 extern "C" uint8_t JnJVM_org_j3_bindings_Bindings_isLive__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(
-    uintptr_t TraceLocal, void* obj) ALWAYS_INLINE;
+    word_t TraceLocal, void* obj) ALWAYS_INLINE;
   
 extern "C" uint8_t JnJVM_org_j3_bindings_Bindings_writeBarrierCAS__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2(gc* ref, gc** slot, gc* old, gc* value) ALWAYS_INLINE;
   
@@ -100,23 +100,23 @@ void MutatorThread::init(Thread* _th) {
   th->MutatorContext =
     JnJVM_org_j3_bindings_Bindings_allocateMutator__I((int32_t)_th->getThreadID());
   th->realRoutine(_th);
-  uintptr_t context = th->MutatorContext;
+  word_t context = th->MutatorContext;
   th->MutatorContext = 0;
   JnJVM_org_j3_bindings_Bindings_freeMutator__Lorg_mmtk_plan_MutatorContext_2(context);
 }
 
-bool Collector::isLive(gc* ptr, uintptr_t closure) {
+bool Collector::isLive(gc* ptr, word_t closure) {
   return JnJVM_org_j3_bindings_Bindings_isLive__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, ptr);
 }
 
-void Collector::scanObject(void** ptr, uintptr_t closure) {
+void Collector::scanObject(void** ptr, word_t closure) {
   if ((*ptr) != NULL) {
     assert(((gc*)(*ptr))->getVirtualTable());
   }
   JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(closure, ptr);
 }
  
-void Collector::markAndTrace(void* source, void* ptr, uintptr_t closure) {
+void Collector::markAndTrace(void* source, void* ptr, word_t closure) {
   void** ptr_ = (void**)ptr;
   if ((*ptr_) != NULL) {
     assert(((gc*)(*ptr_))->getVirtualTable());
@@ -125,7 +125,7 @@ void Collector::markAndTrace(void* source, void* ptr, uintptr_t closure) {
   JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
 }
   
-void Collector::markAndTraceRoot(void* ptr, uintptr_t closure) {
+void Collector::markAndTraceRoot(void* ptr, word_t closure) {
   void** ptr_ = (void**)ptr;
   if ((*ptr_) != NULL) {
     assert(((gc*)(*ptr_))->getVirtualTable());
@@ -133,23 +133,23 @@ void Collector::markAndTraceRoot(void* ptr, uintptr_t closure) {
   JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(closure, ptr, true);
 }
 
-gc* Collector::retainForFinalize(gc* val, uintptr_t closure) {
+gc* Collector::retainForFinalize(gc* val, word_t closure) {
   return JnJVM_org_j3_bindings_Bindings_retainForFinalize__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
-gc* Collector::retainReferent(gc* val, uintptr_t closure) {
+gc* Collector::retainReferent(gc* val, word_t closure) {
   return JnJVM_org_j3_bindings_Bindings_retainReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
-gc* Collector::getForwardedFinalizable(gc* val, uintptr_t closure) {
+gc* Collector::getForwardedFinalizable(gc* val, word_t closure) {
   return JnJVM_org_j3_bindings_Bindings_getForwardedFinalizable__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
-gc* Collector::getForwardedReference(gc* val, uintptr_t closure) {
+gc* Collector::getForwardedReference(gc* val, word_t closure) {
   return JnJVM_org_j3_bindings_Bindings_getForwardedReference__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
-gc* Collector::getForwardedReferent(gc* val, uintptr_t closure) {
+gc* Collector::getForwardedReferent(gc* val, word_t closure) {
   return JnJVM_org_j3_bindings_Bindings_getForwardedReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
 

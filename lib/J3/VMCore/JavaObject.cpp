@@ -33,11 +33,11 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
   assert(HashMask != 0);
   assert(mvm::HashBits != 0);
 
-  uintptr_t header = self->header;
-  uintptr_t GCBits = header & mvm::GCBitMask;
-  uintptr_t val = header & HashMask;
+  word_t header = self->header;
+  word_t GCBits = header & mvm::GCBitMask;
+  word_t val = header & HashMask;
   if (val != 0) {
-    return val ^ (uintptr_t)getClass(self);
+    return val ^ (word_t)getClass(self);
   }
   val = hashCodeGenerator;
   hashCodeGenerator += hashCodeIncrement;
@@ -54,14 +54,14 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
   do {
     header = self->header;
     if ((header & HashMask) != 0) break;
-    uintptr_t newHeader = header | val;
+    word_t newHeader = header | val;
     assert((newHeader & ~HashMask) == header);
     __sync_val_compare_and_swap(&(self->header), header, newHeader);
   } while (true);
 
   assert((self->header & HashMask) != 0);
   assert(GCBits == (self->header & mvm::GCBitMask));
-  return (self->header & HashMask) ^ (uintptr_t)getClass(self);
+  return (self->header & HashMask) ^ (word_t)getClass(self);
 }
 
 

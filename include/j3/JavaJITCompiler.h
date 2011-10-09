@@ -77,7 +77,7 @@ public:
   
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert) = 0;
-  virtual uintptr_t getPointerOrStub(JavaMethod& meth, int type) = 0;
+  virtual word_t getPointerOrStub(JavaMethod& meth, int type) = 0;
 
   static JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
 };
@@ -87,7 +87,7 @@ public:
   virtual bool needsCallback(JavaMethod* meth, Class* customizeFor, bool* needsInit);
   virtual llvm::Value* addCallback(Class* cl, uint16 index, Signdef* sign,
                                    bool stat, llvm::BasicBlock* insert);
-  virtual uintptr_t getPointerOrStub(JavaMethod& meth, int side);
+  virtual word_t getPointerOrStub(JavaMethod& meth, int side);
   
   virtual JavaCompiler* Create(const std::string& ModuleID) {
     return new JavaJ3LazyJITCompiler(ModuleID);

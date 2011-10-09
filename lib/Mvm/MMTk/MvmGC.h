@@ -18,10 +18,10 @@ extern "C" void EmptyDestructor();
 
 class VirtualTable {
  public:
-  uintptr_t destructor;
-  uintptr_t operatorDelete;
-  uintptr_t tracer;
-  uintptr_t specializedTracers[1];
+  word_t destructor;
+  word_t operatorDelete;
+  word_t tracer;
+  word_t specializedTracers[1];
   
   static uint32_t numberOfBaseFunctions() {
     return 4;
@@ -31,22 +31,22 @@ class VirtualTable {
     return 1;
   }
 
-  uintptr_t* getFunctions() {
+  word_t* getFunctions() {
     return &destructor;
   }
 
-  VirtualTable(uintptr_t d, uintptr_t o, uintptr_t t) {
+  VirtualTable(word_t d, word_t o, word_t t) {
     destructor = d;
     operatorDelete = o;
     tracer = t;
   }
 
   VirtualTable() {
-    destructor = reinterpret_cast<uintptr_t>(EmptyDestructor);
+    destructor = reinterpret_cast<word_t>(EmptyDestructor);
   }
 
   bool hasDestructor() {
-    return destructor != reinterpret_cast<uintptr_t>(EmptyDestructor);
+    return destructor != reinterpret_cast<word_t>(EmptyDestructor);
   }
 
   static void emptyTracer(void*) {}
@@ -74,15 +74,15 @@ class Collector {
 public:
   static int verbose;
 
-  static bool isLive(gc* ptr, uintptr_t closure) __attribute__ ((always_inline)); 
-  static void scanObject(void** ptr, uintptr_t closure) __attribute__ ((always_inline));
-  static void markAndTrace(void* source, void* ptr, uintptr_t closure) __attribute__ ((always_inline));
-  static void markAndTraceRoot(void* ptr, uintptr_t closure) __attribute__ ((always_inline));
-  static gc*  retainForFinalize(gc* val, uintptr_t closure) __attribute__ ((always_inline));
-  static gc*  retainReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
-  static gc*  getForwardedFinalizable(gc* val, uintptr_t closure) __attribute__ ((always_inline));
-  static gc*  getForwardedReference(gc* val, uintptr_t closure) __attribute__ ((always_inline));
-  static gc*  getForwardedReferent(gc* val, uintptr_t closure) __attribute__ ((always_inline));
+  static bool isLive(gc* ptr, word_t closure) __attribute__ ((always_inline)); 
+  static void scanObject(void** ptr, word_t closure) __attribute__ ((always_inline));
+  static void markAndTrace(void* source, void* ptr, word_t closure) __attribute__ ((always_inline));
+  static void markAndTraceRoot(void* ptr, word_t closure) __attribute__ ((always_inline));
+  static gc*  retainForFinalize(gc* val, word_t closure) __attribute__ ((always_inline));
+  static gc*  retainReferent(gc* val, word_t closure) __attribute__ ((always_inline));
+  static gc*  getForwardedFinalizable(gc* val, word_t closure) __attribute__ ((always_inline));
+  static gc*  getForwardedReference(gc* val, word_t closure) __attribute__ ((always_inline));
+  static gc*  getForwardedReferent(gc* val, word_t closure) __attribute__ ((always_inline));
   static void objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) __attribute__ ((always_inline));
   static void objectReferenceArrayWriteBarrier(gc* ref, gc** slot, gc* value) __attribute__ ((always_inline));
   static void objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) __attribute__ ((always_inline));

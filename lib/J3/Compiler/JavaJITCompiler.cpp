@@ -187,7 +187,7 @@ void JavaJITCompiler::makeVT(Class* cl) {
   }
  
   Class* current = cl;
-  uintptr_t* functions = VT->getFunctions();
+  word_t* functions = VT->getFunctions();
   while (current != NULL) {
     // Fill the virtual table with function pointers.
     for (uint32 i = 0; i < current->nbVirtualMethods; ++i) {
@@ -244,7 +244,7 @@ void JavaJITCompiler::makeIMT(Class* cl) {
       if (meth) {
         IMT->contents[i] = getPointerOrStub(*meth, JavaMethod::Interface);
       } else {
-        IMT->contents[i] = (uintptr_t)ThrowUnfoundInterface;
+        IMT->contents[i] = (word_t)ThrowUnfoundInterface;
       }
     } else if (size > 1) {
       std::vector<JavaMethod*> methods;
@@ -268,17 +268,17 @@ void JavaJITCompiler::makeIMT(Class* cl) {
           IMT->contents[i] = getPointerOrStub(*(methods[0]),
                                               JavaMethod::Interface);
         } else {
-          IMT->contents[i] = (uintptr_t)ThrowUnfoundInterface;
+          IMT->contents[i] = (word_t)ThrowUnfoundInterface;
         }
       } else {
 
         // Add one to have a NULL-terminated table.
-        uint32_t length = (2 * size + 1) * sizeof(uintptr_t);
+        uint32_t length = (2 * size + 1) * sizeof(word_t);
       
-        uintptr_t* table = (uintptr_t*)
+        word_t* table = (word_t*)
           cl->classLoader->allocator.Allocate(length, "IMT");
       
-        IMT->contents[i] = (uintptr_t)table | 1;
+        IMT->contents[i] = (word_t)table | 1;
 
         uint32_t j = 0;
         std::set<JavaMethod*>::iterator Interf = atIndex.begin();
@@ -288,11 +288,11 @@ void JavaJITCompiler::makeIMT(Class* cl) {
           JavaMethod* Cmeth = *it;
           assert(Imeth != NULL);
           assert(j < 2 * size - 1);
-          table[j] = (uintptr_t)Imeth;
+          table[j] = (word_t)Imeth;
           if (Cmeth) {
             table[j + 1] = getPointerOrStub(*Cmeth, JavaMethod::Interface);
           } else {
-            table[j + 1] = (uintptr_t)ThrowUnfoundInterface;
+            table[j + 1] = (word_t)ThrowUnfoundInterface;
           }
         }
         assert(Interf == atIndex.end());
@@ -372,7 +372,7 @@ extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   return 0;
 }
 
-uintptr_t JavaJ3LazyJITCompiler::getPointerOrStub(JavaMethod& meth,
+word_t JavaJ3LazyJITCompiler::getPointerOrStub(JavaMethod& meth,
                                                   int side) {
   return meth.getSignature()->getVirtualCallStub();
 }
@@ -383,11 +383,11 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
   LLVMSignatureInfo* LSI = getSignatureInfo(sign);
   // Set the stub in the constant pool.
   JavaConstantPool* ctpInfo = cl->ctpInfo;
-  uintptr_t stub = stat ? sign->getStaticCallStub() : sign->getSpecialCallStub();
+  word_t stub = stat ? sign->getStaticCallStub() : sign->getSpecialCallStub();
   if (!ctpInfo->ctpRes[index]) {
     // Do a compare and swap, so that we do not overwrtie what a stub might
     // have just updated.
-    uintptr_t val = (uintptr_t)
+    word_t val = (word_t)
       __sync_val_compare_and_swap(&(ctpInfo->ctpRes[index]), NULL, (void*)stub);
     // If there is something in the the constant pool that is not NULL nor
     // the stub, then it's the method.

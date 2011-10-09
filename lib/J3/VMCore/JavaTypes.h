@@ -281,38 +281,38 @@ private:
   /// function with the specific signature and receive the arguments in a
   /// buffer.
   ///
-  intptr_t _staticCallBuf;
-  intptr_t staticCallBuf();
+  word_t _staticCallBuf;
+  word_t staticCallBuf();
 
   /// _virtualCallBuf - A dynamically generated method which calls a virtual
   /// Java function with the specific signature and receive the arguments in a
   /// buffer.
   ///
-  intptr_t _virtualCallBuf;
-  intptr_t virtualCallBuf();
+  word_t _virtualCallBuf;
+  word_t virtualCallBuf();
   
   /// _staticCallAP - A dynamically generated method which calls a static Java
   /// function with the specific signature and receive the arguments in a
   /// variable argument handle.
   ///
-  intptr_t _staticCallAP;
-  intptr_t staticCallAP();
+  word_t _staticCallAP;
+  word_t staticCallAP();
   
   /// _virtualCallBuf - A dynamically generated method which calls a virtual
   /// Java function with the specific signature and receive the arguments in a
   /// variable argument handle.
   ///
-  intptr_t _virtualCallAP; 
-  intptr_t virtualCallAP();
+  word_t _virtualCallAP; 
+  word_t virtualCallAP();
   
-  intptr_t _virtualCallStub; 
-  intptr_t virtualCallStub();
+  word_t _virtualCallStub; 
+  word_t virtualCallStub();
   
-  intptr_t _specialCallStub;
-  intptr_t specialCallStub();
+  word_t _specialCallStub;
+  word_t specialCallStub();
   
-  intptr_t _staticCallStub; 
-  intptr_t staticCallStub();
+  word_t _staticCallStub; 
+  word_t staticCallStub();
   
 public:
 
@@ -350,67 +350,67 @@ public:
 //
 //===----------------------------------------------------------------------===//
 
-  intptr_t getStaticCallBuf() {
+  word_t getStaticCallBuf() {
     if(!_staticCallBuf) return staticCallBuf();
     return _staticCallBuf;
   }
 
-  intptr_t getVirtualCallBuf() {
+  word_t getVirtualCallBuf() {
     if(!_virtualCallBuf) return virtualCallBuf();
     return _virtualCallBuf;
   }
   
-  intptr_t getStaticCallAP() {
+  word_t getStaticCallAP() {
     if (!_staticCallAP) return staticCallAP();
     return _staticCallAP;
   }
 
-  intptr_t getVirtualCallAP() {
+  word_t getVirtualCallAP() {
     if (!_virtualCallAP) return virtualCallAP();
     return _virtualCallAP;
   }
   
-  intptr_t getVirtualCallStub() {
+  word_t getVirtualCallStub() {
     if (!_virtualCallStub) return virtualCallStub();
     return _virtualCallStub;
   }
   
-  intptr_t getSpecialCallStub() {
+  word_t getSpecialCallStub() {
     if (!_specialCallStub) return specialCallStub();
     return _specialCallStub;
   }
   
-  intptr_t getStaticCallStub() {
+  word_t getStaticCallStub() {
     if (!_staticCallStub) return staticCallStub();
     return _staticCallStub;
   }
   
   void setStaticCallBuf(void* code) {
-    _staticCallBuf = (intptr_t)code;
+    _staticCallBuf = (word_t)code;
   }
 
   void setVirtualCallBuf(void* code) {
-    _virtualCallBuf = (intptr_t)code;
+    _virtualCallBuf = (word_t)code;
   }
   
   void setStaticCallAP(void* code) {
-    _staticCallAP = (intptr_t)code;
+    _staticCallAP = (word_t)code;
   }
 
   void setVirtualCallAP(void* code) {
-    _virtualCallAP = (intptr_t)code;
+    _virtualCallAP = (word_t)code;
   }
   
   void setVirtualCallStub(void* code) {
-    _virtualCallStub = (intptr_t)code;
+    _virtualCallStub = (word_t)code;
   }
   
   void setSpecialCallStub(void* code) {
-    _specialCallStub = (intptr_t)code;
+    _specialCallStub = (word_t)code;
   }
   
   void setStaticCallStub(void* code) {
-    _staticCallStub = (intptr_t)code;
+    _staticCallStub = (word_t)code;
   }
 
 //===----------------------------------------------------------------------===//

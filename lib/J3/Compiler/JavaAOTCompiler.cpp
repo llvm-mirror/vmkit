@@ -371,14 +371,14 @@ Constant* JavaAOTCompiler::HandleMagic(JavaObject* obj, CommonClass* objCl) {
       name->equals(ExtentArray) || name->equals(ObjectReferenceArray) || 
       name->equals(OffsetArray)) {
     
-    intptr_t* realObj = (intptr_t*)obj;
-    intptr_t size = realObj[0];
+    word_t* realObj = (word_t*)obj;
+    word_t size = realObj[0];
 
     ArrayType* ATy = ArrayType::get(JavaIntrinsics.JavaObjectType,
                                     size + 1);
   
     std::vector<Constant*> Vals;
-    for (sint32 i = 0; i < size + 1; ++i) {
+    for (uint32 i = 0; i < size + 1; ++i) {
       Constant* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                       uint64_t(realObj[i]));
       CI = ConstantExpr::getIntToPtr(CI, JavaIntrinsics.JavaObjectType);
@@ -2034,7 +2034,7 @@ void JavaAOTCompiler::makeVT(Class* cl) {
     uint32 size = cl->super->virtualTableSize - 
         JavaVirtualTable::getFirstJavaMethodIndex();
     memcpy(VT->getFirstJavaMethod(), cl->super->virtualVT->getFirstJavaMethod(),
-           size * sizeof(uintptr_t));
+           size * sizeof(word_t));
     VT->destructor = cl->super->virtualVT->destructor;
   }
   
@@ -2043,7 +2043,7 @@ void JavaAOTCompiler::makeVT(Class* cl) {
     ((void**)VT)[meth.offset] = &meth;
   }
 
-  if (!cl->super) VT->destructor = reinterpret_cast<uintptr_t>(EmptyDestructor);
+  if (!cl->super) VT->destructor = reinterpret_cast<word_t>(EmptyDestructor);
 }
 
 void JavaAOTCompiler::makeIMT(Class* cl) {
@@ -2210,7 +2210,7 @@ void mainCompilerStart(JavaThread* th) {
            ee = classes.end(); ii != ee; ++ii) {
         Class* cl = *ii;
         static const std::string magic = "org/vmmagic";
-        static void* ptr = (void*)(uintptr_t)UnreachableMagicMMTk;
+        static void* ptr = (void*)(word_t)UnreachableMagicMMTk;
         if (!strncmp(UTF8Buffer(cl->name).cString(),
                      magic.c_str(),
                      magic.length() - 1)) {

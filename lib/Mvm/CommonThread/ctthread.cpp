@@ -53,13 +53,13 @@ void Thread::joinRVBeforeEnter() {
   MyVM->rendezvous.joinBeforeUncooperative(); 
 }
 
-void Thread::joinRVAfterLeave(intptr_t savedSP) {
+void Thread::joinRVAfterLeave(word_t savedSP) {
   MyVM->rendezvous.joinAfterUncooperative(savedSP); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {
   // Get the caller of this function
-  intptr_t cur = System::GetCallerAddress();
+  word_t cur = System::GetCallerAddress();
   F.previousFrame = lastKnownFrame;
   F.currentFP = cur;
   // This is used as a marker.
@@ -74,7 +74,7 @@ void Thread::endKnownFrame() {
 
 void Thread::startUnknownFrame(KnownFrame& F) {
   // Get the caller of this function
-  intptr_t cur = System::GetCallerAddress();
+  word_t cur = System::GetCallerAddress();
   // Get the caller of the caller.
   cur = System::GetCallerOfAddress(cur);
   F.previousFrame = lastKnownFrame;
@@ -101,11 +101,11 @@ void Thread::printBacktrace() {
   }
 }
 
-void Thread::getFrameContext(intptr_t* buffer) {
+void Thread::getFrameContext(word_t* buffer) {
   mvm::StackWalker Walker(this);
   uint32_t i = 0;
 
-  while (intptr_t ip = *Walker) {
+  while (word_t ip = *Walker) {
     buffer[i++] = ip;
     ++Walker;
   }
@@ -128,7 +128,7 @@ FrameInfo* StackWalker::get() {
   return thread->MyVM->IPToFrameInfo(ip);
 }
 
-intptr_t StackWalker::operator*() {
+word_t StackWalker::operator*() {
   if (addr == thread->baseSP) return 0;
   ip = System::GetIPFromCallerAddress(addr);
   return ip;
@@ -171,7 +171,7 @@ StackWalker::StackWalker(mvm::Thread* th) {
 }
 
 
-void Thread::scanStack(uintptr_t closure) {
+void Thread::scanStack(word_t closure) {
   StackWalker Walker(this);
   while (FrameInfo* MI = Walker.get()) {
     MethodInfoHelper::scan(closure, MI, Walker.ip, Walker.addr);
@@ -184,7 +184,7 @@ void Thread::enterUncooperativeCode(unsigned level) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
       // Get the caller.
-      intptr_t temp = System::GetCallerAddress();
+      word_t temp = System::GetCallerAddress();
       // Make sure to at least get the caller of the caller.
       ++level;
       while (level--) temp = System::GetCallerOfAddress(temp);
@@ -196,7 +196,7 @@ void Thread::enterUncooperativeCode(unsigned level) {
   }
 }
 
-void Thread::enterUncooperativeCode(intptr_t SP) {
+void Thread::enterUncooperativeCode(word_t SP) {
   if (isMvmThread()) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
@@ -212,7 +212,7 @@ void Thread::leaveUncooperativeCode() {
   if (isMvmThread()) {
     if (!inRV) {
       assert(lastSP && "No last SP when leaving uncooperative code");
-      intptr_t savedSP = lastSP;
+      word_t savedSP = lastSP;
       // The cas is not necessary, but it does a memory barrier.
       __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
       // A rendezvous has just been initiated, join it.
@@ -222,9 +222,9 @@ void Thread::leaveUncooperativeCode() {
   }
 }
 
-intptr_t Thread::waitOnSP() {
+word_t Thread::waitOnSP() {
   // First see if we can get lastSP directly.
-  intptr_t sp = lastSP;
+  word_t sp = lastSP;
   if (sp) return sp;
   
   // Then loop a fixed number of iterations to get lastSP.
@@ -241,7 +241,7 @@ intptr_t Thread::waitOnSP() {
 }
 
 
-uintptr_t Thread::baseAddr = 0;
+word_t Thread::baseAddr = 0;
 
 // These could be set at runtime.
 #define STACK_SIZE 0x100000
@@ -260,20 +260,20 @@ uintptr_t Thread::baseAddr = 0;
 ///
 class StackThreadManager {
 public:
-  uintptr_t baseAddr;
+  word_t baseAddr;
   uint32 allocPtr;
   uint32 used[NR_THREADS];
   LockNormal stackLock;
 
   StackThreadManager() {
     baseAddr = 0;
-    uintptr_t ptr = kThreadStart;
+    word_t ptr = kThreadStart;
 
     uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
-    baseAddr = (uintptr_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
+    baseAddr = (word_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
                                PROT_READ | PROT_WRITE, flags, -1, 0);
 
-    if (baseAddr == (uintptr_t) MAP_FAILED) {
+    if (baseAddr == (word_t) MAP_FAILED) {
       fprintf(stderr, "Can not allocate thread memory\n");
       abort();
     }
@@ -283,7 +283,7 @@ public:
     // overflows.
     uint32 pagesize = getpagesize();
     for (uint32 i = 0; i < NR_THREADS; ++i) {
-      uintptr_t addr = baseAddr + (i * STACK_SIZE) + pagesize;
+      word_t addr = baseAddr + (i * STACK_SIZE) + pagesize;
       mprotect((void*)addr, pagesize, PROT_NONE);
     }
 
@@ -292,7 +292,7 @@ public:
     mvm::Thread::baseAddr = baseAddr;
   }
 
-  uintptr_t allocate() {
+  word_t allocate() {
     stackLock.lock();
     uint32 myIndex = 0;
     do {
@@ -371,7 +371,7 @@ void Thread::releaseThread(mvm::Thread* th) {
     // Wait for the thread to die.
     pthread_join((pthread_t)thread_id, NULL);
   }
-  uintptr_t index = ((uintptr_t)th & System::GetThreadIDMask());
+  word_t index = ((word_t)th & System::GetThreadIDMask());
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
 }
