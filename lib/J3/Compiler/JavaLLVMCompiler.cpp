@@ -64,9 +64,11 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor)
     if (isNative(meth->access)) {
       jit.nativeCompile();
       mvm::MvmModule::runPasses(func, JavaNativeFunctionPasses);
+      mvm::MvmModule::runPasses(func, J3FunctionPasses);
     } else {
       jit.javaCompile();
       mvm::MvmModule::runPasses(func, JavaFunctionPasses);
+      mvm::MvmModule::runPasses(func, J3FunctionPasses);
     }
     func->setLinkage(GlobalValue::ExternalLinkage);
     if (!LMI->isCustomizable && jit.isCustomizable) {
@@ -96,12 +98,12 @@ JavaLLVMCompiler::~JavaLLVMCompiler() {
   delete TheModule;
   delete DebugFactory;
   delete JavaFunctionPasses;
+  delete J3FunctionPasses;
   delete JavaNativeFunctionPasses;
   delete Context;
 }
 
 namespace mvm {
-  llvm::FunctionPass* createEscapeAnalysisPass();
   llvm::LoopPass* createLoopSafePointsPass();
 }
 
@@ -112,20 +114,15 @@ namespace j3 {
 void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses = new FunctionPassManager(TheModule);
   JavaNativeFunctionPasses->add(new TargetData(TheModule));
-  // Lower constant calls to lower things like getClass used
-  // on synchronized methods.
-  JavaNativeFunctionPasses->add(createLowerConstantCallsPass(this));
+  J3FunctionPasses = new FunctionPassManager(TheModule);
+  J3FunctionPasses->add(createLowerConstantCallsPass(this));
   
-  JavaFunctionPasses = new FunctionPassManager(TheModule);
   if (cooperativeGC)
-    JavaFunctionPasses->add(mvm::createLoopSafePointsPass());
+    J3FunctionPasses->add(mvm::createLoopSafePointsPass());
+
   // Add other passes after the loop pass, because safepoints may move objects.
   // Moving objects disable many optimizations.
+  JavaFunctionPasses = new FunctionPassManager(TheModule);
   JavaFunctionPasses->add(new TargetData(TheModule));
   mvm::MvmModule::addCommandLinePasses(JavaFunctionPasses);
-
-  // Re-enable this when the pointers in stack-allocated objects can
-  // be given to the GC.
-  //JavaFunctionPasses->add(mvm::createEscapeAnalysisPass());
-  JavaFunctionPasses->add(createLowerConstantCallsPass(this));
 }

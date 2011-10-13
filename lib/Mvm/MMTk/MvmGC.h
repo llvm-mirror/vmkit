@@ -53,6 +53,7 @@ class VirtualTable {
 };
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT);
+extern "C" void* gcmalloc(uint32_t sz, void* VT);
 
 class gc : public gcRoot {
 public:
@@ -65,8 +66,11 @@ public:
   void* operator new(size_t sz, VirtualTable *VT) {
     return gcmallocUnresolved(sz, VT);
   }
-
 };
+
+extern "C" void arrayWriteBarrier(void* ref, void** ptr, void* value);
+extern "C" void fieldWriteBarrier(void* ref, void** ptr, void* value);
+extern "C" void nonHeapWriteBarrier(void** ptr, void* value);
 
 namespace mvm {
   

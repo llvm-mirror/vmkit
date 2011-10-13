@@ -210,6 +210,7 @@ public:
   llvm::Function* parseFunction(JavaMethod* meth, Class* customizeFor);
    
   llvm::FunctionPassManager* JavaFunctionPasses;
+  llvm::FunctionPassManager* J3FunctionPasses;
   llvm::FunctionPassManager* JavaNativeFunctionPasses;
   
   virtual bool needsCallback(JavaMethod* meth,

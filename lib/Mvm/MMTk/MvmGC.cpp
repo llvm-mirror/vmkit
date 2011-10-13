@@ -109,15 +109,15 @@ gc* Collector::getForwardedReferent(gc* val, word_t closure) {
   return NULL;
 }
 
-extern "C" void arrayWriteBarrier(gc* ref, gc** ptr, gc* value) {
+extern "C" void arrayWriteBarrier(void* ref, void** ptr, void* value) {
   *ptr = value;
 }
 
-extern "C" void fieldWriteBarrier(gc* ref, gc** ptr, gc* value) {
+extern "C" void fieldWriteBarrier(void* ref, void** ptr, void* value) {
   *ptr = value;
 }
 
-extern "C" void nonHeapWriteBarrier(gc** ptr, gc* value) {
+extern "C" void nonHeapWriteBarrier(void** ptr, void* value) {
   *ptr = value;
 }
 

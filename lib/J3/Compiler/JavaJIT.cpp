@@ -89,8 +89,8 @@ bool JavaJIT::canBeInlined(JavaMethod* meth, bool customizing) {
   uint32 codeLen = reader.readU4();
   uint32 start = reader.cursor; 
   reader.seek(codeLen, Reader::SeekCur);
-  uint16 nbHandlers = reader.readU2();
-  if (nbHandlers != 0) return false;
+  uint16 handlers = reader.readU2();
+  if (handlers != 0) return false;
   reader.cursor = start;
 
   JavaJIT jit(TheCompiler, meth, llvmFunction, customizing ? customizeFor : NULL);
@@ -556,8 +556,10 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
   nativeArgs[0] = nativeFunc;
 
   // Synchronize before saying we're entering native
-  if (isSynchro(compilingMethod->access))
+  if (isSynchro(compilingMethod->access)) {
+    nbHandlers = 1;
     beginSynchronize();
+  }
   
   Value* Args4[3] = { temp, oldCLIN, Frame };
 
@@ -897,7 +899,7 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
     }
   }
   
-  readExceptionTable(reader, codeLen);
+  nbHandlers = readExceptionTable(reader, codeLen);
   
   reader.cursor = start;
   exploreOpcodes(reader, codeLen);
@@ -1068,7 +1070,7 @@ llvm::Function* JavaJIT::javaCompile() {
     }
 #endif
 
-  readExceptionTable(reader, codeLen);
+  nbHandlers = readExceptionTable(reader, codeLen);
   
   reader.cursor = start;
   exploreOpcodes(reader, codeLen);

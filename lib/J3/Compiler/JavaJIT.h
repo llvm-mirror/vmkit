@@ -94,6 +94,7 @@ public:
     customizeFor = customized;
     isCustomizable = false;
     overridesThis = false;
+    nbHandlers = 0;
   }
 
   /// javaCompile - Compile the Java method.
@@ -104,6 +105,9 @@ public:
   
   /// isCustomizable - Whether we found the method to be customizable.
   bool isCustomizable;
+
+  // The number of handlers in that method.
+  uint32_t nbHandlers;
 
 private:
   /// Whether the method overrides 'this'.
@@ -394,6 +398,7 @@ private:
   /// finishExceptions - Emit code to unwind the current function if an
   /// exception is thrown.
   void finishExceptions();
+
 //===--------------------------- Control flow  ----------------------------===//
 
   /// opcodeInfos - The informations for each instruction.

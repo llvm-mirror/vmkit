@@ -168,6 +168,17 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   initialiseAssessorInfo();  
 
   addJavaPasses();
+
+  // Set the pointer to methods that will be inlined, so that these methods
+  // do not get compiled by the JIT.
+  executionEngine->updateGlobalMapping(
+      JavaIntrinsics.AllocateFunction, (void*)(word_t)gcmalloc);
+  executionEngine->updateGlobalMapping(
+      JavaIntrinsics.ArrayWriteBarrierFunction, (void*)(word_t)arrayWriteBarrier);
+  executionEngine->updateGlobalMapping(
+      JavaIntrinsics.FieldWriteBarrierFunction, (void*)(word_t)fieldWriteBarrier);
+  executionEngine->updateGlobalMapping(
+      JavaIntrinsics.NonHeapWriteBarrierFunction, (void*)(word_t)nonHeapWriteBarrier);
 }
 
 JavaJITCompiler::~JavaJITCompiler() {
