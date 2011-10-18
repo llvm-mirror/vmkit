@@ -476,7 +476,7 @@ void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
   assert(cl && "No class after loadClass");
-  assert((cl->isClass() && cl->asClass()->isResolved()) && 
+  assert((cl->isArray() || (cl->isClass() && cl->asClass()->isResolved())) &&
          "Class not resolved after loadClass");
 }
   
