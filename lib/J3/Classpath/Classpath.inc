@@ -359,4 +359,34 @@ JavaObject* unsafe, JavaObject* obj, jlong offset, JavaObject* value) {
   mvm::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)value);
 }
 
+// TODO: Add the Volatile variants
+#define GET_PUT_OFFSET(Type,jtype,shorttype) \
+JNIEXPORT jtype JNICALL Java_sun_misc_Unsafe_get ## Type ## __Ljava_lang_Object_2J( \
+JavaObject* unsafe, JavaObject* base, jlong offset) { \
+  jtype res = 0; \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  jtype* ptr = (jtype*) (((uint8 *) base) + offset); \
+  res = *ptr; \
+  END_NATIVE_EXCEPTION \
+ \
+  return res; \
+} \
+ \
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_put ## Type ## __Ljava_lang_Object_2J ## shorttype( \
+JavaObject* unsafe, JavaObject* base, jlong offset, jtype val) { \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  jtype* ptr = (jtype*) (((uint8 *) base) + offset); \
+  *ptr = val; \
+  END_NATIVE_EXCEPTION \
+}
+
+GET_PUT_OFFSET(Boolean,jboolean,Z)
+GET_PUT_OFFSET(Byte,jbyte,B)
+GET_PUT_OFFSET(Char,jchar,C)
+GET_PUT_OFFSET(Short,jshort,S)
+GET_PUT_OFFSET(Int,jint,I)
+GET_PUT_OFFSET(Long,jlong,J)
+GET_PUT_OFFSET(Float,jfloat,F)
+GET_PUT_OFFSET(Double,jdouble,D)
+
 }
