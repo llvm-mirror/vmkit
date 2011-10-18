@@ -570,7 +570,7 @@ JavaString* CreateUnableToLoad(const UTF8* name, Jnjvm* vm) {
     if (name->elements[j] == '/') {
       ArrayUInt16::setElement(msg, '.', i); i++;
     } else {
-      ArrayUInt16::setElement(msg, name->elements[i], i); i++;
+      ArrayUInt16::setElement(msg, name->elements[j], i); i++;
     }
   }
 
@@ -608,7 +608,7 @@ JavaString* CreateUnableToLoad(JavaString* name, Jnjvm* vm) {
     if (ArrayUInt16::getElement(JavaString::getValue(name), j) == '/') {
       ArrayUInt16::setElement(msg, '.', i); i++;
     } else {
-      ArrayUInt16::setElement(msg, ArrayUInt16::getElement(JavaString::getValue(name), j), i);
+      ArrayUInt16::setElement(msg, ArrayUInt16::getElement(JavaString::getValue(name), j), i); i++;
     }
   }
 
