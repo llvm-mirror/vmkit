@@ -2545,141 +2545,23 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
 
 Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
                        BasicBlock *InsertAtEnd) {
-  assert(!inlining);
-
-  Instruction* res = CallInst::Create(F, arg1, Name, InsertAtEnd);
-  DebugLoc DL = CreateLocation();
-  res->setDebugLoc(DL);
-  
-  if (TheCompiler->hasExceptionsEnabled()) {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-    
-    // Get the Java exception.
-    Value* obj = 0;
-    
-    BasicBlock* ifNormal = createBasicBlock("no exception block");
-  
-    Value* test = 0;
-    Constant* zero = intrinsics->JavaObjectNullConstant;
-    if (F == intrinsics->InitialisationCheckFunction || 
-        F == intrinsics->GetConstantPoolAtFunction ||
-        F == intrinsics->GetArrayClassFunction ||
-        F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", false, currentBlock);
-      test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
-      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
-      Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
-      test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
-    } else {
-      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
-    }
-
-    BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
- 
-    if (!currentExceptionBlock->empty()) {
-      Instruction* insn = currentExceptionBlock->begin();
-      PHINode* node = dyn_cast<PHINode>(insn);
-      if (node) node->addIncoming(obj, currentBlock);
-    }
-  
-    currentBlock = ifNormal;
-  }
-
-  return res;
+  std::vector<Value*> args;
+  args.push_back(arg1);
+  return invoke(F, args, Name, InsertAtEnd);
 }
 
 Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
                        const char* Name, BasicBlock *InsertAtEnd) {
-  assert(!inlining);
-
-  Value* args[2] = { arg1, arg2 };
-  
-  Instruction* res = CallInst::Create(F, args, Name, InsertAtEnd);
-  DebugLoc DL = CreateLocation();
-  res->setDebugLoc(DL);
-  
-  if (TheCompiler->hasExceptionsEnabled()) {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-    
-    // Get the Java exception.
-    Value* obj = 0;
-    
-    BasicBlock* ifNormal = createBasicBlock("no exception block");
-    
-    Value* test = 0;
-    Constant* zero = intrinsics->JavaObjectNullConstant;
-    if (F == intrinsics->InitialisationCheckFunction || 
-        F == intrinsics->GetConstantPoolAtFunction ||
-        F == intrinsics->GetArrayClassFunction ||
-        F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", false, currentBlock);
-      test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
-      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
-      Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
-      test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
-    } else {
-      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
-    }
-  
-    BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
-  
-    if (!currentExceptionBlock->empty()) {
-      Instruction* insn = currentExceptionBlock->begin();
-      PHINode* node = dyn_cast<PHINode>(insn);
-      if (node) node->addIncoming(obj, currentBlock);
-    }
-
-    currentBlock = ifNormal;
-  }
-
-  return res;
+  std::vector<Value*> args;
+  args.push_back(arg1);
+  args.push_back(arg2);
+  return invoke(F, args, Name, InsertAtEnd);
 }
 
 Instruction* JavaJIT::invoke(Value *F, const char* Name,
                        BasicBlock *InsertAtEnd) {
-  assert(!inlining);
-  Instruction* res = llvm::CallInst::Create(F, Name, InsertAtEnd);
-  DebugLoc DL = CreateLocation();
-  res->setDebugLoc(DL);
-  
-  if (TheCompiler->hasExceptionsEnabled()) {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-    
-    // Get the Java exception.
-    Value* obj = 0;
-    
-    BasicBlock* ifNormal = createBasicBlock("no exception block");
-  
-    Value* test = 0;
-    Constant* zero = intrinsics->JavaObjectNullConstant;
-    if (F == intrinsics->InitialisationCheckFunction || 
-        F == intrinsics->GetConstantPoolAtFunction ||
-        F == intrinsics->GetArrayClassFunction ||
-        F == intrinsics->GetClassDelegateeFunction) {
-      obj = new LoadInst(javaExceptionPtr, "", false, currentBlock);
-      test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
-      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
-      Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
-      test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
-    } else {
-      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
-    }
-
-    BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
-  
-    if (!currentExceptionBlock->empty()) {
-      Instruction* insn = currentExceptionBlock->begin();
-      PHINode* node = dyn_cast<PHINode>(insn);
-      if (node) node->addIncoming(obj, currentBlock);
-    }
-
-    currentBlock = ifNormal;
-  }
-
-  return res;
+  std::vector<Value*> args;
+  return invoke(F, args, Name, InsertAtEnd);
 }
 
 void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
