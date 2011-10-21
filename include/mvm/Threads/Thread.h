@@ -284,18 +284,27 @@ public:
 class ExceptionBuffer {
 public:
   ExceptionBuffer() {
+    init();
+  }
+
+  void init() {
     Thread* th = Thread::get();
     previousBuffer = th->lastExceptionBuffer;
     th->lastExceptionBuffer = this;
   }
 
   ~ExceptionBuffer() {
+    remove();
+  }
+
+  void remove() {
     Thread* th = Thread::get();
     assert(th->lastExceptionBuffer == this && "Wrong exception buffer");
     th->lastExceptionBuffer = previousBuffer;
   }
-  ExceptionBuffer* previousBuffer;
+
   jmp_buf buffer;
+  ExceptionBuffer* previousBuffer;
 };
 
 /// StackWalker - This class walks the stack of threads, returning a FrameInfo
