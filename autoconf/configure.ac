@@ -203,6 +203,74 @@ AC_SUBST([classpathglibj])
 AC_SUBST([classpathlibs])
 AC_SUBST([classpathversion])
 
+dnl **************************************************************************
+dnl OpenJDK Paths
+dnl **************************************************************************
+dnl Chat with OpenJDK folk about best way to look for the things we need
+dnl For now, this should suffice.
+
+AC_ARG_WITH(openjdk-jre,
+       [AS_HELP_STRING(--with-openjdk-jre,
+           [Build J3 with OpenJDK JRE install (default is '/usr/lib/java/jre')])],
+       [[openjdkjre=$withval]],
+       [[openjdkjre=/usr/lib/java/jre]]
+)
+
+AC_ARG_WITH(openjdk-arch-dir,
+       [AS_HELP_STRING(--with-openjdk-arch-dir,
+           [Location of architecture-specific OpenJDK libraries (default is '/usr/lib/java/jre/lib/i386')])],
+       [[openjdkarchdir=$withval]],
+       [[openjdkarchdir=/usr/lib/java/jre/lib/i386]]
+)
+AC_SUBST([openjdkjre])
+AC_SUBST([openjdkarchdir])
+
+
+dnl **************************************************************************
+dnl Pick Classpath or OpenJDK.  Also, light sanity checks on the chosen one.
+dnl **************************************************************************
+
+AC_ARG_WITH(classpath-impl,
+       [AS_HELP_STRING(--with-classpath-impl,
+           [Build J3 with the specified classpath implementation (default is gnuclasspath)])],
+       [[classpathimpl=$withval]],
+       [[classpathimpl=gnuclasspath]]
+)
+
+case "${classpathimpl}" in
+  gnuclasspath)
+    AC_MSG_NOTICE(Validing GNU Classpath installation...)
+    AC_CHECK_FILES([${classpathlibs}]
+                   [${classpathlibs}/libjavaio$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavalang$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavalangreflect$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavanet$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavanio$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavautil$DYLIB_EXTENSION],,
+      AC_MSG_ERROR([[Invalid GNU Classpath library path, can't find required libraries]]))
+    AC_CHECK_FILE([${classpathglibj}],,
+      AC_MSG_ERROR([[Invalid glibj.zip location]]))
+      ;;
+  openjdk)
+    AC_MSG_NOTICE(Validating OpenJDK installation...)
+    AC_CHECK_FILES([${openjdkjre}]
+                   [${openjdkjre}/lib/rt.jar],,
+      AC_MSG_ERROR([[Invalid OpenJDK JRE path, can't find required jar files!]]))
+    AC_CHECK_FILE([${openjdkarchdir}],,
+      AC_MSG_ERROR([[Invalid OpenJDK arch dir]]))
+    dnl Check that $archdir/client/libjava.so or $archdir/server/libjava.so exist
+    AC_CHECK_FILE([${openjdkarchdir}]/client/libjvm$DYLIB_EXTENSION,,
+      AC_CHECK_FILE([${openjdkarchdir}]/server/libjvm$DYLIB_EXTENSION,,
+        AC_MSG_ERROR([[Can't find libjvm$DYLIB_EXTENSION]])))
+      ;;
+  *)
+    AC_MSG_ERROR([Invalid --with-classpath-impl "${classpathimpl}".  Must be one of "gnuclasspath" or "openjdk"])
+      ;;
+esac
+
+AC_SUBST(classpathimpl)
+
+
 dnl===-----------------------------------------------------------------------===
 dnl===
 dnl=== SECTION 4: Check for programs we need and that they are the right version

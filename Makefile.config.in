@@ -2,3 +2,15 @@ MMTK_PLAN = @MMTK_PLAN@
 MMTK_PLAN_HEADER = @MMTK_PLAN_HEADER@
 WITH_64 = @WITH_64@
 ANT = @ANT@
+
+CLASSPATH_IMPL = @classpathimpl@
+
+ifeq ($(CLASSPATH_IMPL),gnuclasspath)
+	CLASSPATH_DIR = GNUClasspath
+else
+	ifeq ($(CLASSPATH_IMPL),openjdk)
+		CLASSPATH_DIR = OpenJDK
+	else
+$(error Unsupported classpath implementation "$(CLASSPATH_IMPL)")
+	endif
+endif
