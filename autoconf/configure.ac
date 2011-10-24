@@ -241,12 +241,12 @@ case "${classpathimpl}" in
   gnuclasspath)
     AC_MSG_NOTICE(Validing GNU Classpath installation...)
     AC_CHECK_FILES([${classpathlibs}]
-                   [${classpathlibs}/libjavaio$DYLIB_EXTENSION]
-                   [${classpathlibs}/libjavalang$DYLIB_EXTENSION]
-                   [${classpathlibs}/libjavalangreflect$DYLIB_EXTENSION]
-                   [${classpathlibs}/libjavanet$DYLIB_EXTENSION]
-                   [${classpathlibs}/libjavanio$DYLIB_EXTENSION]
-                   [${classpathlibs}/libjavautil$DYLIB_EXTENSION],,
+                   [${classpathlibs}/libjavaio.$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavalang.$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavalangreflect.$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavanet.$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavanio.$DYLIB_EXTENSION]
+                   [${classpathlibs}/libjavautil.$DYLIB_EXTENSION],,
       AC_MSG_ERROR([[Invalid GNU Classpath library path, can't find required libraries]]))
     AC_CHECK_FILE([${classpathglibj}],,
       AC_MSG_ERROR([[Invalid glibj.zip location]]))
@@ -259,9 +259,9 @@ case "${classpathimpl}" in
     AC_CHECK_FILE([${openjdkarchdir}],,
       AC_MSG_ERROR([[Invalid OpenJDK arch dir]]))
     dnl Check that $archdir/client/libjava.so or $archdir/server/libjava.so exist
-    AC_CHECK_FILE([${openjdkarchdir}]/client/libjvm$DYLIB_EXTENSION,,
-      AC_CHECK_FILE([${openjdkarchdir}]/server/libjvm$DYLIB_EXTENSION,,
-        AC_MSG_ERROR([[Can't find libjvm$DYLIB_EXTENSION]])))
+    AC_CHECK_FILE([${openjdkarchdir}]/client/libjvm.$DYLIB_EXTENSION,,
+      AC_CHECK_FILE([${openjdkarchdir}]/server/libjvm.$DYLIB_EXTENSION,,
+        AC_MSG_ERROR([[Can't find libjvm.$DYLIB_EXTENSION]])))
       ;;
   *)
     AC_MSG_ERROR([Invalid --with-classpath-impl "${classpathimpl}".  Must be one of "gnuclasspath" or "openjdk"])
