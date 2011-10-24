@@ -1005,9 +1005,19 @@ word_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
 word_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
                                         char* buf) {
 
+  word_t res;
+
+  // Is this method defined via registerNatives()?
+  // If so, use that definition.
+  if (res = getRegisteredNative(meth))
+    return res;
+
+  // Otherwise, try to resolve the method with a symbol lookup
+  // First as the base method
   meth->jniConsFromMeth(buf);
-  word_t res = loadInLib(buf, j3);
+  res = loadInLib(buf, j3);
   if (!res) {
+    // Failing that, try the overloaded symbol name
     meth->jniConsFromMethOverloaded(buf);
     res = loadInLib(buf, j3);
   }
@@ -1030,4 +1040,20 @@ JavaString** StringList::addString(JnjvmClassLoader* JCL, JavaString* obj) {
     JCL->lock.unlock();
     return res;
   }
+}
+
+void JnjvmClassLoader::registerNative(JavaMethod * meth, word_t fnPtr) {
+  lock.lock();
+  // Don't support multiple levels of registerNatives
+  assert(registeredNatives.find(meth) == registeredNatives.end());
+
+  registeredNatives[meth] = fnPtr;
+  lock.unlock();
+}
+
+word_t JnjvmClassLoader::getRegisteredNative(const JavaMethod * meth) {
+  lock.lock();
+  word_t res = registeredNatives[meth];
+  lock.unlock();
+  return res;
 }

@@ -108,6 +108,11 @@ protected:
   ///
   mvm::LockRecursive lock;
 
+  /// registeredNatives - Stores the native function pointers corresponding
+  /// to methods that were defined through JNI's RegisterNatives mechanism.
+  ///
+  std::map<const JavaMethod*,word_t> registeredNatives;
+
 public:
   
   /// allocator - Reference to the memory allocator, which will allocate UTF8s,
@@ -300,6 +305,14 @@ public:
   /// loadClassFromSelf - Load the main class if we are an executable.
   ///
   Class* loadClassFromSelf(Jnjvm* vm, const char* name);
+
+  /// registerNative - Record the native function pointer of a method.
+  ///
+  void registerNative(JavaMethod * meth, word_t fnPtr);
+
+  /// getRegisteredNative - Return the native pointer, if exists.
+  ///
+  word_t getRegisteredNative(const JavaMethod * meth);
 
   friend class Class;
   friend class CommonClass;

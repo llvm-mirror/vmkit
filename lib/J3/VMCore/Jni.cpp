@@ -3755,11 +3755,42 @@ void SetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 }
 
 
-jint RegisterNatives(JNIEnv *env, jclass clazz, const JNINativeMethod *methods,
+jint RegisterNatives(JNIEnv *env, jclass _clazz, const JNINativeMethod *methods,
 		     jint nMethods) {
-  NYI();
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  JavaObject * clazz = 0;
+  llvm_gcroot(clazz, 0);
+  clazz = *(JavaObject**)_clazz;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass * Cl = UserCommonClass::resolvedImplClass(vm, clazz, false);
+  // TODO: Don't assert, throw exceptions!
+  assert(Cl);
+  UserClass * cl = Cl->asClass();
+
+  for(int i = 0; i < nMethods; ++i)
+  {
+    const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz(methods[i].name);
+    const UTF8* sign = cl->classLoader->hashUTF8->lookupAsciiz(methods[i].signature);
+    assert(name);
+    assert(sign);
+
+    JavaMethod * meth = cl->lookupMethodDontThrow(name, sign, true, true, 0);
+    if (!meth) meth = cl->lookupMethodDontThrow(name, sign, false, true, 0);
+
+    // TODO: Don't assert, throw exceptions!
+    assert(meth);
+    assert(isNative(meth->access));
+
+    cl->classLoader->registerNative(meth,(word_t)methods[i].fnPtr);
+  }
+
+  RETURN_FROM_JNI(0)
+
+  END_JNI_EXCEPTION
+
+  RETURN_FROM_JNI(0)
 }
 
 
