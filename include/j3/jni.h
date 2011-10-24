@@ -184,9 +184,6 @@ extern JNIEXPORT void JNICALL JNI_OnUnload (JavaVM *, void *);
 /* These functions are called by user code to start using the
    invocation API.  */
 extern _CLASSPATH_JNIIMPEXP jint JNICALL
-JNI_GetDefaultJavaVMInitArgs (void *);
-
-extern _CLASSPATH_JNIIMPEXP jint JNICALL
 JNI_CreateJavaVM (JavaVM **, void **, void *);
 
 extern _CLASSPATH_JNIIMPEXP jint JNICALL
@@ -1623,39 +1620,6 @@ typedef struct JavaVMInitArgs
   /* Whether we should ignore unrecognized options.  */
   jboolean ignoreUnrecognized;
 } JavaVMInitArgs;
-
-typedef struct JDK1_1InitArgs
-{
-  /* VM version.  Should be JNI_VERSION_1_1.  Note that before JDK
-     1.1.2, this field was named 'reserved0'.  (I don't know what the
-     current 'reserved0' field was named then.)  */
-  jint version;
-
-  /* A null-terminated array of environment strings, each of the form
-     "KEY=VALUE".  This is used to set system properties.  Note that
-     before JDK 1.1.2, this field was named 'reserved1'.  */
-  char **properties;
-
-  jint checkSource;
-  jint nativeStackSize;
-  jint javaStackSize;
-  jint minHeapSize;
-  jint maxHeapSize;
-  jint verifyMode;
-  const char *classpath;
-
-  jint (JNICALL *vfprintf) (FILE *file, const char *fmt, va_list args);
-  void (JNICALL *exit) (jint value);
-  void (JNICALL *abort) (void);
-
-  jint enableClassGC;
-  jint enableVerboseGC;
-  jint disableAsyncGC;
-
-  jint reserved0;
-  jint reserved1;
-  jint reserved2;
-} JDK1_1InitArgs;
 
 typedef struct JDK1_1AttachArgs
 {
