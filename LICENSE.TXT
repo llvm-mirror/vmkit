@@ -63,3 +63,4 @@ Program             Directory
 -------             ---------
 MMTk                vmkit/mmtk/
 JNI                 vmkit/include/j3/
+OpenJDK             vmkit/include/j3/openjdk
