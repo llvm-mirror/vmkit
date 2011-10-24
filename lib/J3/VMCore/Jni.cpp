@@ -20,6 +20,7 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "Reader.h"
 
 using namespace j3;
 
@@ -51,10 +52,30 @@ jint GetVersion(JNIEnv *env) {
 }
 
 
-jclass DefineClass(JNIEnv *env, const char *name, jobject loader,
-				   const jbyte *buf, jsize bufLen) {
-  NYI();
-  abort();
+jclass DefineClass(JNIEnv *env, const char *name, jobject _loader,
+				   const jbyte *buf, jsize len) {
+  BEGIN_JNI_EXCEPTION
+
+  JavaObject * loader = _loader ? *(JavaObject**)_loader : 0;
+  llvm_gcroot(loader, 0);
+
+  jclass res;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JnjvmClassLoader* JCL =
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
+
+  ClassBytes * bytes = new (JCL->allocator, len) ClassBytes(len);
+  memcpy(bytes->elements,buf,len);
+  const UTF8* utfName = JCL->asciizConstructUTF8(name);
+  UserClass *cl = JCL->constructClass(utfName, bytes);
+
+  if (cl) res = (jclass)cl->getClassDelegateePtr(vm);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
   return 0;
 }
 
@@ -109,9 +130,23 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
 
 
 jclass GetSuperclass(JNIEnv *env, jclass sub) {
-  NYI();
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  jclass res = 0;
+  JavaObject* Cl = *(JavaObject**)sub;
+  llvm_gcroot(Cl, 0);
+  llvm_gcroot(res, 0);
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  if (!cl->isInterface() && cl->getSuper() != NULL) {
+    res = (jclass)cl->getSuper()->getClassDelegateePtr(vm);
+  }
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  RETURN_FROM_JNI(0);
 }
   
  
@@ -141,8 +176,10 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass _sub, jclass _sup) {
 
 
 jint Throw(JNIEnv *env, jthrowable obj) {
-  NYI();
-  abort();
+  BEGIN_JNI_EXCEPTION
+  JavaThread::get()->pendingException = *(JavaObject**)obj;
+
+  END_JNI_EXCEPTION
   return 0;
 }
 
@@ -2831,10 +2868,16 @@ jstring NewStringUTF(JNIEnv *env, const char *bytes) {
 }
 
 
-jsize GetStringUTFLength (JNIEnv *env, jstring string) {   
-  NYI();
-  abort();
-  return 0;
+jsize GetStringUTFLength (JNIEnv *env, jstring string) {
+  BEGIN_JNI_EXCEPTION
+  JavaThread* th = JavaThread::get();
+
+  JavaString * s = *(JavaString**)string;
+  llvm_gcroot(s, 0);
+  RETURN_FROM_JNI(s->count);
+  END_JNI_EXCEPTION
+
+  RETURN_FROM_JNI(0)
 }
 
 
@@ -3779,15 +3822,51 @@ jint GetJavaVM(JNIEnv *env, JavaVM **vm) {
 
 void GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len,
                      jchar *buf) {
-  NYI();
-  abort();
+  BEGIN_JNI_EXCEPTION
+
+  JavaString * s = *(JavaString**)str;
+  llvm_gcroot(s, 0);
+  UserClass * cl = JavaObject::getClass(s)->asClass();
+  const UTF8 * utf = JavaString::javaToInternal(s, cl->classLoader->hashUTF8);
+
+  ssize_t end = start+len;
+  if (end > utf->size) {
+    assert(0 && "Throw string out of bounds exception here!");
+  }
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UTF8Map* map = vm->bootstrapLoader->hashUTF8;
+
+  const UTF8 * result = utf->extract(map, start, start + len);
+  assert(result->size == len);
+  for(sint32 i = 0; i < len; ++i)
+    buf[i] = result->elements[i];
+
+  RETURN_VOID_FROM_JNI;
+  END_JNI_EXCEPTION
+  RETURN_VOID_FROM_JNI;
 }
 
 
 void GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len,
                         char *buf) {
-  NYI();
-  abort();
+  BEGIN_JNI_EXCEPTION
+
+  JavaString * s = *(JavaString**)str;
+  llvm_gcroot(s, 0);
+
+  int end = start+len;
+  if (end > s->count) {
+    assert(0 && "Throw string out of bounds exception here!");
+  }
+
+  char * internalStr = JavaString::strToAsciiz(s);
+  assert((int)strlen(internalStr) == len);
+  memcpy(buf, internalStr, len + 1);
+
+  RETURN_VOID_FROM_JNI;
+  END_JNI_EXCEPTION
+  RETURN_VOID_FROM_JNI;
 }
 
 
