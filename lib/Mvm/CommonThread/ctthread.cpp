@@ -179,7 +179,7 @@ void Thread::scanStack(word_t closure) {
   }
 }
 
-void Thread::enterUncooperativeCode(unsigned level) {
+void Thread::enterUncooperativeCode(uint16_t level) {
   if (isMvmThread()) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");

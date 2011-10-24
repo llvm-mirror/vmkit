@@ -208,7 +208,7 @@ public:
   void joinRVBeforeEnter();
   void joinRVAfterLeave(word_t savedSP);
 
-  void enterUncooperativeCode(unsigned level = 0) __attribute__ ((noinline));
+  void enterUncooperativeCode(uint16_t level = 0) __attribute__ ((noinline));
   void enterUncooperativeCode(word_t SP);
   void leaveUncooperativeCode();
   word_t waitOnSP();
