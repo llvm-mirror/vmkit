@@ -21,8 +21,11 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
-
 using namespace j3;
+
+#define NYI() do { \
+  fprintf(stderr, "%s: Implement me!\n", __FUNCTION__); \
+} while(0)
 
 Jnjvm* myVM(JNIEnv* env) {
   return JavaThread::get()->getJVM();
@@ -50,7 +53,8 @@ jint GetVersion(JNIEnv *env) {
 
 jclass DefineClass(JNIEnv *env, const char *name, jobject loader,
 				   const jbyte *buf, jsize bufLen) {
-  fprintf(stderr, "Implement me\n"); abort();
+  NYI();
+  abort();
   return 0;
 }
 
@@ -105,7 +109,8 @@ jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
 
 
 jclass GetSuperclass(JNIEnv *env, jclass sub) {
-  fprintf(stderr, "Implement me\n"); abort();
+  NYI();
+  abort();
   return 0;
 }
   
@@ -136,7 +141,7 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass _sub, jclass _sup) {
 
 
 jint Throw(JNIEnv *env, jthrowable obj) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -194,31 +199,31 @@ jthrowable ExceptionOccurred(JNIEnv *env) {
 
 
 void ExceptionDescribe(JNIEnv *env) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
 
 void ExceptionClear(JNIEnv *env) {
-  fprintf(stderr, "Implement me\n"); 
+  NYI();
   abort();
 }
 
 
 void FatalError(JNIEnv *env, const char *msg) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
 
 jint PushLocalFrame(JNIEnv* env, jint capacity) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 jobject PopLocalFrame(JNIEnv* env, jobject result) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -245,14 +250,14 @@ jboolean IsSameObject(JNIEnv *env, jobject ref1, jobject ref2) {
 
 
 jobject NewLocalRef(JNIEnv *env, jobject ref) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 
 jint EnsureLocalCapacity(JNIEnv* env, jint capacity) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -319,7 +324,7 @@ jobject NewObject(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
 
 jobject NewObjectV(JNIEnv* env, jclass clazz, jmethodID methodID,
                    va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -374,14 +379,14 @@ jclass GetObjectClass(JNIEnv *env, jobject _obj) {
 
 
 jboolean IsInstanceOf(JNIEnv *env, jobject obj, jclass clazz) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 
 jfieldID FromReflectedField(JNIEnv* env, jobject field) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -389,7 +394,7 @@ jfieldID FromReflectedField(JNIEnv* env, jobject field) {
 
 jobject ToReflectedMethod(JNIEnv* env, jclass cls, jmethodID methodID,
                                jboolean isStatic) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -397,7 +402,7 @@ jobject ToReflectedMethod(JNIEnv* env, jclass cls, jmethodID methodID,
 
 jobject ToReflectedField(JNIEnv* env, jclass cls, jfieldID fieldID,
 			 jboolean isStatic) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -593,7 +598,7 @@ jboolean CallBooleanMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 
 jbyte CallByteMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -645,7 +650,7 @@ jbyte CallByteMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 
 jchar CallCharMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -698,7 +703,7 @@ jchar CallCharMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 
 jshort CallShortMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -827,7 +832,7 @@ jint CallIntMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 
 jlong CallLongMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1102,7 +1107,7 @@ void CallVoidMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 jobject CallNonvirtualObjectMethod(JNIEnv *env, jobject obj, jclass clazz,
                                    jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1110,7 +1115,7 @@ jobject CallNonvirtualObjectMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jobject CallNonvirtualObjectMethodV(JNIEnv *env, jobject obj, jclass clazz,
                                     jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1118,7 +1123,7 @@ jobject CallNonvirtualObjectMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 jobject CallNonvirtualObjectMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                     jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1127,7 +1132,7 @@ jobject CallNonvirtualObjectMethodA(JNIEnv *env, jobject obj, jclass clazz,
 
 jboolean CallNonvirtualBooleanMethod(JNIEnv *env, jobject obj, jclass clazz,
                                      jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1135,7 +1140,7 @@ jboolean CallNonvirtualBooleanMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jboolean CallNonvirtualBooleanMethodV(JNIEnv *env, jobject obj, jclass clazz,
                                       jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1143,7 +1148,7 @@ jboolean CallNonvirtualBooleanMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 jboolean CallNonvirtualBooleanMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                       jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1151,7 +1156,7 @@ jboolean CallNonvirtualBooleanMethodA(JNIEnv *env, jobject obj, jclass clazz,
 
 jbyte CallNonvirtualByteMethod(JNIEnv *env, jobject obj, jclass clazz,
                                jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1159,7 +1164,7 @@ jbyte CallNonvirtualByteMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jbyte CallNonvirtualByteMethodV (JNIEnv *env, jobject obj, jclass clazz,
                                  jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1167,7 +1172,7 @@ jbyte CallNonvirtualByteMethodV (JNIEnv *env, jobject obj, jclass clazz,
 
 jbyte CallNonvirtualByteMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                 jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1176,7 +1181,7 @@ jbyte CallNonvirtualByteMethodA(JNIEnv *env, jobject obj, jclass clazz,
 
 jchar CallNonvirtualCharMethod(JNIEnv *env, jobject obj, jclass clazz,
                                jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1184,7 +1189,7 @@ jchar CallNonvirtualCharMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jchar CallNonvirtualCharMethodV(JNIEnv *env, jobject obj, jclass clazz,
                                 jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1192,7 +1197,7 @@ jchar CallNonvirtualCharMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 jchar CallNonvirtualCharMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                 jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1201,7 +1206,7 @@ jchar CallNonvirtualCharMethodA(JNIEnv *env, jobject obj, jclass clazz,
 
 jshort CallNonvirtualShortMethod(JNIEnv *env, jobject obj, jclass clazz,
                                  jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1209,7 +1214,7 @@ jshort CallNonvirtualShortMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jshort CallNonvirtualShortMethodV(JNIEnv *env, jobject obj, jclass clazz,
                                   jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1217,7 +1222,7 @@ jshort CallNonvirtualShortMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 jshort CallNonvirtualShortMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                   jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1226,7 +1231,7 @@ jshort CallNonvirtualShortMethodA(JNIEnv *env, jobject obj, jclass clazz,
 
 jint CallNonvirtualIntMethod(JNIEnv *env, jobject obj, jclass clazz,
                              jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1234,7 +1239,7 @@ jint CallNonvirtualIntMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jint CallNonvirtualIntMethodV(JNIEnv *env, jobject obj, jclass clazz,
                               jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1242,7 +1247,7 @@ jint CallNonvirtualIntMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 jint CallNonvirtualIntMethodA(JNIEnv *env, jobject obj, jclass clazz,
                               jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1251,7 +1256,7 @@ jint CallNonvirtualIntMethodA(JNIEnv *env, jobject obj, jclass clazz,
 
 jlong CallNonvirtualLongMethod(JNIEnv *env, jobject obj, jclass clazz,
                                jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1259,7 +1264,7 @@ jlong CallNonvirtualLongMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jlong CallNonvirtualLongMethodV(JNIEnv *env, jobject obj, jclass clazz,
                                 jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1267,7 +1272,7 @@ jlong CallNonvirtualLongMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 jlong CallNonvirtualLongMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                 jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1276,7 +1281,7 @@ jlong CallNonvirtualLongMethodA(JNIEnv *env, jobject obj, jclass clazz,
 
 jfloat CallNonvirtualFloatMethod(JNIEnv *env, jobject obj, jclass clazz,
                                  jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1284,7 +1289,7 @@ jfloat CallNonvirtualFloatMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jfloat CallNonvirtualFloatMethodV(JNIEnv *env, jobject obj, jclass clazz,
                                   jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1292,7 +1297,7 @@ jfloat CallNonvirtualFloatMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 jfloat CallNonvirtualFloatMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                   jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1301,7 +1306,7 @@ jfloat CallNonvirtualFloatMethodA(JNIEnv *env, jobject obj, jclass clazz,
 
 jdouble CallNonvirtualDoubleMethod(JNIEnv *env, jobject obj, jclass clazz,
                                    jmethodID methodID, ...) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1309,7 +1314,7 @@ jdouble CallNonvirtualDoubleMethod(JNIEnv *env, jobject obj, jclass clazz,
 
 jdouble CallNonvirtualDoubleMethodV(JNIEnv *env, jobject obj, jclass clazz,
                                     jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1317,7 +1322,7 @@ jdouble CallNonvirtualDoubleMethodV(JNIEnv *env, jobject obj, jclass clazz,
 
 jdouble CallNonvirtualDoubleMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                     jmethodID methodID, const jvalue *args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -1354,14 +1359,14 @@ void CallNonvirtualVoidMethod(JNIEnv *env, jobject _obj, jclass clazz,
 
 void CallNonvirtualVoidMethodV(JNIEnv *env, jobject obj, jclass clazz,
                                jmethodID methodID, va_list args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
 
 void CallNonvirtualVoidMethodA(JNIEnv *env, jobject obj, jclass clazz,
                                jmethodID methodID, const jvalue * args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
@@ -2719,7 +2724,7 @@ void SetStaticDoubleField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
 
 jstring NewString(JNIEnv *env, const jchar *buf, jsize len) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -2740,14 +2745,14 @@ jsize GetStringLength(JNIEnv *env, jstring _str) {
 
 
 const jchar *GetStringChars(JNIEnv *env, jstring str, jboolean *isCopy) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 
 void ReleaseStringChars(JNIEnv *env, jstring str, const jchar *chars) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
@@ -2771,7 +2776,7 @@ jstring NewStringUTF(JNIEnv *env, const char *bytes) {
 
 
 jsize GetStringUTFLength (JNIEnv *env, jstring string) {   
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -3650,14 +3655,14 @@ void SetDoubleArrayRegion(JNIEnv *env, jdoubleArray array, jsize start,
 
 jint RegisterNatives(JNIEnv *env, jclass clazz, const JNINativeMethod *methods,
 		     jint nMethods) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 
 jint UnregisterNatives(JNIEnv *env, jclass clazz) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -3718,14 +3723,14 @@ jint GetJavaVM(JNIEnv *env, JavaVM **vm) {
 
 void GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len,
                      jchar *buf) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
 
 void GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len,
                         char *buf) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
@@ -3777,27 +3782,27 @@ void ReleasePrimitiveArrayCritical(JNIEnv *env, jarray _array, void *carray,
 
 
 const jchar *GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 
 void ReleaseStringCritical(JNIEnv *env, jstring string, const jchar *cstring) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
 
 jweak NewWeakGlobalRef(JNIEnv* env, jobject obj) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 
 void DeleteWeakGlobalRef(JNIEnv* env, jweak ref) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
 }
 
@@ -3927,13 +3932,13 @@ void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
 
 
 jlong GetDirectBufferCapacity(JNIEnv* env, jobject buf) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 jobjectRefType GetObjectRefType(JNIEnv* env, jobject obj) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return (jobjectRefType)0;
 }
@@ -3941,21 +3946,21 @@ jobjectRefType GetObjectRefType(JNIEnv* env, jobject obj) {
 
 
 jint DestroyJavaVM(JavaVM *vm) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 
 jint AttachCurrentThread(JavaVM *vm, void **env, void *thr_args) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
 
 
 jint DetachCurrentThread(JavaVM *vm) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
@@ -3985,7 +3990,7 @@ jint GetEnv(JavaVM *vm, void **env, jint version) {
 
 
 jint AttachCurrentThreadAsDaemon(JavaVM *vm, void **par1, void *par2) {
-  fprintf(stderr, "Implement me\n");
+  NYI();
   abort();
   return 0;
 }
