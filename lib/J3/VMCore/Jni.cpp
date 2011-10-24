@@ -322,11 +322,31 @@ jobject NewObject(JNIEnv *env, jclass _clazz, jmethodID methodID, ...) {
 }
 
 
-jobject NewObjectV(JNIEnv* env, jclass clazz, jmethodID methodID,
+jobject NewObjectV(JNIEnv* env, jclass _clazz, jmethodID methodID,
                    va_list args) {
-  NYI();
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  // Local object references
+  JavaObject* clazz = *(JavaObject**)_clazz;
+  JavaObject* res = 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(res, 0);
+
+  JavaThread* th = JavaThread::get();
+  Jnjvm* vm = th->getJVM();
+  JavaMethod* meth = (JavaMethod*)methodID;
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, true);
+
+  // Store local reference
+  res = cl->asClass()->doNew(vm);
+
+  meth->invokeIntSpecialAP(vm, cl->asClass(), res, args);
+
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 jobject NewObjectA(JNIEnv* env, jclass _clazz, jmethodID methodID,
@@ -378,10 +398,26 @@ jclass GetObjectClass(JNIEnv *env, jobject _obj) {
 }
 
 
-jboolean IsInstanceOf(JNIEnv *env, jobject obj, jclass clazz) {
-  NYI();
-  abort();
-  return 0;
+jboolean IsInstanceOf(JNIEnv *env, jobject _obj, jclass clazz) {
+  bool res = false;
+  JavaObject * obj = 0;
+  JavaObject * Cl = 0;
+  llvm_gcroot(Cl, 0);
+  llvm_gcroot(obj, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  obj = *(JavaObject**)_obj;
+  Cl = *(JavaObject**)clazz;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  res = JavaObject::instanceOf(obj, cl);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  return JNI_FALSE;
 }
 
 
@@ -2724,9 +2760,29 @@ void SetStaticDoubleField(JNIEnv *env, jclass _clazz, jfieldID fieldID,
 
 
 jstring NewString(JNIEnv *env, const jchar *buf, jsize len) {
-  NYI();
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  JavaString* obj = NULL;
+  ArrayUInt16* tmp = NULL;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(tmp, 0);
+
+  JavaThread* th = JavaThread::get();
+  Jnjvm* vm = th->getJVM();
+
+  tmp = (ArrayUInt16*)vm->upcalls->ArrayOfChar->doNew(len, vm);
+
+  for (sint32 i = 0; i < len; i++) {
+    ArrayUInt16::setElement(tmp, buf[i], i);
+  }
+
+  obj = vm->constructString(tmp);
+  assert(obj->count == len);
+  jstring ret = (jstring)th->pushJNIRef(obj);
+  RETURN_FROM_JNI(ret);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
