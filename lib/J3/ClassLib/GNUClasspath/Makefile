@@ -1,4 +1,4 @@
-##===- lib/JnJVM/Classpath/Makefile ------------------------*- Makefile -*-===##
+##===- lib/J3/ClassLib/GNUClasspath/Makefile ---------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -6,7 +6,7 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ../../..
+LEVEL = ../../../..
 
 
 EXTRA_DIST = ClasspathConstructor.inc ClasspathField.inc Classpath.inc ClasspathMethod.inc \
@@ -20,4 +20,4 @@ MODULE_WITH_GC = Classpath
 
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore -I$(PROJ_SRC_DIR)/../../../include/j3
+CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore -I$(PROJ_SRC_DIR)/../../../include/j3 -I..

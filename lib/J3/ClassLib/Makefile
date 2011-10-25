@@ -1,17 +1,15 @@
-##===- lib/JnJVM/Compiler/Makefile -------------------------*- Makefile -*-===##
-# 
-#                     The VMKit project
+##===- lib/J3/ClassLib/Makefile ----------------------------*- Makefile -*-===##
+#
+#                     The vmkit project
 #
 # This file is distributed under the University of Illinois Open Source
 # License. See LICENSE.TXT for details.
-# 
+#
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-MODULE_WITH_GC = J3Compiler
+DIRS = $(CLASSPATH_DIR)
 
 include $(LEVEL)/Makefile.common
-
-CXX.Flags += -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../ClassLib/$(CLASSPATH_DIR) -I$(PROJ_SRC_DIR)/../VMCore

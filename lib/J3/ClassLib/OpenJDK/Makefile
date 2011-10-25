@@ -1,4 +1,4 @@
-##===- lib/JnJVM/Makefile ----------------------------------*- Makefile -*-===##
+##===- lib/J3/ClassLib/OpenJDK/Makefile --------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -6,10 +6,14 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ../..
+LEVEL = ../../../..
 
-DIRS = LLVMRuntime VMCore ClassLib Compiler
+EXTRA_DIST =
 
 include $(LEVEL)/Makefile.config
+
+MODULE_WITH_GC = Classpath
+
 include $(LEVEL)/Makefile.common
 
+CXX.Flags += -I$(PROJ_SRC_DIR)/../VMCore -I$(PROJ_SRC_DIR)/../../../include/j3 -I..
