@@ -1005,12 +1005,10 @@ word_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
 word_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
                                         char* buf) {
 
-  word_t res;
-
   // Is this method defined via registerNatives()?
   // If so, use that definition.
-  if (res = getRegisteredNative(meth))
-    return res;
+  word_t res = getRegisteredNative(meth);
+  if (res != 0) return res;
 
   // Otherwise, try to resolve the method with a symbol lookup
   // First as the base method
