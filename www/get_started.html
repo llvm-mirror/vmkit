@@ -39,14 +39,17 @@ is <em>still early work</em> and is under heavy development.
 is:</p>
 
 <ol>
-  <li><a href="http://www.llvm.org/docs/GettingStarted.html#checkout">Checkout
-    and build LLVM</a> from SVN head. Make sure you have llvm-gcc or clang available
-    when you configure LLVM. Alternatively, you can also checkout clang in llvm/tools.</li>
+  <li>Checkout <a href="http://www.llvm.org/docs/GettingStarted.html#checkout">
+    LLVM</a> and 
+    <a href="http://clang.llvm.org/get_started.html">Clang</a> from SVN head.
+  </li>
 
   <ul>
     <li><tt>svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm</tt></li>
-    <li><tt>cd llvm</tt></li>
-    <li><tt>./configure; make</tt></li>
+    <li><tt>cd llvm/tools</li></tt>
+    <li><tt>svn co http://llvm.org/svn/llvm-project/cfe/trunk clang</tt></li>
+    <li><tt>cd ../..</tt></li>
+    <li><tt>./configure; make ENABLE_OPTIMIZED=1</tt></li>
   </ul>
 
   
@@ -118,10 +121,10 @@ is:</p>
   <li>Build vmkit:</li>
   <ul>
     <li><tt>cd vmkit</tt></li>
-    <li><tt>make</tt> (this will give you a debug build)</li>
+    <li><tt>make ENABLE_OPTIMIZED=1</tt> (this will give you a release build)</li>
   </ul>
 
-  <li>Try it out: (assuming vmkit/Debug/bin is in your path)</li>
+  <li>Try it out: (assuming vmkit/Release+Asserts/bin is in your path)</li>
   <ul>
     <li><tt>j3 --help</tt></li>
     <li><tt>j3 HelloWorld</tt></li>
