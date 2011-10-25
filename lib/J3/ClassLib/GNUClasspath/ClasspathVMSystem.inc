@@ -42,15 +42,15 @@ jint len) {
   Jnjvm *vm = th->getJVM();
 
   if (src == NULL || dst == NULL) {
-    th->pendingException = vm->CreateNullPointerException();
-    return;
+    th->throwException(vm->CreateNullPointerException());
+    UNREACHABLE();
   }
   
   if (!(JavaObject::getClass(src)->isArray() &&
         JavaObject::getClass(dst)->isArray())) {
-    th->pendingException = vm->CreateArrayStoreException(
-      (JavaVirtualTable*)dst->getVirtualTable());
-    return;
+    th->throwException(vm->CreateArrayStoreException(
+      (JavaVirtualTable*)dst->getVirtualTable()));
+    UNREACHABLE();
   }
   
   UserClassArray* ts = (UserClassArray*)JavaObject::getClass(src);
@@ -62,33 +62,32 @@ jint len) {
   sint32 dstSize = JavaArray::getSize(dst);
 
   if (len > srcSize) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len);
+    th->throwException(vm->CreateIndexOutOfBoundsException(len));
   } else if (len > dstSize) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len);
+    th->throwException(vm->CreateIndexOutOfBoundsException(len));
   } else if (len + sstart > srcSize) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len + sstart);
+    th->throwException(vm->CreateIndexOutOfBoundsException(len + sstart));
   } else if (len + dstart > dstSize) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len + dstart);
+    th->throwException(vm->CreateIndexOutOfBoundsException(len + dstart));
   } else if (dstart < 0) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(dstart);
+    th->throwException(vm->CreateIndexOutOfBoundsException(dstart));
   } else if (sstart < 0) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(sstart);
+    th->throwException(vm->CreateIndexOutOfBoundsException(sstart));
   } else if (len < 0) {
-    th->pendingException = vm->CreateIndexOutOfBoundsException(len);
+    th->throwException(vm->CreateIndexOutOfBoundsException(len));
   } else if ((dstType->isPrimitive() || srcType->isPrimitive()) &&
              srcType != dstType) {
-    th->pendingException = vm->CreateArrayStoreException(
-      (JavaVirtualTable*)dst->getVirtualTable());
+    th->throwException(vm->CreateArrayStoreException(
+      (JavaVirtualTable*)dst->getVirtualTable()));
   }
-  if (th->pendingException != NULL) return;
   
   if (!(dstType->isPrimitive())) {
     for (int i = 0; i < len; i++) {
       cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
       if (cur) {
         if (!(JavaObject::getClass(cur)->isAssignableFrom(dstType))) {
-          th->pendingException = vm->CreateArrayStoreException(
-              (JavaVirtualTable*)dst->getVirtualTable());
+          th->throwException(vm->CreateArrayStoreException(
+              (JavaVirtualTable*)dst->getVirtualTable()));
           break;
         } else {
           ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);

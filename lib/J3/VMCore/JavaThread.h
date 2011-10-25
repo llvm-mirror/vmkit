@@ -28,14 +28,8 @@ class JavaObject;
 class Jnjvm;
 
 
-#define BEGIN_NATIVE_EXCEPTION(level) \
-  JavaThread* __th = JavaThread::get(); \
-  TRY {
-
-#define END_NATIVE_EXCEPTION \
-  } CATCH { \
-    __th->throwFromNative(); \
-  } END_CATCH;
+#define BEGIN_NATIVE_EXCEPTION(level)
+#define END_NATIVE_EXCEPTION
 
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \

@@ -95,6 +95,7 @@ public:
     isCustomizable = false;
     overridesThis = false;
     nbHandlers = 0;
+    jmpBuffer = NULL;
   }
 
   /// javaCompile - Compile the Java method.
@@ -153,6 +154,8 @@ private:
 
   /// endNode - The result of the method.
   llvm::PHINode* endNode;
+
+  llvm::Value* jmpBuffer;
   
   /// arraySize - Get the size of the array.
   llvm::Value* arraySize(llvm::Value* obj) {
@@ -390,10 +393,10 @@ private:
   llvm::BasicBlock* unifiedUnreachable;
 
   /// throwException - Emit code to throw an exception.
-  void throwException(llvm::Function* F, llvm::Value** args,
+  void throwRuntimeException(llvm::Function* F, llvm::Value** args,
                       uint32 nbArgs);
-  void throwException(llvm::Function* F, llvm::Value* arg1);
-  void throwException(llvm::Value* obj);
+  void throwRuntimeException(llvm::Function* F, llvm::Value* arg1);
+  void throwException(llvm::Value* obj, bool checkNull = true);
 
   /// finishExceptions - Emit code to unwind the current function if an
   /// exception is thrown.

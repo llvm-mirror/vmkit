@@ -367,6 +367,10 @@ void BaseIntrinsics::init(llvm::Module* module) {
   NonHeapWriteBarrierFunction = module->getFunction("nonHeapWriteBarrier");
   AllocateFunction = module->getFunction("gcmalloc");
 
+  SetjmpFunction = module->getFunction("_setjmp");
+  RegisterSetjmpFunction = module->getFunction("registerSetjmp");
+  UnregisterSetjmpFunction = module->getFunction("unregisterSetjmp");
+
   AllocateFunction->setGC("vmkit");
   ArrayWriteBarrierFunction->setGC("vmkit");
   FieldWriteBarrierFunction->setGC("vmkit");

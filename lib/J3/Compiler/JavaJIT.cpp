@@ -599,6 +599,21 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
   // Synchronize after leaving native.
   if (isSynchro(compilingMethod->access))
     endSynchronize();
+
+  BasicBlock* ifNormal = createBasicBlock("");
+  BasicBlock* ifException = createBasicBlock("");
+  Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+  Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+  Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, intrinsics->JavaObjectNullConstant, "");
+  BranchInst::Create(ifException, ifNormal, test, currentBlock);
+
+  currentBlock = ifException;
+  // Clear exception.
+  new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr,
+                currentBlock);
+  CallInst::Create(intrinsics->ThrowExceptionFunction, obj, "", currentBlock);
+  new UnreachableInst(*llvmContext, currentBlock);
+  currentBlock = ifNormal;
   
   if (returnType != Type::getVoidTy(*llvmContext))
     ReturnInst::Create(*llvmContext, endNode, currentBlock);
@@ -1071,6 +1086,10 @@ llvm::Function* JavaJIT::javaCompile() {
 #endif
 
   nbHandlers = readExceptionTable(reader, codeLen);
+  if (nbHandlers != 0) {
+    jmpBuffer = new AllocaInst(ArrayType::get(Type::getInt8Ty(*llvmContext), sizeof(mvm::ExceptionBuffer)), "", currentBlock);
+    jmpBuffer = new BitCastInst(jmpBuffer, intrinsics->ptrType, "", currentBlock);
+  }
   
   reader.cursor = start;
   exploreOpcodes(reader, codeLen);
@@ -1120,7 +1139,7 @@ llvm::Function* JavaJIT::javaCompile() {
     BranchInst::Create(stackOverflow, noStackOverflow, stackCheck,
                        currentBlock);
     currentBlock = stackOverflow;
-    throwException(intrinsics->StackOverflowErrorFunction, 0, 0);
+    throwRuntimeException(intrinsics->StackOverflowErrorFunction, 0, 0);
     currentBlock = noStackOverflow;
   }
 
@@ -1163,12 +1182,31 @@ llvm::Function* JavaJIT::javaCompile() {
     CallInst::Create(intrinsics->PrintMethodEndFunction, arg, "", currentBlock);
     }
 #endif
+
+  finishExceptions();
   
   PI = pred_begin(currentBlock);
   PE = pred_end(currentBlock);
   if (PI == PE) {
     currentBlock->eraseFromParent();
   } else {
+    if (nbHandlers != 0) {
+      BasicBlock* ifNormal = createBasicBlock("");
+      BasicBlock* ifException = createBasicBlock("");
+      Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+      Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+      Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, intrinsics->JavaObjectNullConstant, "");
+      BranchInst::Create(ifException, ifNormal, test, currentBlock);
+
+      currentBlock = ifException;
+      // Clear exception.
+      new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr,
+                    currentBlock);
+      CallInst::Create(intrinsics->ThrowExceptionFunction, obj, "", currentBlock);
+      new UnreachableInst(*llvmContext, currentBlock);
+      currentBlock = ifNormal;
+    }
+
     if (returnType != Type::getVoidTy(*llvmContext)) {
       if (returnValue != NULL) {
         Value* obj = new LoadInst(
@@ -1182,9 +1220,6 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
 
-  currentBlock = endExceptionBlock;
-
-  finishExceptions();
    
   removeUnusedLocals(intLocals);
   removeUnusedLocals(doubleLocals);
@@ -1306,7 +1341,7 @@ void JavaJIT::JITVerifyNull(Value* obj) {
 
     BranchInst::Create(exit, cont, test, currentBlock);
     currentBlock = exit;
-    throwException(intrinsics->NullPointerExceptionFunction, 0, 0);
+    throwRuntimeException(intrinsics->NullPointerExceptionFunction, 0, 0);
     currentBlock = cont;
   } 
 }
@@ -1334,7 +1369,7 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
     
     currentBlock = ifFalse;
     Value* args[2] = { obj, index };
-    throwException(intrinsics->IndexOutOfBoundsExceptionFunction, args, 2);
+    throwRuntimeException(intrinsics->IndexOutOfBoundsExceptionFunction, args, 2);
     currentBlock = ifTrue;
   }
   
@@ -2346,7 +2381,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   // Block bb7 (label_bb7)
   currentBlock = label_bb7;
   Value* VTArgs[1] = { Constant::getNullValue(intrinsics->VTType) };
-  throwException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 1);
+  throwRuntimeException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 1);
    
 
   
@@ -2492,51 +2527,39 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
                        const char* Name,
                        BasicBlock *InsertAtEnd) {
   assert(!inlining);
-  
-  Instruction* res = CallInst::Create(F, args, Name, InsertAtEnd);
+ 
+  BasicBlock* ifException = NULL;
+  if (jmpBuffer != NULL) {
+    BasicBlock* doCall = createBasicBlock("");
+    ifException = createBasicBlock("");
+    Instruction* check = CallInst::Create(intrinsics->SetjmpFunction, jmpBuffer, "", currentBlock);
+    check = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, check, intrinsics->constantZero, "");
+    BranchInst::Create(doCall, ifException, check, currentBlock);
+    currentBlock = doCall;
+    CallInst::Create(intrinsics->RegisterSetjmpFunction, jmpBuffer, "", currentBlock);
+  }
+
+  Instruction* res = CallInst::Create(F, args, Name,  currentBlock);
   DebugLoc DL = CreateLocation();
   res->setDebugLoc(DL);
   
-  if (TheCompiler->hasExceptionsEnabled()) {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-    
-    // Get the Java exception.
-    Value* obj = 0;
-    
+  if (jmpBuffer != NULL) {
+    CallInst::Create(intrinsics->UnregisterSetjmpFunction, jmpBuffer, "", currentBlock);
     BasicBlock* ifNormal = createBasicBlock("no exception block");
-  
-    Value* test = 0;
-    Constant* zero = intrinsics->JavaObjectNullConstant;
+    BranchInst::Create(ifNormal, currentBlock);
 
-    // If F is a runtime intrinsic that does not access memory, use a hack
-    // that will prevent LLVM from moving the exception check: runtime
-    // intrinsics return the exception if an exception was raised.
-    if (F == intrinsics->InitialisationCheckFunction || 
-        F == intrinsics->GetConstantPoolAtFunction ||
-        F == intrinsics->GetArrayClassFunction ||
-        F == intrinsics->GetClassDelegateeFunction) {
-      // Make the load volatile to force the instruction after the call.
-      // Otherwise, LLVM will merge the load with a previous load because
-      // the function is readnone.
-      obj = new LoadInst(javaExceptionPtr, "", false, currentBlock);
-      test = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
-      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, test, obj, "");
-      Value* T = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
-      test = BinaryOperator::CreateAnd(test, T, "", currentBlock);
-    } else {
-      obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, zero, "");
-    }
-
-    BranchInst::Create(currentExceptionBlock, ifNormal, test, currentBlock);
-
-    
+    currentBlock = ifException;
+    CallInst::Create(intrinsics->UnregisterSetjmpFunction, jmpBuffer, "", currentBlock);
+ 
     if (!currentExceptionBlock->empty()) {
+      // Get the Java exception.
+      Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr())); 
+      Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
       Instruction* insn = currentExceptionBlock->begin();
       PHINode* node = dyn_cast<PHINode>(insn);
       if (node) node->addIncoming(obj, currentBlock);
-    }
-  
+    } 
+    BranchInst::Create(currentExceptionBlock, currentBlock);
     currentBlock = ifNormal; 
   }
 
@@ -2564,62 +2587,32 @@ Instruction* JavaJIT::invoke(Value *F, const char* Name,
   return invoke(F, args, Name, InsertAtEnd);
 }
 
-void JavaJIT::throwException(llvm::Function* F, Value* arg1) {
-  Instruction* obj = CallInst::Create(F, arg1, "", currentBlock);
-  DebugLoc DL = CreateLocation();
-  obj->setDebugLoc(DL);
+void JavaJIT::throwException(Value* obj, bool checkNull) {
+  if (checkNull) JITVerifyNull(obj);
+  if (nbHandlers == 0) {
+    CallInst::Create(intrinsics->ThrowExceptionFunction, obj, "", currentBlock);
+    new UnreachableInst(*llvmContext, currentBlock);
+  } else {
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+    new StoreInst(obj, javaExceptionPtr, currentBlock);
 
-  if (currentExceptionBlock != endExceptionBlock) {
     Instruction* insn = currentExceptionBlock->begin();
     PHINode* node = dyn_cast<PHINode>(insn);
     if (node) node->addIncoming(obj, currentBlock);
     BranchInst::Create(currentExceptionBlock, currentBlock);
-  } else {
-    if (endNode) {
-      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
-                           currentBlock);
-    }
-    BranchInst::Create(endBlock, currentBlock);
   }
 }
 
-void JavaJIT::throwException(Value* obj) {
-  JITVerifyNull(obj);
-	Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-
-  new StoreInst(obj, javaExceptionPtr, currentBlock);
-  if (currentExceptionBlock != endExceptionBlock) {
-    Instruction* insn = currentExceptionBlock->begin();
-    PHINode* node = dyn_cast<PHINode>(insn);
-    if (node) node->addIncoming(obj, currentBlock);
-    BranchInst::Create(currentExceptionBlock, currentBlock);
-  } else {
-    if (endNode) {
-      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
-                           currentBlock);
-    }
-    BranchInst::Create(endBlock, currentBlock);
-  }
+void JavaJIT::throwRuntimeException(llvm::Function* F, Value* arg1) {
+  Value* args[1] = { arg1 };
+  throwRuntimeException(F, args, 1);
 }
 
-void JavaJIT::throwException(llvm::Function* F, Value** args,
-                             uint32 nbArgs) {
+void JavaJIT::throwRuntimeException(llvm::Function* F, Value** args, uint32 nbArgs) {
   Instruction* obj = CallInst::Create(F, ArrayRef<Value*>(args, nbArgs), "", currentBlock);
   DebugLoc DL = CreateLocation();
   obj->setDebugLoc(DL);
-
-  if (currentExceptionBlock != endExceptionBlock) {
-    Instruction* insn = currentExceptionBlock->begin();
-    PHINode* node = dyn_cast<PHINode>(insn);
-    if (node) node->addIncoming(obj, currentBlock);
-    BranchInst::Create(currentExceptionBlock, currentBlock);
-  } else {
-    if (endNode) {
-      endNode->addIncoming(Constant::getNullValue(endNode->getType()),
-                           currentBlock);
-    }
-    BranchInst::Create(endBlock, currentBlock);
-  }
+  throwException(obj, false);
 }
 
 /// Handler - This class represents an exception handler. It is only needed
@@ -2803,7 +2796,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // First thing in the handler: clear the exception.
     Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
     
-    // Clear exceptions.
+    // Clear exception.
     new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr,
                   currentBlock);
   }
