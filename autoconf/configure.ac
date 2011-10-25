@@ -377,7 +377,7 @@ AC_CONFIG_SRCDIR(["Makefile.common.in"])
 dnl Configure a common Makefile
 AC_CONFIG_FILES(Makefile.common)
 AC_CONFIG_FILES(Makefile.config)
-AC_CONFIG_FILES([lib/J3/Classpath/Classpath.h])
+AC_CONFIG_FILES([lib/J3/ClassLib/Classpath.h])
 AC_CONFIG_FILES([tools/llcj/LinkPaths.h])
 AC_CONFIG_FILES([mmtk/java/src/org/j3/config/Selected.java])
 AC_CONFIG_FILES([mmtk/java/build.xml])
