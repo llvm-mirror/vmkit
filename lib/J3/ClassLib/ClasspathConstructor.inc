@@ -32,7 +32,7 @@ JNIEnv *env,
 JavaObjectConstructor* cons) {
 
   JavaObject* res = 0;
-  
+
   llvm_gcroot(cons, 0);
   llvm_gcroot(res, 0);
 
@@ -71,9 +71,9 @@ JavaObjectConstructor* cons) {
 
 JavaObject* proceedConstructor(JavaObjectConstructor* cons,
                                ArrayObject* args,
-                               JavaObject* Clazz, jint index) 
+                               JavaObject* Clazz, jint index)
   __attribute__ ((noinline));
- 
+
 JavaObject* proceedConstructor(JavaObjectConstructor* cons,
                                ArrayObject* args,
                                JavaObject* Clazz, jint index) {
@@ -97,7 +97,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
 
   mvm::ThreadAllocator allocator;
   // Allocate a buffer to store the arguments.
-  jvalue* buf = size ? 
+  jvalue* buf = size ?
       (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
 
   if (nbArgs == size) {
@@ -107,7 +107,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       cl->initialiseClass(vm);
       res = cl->doNew(vm);
       JavaObject** ptr = (JavaObject**)ArrayObject::getElements(args);
-      
+
       Typedef* const* arguments = sign->getArgumentsType();
       // Store the arguments, unboxing primitives if necessary.
       for (sint32 i = 0; i < size; ++i) {
@@ -116,7 +116,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
           buf[i].l = reinterpret_cast<jobject>(&ptr[i]);
         }
       }
-      
+
       JavaThread* th = JavaThread::get();
       TRY {
         meth->invokeIntSpecialBuf(vm, cl, res, buf);
@@ -143,7 +143,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
     vm->illegalArgumentException("wrong number of arguments");
     return NULL;
   }
- 
+
   return res;
 }
 
@@ -159,30 +159,30 @@ JavaObjectConstructor* cons, ArrayObject* args, JavaObject* Clazz, jint index) {
   llvm_gcroot(cons, 0);
   llvm_gcroot(args, 0);
   llvm_gcroot(Clazz, 0);
-  
+
   BEGIN_NATIVE_EXCEPTION(0)
 
   res = proceedConstructor(cons, args, Clazz, index);
-  
+
   END_NATIVE_EXCEPTION
-  
+
   return res;
 }
 
-JNIEXPORT 
+JNIEXPORT
 ArrayObject* JNICALL Java_java_lang_reflect_Constructor_getExceptionTypes(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObjectConstructor* cons) {
-  
+
   ArrayObject* res = 0;
 
   llvm_gcroot(res, 0);
   llvm_gcroot(cons, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   verifyNull(cons);
   UserClass* cl = JavaObjectConstructor::getClass(cons);
   JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
@@ -197,7 +197,7 @@ JavaObjectConstructor* cons) {
 
 JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Constructor_getSignature(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObjectConstructor* Meth) {
 
@@ -212,7 +212,7 @@ JavaObjectConstructor* Meth) {
   JavaMethod* meth = JavaObjectConstructor::getInternalMethod(Meth);
   Jnjvm* vm = JavaThread::get()->getJVM();
   result = vm->internalUTF8ToStr(meth->type);
-  
+
   END_NATIVE_EXCEPTION
 
   return result;

@@ -28,7 +28,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObject* Cl) {
-  
+
   llvm_gcroot(Cl, 0);
   bool res = false;
   BEGIN_NATIVE_EXCEPTION(0)
@@ -36,10 +36,10 @@ JavaObject* Cl) {
   verifyNull(Cl);
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, true);
-  
-  if (cl->isClass() && 
+
+  if (cl->isClass() &&
       cl->asClass()->lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
-                                           vm->bootstrapLoader->clinitType, 
+                                           vm->bootstrapLoader->clinitType,
                                            true, false, 0))
   res = true;
 
@@ -112,15 +112,15 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObjectField* Field, JavaObject* obj, jshort val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
   field->setInstanceInt16Field(obj, (sint16)val);
-  
+
   END_NATIVE_EXCEPTION
 }
 
@@ -130,11 +130,11 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObjectField* Field, JavaObject* obj, jint val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
   field->setInstanceInt32Field(obj, (sint32)val);
@@ -148,15 +148,15 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObjectField* Field, JavaObject* obj, jlong val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
   field->setInstanceLongField(obj, (sint64)val);
-  
+
   END_NATIVE_EXCEPTION
 }
 
@@ -166,15 +166,15 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObjectField* Field, JavaObject* obj, jfloat val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
   field->setInstanceFloatField(obj, (float)val);
-  
+
   END_NATIVE_EXCEPTION
 }
 
@@ -184,11 +184,11 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObjectField* Field, JavaObject* obj, jdouble val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
   field->setInstanceDoubleField(obj, (double)val);
@@ -202,12 +202,12 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
   llvm_gcroot(val, 0);
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   verifyNull(obj);
   JavaField* field = JavaObjectField::getInternalField(Field);
   field->setInstanceObjectField(obj, val);
@@ -221,7 +221,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObject* target, JavaObject* constr, JavaObjectConstructor* cons) {
-  
+
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(target, 0);
@@ -229,9 +229,9 @@ JavaObject* target, JavaObject* constr, JavaObjectConstructor* cons) {
   llvm_gcroot(cons, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = 
+  UserClass* cl =
     (UserClass*)UserCommonClass::resolvedImplClass(vm, target, true);
   res = cl->doNew(vm);
   JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
@@ -254,9 +254,9 @@ JavaObject* arrayType, jint arrayLength) {
   llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* base = 
+  UserCommonClass* base =
     UserCommonClass::resolvedImplClass(vm, arrayType, true);
   JnjvmClassLoader* loader = base->classLoader;
   const UTF8* name = base->getName();
@@ -277,7 +277,7 @@ JavaObject* arrayType, jint arrayLength) {
 
 
 // Never throws.
-JNIEXPORT 
+JNIEXPORT
 bool JNICALL Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8(
 #ifdef NATIVE_JNI
 JNIEnv *env,
@@ -290,13 +290,13 @@ jclass clazz,
 // Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapLong(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObject* unsafe, JavaObject* obj, jlong offset, jlong expect, jlong update) {
 
   llvm_gcroot(unsafe, 0);
   llvm_gcroot(obj, 0);
-  jlong *ptr; 
+  jlong *ptr;
   jlong  value;
 
   ptr = (jlong *) (((uint8 *) obj) + offset);
@@ -315,13 +315,13 @@ JavaObject* unsafe, JavaObject* obj, jlong offset, jlong expect, jlong update) {
 // Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapInt(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObject* unsafe, JavaObject* obj, jlong offset, jint expect, jint update) {
 
   llvm_gcroot(unsafe, 0);
   llvm_gcroot(obj, 0);
-  jint *ptr; 
+  jint *ptr;
 
   ptr = (jint *) (((uint8 *) obj) + offset);
 
@@ -331,7 +331,7 @@ JavaObject* unsafe, JavaObject* obj, jlong offset, jint expect, jint update) {
 // Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapObject(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObject* unsafe, JavaObject* obj, jlong offset, JavaObject* expect,
 JavaObject* update) {
@@ -348,7 +348,7 @@ JavaObject* update) {
 // Never throws.
 JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putObjectVolatile(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObject* unsafe, JavaObject* obj, jlong offset, JavaObject* value) {
   llvm_gcroot(unsafe, 0);

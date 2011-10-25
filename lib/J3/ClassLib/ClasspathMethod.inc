@@ -27,16 +27,16 @@ extern "C" {
 
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiersInternal(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
-JavaObjectMethod* Meth) { 
-  
+JavaObjectMethod* Meth) {
+
   jint res = 0;
   llvm_gcroot(Meth, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
-  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth); 
+
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   res = meth->access;
 
   END_NATIVE_EXCEPTION
@@ -46,7 +46,7 @@ JavaObjectMethod* Meth) {
 
 JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_getReturnType(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObjectMethod* Meth) {
 
@@ -57,7 +57,7 @@ JavaObjectMethod* Meth) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   UserClass* cl = JavaObjectMethod::getClass(Meth);
-  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth); 
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   JnjvmClassLoader* loader = cl->classLoader;
   res = meth->getReturnType(loader);
 
@@ -69,7 +69,7 @@ JavaObjectMethod* Meth) {
 
 JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_getParameterTypes(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObjectMethod* Meth) {
 
@@ -82,7 +82,7 @@ JavaObjectMethod* Meth) {
   UserClass* cl = JavaObjectMethod::getClass(Meth);
   JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   JnjvmClassLoader* loader = cl->classLoader;
-  
+
   res = meth->getParameterTypes(loader);
 
   END_NATIVE_EXCEPTION
@@ -91,7 +91,7 @@ JavaObjectMethod* Meth) {
 }
 
 JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
-                          ArrayObject* args, JavaObject* Cl, jint index) 
+                          ArrayObject* args, JavaObject* Cl, jint index)
   __attribute__((noinline));
 
 JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
@@ -99,7 +99,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
 
   JavaObject* res = 0;
   JavaObject* exc = 0;
-  
+
   llvm_gcroot(res, 0);
   llvm_gcroot(Meth, 0);
   llvm_gcroot(obj, 0);
@@ -110,7 +110,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
   Jnjvm* vm = JavaThread::get()->getJVM();
 
   JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
-  
+
   sint32 nbArgs = args ? ArrayObject::getSize(args) : 0;
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
@@ -118,11 +118,11 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
   mvm::ThreadAllocator allocator;
   jvalue* buf = size ?
       (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
-  
+
   if (nbArgs == size) {
     UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
     UserClass* cl = (UserClass*)_cl;
-    
+
     if (isVirtual(meth->access)) {
       verifyNull(obj);
       UserCommonClass* objCl = JavaObject::getClass(obj);
@@ -140,7 +140,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
     } else {
       cl->initialiseClass(vm);
     }
-    
+
     JavaObject** ptr = ArrayObject::getElements(args);
     Typedef* const* arguments = sign->getArgumentsType();
     for (sint32 i = 0; i < size; ++i) {
@@ -149,7 +149,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
         buf[i].l = reinterpret_cast<jobject>(&ptr[i]);
       }
     }
-    
+
     JavaThread* th = JavaThread::get();
 
 #define RUN_METH(TYPE, VAR)                                                    \
@@ -172,7 +172,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       th->getJVM()->invocationTargetException(exc);                            \
       return NULL;                                                             \
     }
-    
+
     Typedef* retType = sign->getReturnType();
     if (retType->isPrimitive()) {
       PrimitiveTypedef* prim = (PrimitiveTypedef*)retType;
@@ -223,7 +223,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
       }
     } else {
       RUN_METH(JavaObject, res);
-    } 
+    }
   } else {
     vm->illegalArgumentException("wrong number of arguments");
     return NULL;
@@ -236,10 +236,10 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
 
 JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_invokeNative(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObjectMethod* Meth, JavaObject* obj, ArrayObject* args, JavaObject* Cl, jint index) {
-  
+
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(Meth, 0);
@@ -250,7 +250,7 @@ JavaObjectMethod* Meth, JavaObject* obj, ArrayObject* args, JavaObject* Cl, jint
   BEGIN_NATIVE_EXCEPTION(0)
 
   res = proceedMethod(Meth, obj, args, Cl, index);
-  
+
   END_NATIVE_EXCEPTION
 
   return res;
@@ -258,7 +258,7 @@ JavaObjectMethod* Meth, JavaObject* obj, ArrayObject* args, JavaObject* Cl, jint
 
 JNIEXPORT ArrayObject* JNICALL Java_java_lang_reflect_Method_getExceptionTypes(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObjectMethod* Meth) {
 
@@ -281,7 +281,7 @@ JavaObjectMethod* Meth) {
 
 JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_getSignature(
 #ifdef NATIVE_JNI
-JNIEnv *env, 
+JNIEnv *env,
 #endif
 JavaObjectMethod* Meth) {
 
@@ -295,7 +295,7 @@ JavaObjectMethod* Meth) {
   JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   Jnjvm* vm = JavaThread::get()->getJVM();
   result = vm->internalUTF8ToStr(meth->type);
-  
+
   END_NATIVE_EXCEPTION
 
   return result;

@@ -44,7 +44,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Field_getType(
 JNIEnv *env,
 #endif
 JavaObjectField* Field) {
-  
+
   JavaObject* res = 0;
 
   llvm_gcroot(Field, 0);
@@ -69,12 +69,12 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getInt(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj) {
-  
+
   jint res = 0;
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
-  
+
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -82,13 +82,13 @@ JavaObjectField* Field, JavaObject* obj) {
   JavaField* field = JavaObjectField::getInternalField(Field);
   const Typedef* type = field->getSignature();
   bool stat =  isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
 
@@ -122,11 +122,11 @@ JavaObjectField* Field, JavaObject* obj) {
   } else {
       vm->illegalArgumentException("wrong type");
   }
-  
+
   END_NATIVE_EXCEPTION
-  
+
   return res;
-  
+
 }
 
 JNIEXPORT jlong JNICALL Java_java_lang_reflect_Field_getLong(
@@ -136,7 +136,7 @@ JNIEnv *env,
 JavaObjectField* Field, JavaObject* obj) {
 
   jlong res = 0;
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
@@ -146,17 +146,17 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    
+
     if (prim->isInt()) {
       if (stat) {
         res = (sint64)field->getStaticInt32Field();
@@ -193,7 +193,7 @@ JavaObjectField* Field, JavaObject* obj) {
   } else {
     vm->illegalArgumentException("wrong type");
   }
-  
+
   END_NATIVE_EXCEPTION
 
   return res;
@@ -206,7 +206,7 @@ JNIEnv *env,
 JavaObjectField* Field, JavaObject* obj) {
 
   jboolean res = 0;
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
@@ -216,17 +216,17 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat =  isStatic(field->access);
-   
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
-    if (prim->isBool()) { 
+    if (prim->isBool()) {
       if (stat) {
         res = (uint8)field->getStaticInt8Field();
       } else {
@@ -238,11 +238,11 @@ JavaObjectField* Field, JavaObject* obj) {
   } else {
     vm->illegalArgumentException("wrong type");
   }
-  
+
   END_NATIVE_EXCEPTION
 
   return res;
-  
+
 }
 
 JNIEXPORT jfloat JNICALL Java_java_lang_reflect_Field_getFloat(
@@ -250,24 +250,24 @@ JNIEXPORT jfloat JNICALL Java_java_lang_reflect_Field_getFloat(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj) {
-  
+
   jfloat res = 0;
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -314,7 +314,7 @@ JavaObjectField* Field, JavaObject* obj) {
   } else {
     vm->illegalArgumentException("wrong type");
   }
-  
+
   END_NATIVE_EXCEPTION
 
   return res;
@@ -336,13 +336,13 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -358,9 +358,9 @@ JavaObjectField* Field, JavaObject* obj) {
   } else {
     vm->illegalArgumentException("wrong type");
   }
-  
+
   END_NATIVE_EXCEPTION
-  
+
   return res;
 }
 
@@ -369,24 +369,24 @@ JNIEXPORT jchar JNICALL Java_java_lang_reflect_Field_getChar(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj) {
-  
+
   jchar res = 0;
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -404,9 +404,9 @@ JavaObjectField* Field, JavaObject* obj) {
   }
 
   END_NATIVE_EXCEPTION
-  
+
   return res;
-  
+
 }
 
 JNIEXPORT jshort JNICALL Java_java_lang_reflect_Field_getShort(
@@ -426,13 +426,13 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -454,35 +454,35 @@ JavaObjectField* Field, JavaObject* obj) {
   } else {
     vm->illegalArgumentException("wrong type");
   }
-  
+
   END_NATIVE_EXCEPTION
 
   return res;
 }
-  
+
 JNIEXPORT jdouble JNICALL Java_java_lang_reflect_Field_getDouble(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj) {
-  
+
   jdouble res = 0;
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -558,13 +558,13 @@ JavaObjectField* Field, JavaObject* obj) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -616,7 +616,7 @@ JavaObjectField* Field, JavaObject* obj) {
       res =  field->getInstanceObjectField(obj);
     }
   }
-  
+
   END_NATIVE_EXCEPTION
 
   return res;
@@ -627,29 +627,29 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
   llvm_gcroot(val, 0);
-  
+
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   jvalue buf;
   bool stat = isStatic(field->access);
-  
-  
+
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
- 
+
   const Typedef* type = field->getSignature();
   JavaObject::decapsulePrimitive(val, vm, &buf, type);
-  
+
 
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -718,7 +718,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setBoolean(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, jboolean val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
@@ -728,13 +728,13 @@ JavaObjectField* Field, JavaObject* obj, jboolean val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
- 
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -752,7 +752,7 @@ JavaObjectField* Field, JavaObject* obj, jboolean val) {
   }
 
   END_NATIVE_EXCEPTION
-  
+
 }
 
 JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setByte(
@@ -760,17 +760,17 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setByte(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, jbyte val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
-  
+
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
@@ -831,7 +831,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, jchar val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
@@ -841,7 +841,7 @@ JavaObjectField* Field, JavaObject* obj, jchar val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
@@ -895,7 +895,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, jshort val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
@@ -905,13 +905,13 @@ JavaObjectField* Field, JavaObject* obj, jshort val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -959,7 +959,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, jint val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
@@ -969,13 +969,13 @@ JavaObjectField* Field, JavaObject* obj, jint val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -1018,17 +1018,17 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, jlong val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
-  
+
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
@@ -1081,13 +1081,13 @@ JavaObjectField* Field, JavaObject* obj, jfloat val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -1118,7 +1118,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
 JNIEnv *env,
 #endif
 JavaObjectField* Field, JavaObject* obj, jdouble val) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
@@ -1128,13 +1128,13 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
   UserClass* cl = JavaObjectField::getClass(Field);
   JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
-  
+
   if (stat) {
     cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
-  
+
   const Typedef* type = field->getSignature();
   if (type->isPrimitive()) {
     const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -1160,7 +1160,7 @@ JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
 JNIEnv *env,
 #endif
 JavaObject* Unsafe, JavaObjectField* Field) {
-  
+
   llvm_gcroot(Field, 0);
   llvm_gcroot(Unsafe, 0);
 
