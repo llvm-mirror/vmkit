@@ -16,4 +16,7 @@ MODULE_WITH_GC = Classpath
 
 include $(LEVEL)/Makefile.common
 
-CXX.Flags += -I$(PROJ_SRC_DIR)/../../VMCore -I$(PROJ_SRC_ROOT)/include/j3 -I..
+CXX.Flags += -I$(PROJ_SRC_DIR)/../../VMCore
+CXX.Flags += -I$(PROJ_SRC_ROOT)/include/j3
+CXX.Flags += -I$(PROJ_SRC_DIR)/.. -I$(PROJ_OBJ_DIR)/..
+CXX.Flags += -I$(PROJ_SRC_ROOT)/include/j3/openjdk
