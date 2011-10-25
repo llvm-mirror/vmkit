@@ -39,6 +39,12 @@ CXX.Flags += @GC_FLAGS@ -fno-exceptions -Wno-variadic-macros -fno-omit-frame-poi
 CLASSPATH_FLAGS =
 GLIBJ = @classpathglibj@
 
+# Using conditional compilation for now, until a proper interface/architecture
+# is figured out and implemented.
+ifeq (@classpathimpl@,openjdk)
+CXX.Flags += -DUSE_OPENJDK
+endif
+
 LIBS += -lz
 
 include $(PROJ_SRC_ROOT)/Makefile.rules
