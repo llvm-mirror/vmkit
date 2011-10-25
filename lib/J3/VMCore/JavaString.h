@@ -22,12 +22,19 @@ class Jnjvm;
 
 class JavaString : public JavaObject {
  private:
-  // CLASSPATH FIELDS!!
   const ArrayUInt16* value;
  public:
+#ifndef USE_OPENJDK
+  // Classpath fields
   sint32 count;
   sint32 cachedHashCode;
   sint32 offset;
+#else
+  // OpenJDK fields
+  sint32 offset;
+  sint32 count;
+  sint32 cachedHashCode;
+#endif
 
   static void setValue(JavaString* self, const ArrayUInt16* array) {
     llvm_gcroot(self, 0);
