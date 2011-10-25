@@ -16,8 +16,6 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 
-extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
-
 namespace j3 {
 
 class JavaObjectClass : public JavaObject {
@@ -176,14 +174,17 @@ public:
     llvm_gcroot(self, 0);
     llvm_gcroot(stackTrace, 0);
 
-    stackTrace = internalFillInStackTrace(self);
-    mvm::Collector::objectReferenceWriteBarrier(
-        (gc*)self, (gc**)&(self->vmState), (gc*)stackTrace);
+    // TODO: Implement this right
+    assert(0 && "fillInStackTrace not implemented yet!");
 
-    mvm::Collector::objectReferenceWriteBarrier(
-        (gc*)self, (gc**)&(self->cause), (gc*)self);
+    // stackTrace = internalFillInStackTrace(self);
+    // mvm::Collector::objectReferenceWriteBarrier(
+    //     (gc*)self, (gc**)&(self->vmState), (gc*)stackTrace);
 
-    self->stackTrace = NULL;
+    // mvm::Collector::objectReferenceWriteBarrier(
+    //     (gc*)self, (gc**)&(self->cause), (gc*)self);
+
+    // self->stackTrace = NULL;
   }
 };
 
