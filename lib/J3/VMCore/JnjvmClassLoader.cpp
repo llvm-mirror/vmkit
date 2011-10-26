@@ -61,8 +61,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   javaSignatures = new(allocator, "SignMap") SignMap();
   strings = new(allocator, "StringList") StringList();
   
-  bootClasspathEnv = GNUClasspathGlibj;
-  libClasspathEnv = GNUClasspathLibs;
+  bootClasspathEnv = ClasslibBootEnv;
+  libClasspathEnv = ClasslibLibEnv;
    
   upcalls = new(allocator, "Classpath") Classpath();
   bootstrapLoader = this;

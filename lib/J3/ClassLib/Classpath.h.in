@@ -17,6 +17,9 @@
 #define GNUClasspathGlibj "@classpathglibj@"
 #define GNUClasspathVersion "@classpathversion@"
 
+#define ClasslibBootEnv GNUClasspathGlibj
+#define ClasslibLibEnv GNUClasspathLibs
+
 #else
 
 // OpenJDK values
@@ -44,5 +47,8 @@
   ":" "/lib64" \
   ":" "/usr/lib" \
   ":" "/usr/lib64"
+
+#define ClasslibBootEnv OpenJDKBootPath
+#define ClasslibLibEnv OpenJDKLibPaths
 
 #endif // USE_OPENJDK

@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "Classpath.h"
 #include "ClasspathReflect.h"
 #include "JavaAccess.h"
 #include "JavaClass.h"
@@ -537,6 +538,13 @@ extern "C" JavaString* Java_java_lang_VMSystem_getenv__Ljava_lang_String_2(JavaS
 }
 
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
+
+  // Load OpenJDK's libjava.so
+  void * handle = loader->loadLib(OpenJDKLibJava);
+  if (handle == NULL) {
+    fprintf(stderr, "Failed to load %s, cannot proceed!\n", OpenJDKLibJava);
+    abort();
+  }
 
   newClassLoader =
     UPCALL_CLASS(loader, "java/lang/ClassLoader");
