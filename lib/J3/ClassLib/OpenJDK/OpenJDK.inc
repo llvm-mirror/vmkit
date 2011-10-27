@@ -1534,25 +1534,45 @@ jio_vfprintf(FILE *, const char *fmt, va_list args) {
   NYI();
 }
 
-typedef pthread_mutex_t Lock;
 JNIEXPORT void * JNICALL
 JVM_RawMonitorCreate(void) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  pthread_mutex_t* L = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(L, NULL);
+
+  RETURN_FROM_JNI(L);
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT void JNICALL
 JVM_RawMonitorDestroy(void *mon) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  pthread_mutex_t* L = (pthread_mutex_t*)mon;
+  pthread_mutex_destroy(L);
+  free(L);
+  RETURN_VOID_FROM_JNI;
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT jint JNICALL
 JVM_RawMonitorEnter(void *mon) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  pthread_mutex_t* L = (pthread_mutex_t*)mon;
+  jint res = pthread_mutex_lock(L);
+  RETURN_FROM_JNI(res);
+  END_JNI_EXCEPTION
+  return 0;
 }
 
 JNIEXPORT void JNICALL
 JVM_RawMonitorExit(void *mon) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  pthread_mutex_t* L = (pthread_mutex_t*)mon;
+  pthread_mutex_unlock(L);
+  RETURN_VOID_FROM_JNI;
+  END_JNI_EXCEPTION
 }
 
 /*
