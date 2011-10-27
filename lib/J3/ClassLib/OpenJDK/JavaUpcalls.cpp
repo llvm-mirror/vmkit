@@ -1069,6 +1069,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   initPhantomReference->setNative();
 }
 
+void Classpath::InitializeSystem(Jnjvm * jvm) {
+  // TODO: Implement me!
+}
+
+
 #include "ClasspathConstructor.inc"
 #include "Classpath.inc"
 #include "ClasspathField.inc"

@@ -1105,9 +1105,7 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->newConstructor);
   LOAD_CLASS(upcalls->newField);
   LOAD_CLASS(upcalls->newMethod);
-  LOAD_CLASS(upcalls->newVMThread);
   LOAD_CLASS(upcalls->newStackTraceElement);
-  LOAD_CLASS(upcalls->newVMThrowable);
   LOAD_CLASS(upcalls->boolClass);
   LOAD_CLASS(upcalls->byteClass);
   LOAD_CLASS(upcalls->charClass);
@@ -1150,6 +1148,9 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->InstantiationException);
   LOAD_CLASS(upcalls->SystemClass);
 #undef LOAD_CLASS
+
+  // Implementation-specific end-of-bootstrap initialization
+  upcalls->InitializeSystem(this);
 
   loadAppClassLoader();
   obj = JavaThread::get()->currentThread();

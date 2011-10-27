@@ -275,6 +275,7 @@ private:
 
 public:
   ISOLATE_STATIC void InitializeThreading(Jnjvm* vm);
+  ISOLATE_STATIC void InitializeSystem(Jnjvm* vm);
 };
 
 
