@@ -6,7 +6,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <jvm.h>
+#include "jvm.h"
+#include "Reader.h"
+#include "JavaConstantPool.h"
+#include "SetProperties.inc"
+
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <errno.h>
+#include <sys/ioctl.h>
 
 #define NYI() \
   do{ assert(0 && "Not yet implemented!"); abort(); } while(0)
@@ -14,7 +25,7 @@
 
 JNIEXPORT jint JNICALL
 JVM_GetInterfaceVersion(void) {
-  NYI();
+  return JVM_INTERFACE_VERSION;
 }
 
 jint JVM_CreateJavaVM(JavaVM **pvm, void **penv, void *args) {
@@ -23,22 +34,55 @@ jint JVM_CreateJavaVM(JavaVM **pvm, void **penv, void *args) {
 
 JNIEXPORT jint JNICALL
 JVM_IHashCode(JNIEnv *env, jobject _obj) {
-  NYI();
+  JavaObject * obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  jint hash = (obj == NULL) ? 0 : JavaObject::hashCode(obj);
+  return hash;
 }
 
 JNIEXPORT void JNICALL
 JVM_MonitorWait(JNIEnv *env, jobject obj, jlong ms) {
-  NYI();
+  JavaObject * o = 0;
+  llvm_gcroot(o, 0);
+
+  BEGIN_JNI_EXCEPTION
+  Jnjvm* vm = JavaThread::get()->getJVM();
+
+  o = *(JavaObject**)obj;
+
+  if (ms < 0) {
+    vm->illegalArgumentException("Negative wait time specified");
+  }
+  if (ms) {
+    struct timeval info;
+    uint64_t usec = ms * 1000LL;
+    info.tv_usec = usec % 1000000LL;
+    info.tv_sec = usec / 1000000LL;
+    JavaObject::timedWait(o, info);
+  } else {
+    JavaObject::wait(o);
+  }
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT void JNICALL
 JVM_MonitorNotify(JNIEnv *env, jobject obj) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  JavaObject * o = *(JavaObject**)obj;
+  JavaObject::notify(o);
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT void JNICALL
 JVM_MonitorNotifyAll(JNIEnv *env, jobject obj) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  JavaObject * o = *(JavaObject**)obj;
+  JavaObject::notifyAll(o);
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT jobject JNICALL
@@ -59,12 +103,22 @@ JVM_InternString(JNIEnv *env, jstring _str) {
  */
 JNIEXPORT jlong JNICALL
 JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored) {
-  NYI();
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  jlong time = (tv.tv_sec * 1000LL) + (tv.tv_usec / 1000LL);
+  return time;
 }
 
 JNIEXPORT jlong JNICALL
 JVM_NanoTime(JNIEnv *env, jclass ignored) {
-  NYI();
+  // TODO: Impl with more accurate clock?
+  struct timeval tv;
+
+  gettimeofday(&tv, NULL);
+
+  jlong time = (tv.tv_sec * 1000000LL) + (tv.tv_usec / 1000000LL);
+
+  return time;
 }
 
 JNIEXPORT void JNICALL
@@ -75,7 +129,17 @@ JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject jsrc, jint sstart,
 
 JNIEXPORT jobject JNICALL
 JVM_InitProperties(JNIEnv *env, jobject p) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  JavaObject * prop = *(JavaObject**)p;
+  llvm_gcroot(prop, 0);
+  setProperties(prop);
+  setCommandLineProperties(prop);
+
+  RETURN_FROM_JNI(p);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
@@ -91,17 +155,20 @@ JVM_OnExit(void (*func)(void)) {
  */
 JNIEXPORT void JNICALL
 JVM_Exit(jint code) {
-  NYI();
+  mvm::System::Exit(code);
 }
 
 JNIEXPORT void JNICALL
 JVM_Halt(jint code) {
-  NYI();
+  mvm::System::Exit(code);
 }
 
 JNIEXPORT void JNICALL
 JVM_GC(void) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  mvm::Collector::collect();
+  RETURN_VOID_FROM_JNI;
+  END_JNI_EXCEPTION
 }
 
 /* Returns the number of real-time milliseconds that have elapsed since the
@@ -135,27 +202,33 @@ JVM_TraceMethodCalls(jboolean on) {
 
 JNIEXPORT jlong JNICALL
 JVM_TotalMemory(void) {
-  NYI();
+  return (jlong)mvm::Collector::getTotalMemory();
 }
 
 JNIEXPORT jlong JNICALL
 JVM_FreeMemory(void) {
-  NYI();
+  return (jlong)mvm::Collector::getFreeMemory();
 }
 
 JNIEXPORT jlong JNICALL
 JVM_MaxMemory(void) {
-  NYI();
+  return (jlong)mvm::Collector::getMaxMemory();
 }
 
 JNIEXPORT jint JNICALL
 JVM_ActiveProcessorCount(void) {
-  NYI();
+  return mvm::System::GetNumberOfProcessors();
 }
 
 JNIEXPORT void * JNICALL
 JVM_LoadLibrary(const char *name) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  RETURN_FROM_JNI(vm->bootstrapLoader->loadLib(name));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT void JNICALL
@@ -165,7 +238,14 @@ JVM_UnloadLibrary(void * handle) {
 
 JNIEXPORT void * JNICALL
 JVM_FindLibraryEntry(void *handle, const char *name) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  bool j3 = false;
+  RETURN_FROM_JNI((void *)vm->bootstrapLoader->loadInLib(name, j3));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -277,7 +357,7 @@ JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio) {
 
 JNIEXPORT void JNICALL
 JVM_Yield(JNIEnv *env, jclass threadClass) {
-  NYI();
+  mvm::Thread::yield();
 }
 
 JNIEXPORT void JNICALL
@@ -287,7 +367,12 @@ JVM_Sleep(JNIEnv *env, jclass threadClass, jlong millis) {
 
 JNIEXPORT jobject JNICALL
 JVM_CurrentThread(JNIEnv *env, jclass threadClass) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  JavaThread* th = JavaThread::get();
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(th->currentThread()));
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jint JNICALL
@@ -449,7 +534,19 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray dim) {
  */
 JNIEXPORT jclass JNICALL
 JVM_GetCallerClass(JNIEnv *env, int n) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+
+  JavaThread* th = JavaThread::get();
+
+  Jnjvm* vm = th->getJVM();
+  UserClass* cl = th->getCallingClassLevel(n);
+  assert(cl);
+  JavaObject * const * res = cl->getClassDelegateePtr(vm);
+  RETURN_FROM_JNI((jclass)res);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
@@ -788,7 +885,8 @@ JVM_FindSignal(const char *name) {
  */
 JNIEXPORT jboolean JNICALL
 JVM_DesiredAssertionStatus(JNIEnv *env, jclass unused, jclass cls) {
-  NYI();
+  // TODO: Actually implement?
+  return JNI_FALSE;
 }
 
 /*
@@ -1147,7 +1245,16 @@ JVM_IsSameClassPackage(JNIEnv *env, jclass class1, jclass class2) {
  */
 JNIEXPORT jint JNICALL
 JVM_GetLastErrorString(char *buf, int len) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  char * err = strerror_r(errno, buf, len);
+  if (err != buf)
+    strncpy(buf, err, len);
+
+  RETURN_FROM_JNI(strlen(buf));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
@@ -1354,7 +1461,7 @@ JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen) 
 
 JNIEXPORT int JNICALL
 JVM_GetHostName(char* name, int namelen) {
-  NYI();
+  return gethostname(name, namelen);
 }
 
 /*
@@ -1368,7 +1475,7 @@ JVM_GetHostName(char* name, int namelen) {
  */
 int
 jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
-  NYI();
+  return vsnprintf(str, count, fmt, args);
 }
 
 int
