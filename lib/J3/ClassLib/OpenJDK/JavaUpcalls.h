@@ -70,6 +70,8 @@ public:
   ISOLATE_STATIC UserClass* newString;
   ISOLATE_STATIC UserClass* newClass;
   ISOLATE_STATIC UserClass* newThrowable;
+  ISOLATE_STATIC JavaField* backtrace;
+  ISOLATE_STATIC JavaField* detailMessage;
   ISOLATE_STATIC UserClass* newException;
   ISOLATE_STATIC JavaMethod* initClass;
   ISOLATE_STATIC JavaMethod* initClassWithProtectionDomain;
@@ -92,17 +94,11 @@ public:
   ISOLATE_STATIC JavaField*  fieldSlot;
   ISOLATE_STATIC UserClassArray* classArrayClass;
   ISOLATE_STATIC JavaMethod* loadInClassLoader;
-  ISOLATE_STATIC JavaMethod* initVMThrowable;
-  ISOLATE_STATIC JavaField*  vmDataVMThrowable;
-  ISOLATE_STATIC UserClass*  newVMThrowable;
   ISOLATE_STATIC JavaField*  bufferAddress;
-  ISOLATE_STATIC JavaField*  dataPointer32;
-  ISOLATE_STATIC JavaField*  dataPointer64;
-  ISOLATE_STATIC UserClass*  newPointer32;
-  ISOLATE_STATIC UserClass*  newPointer64;
   ISOLATE_STATIC UserClass*  newDirectByteBuffer;
   ISOLATE_STATIC JavaMethod* InitDirectByteBuffer;
   ISOLATE_STATIC JavaField*  vmdataClassLoader;
+  ISOLATE_STATIC UserClass* cloneableClass;
   ISOLATE_STATIC UserClass*  enumClass;
 
   ISOLATE_STATIC JavaField* boolValue;
@@ -133,27 +129,20 @@ public:
   ISOLATE_STATIC UserClass* vmStackWalker;
 
   ISOLATE_STATIC UserClass* newThread;
-  ISOLATE_STATIC UserClass* newVMThread;
-  ISOLATE_STATIC JavaField* assocThread;
-  ISOLATE_STATIC JavaField* vmdataVMThread;
-  ISOLATE_STATIC JavaMethod* finaliseCreateInitialThread;
   ISOLATE_STATIC JavaMethod* initThread;
-  ISOLATE_STATIC JavaMethod* initVMThread;
-  ISOLATE_STATIC JavaMethod* runVMThread;
+  ISOLATE_STATIC JavaMethod* runThread;
   ISOLATE_STATIC JavaMethod* groupAddThread;
-  ISOLATE_STATIC JavaField* threadName;
   ISOLATE_STATIC JavaField* groupName;
   ISOLATE_STATIC JavaMethod* initGroup;
+  ISOLATE_STATIC JavaMethod* initNamedGroup;
   ISOLATE_STATIC JavaField* priority;
   ISOLATE_STATIC JavaField* daemon;
+  ISOLATE_STATIC JavaField* eetop;
   ISOLATE_STATIC JavaField* group;
-  ISOLATE_STATIC JavaField* running;
+  ISOLATE_STATIC JavaField* threadStatus;
   ISOLATE_STATIC UserClass* threadGroup;
-  ISOLATE_STATIC JavaField* rootGroup;
-  ISOLATE_STATIC JavaField* vmThread;
   ISOLATE_STATIC JavaMethod* getUncaughtExceptionHandler;
   ISOLATE_STATIC JavaMethod* uncaughtException;
-  ISOLATE_STATIC UserClass*  inheritableThreadLocal;
 
 
   ISOLATE_STATIC UserClass* InvocationTargetException;
@@ -188,6 +177,7 @@ public:
   ISOLATE_STATIC UserClass* UnknownError;
   ISOLATE_STATIC UserClass* ClassNotFoundException;
   ISOLATE_STATIC UserClass* ArithmeticException;
+  ISOLATE_STATIC UserClass* CloneNotSupportedException;
 
   ISOLATE_STATIC JavaMethod* InitInvocationTargetException;
   ISOLATE_STATIC JavaMethod* InitArrayStoreException;
@@ -221,10 +211,11 @@ public:
   ISOLATE_STATIC JavaMethod* InitUnknownError;
   ISOLATE_STATIC JavaMethod* InitClassNotFoundException;
   ISOLATE_STATIC JavaMethod* InitArithmeticException;
+  ISOLATE_STATIC JavaMethod* InitCloneNotSupportedException;
 
   ISOLATE_STATIC JavaMethod* SystemArraycopy;
-  ISOLATE_STATIC JavaMethod* VMSystemArraycopy;
   ISOLATE_STATIC Class*      SystemClass;
+  ISOLATE_STATIC JavaMethod* initSystem;
 
   ISOLATE_STATIC JavaMethod* IntToString;
 

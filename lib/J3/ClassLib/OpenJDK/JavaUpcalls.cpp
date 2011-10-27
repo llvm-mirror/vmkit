@@ -33,33 +33,28 @@
 using namespace j3;
 
 Class*      Classpath::newThread;
-Class*      Classpath::newVMThread;
-JavaField*  Classpath::assocThread;
-JavaField*  Classpath::vmdataVMThread;
-JavaMethod* Classpath::finaliseCreateInitialThread;
-JavaMethod* Classpath::initVMThread;
 JavaMethod* Classpath::initThread;
+JavaMethod* Classpath::runThread;
 JavaMethod* Classpath::groupAddThread;
-JavaField*  Classpath::threadName;
 JavaField*  Classpath::groupName;
 JavaMethod* Classpath::initGroup;
+JavaMethod* Classpath::initNamedGroup;
 JavaField*  Classpath::priority;
 JavaField*  Classpath::daemon;
+JavaField*  Classpath::eetop;
+JavaField*  Classpath::threadStatus;
 JavaField*  Classpath::group;
-JavaField*  Classpath::running;
 Class*      Classpath::threadGroup;
-JavaField*  Classpath::rootGroup;
-JavaField*  Classpath::vmThread;
 JavaMethod* Classpath::getUncaughtExceptionHandler;
 JavaMethod* Classpath::uncaughtException;
-Class*      Classpath::inheritableThreadLocal;
 
-JavaMethod* Classpath::runVMThread;
 JavaMethod* Classpath::setContextClassLoader;
 JavaMethod* Classpath::getSystemClassLoader;
 Class*      Classpath::newString;
 Class*      Classpath::newClass;
 Class*      Classpath::newThrowable;
+JavaField*  Classpath::backtrace;
+JavaField*  Classpath::detailMessage;
 Class*      Classpath::newException;
 JavaMethod* Classpath::initClass;
 JavaMethod* Classpath::initClassWithProtectionDomain;
@@ -82,18 +77,12 @@ JavaField*  Classpath::methodSlot;
 JavaField*  Classpath::fieldSlot;
 ClassArray* Classpath::classArrayClass;
 JavaMethod* Classpath::loadInClassLoader;
-JavaMethod* Classpath::initVMThrowable;
-JavaField*  Classpath::vmDataVMThrowable;
-Class*      Classpath::newVMThrowable;
 JavaField*  Classpath::bufferAddress;
-JavaField*  Classpath::dataPointer32;
-JavaField*  Classpath::dataPointer64;
-Class*      Classpath::newPointer32;
-Class*      Classpath::newPointer64;
 Class*      Classpath::newDirectByteBuffer;
 JavaField*  Classpath::vmdataClassLoader;
 JavaMethod* Classpath::InitDirectByteBuffer;
 Class*      Classpath::newClassLoader;
+Class*      Classpath::cloneableClass;
 
 
 JavaField*  Classpath::boolValue;
@@ -153,6 +142,7 @@ Class* Classpath::StackOverflowError;
 Class* Classpath::UnknownError;
 Class* Classpath::ClassNotFoundException;
 Class* Classpath::ArithmeticException;
+Class* Classpath::CloneNotSupportedException;
 
 JavaMethod* Classpath::InitInvocationTargetException;
 JavaMethod* Classpath::InitArrayStoreException;
@@ -186,13 +176,14 @@ JavaMethod* Classpath::InitStackOverflowError;
 JavaMethod* Classpath::InitUnknownError;
 JavaMethod* Classpath::InitClassNotFoundException;
 JavaMethod* Classpath::InitArithmeticException;
+JavaMethod* Classpath::InitCloneNotSupportedException;
 JavaMethod* Classpath::InitObject;
 JavaMethod* Classpath::FinalizeObject;
 JavaMethod* Classpath::IntToString;
 
 JavaMethod* Classpath::SystemArraycopy;
-JavaMethod* Classpath::VMSystemArraycopy;
 Class*      Classpath::SystemClass;
+JavaMethod* Classpath::initSystem;
 Class*      Classpath::EnumClass;
 
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
@@ -231,29 +222,25 @@ Class*      Classpath::newReference;
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
-  JavaObjectVMThread* vmth = NULL;
   JavaObject* th = NULL;
   JavaObject* name = NULL;
   llvm_gcroot(Group, 0);
-  llvm_gcroot(vmth, 0);
   llvm_gcroot(th, 0);
   llvm_gcroot(name, 0);
 
+  assert(thName && thName[0] && "Invalid thread name!");
+
   th = newThread->doNew(vm);
   myth->javaThread = th;
-  vmth = (JavaObjectVMThread*)newVMThread->doNew(vm);
+
   name = vm->asciizToStr(thName);
 
-  initThread->invokeIntSpecial(vm, newThread, th, &vmth, &name, 1, 0);
-  vmThread->setInstanceObjectField(th, vmth);
-  assocThread->setInstanceObjectField(vmth, th);
-  running->setInstanceInt8Field(vmth, (uint32)1);
-  JavaObjectVMThread::setVmdata(vmth, myth);
+  // call Thread(ThreadGroup,String) constructor
+  initThread->invokeIntSpecial(vm, newThread, th, &Group, &name);
 
-  group->setInstanceObjectField(th, Group);
-  groupAddThread->invokeIntSpecial(vm, threadGroup, Group, &th);
-
-  finaliseCreateInitialThread->invokeIntStatic(vm, inheritableThreadLocal, &th);
+  // Store reference to the JavaThread for this thread in the 'eetop' field
+  // TODO: Don't do this until we have the tracing handled.
+  // eetop->setInstanceLongField(th, (long)myth);
 }
 
 void Classpath::InitializeThreading(Jnjvm* vm) {
@@ -261,31 +248,33 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   JavaObject* RG = 0;
   JavaObject* SystemGroup = 0;
   JavaObject* systemName = 0;
+  JavaObject* MainGroup = 0;
+  JavaObject* mainName = 0;
   llvm_gcroot(RG, 0);
   llvm_gcroot(SystemGroup, 0);
   llvm_gcroot(systemName, 0);
+  llvm_gcroot(MainGroup, 0);
+  llvm_gcroot(mainName, 0);
 
   // Resolve and initialize classes first.
   newThread->resolveClass();
   newThread->initialiseClass(vm);
 
-  newVMThread->resolveClass();
-  newVMThread->initialiseClass(vm);
-
   threadGroup->resolveClass();
   threadGroup->initialiseClass(vm);
-
-  // Create the main thread
-  RG = rootGroup->getStaticObjectField();
-  assert(RG && "No root group");
-  assert(vm->getMainThread() && "VM did not set its main thread");
-  CreateJavaThread(vm, (JavaThread*)vm->getMainThread(), "main", RG);
 
   // Create the "system" group.
   SystemGroup = threadGroup->doNew(vm);
   initGroup->invokeIntSpecial(vm, threadGroup, SystemGroup);
-  systemName = vm->asciizToStr("system");
-  groupName->setInstanceObjectField(SystemGroup, systemName);
+
+  // Create the "main" group, child of the "system" group.
+  MainGroup = threadGroup->doNew(vm);
+  mainName = vm->asciizToStr("main");
+  initNamedGroup->invokeIntSpecial(vm, threadGroup, MainGroup, &SystemGroup, &mainName);
+
+  // Create the main thread
+  assert(vm->getMainThread() && "VM did not set its main thread");
+  CreateJavaThread(vm, (JavaThread*)vm->getMainThread(), "main", MainGroup);
 
   // Create the finalizer thread.
   assert(vm->getFinalizerThread() && "VM did not set its finalizer thread");
@@ -395,65 +384,6 @@ extern "C" JavaString* Java_java_lang_VMString_intern__Ljava_lang_String_2(
   return res;
 }
 
-extern "C" uint8 Java_java_lang_Class_isArray__(JavaObjectClass* klass) {
-  llvm_gcroot(klass, 0);
-  UserCommonClass* cl = 0;
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  cl = JavaObjectClass::getClass(klass);
-
-  END_NATIVE_EXCEPTION
-
-  return (uint8)cl->isArray();
-}
-
-extern "C" JavaObject* Java_gnu_classpath_VMStackWalker_getCallingClass__() {
-
-  JavaObject* res = 0;
-  llvm_gcroot(res, 0);
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  JavaThread* th = JavaThread::get();
-  UserClass* cl = th->getCallingClassLevel(2);
-  if (cl != NULL) res = cl->getClassDelegatee(th->getJVM());
-
-  END_NATIVE_EXCEPTION
-
-  return res;
-}
-
-extern "C" JavaObject* Java_gnu_classpath_VMStackWalker_getCallingClassLoader__() {
-
-  JavaObject* res = 0;
-  llvm_gcroot(res, 0);
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  JavaThread* th = JavaThread::get();
-  UserClass* cl = th->getCallingClassLevel(2);
-  res = cl->classLoader->getJavaClassLoader();
-
-  END_NATIVE_EXCEPTION
-
-  return res;
-}
-
-extern "C" JavaObject* Java_gnu_classpath_VMStackWalker_firstNonNullClassLoader__() {
-  JavaObject* res = 0;
-  llvm_gcroot(res, 0);
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  JavaThread* th = JavaThread::get();
-  res = th->getNonNullClassLoader();
-
-  END_NATIVE_EXCEPTION
-
-  return res;
-}
-
 extern "C" JavaObject* Java_sun_reflect_Reflection_getCallerClass__I(uint32 index) {
 
   JavaObject* res = 0;
@@ -512,30 +442,6 @@ extern "C" void nativeJavaObjectConstructorTracer(
   JavaObjectConstructor::staticTracer(obj, closure);
 }
 
-extern "C" void nativeJavaObjectVMThreadTracer(
-    JavaObjectVMThread* obj, word_t closure) {
-  JavaObjectVMThread::staticTracer(obj, closure);
-}
-
-extern "C" JavaString* Java_java_lang_VMSystem_getenv__Ljava_lang_String_2(JavaString* str) {
-  JavaString* ret = 0;
-  llvm_gcroot(str, 0);
-  llvm_gcroot(ret, 0);
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  mvm::ThreadAllocator allocator;
-  char* buf = JavaString::strToAsciiz(str, &allocator);
-  char* res = getenv(buf);
-  if (res) {
-    Jnjvm* vm = JavaThread::get()->getJVM();
-    ret = vm->asciizToStr(res);
-  }
-
-  END_NATIVE_EXCEPTION
-
-  return ret;
-}
 
 void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
@@ -566,21 +472,23 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   newThrowable =
     UPCALL_CLASS(loader, "java/lang/Throwable");
 
+  backtrace =
+    UPCALL_FIELD(loader, "java/lang/Throwable",
+        "backtrace", "Ljava/lang/Object;", ACC_VIRTUAL);
+
+  detailMessage =
+    UPCALL_FIELD(loader, "java/lang/Throwable",
+        "detailMessage", "Ljava/lang/String;", ACC_VIRTUAL);
+
   newException =
     UPCALL_CLASS(loader, "java/lang/Exception");
 
-  newPointer32 =
-    UPCALL_CLASS(loader, "gnu/classpath/Pointer32");
-
-  newPointer64 =
-    UPCALL_CLASS(loader, "gnu/classpath/Pointer64");
-
   newDirectByteBuffer =
-    UPCALL_CLASS(loader, "java/nio/DirectByteBufferImpl$ReadWrite");
+    UPCALL_CLASS(loader, "java/nio/DirectByteBuffer");
 
+  //TODO: Revisit this one, verify signature.
   InitDirectByteBuffer =
-    UPCALL_METHOD(loader, "java/nio/DirectByteBufferImpl$ReadWrite", "<init>",
-                  "(Ljava/lang/Object;Lgnu/classpath/Pointer;III)V",
+    UPCALL_METHOD(loader, "java/nio/DirectByteBuffer", "<init>", "(JI)V",
                   ACC_VIRTUAL);
 
   initClass =
@@ -606,7 +514,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   initConstructor =
     UPCALL_METHOD(loader, "java/lang/reflect/Constructor", "<init>",
-                  "(Ljava/lang/Class;I)V", ACC_VIRTUAL);
+    "(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;"
+    "IILjava/lang/String;[B[B)V",
+      ACC_VIRTUAL);
 
   newConstructor =
     UPCALL_CLASS(loader, "java/lang/reflect/Constructor");
@@ -622,7 +532,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   initMethod =
     UPCALL_METHOD(loader, "java/lang/reflect/Method", "<init>",
-                  "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
+                  "(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;"
+                  "Ljava/lang/Class;[Ljava/lang/Class;IILjava/lang/String;"
+                  "[B[B[B)V", ACC_VIRTUAL);
 
   newMethod =
     UPCALL_CLASS(loader, "java/lang/reflect/Method");
@@ -635,7 +547,8 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   initField =
     UPCALL_METHOD(loader, "java/lang/reflect/Field", "<init>",
-                  "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
+                  "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V",
+                  ACC_VIRTUAL);
 
   newField =
     UPCALL_CLASS(loader, "java/lang/reflect/Field");
@@ -650,29 +563,14 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   classArrayClass =
     UPCALL_ARRAY_CLASS(loader, "java/lang/Class", 1);
 
-  newVMThrowable =
-    UPCALL_CLASS(loader, "java/lang/VMThrowable");
-
-  initVMThrowable =
-    UPCALL_METHOD(loader, "java/lang/VMThrowable", "<init>", "()V", ACC_VIRTUAL);
-
-  vmDataVMThrowable =
-    UPCALL_FIELD(loader, "java/lang/VMThrowable", "vmdata", "Ljava/lang/Object;",
-                 ACC_VIRTUAL);
-
   bufferAddress =
     UPCALL_FIELD(loader, "java/nio/Buffer", "address", "Lgnu/classpath/Pointer;",
                  ACC_VIRTUAL);
 
-  dataPointer32 =
-    UPCALL_FIELD(loader, "gnu/classpath/Pointer32", "data", "I", ACC_VIRTUAL);
-
-  dataPointer64 =
-    UPCALL_FIELD(loader, "gnu/classpath/Pointer64", "data", "J", ACC_VIRTUAL);
-
-  vmdataClassLoader =
-    UPCALL_FIELD(loader, "java/lang/ClassLoader", "vmdata", "Ljava/lang/Object;",
-                 ACC_VIRTUAL);
+  // TODO: Resolve how to tie a ClassLoader to its internal representation
+  //vmdataClassLoader =
+  //  UPCALL_FIELD(loader, "java/lang/ClassLoader", "vmdata", "Ljava/lang/Object;",
+  //               ACC_VIRTUAL);
 
   newStackTraceElement =
     UPCALL_CLASS(loader, "java/lang/StackTraceElement");
@@ -682,7 +580,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   initStackTraceElement =
     UPCALL_METHOD(loader,  "java/lang/StackTraceElement", "<init>",
-                  "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Z)V",
+                  "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V",
                   ACC_VIRTUAL);
 
   boolValue =
@@ -739,25 +637,14 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   Classpath::OfObject =
     UPCALL_CLASS(loader, "java/lang/Object");
 
-  vmStackWalker =
-    UPCALL_CLASS(loader, "gnu/classpath/VMStackWalker");
-
   loadInClassLoader =
     UPCALL_METHOD(loader, "java/lang/ClassLoader", "loadClass",
                   "(Ljava/lang/String;)Ljava/lang/Class;", ACC_VIRTUAL);
 
-  JavaMethod* internString =
-    UPCALL_METHOD(loader, "java/lang/VMString", "intern",
-                  "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC);
-  internString->setNative();
-
-  JavaMethod* isArray =
-    UPCALL_METHOD(loader, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);
-  isArray->setNative();
-
   // Make sure classes the JIT optimizes on are loaded.
-  UPCALL_CLASS(loader, "java/lang/VMFloat");
-  UPCALL_CLASS(loader, "java/lang/VMDouble");
+  // TODO: What to do with these? I think we can just remove them...
+  //UPCALL_CLASS(loader, "java/lang/VMFloat");
+  //UPCALL_CLASS(loader, "java/lang/VMDouble");
 
   UPCALL_REFLECT_CLASS_EXCEPTION(loader, InvocationTargetException);
   UPCALL_CLASS_EXCEPTION(loader, ArrayStoreException);
@@ -791,6 +678,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   UPCALL_CLASS_EXCEPTION(loader, UnknownError);
   UPCALL_CLASS_EXCEPTION(loader, ClassNotFoundException);
   UPCALL_CLASS_EXCEPTION(loader, ArithmeticException);
+  UPCALL_CLASS_EXCEPTION(loader, CloneNotSupportedException);
 
   UPCALL_METHOD_EXCEPTION(loader, InvocationTargetException);
   UPCALL_METHOD_EXCEPTION(loader, ArrayStoreException);
@@ -824,6 +712,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   UPCALL_METHOD_EXCEPTION(loader, UnknownError);
   UPCALL_METHOD_EXCEPTION(loader, ClassNotFoundException);
   UPCALL_METHOD_EXCEPTION(loader, ArithmeticException);
+  UPCALL_METHOD_EXCEPTION(loader, CloneNotSupportedException);
 
   UPCALL_METHOD_WITH_EXCEPTION(loader, NoClassDefFoundError);
   UPCALL_METHOD_WITH_EXCEPTION(loader, ExceptionInInitializerError);
@@ -842,45 +731,26 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                                   "(Ljava/lang/Object;ILjava/lang/Object;II)V",
                                   ACC_STATIC);
 
-  VMSystemArraycopy = UPCALL_METHOD(loader, "java/lang/VMSystem", "arraycopy",
-                                  "(Ljava/lang/Object;ILjava/lang/Object;II)V",
-                                  ACC_STATIC);
+  SystemClass = UPCALL_CLASS(loader, "java/lang/System");
+
+  initSystem =
+    UPCALL_METHOD(loader, "java/lang/System", "initializeSystemClass", "()V",
+        ACC_STATIC);
 
   SystemClass = UPCALL_CLASS(loader, "java/lang/System");
   EnumClass = UPCALL_CLASS(loader, "java/lang/Enum");
 
+  cloneableClass = UPCALL_CLASS(loader, "java/lang/Cloneable");
+
   newThread =
     UPCALL_CLASS(loader, "java/lang/Thread");
 
-  newVMThread =
-    UPCALL_CLASS(loader, "java/lang/VMThread");
-
-  assocThread =
-    UPCALL_FIELD(loader, "java/lang/VMThread", "thread", "Ljava/lang/Thread;",
-                 ACC_VIRTUAL);
-
-  vmdataVMThread =
-    UPCALL_FIELD(loader, "java/lang/VMThread", "vmdata", "Ljava/lang/Object;",
-                 ACC_VIRTUAL);
-
-  inheritableThreadLocal =
-    UPCALL_CLASS(loader, "java/lang/InheritableThreadLocal");
-
-  finaliseCreateInitialThread =
-    UPCALL_METHOD(loader, "java/lang/InheritableThreadLocal", "newChildThread",
-                  "(Ljava/lang/Thread;)V", ACC_STATIC);
-
   initThread =
     UPCALL_METHOD(loader, "java/lang/Thread", "<init>",
-                  "(Ljava/lang/VMThread;Ljava/lang/String;IZ)V", ACC_VIRTUAL);
+        "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V", ACC_VIRTUAL);
 
-  initVMThread =
-    UPCALL_METHOD(loader, "java/lang/VMThread", "<init>",
-                  "(Ljava/lang/Thread;)V", ACC_VIRTUAL);
-
-  runVMThread =
-    UPCALL_METHOD(loader, "java/lang/VMThread", "run", "()V", ACC_VIRTUAL);
-
+  runThread =
+    UPCALL_METHOD(loader, "java/lang/Thread", "run", "()V", ACC_VIRTUAL);
 
   groupAddThread =
     UPCALL_METHOD(loader, "java/lang/ThreadGroup", "addThread",
@@ -890,39 +760,32 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/ThreadGroup", "<init>",
                   "()V", ACC_VIRTUAL);
 
+  initNamedGroup =
+    UPCALL_METHOD(loader, "java/lang/ThreadGroup", "<init>",
+                  "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V", ACC_VIRTUAL);
+
   groupName =
     UPCALL_FIELD(loader, "java/lang/ThreadGroup", "name", "Ljava/lang/String;",
                  ACC_VIRTUAL);
-
-  threadName =
-     UPCALL_FIELD(loader, "java/lang/Thread", "name", "Ljava/lang/String;",
-                  ACC_VIRTUAL);
-
-
   priority =
     UPCALL_FIELD(loader,  "java/lang/Thread", "priority", "I", ACC_VIRTUAL);
 
   daemon =
     UPCALL_FIELD(loader, "java/lang/Thread", "daemon", "Z", ACC_VIRTUAL);
 
+  eetop =
+    UPCALL_FIELD(loader, "java/lang/Thread", "eetop", "J", ACC_VIRTUAL);
+
+  threadStatus =
+    UPCALL_FIELD(loader, "java/lang/Thread", "threadStatus", "I", ACC_VIRTUAL);
   group =
     UPCALL_FIELD(loader, "java/lang/Thread", "group",
                  "Ljava/lang/ThreadGroup;", ACC_VIRTUAL);
 
-  running =
-    UPCALL_FIELD(loader, "java/lang/VMThread", "running", "Z", ACC_VIRTUAL);
-
   threadGroup =
     UPCALL_CLASS(loader, "java/lang/ThreadGroup");
 
-  rootGroup =
-    UPCALL_FIELD(loader, "java/lang/ThreadGroup", "root",
-                 "Ljava/lang/ThreadGroup;", ACC_STATIC);
-
-  vmThread =
-    UPCALL_FIELD(loader, "java/lang/Thread", "vmThread",
-                 "Ljava/lang/VMThread;", ACC_VIRTUAL);
-
+  // TODO: Verify this works in OpenJDK, merged from upstream
   getUncaughtExceptionHandler =
     UPCALL_METHOD(loader, "java/lang/Thread", "getUncaughtExceptionHandler",
                   "()Ljava/lang/Thread$UncaughtExceptionHandler;", ACC_VIRTUAL);
@@ -954,54 +817,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   // Don't compile methods here, we still don't know where to allocate Java
   // strings.
 
-  JavaMethod* getEnv =
-    UPCALL_METHOD(loader, "java/lang/VMSystem", "getenv",
-                  "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC);
-  getEnv->setNative();
-
-  JavaMethod* getCallingClass =
-    UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClass",
-                  "()Ljava/lang/Class;", ACC_STATIC);
-  getCallingClass->setNative();
-
-  JavaMethod* getCallingClassLoader =
-    UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "getCallingClassLoader",
-                  "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  getCallingClassLoader->setNative();
-
-  JavaMethod* firstNonNullClassLoader =
-    UPCALL_METHOD(loader, "gnu/classpath/VMStackWalker", "firstNonNullClassLoader",
-                  "()Ljava/lang/ClassLoader;", ACC_STATIC);
-  firstNonNullClassLoader->setNative();
-
   JavaMethod* getCallerClass =
     UPCALL_METHOD(loader, "sun/reflect/Reflection", "getCallerClass",
                   "(I)Ljava/lang/Class;", ACC_STATIC);
   getCallerClass->setNative();
-
-  JavaMethod* postProperties =
-    UPCALL_METHOD(loader, "gnu/classpath/VMSystemProperties", "postInit",
-                  "(Ljava/util/Properties;)V", ACC_STATIC);
-  postProperties->setNative();
-
-  // Also implement these twos, implementation in GNU Classpath 0.97.2 is buggy.
-  JavaMethod* getAnnotation =
-    UPCALL_METHOD(loader, "java/lang/reflect/AccessibleObject", "getAnnotation",
-                  "(Ljava/lang/Class;)Ljava/lang/annotation/Annotation;",
-                  ACC_VIRTUAL);
-  getAnnotation->setNative();
-
-  JavaMethod* getAnnotations =
-    UPCALL_METHOD(loader, "java/lang/reflect/AccessibleObject",
-                  "getDeclaredAnnotations",
-                  "()[Ljava/lang/annotation/Annotation;",
-                  ACC_VIRTUAL);
-  getAnnotations->setNative();
-
-  JavaMethod* getBootPackages =
-    UPCALL_METHOD(loader, "java/lang/VMClassLoader", "getBootPackages",
-                  "()[Ljava/lang/String;", ACC_STATIC);
-  getBootPackages->setNative();
 
   //===----------------------------------------------------------------------===//
   //
@@ -1028,9 +847,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
       (word_t)nativeJavaObjectFieldTracer,
       "nativeJavaObjectFieldTracer");
 
-   newVMThread->getVirtualVT()->setNativeTracer(
-      (word_t)nativeJavaObjectVMThreadTracer,
-      "nativeJavaObjectVMThreadTracer");
+   //TODO: Fix native tracer for java.lang.Thread to not trace through
+   // the eetop field to our internal JavaThread.
+   //newVMThread->getVirtualVT()->setNativeTracer(
+   //   (word_t)nativeJavaObjectVMThreadTracer,
+   //   "nativeJavaObjectVMThreadTracer");
 
   newReference = UPCALL_CLASS(loader, "java/lang/ref/Reference");
 
@@ -1070,7 +891,24 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 }
 
 void Classpath::InitializeSystem(Jnjvm * jvm) {
-  // TODO: Implement me!
+  JavaObject * exc = NULL;
+  llvm_gcroot(exc, 0);
+  TRY {
+    initSystem->invokeIntStatic(jvm, SystemClass);
+  } CATCH {
+    exc = JavaThread::get()->pendingException;
+  } END_CATCH;
+
+  if (exc) {
+    fprintf(stderr, "Exception %s while initializing system.\n",
+        UTF8Buffer(JavaObject::getClass(exc)->name).cString());
+    JavaString * s = (JavaString*)detailMessage->getInstanceObjectField(exc);
+    if (s) {
+      fprintf(stderr, "Exception Message: \"%s\"\n",
+          JavaString::strToAsciiz(s));
+    }
+    abort();
+  }
 }
 
 
