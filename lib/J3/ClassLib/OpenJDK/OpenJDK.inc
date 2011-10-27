@@ -1315,7 +1315,14 @@ JVM_NativePath(char * path) {
  */
 JNIEXPORT jint JNICALL
 JVM_Open(const char *fname, jint flags, jint mode) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  int result = open(fname, flags, mode);
+
+  result = (result == 0) ? -1 : result;
+  RETURN_FROM_JNI(result);
+  END_JNI_EXCEPTION
+
+  return -1;
 }
 
 /*
@@ -1326,7 +1333,12 @@ JVM_Open(const char *fname, jint flags, jint mode) {
  */
 JNIEXPORT jint JNICALL
 JVM_Close(jint fd) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  jint res = close(fd);
+  RETURN_FROM_JNI(res);
+  END_JNI_EXCEPTION
+
+  return -1;
 }
 
 /*
@@ -1342,7 +1354,11 @@ JVM_Close(jint fd) {
  */
 JNIEXPORT jint JNICALL
 JVM_Read(jint fd, char *buf, jint nbytes) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  jint res = read(fd, buf, nbytes);
+  RETURN_FROM_JNI(res);
+  END_JNI_EXCEPTION
+  return -1;
 }
 
 /*
@@ -1356,7 +1372,11 @@ JVM_Read(jint fd, char *buf, jint nbytes) {
  */
 JNIEXPORT jint JNICALL
 JVM_Write(jint fd, char *buf, jint nbytes) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  jint res = write(fd, buf, nbytes);
+  RETURN_FROM_JNI(res);
+  END_JNI_EXCEPTION
+  return -1;
 }
 
 /*
@@ -1365,7 +1385,44 @@ JVM_Write(jint fd, char *buf, jint nbytes) {
  */
 JNIEXPORT jint JNICALL
 JVM_Available(jint fd, jlong *pbytes) {
-  NYI();
+  // From JamVM's JVM_Available implementation, GPLv2
+  BEGIN_JNI_EXCEPTION
+  struct stat sb;
+
+  if(fstat(fd, &sb) == -1)
+    RETURN_FROM_JNI(0);
+
+  switch(sb.st_mode & S_IFMT) {
+    case S_IFCHR:
+    case S_IFIFO:
+    case S_IFSOCK: {
+      int n;
+
+      if(ioctl(fd, TIOCINQ, &n) == -1)
+        RETURN_FROM_JNI(0);
+
+      *pbytes = n;
+      RETURN_FROM_JNI(1);
+    }
+
+    default: {
+      off64_t cur, end;
+
+      if((cur = lseek64(fd, 0, SEEK_CUR)) == -1)
+        RETURN_FROM_JNI(0);
+
+      if((end = lseek64(fd, 0, SEEK_END)) == -1)
+        RETURN_FROM_JNI(0);
+
+      if(lseek64(fd, cur, SEEK_SET) == -1)
+        RETURN_FROM_JNI(0);
+
+      *pbytes = end - cur;
+      RETURN_FROM_JNI(1);
+    }
+  }
+  END_JNI_EXCEPTION
+  return 0;
 }
 
 /*
@@ -1379,7 +1436,11 @@ JVM_Available(jint fd, jlong *pbytes) {
  */
 JNIEXPORT jlong JNICALL
 JVM_Lseek(jint fd, jlong offset, jint whence) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  jlong res = lseek64(fd, offset, whence);
+  RETURN_FROM_JNI(res);
+  END_JNI_EXCEPTION
+  return 0;
 }
 
 /*
