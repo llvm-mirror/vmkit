@@ -1073,3 +1073,4 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 #include "Classpath.inc"
 #include "ClasspathField.inc"
 #include "ClasspathMethod.inc"
+#include "OpenJDK.inc"
