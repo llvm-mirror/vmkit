@@ -554,9 +554,50 @@ JVM_GetCallerClass(JNIEnv *env, int n) {
  * utf: class name
  */
 
+
+const struct {
+  const char * name;
+  char id;
+} static PrimMap[] = {
+  { "boolean", 'Z' },
+  { "byte"   , 'B' },
+  { "char"   , 'C' },
+  { "short"  , 'S' },
+  { "int"    , 'I' },
+  { "long"   , 'J' },
+  { "float"  , 'F' },
+  { "double" , 'D' },
+  { "void"   , 'V' }
+};
+const static unsigned PrimMapSize = sizeof(PrimMap)/sizeof(PrimMap[0]);
+
 JNIEXPORT jclass JNICALL
 JVM_FindPrimitiveClass(JNIEnv *env, const char *utf) {
-  NYI();
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+
+  UserClassPrimitive * prim =  0;
+  for(unsigned i = 0; i < PrimMapSize; ++i) {
+    if(!strcmp(PrimMap[i].name, utf)) {
+      prim = UserClassPrimitive::byteIdToPrimitive(PrimMap[i].id, vm->upcalls);
+      break;
+    }
+  }
+  if (!prim) {
+    fprintf(stderr, "Unsupported primitive \"%s\"!  Missing table entry?\n", utf);
+  }
+  assert(prim && "Invalid Primitive in JVM_FindPrimitiveClass");
+
+  res = (JavaObject*)prim->getClassDelegateePtr(vm);
+  RETURN_FROM_JNI((jclass)res);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
