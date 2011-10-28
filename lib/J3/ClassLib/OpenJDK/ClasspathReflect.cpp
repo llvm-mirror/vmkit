@@ -16,14 +16,14 @@ namespace j3 {
 
 JavaMethod* JavaObjectConstructor::getInternalMethod(JavaObjectConstructor* self) {
   llvm_gcroot(self, 0);
-  UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
+  UserCommonClass* cls = JavaObjectClass::getClass(self->clazz);
   return &(cls->asClass()->virtualMethods[self->slot]);
 }
 
 
 JavaMethod* JavaObjectMethod::getInternalMethod(JavaObjectMethod* self) {
   llvm_gcroot(self, 0);
-  UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
+  UserCommonClass* cls = JavaObjectClass::getClass(self->clazz);
   return &(cls->asClass()->virtualMethods[self->slot]);
 }
 

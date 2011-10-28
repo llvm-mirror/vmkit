@@ -20,41 +20,71 @@ namespace j3 {
 
 class JavaObjectClass : public JavaObject {
 private:
-  JavaObject* signers;
-  JavaObject* pd;
-  UserCommonClass* vmdata;
-  JavaObject* constructor;
+  JavaObject* cachedConstructor;
+  JavaObject* newInstanceCallerCache;
+  JavaString* name;
+  JavaObject* declaredFields;
+  JavaObject* publicFields;
+  JavaObject* declaredMethods;
+  JavaObject* publicMethods;
+  JavaObject* declaredConstructors;
+  JavaObject* publicConstructors;
+  JavaObject* declaredPublicFields;
+  uint32_t classRedefinedCount;
+  uint32_t lastRedefinedCount;
+  JavaObject* genericInfo;
+  JavaObject* enumConstants;
+  JavaObject* enumConstantDictionary;
+  JavaObject* annotations;
+  JavaObject* declaredAnnotations;
+  JavaObject* annotationType;
 
 public:
 
   static UserCommonClass* getClass(JavaObjectClass* cl) {
     llvm_gcroot(cl, 0);
-    return cl->vmdata;
+    UNIMPLEMENTED();
+    return NULL;
   }
 
   static void setClass(JavaObjectClass* cl, UserCommonClass* vmdata) {
     llvm_gcroot(cl, 0);
-    cl->vmdata = vmdata;
+    UNIMPLEMENTED();
   }
 
   static void setProtectionDomain(JavaObjectClass* cl, JavaObject* pd) {
     llvm_gcroot(cl, 0);
     llvm_gcroot(pd, 0);
-    mvm::Collector::objectReferenceWriteBarrier(
-        (gc*)cl, (gc**)&(cl->pd), (gc*)pd);
+    UNIMPLEMENTED();
   }
 
   static JavaObject* getProtectionDomain(JavaObjectClass* cl) {
     llvm_gcroot(cl, 0);
-    return cl->pd;
+    UNIMPLEMENTED();
+    return NULL;
   }
 
   static void staticTracer(JavaObjectClass* obj, word_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->pd, closure);
-    mvm::Collector::markAndTrace(obj, &obj->signers, closure);
-    mvm::Collector::markAndTrace(obj, &obj->constructor, closure);
-    if (obj->vmdata) {
-      JavaObject** Obj = obj->vmdata->classLoader->getJavaClassLoaderPtr();
+    mvm::Collector::markAndTrace(obj, &obj->cachedConstructor, closure);
+    mvm::Collector::markAndTrace(obj, &obj->newInstanceCallerCache, closure);
+    mvm::Collector::markAndTrace(obj, &obj->name, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaredFields, closure);
+    mvm::Collector::markAndTrace(obj, &obj->publicFields, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaredMethods, closure);
+    mvm::Collector::markAndTrace(obj, &obj->publicMethods, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaredConstructors, closure);
+    mvm::Collector::markAndTrace(obj, &obj->publicConstructors, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaredPublicFields, closure);
+    mvm::Collector::markAndTrace(obj, &obj->genericInfo, closure);
+    mvm::Collector::markAndTrace(obj, &obj->enumConstants, closure);
+    mvm::Collector::markAndTrace(obj, &obj->enumConstantDictionary, closure);
+    mvm::Collector::markAndTrace(obj, &obj->annotations, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
+    mvm::Collector::markAndTrace(obj, &obj->annotationType, closure);
+
+    UserCommonClass * cl = getClass(obj);
+    if (cl) {
+      JavaObject** Obj = cl->classLoader->getJavaClassLoaderPtr();
       if (*Obj) mvm::Collector::markAndTraceRoot(Obj, closure);
     }
   }
@@ -62,27 +92,47 @@ public:
 
 class JavaObjectField : public JavaObject {
 private:
-  uint8 flag;
-  JavaObjectClass* declaringClass;
+  JavaObjectClass * clazz;
+  uint32_t slot;
   JavaObject* name;
-  uint32 slot;
+  JavaObject* type;
+  uint32_t modifiers;
+  JavaString* signature;
+  JavaObject* genericInfo;
+  JavaObject* annotations;
+  JavaObject* fieldAccessor;
+  JavaObject* overrideFieldAccessor;
+  JavaObject* root;
+  JavaObject* securityCheckCache;
+  JavaObject* securityCheckTargetClassCache;
+  JavaObject* declaredAnnotations;
 
 public:
 
   static void staticTracer(JavaObjectField* obj, word_t closure) {
+    mvm::Collector::markAndTrace(obj, &obj->clazz, closure);
     mvm::Collector::markAndTrace(obj, &obj->name, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
+    mvm::Collector::markAndTrace(obj, &obj->type, closure);
+    mvm::Collector::markAndTrace(obj, &obj->signature, closure);
+    mvm::Collector::markAndTrace(obj, &obj->genericInfo, closure);
+    mvm::Collector::markAndTrace(obj, &obj->annotations, closure);
+    mvm::Collector::markAndTrace(obj, &obj->fieldAccessor, closure);
+    mvm::Collector::markAndTrace(obj, &obj->overrideFieldAccessor, closure);
+    mvm::Collector::markAndTrace(obj, &obj->root, closure);
+    mvm::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
+    mvm::Collector::markAndTrace(obj, &obj->securityCheckTargetClassCache, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
   }
 
   static JavaField* getInternalField(JavaObjectField* self) {
     llvm_gcroot(self, 0);
-    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->clazz);
     return &(cls->asClass()->virtualFields[self->slot]);
   }
 
   static UserClass* getClass(JavaObjectField* self) {
     llvm_gcroot(self, 0);
-    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->clazz);
     return cls->asClass();
   }
 
@@ -90,23 +140,49 @@ public:
 
 class JavaObjectMethod : public JavaObject {
 private:
-  uint8 flag;
-  JavaObjectClass* declaringClass;
-  JavaObject* name;
+  JavaObjectClass* clazz;
   uint32 slot;
+  JavaObject* name;
+  JavaObject* returnType;
+  JavaObject* parameterTypes;
+  JavaObject* exceptionTypes;
+  uint32_t modifiers;
+  JavaString* Signature;
+  JavaObject* genericInfo;
+  JavaObject* annotations;
+  JavaObject* parameterAnnotations;
+  JavaObject* annotationDefault;
+  JavaObject* methodAccessor;
+  JavaObject* root;
+  JavaObject* securityCheckCache;
+  JavaObject* securityCheckTargetClassCache;
+  JavaObject* declaredAnnotations;
 
 public:
 
   static void staticTracer(JavaObjectMethod* obj, word_t closure) {
+    mvm::Collector::markAndTrace(obj, &obj->clazz, closure);
     mvm::Collector::markAndTrace(obj, &obj->name, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
+    mvm::Collector::markAndTrace(obj, &obj->returnType, closure);
+    mvm::Collector::markAndTrace(obj, &obj->parameterTypes, closure);
+    mvm::Collector::markAndTrace(obj, &obj->exceptionTypes, closure);
+    mvm::Collector::markAndTrace(obj, &obj->Signature, closure);
+    mvm::Collector::markAndTrace(obj, &obj->genericInfo, closure);
+    mvm::Collector::markAndTrace(obj, &obj->annotations, closure);
+    mvm::Collector::markAndTrace(obj, &obj->parameterAnnotations, closure);
+    mvm::Collector::markAndTrace(obj, &obj->annotationDefault, closure);
+    mvm::Collector::markAndTrace(obj, &obj->methodAccessor, closure);
+    mvm::Collector::markAndTrace(obj, &obj->root, closure);
+    mvm::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
+    mvm::Collector::markAndTrace(obj, &obj->securityCheckTargetClassCache, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
   }
 
   static JavaMethod* getInternalMethod(JavaObjectMethod* self);
 
   static UserClass* getClass(JavaObjectMethod* self) {
     llvm_gcroot(self, 0);
-    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->clazz);
     return cls->asClass();
   }
 
@@ -114,51 +190,51 @@ public:
 
 class JavaObjectConstructor : public JavaObject {
 private:
-  uint8 flag;
-  JavaObjectClass* declaringClass;
+  JavaObjectClass* clazz;
   uint32 slot;
+  JavaObject* parameterTypes;
+  JavaObject* exceptionTypes;
+  uint32_t modifiers;
+  JavaString* signature;
+  JavaObject* genericInfo;
+  JavaObject* annotations;
+  JavaObject* parameterAnnotations;
+  JavaObject* securityCheckCache;
+  JavaObject* constructorAccessor;
+  JavaObject* root;
+  JavaObject* declaredAnnotations;
 
 public:
   static void staticTracer(JavaObjectConstructor* obj, word_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->declaringClass, closure);
+    mvm::Collector::markAndTrace(obj, &obj->clazz, closure);
+    mvm::Collector::markAndTrace(obj, &obj->parameterTypes, closure);
+    mvm::Collector::markAndTrace(obj, &obj->exceptionTypes, closure);
+    mvm::Collector::markAndTrace(obj, &obj->signature, closure);
+    mvm::Collector::markAndTrace(obj, &obj->genericInfo, closure);
+    mvm::Collector::markAndTrace(obj, &obj->annotations, closure);
+    mvm::Collector::markAndTrace(obj, &obj->parameterAnnotations, closure);
+    mvm::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
+    mvm::Collector::markAndTrace(obj, &obj->constructorAccessor, closure);
+    mvm::Collector::markAndTrace(obj, &obj->root, closure);
+    mvm::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
   }
 
   static JavaMethod* getInternalMethod(JavaObjectConstructor* self);
 
   static UserClass* getClass(JavaObjectConstructor* self) {
     llvm_gcroot(self, 0);
-    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->clazz);
     return cls->asClass();
   }
 
 };
 
-class JavaObjectVMThread : public JavaObject {
-private:
-  JavaObject* thread;
-  bool running;
-  JavaThread* vmdata;
-
-public:
-  static void staticTracer(JavaObjectVMThread* obj, word_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->thread, closure);
-  }
-
-  static void setVmdata(JavaObjectVMThread* vmthread,
-                        JavaThread* internal_thread) {
-    llvm_gcroot(vmthread, 0);
-    vmthread->vmdata = internal_thread;
-  }
-
-};
-
-
 class JavaObjectThrowable : public JavaObject {
 private:
+  JavaObject* backtrace;
   JavaObject* detailedMessage;
   JavaObject* cause;
   JavaObject* stackTrace;
-  JavaObject* vmState;
 
 public:
 
@@ -192,7 +268,8 @@ class JavaObjectReference : public JavaObject {
 private:
   JavaObject* referent;
   JavaObject* queue;
-  JavaObject* nextOnQueue;
+  JavaObject* next;
+  JavaObject* discovered;
 
 public:
   static void init(JavaObjectReference* self, JavaObject* r, JavaObject* q) {
