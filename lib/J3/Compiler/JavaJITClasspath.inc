@@ -99,7 +99,7 @@ void JavaJIT::lowerArraycopy(std::vector<Value*>& args) {
   // Block bb7 (label_bb7)
   currentBlock = label_bb7;
   Value* VTArgs[1] = { Constant::getNullValue(intrinsics->VTType) };
-  throwRuntimeException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 1);
+  throwException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 1);
    
 
   

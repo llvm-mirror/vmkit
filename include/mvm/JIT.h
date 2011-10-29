@@ -112,10 +112,6 @@ public:
   llvm::Function* FieldWriteBarrierFunction;
   llvm::Function* NonHeapWriteBarrierFunction;
 
-  llvm::Function* SetjmpFunction;
-  llvm::Function* RegisterSetjmpFunction;
-  llvm::Function* UnregisterSetjmpFunction;
-
   llvm::Constant* constantInt8Zero;
   llvm::Constant* constantZero;
   llvm::Constant* constantOne;

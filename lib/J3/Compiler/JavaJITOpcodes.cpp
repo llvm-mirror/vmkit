@@ -712,7 +712,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           BranchInst::Create(endBlock, exceptionBlock, res, currentBlock);
           
           currentBlock = exceptionBlock;
-          throwRuntimeException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 2);
+          throwException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 2);
 
           currentBlock = endBlock;
         }
@@ -1004,7 +1004,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
           BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
           currentBlock = ifTrue;
-          throwRuntimeException(intrinsics->ArithmeticExceptionFunction, 0, 0);
+          throwException(intrinsics->ArithmeticExceptionFunction, 0, 0);
           currentBlock = ifFalse;  
         }
         Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val2,
@@ -1042,7 +1042,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
           BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
           currentBlock = ifTrue;
-          throwRuntimeException(intrinsics->ArithmeticExceptionFunction, 0, 0);
+          throwException(intrinsics->ArithmeticExceptionFunction, 0, 0);
           currentBlock = ifFalse;
         }
         push(BinaryOperator::CreateSDiv(val1, val2, "", currentBlock),
@@ -1081,7 +1081,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
           BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
           currentBlock = ifTrue;
-          throwRuntimeException(intrinsics->ArithmeticExceptionFunction, 0, 0);
+          throwException(intrinsics->ArithmeticExceptionFunction, 0, 0);
           currentBlock = ifFalse;
         }
         Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val2,
@@ -1114,7 +1114,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
           BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
           currentBlock = ifTrue;
-          throwRuntimeException(intrinsics->ArithmeticExceptionFunction, 0, 0);
+          throwException(intrinsics->ArithmeticExceptionFunction, 0, 0);
           currentBlock = ifFalse;
         }
         push(BinaryOperator::CreateSRem(val1, val2, "", currentBlock),
@@ -2131,7 +2131,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
           BranchInst::Create(BB1, BB2, cmp, currentBlock);
           currentBlock = BB1;
-          throwRuntimeException(intrinsics->NegativeArraySizeExceptionFunction, arg1);
+          throwException(intrinsics->NegativeArraySizeExceptionFunction, arg1);
           currentBlock = BB2;
         
           cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_SGT, arg1,
@@ -2142,7 +2142,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
           BranchInst::Create(BB1, BB2, cmp, currentBlock);
           currentBlock = BB1;
-          throwRuntimeException(intrinsics->OutOfMemoryErrorFunction, arg1);
+          throwException(intrinsics->OutOfMemoryErrorFunction, arg1);
           currentBlock = BB2;
         }
         
@@ -2219,7 +2219,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
           BranchInst::Create(endCheckcast, ifFalse, cmp, currentBlock);
           currentBlock = exceptionCheckcast;
-          throwRuntimeException(intrinsics->ClassCastExceptionFunction, args, 2);
+          throwException(intrinsics->ClassCastExceptionFunction, args, 2);
           currentBlock = ifFalse;
         } else {
           BasicBlock* ifFalse = createBasicBlock("false type compare");

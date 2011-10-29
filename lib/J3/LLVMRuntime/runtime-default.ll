@@ -166,7 +166,7 @@ declare %JavaClass* @initialisationCheck(%JavaClass*) readnone
 ;;; forceInitialisationCheck - Force to check initialization. The difference
 ;;; between this function and the initialisationCheck function is that the
 ;;; latter is readnone and can thus be removed. This function is removed
-;;; by J3 after the GVN pass, therefore it does not have an actual
+;;; by Jnjvm after the GVN pass, therefore it does not have an actual
 ;;; implementation.
 declare void @forceInitialisationCheck(%JavaClass*)
 
@@ -177,10 +177,10 @@ declare void @forceInitialisationCheck(%JavaClass*)
 declare void @forceLoadedCheck(%JavaCommonClass*)
 
 ;;; getConstantPoolAt - Get the value in the constant pool of this class.
-;;; This function is removed by J3's LLVM pass, therefore it does
+;;; This function is removed by Jnjvm after the GVn pass, therefore it does
 ;;; not have an actual implementation.
 declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i8**,
-                               %JavaClass*, i32, ...)
+                               %JavaClass*, i32, ...) readnone
 
 ;;; j3VirtualTableLookup - Look up the offset in a virtual table of a
 ;;; specific function.

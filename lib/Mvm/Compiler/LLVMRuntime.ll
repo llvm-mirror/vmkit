@@ -68,9 +68,3 @@ declare void @addFinalizationCandidate(i8*)
 declare void @arrayWriteBarrier(i8*, i8**, i8*)
 declare void @fieldWriteBarrier(i8*, i8**, i8*)
 declare void @nonHeapWriteBarrier(i8**, i8*)
-
-
-
-declare i32 @_setjmp(i8*) nounwind
-declare void @registerSetjmp(i8*) nounwind
-declare void @unregisterSetjmp(i8*) nounwind
