@@ -29,8 +29,6 @@ extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
 
   void* res = 0;
 
-  BEGIN_NATIVE_EXCEPTION(1)
-  
   UserConstantPool* ctpInfo = caller->getConstantPool();
   if (ctpInfo->ctpRes[index]) {
     res = ctpInfo->ctpRes[index];
@@ -45,15 +43,6 @@ extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
     
     ctpInfo->ctpRes[index] = (void*)res;
   }
-  
-    
-  END_NATIVE_EXCEPTION
-
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (JavaMethod*)obj;
   return res;
 }
 
@@ -61,8 +50,6 @@ extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
 extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index) {
   
   void* res = 0;
-  
-  BEGIN_NATIVE_EXCEPTION(1)
 
   UserConstantPool* ctpInfo = caller->getConstantPool();
   if (ctpInfo->ctpRes[index]) {
@@ -83,13 +70,6 @@ extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index) {
     res = (void*)field->ptrOffset;
   }
 
-  END_NATIVE_EXCEPTION
-
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (void*)obj;
   return res;
 }
 
@@ -97,8 +77,6 @@ extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index) {
 extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
   
   void* res = 0;
-  
-  BEGIN_NATIVE_EXCEPTION(1)
   
   UserConstantPool* ctpInfo = caller->getConstantPool();
   
@@ -128,13 +106,6 @@ extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
     res = ptr;
   }
 
-  END_NATIVE_EXCEPTION
-
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (void*)obj;
   return res;
 }
 
@@ -144,8 +115,6 @@ extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
   llvm_gcroot(obj, 0);
   uint32 res = 0;
   
-  BEGIN_NATIVE_EXCEPTION(1)
-    
   UserCommonClass* cl = 0;
   const UTF8* utf8 = 0;
   Signdef* sign = 0;
@@ -173,8 +142,6 @@ extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
 
   res = dmeth->offset;
 
-  END_NATIVE_EXCEPTION
-
   return res;
 }
 
@@ -183,8 +150,6 @@ extern "C" void* j3ClassLookup(UserClass* caller, uint32 index) {
   
   void* res = 0;
   
-  BEGIN_NATIVE_EXCEPTION(1)
-   
   UserConstantPool* ctpInfo = caller->getConstantPool();
   UserCommonClass* cl = ctpInfo->loadClass(index);
   // We can not initialize here, because bytecodes such as CHECKCAST
@@ -202,50 +167,20 @@ extern "C" void* j3ClassLookup(UserClass* caller, uint32 index) {
       cl->classLoader->constructArray(arrayName)->virtualVT;
   }
 
-  END_NATIVE_EXCEPTION
-  
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (void*)obj;
   return res;
 }
 
 // Calls Java code.
 // Throws if initializing the class throws an exception.
 extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass* cl) {
-  BEGIN_NATIVE_EXCEPTION(1)
- 
   cl->resolveClass();
   cl->initialiseClass(JavaThread::get()->getJVM());
-  
-  END_NATIVE_EXCEPTION
-
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (UserCommonClass*)obj;
   return cl;
 }
 
 // Calls Java code.
 extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl) {
-  JavaObject* res = 0;
-  llvm_gcroot(res, 0);
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  res = cl->getClassDelegatee(vm);
-  END_NATIVE_EXCEPTION
-  
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return obj;
-  return res;
+  return cl->getClassDelegatee(JavaThread::get()->getJVM());
 }
 
 // Throws if one of the dimension is negative.
@@ -287,8 +222,6 @@ extern "C" JavaObject* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
 
-  BEGIN_NATIVE_EXCEPTION(1)
-
   va_list ap;
   va_start(ap, len);
   mvm::ThreadAllocator allocator;
@@ -299,8 +232,6 @@ extern "C" JavaObject* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   res = multiCallNewIntern(cl, len, dims, vm);
 
-  END_NATIVE_EXCEPTION
-
   return res;
 }
 
@@ -310,7 +241,6 @@ extern "C" JavaVirtualTable* j3GetArrayClass(UserClass* caller,
                                              JavaVirtualTable** VT) {
   JavaVirtualTable* res = 0;
   assert(VT && "Incorrect call to j3GetArrayClass");
-  BEGIN_NATIVE_EXCEPTION(1)
   
   UserConstantPool* ctpInfo = caller->getConstantPool();
   UserCommonClass* cl = ctpInfo->loadClass(index);
@@ -322,13 +252,6 @@ extern "C" JavaVirtualTable* j3GetArrayClass(UserClass* caller,
   res = JCL->constructArray(arrayName)->virtualVT;
   *VT = res;
 
-  END_NATIVE_EXCEPTION
-
-  // Since the function is marked readnone, LLVM may move it after the
-  // exception check. Therefore, we trick LLVM to check the return value of the
-  // function.
-  JavaObject* obj = JavaThread::get()->pendingException;
-  if (obj) return (JavaVirtualTable*)obj;
   return res;
 }
 
@@ -377,144 +300,47 @@ extern "C" void j3JavaObjectRelease(JavaObject* obj) {
   JavaObject::release(obj);
 }
 
-// Does not call any Java code. Can not yield a GC.
 extern "C" void j3ThrowException(JavaObject* obj) {
   llvm_gcroot(obj, 0);
-  return JavaThread::get()->throwException(obj);
+  JavaThread::get()->throwException(obj);
+  UNREACHABLE();
 }
 
-// Creates a Java object and then throws it.
 extern "C" JavaObject* j3NullPointerException() {
-  JavaObject *exc = 0;
-  llvm_gcroot(exc, 0);
-  JavaThread *th = JavaThread::get();
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  
-  exc = th->getJVM()->CreateNullPointerException();
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
-  return exc;
+  return JavaThread::get()->getJVM()->CreateNullPointerException();
 }
 
-// Creates a Java object and then throws it.
 extern "C" JavaObject* j3NegativeArraySizeException(sint32 val) {
-  JavaObject *exc = 0;
-  llvm_gcroot(exc, 0);
-  JavaThread *th = JavaThread::get();
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  
-  exc = th->getJVM()->CreateNegativeArraySizeException();
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
-  return exc;
+  return JavaThread::get()->getJVM()->CreateNegativeArraySizeException();
 }
 
-// Creates a Java object and then throws it.
 extern "C" JavaObject* j3OutOfMemoryError(sint32 val) {
-  JavaObject *exc = 0;
-  llvm_gcroot(exc, 0);
-  JavaThread *th = JavaThread::get();
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  
-  exc = th->getJVM()->CreateOutOfMemoryError();
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
-  return exc;
+  return JavaThread::get()->getJVM()->CreateOutOfMemoryError();
 }
 
-// Creates a Java object and then throws it.
 extern "C" JavaObject* j3StackOverflowError() {
-  JavaObject *exc = 0;
-  llvm_gcroot(exc, 0);
-  JavaThread *th = JavaThread::get();
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  
-  exc = th->getJVM()->CreateStackOverflowError();
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
-  return exc;
+  return JavaThread::get()->getJVM()->CreateStackOverflowError();
 }
 
-// Creates a Java object and then throws it.
 extern "C" JavaObject* j3ArithmeticException() {
-  JavaObject *exc = 0;
-  llvm_gcroot(exc, 0);
-  JavaThread *th = JavaThread::get();
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  
-  exc = th->getJVM()->CreateArithmeticException();
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
-  return exc;
+  return JavaThread::get()->getJVM()->CreateArithmeticException();
 }
 
-// Creates a Java object and then throws it.
 extern "C" JavaObject* j3ClassCastException(JavaObject* obj,
                                             UserCommonClass* cl) {
-  JavaObject *exc = 0;
-  llvm_gcroot(obj, 0);
-  llvm_gcroot(exc, 0);
-  
-  JavaThread *th = JavaThread::get();
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  
-  exc = th->getJVM()->CreateClassCastException(obj, cl);
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
-  return exc;
+  llvm_gcroot(obj, 0);  
+  return JavaThread::get()->getJVM()->CreateClassCastException(obj, cl);
 }
 
-// Creates a Java object and then throws it.
 extern "C" JavaObject* j3IndexOutOfBoundsException(JavaObject* obj,
                                                    sint32 index) {
-  JavaObject *exc = 0;
   llvm_gcroot(obj, 0);
-  llvm_gcroot(exc, 0);
-  
-  JavaThread *th = JavaThread::get();
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  
-  exc = th->getJVM()->CreateIndexOutOfBoundsException(index);
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
-  return exc;
+  return JavaThread::get()->getJVM()->CreateIndexOutOfBoundsException(index);
 }
 
-// Creates a Java object and then throws it.
 extern "C" JavaObject* j3ArrayStoreException(JavaVirtualTable* VT,
                                              JavaVirtualTable* VT2) {
-  JavaObject *exc = 0;
-  llvm_gcroot(exc, 0);
-  JavaThread *th = JavaThread::get();
-
-  BEGIN_NATIVE_EXCEPTION(1)
-  exc = th->getJVM()->CreateArrayStoreException(VT);
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
-  return exc;
+  return JavaThread::get()->getJVM()->CreateArrayStoreException(VT);
 }
 
 // Create an exception then throws it.
@@ -522,30 +348,18 @@ extern "C" void j3ThrowExceptionFromJIT() {
   JavaObject *exc = 0;
   llvm_gcroot(exc, 0);
   JavaThread *th = JavaThread::get();
-  
-  BEGIN_NATIVE_EXCEPTION(1)
-
   JavaMethod* meth = th->getCallingMethodLevel(0);
   exc = th->getJVM()->CreateUnsatisfiedLinkError(meth);
-
-  END_NATIVE_EXCEPTION
-
-  th->pendingException = exc;
+  j3ThrowException(exc);
 }
 
 extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {
   
   JavaString** str = 0;
-  
-  BEGIN_NATIVE_EXCEPTION(1)
-  
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
   str = cl->classLoader->UTF8ToStr(utf8);
   ctpInfo->ctpRes[index] = str;
-  
-  END_NATIVE_EXCEPTION
-
   return (void*)str;
 }
 
@@ -555,8 +369,6 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   UserCommonClass* cl = JavaObject::getClass(obj);
   void* result = NULL;
   
-  BEGIN_NATIVE_EXCEPTION(1)
-
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
   ++Walker; // Remove the stub.
@@ -610,16 +422,12 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
     }
   }
 
-  END_NATIVE_EXCEPTION
-
   return result;
 }
 
 extern "C" void* j3ResolveStaticStub() {
   JavaThread *th = JavaThread::get();
   void* result = NULL;
-  
-  BEGIN_NATIVE_EXCEPTION(1)
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
@@ -647,16 +455,12 @@ extern "C" void* j3ResolveStaticStub() {
   // Update the entry in the constant pool.
   ctpInfo->ctpRes[ctpIndex] = result;
 
-  END_NATIVE_EXCEPTION
-
   return result;
 }
 
 extern "C" void* j3ResolveSpecialStub() {
   JavaThread *th = JavaThread::get();
   void* result = NULL;
-  
-  BEGIN_NATIVE_EXCEPTION(1)
 
   // Lookup the caller of this class.
   mvm::StackWalker Walker(th);
@@ -691,8 +495,6 @@ extern "C" void* j3ResolveSpecialStub() {
     
   // Update the entry in the constant pool.
   ctpInfo->ctpRes[ctpIndex] = result;
-
-  END_NATIVE_EXCEPTION
 
   return result;
 }

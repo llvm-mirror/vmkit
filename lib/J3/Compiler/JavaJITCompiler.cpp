@@ -323,7 +323,7 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth, Class* customizeFor
   mvm::MvmModule::protectIR();
   Function* func = parseFunction(meth, customizeFor);
   void* res = executionEngine->getPointerToGlobal(func);
- 
+
   if (!func->isDeclaration()) {
     llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*func);
   

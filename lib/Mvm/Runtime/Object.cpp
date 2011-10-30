@@ -38,6 +38,14 @@ extern "C" void printObject(void* ptr) {
 extern "C" void EmptyDestructor() {
 }
 
+extern "C" void registerSetjmp(ExceptionBuffer* buffer) {
+  buffer->init();
+}
+
+extern "C" void unregisterSetjmp(ExceptionBuffer* buffer) {
+  buffer->remove();
+}
+
 void VirtualMachine::waitForExit() {   
   threadLock.lock();
   

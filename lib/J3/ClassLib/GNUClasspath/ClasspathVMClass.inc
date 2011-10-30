@@ -593,7 +593,7 @@ JavaObject* throwable) {
   llvm_gcroot(throwable, 0);
 
   assert(throwable && "Using internal VM throw exception without exception");
-  JavaThread::get()->pendingException = (JavaObject*)throwable;
+  JavaThread::get()->throwException(throwable);
 }
 
 JNIEXPORT ArrayObject* Java_java_lang_VMClass_getDeclaredAnnotations(
