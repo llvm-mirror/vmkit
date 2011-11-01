@@ -480,7 +480,18 @@ JVM_ResumeThread(JNIEnv *env, jobject thread) {
 
 JNIEXPORT void JNICALL
 JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio) {
-  NYI();
+  JavaObject * T;
+  llvm_gcroot(T, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm * vm = th->getJVM();
+  T = *(JavaObject**)thread;
+
+  vm->upcalls->priority->setInstanceInt32Field(T, prio);
+
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT void JNICALL
