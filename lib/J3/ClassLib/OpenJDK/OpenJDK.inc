@@ -7,17 +7,19 @@
 //===----------------------------------------------------------------------===//
 
 #include "jvm.h"
-#include "Reader.h"
+
+#include "ArrayCopy.inc"
 #include "JavaConstantPool.h"
+#include "Reader.h"
 #include "SetProperties.inc"
 
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <errno.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
 #define NYI() \
   do{ assert(0 && "Not yet implemented!"); abort(); } while(0)
@@ -215,7 +217,22 @@ JVM_NanoTime(JNIEnv *env, jclass ignored) {
 JNIEXPORT void JNICALL
 JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject jsrc, jint sstart,
               jobject jdst, jint dstart, jint len) {
-  NYI();
+  JavaObject *src = 0;
+  JavaObject *dst = 0;
+  JavaObject* cur = 0;
+  llvm_gcroot(src, 0);
+  llvm_gcroot(dst, 0);
+  llvm_gcroot(cur, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  src = *(JavaObject**)jsrc;
+  dst = *(JavaObject**)jdst;
+
+  ArrayCopy(src, sstart, dst, dstart, len);
+
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT jobject JNICALL
