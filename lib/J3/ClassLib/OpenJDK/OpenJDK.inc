@@ -1143,18 +1143,46 @@ JNIEXPORT jstring JNICALL JVM_ConstantPoolGetUTF8At
 JNIEXPORT jobject JNICALL
 JVM_DoPrivileged(JNIEnv *env, jclass cls,
                  jobject action, jobject context, jboolean wrapException) {
-  NYI();
+  JavaObject * obj = 0;
+  JavaObject * res = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(res, 0);
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(action);
+
+  obj = *(JavaObject**)action;
+
+  Jnjvm* vm = th->getJVM();
+
+  // For now, we don't do anything special,
+  // just call the requested 'run()' method...
+  UserClass * cl = JavaObject::getClass(obj)->asClass();
+  const UTF8 * runName = cl->classLoader->hashUTF8->lookupAsciiz("run");
+  const UTF8 * runType = cl->classLoader->hashUTF8->lookupAsciiz("()Ljava/lang/Object;");
+  assert(cl); assert(runName); assert(runType);
+
+  JavaMethod * meth = cl->lookupMethodDontThrow(runName, runType, false, true, 0);
+  assert(meth);
+
+  res = meth->invokeJavaObjectVirtual(vm, cl, obj, obj);
+
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(res));
+
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT jobject JNICALL
 JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls) {
-  NYI();
+  // No AccessControlContext supported yet
+  return NULL;
 }
 
 
 JNIEXPORT jobject JNICALL
 JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls) {
-  NYI();
+  // No AccessControlContext supported yet
+  return NULL;
 }
 
 /*
