@@ -468,6 +468,8 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   newClass =
     UPCALL_CLASS(loader, "java/lang/Class");
+  // Add space for extra fields, see ClasspathReflect.h
+  newClass->virtualSize += 2*sizeof(void*);
 
   newThrowable =
     UPCALL_CLASS(loader, "java/lang/Throwable");

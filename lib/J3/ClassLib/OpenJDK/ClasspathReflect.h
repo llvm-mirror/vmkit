@@ -15,6 +15,7 @@
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaString.h"
 
 namespace j3 {
 
@@ -38,30 +39,32 @@ private:
   JavaObject* annotations;
   JavaObject* declaredAnnotations;
   JavaObject* annotationType;
+  // Extra fields added by VM
+  UserCommonClass * internalClass;
+  JavaObject * pd;
 
 public:
 
   static UserCommonClass* getClass(JavaObjectClass* cl) {
     llvm_gcroot(cl, 0);
-    UNIMPLEMENTED();
-    return NULL;
+    return cl->internalClass;
   }
 
   static void setClass(JavaObjectClass* cl, UserCommonClass* vmdata) {
     llvm_gcroot(cl, 0);
-    UNIMPLEMENTED();
+    cl->internalClass = vmdata;
   }
 
   static void setProtectionDomain(JavaObjectClass* cl, JavaObject* pd) {
     llvm_gcroot(cl, 0);
     llvm_gcroot(pd, 0);
-    UNIMPLEMENTED();
+    mvm::Collector::objectReferenceWriteBarrier(
+        (gc*)cl, (gc**)&(cl->pd), (gc*)pd);
   }
 
   static JavaObject* getProtectionDomain(JavaObjectClass* cl) {
     llvm_gcroot(cl, 0);
-    UNIMPLEMENTED();
-    return NULL;
+    return cl->pd;
   }
 
   static void staticTracer(JavaObjectClass* obj, word_t closure) {
