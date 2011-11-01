@@ -821,7 +821,20 @@ JVM_GetClassInterfaces(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jobject JNICALL
 JVM_GetClassLoader(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObject * Cl = *(JavaObject**)cls;
+  JavaObject * res = 0;
+  llvm_gcroot(Cl, 0);
+  llvm_gcroot(res, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  res = cl->classLoader->getJavaClassLoader();
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(res));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jboolean JNICALL
