@@ -165,7 +165,28 @@ JVM_Clone(JNIEnv *env, jobject obj) {
  */
 JNIEXPORT jstring JNICALL
 JVM_InternString(JNIEnv *env, jstring _str) {
-  NYI();
+  JavaString * str = *(JavaString**)_str;
+  const ArrayUInt16* array = 0;
+  JavaString * res = 0;
+  llvm_gcroot(str, 0);
+  llvm_gcroot(array, 0);
+  llvm_gcroot(res, 0);
+
+  // If already intern'd, just return.
+  if(str->getVirtualTable() == JavaString::internStringVT)
+    return _str;
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  array = JavaString::strToArray(str, vm);
+  res = vm->constructString(array);
+
+  RETURN_FROM_JNI((jstring)th->pushJNIRef(res))
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
@@ -450,12 +471,67 @@ JVM_DisableCompiler(JNIEnv *env, jclass compCls) {
   NYI();
 }
 
+void start(JavaThread* thread) {
+
+  JavaObject* javaThread = NULL;
+  llvm_gcroot(javaThread, 0);
+
+  Jnjvm* vm = thread->getJVM();
+
+  // Wait some time to let the creator initialise this field
+  while (thread->javaThread == NULL) {
+    mvm::Thread::yield();
+  }
+
+  javaThread = thread->javaThread;
+  assert(javaThread && "Didn't fix the javaThread of a j3 thread");
+
+  // Ok, now that the thread is created we can set the the value of eetop
+  // which points from the javaobject to our internal JavaThread
+  vm->upcalls->eetop->setInstanceLongField(javaThread, (long)thread);
+
+  // If the thread is not a daemon, it is added to the list of threads to
+  // wait until exit.
+  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
+
+  if (!isDaemon) {
+    vm->threadSystem.enter();
+  }
+
+  assert(javaThread->getVirtualTable());
+  // Run the VMThread::run function
+  vm->upcalls->runThread->invokeIntSpecial(vm, vm->upcalls->newThread, javaThread);
+
+  // Remove the thread from the list.
+  if (!isDaemon) {
+    vm->threadSystem.leave();
+  }
+}
 /*
  * java.lang.Thread
  */
 JNIEXPORT void JNICALL
 JVM_StartThread(JNIEnv *env, jobject _thread) {
-  NYI();
+  JavaObject * thread = 0;
+  JavaThread * javaThread = 0;
+  llvm_gcroot(thread, 0);
+  llvm_gcroot(javaThread, 0);
+  BEGIN_JNI_EXCEPTION
+
+  thread = *(JavaObject**)_thread;
+  assert(thread);
+  assert(thread->getVirtualTable());
+  Jnjvm* vm = JavaThread::get()->getJVM();
+
+  JavaThread * newTh = new JavaThread(vm);
+  if (!newTh) vm->outOfMemoryError();
+  newTh->start((void (*)(mvm::Thread*))start);
+
+  newTh->initialise(thread, 0);
+
+  RETURN_VOID_FROM_JNI
+
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT void JNICALL
@@ -465,7 +541,20 @@ JVM_StopThread(JNIEnv *env, jobject thread, jobject exception) {
 
 JNIEXPORT jboolean JNICALL
 JVM_IsThreadAlive(JNIEnv *env, jobject _thread) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  JavaObject * thread = *(JavaObject**)_thread;
+  llvm_gcroot(thread, 0);
+  assert(thread);
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  jint status = vm->upcalls->threadStatus->getInstanceInt32Field(thread);
+
+  // TODO: We don't actually maintain 'status'...
+  RETURN_FROM_JNI(status != 0);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT void JNICALL

@@ -367,27 +367,6 @@ extern "C" void Java_java_lang_ref_PhantomReference__0003Cinit_0003E__Ljava_lang
   END_NATIVE_EXCEPTION
 }
 
-extern "C" JavaString* Java_java_lang_VMString_intern__Ljava_lang_String_2(
-    JavaString* obj) {
-  const ArrayUInt16* array = 0;
-  JavaString* res = 0;
-  llvm_gcroot(obj, 0);
-  llvm_gcroot(array, 0);
-  llvm_gcroot(res, 0);
-  // If the string is already interned, just return.
-  if (obj->getVirtualTable() == JavaString::internStringVT) return obj;
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  array = JavaString::strToArray(obj, vm);
-  res = vm->constructString(array);
-
-  END_NATIVE_EXCEPTION
-
-  return res;
-}
-
 extern "C" JavaObject* Java_sun_reflect_Reflection_getCallerClass__I(uint32 index) {
 
   JavaObject* res = 0;
