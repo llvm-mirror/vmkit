@@ -9,7 +9,7 @@
 
 #include "types.h"
 
-#include "ArrayCopy.h"
+#include "ArrayCopy.inc"
 #include "Classpath.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
