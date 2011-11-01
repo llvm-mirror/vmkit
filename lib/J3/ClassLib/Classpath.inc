@@ -359,6 +359,10 @@ JavaObject* unsafe, JavaObject* obj, jlong offset, JavaObject* value) {
   mvm::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)value);
 }
 
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_registerNatives(JavaObject*) {
+  // Nothing
+}
+
 // TODO: Add the Volatile variants
 #define GET_PUT_OFFSET(Type,jtype,shorttype) \
 JNIEXPORT jtype JNICALL Java_sun_misc_Unsafe_get ## Type ## __Ljava_lang_Object_2J( \
