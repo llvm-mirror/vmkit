@@ -95,6 +95,9 @@ public:
 
 class JavaObjectField : public JavaObject {
 private:
+  // AccessibleObject fields
+  uint8 override;
+  // Field fields
   JavaObjectClass * clazz;
   uint32_t slot;
   JavaObject* name;
@@ -143,6 +146,9 @@ public:
 
 class JavaObjectMethod : public JavaObject {
 private:
+  // AccessibleObject fields
+  uint8 override;
+  // Method fields
   JavaObjectClass* clazz;
   uint32 slot;
   JavaObject* name;
@@ -193,6 +199,9 @@ public:
 
 class JavaObjectConstructor : public JavaObject {
 private:
+  // AccessibleObject fields
+  uint8 override;
+  // Constructor fields
   JavaObjectClass* clazz;
   uint32 slot;
   JavaObject* parameterTypes;
