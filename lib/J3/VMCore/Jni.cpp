@@ -297,8 +297,7 @@ jobject NewLocalRef(JNIEnv *env, jobject ref) {
 
 
 jint EnsureLocalCapacity(JNIEnv* env, jint capacity) {
-  NYI();
-  abort();
+  // Assume we have capacity
   return 0;
 }
 
