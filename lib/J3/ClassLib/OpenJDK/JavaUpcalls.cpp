@@ -235,12 +235,16 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
 
   name = vm->asciizToStr(thName);
 
+  // Initialize the values
+  priority->setInstanceInt32Field(th, (uint32)5);
+  daemon->setInstanceInt8Field(th, (uint32)false);
+
   // call Thread(ThreadGroup,String) constructor
   initThread->invokeIntSpecial(vm, newThread, th, &Group, &name);
 
   // Store reference to the JavaThread for this thread in the 'eetop' field
-  // TODO: Don't do this until we have the tracing handled.
-  // eetop->setInstanceLongField(th, (long)myth);
+  // GC-safe since 'eetop' is of type 'long'
+  eetop->setInstanceLongField(th, (long)myth);
 }
 
 void Classpath::InitializeThreading(Jnjvm* vm) {
