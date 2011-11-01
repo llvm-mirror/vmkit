@@ -22,6 +22,76 @@
 #define NYI() \
   do{ assert(0 && "Not yet implemented!"); abort(); } while(0)
 
+JavaObject* internalFillInStackTrace(JavaObject* throwable) {
+
+  ArrayPtr* result = 0;
+  llvm_gcroot(throwable, 0);
+  llvm_gcroot(result, 0);
+
+  JavaThread* th = JavaThread::get();
+  Jnjvm* vm = th->getJVM();
+  assert(th);
+  assert(vm);
+
+  uint32 length = th->getFrameContextLength();
+
+#ifdef ARCH_64
+    ClassArray* cl = vm->upcalls->ArrayOfInt;
+    result = (ArrayPtr*) cl->doNew(length, vm);
+#else
+    ClassArray* cl = vm->upcalls->ArrayOfLong;
+    result = (ArrayPtr*) cl->doNew(length, vm);
+#endif
+
+  // Don't call th->getFrameContext because it is not GC-safe.
+  mvm::StackWalker Walker(th);
+  uint32_t i = 0;
+
+  while (intptr_t ip = *Walker) {
+    ArrayPtr::setElement(result, ip, i);
+    ++i;
+    ++Walker;
+  }
+
+  return result;
+}
+
+JavaObject* consStackElement(mvm::FrameInfo* FI, intptr_t ip) {
+
+  JavaString* methodName = 0;
+  JavaString* className = 0;
+  JavaString* sourceName = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(methodName, 0);
+  llvm_gcroot(className, 0);
+  llvm_gcroot(sourceName, 0);
+  llvm_gcroot(res, 0);
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaMethod* meth = (JavaMethod*)FI->Metadata;
+  methodName = vm->internalUTF8ToStr(meth->name);
+  Class* cl = meth->classDef;
+  className = JavaString::internalToJava(cl->name, vm);
+
+  Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
+
+  if (sourceAtt) {
+    Reader reader(sourceAtt, cl->bytes);
+    uint16 index = reader.readU2();
+    sourceName = vm->internalUTF8ToStr(cl->getConstantPool()->UTF8At(index));
+  }
+
+  uint16 lineNumber = meth->lookupLineNumber(FI);
+
+  UserClass* newS = vm->upcalls->newStackTraceElement;
+  res = newS->doNew(vm);
+  vm->upcalls->initStackTraceElement->invokeIntSpecial(vm, newS, res,
+                                                       &className,
+                                                       &methodName,
+                                                       &sourceName,
+                                                       lineNumber);
+  return res;
+}
 
 JNIEXPORT jint JNICALL
 JVM_GetInterfaceVersion(void) {
@@ -266,7 +336,17 @@ JVM_IsNaN(jdouble d) {
  */
 JNIEXPORT void JNICALL
 JVM_FillInStackTrace(JNIEnv *env, jobject throwable) {
-  NYI();
+  JavaObjectThrowable * T = 0;
+  llvm_gcroot(T, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  T = *(JavaObjectThrowable**)throwable;
+  JavaObjectThrowable::fillInStackTrace(T);
+
+  RETURN_VOID_FROM_JNI;
+
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT void JNICALL
@@ -276,12 +356,60 @@ JVM_PrintStackTrace(JNIEnv *env, jobject throwable, jobject printable) {
 
 JNIEXPORT jint JNICALL
 JVM_GetStackTraceDepth(JNIEnv *env, jobject throwable) {
-  NYI();
+  JavaObjectThrowable * T = 0;
+  llvm_gcroot(T, 0);
+
+  jint res = -1;
+
+  BEGIN_JNI_EXCEPTION
+
+  T = *(JavaObjectThrowable**)throwable;
+  res = JavaObjectThrowable::getStackTraceDepth(T);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jobject JNICALL
 JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint index) {
-  NYI();
+  JavaObjectThrowable * T = 0;
+  JavaObject * result = 0;
+  JavaObject * stack = 0;
+  llvm_gcroot(T, 0);
+  llvm_gcroot(result, 0);
+  llvm_gcroot(stack, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  T = *(JavaObjectThrowable**)throwable;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  stack = vm->upcalls->backtrace->getInstanceObjectField(T);
+  verifyNull(stack);
+
+  sint32 base = JavaObjectThrowable::getStackTraceBase(T);
+
+  sint32 cur = 0;
+  for (sint32 i = base; i < JavaArray::getSize(stack); ++i) {
+    intptr_t ip = ArrayPtr::getElement((ArrayPtr*)stack, i);
+    mvm::FrameInfo* FI = vm->IPToFrameInfo(ip);
+    if (FI->Metadata != NULL) {
+      if (cur == index) {
+        result = consStackElement(FI, ip);
+        break;
+      }
+      cur++;
+    }
+  }
+
+  assert(result && "No stack element found");
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(result));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
