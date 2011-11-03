@@ -37,7 +37,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
 
   uint32 length = th->getFrameContextLength();
 
-#ifdef ARCH_64
+#ifndef ARCH_64
     ClassArray* cl = vm->upcalls->ArrayOfInt;
     result = (ArrayPtr*) cl->doNew(length, vm);
 #else
