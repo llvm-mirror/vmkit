@@ -861,12 +861,52 @@ JVM_ResolveClass(JNIEnv *env, jclass cls) {
 JNIEXPORT jclass JNICALL
 JVM_FindClassFromClassLoader(JNIEnv *env, const char *name, jboolean init,
                              jobject _loader, jboolean throwError) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+
+  JavaObject * loader = _loader ? *(JavaObject**)_loader : 0;
+  llvm_gcroot(loader, 0);
+
+  jclass res;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JnjvmClassLoader* JCL =
+    JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
+
+  CommonClass * Cl = JCL->loadClassFromAsciiz(name, true, throwError);
+  if (Cl) {
+    if (init && Cl->asClass())
+      Cl->asClass()->initialiseClass(vm);
+    res = (jclass)Cl->getClassDelegateePtr(vm);
+  }
+  else {
+    vm->classNotFoundException(vm->asciizToStr(name));
+  }
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jclass JNICALL
 JVM_FindClassFromBootLoader(JNIEnv *env, const char *name) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+
+  jclass res = 0;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JnjvmClassLoader* JCL = vm->bootstrapLoader;
+
+  CommonClass * Cl = JCL->loadClassFromAsciiz(name, true, false);
+  if (Cl) {
+    res = (jclass)Cl->getClassDelegateePtr(vm);
+  }
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
@@ -881,7 +921,27 @@ JVM_FindClassFromClass(JNIEnv *env, const char *name, jboolean init,
 /* Find a loaded class cached by the VM */
 JNIEXPORT jclass JNICALL
 JVM_FindLoadedClass(JNIEnv *env, jobject _loader, jstring name) {
-  NYI();
+  JavaObject * loader = 0;
+  llvm_gcroot(loader, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JnjvmClassLoader* JCL = NULL;
+
+  JavaString * str = *(JavaString**)name;
+
+  loader = *(JavaObject**)_loader;
+
+  CommonClass * Cl = 0;
+
+  JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
+  if (JCL)
+   Cl = JCL->lookupClassFromJavaString(str);
+  jclass res = Cl ? (jclass)Cl->getClassDelegateePtr(vm) : 0;
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
 }
 
 /* Define a class */
