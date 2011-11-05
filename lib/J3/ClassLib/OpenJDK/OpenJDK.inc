@@ -925,15 +925,16 @@ JVM_FindClassFromClass(JNIEnv *env, const char *name, jboolean init,
 JNIEXPORT jclass JNICALL
 JVM_FindLoadedClass(JNIEnv *env, jobject _loader, jstring name) {
   JavaObject * loader = 0;
+  JavaString * str = 0;
   llvm_gcroot(loader, 0);
+  llvm_gcroot(str, 0);
   BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader* JCL = NULL;
 
-  JavaString * str = *(JavaString**)name;
-
   loader = *(JavaObject**)_loader;
+  str = *(JavaString**)name;
 
   CommonClass * Cl = 0;
 
@@ -945,6 +946,7 @@ JVM_FindLoadedClass(JNIEnv *env, jobject _loader, jstring name) {
 
   END_JNI_EXCEPTION
 
+  return 0;
 }
 
 /* Define a class */
