@@ -358,7 +358,10 @@ JVM_FindLibraryEntry(void *handle, const char *name) {
 
 JNIEXPORT jboolean JNICALL
 JVM_IsSupportedJNIVersion(jint version) {
-  NYI();
+  return version == JNI_VERSION_1_1 ||
+         version == JNI_VERSION_1_2 ||
+         version == JNI_VERSION_1_4 |
+         version == JNI_VERSION_1_6;
 }
 
 /*
