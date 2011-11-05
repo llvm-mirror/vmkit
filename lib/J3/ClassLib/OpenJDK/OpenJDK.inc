@@ -2007,7 +2007,8 @@ JVM_GetLastErrorString(char *buf, int len) {
  */
 JNIEXPORT char * JNICALL
 JVM_NativePath(char * path) {
-  NYI();
+  // TODO: Implement me?
+  return path;
 }
 
 /*
