@@ -1044,17 +1044,17 @@ JavaString** StringList::addString(JnjvmClassLoader* JCL, JavaString* obj) {
 }
 
 void JnjvmClassLoader::registerNative(JavaMethod * meth, word_t fnPtr) {
-  lock.lock();
+  nativesLock.lock();
   // Don't support multiple levels of registerNatives
   assert(registeredNatives.find(meth) == registeredNatives.end());
 
   registeredNatives[meth] = fnPtr;
-  lock.unlock();
+  nativesLock.unlock();
 }
 
 word_t JnjvmClassLoader::getRegisteredNative(const JavaMethod * meth) {
-  lock.lock();
+  nativesLock.lock();
   word_t res = registeredNatives[meth];
-  lock.unlock();
+  nativesLock.unlock();
   return res;
 }

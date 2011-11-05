@@ -113,6 +113,10 @@ protected:
   ///
   std::map<const JavaMethod*,word_t> registeredNatives;
 
+  /// nativesLock - Locks the registeredNatives map above
+  ///
+  mvm::LockRecursive nativesLock;
+
 public:
   
   /// allocator - Reference to the memory allocator, which will allocate UTF8s,
