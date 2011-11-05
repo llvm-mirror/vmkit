@@ -808,11 +808,14 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   vmdata = 
     (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
   
-  if (vmdata == NULL) {
+  // If the vmdata field isn't set yet, or it's set to something other than
+  // a VMClassLoader (which happens in the OpenJDK port), then initialize
+  // the field now.
+  if (vmdata == NULL || !VMClassLoader::isVMClassLoader(vmdata)) {
     JavaObject::acquire(loader);
     vmdata = 
       (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
-    if (!vmdata) {
+    if (!vmdata || !VMClassLoader::isVMClassLoader(vmdata)) {
       vmdata = VMClassLoader::allocate();
       mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
       JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,

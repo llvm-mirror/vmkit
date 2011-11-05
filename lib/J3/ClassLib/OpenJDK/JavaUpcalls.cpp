@@ -552,10 +552,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_FIELD(loader, "java/nio/Buffer", "address", "Lgnu/classpath/Pointer;",
                  ACC_VIRTUAL);
 
-  // TODO: Resolve how to tie a ClassLoader to its internal representation
-  //vmdataClassLoader =
-  //  UPCALL_FIELD(loader, "java/lang/ClassLoader", "vmdata", "Ljava/lang/Object;",
-  //               ACC_VIRTUAL);
+  vmdataClassLoader =
+    UPCALL_FIELD(loader, "java/lang/ClassLoader", "classes", "Ljava/util/Vector;",
+                 ACC_VIRTUAL);
 
   newStackTraceElement =
     UPCALL_CLASS(loader, "java/lang/StackTraceElement");
