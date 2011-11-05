@@ -977,7 +977,25 @@ JVM_DefineClassWithSourceCond(JNIEnv *env, const char *name, jobject loader,
 
 JNIEXPORT jstring JNICALL
 JVM_GetClassName(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObject * result = 0;
+  JavaObject * Cl = 0;
+  llvm_gcroot(result, 0);
+  llvm_gcroot(Cl, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = *(JavaObject**)cls;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+
+  const UTF8* iname = cl->getName();
+  result = JavaString::internalToJava(iname, vm);
+
+  RETURN_FROM_JNI((jstring)th->pushJNIRef(result));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jobjectArray JNICALL
