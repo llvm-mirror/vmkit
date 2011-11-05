@@ -1005,7 +1005,24 @@ JVM_GetClassLoader(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jboolean JNICALL
 JVM_IsInterface(JNIEnv *env, jclass cls) {
-  NYI();
+  jboolean res = JNI_FALSE;
+
+  JavaObject * Cl = 0;
+  llvm_gcroot(Cl, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = *(JavaObject**)cls;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+
+  res = cl->isInterface();
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  return JNI_FALSE;
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1020,7 +1037,20 @@ JVM_SetClassSigners(JNIEnv *env, jclass cls, jobjectArray signers) {
 
 JNIEXPORT jobject JNICALL
 JVM_GetProtectionDomain(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObjectClass * JOC = 0;
+  JavaObject * pd = 0;
+  llvm_gcroot(JOC, 0);
+  llvm_gcroot(pd, 0);
+  BEGIN_JNI_EXCEPTION
+
+  JOC = *(JavaObjectClass**)cls;
+  pd = JavaObjectClass::getProtectionDomain(JOC);
+
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(pd));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT void JNICALL
@@ -1030,17 +1060,64 @@ JVM_SetProtectionDomain(JNIEnv *env, jclass cls, jobject protection_domain) {
 
 JNIEXPORT jboolean JNICALL
 JVM_IsArrayClass(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObject * Cl = 0;
+  llvm_gcroot(Cl, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = *(JavaObject**)cls;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+
+  RETURN_FROM_JNI(cl->isArray());
+
+  END_JNI_EXCEPTION
+
+  return JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
 JVM_IsPrimitiveClass(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObject * Cl = 0;
+  llvm_gcroot(Cl, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = *(JavaObject**)cls;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+
+  RETURN_FROM_JNI(cl->isPrimitive());
+
+  END_JNI_EXCEPTION
+
+  return JNI_FALSE;
 }
 
 JNIEXPORT jclass JNICALL
 JVM_GetComponentType(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObject * Cl = 0;
+  JavaObject* res = 0;
+  llvm_gcroot(Cl, 0);
+  llvm_gcroot(res, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = *(JavaObject**)cls;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+
+  if (cl->isArray()) {
+    UserCommonClass* bc = cl->asArrayClass()->baseClass();
+    res = (JavaObject*)bc->getClassDelegateePtr(vm);
+  } else {
+    res = 0;
+  }
+
+  RETURN_FROM_JNI((jclass)res);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jint JNICALL
