@@ -1122,7 +1122,27 @@ JVM_GetComponentType(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jint JNICALL
 JVM_GetClassModifiers(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObject * Cl = 0;
+  llvm_gcroot(Cl, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = *(JavaObject**)cls;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false)->asClass();;
+
+  jint res = cl->getAccess();
+
+  if (isEnum(res) && cl->getSuper() != vm->upcalls->EnumClass) {
+    // javac may put that flag to inner classes of enum classes.
+    res &= ~ACC_ENUM;
+  }
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1394,7 +1414,23 @@ JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnl
    valid. */
 JNIEXPORT jint JNICALL
 JVM_GetClassAccessFlags(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObject * Cl = 0;
+  llvm_gcroot(Cl, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = *(JavaObject**)cls;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+  assert(cl->isClass());
+
+  // TODO: Verify this is doing what this function is supposed to do
+  // (In particular regarding the comment block above)
+  RETURN_FROM_JNI(cl->asClass()->access);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /* The following two reflection routines are still needed due to startup time issues */
