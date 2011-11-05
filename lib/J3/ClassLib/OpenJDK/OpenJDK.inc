@@ -1610,7 +1610,8 @@ JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls) {
 
 JNIEXPORT void * JNICALL
 JVM_RegisterSignal(jint sig, void *handler) {
-  NYI();
+  // Don't let signals be registered, yet.
+  return (void*)-1;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -1620,7 +1621,31 @@ JVM_RaiseSignal(jint sig) {
 
 JNIEXPORT jint JNICALL
 JVM_FindSignal(const char *name) {
-  NYI();
+  // Map Signal name to integer...
+  static struct {
+    const char * name;
+    int num;
+  } SignalMap[] =
+  {
+    { "TERM", SIGTERM },
+    { "HUP", SIGHUP },
+    { "INT", SIGINT }
+  };
+  static uint32 signal_count = sizeof(SignalMap)/sizeof(SignalMap[0]);
+
+  BEGIN_JNI_EXCEPTION
+
+  for(uint32 i = 0; i < signal_count; ++i) {
+    if (!strcmp(name, SignalMap[i].name))
+      RETURN_FROM_JNI(SignalMap[i].num);
+  }
+
+  fprintf(stderr, "Unknown Signal \"%s\", missing entry in table?\n", name);
+  UNIMPLEMENTED();
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
