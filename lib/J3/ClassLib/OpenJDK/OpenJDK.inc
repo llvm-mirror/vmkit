@@ -951,7 +951,30 @@ JVM_FindLoadedClass(JNIEnv *env, jobject _loader, jstring name) {
 JNIEXPORT jclass JNICALL
 JVM_DefineClass(JNIEnv *env, const char *name, jobject _loader, const jbyte *buf,
                 jsize len, jobject pd) {
-  NYI();
+  JavaObject * loader = 0;
+  llvm_gcroot(loader, 0);
+  BEGIN_JNI_EXCEPTION
+
+  loader = _loader ? *(JavaObject**)_loader : 0;
+
+  jclass res;
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JnjvmClassLoader* JCL = NULL;
+  JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
+
+  ClassBytes * bytes = new (JCL->allocator, len) ClassBytes(len);
+  memcpy(bytes->elements,buf,len);
+  const UTF8* utfName = JCL->asciizConstructUTF8(name);
+  UserClass *cl = JCL->constructClass(utfName, bytes);
+
+  if (cl) res = (jclass)cl->getClassDelegateePtr(vm);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /* Define a class with a source (added in JDK1.5) */
@@ -959,7 +982,8 @@ JNIEXPORT jclass JNICALL
 JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader,
                           const jbyte *buf, jsize len, jobject pd,
                           const char *source) {
-  NYI();
+  // Discard source for now
+  return JVM_DefineClass(env, name, loader, buf, len, pd);
 }
 
 /* Define a class with a source with conditional verification (added HSX 14)
@@ -971,7 +995,8 @@ JNIEXPORT jclass JNICALL
 JVM_DefineClassWithSourceCond(JNIEnv *env, const char *name, jobject loader,
                               const jbyte *buf, jsize len, jobject pd,
                               const char *source, jboolean verify) {
-  NYI();
+  // Discard source and verification
+  return JVM_DefineClass(env, name, loader, buf, len, pd);
 }
 
 /*
