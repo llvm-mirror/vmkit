@@ -53,7 +53,7 @@ public final class BuildTimeConfig extends org.mmtk.vm.BuildTimeConfig {
     if (default_property_file == null) {
       propFileName = System.getProperty(property_file_property);
       if (propFileName == null) {
-        System.err.println(property_file_property+" must specify a properties file");
+        //System.err.println(property_file_property+" must specify a properties file");
         VM.sysExit(1);
       }   
     } else {
@@ -67,7 +67,7 @@ public final class BuildTimeConfig extends org.mmtk.vm.BuildTimeConfig {
       propFileStream.close();
     } catch (FileNotFoundException e) {
       if (!propFileName.equals(default_property_file)) {
-        System.err.println(propFileName+" not found.");
+        //System.err.println(propFileName+" not found.");
         VM.sysExit(1);
       }   
     } catch (IOException e) {
