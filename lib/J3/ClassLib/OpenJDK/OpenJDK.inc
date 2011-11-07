@@ -348,9 +348,7 @@ JNIEXPORT void * JNICALL
 JVM_FindLibraryEntry(void *handle, const char *name) {
   BEGIN_JNI_EXCEPTION
   Jnjvm* vm = JavaThread::get()->getJVM();
-  bool j3 = false;
-  RETURN_FROM_JNI((void *)vm->bootstrapLoader->loadInLib(name, j3));
-
+  RETURN_FROM_JNI((void *)vm->bootstrapLoader->loadInLib(name, handle));
   END_JNI_EXCEPTION
 
   return 0;
