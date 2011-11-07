@@ -629,13 +629,75 @@ JVM_CountStackFrames(JNIEnv *env, jobject thread) {
 }
 
 JNIEXPORT void JNICALL
-JVM_Interrupt(JNIEnv *env, jobject thread) {
-  NYI();
+JVM_Interrupt(JNIEnv *env, jobject _thread) {
+  JavaObject * thread = 0;
+  llvm_gcroot(thread, 0);
+  BEGIN_JNI_EXCEPTION
+
+  thread = *(JavaObject**)_thread;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaField * field = vm->upcalls->eetop;
+
+  // It's possible that the thread to be interrupted has not finished
+  // its initialization. Wait until the initialization is done.
+  while (field->getInstanceLongField(thread) == 0)
+    mvm::Thread::yield();
+
+  JavaThread* th = (JavaThread*)field->getInstanceLongField(thread);
+  th->lockingThread.interruptFlag = 1;
+  mvm::FatLock* lock = th->lockingThread.waitsOn;
+
+  // If the thread is blocked on a wait. We also verify nextWaiting in case
+  // the thread has been notified.
+  if (lock && th->lockingThread.nextWaiting) {
+    th->lockingThread.state = mvm::LockingThread::StateInterrupted;
+
+    // Make sure the thread is waiting.
+    uint32 locked = 0;
+    while (true) {
+      locked = (lock->tryAcquire() == 0);
+      if (locked || (lock->getOwner() != th && lock->getOwner() != 0))
+        break;
+      else mvm::Thread::yield();
+    }
+
+    // Interrupt the thread.
+    th->lockingThread.varcond.signal();
+
+    // Release the lock if we acquired it.
+    if (locked) lock->release(lock->getAssociatedObject(), vm->lockSystem);
+  }
+
+  // Here we could also raise a signal for interrupting I/O
+
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT jboolean JNICALL
-JVM_IsInterrupted(JNIEnv *env, jobject thread, jboolean clearInterrupted) {
-  NYI();
+JVM_IsInterrupted(JNIEnv *env, jobject _thread, jboolean clearInterrupted) {
+  JavaObject * thread = 0;
+  llvm_gcroot(thread, 0);
+
+  bool interrupt = false;
+
+  BEGIN_JNI_EXCEPTION
+
+  thread = *(JavaObject**)_thread;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaField * field = vm->upcalls->eetop;
+
+  JavaThread* jth = (JavaThread*)field->getInstanceLongField(thread);
+  interrupt = (jboolean)jth->lockingThread.interruptFlag;
+
+  if (clearInterrupted)
+    jth->lockingThread.interruptFlag = 0;
+
+  RETURN_FROM_JNI(interrupt);
+
+  END_JNI_EXCEPTION
+
+  return false;
 }
 
 JNIEXPORT jboolean JNICALL
