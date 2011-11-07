@@ -22,7 +22,8 @@ extern "C" int64_t Java_org_j3_mmtk_Statistics_nanoTime__ (MMTkObject* S) {
   int64_t result;
   struct timeval tp; 
 
-  int res = gettimeofday (&tp, NULL);
+  int res;
+	res = gettimeofday (&tp, NULL);
   assert(res != -1 && "failed gettimeofday.");
 
   result = (int64_t) tp.tv_sec;

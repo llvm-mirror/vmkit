@@ -60,7 +60,11 @@ namespace mvm {
 }
 
 const char* MvmModule::getHostTriple() {
-  return LLVM_HOSTTRIPLE;
+#ifdef LLVM_HOSTTRIPLE
+  return LLVM_HOSTTRIPLE
+#else
+  return LLVM_DEFAULT_TARGET_TRIPLE;
+#endif
 }
 
 cl::opt<bool>
@@ -416,7 +420,8 @@ Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, Bum
     FrameIterator iterator(*frames);
     while (iterator.hasNext()) {
       FrameInfo* frame = iterator.next();
-      FrameInfo* other = VM->IPToFrameInfo(frame->ReturnAddress);
+      FrameInfo* other;
+      other = VM->IPToFrameInfo(frame->ReturnAddress);
       assert(frame->ReturnAddress == other->ReturnAddress);
     }
   }

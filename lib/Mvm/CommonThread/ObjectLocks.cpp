@@ -45,10 +45,12 @@ void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
 void ThinLock::removeFatLock(FatLock* fatLock, LockSystem& table) {
   gc* object = fatLock->associatedObject;
   llvm_gcroot(object, 0);
-  word_t ID = fatLock->getID();
+  word_t ID;
   word_t oldValue = 0;
   word_t newValue = 0;
   word_t yieldedValue = 0;
+
+  ID = fatLock->getID();
   do {
     oldValue = object->header;
     newValue = oldValue & NonLockBitsMask;

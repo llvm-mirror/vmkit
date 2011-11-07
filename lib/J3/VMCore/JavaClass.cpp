@@ -877,7 +877,8 @@ void Class::readClass() {
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", mvm::PrintBuffer(this).cString());
 
   Reader reader(bytes);
-  uint32 magic = reader.readU4();
+  uint32 magic;
+  magic = reader.readU4();
   assert(magic == Jnjvm::Magic && "I've created a class but magic is no good!");
 
   /* uint16 minor = */ reader.readU2();
