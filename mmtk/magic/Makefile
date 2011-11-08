@@ -8,6 +8,9 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL = ../..
+
+include $(LEVEL)/Makefile.config
+
 LIBRARYNAME = MMTKMagic
 LOADABLE_MODULE = 1
 

@@ -8,6 +8,9 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL = ../../..
+
+include $(LEVEL)/Makefile.config
+
 LIBRARYNAME = StaticGCPass
 LOADABLE_MODULE = 1
 

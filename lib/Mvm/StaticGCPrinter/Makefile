@@ -8,6 +8,9 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL = ../../..
+
+include $(LEVEL)/Makefile.config
+
 LIBRARYNAME = StaticGCPrinter
 LOADABLE_MODULE = 1
 
