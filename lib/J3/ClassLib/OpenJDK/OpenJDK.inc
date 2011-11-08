@@ -8,9 +8,11 @@
 
 #include "jvm.h"
 
-#include "ArrayCopy.inc"
 #include "JavaConstantPool.h"
 #include "Reader.h"
+
+#include "ArrayCopy.inc"
+#include "ClassContext.inc"
 #include "SetProperties.inc"
 
 #include <errno.h>
@@ -734,7 +736,16 @@ JVM_CurrentClassLoader(JNIEnv *env) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassContext(JNIEnv *env) {
-  NYI();
+  ArrayObject * res = 0;
+  llvm_gcroot(res, 0);
+  BEGIN_JNI_EXCEPTION
+
+  res = GetClassContext();
+
+  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(res));
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jint JNICALL

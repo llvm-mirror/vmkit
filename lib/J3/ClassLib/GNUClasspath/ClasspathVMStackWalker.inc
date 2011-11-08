@@ -19,6 +19,8 @@
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
+#include "ClassContext.inc"
+
 using namespace j3;
 
 extern "C" {
@@ -31,31 +33,12 @@ jclass clazz,
 ) {
 
   ArrayObject* result = NULL;
-  JavaObject* delegatee = NULL;
   llvm_gcroot(result, 0);
-  llvm_gcroot(delegatee, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaThread* th = JavaThread::get();
-  Jnjvm* vm = th->getJVM();
-  uint32 length = th->getFrameContextLength();
-  
-  mvm::ThreadAllocator allocator;  
-  uintptr_t* buffer = (uintptr_t*)allocator.Allocate(length * sizeof(uintptr_t));
-  
-  uint32 finalSize = th->getJavaFrameContext((void**)buffer);
-  
-  result = (ArrayObject*)
-    vm->upcalls->stackTraceArray->doNew(finalSize, vm);
-   
-  for (uint32 i = 0; i != finalSize; ++i) {
-    JavaMethod* meth = ((JavaMethod**)buffer)[i];
-    assert(meth && "Wrong stack trace");
-    delegatee = meth->classDef->getClassDelegatee(vm);;
-    ArrayObject::setElement(result, delegatee, i);
-  }
-  
+  result = GetClassContext();
+
   END_NATIVE_EXCEPTION
   
   return result;
