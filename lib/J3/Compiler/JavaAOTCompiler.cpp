@@ -1775,7 +1775,10 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   // methods
   for (uint32 i = JavaVirtualTable::getFirstJavaMethodIndex(); i < size; ++i) {
     JavaMethod* meth = ((JavaMethod**)RealVT)[i];
-    if (isAbstract(meth->access)) {
+    // Primitive classes don't have methods--abstract or otherwise.
+    // (But we do have placeholders for j.l.Object methods in their VTs,
+    // so just emit NULL's here)
+    if (classDef->isPrimitive() || isAbstract(meth->access)) {
       Elemts.push_back(Constant::getNullValue(PTy));
     } else {
       Function* F = getMethodOrStub(meth, maybeCustomize);
