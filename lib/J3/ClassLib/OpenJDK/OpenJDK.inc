@@ -1147,7 +1147,9 @@ JVM_GetClassSigners(JNIEnv *env, jclass cls) {
 
 JNIEXPORT void JNICALL
 JVM_SetClassSigners(JNIEnv *env, jclass cls, jobjectArray signers) {
-  NYI();
+  // Let them 'set' signers, since we don't implement this yet and
+  // don't allow them to 'get' the value back (above).
+  //NYI();
 }
 
 JNIEXPORT jobject JNICALL
