@@ -61,7 +61,7 @@ namespace mvm {
 
 const char* MvmModule::getHostTriple() {
 #ifdef LLVM_HOSTTRIPLE
-  return LLVM_HOSTTRIPLE
+  return LLVM_HOSTTRIPLE;
 #else
   return LLVM_DEFAULT_TARGET_TRIPLE;
 #endif
