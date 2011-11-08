@@ -1566,7 +1566,27 @@ JVM_InvokeMethod(JNIEnv *env, jobject method, jobject _obj, jobjectArray args0) 
  */
 JNIEXPORT jobject JNICALL
 JVM_NewInstanceFromConstructor(JNIEnv *env, jobject _c, jobjectArray args0) {
-  NYI();
+  JavaObject * ret = 0;
+  JavaObjectConstructor * c = 0;
+  llvm_gcroot(ret, 0);
+  llvm_gcroot(c, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+
+  c = *(JavaObjectConstructor**)_c;
+
+  ret = proceedConstructor(
+    c,
+    args0? *(ArrayObject**)args0 : 0,
+    JavaObjectConstructor::getClass(c)->getDelegatee(),
+    0 /* unused */ );
+
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(ret));
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
