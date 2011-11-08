@@ -117,51 +117,47 @@ JVM_IHashCode(JNIEnv *env, jobject _obj) {
 
 JNIEXPORT void JNICALL
 JVM_MonitorWait(JNIEnv *env, jobject obj, jlong ms) {
-  JavaObject * o = 0;
-  llvm_gcroot(o, 0);
-
   BEGIN_JNI_EXCEPTION
-  Jnjvm* vm = JavaThread::get()->getJVM();
 
-  o = *(JavaObject**)obj;
-
-  if (ms < 0) {
-    vm->illegalArgumentException("Negative wait time specified");
-  }
-  if (ms) {
-    struct timeval info;
-    uint64_t usec = ms * 1000LL;
-    info.tv_usec = usec % 1000000LL;
-    info.tv_sec = usec / 1000000LL;
-    JavaObject::timedWait(o, info);
-  } else {
-    JavaObject::wait(o);
-  }
+  JavaObject::wait(*(JavaObject**)obj, ms, 0);
   RETURN_VOID_FROM_JNI
+
   END_JNI_EXCEPTION
 }
 
 JNIEXPORT void JNICALL
 JVM_MonitorNotify(JNIEnv *env, jobject obj) {
   BEGIN_JNI_EXCEPTION
-  JavaObject * o = *(JavaObject**)obj;
-  JavaObject::notify(o);
+
+  JavaObject::notify(*(JavaObject**)obj);
+
   RETURN_VOID_FROM_JNI
+
   END_JNI_EXCEPTION
 }
 
 JNIEXPORT void JNICALL
 JVM_MonitorNotifyAll(JNIEnv *env, jobject obj) {
   BEGIN_JNI_EXCEPTION
-  JavaObject * o = *(JavaObject**)obj;
-  JavaObject::notifyAll(o);
+
+  JavaObject::notifyAll(*(JavaObject**)obj);
   RETURN_VOID_FROM_JNI
+
   END_JNI_EXCEPTION
 }
 
 JNIEXPORT jobject JNICALL
 JVM_Clone(JNIEnv *env, jobject obj) {
-  NYI();
+  JavaObject * clone = 0;
+  llvm_gcroot(clone, 0);
+  BEGIN_JNI_EXCEPTION
+
+  clone = JavaObject::clone(*(JavaObject**)obj);
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(clone));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*

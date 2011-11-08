@@ -9,6 +9,7 @@
 
 #include "mvm/Threads/Locks.h"
 
+#include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
@@ -95,6 +96,28 @@ void JavaObject::timedWait(JavaObject* self, struct timeval& info) {
   waitIntern(self, &info, true);
 }
 
+void JavaObject::wait(JavaObject* self, int64_t ms, int32_t ns) {
+  llvm_gcroot(self, 0);
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+
+  if (ms < 0 || ns < 0) {
+    vm->illegalArgumentException("Negative wait time specified");
+  }
+
+  uint32 sec = (uint32) (ms / 1000);
+  uint32 usec = (ns / 1000) + 1000 * (ms % 1000);
+  if (ns && !usec) usec = 1;
+  if (sec || usec) {
+    struct timeval t;
+    t.tv_sec = sec;
+    t.tv_usec = usec;
+    JavaObject::timedWait(self, t);
+  } else {
+    JavaObject::wait(self);
+  }
+}
+
 void JavaObject::notify(JavaObject* self) {
   llvm_gcroot(self, 0);
   JavaThread* thread = JavaThread::get();
@@ -117,6 +140,71 @@ void JavaObject::notifyAll(JavaObject* self) {
     UNREACHABLE();
   }
   thread->lockingThread.notifyAll(self, table);
+}
+
+JavaObject* JavaObject::clone(JavaObject* src) {
+  JavaObject* res = 0;
+  JavaObject* tmp = 0;
+
+  llvm_gcroot(src, 0);
+  llvm_gcroot(res, 0);
+  llvm_gcroot(tmp, 0);
+
+  UserCommonClass* cl = JavaObject::getClass(src);
+  Jnjvm* vm = JavaThread::get()->getJVM();
+
+  // If this doesn't inherit the Cloneable interface, throw exception
+  // TODO: Add support in both class libraries for the upcalls fields used here
+  //if (!JavaObject::instanceOf(src, vm->upcalls->cloneableClass))
+  //  vm->cloneNotSupportedException();
+
+  if (cl->isArray()) {
+    UserClassArray* array = cl->asArrayClass();
+    int length = JavaArray::getSize(src);
+    res = array->doNew(length, vm);
+    UserCommonClass* base = array->baseClass();
+    if (base->isPrimitive()) {
+      int size = length << base->asPrimitiveClass()->logSize;
+      memcpy((void*)((uintptr_t)res + sizeof(JavaObject) + sizeof(size_t)),
+             (void*)((uintptr_t)src + sizeof(JavaObject) + sizeof(size_t)),
+             size);
+    } else {
+      for (int i = 0; i < length; i++) {
+        tmp = ArrayObject::getElement((ArrayObject*)src, i);
+        ArrayObject::setElement((ArrayObject*)res, tmp, i);
+      }
+    }
+  } else {
+    assert(cl->isClass() && "Not a class!");
+    res = cl->asClass()->doNew(vm);
+    while (cl != NULL) {
+      for (uint32 i = 0; i < cl->asClass()->nbVirtualFields; ++i) {
+        JavaField& field = cl->asClass()->virtualFields[i];
+        if (field.isReference()) {
+          tmp = field.getInstanceObjectField(src);
+          JavaObject** ptr = field.getInstanceObjectFieldPtr(res);
+          mvm::Collector::objectReferenceWriteBarrier((gc*)res, (gc**)ptr, (gc*)tmp);
+        } else if (field.isLong()) {
+          field.setInstanceLongField(res, field.getInstanceLongField(src));
+        } else if (field.isDouble()) {
+          field.setInstanceDoubleField(res, field.getInstanceDoubleField(src));
+        } else if (field.isInt()) {
+          field.setInstanceInt32Field(res, field.getInstanceInt32Field(src));
+        } else if (field.isFloat()) {
+          field.setInstanceFloatField(res, field.getInstanceFloatField(src));
+        } else if (field.isShort() || field.isChar()) {
+          field.setInstanceInt16Field(res, field.getInstanceInt16Field(src));
+        } else if (field.isByte() || field.isBoolean()) {
+          field.setInstanceInt8Field(res, field.getInstanceInt8Field(src));
+        } else {
+          UNREACHABLE();
+        }
+      }
+      cl = cl->super;
+    }
+  }
+
+  return res;
 }
 
 void JavaObject::overflowThinLock(JavaObject* self) {
