@@ -35,6 +35,7 @@
 #include "LockedMap.h"
 #include "Reader.h"
 #include "ReferenceQueue.h"
+#include "VMStaticInstance.h"
 #include "Zip.h"
 
 using namespace j3;
@@ -1394,6 +1395,8 @@ size_t Jnjvm::getObjectSize(gc* object) {
   JavaObject* src = (JavaObject*)object;
   if (VMClassLoader::isVMClassLoader(src)) {
     size = sizeof(VMClassLoader);
+  } else if (VMStaticInstance::isVMStaticInstance(src)) {
+    size = sizeof(VMStaticInstance);
   } else {
     CommonClass* cl = JavaObject::getClass(src);
     if (cl->isArray()) {
@@ -1416,6 +1419,8 @@ const char* Jnjvm::getObjectTypeName(gc* object) {
   JavaObject* src = (JavaObject*)object;
   if (VMClassLoader::isVMClassLoader(src)) {
     return "VMClassLoader";
+  } else if (VMStaticInstance::isVMStaticInstance(src)) {
+    return "VMStaticInstance";
   } else {
     CommonClass* cl = JavaObject::getClass(src);
     // This code is only used for debugging on a fatal error. It is fine to

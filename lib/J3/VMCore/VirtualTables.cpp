@@ -32,6 +32,7 @@
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
 #include "ReferenceQueue.h"
+#include "VMStaticInstance.h"
 #include "Zip.h"
 
 using namespace j3;
@@ -44,7 +45,7 @@ using namespace j3;
 // Having many GC classes gives more work to the GC for the scanning phase
 // and for the relocation phase (for copying collectors).
 //
-// In J3, there is only one internal gc object, the class loader.
+// In J3, there is only one primary internal gc object, the class loader.
 // We decided that this was the best solution because
 // otherwise it would involve hacks on the java.lang.Classloader class.
 // Therefore, we create a new GC class with a finalize method that will
@@ -52,11 +53,19 @@ using namespace j3;
 // not reachable anymore. This also relies on the java.lang.Classloader class
 // referencing an object of type VMClassLoader (this is the case in GNU
 // Classpath with the vmdata field).
+// In addition, to handle support for sun.misc.Unsafe, we have a similar
+// second clsas VMStaticInstance that wraps static instances for use
+// in staticFieldBase and traces the owning ClassLoader to make sure
+// the underlying instance and class don't get GC'd improperly.
 //===----------------------------------------------------------------------===//
 
 VirtualTable VMClassLoader::VT((word_t)VMClassLoader::staticDestructor,
                                (word_t)VMClassLoader::staticDestructor,
                                (word_t)VMClassLoader::staticTracer);
+
+VirtualTable VMStaticInstance::VT((word_t)VMStaticInstance::staticDestructor,
+                                  (word_t)VMStaticInstance::staticDestructor,
+                                  (word_t)VMStaticInstance::staticTracer);
 
 //===----------------------------------------------------------------------===//
 // Trace methods for Java objects. There are four types of objects:
