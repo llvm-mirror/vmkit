@@ -1185,6 +1185,8 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 
       case LSHL : {
         Value* val2 = new ZExtInst(pop(), Type::getInt64Ty(*llvmContext), "", currentBlock);
+        Value* mask = ConstantInt::get(Type::getInt64Ty(*llvmContext), 0x3F);
+        val2 = BinaryOperator::CreateAnd(val2, mask, "", currentBlock);
         pop(); // remove the 0 on the stack
         Value* val1 = pop();
         push(BinaryOperator::CreateShl(val1, val2, "", currentBlock),
