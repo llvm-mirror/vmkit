@@ -94,7 +94,6 @@ private:
   llvm::Constant* CreateConstantFromJavaMethod(JavaMethod& method);
   llvm::Constant* CreateConstantFromStaticInstance(Class* cl);
   llvm::Constant* CreateConstantFromJavaString(JavaString* str);
-  llvm::Constant* CreateConstantFromJavaClass(CommonClass* cl);
   llvm::Constant* CreateConstantForBaseObject(CommonClass* cl);
   llvm::Constant* CreateConstantFromJavaObject(JavaObject* obj);
   llvm::Constant* CreateConstantFromClassBytes(ClassBytes* bytes);

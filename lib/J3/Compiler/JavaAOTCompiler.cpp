@@ -295,39 +295,7 @@ Constant* JavaAOTCompiler::getStringPtr(JavaString** str) {
 }
 
 Constant* JavaAOTCompiler::getJavaClass(CommonClass* cl) {
-  Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
-  LLVMClassInfo* LCI = getClassInfo(javaClass);
-  llvm::Type* Ty = LCI->getVirtualType();
-
-  if (useCooperativeGC()) {
-    return Constant::getNullValue(JavaIntrinsics.JavaObjectType);
-  } else {
-    java_class_iterator End = javaClasses.end();
-    java_class_iterator I = javaClasses.find(cl);
-    if (I == End) {
-      final_object_iterator End = finalObjects.end();
-      final_object_iterator I = finalObjects.find(cl->delegatee[0]);
-      if (I == End) {
-      
-        Module& Mod = *getLLVMModule();
-      
-        GlobalVariable* varGV = 
-          new GlobalVariable(Mod, Ty->getContainedType(0), false,
-                             GlobalValue::InternalLinkage, 0, "");
-      
-        Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
-                                              JavaIntrinsics.JavaObjectType);
-    
-        javaClasses.insert(std::make_pair(cl, res));
-        varGV->setInitializer(CreateConstantFromJavaClass(cl));
-        return res;
-      } else {
-        return I->second;
-      }
-    } else {
-      return I->second;
-    }
-  }
+  return Constant::getNullValue(JavaIntrinsics.JavaObjectType);
 }
 
 Constant* JavaAOTCompiler::getJavaClassPtr(CommonClass* cl) {
@@ -684,36 +652,6 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
   // lock
   Constant* L = ConstantInt::get(Type::getInt64Ty(getLLVMContext()), 0);
   Elmts.push_back(ConstantExpr::getIntToPtr(L, JavaIntrinsics.ptrType));
-
-  return ConstantStruct::get(STy, Elmts);
-}
-
-Constant* JavaAOTCompiler::CreateConstantFromJavaClass(CommonClass* cl) {
-  assert(!useCooperativeGC());
-  Class* javaClass = cl->classLoader->bootstrapLoader->upcalls->newClass;
-  LLVMClassInfo* LCI = getClassInfo(javaClass);
-  StructType* STy = 
-    dyn_cast<StructType>(LCI->getVirtualType()->getContainedType(0));
-
-  std::vector<Constant*> Elmts;
-
-  // JavaObject
-  Elmts.push_back(CreateConstantForBaseObject(javaClass));
-  
-  // signers
-  Elmts.push_back(Constant::getNullValue(JavaIntrinsics.JavaObjectType));
-  
-  // pd
-  Elmts.push_back(Constant::getNullValue(JavaIntrinsics.JavaObjectType));
-  
-  // vmdata
-  Constant* Cl = getNativeClass(cl);
-  Cl = ConstantExpr::getCast(Instruction::BitCast, Cl,
-                             JavaIntrinsics.JavaObjectType);
-  Elmts.push_back(Cl);
-
-  // constructor
-  Elmts.push_back(Constant::getNullValue(JavaIntrinsics.JavaObjectType));
 
   return ConstantStruct::get(STy, Elmts);
 }
