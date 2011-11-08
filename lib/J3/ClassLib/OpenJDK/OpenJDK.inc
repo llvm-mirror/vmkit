@@ -1553,8 +1553,29 @@ JVM_GetClassAccessFlags(JNIEnv *env, jclass cls) {
  * java.lang.reflect.Method
  */
 JNIEXPORT jobject JNICALL
-JVM_InvokeMethod(JNIEnv *env, jobject method, jobject _obj, jobjectArray args0) {
-  NYI();
+JVM_InvokeMethod(JNIEnv *env, jobject _m, jobject _obj, jobjectArray args0) {
+  JavaObject * ret = 0;
+  JavaObjectMethod * m = 0;
+  llvm_gcroot(ret, 0);
+  llvm_gcroot(m, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+
+  m = *(JavaObjectMethod**)_m;
+
+  ret = proceedMethod(
+    m,
+    _obj ? *(JavaObject**)_obj : 0,
+    args0? *(ArrayObject**)args0 : 0,
+    JavaObjectMethod::getClass(m)->getDelegatee(),
+    0 /* unused */ );
+
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(ret));
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
