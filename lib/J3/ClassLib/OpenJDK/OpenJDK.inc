@@ -803,12 +803,34 @@ JVM_LoadClass0(JNIEnv *env, jobject obj, jclass currClass,
  */
 JNIEXPORT jint JNICALL
 JVM_GetArrayLength(JNIEnv *env, jobject arr) {
-  NYI();
+  ArrayObject* array = 0;
+  llvm_gcroot(array, 0);
+
+  BEGIN_JNI_EXCEPTION
+  array = *(ArrayObject**)arr;
+  RETURN_FROM_JNI(ArrayObject::getSize(array));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jobject JNICALL
 JVM_GetArrayElement(JNIEnv *env, jobject arr, jint index) {
-  NYI();
+  ArrayObject* array = 0;
+  JavaObject* element = 0;
+  llvm_gcroot(array, 0);
+  llvm_gcroot(element, 0);
+
+  BEGIN_JNI_EXCEPTION
+  array = *(ArrayObject**)arr;
+  element = ArrayObject::getElement(array, index);
+
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(element));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jvalue JNICALL
@@ -818,7 +840,19 @@ JVM_GetPrimitiveArrayElement(JNIEnv *env, jobject arr, jint index, jint wCode) {
 
 JNIEXPORT void JNICALL
 JVM_SetArrayElement(JNIEnv *env, jobject arr, jint index, jobject val) {
-  NYI();
+  ArrayObject* array = 0;
+  JavaObject* element = 0;
+  llvm_gcroot(array, 0);
+  llvm_gcroot(element, 0);
+
+  BEGIN_JNI_EXCEPTION
+  array = *(ArrayObject**)arr;
+  element = *(JavaObject**)val;
+
+  ArrayObject::setElement(array, element, index);
+
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT void JNICALL
