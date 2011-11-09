@@ -9,8 +9,7 @@
 LEVEL = ../../../..
 
 
-EXTRA_DIST = ClasspathConstructor.inc ClasspathField.inc Classpath.inc ClasspathMethod.inc \
-	     ClasspathVMClass.inc ClasspathVMClassLoader.inc ClasspathVMObject.inc \
+EXTRA_DIST = ClasspathVMClass.inc ClasspathVMClassLoader.inc ClasspathVMObject.inc \
 	     ClasspathVMRuntime.inc ClasspathVMStackWalker.inc ClasspathVMSystem.inc \
 	     ClasspathVMSystemProperties.inc ClasspathVMThread.inc ClasspathVMThrowable.inc
 

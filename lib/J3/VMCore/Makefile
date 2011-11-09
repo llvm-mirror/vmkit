@@ -1,4 +1,4 @@
-##===- lib/JnJVM/VMCore/Makefile ---------------------------*- Makefile -*-===##
+##===- lib/J3/VMCore/Makefile ------------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -7,6 +7,8 @@
 # 
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
+
+EXTRA_DIST = JniClasspath.inc JniOpenJDK.inc
 
 include $(LEVEL)/Makefile.config
 

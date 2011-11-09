@@ -1,4 +1,4 @@
-class lshl {
+class LshlTest {
   public static void check(boolean b) throws Exception {
     if (!b) throw new Exception("Check failed!");
   }

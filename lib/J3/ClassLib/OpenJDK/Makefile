@@ -8,7 +8,7 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../../..
 
-EXTRA_DIST =
+EXTRA_DIST = OpenJDK.inc
 
 include $(LEVEL)/Makefile.config
 

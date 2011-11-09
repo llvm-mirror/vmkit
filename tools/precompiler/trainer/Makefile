@@ -8,6 +8,8 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
+EXTRA_DIST = HelloWorld.java
+
 include $(LEVEL)/Makefile.config
 
 BUILT_SOURCES = Precompiled.bc BootstrapClasses.bc

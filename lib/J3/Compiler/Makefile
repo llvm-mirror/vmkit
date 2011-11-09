@@ -1,4 +1,4 @@
-##===- lib/JnJVM/Compiler/Makefile -------------------------*- Makefile -*-===##
+##===- lib/J3/Compiler/Makefile ----------------------------*- Makefile -*-===##
 # 
 #                     The VMKit project
 #
@@ -7,6 +7,8 @@
 # 
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
+
+EXTRA_DIST = JavaJITClasspath.inc JavaJITOpenJDK.inc
 
 include $(LEVEL)/Makefile.config
 

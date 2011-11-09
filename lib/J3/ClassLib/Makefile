@@ -8,6 +8,14 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
+EXTRA_DIST = ArrayCopy.inc \
+             ClassContext.inc \
+             ClasspathConstructor.inc \
+             ClasspathField.inc \
+             Classpath.inc \
+             ClasspathMethod.inc \
+             SetProperties.inc
+
 include $(LEVEL)/Makefile.config
 
 DIRS = $(CLASSPATH_DIR)

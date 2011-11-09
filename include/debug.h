@@ -85,4 +85,8 @@
 #endif
 #endif
 
+// Silence compiler warnings.
+template <typename T>
+static inline void USE(T) { }
+
 #endif
