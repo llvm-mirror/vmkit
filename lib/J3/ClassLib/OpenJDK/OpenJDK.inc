@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -2375,7 +2376,7 @@ JVM_SetLength(jint fd, jlong length) {
  */
 JNIEXPORT jint JNICALL
 JVM_Sync(jint fd) {
-  NYI();
+  return fsync(fd);
 }
 
 /*
@@ -2384,17 +2385,17 @@ JVM_Sync(jint fd) {
 
 JNIEXPORT jint JNICALL
 JVM_InitializeSocketLibrary(void) {
-  NYI();
+  // Nothing to do here.
 }
 
 JNIEXPORT jint JNICALL
 JVM_Socket(jint domain, jint type, jint protocol) {
-  NYI();
+  return socket(domain, type, protocol);
 }
 
 JNIEXPORT jint JNICALL
 JVM_SocketClose(jint fd) {
-  NYI();
+  return close(fd);
 }
 
 JNIEXPORT jint JNICALL
@@ -2404,12 +2405,12 @@ JVM_SocketShutdown(jint fd, jint howto) {
 
 JNIEXPORT jint JNICALL
 JVM_Recv(jint fd, char *buf, jint nBytes, jint flags) {
-  NYI();
+  return recv(fd, buf, nBytes, flags);
 }
 
 JNIEXPORT jint JNICALL
 JVM_Send(jint fd, char *buf, jint nBytes, jint flags) {
-  NYI();
+  return send(fd, buf, nBytes, flags);
 }
 
 JNIEXPORT jint JNICALL
@@ -2419,22 +2420,22 @@ JVM_Timeout(int fd, long timeout) {
 
 JNIEXPORT jint JNICALL
 JVM_Listen(jint fd, jint count) {
-  NYI();
+  return listen(fd, count);
 }
 
 JNIEXPORT jint JNICALL
 JVM_Connect(jint fd, struct sockaddr *him, jint len) {
-  NYI();
+  return connect(fd, him, len);
 }
 
 JNIEXPORT jint JNICALL
 JVM_Bind(jint fd, struct sockaddr *him, jint len) {
-  NYI();
+  return bind(fd, him, len);
 }
 
 JNIEXPORT jint JNICALL
 JVM_Accept(jint fd, struct sockaddr *him, jint *len) {
-  NYI();
+  return accept(fd, him, (socklen_t*)len);
 }
 
 JNIEXPORT jint JNICALL
@@ -2457,7 +2458,7 @@ JVM_SocketAvailable(jint fd, jint *result) {
 
 JNIEXPORT jint JNICALL
 JVM_GetSockName(jint fd, struct sockaddr *him, int *len) {
-  NYI();
+  return getsockname(fd, him, (socklen_t*)len);
 }
 
 JNIEXPORT jint JNICALL
