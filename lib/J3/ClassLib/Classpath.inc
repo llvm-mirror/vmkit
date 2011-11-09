@@ -475,7 +475,7 @@ JavaObject* unsafe, JavaObject* base, jlong offset) {
 
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_arrayBaseOffset(
 JavaObject* unsafe, JavaObject* clazz) {
-  UNIMPLEMENTED();
+  // Array starts at beginning of object
   return 0;
 }
 
@@ -484,7 +484,9 @@ JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_arrayIndexScale(
 JNIEnv *env,
 #endif
 JavaObject* unsafe, JavaObject* clazz) {
-  UNIMPLEMENTED();
+  // Return '0' if we don't support indexing this way.
+  // (We might pack fields specially, etc)
+  // TODO: Implement this for the array types we support this way
   return 0;
 }
 
