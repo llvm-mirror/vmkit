@@ -104,11 +104,11 @@ AModule           := $(LibDir)/lib$(MODULE_WITH_GC).a
 
 $(ObjectsBCWithGC): $(ObjDir)/%_gc.bc: $(ObjDir)/%.ll $(LOPT)
 	$(Echo) "Compiling $*.ll to $*.bc for $(BuildMode) build (bytecode)"
-	$(Verb) $(LOPT) $< -load=$(VMKIT_SRC_ROOT)/$(BuildMode)/lib/StaticGCPass$(SHLIBEXT) -std-compile-opts -StaticGCPass -o $@
+	$(Verb) $(LOPT) $< -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPass$(SHLIBEXT) -std-compile-opts -StaticGCPass -o $@
 
 $(ObjectsSWithGC): $(ObjDir)/%_gc.s: $(ObjDir)/%_gc.bc $(LLC)
 	$(Echo) "Compiling $*.bc to $*.s for $(BuildMode) build"
-	$(Verb) $(LLC) -disable-cfi -disable-fp-elim -load=$(VMKIT_SRC_ROOT)/$(BuildMode)/lib/StaticGCPrinter$(SHLIBEXT) $< -o $@
+	$(Verb) $(LLC) -disable-cfi -disable-fp-elim -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPrinter$(SHLIBEXT) $< -o $@
 
 $(ObjectsWithGC): $(ObjDir)/%_gc.o: $(ObjDir)/%_gc.s $(ObjDir)/.dir
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
