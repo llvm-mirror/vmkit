@@ -760,7 +760,9 @@ JVM_ClassLoaderDepth(JNIEnv *env) {
  */
 JNIEXPORT jstring JNICALL
 JVM_GetSystemPackage(JNIEnv *env, jstring name) {
-  NYI();
+  // TODO: Actually implement this
+  // Not doing so doesn't seem to hurt anything, yet.
+  return NULL;
 }
 
 JNIEXPORT jobjectArray JNICALL
