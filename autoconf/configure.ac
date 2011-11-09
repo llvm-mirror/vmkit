@@ -31,7 +31,7 @@ dnl===
 dnl===-----------------------------------------------------------------------===
 dnl Initialize autoconf and define the package name, version number and
 dnl email address for reporting bugs.
-AC_INIT([vmkit],[0.30svn],[nicolas.geoffray@gmail.com])
+AC_INIT([vmkit],[0.31svn],[nicolas.geoffray@gmail.com])
 
 dnl Provide a copyright substitution and ensure the copyright notice is included
 dnl in the output of --version option of the generated configure script.
