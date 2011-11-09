@@ -2360,14 +2360,13 @@ JVM_Lseek(jint fd, jlong offset, jint whence) {
 /*
  * Set the length of the file associated with the given descriptor to the given
  * length.  If the new length is longer than the current length then the file
- * is extended; the contents of the extended portion are not defined.  Th {
-NYI();
-}
+ * is extended; the contents of the extended portion are not defined.  The
  * value of the file pointer is undefined after this procedure returns.
  */
 JNIEXPORT jint JNICALL
 JVM_SetLength(jint fd, jlong length) {
-  NYI();
+  int res = ftruncate64(fd, length);
+  return res != -1;
 }
 
 /*
