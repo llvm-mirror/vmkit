@@ -828,7 +828,56 @@ JVM_SetPrimitiveArrayElement(JNIEnv *env, jobject arr, jint index, jvalue v,
 
 JNIEXPORT jobject JNICALL
 JVM_NewArray(JNIEnv *env, jclass eltClass, jint length) {
-  NYI();
+  JavaObject* res = 0;
+  JavaObject* eltClassObj = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(eltClassObj, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = th->getJVM();
+  if (length < 0) vm->negativeArraySizeException(length);
+
+  eltClassObj = *(JavaObject**)eltClass;
+  UserCommonClass* base =
+    UserCommonClass::resolvedImplClass(vm, eltClassObj, true);
+  JnjvmClassLoader* loader = base->classLoader;
+  const UTF8* name = base->getName();
+  const UTF8* arrayName = loader->constructArrayName(1, name);
+  if (base->isPrimitive()) {
+    UserClassArray *array = 0;
+    if (base == vm->upcalls->OfBool) {
+      array = vm->upcalls->ArrayOfBool;
+    } else if (base == vm->upcalls->OfByte) {
+      array = vm->upcalls->ArrayOfByte;
+    } else if (base == vm->upcalls->OfShort) {
+      array = vm->upcalls->ArrayOfShort;
+    } else if (base == vm->upcalls->OfChar) {
+      array = vm->upcalls->ArrayOfChar;
+    } else if (base == vm->upcalls->OfInt) {
+      array = vm->upcalls->ArrayOfInt;
+    } else if (base == vm->upcalls->OfFloat) {
+      array = vm->upcalls->ArrayOfFloat;
+    } else if (base == vm->upcalls->OfLong) {
+      array = vm->upcalls->ArrayOfLong;
+    } else if (base == vm->upcalls->OfDouble) {
+      array = vm->upcalls->ArrayOfDouble;
+    } else {
+      vm->illegalArgumentException("Invalid array primitive type!");
+      abort();
+    }
+    res = (JavaObject*)array->doNew(length, vm);
+  } else {
+    UserClassArray* array = loader->constructArray(arrayName, base);
+    res = (JavaObject*)array->doNew(length, vm);
+  }
+
+  jobject ret = (jobject)th->pushJNIRef(res);
+  RETURN_FROM_JNI(ret);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jobject JNICALL
