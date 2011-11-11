@@ -92,7 +92,7 @@ static void EmitVmkitGlobal(const Module &M, AsmPrinter &AP, const char *Id) {
   std::string SymName;
   SymName += "vmkit";
   size_t Letter = SymName.size();
-  SymName.append(MId.begin(), std::find(MId.begin(), MId.end(), '.'));
+  SymName += MId;
   SymName += "__";
   SymName += Id;
 
