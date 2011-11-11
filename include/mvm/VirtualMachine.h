@@ -224,6 +224,12 @@ public:
   /// runApplication - Run an application. The application name is in
   /// the arguments, hence it is the virtual machine's job to parse them.
   virtual void runApplication(int argc, char** argv) = 0;
+
+//===----------------------------------------------------------------------===//
+// (5) Exception-related methods.
+//===----------------------------------------------------------------------===//
+
+  virtual void nullPointerException() = 0;
 };
 
 } // end namespace mvm

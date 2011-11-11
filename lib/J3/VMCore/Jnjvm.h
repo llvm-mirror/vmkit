@@ -268,7 +268,6 @@ public:
   void arrayStoreException();
   void indexOutOfBounds(const JavaObject* obj, sint32 entry);
   void negativeArraySizeException(int size);
-  void nullPointerException();
   void illegalAccessException(const char* msg);
   void illegalMonitorStateException(const JavaObject* obj);
   void interruptedException(const JavaObject* obj);
@@ -287,6 +286,7 @@ public:
   void classNotFoundException(JavaString* str);
   void noClassDefFoundError(UserClass* cl, const UTF8* name);
   void classFormatError(const char* str);
+  virtual void nullPointerException();
   
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.
   ///

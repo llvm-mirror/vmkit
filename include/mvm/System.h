@@ -214,6 +214,14 @@ public:
   static void Exit(int value) {
     _exit(value);
   }
+
+  static bool SupportsHardwareNullCheck() {
+#if LINUX_OS && ARCH_X64
+    return true;
+#else
+    return false;
+#endif
+  }
 };
 
 }

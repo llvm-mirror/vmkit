@@ -14,13 +14,17 @@
 #include "llvm/CodeGen/GCStrategy.h"
 #include "llvm/CodeGen/AsmPrinter.h"
 #include "llvm/CodeGen/GCMetadataPrinter.h"
+#include "llvm/CodeGen/MachineFunction.h"
+#include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/Module.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCSymbol.h"
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/Target/Mangler.h"
 #include "llvm/Target/TargetData.h"
+#include "llvm/Target/TargetInstrInfo.h"
 #include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/ADT/SmallString.h"
@@ -37,6 +41,7 @@ namespace {
   class VmkitAOTGC : public GCStrategy {
   public:
     VmkitAOTGC();
+    virtual bool findCustomSafePoints(GCFunctionInfo& FI, MachineFunction& MF);
   };
 }
 
@@ -44,9 +49,39 @@ static GCRegistry::Add<VmkitAOTGC>
 X("vmkit", "Vmkit GC for AOT-generated functions");
 
 VmkitAOTGC::VmkitAOTGC() {
-  NeededSafePoints = 1 << GC::PostCall;
+  CustomSafePoints = true;
   UsesMetadata = true;
 }
+
+
+static MCSymbol *InsertLabel(MachineBasicBlock &MBB, 
+                             MachineBasicBlock::iterator MI,
+                             DebugLoc DL) {
+  const TargetInstrInfo* TII = MBB.getParent()->getTarget().getInstrInfo();
+  MCSymbol *Label = MBB.getParent()->getContext().CreateTempSymbol();
+  BuildMI(MBB, MI, DL, TII->get(TargetOpcode::GC_LABEL)).addSym(Label);
+  return Label;
+}
+
+
+bool VmkitAOTGC::findCustomSafePoints(GCFunctionInfo& FI, MachineFunction &MF) {
+  for (MachineFunction::iterator BBI = MF.begin(),
+                                 BBE = MF.end(); BBI != BBE; ++BBI) {
+    for (MachineBasicBlock::iterator MI = BBI->begin(),
+                                     ME = BBI->end(); MI != ME; ++MI) {
+      if (MI->getDesc().isCall()) {
+        MachineBasicBlock::iterator RAI = MI; ++RAI;                                
+        MCSymbol* Label = InsertLabel(*MI->getParent(), RAI, MI->getDebugLoc());
+        FI.addSafePoint(GC::PostCall, Label, MI->getDebugLoc());
+      } else if (MI->getDebugLoc().getCol() == 1) {
+        MCSymbol* Label = InsertLabel(*MI->getParent(), MI, MI->getDebugLoc());
+        FI.addSafePoint(GC::Loop, Label, MI->getDebugLoc());
+      }
+    }
+  }
+  return false;
+}
+
 
 namespace {
 
@@ -317,7 +352,13 @@ void VmkitAOTGCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
       }
 
       // Return address
-      AP.OutStreamer.EmitSymbolValue(J->Label, IntPtrSize, 0);
+      const MCExpr* address = MCSymbolRefExpr::Create(J->Label, AP.OutStreamer.getContext());
+      if (DL.getCol() == 1) {
+        const MCExpr* one = MCConstantExpr::Create(1, AP.OutStreamer.getContext());
+        address = MCBinaryExpr::CreateAdd(address, one, AP.OutStreamer.getContext());
+      }
+
+      AP.OutStreamer.EmitValue(address, IntPtrSize, 0);
       AP.EmitInt16(sourceIndex);
       AP.EmitInt16(FrameSize);
       AP.EmitInt16(LiveCount);

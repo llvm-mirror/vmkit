@@ -1333,16 +1333,23 @@ void JavaJIT::loadConstant(uint16 index) {
 
 void JavaJIT::JITVerifyNull(Value* obj) {
   if (TheCompiler->hasExceptionsEnabled()) {
-    Constant* zero = intrinsics->JavaObjectNullConstant;
-    Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, zero, "");
+    if (nbHandlers == 0 && mvm::System::SupportsHardwareNullCheck()) {
+      Value* indexes[2] = { intrinsics->constantZero, intrinsics->constantZero };
+      Value* VTPtr = GetElementPtrInst::Create(obj, indexes, "", currentBlock);
+      Instruction* VT = new LoadInst(VTPtr, "", true, currentBlock);
+      VT->setDebugLoc(DebugLoc::get(currentBytecodeIndex, 1, DbgSubprogram));
+    } else {
+      Constant* zero = intrinsics->JavaObjectNullConstant;
+      Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, zero, "");
 
-    BasicBlock* exit = createBasicBlock("verifyNullExit");
-    BasicBlock* cont = createBasicBlock("verifyNullCont");
+      BasicBlock* exit = createBasicBlock("verifyNullExit");
+      BasicBlock* cont = createBasicBlock("verifyNullCont");
 
-    BranchInst::Create(exit, cont, test, currentBlock);
-    currentBlock = exit;
-    throwRuntimeException(intrinsics->NullPointerExceptionFunction, 0, 0);
-    currentBlock = cont;
+      BranchInst::Create(exit, cont, test, currentBlock);
+      currentBlock = exit;
+      throwRuntimeException(intrinsics->NullPointerExceptionFunction, 0, 0);
+      currentBlock = cont;
+    }
   } 
 }
 

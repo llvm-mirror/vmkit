@@ -407,6 +407,9 @@ Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, Bum
     frame->Metadata = meta;
     frame->SourceIndex = I->Loc.getLine();
     frame->ReturnAddress = JCE->getLabelAddress(I->Label);
+    // If the safe point is fro an NPE, increment the return address to
+    // not clash with post calls.
+    if (I->Loc.getCol() == 1) frame->ReturnAddress += 1;
     int i = 0;
     for (llvm::GCFunctionInfo::live_iterator KI = FI->live_begin(I),
          KE = FI->live_end(I); KI != KE; ++KI) {
