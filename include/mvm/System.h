@@ -216,7 +216,7 @@ public:
   }
 
   static bool SupportsHardwareNullCheck() {
-#if LINUX_OS && ARCH_X64
+#if (LINUX_OS && ARCH_X64) || (MACOS_OS && ARCH_X64)
     return true;
 #else
     return false;

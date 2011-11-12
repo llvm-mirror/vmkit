@@ -19,6 +19,7 @@
 using namespace mvm;
 
 #if defined(ARCH_X64) && defined(LINUX_OS)
+
 extern "C" {
   void NativeHandleSignal(void);
   asm(
@@ -36,6 +37,23 @@ extern "C" {
     ((ucontext_t*)context)->uc_mcontext.gregs[REG_RDI] = ((ucontext_t*)context)->uc_mcontext.gregs[REG_RIP] + 1; \
     ((ucontext_t*)context)->uc_mcontext.gregs[REG_RIP] = (word_t)NativeHandleSignal;
 
+#elif defined(ARCH_X64) && defined(MACOS_OS)
+extern "C" {
+  void NativeHandleSignal(void);
+  asm(
+    ".text\n"
+    ".align 8\n"
+    ".globl NativeHandleSignal\n"
+  "_NativeHandleSignal:\n"
+    // Save The faulting address to fake a reall method call
+    "pushq %rdi\n"
+    "jmp   _ThrowNullPointerException\n"
+    );
+}
+
+#define UPDATE_REGS() \
+    ((ucontext_t*)context)->uc_mcontext->__ss.__rdi = ((ucontext_t*)context)->uc_mcontext->__ss.__rip + 1; \
+    ((ucontext_t*)context)->uc_mcontext->__ss.__rip = (word_t)NativeHandleSignal;
 #else
 #define UPDATE_REGS() UNIMPLEMENTED();
 #endif
