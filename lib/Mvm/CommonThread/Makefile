@@ -8,6 +8,8 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
+EXTRA_DIST = Sigsegv-linux-x64.inc Sigsegv-macos-x64.inc
+
 include $(LEVEL)/Makefile.config
 
 MODULE_WITH_GC = CommonThread

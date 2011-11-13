@@ -127,6 +127,11 @@ public:
     return kThreadStart;
   }
 
+  static uint32_t GetPageSize() {
+    static uint32_t pagesize = getpagesize();
+    return pagesize;
+  }
+
   static word_t GetCallerAddress() {
 #if defined(ARCH_X86) || defined(ARCH_X64)
     return (word_t)__builtin_frame_address(0);
@@ -215,13 +220,8 @@ public:
     _exit(value);
   }
 
-  static bool SupportsHardwareNullCheck() {
-#if (LINUX_OS && ARCH_X64) || (MACOS_OS && ARCH_X64)
-    return true;
-#else
-    return false;
-#endif
-  }
+  static bool SupportsHardwareNullCheck();
+  static bool SupportsHardwareStackOverflow();
 };
 
 }

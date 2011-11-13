@@ -357,6 +357,11 @@ JavaObject* Jnjvm::CreateStackOverflowError() {
   return obj;
 }
 
+void Jnjvm::stackOverflowError() {
+  JavaThread::get()->throwException(CreateStackOverflowError());
+  UNREACHABLE();
+}
+
 JavaObject* Jnjvm::CreateArrayStoreException(JavaVirtualTable* VT) {
   JavaString* str = NULL;
   llvm_gcroot(str, 0);

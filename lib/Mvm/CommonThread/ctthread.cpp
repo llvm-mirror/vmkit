@@ -278,12 +278,11 @@ public:
       abort();
     }
  
-    // Protect the page after the first page. The first page contains thread
-    // specific data. The second page has no access rights to catch stack
-    // overflows.
-    uint32 pagesize = getpagesize();
+    // Protect the page after the alternative stack.
+    uint32 pagesize = System::GetPageSize();
     for (uint32 i = 0; i < NR_THREADS; ++i) {
-      word_t addr = baseAddr + (i * STACK_SIZE) + pagesize;
+      word_t addr = baseAddr + (i * STACK_SIZE) + pagesize
+        + mvm::Thread::GetAlternativeStackSize();
       mprotect((void*)addr, pagesize, PROT_NONE);
     }
 
@@ -327,11 +326,19 @@ extern void sigsegvHandler(int, siginfo_t*, void*);
 void Thread::internalThreadStart(mvm::Thread* th) {
   th->baseSP  = System::GetCallerAddress();
 
+  // Set the alternate stack as the second page of the thread's
+  // stack.
+  stack_t st;
+  st.ss_sp = (void*)th->GetAlternativeStackEnd();
+  st.ss_flags = 0;
+  st.ss_size = th->GetAlternativeStackSize();
+  sigaltstack(&st, NULL);
+
   // Set the SIGSEGV handler to diagnose errors.
   struct sigaction sa;
   sigset_t mask;
   sigfillset(&mask);
-  sa.sa_flags = SA_SIGINFO;
+  sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
   sa.sa_mask = mask;
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);

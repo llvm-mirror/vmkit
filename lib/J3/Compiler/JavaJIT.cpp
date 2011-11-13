@@ -1120,7 +1120,8 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock = continueBlock;
   }
   
-  if (TheCompiler->hasExceptionsEnabled()) {
+  if (TheCompiler->hasExceptionsEnabled() &&
+      !mvm::System::SupportsHardwareStackOverflow()) {
     // Variables have been allocated and the lock has been taken. Do the stack
     // check now: if there is an exception, we will go to the lock release code.
     currentExceptionBlock = opcodeInfos[0].exceptionBlock;

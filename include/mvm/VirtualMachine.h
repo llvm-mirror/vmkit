@@ -230,6 +230,7 @@ public:
 //===----------------------------------------------------------------------===//
 
   virtual void nullPointerException() = 0;
+  virtual void stackOverflowError() = 0;
 };
 
 } // end namespace mvm

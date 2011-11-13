@@ -279,6 +279,24 @@ public:
   void endKnownFrame();
   void startUnknownFrame(KnownFrame& F) __attribute__ ((noinline));
   void endUnknownFrame();
+
+  word_t GetAlternativeStackEnd() {
+    return (word_t)this + System::GetPageSize();
+  }
+
+  word_t GetAlternativeStackStart() {
+    return GetAlternativeStackEnd() + GetAlternativeStackSize();
+  }
+
+  static word_t GetAlternativeStackSize() {
+    return 3 * System::GetPageSize();
+  }
+
+  bool IsStackOverflowAddr(word_t addr) {
+    word_t stackOverflowCheck = GetAlternativeStackStart();
+    return addr > stackOverflowCheck &&
+      addr <= stackOverflowCheck + System::GetPageSize();
+  }
 };
 
 class ExceptionBuffer {

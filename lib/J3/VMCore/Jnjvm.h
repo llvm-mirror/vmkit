@@ -287,6 +287,7 @@ public:
   void noClassDefFoundError(UserClass* cl, const UTF8* name);
   void classFormatError(const char* str);
   virtual void nullPointerException();
+  virtual void stackOverflowError();
   
   /// asciizToStr - Constructs a java/lang/String object from the given asciiz.
   ///
