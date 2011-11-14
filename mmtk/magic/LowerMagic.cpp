@@ -20,6 +20,8 @@
 
 #include <cstdio>
 
+#include "mvm/System.h"
+
 using namespace llvm;
 
 namespace vmmagic {
@@ -353,21 +355,39 @@ static void initialiseFunctions(Module* M) {
 
 
 static bool removePotentialNullCheck(BasicBlock* Cur, Value* Obj) {
-  BasicBlock* BB = Cur->getUniquePredecessor();
-  LLVMContext& Context = Cur->getParent()->getContext();
-  if (BB) {
-    Instruction* T = BB->getTerminator();
-    if (dyn_cast<BranchInst>(T) && T != BB->begin()) {
-      BasicBlock::iterator BIE = BB->end();
-      --BIE; // Terminator
-      --BIE; // Null test
-      if (ICmpInst* IE = dyn_cast<ICmpInst>(BIE)) {
-        if (IE->getPredicate() == ICmpInst::ICMP_EQ &&
-            IE->getOperand(0) == Obj &&
-            IE->getOperand(1) == Constant::getNullValue(Obj->getType())) {
-          BIE->replaceAllUsesWith(ConstantInt::getFalse(Context));
-          BIE->eraseFromParent();
-          return true;
+  if (!Obj->getType()->isPointerTy()) return false;
+
+  if (mvm::System::SupportsHardwareNullCheck()) {
+    for (Value::use_iterator I = Obj->use_begin(), E = Obj->use_end(); I != E; I++) {
+      if (GetElementPtrInst* GE = dyn_cast<GetElementPtrInst>(*I)) {
+        for (Value::use_iterator II = GE->use_begin(), EE = GE->use_end(); II != EE; II++) {
+          if (LoadInst* LI = dyn_cast<LoadInst>(*II)) {
+            if (LI->isVolatile()) {
+              assert(LI->use_empty());
+              LI->eraseFromParent();
+              return true;
+            }
+          }
+        }
+      }
+    }
+  } else {
+    BasicBlock* BB = Cur->getUniquePredecessor();
+    LLVMContext& Context = Cur->getParent()->getContext();
+    if (BB) {
+      Instruction* T = BB->getTerminator();
+      if (dyn_cast<BranchInst>(T) && T != BB->begin()) {
+        BasicBlock::iterator BIE = BB->end();
+        --BIE; // Terminator
+        --BIE; // Null test
+        if (ICmpInst* IE = dyn_cast<ICmpInst>(BIE)) {
+          if (IE->getPredicate() == ICmpInst::ICMP_EQ &&
+              IE->getOperand(0) == Obj &&
+              IE->getOperand(1) == Constant::getNullValue(Obj->getType())) {
+            BIE->replaceAllUsesWith(ConstantInt::getFalse(Context));
+            BIE->eraseFromParent();
+            return true;
+          }
         }
       }
     }
