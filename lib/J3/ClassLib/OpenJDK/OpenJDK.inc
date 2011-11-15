@@ -2269,10 +2269,27 @@ JVM_NativePath(char * path) {
  */
 JNIEXPORT jint JNICALL
 JVM_Open(const char *fname, jint flags, jint mode) {
-  BEGIN_JNI_EXCEPTION
-  int result = open(fname, flags, mode);
+  // Special flag the JVM uses
+  // means to delete the file after opening.
+  static const int O_DELETE = 0x10000;
 
-  result = (result == 0) ? -1 : result;
+  BEGIN_JNI_EXCEPTION
+
+  int result = open(fname, flags & ~O_DELETE, mode);
+
+  // Map EEXIST to special JVM_EEXIST, otherwise all errors are -1
+  if (result < 0) {
+    if (errno == EEXIST) {
+      RETURN_FROM_JNI(JVM_EEXIST);
+    } else {
+      RETURN_FROM_JNI(-1);
+    }
+  }
+
+  // Handle O_DELETE flag, if specified
+  if (flags & O_DELETE)
+    unlink(fname);
+
   RETURN_FROM_JNI(result);
   END_JNI_EXCEPTION
 
