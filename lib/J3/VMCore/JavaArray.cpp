@@ -38,7 +38,7 @@ const unsigned int JavaArray::T_LONG = 11;
 void ArrayObject::setElement(ArrayObject* self, JavaObject* value, uint32_t i) {
   llvm_gcroot(self, 0);
   llvm_gcroot(value, 0);
-  assert(i < self->size);
+  assert((ssize_t)i < self->size);
   if (value != NULL) assert(value->getVirtualTable());
   mvm::Collector::objectReferenceArrayWriteBarrier(
       (gc*)self, (gc**)&(self->elements[i]), (gc*)value);
