@@ -282,7 +282,7 @@ public:
     uint32 pagesize = System::GetPageSize();
     for (uint32 i = 0; i < NR_THREADS; ++i) {
       word_t addr = baseAddr + (i * STACK_SIZE) + pagesize
-        + mvm::Thread::GetAlternativeStackSize();
+        + mvm::System::GetAlternativeStackSize();
       mprotect((void*)addr, pagesize, PROT_NONE);
     }
 
@@ -331,7 +331,7 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   stack_t st;
   st.ss_sp = (void*)th->GetAlternativeStackEnd();
   st.ss_flags = 0;
-  st.ss_size = th->GetAlternativeStackSize();
+  st.ss_size = System::GetAlternativeStackSize();
   sigaltstack(&st, NULL);
 
   // Set the SIGSEGV handler to diagnose errors.

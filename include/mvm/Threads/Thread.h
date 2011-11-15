@@ -285,11 +285,7 @@ public:
   }
 
   word_t GetAlternativeStackStart() {
-    return GetAlternativeStackEnd() + GetAlternativeStackSize();
-  }
-
-  static word_t GetAlternativeStackSize() {
-    return 3 * System::GetPageSize();
+    return GetAlternativeStackEnd() + System::GetAlternativeStackSize();
   }
 
   bool IsStackOverflowAddr(word_t addr) {

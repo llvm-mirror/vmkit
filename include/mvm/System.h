@@ -13,6 +13,7 @@
 #include <csetjmp>
 #include <cstring>
 #include <dlfcn.h>
+#include <signal.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -110,6 +111,22 @@ public:
       return (ptr & ~(kWordSize - 1)) + kWordSize;
     }
     return ptr;
+  }
+
+  static bool IsPageAligned(word_t ptr) {
+    return (ptr & (GetPageSize() - 1)) == 0;
+  }
+
+  static word_t PageAlignUp(word_t ptr) {
+    if (!IsPageAligned(ptr)) {
+      return (ptr & ~(GetPageSize() - 1)) + GetPageSize();
+    }
+    return ptr;
+  }
+
+  static word_t GetAlternativeStackSize() {
+    static word_t size = PageAlignUp(SIGSTKSZ);
+    return size;
   }
 
   // Apply this mask to the stack pointer to get the Thread object.
