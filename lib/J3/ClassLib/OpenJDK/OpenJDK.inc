@@ -1805,7 +1805,7 @@ JVM_DoPrivileged(JNIEnv *env, jclass cls,
   JavaMethod * meth = cl->lookupMethodDontThrow(runName, runType, false, true, 0);
   assert(meth);
 
-  res = meth->invokeJavaObjectVirtual(vm, cl, obj, obj);
+  res = meth->invokeJavaObjectVirtual(vm, cl, obj);
 
   RETURN_FROM_JNI((jobject)th->pushJNIRef(res));
 
