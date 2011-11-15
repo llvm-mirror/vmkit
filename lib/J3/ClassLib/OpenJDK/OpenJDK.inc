@@ -480,12 +480,12 @@ JVM_CompilerCommand(JNIEnv *env, jclass compCls, jobject arg) {
 
 JNIEXPORT void JNICALL
 JVM_EnableCompiler(JNIEnv *env, jclass compCls) {
-  NYI();
+  // Ignore.
 }
 
 JNIEXPORT void JNICALL
 JVM_DisableCompiler(JNIEnv *env, jclass compCls) {
-  NYI();
+  // Ignore.
 }
 
 void start(JavaThread* thread) {
@@ -699,7 +699,10 @@ JVM_IsInterrupted(JNIEnv *env, jobject _thread, jboolean clearInterrupted) {
 
 JNIEXPORT jboolean JNICALL
 JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj) {
-  NYI();
+  BEGIN_JNI_EXCEPTION
+  RETURN_FROM_JNI(JavaObject::owner(*(JavaObject**)obj));
+  END_JNI_EXCEPTION
+  return false;
 }
 
 JNIEXPORT void JNICALL
@@ -1893,7 +1896,7 @@ JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused) {
  */
 JNIEXPORT jboolean JNICALL
 JVM_SupportsCX8(void) {
-  NYI();
+  return JNI_FALSE;
 }
 
 /*************************************************************************
