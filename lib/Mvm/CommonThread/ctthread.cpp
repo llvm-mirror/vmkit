@@ -342,6 +342,7 @@ void Thread::internalThreadStart(mvm::Thread* th) {
   sa.sa_mask = mask;
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
+  sigaction(SIGBUS, &sa, NULL);
 
   assert(th->MyVM && "VM not set in a thread");
   th->MyVM->rendezvous.addThread(th);
