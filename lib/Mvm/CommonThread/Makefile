@@ -8,7 +8,7 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-EXTRA_DIST = Sigsegv-linux-x64.inc Sigsegv-macos-x64.inc
+EXTRA_DIST = Sigsegv-linux-x64.inc Sigsegv-macos-x64.inc Sigsegv-linux-x86.inc
 
 include $(LEVEL)/Makefile.config
 

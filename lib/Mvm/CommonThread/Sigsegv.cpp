@@ -30,6 +30,8 @@ namespace {
 
 #if defined(ARCH_X64) && defined(LINUX_OS)
 #include "Sigsegv-linux-x64.inc"
+#elif defined(ARCH_X86) && defined(LINUX_OS)
+#include "Sigsegv-linux-x86.inc"
 #elif defined(ARCH_X64) && defined(MACOS_OS)
 #include "Sigsegv-macos-x64.inc"
 #else
@@ -50,7 +52,7 @@ bool System::SupportsHardwareStackOverflow() {
 }
 #endif
 
-extern "C" void ThrowStackOverflowError(word_t ip, word_t fp) {
+extern "C" void ThrowStackOverflowError(word_t ip) {
   mvm::Thread* th = mvm::Thread::get();
   mvm::FrameInfo* FI = th->MyVM->IPToFrameInfo(ip);
   if (FI->Metadata == NULL) {
