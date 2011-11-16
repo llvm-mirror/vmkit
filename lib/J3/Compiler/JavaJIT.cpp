@@ -121,10 +121,10 @@ void JavaJIT::invokeVirtual(uint16 index) {
   bool customized = false;
   bool thisReference =
     isThisReference(stackSize() - signature->getNumberOfSlots() - 1);
-  if (thisReference) {
-    assert(meth != NULL);
+  if (thisReference && meth) {
     isCustomizable = true;
-    if (customizeFor != NULL) {
+    if ((customizeFor != NULL)
+        && cl->isAssignableFrom(customizeFor)) {
       meth = customizeFor->lookupMethodDontThrow(
           meth->name, meth->type, false, true, NULL);
       assert(meth);
