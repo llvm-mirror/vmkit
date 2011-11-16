@@ -897,7 +897,7 @@ void Classpath::InitializeSystem(Jnjvm * jvm) {
 
 
 #include "ClasspathConstructor.inc"
-#include "Classpath.inc"
 #include "ClasspathField.inc"
 #include "ClasspathMethod.inc"
 #include "OpenJDK.inc"
+#include "Unsafe.inc"

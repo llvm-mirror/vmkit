@@ -9,9 +9,11 @@
 LEVEL = ../../../..
 
 
-EXTRA_DIST = ClasspathVMClass.inc ClasspathVMClassLoader.inc ClasspathVMObject.inc \
-	     ClasspathVMRuntime.inc ClasspathVMStackWalker.inc ClasspathVMSystem.inc \
-	     ClasspathVMSystemProperties.inc ClasspathVMThread.inc ClasspathVMThrowable.inc
+EXTRA_DIST = Classpath.inc ClasspathVMClass.inc ClasspathVMClassLoader.inc \
+             ClasspathVMObject.inc ClasspathVMRuntime.inc \
+             ClasspathVMStackWalker.inc ClasspathVMSystem.inc \
+             ClasspathVMSystemProperties.inc ClasspathVMThread.inc \
+             ClasspathVMThrowable.inc
 
 include $(LEVEL)/Makefile.config
 

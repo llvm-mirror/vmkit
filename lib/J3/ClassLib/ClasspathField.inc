@@ -1154,18 +1154,4 @@ JavaObjectField* Field, JavaObject* obj, jdouble val) {
   END_NATIVE_EXCEPTION
 }
 
-// Never throws.
-JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-#endif
-JavaObject* Unsafe, JavaObjectField* Field) {
-
-  llvm_gcroot(Field, 0);
-  llvm_gcroot(Unsafe, 0);
-
-  JavaField* field = JavaObjectField::getInternalField(Field);
-  return (jlong)field->ptrOffset;
-}
-
 }

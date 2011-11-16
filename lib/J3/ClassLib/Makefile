@@ -12,9 +12,9 @@ EXTRA_DIST = ArrayCopy.inc \
              ClassContext.inc \
              ClasspathConstructor.inc \
              ClasspathField.inc \
-             Classpath.inc \
              ClasspathMethod.inc \
-             SetProperties.inc
+             SetProperties.inc \
+             Unsafe.inc
 
 include $(LEVEL)/Makefile.config
 
