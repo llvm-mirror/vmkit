@@ -977,22 +977,39 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
 }
 
 word_t JnjvmClassLoader::loadInLib(const char* buf, bool& j3) {
-  word_t res = (word_t)TheCompiler->loadMethod(mvm::System::GetSelfHandle(), buf);
-  
-  if (!res) {
-    for (std::vector<void*>::iterator i = nativeLibs.begin(),
-              e = nativeLibs.end(); i!= e; ++i) {
-      res = (word_t)TheCompiler->loadMethod((*i), buf);
-      if (res) break;
-    }
-  } else {
-    j3 = true;
-  }
-  
-  if (!res && this != bootstrapLoader)
-    res = bootstrapLoader->loadInLib(buf, j3);
+  // Check 'self'.  Should only check our process, however it's possible native
+  // code dlopen'd something itself (with RTLD_GLOBAL; OpenJDK does this).
+  // To handle this, we search both ourselves and the libraries we loaded.
+  word_t sym =
+    (word_t)TheCompiler->loadMethod(mvm::System::GetSelfHandle(), buf);
 
-  return (word_t)res;
+  // Search loaded libraries as well, both as fallback and to determine
+  // whether or not the symbol in question is defined by vmkit.
+  word_t symFromLib = 0;
+  for (std::vector<void*>::iterator i = nativeLibs.begin(),
+      e = nativeLibs.end(); i!= e; ++i) {
+    symFromLib = (word_t)TheCompiler->loadMethod((*i), buf);
+    if (symFromLib) break;
+  }
+
+  if (sym) {
+    // Always use the definition from 'self', if it exists.
+    // Furthermore, claim it's defined in j3 iff it wasn't found in one of our
+    // libraries.  This might be wrong if we do a lookup on a symbol that's
+    // neither in vmkit nor a VM-loaded library (but /is/ in a different library
+    // that has been dlopen'd by native code), but that should never
+    // be called from java code anyway.
+    j3 = (sym != symFromLib);
+    return sym;
+  }
+
+  // Otherwise return what we found in the libraries, if anything
+  if (symFromLib) return symFromLib;
+
+  if (this != bootstrapLoader)
+    return bootstrapLoader->loadInLib(buf, j3);
+
+  return 0;
 }
 
 void* JnjvmClassLoader::loadLib(const char* buf) {
