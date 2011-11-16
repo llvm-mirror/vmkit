@@ -102,9 +102,6 @@ JavaObject* unsafe, JavaObject* clazz) {
 /// objectFieldOffset - Pointer offset of the specified field
 ///
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-#endif
 JavaObject* Unsafe, JavaObjectField* Field) {
 
   llvm_gcroot(Field, 0);
@@ -136,19 +133,110 @@ JavaObject* unsafe, JavaObject* base, jlong offset, jtype val) { \
   END_NATIVE_EXCEPTION \
 }
 
-GET_PUT_OFFSET(Boolean,jboolean,Z)
-GET_PUT_OFFSET(Byte,jbyte,B)
-GET_PUT_OFFSET(Char,jchar,C)
-GET_PUT_OFFSET(Short,jshort,S)
-GET_PUT_OFFSET(Int,jint,I)
-GET_PUT_OFFSET(Long,jlong,J)
-GET_PUT_OFFSET(Float,jfloat,F)
-GET_PUT_OFFSET(Double,jdouble,D)
+//===--- Direct address read/write acccessors -----------------------------===//
+#define GET_PUT_DIRECT(Type,jtype,shorttype) \
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_put ## Type ## __J ## shorttype( \
+JavaObject* unsafe, jlong ptr, jtype val) { \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  *(jtype*)ptr = val; \
+  END_NATIVE_EXCEPTION \
+} \
+ \
+JNIEXPORT jtype JNICALL Java_sun_misc_Unsafe_get ## Type ## __J( \
+JavaObject* unsafe, jlong ptr) { \
+  jtype res = 0; \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  res = *(jtype*)ptr; \
+  END_NATIVE_EXCEPTION \
+  return res; \
+}
+
+//===--- Volatile variant of field accessors ------------------------------===//
+// Memory barriers after writes to ensure new value is seen elsewhere
+#define GET_PUT_OFFSET_VOLATILE(Type,jtype,shorttype) \
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_put ## Type ## Volatile__J ## shorttype( \
+JavaObject* unsafe, jlong ptr, jtype val) { \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  *(volatile jtype*)ptr = val; \
+  __sync_synchronize(); \
+  END_NATIVE_EXCEPTION \
+} \
+ \
+JNIEXPORT jtype JNICALL Java_sun_misc_Unsafe_get ## Type ## Volatile__J( \
+JavaObject* unsafe, jlong ptr) { \
+  jtype res = 0; \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  res = *(volatile jtype*)ptr; \
+  END_NATIVE_EXCEPTION \
+  return res; \
+}
+
+//===--- Volatile variant of direct address accessors ---------------------===//
+#define GET_PUT_DIRECT_VOLATILE(Type,jtype,shorttype) \
+JNIEXPORT jtype JNICALL Java_sun_misc_Unsafe_get ## Type ## Volatile__Ljava_lang_Object_2J( \
+JavaObject* unsafe, JavaObject* base, jlong offset) { \
+  jtype res = 0; \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  volatile jtype* ptr = (volatile jtype*)fieldPtr(base,offset); \
+  res = *ptr; \
+  END_NATIVE_EXCEPTION \
+ \
+  return res; \
+} \
+ \
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_put ## Type ## Volatile__Ljava_lang_Object_2J ## shorttype( \
+JavaObject* unsafe, JavaObject* base, jlong offset, jtype val) { \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  volatile jtype* ptr = (volatile jtype*)fieldPtr(base,offset); \
+  *ptr = val; \
+  __sync_synchronize(); \
+  END_NATIVE_EXCEPTION \
+}
+
+//===--- Ordered variant of field accessors -------------------------------===//
+#define GET_PUT_FIELD_ORDERED(Type,jtype,shorttype) \
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putOrdered ## Type( \
+JavaObject* unsafe, JavaObject* base, jlong offset, jtype val) { \
+  BEGIN_NATIVE_EXCEPTION(0) \
+  volatile jtype* ptr = (volatile jtype*)fieldPtr(base,offset); \
+  *ptr = val; \
+  /* No memory barrier */ \
+  END_NATIVE_EXCEPTION \
+}
+
+#define GET_PUT_ALL(Type,jtype,shorttype) \
+  GET_PUT_OFFSET(Type,jtype,shorttype) \
+  GET_PUT_DIRECT(Type,jtype,shorttype) \
+  GET_PUT_OFFSET_VOLATILE(Type,jtype,shorttype) \
+  GET_PUT_DIRECT_VOLATILE(Type,jtype,shorttype)
+
+GET_PUT_ALL(Boolean,jboolean,Z)
+GET_PUT_ALL(Byte,jbyte,B)
+GET_PUT_ALL(Char,jchar,C)
+GET_PUT_ALL(Short,jshort,S)
+GET_PUT_ALL(Int,jint,I)
+GET_PUT_ALL(Long,jlong,J) // TODO: Long needs special handling!
+GET_PUT_ALL(Float,jfloat,F)
+GET_PUT_ALL(Double,jdouble,D)
+
+// Ordered:
+GET_PUT_FIELD_ORDERED(Int,jint,I)
+GET_PUT_FIELD_ORDERED(Long,jlong,J)
 
 //===--- Get/Put of Objects, due to GC needs special handling -------------===//
 // JavaObject field accessors:
-// Never throws.
-JNIEXPORT JavaObject* JNICALL Java_sun_misc_Unsafe_getObjectVolatile(
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putObject__Ljava_lang_Object_2JLjava_lang_Object_2(
+JavaObject* unsafe, JavaObject* base, jlong offset, JavaObject* value) {
+  llvm_gcroot(unsafe, 0);
+  llvm_gcroot(base, 0);
+  llvm_gcroot(value, 0);
+
+  JavaObject** ptr = (JavaObject**)fieldPtr(base, offset);
+  mvm::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
+}
+
+
+JNIEXPORT JavaObject* JNICALL Java_sun_misc_Unsafe_getObject__Ljava_lang_Object_2J(
 JavaObject* unsafe, JavaObject* base, jlong offset) {
   JavaObject * res = 0;
   llvm_gcroot(unsafe, 0);
@@ -166,9 +254,6 @@ JavaObject* unsafe, JavaObject* base, jlong offset) {
 // Volatile JavaObject field accessors:
 // Never throws.
 JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putObjectVolatile(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-#endif
 JavaObject* unsafe, JavaObject* base, jlong offset, JavaObject* value) {
   llvm_gcroot(unsafe, 0);
   llvm_gcroot(base, 0);
@@ -176,38 +261,48 @@ JavaObject* unsafe, JavaObject* base, jlong offset, JavaObject* value) {
 
   JavaObject** ptr = (JavaObject**)fieldPtr(base, offset);
   mvm::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
+  // Ensure this value is seen.
+  __sync_synchronize();
 }
 
-//===--- Misc get/put defined, TODO: generalize! --------------------------===//
-JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putLong__JJ(
-JavaObject* unsafe, jlong ptr, jlong value) {
-  BEGIN_NATIVE_EXCEPTION(0)
-  *(jlong*)ptr = value;
-  END_NATIVE_EXCEPTION
-}
+JNIEXPORT JavaObject* JNICALL Java_sun_misc_Unsafe_getObjectVolatile(
+JavaObject* unsafe, JavaObject* base, jlong offset) {
+  JavaObject * res = 0;
+  llvm_gcroot(unsafe, 0);
+  llvm_gcroot(base, 0);
+  llvm_gcroot(res, 0);
 
-JNIEXPORT jbyte JNICALL Java_sun_misc_Unsafe_getByte__J(
-JavaObject* unsafe, jlong ptr) {
-  jbyte res = 0;
   BEGIN_NATIVE_EXCEPTION(0)
-  res =  *(jbyte*)ptr;
-  END_NATIVE_EXCEPTION
+  JavaObject* volatile* ptr = (JavaObject* volatile*)fieldPtr(base, offset);
+  res = *ptr;
+  END_NATIVE_EXCEPTION;
 
   return res;
+}
+
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putOrderedObject(
+JavaObject* unsafe, JavaObject* base, jlong offset, JavaObject* value) {
+  llvm_gcroot(unsafe, 0);
+  llvm_gcroot(base, 0);
+  llvm_gcroot(value, 0);
+
+  JavaObject** ptr = (JavaObject**)fieldPtr(base, offset);
+  mvm::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
+  // No barrier (difference between volatile and ordered)
 }
 
 
 //===--- CompareAndSwap field accessors -----------------------------------===//
 // Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapLong(
-JavaObject* unsafe, JavaObject* obj, jlong offset, jlong expect, jlong update) {
+JavaObject* unsafe, JavaObject* base, jlong offset, jlong expect, jlong update) {
 
   llvm_gcroot(unsafe, 0);
-  llvm_gcroot(obj, 0);
+  llvm_gcroot(base, 0);
   jlong *ptr;
   jlong  value;
 
-  ptr = (jlong *) (((uint8 *) obj) + offset);
+  ptr = (jlong*)fieldPtr(base, offset);
 
   value = *ptr;
 
@@ -222,36 +317,30 @@ JavaObject* unsafe, JavaObject* obj, jlong offset, jlong expect, jlong update) {
 
 // Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapInt(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-#endif
-JavaObject* unsafe, JavaObject* obj, jlong offset, jint expect, jint update) {
+JavaObject* unsafe, JavaObject* base, jlong offset, jint expect, jint update) {
 
   llvm_gcroot(unsafe, 0);
-  llvm_gcroot(obj, 0);
+  llvm_gcroot(base, 0);
   jint *ptr;
 
-  ptr = (jint *) (((uint8 *) obj) + offset);
+  ptr = (jint *)fieldPtr(base, offset);
 
   return __sync_bool_compare_and_swap(ptr, expect, update);
 }
 
 // Never throws.
 JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapObject(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-#endif
-JavaObject* unsafe, JavaObject* obj, jlong offset, JavaObject* expect,
+JavaObject* unsafe, JavaObject* base, jlong offset, JavaObject* expect,
 JavaObject* update) {
   llvm_gcroot(unsafe, 0);
-  llvm_gcroot(obj, 0);
+  llvm_gcroot(base, 0);
   llvm_gcroot(expect, 0);
   llvm_gcroot(update, 0);
 
-  JavaObject** ptr = (JavaObject**) (((uint8 *) obj) + offset);
-
-  return mvm::Collector::objectReferenceTryCASBarrier((gc*)obj, (gc**)ptr, (gc*)expect, (gc*)update);
+  JavaObject** ptr = (JavaObject**)fieldPtr(base, offset);
+  return mvm::Collector::objectReferenceTryCASBarrier((gc*)base, (gc**)ptr, (gc*)expect, (gc*)update);
 }
+
 
 //===--- Class-related functions ------------------------------------------===//
 JNIEXPORT void JNICALL Java_sun_misc_Unsafe_ensureClassInitialized(
@@ -268,6 +357,11 @@ JavaObject* unsafe, JavaObject* clazz) {
   cl->asClass()->initialiseClass(vm);
 
   END_NATIVE_EXCEPTION;
+}
+
+JNIEXPORT JavaObject* JNICALL Java_sun_misc_Unsafe_defineClass__Ljava_lang_String_2_3BII(
+JavaObject* unsafe, JavaString *name, ArrayObject * bytesArr, jint off, jint len) {
+  UNIMPLEMENTED();
 }
 
 JNIEXPORT JavaObject* JNICALL Java_sun_misc_Unsafe_defineClass__Ljava_lang_String_2_3BIILjava_lang_ClassLoader_2Ljava_security_ProtectionDomain_2(
@@ -322,14 +416,50 @@ JavaObject* unsafe, JavaObjectClass * clazz) {
   return res;
 }
 
+JNIEXPORT JavaObject* JNICALL Java_sun_Unsafe_defineAnonymousClass(
+JavaObject* unsafe, ...) {
+  UNIMPLEMENTED();
+}
 
 //===--- Memory functions -------------------------------------------------===//
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_setMemory__JJB(
+JavaObject* unsafe, long address, long bytes, jbyte value) {
+  memset((void*)address, value, bytes);
+}
+
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_copyMemory__JJJ(
+JavaObject* unsafe, jlong src, jlong dst, jlong size) {
+  memcpy((void*)dst, (void*)src, size);
+}
+
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_copyMemory__Ljava_lang_Object_2JLjava_lang_Object_2JJ(
+JavaObject* unsafe,
+JavaObject* srcBase, jlong srcOffset,
+JavaObject* dstBase, jlong dstOffset,
+jlong size) {
+  BEGIN_NATIVE_EXCEPTION(0)
+  uint8_t* src = fieldPtr(srcBase, srcOffset, false /* Don't throw on null base*/ );
+  uint8_t* dst = fieldPtr(dstBase, dstOffset, false /* Don't throw on null base*/ );
+  memcpy(dst, src, size);
+  END_NATIVE_EXCEPTION
+}
+
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_allocateMemory(
 JavaObject* unsafe, jlong size) {
   // TODO: Invalid size/OOM/etc handling!
   jlong res = 0;
   BEGIN_NATIVE_EXCEPTION(0)
   res = (jlong)malloc(size);
+  END_NATIVE_EXCEPTION
+  return res;
+}
+
+JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_reallocateMemory(
+JavaObject* unsafe, jlong ptr, jlong newsize) {
+  // TODO: Invalid size/OOM/etc handling!
+  jlong res = 0;
+  BEGIN_NATIVE_EXCEPTION(0)
+  res = (jlong)realloc((void*)ptr, newsize);
   END_NATIVE_EXCEPTION
   return res;
 }
@@ -342,6 +472,45 @@ JavaObject* unsafe, jlong ptr) {
   END_NATIVE_EXCEPTION
 }
 
+JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_getAddress(
+JavaObject* unsafe, jlong ptr) {
+  return (jlong)*(void**)ptr;
+}
+
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_putAddress(
+JavaObject* unsafe, jlong ptr, jlong val) {
+  *(void**)ptr = (void*)val;
+}
+
+//===--- Park/Unpark thread support ---------------------------------------===//
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_park(
+JavaObject* unsafe, jboolean isAbsolute, jlong time) {
+  // Nothing, for now.
+}
+
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_unpark(
+JavaObject* unsafe, JavaObject* thread) {
+  // Nothing, for now.
+}
+
+//===--- Monitor support --------------------------------------------------===//
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_tryMonitorEnter(
+JavaObject* unsafe, JavaObject * obj) {
+  //TODO: Implement me!
+  UNIMPLEMENTED();
+}
+
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_monitorEnter(
+JavaObject* unsafe, JavaObject * obj) {
+  //TODO: Implement me!
+  UNIMPLEMENTED();
+}
+
+JNIEXPORT void JNICALL Java_sun_misc_Unsafe_monitorExit(
+JavaObject* unsafe, JavaObject * obj) {
+  //TODO: Implement me!
+  UNIMPLEMENTED();
+}
 
 //===--- Misc support functions -------------------------------------------===//
 JNIEXPORT void JNICALL Java_sun_misc_Unsafe_registerNatives(JavaObject*) {
@@ -356,6 +525,19 @@ JavaObject* unsafe, JavaObject * obj) {
   JavaThread::get()->throwException(obj);
 }
 
+JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_pageSize(
+JavaObject* unsafe) {
+  return mvm::System::GetPageSize();
+}
 
+JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_addressSize(
+JavaObject* unsafe) {
+  return mvm::kWordSize;
+}
+
+JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_getLoadAverage(
+JavaObject* unsafe, ...) {
+  UNIMPLEMENTED();
+}
 
 }
