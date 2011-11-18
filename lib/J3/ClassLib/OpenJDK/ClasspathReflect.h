@@ -92,6 +92,15 @@ public:
       if (*Obj) mvm::Collector::markAndTraceRoot(Obj, closure);
     }
   }
+
+  static ArrayObject* getDeclaredAnnotations(JavaObjectClass* Cl);
+  static ArrayObject* getDeclaredClasses(JavaObjectClass* Cl, bool publicOnly);
+  static ArrayObject* getDeclaredConstructors(JavaObjectClass* Cl, bool publicOnly);
+  static ArrayObject* getDeclaredFields(JavaObjectClass* Cl, bool publicOnly);
+  static ArrayObject* getDeclaredMethods(JavaObjectClass* Cl, bool publicOnly);
+  static ArrayObject* getInterfaces(JavaObjectClass* Cl);
+  static JavaObject* getDeclaringClass(JavaObjectClass* Cl);
+  static int getModifiers(JavaObjectClass* Cl);
 };
 
 class JavaObjectField : public JavaObject {
@@ -143,6 +152,7 @@ public:
     return cls->asClass();
   }
 
+  static JavaObjectField* createFromInternalField(JavaField* field, int i);
 };
 
 class JavaObjectMethod : public JavaObject {
@@ -196,6 +206,7 @@ public:
     return cls->asClass();
   }
 
+  static JavaObjectMethod* createFromInternalMethod(JavaMethod* meth, int i);
 };
 
 class JavaObjectConstructor : public JavaObject {
@@ -240,6 +251,7 @@ public:
     return cls->asClass();
   }
 
+  static JavaObjectConstructor* createFromInternalConstructor(JavaMethod* cons, int i);
 };
 
 class JavaObjectThrowable : public JavaObject {

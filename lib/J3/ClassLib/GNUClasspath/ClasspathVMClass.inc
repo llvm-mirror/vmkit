@@ -86,48 +86,12 @@ JavaObject* Cl,
 jboolean publicOnly) {
 
   ArrayObject* ret = 0;
-  JavaObject* tmp = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
-  llvm_gcroot(tmp, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-
-  if (cl->isArray() || cl->isInterface() || cl->isPrimitive()) {
-    ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(0, vm);
-  } else {
-    UserClass* realCl = cl->asClass();;
-    JnjvmClassLoader* classLoader = cl->classLoader;
-    uint32 size = 0;
-    
-    for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
-      JavaMethod* meth = &realCl->virtualMethods[i];
-      bool pub = isPublic(meth->access);
-      if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
-          (!publicOnly || pub)) {
-        ++size;
-      }
-    }
-  
-    ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(size, vm);
-
-    sint32 index = 0;
-    for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
-      JavaMethod* meth = &realCl->virtualMethods[i];
-      bool pub = isPublic(meth->access);
-      if (meth->name->equals(classLoader->bootstrapLoader->initName) && 
-          (!publicOnly || pub)) {
-        UserClass* Cons = vm->upcalls->newConstructor;
-        tmp = Cons->doNew(vm);
-        vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp, &Cl, i);
-        ArrayObject::setElement(ret, tmp, index);
-        index++;
-      }
-    }
-  }
+  ret = JavaObjectClass::getDeclaredConstructors((JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -143,58 +107,12 @@ JavaObject* Cl,
 jboolean publicOnly) {
 
   ArrayObject* ret = 0;
-  JavaObject* tmp = 0;
-  JavaString* str = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
-  llvm_gcroot(tmp, 0);
-  llvm_gcroot(str, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-  Classpath* upcalls = vm->upcalls;
-
-  if (cl->isArray() || cl->isPrimitive()) {
-    ret = (ArrayObject*)upcalls->methodArrayClass->doNew(0, vm);
-  } else {
-    UserClass* realCl = cl->asClass();
-    JnjvmClassLoader* classLoader = cl->classLoader;
-    uint32 size = 0;
-
-    for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
-         ++i) {
-      JavaMethod* meth = &realCl->virtualMethods[i];
-      bool pub = isPublic(meth->access);
-      if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
-          !(meth->name->equals(classLoader->bootstrapLoader->clinitName)) && 
-          (!publicOnly || pub)) {
-        ++size; 
-      }
-    }
-
-    
-    ret = (ArrayObject*)upcalls->methodArrayClass->doNew(size, vm);
-
-    sint32 index = 0;
-    for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
-         ++i) {
-      JavaMethod* meth = &realCl->virtualMethods[i];
-      bool pub = isPublic(meth->access);
-      if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) && 
-          !(meth->name->equals(classLoader->bootstrapLoader->clinitName)) && 
-          (!publicOnly || pub)) {
-        // TODO: check parameter types
-        UserClass* Meth = vm->upcalls->newMethod;
-        tmp = Meth->doNew(vm);
-        str = vm->internalUTF8ToStr(meth->name);
-        upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp, &Cl, &str, i);
-        ArrayObject::setElement(ret, tmp, index);
-        index++;
-      }
-    }
-  }
+  ret = JavaObjectClass::getDeclaredMethods((JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -214,14 +132,7 @@ jboolean ignore) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-  res = cl->getAccess();
-
-  if (isEnum(res) && cl->getSuper() != vm->upcalls->EnumClass) {
-    // javac may put that flag to inner classes of enum classes. 
-    res &= ~ACC_ENUM;
-  }
+  res = JavaObjectClass::getModifiers((JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
   return res;
@@ -428,49 +339,12 @@ jclass clazz,
 JavaObject* Cl, jboolean publicOnly) {
 
   ArrayObject* ret = 0;
-  JavaObject* tmp = 0;
-  JavaString* name = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
-  llvm_gcroot(tmp, 0);
-  llvm_gcroot(name, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-
-  if (!cl->isClass()) {
-    ret = (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(0, vm);
-  } else {
-    UserClass* realCl = cl->asClass(); 
-    uint32 size = 0;
-    for (uint32 i = 0; i < realCl->nbVirtualFields + realCl->nbStaticFields;
-         ++i) {
-      JavaField* field = &realCl->virtualFields[i];
-      if (!publicOnly || isPublic(field->access)) {
-        ++size;
-      }
-    }
-
-
-    ret = (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(size, vm);
-
-    sint32 index = 0;
-    for (uint32 i = 0; i < realCl->nbVirtualFields + realCl->nbStaticFields;
-         ++i) {
-      JavaField* field = &realCl->virtualFields[i];
-      if (!publicOnly || isPublic(field->access)) {
-        // TODO: check parameter types
-        UserClass* Field = vm->upcalls->newField;
-        tmp = Field->doNew(vm);
-        name = vm->internalUTF8ToStr(field->name);
-        vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp, &Cl, &name, i);
-        ArrayObject::setElement(ret, tmp, index);
-        index++;
-      }
-    }
-  }
+  ret = JavaObjectClass::getDeclaredFields((JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -490,14 +364,7 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-  res = (ArrayObject*)vm->upcalls->classArrayClass->doNew(cl->nbInterfaces, vm);
-
-  for (uint16 i = 0; i < cl->nbInterfaces; ++i) {
-    UserClass* klass = cl->interfaces[i];
-    ArrayObject::setElement(res, klass->getClassDelegatee(vm), i);
-  }
+  res = JavaObjectClass::getInterfaces((JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
 
@@ -518,16 +385,7 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false)->asClass();
-
-  if (cl) {
-    cl->resolveInnerOuterClasses();
-    UserClass* outer = cl->getOuterClass();
-    if (outer) {
-      res = outer->getClassDelegatee(vm);
-    }
-  }
+  res = JavaObjectClass::getDeclaringClass((JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
 
@@ -548,33 +406,7 @@ JavaObject* Cl, bool publicOnly) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false)->asClass();
-  if (cl) {
-    cl->resolveInnerOuterClasses();
-    UserClassArray* array = vm->upcalls->constructorArrayClass;
-    
-    uint16 sizeArray = 0;
-
-    if (publicOnly) {
-      for (uint16 i = 0; i < cl->nbInnerClasses; ++i) {
-        UserClass* klass = cl->innerClasses[i];
-        if (isPublic(klass->innerAccess)) ++sizeArray;
-      }
-    } else {
-      sizeArray = cl->nbInnerClasses;
-    }
-
-    result = (ArrayObject*)array->doNew(sizeArray, vm);
-    int index = 0;
-    for (uint16 i = 0; i < cl->nbInnerClasses; ++i) {
-      UserClass* klass = cl->innerClasses[i];
-      if (!publicOnly || isPublic(klass->innerAccess))
-        ArrayObject::setElement(result, klass->getClassDelegatee(vm), index++); 
-    }
-    assert(index == sizeArray);
-  }
-  
+  result = JavaObjectClass::getDeclaredClasses((JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -603,16 +435,14 @@ jclass clazz,
 #endif
 JavaObject* Cl) {
   // TODO implement me
-  
+
   ArrayObject* res = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(Cl, 0);
-  
+
   BEGIN_NATIVE_EXCEPTION(0)
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
-  res = (ArrayObject*)array->doNew(0, vm);
+  res = JavaObjectClass::getDeclaredAnnotations((JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
 
@@ -640,6 +470,5 @@ JavaObject* Cl) {
 
   return res;
 }
-
 
 }

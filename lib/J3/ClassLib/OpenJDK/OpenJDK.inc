@@ -1186,7 +1186,18 @@ JVM_GetClassName(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassInterfaces(JNIEnv *env, jclass cls) {
-  NYI();
+  ArrayObject* ret = 0;
+  llvm_gcroot(ret, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  ret = JavaObjectClass::getInterfaces(*(JavaObjectClass**)cls);
+
+  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jobject JNICALL
@@ -1328,23 +1339,13 @@ JVM_GetComponentType(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jint JNICALL
 JVM_GetClassModifiers(JNIEnv *env, jclass cls) {
-  JavaObject * Cl = 0;
+  JavaObjectClass * Cl = 0;
   llvm_gcroot(Cl, 0);
   BEGIN_JNI_EXCEPTION
 
-  Cl = *(JavaObject**)cls;
+  Cl = *(JavaObjectClass**)cls;
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false)->asClass();;
-
-  jint res = cl->getAccess();
-
-  if (isEnum(res) && cl->getSuper() != vm->upcalls->EnumClass) {
-    // javac may put that flag to inner classes of enum classes.
-    res &= ~ACC_ENUM;
-  }
-
-  RETURN_FROM_JNI(res);
+  RETURN_FROM_JNI(JavaObjectClass::getModifiers(Cl));
 
   END_JNI_EXCEPTION
 
@@ -1353,12 +1354,35 @@ JVM_GetClassModifiers(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass) {
-  NYI();
+  ArrayObject* ret = 0;
+  llvm_gcroot(ret, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  // TODO: Verify boolean parameter here, assuming should default to true.
+  ret = JavaObjectClass::getDeclaredClasses(*(JavaObjectClass**)ofClass, false);
+
+  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jclass JNICALL
 JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass) {
-  NYI();
+  JavaObject* ret = 0;
+  llvm_gcroot(ret, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  ret = JavaObjectClass::getDeclaringClass(*(JavaObjectClass**)ofClass);
+
+  RETURN_FROM_JNI((jclass)th->pushJNIRef(ret));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /* Generics support (JDK 1.5) */
@@ -1370,7 +1394,18 @@ JVM_GetClassSignature(JNIEnv *env, jclass cls) {
 /* Annotations support (JDK 1.5) */
 JNIEXPORT jbyteArray JNICALL
 JVM_GetClassAnnotations(JNIEnv *env, jclass cls) {
-  NYI();
+  ArrayObject* ret = 0;
+  llvm_gcroot(ret, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  ret = JavaObjectClass::getDeclaredAnnotations(*(JavaObjectClass**)cls);
+
+  RETURN_FROM_JNI((jbyteArray)th->pushJNIRef(ret));
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
@@ -1380,74 +1415,11 @@ JVM_GetClassAnnotations(JNIEnv *env, jclass cls) {
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
   ArrayObject* ret = 0;
-  JavaObject* tmp = 0;
-  JavaString* str = 0;
-  JavaObject * Cl = 0;
-  llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
-  llvm_gcroot(tmp, 0);
-  llvm_gcroot(str, 0);
 
   BEGIN_JNI_EXCEPTION
 
-  Cl = *(JavaObject**)ofClass;
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-  Classpath* upcalls = vm->upcalls;
-
-  if (cl->isArray() || cl->isPrimitive()) {
-    ret = (ArrayObject*)upcalls->methodArrayClass->doNew(0, vm);
-  } else {
-    UserClass* realCl = cl->asClass();
-    JnjvmClassLoader* classLoader = cl->classLoader;
-    uint32 size = 0;
-
-    for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
-         ++i) {
-      JavaMethod* meth = &realCl->virtualMethods[i];
-      bool pub = isPublic(meth->access);
-      if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) &&
-          (!publicOnly || pub)) {
-        ++size;
-      }
-    }
-
-
-    ret = (ArrayObject*)upcalls->methodArrayClass->doNew(size, vm);
-
-    sint32 index = 0;
-    for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
-         ++i) {
-      JavaMethod* meth = &realCl->virtualMethods[i];
-      bool pub = isPublic(meth->access);
-      if (!(meth->name->equals(classLoader->bootstrapLoader->initName)) &&
-          (!publicOnly || pub)) {
-        // TODO: check parameter types
-        UserClass* Meth = vm->upcalls->newMethod;
-        tmp = Meth->doNew(vm);
-        str = vm->internalUTF8ToStr(meth->name);
-        JavaObject * pArr = meth->getParameterTypes(classLoader);
-        JavaObject * eArr = meth->getExceptionTypes(classLoader);
-        JavaObject * retTy = meth->getReturnType(classLoader);
-        upcalls->initMethod->invokeIntSpecial(vm, Meth, tmp,
-          &Cl,          /* declaring class */
-          &str,         /* name */
-          &pArr,        /* parameter types */
-          &retTy,       /* return type */
-          &eArr,        /* exceptions */
-          meth->access, /* modifiers */
-          i,            /* slot */
-          NULL,         /* signature */
-          NULL,         /* annotations */
-          NULL,         /* parameter annotations */
-          NULL,         /* default annotations */
-          i);
-        ArrayObject::setElement(ret, tmp, index);
-        index++;
-      }
-    }
-  }
+  ret = JavaObjectClass::getDeclaredMethods(*(JavaObjectClass**)ofClass, publicOnly);
 
   RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
 
@@ -1459,85 +1431,12 @@ JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
   ArrayObject* ret = 0;
-  JavaObject* tmp = 0;
-  JavaString* name = 0;
-  JavaObject*const*  type = 0;
-  JavaString* sign = 0;
-  JavaObject* annArray = 0;
   llvm_gcroot(ret, 0);
-  llvm_gcroot(tmp, 0);
-  llvm_gcroot(name, 0);
-  llvm_gcroot(type, 0);
-  llvm_gcroot(sign, 0);
-  llvm_gcroot(annArray, 0);
 
   BEGIN_JNI_EXCEPTION
 
-  JavaObject * Cl = *(JavaObject**)ofClass;
-  llvm_gcroot(Cl, 0);
+  ret = JavaObjectClass::getDeclaredFields(*(JavaObjectClass**)ofClass, publicOnly);
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-
-  if (!cl->isClass()) {
-    ret = (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(0, vm);
-  } else {
-    UserClass* realCl = cl->asClass();
-    uint32 size = 0;
-    for (uint32 i = 0; i < realCl->nbVirtualFields + realCl->nbStaticFields;
-         ++i) {
-      JavaField* field = &realCl->virtualFields[i];
-      if (!publicOnly || isPublic(field->access)) {
-        ++size;
-      }
-    }
-
-
-    ret = (ArrayObject*)vm->upcalls->fieldArrayClass->doNew(size, vm);
-
-    sint32 index = 0;
-    for (uint32 i = 0; i < realCl->nbVirtualFields + realCl->nbStaticFields;
-         ++i) {
-      JavaField* field = &realCl->virtualFields[i];
-      if (!publicOnly || isPublic(field->access)) {
-        // TODO: check parameter types
-        UserClass* Field = vm->upcalls->newField;
-        tmp = Field->doNew(vm);
-        name = vm->internalUTF8ToStr(field->name);
-
-        //type->Class
-        UserCommonClass * fieldCl = field->getSignature()->assocClass(cl->classLoader);
-        assert(fieldCl);
-        type = fieldCl->getClassDelegateePtr(vm);
-
-        // TODO:Implement these!
-        sign = NULL;
-        annArray = NULL;
-
-        //Convert to string
-
-        /* java.reflect.Field(
-         *   Class declaringClass,
-         *   String name,
-         *   Class type,
-         *   int modifiers,
-         *   int slot,
-         *   String signature,
-         *   byte[] annotations)
-         */
-        vm->upcalls->initField->invokeIntSpecial(vm, Field, tmp,
-          &Cl,
-          &name,
-          type,
-          field->access,
-          i,
-          sign,
-          annArray);
-        ArrayObject::setElement(ret, tmp, index);
-        index++;
-      }
-    }
-  }
   RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
 
   END_JNI_EXCEPTION
@@ -1548,62 +1447,11 @@ JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
   ArrayObject* ret = 0;
-  JavaObject* tmp = 0;
-  JavaObject* Cl = 0;
-  llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
-  llvm_gcroot(tmp, 0);
 
   BEGIN_JNI_EXCEPTION
 
-  Cl = *(JavaObject**)ofClass;
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
-
-  if (cl->isArray() || cl->isInterface() || cl->isPrimitive()) {
-    ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(0, vm);
-  } else {
-    UserClass* realCl = cl->asClass();;
-    JnjvmClassLoader* classLoader = cl->classLoader;
-    uint32 size = 0;
-
-    for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
-      JavaMethod* meth = &realCl->virtualMethods[i];
-      bool pub = isPublic(meth->access);
-      if (meth->name->equals(classLoader->bootstrapLoader->initName) &&
-          (!publicOnly || pub)) {
-        ++size;
-      }
-    }
-
-    ret = (ArrayObject*)vm->upcalls->constructorArrayClass->doNew(size, vm);
-
-    sint32 index = 0;
-    for (uint32 i = 0; i < realCl->nbVirtualMethods; ++i) {
-      JavaMethod* meth = &realCl->virtualMethods[i];
-      bool pub = isPublic(meth->access);
-      if (meth->name->equals(classLoader->bootstrapLoader->initName) &&
-          (!publicOnly || pub)) {
-        UserClass* Cons = vm->upcalls->newConstructor;
-        JavaObject * pArr = meth->getParameterTypes(classLoader);
-        JavaObject * eArr = meth->getExceptionTypes(classLoader);
-        tmp = Cons->doNew(vm);
-        vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, tmp,
-          &Cl,          /* declaringClass */
-          &pArr,        /* parameterTypes */
-          &eArr,        /* checkedExceptions */
-          meth->access, /* modifiers */
-          i,            /* slot */
-          NULL,         /* String signature */
-          NULL,         /* annotations */
-          NULL          /* parameterAnnotations */
-        );
-        ArrayObject::setElement(ret, tmp, index);
-        index++;
-      }
-    }
-  }
+  ret = JavaObjectClass::getDeclaredConstructors(*(JavaObjectClass**)ofClass, publicOnly);
 
   RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
 
