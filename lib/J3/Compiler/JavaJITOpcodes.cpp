@@ -142,6 +142,10 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         stack = opinfo->stack;
         currentStackIndex = stack.size();
       }
+
+      if (opinfo->backEdge) {
+        checkYieldPoint();
+      }
     }
 
     currentExceptionBlock = opinfo->exceptionBlock;
@@ -2572,12 +2576,15 @@ void JavaJIT::exploreOpcodes(Reader& reader, uint32 codeLength) {
       case IF_ICMPLE :
       case IF_ACMPEQ :
       case IF_ACMPNE :
-      case GOTO : {
+      case GOTO :
+      case IFNULL :
+      case IFNONNULL : {
         uint32 tmp = i;
         uint16 index = tmp + reader.readU2();
+        if (index < i) opcodeInfos[index].backEdge = true;
         i += 2;
         if (!(opcodeInfos[index].newBlock))
-          opcodeInfos[index].newBlock = createBasicBlock("GOTO or IF*");
+          opcodeInfos[index].newBlock = createBasicBlock("");
         break;
       }
       
@@ -2715,17 +2722,6 @@ void JavaJIT::exploreOpcodes(Reader& reader, uint32 codeLength) {
       case WIDE :
         wide = true;
         break;
-
-      case IFNULL :
-      case IFNONNULL : {
-        uint32 tmp = i;
-        uint16 index = tmp + reader.readU2();
-        i += 2;
-        if (!(opcodeInfos[index].newBlock))
-          opcodeInfos[index].newBlock = createBasicBlock("true IF*NULL");
-        break;
-      }
-
 
       default : {
         fprintf(stderr, "I haven't verified your class file and it's malformed:"

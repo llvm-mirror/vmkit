@@ -21,8 +21,9 @@
 
 #include "j3/JavaLLVMCompiler.h"
 
-using namespace j3;
 using namespace llvm;
+
+namespace j3 {
 
 JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   TheModule(new llvm::Module(str, *(new LLVMContext()))),
@@ -103,26 +104,18 @@ JavaLLVMCompiler::~JavaLLVMCompiler() {
   delete Context;
 }
 
-namespace mvm {
-  llvm::LoopPass* createLoopSafePointsPass();
-}
-
-namespace j3 {
-  llvm::FunctionPass* createLowerConstantCallsPass(JavaLLVMCompiler* I);
-}
+llvm::FunctionPass* createLowerConstantCallsPass(JavaLLVMCompiler* I);
 
 void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses = new FunctionPassManager(TheModule);
   JavaNativeFunctionPasses->add(new TargetData(TheModule));
+
   J3FunctionPasses = new FunctionPassManager(TheModule);
   J3FunctionPasses->add(createLowerConstantCallsPass(this));
   
-  if (cooperativeGC)
-    J3FunctionPasses->add(mvm::createLoopSafePointsPass());
-
-  // Add other passes after the loop pass, because safepoints may move objects.
-  // Moving objects disable many optimizations.
   JavaFunctionPasses = new FunctionPassManager(TheModule);
   JavaFunctionPasses->add(new TargetData(TheModule));
   mvm::MvmModule::addCommandLinePasses(JavaFunctionPasses);
 }
+
+} // end namespace j3

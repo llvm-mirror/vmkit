@@ -75,6 +75,23 @@ bool JavaJIT::needsInitialisationCheck(Class* cl) {
   return true;
 }
 
+void JavaJIT::checkYieldPoint() {
+  if (!TheCompiler->useCooperativeGC()) return;
+  Value* YieldPtr = getDoYieldPtr(getMutatorThreadPtr());
+
+  Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
+
+  BasicBlock* continueBlock = createBasicBlock("After safe point");
+  BasicBlock* yieldBlock = createBasicBlock("In safe point");
+  BranchInst::Create(yieldBlock, continueBlock, Yield, currentBlock);
+
+  currentBlock = yieldBlock;
+  CallInst::Create(intrinsics->conditionalSafePoint, "", currentBlock);
+  BranchInst::Create(continueBlock, currentBlock);
+
+  currentBlock = continueBlock;
+}
+
 bool JavaJIT::canBeInlined(JavaMethod* meth, bool customizing) {
   if (inlineMethods[meth]) return false;
   if (isSynchro(meth->access)) return false;
@@ -1099,25 +1116,11 @@ llvm::Function* JavaJIT::javaCompile() {
   if (returnType != Type::getVoidTy(*llvmContext)) {
     endNode = llvm::PHINode::Create(returnType, 0, "", endBlock);
   }
+
+  checkYieldPoint();
   
   if (isSynchro(compilingMethod->access)) {
     beginSynchronize();
-  }
-  
-  if (TheCompiler->useCooperativeGC()) {
-    Value* YieldPtr = getDoYieldPtr(getMutatorThreadPtr());
-
-    Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
-
-    BasicBlock* continueBlock = createBasicBlock("After safe point");
-    BasicBlock* yieldBlock = createBasicBlock("In safe point");
-    BranchInst::Create(yieldBlock, continueBlock, Yield, currentBlock);
-
-    currentBlock = yieldBlock;
-    CallInst::Create(intrinsics->conditionalSafePoint, "", currentBlock);
-    BranchInst::Create(continueBlock, currentBlock);
-
-    currentBlock = continueBlock;
   }
   
   if (TheCompiler->hasExceptionsEnabled() &&

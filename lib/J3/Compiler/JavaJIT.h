@@ -64,6 +64,9 @@ struct Opinfo {
   /// stack - The stack at this location if there is a new block
   ///
   std::vector<MetaInfo> stack;
+
+  /// backEdge - If this block is a back edge.
+  bool backEdge;
 };
 
 /// JavaJIT - The compilation engine of J3. Parses the bycode and returns
