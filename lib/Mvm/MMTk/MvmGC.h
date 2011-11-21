@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 
-#ifndef MVM_MMTK_GC_H
-#define MVM_MMTK_GC_H
+#ifndef VMKIT_MMTK_GC_H
+#define VMKIT_MMTK_GC_H
 
 #include "vmkit/GC.h"
 #include <cstdlib>

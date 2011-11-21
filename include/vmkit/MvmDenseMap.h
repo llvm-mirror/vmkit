@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_DENSEMAP_H
-#define MVM_DENSEMAP_H
+#ifndef VMKIT_DENSEMAP_H
+#define VMKIT_DENSEMAP_H
 
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/PointerLikeTypeTraits.h"

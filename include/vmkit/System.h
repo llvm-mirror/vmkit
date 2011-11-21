@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_SYSTEM_H
-#define MVM_SYSTEM_H
+#ifndef VMKIT_SYSTEM_H
+#define VMKIT_SYSTEM_H
 
 #include <csetjmp>
 #include <cstring>

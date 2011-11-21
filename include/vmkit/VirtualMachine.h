@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_VIRTUALMACHINE_H
-#define MVM_VIRTUALMACHINE_H
+#ifndef VMKIT_VIRTUALMACHINE_H
+#define VMKIT_VIRTUALMACHINE_H
 
 #include "llvm/ADT/DenseMap.h"
 
@@ -234,4 +234,4 @@ public:
 };
 
 } // end namespace mvm
-#endif // MVM_VIRTUALMACHINE_H
+#endif // VMKIT_VIRTUALMACHINE_H

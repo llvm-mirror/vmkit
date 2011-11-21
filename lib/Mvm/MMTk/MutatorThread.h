@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 
-#ifndef MVM_MUTATOR_THREAD_H
-#define MVM_MUTATOR_THREAD_H
+#ifndef VMKIT_MUTATOR_THREAD_H
+#define VMKIT_MUTATOR_THREAD_H
 
 #include "vmkit/Allocator.h"
 #include "vmkit/Thread.h"

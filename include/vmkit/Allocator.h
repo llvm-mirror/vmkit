@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_ALLOCATOR_H
-#define MVM_ALLOCATOR_H
+#ifndef VMKIT_ALLOCATOR_H
+#define VMKIT_ALLOCATOR_H
 
 #include "llvm/Support/Allocator.h"
 #include "vmkit/Locks.h"
@@ -77,4 +77,4 @@ public:
 
 } // end namespace mvm
 
-#endif // MVM_ALLOCATOR_H
+#endif // VMKIT_ALLOCATOR_H

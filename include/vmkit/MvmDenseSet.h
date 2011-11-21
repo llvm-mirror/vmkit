@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_DENSESET_H
-#define MVM_DENSESET_H
+#ifndef VMKIT_DENSESET_H
+#define VMKIT_DENSESET_H
 
 #include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/Support/MathExtras.h"

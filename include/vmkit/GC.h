@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 
-#ifndef MVM_GC_H
-#define MVM_GC_H
+#ifndef VMKIT_GC_H
+#define VMKIT_GC_H
 
 #include <stdint.h>
 #include "vmkit/System.h"

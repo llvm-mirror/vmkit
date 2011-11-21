@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_METHODINFO_H
-#define MVM_METHODINFO_H
+#ifndef VMKIT_METHODINFO_H
+#define VMKIT_METHODINFO_H
 
 #include "vmkit/Allocator.h"
 #include "vmkit/System.h"
@@ -96,4 +96,4 @@ public:
 };
 
 } // end namespace mvm
-#endif // MVM_METHODINFO_H
+#endif // VMKIT_METHODINFO_H

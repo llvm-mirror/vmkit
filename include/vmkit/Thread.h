@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_THREAD_H
-#define MVM_THREAD_H
+#ifndef VMKIT_THREAD_H
+#define VMKIT_THREAD_H
 
 #include <cassert>
 #include <cstdio>
@@ -340,4 +340,4 @@ public:
 
 
 } // end namespace mvm
-#endif // MVM_THREAD_H
+#endif // VMKIT_THREAD_H

@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_OBJECT_LOCKS_H
-#define MVM_OBJECT_LOCKS_H
+#ifndef VMKIT_OBJECT_LOCKS_H
+#define VMKIT_OBJECT_LOCKS_H
 
 #include "vmkit/Allocator.h"
 #include "vmkit/GC.h"
@@ -198,4 +198,4 @@ public:
 
 } // end namespace mvm
 
-#endif // MVM_OBJECT_LOCKS_H
+#endif // VMKIT_OBJECT_LOCKS_H

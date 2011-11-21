@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_JIT_H
-#define MVM_JIT_H
+#ifndef VMKIT_JIT_H
+#define VMKIT_JIT_H
 
 #include <cfloat>
 #include <cmath>
@@ -194,4 +194,4 @@ public:
 
 } // end namespace mvm
 
-#endif // MVM_JIT_H
+#endif // VMKIT_JIT_H

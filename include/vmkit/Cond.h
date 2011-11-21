@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef MVM_COND_H
-#define MVM_COND_H
+#ifndef VMKIT_COND_H
+#define VMKIT_COND_H
 
 #include <cstdlib>
 #include <pthread.h>
@@ -31,4 +31,4 @@ public:
 
 } // end namespace mvm
 
-#endif // MVM_COND_H
+#endif // VMKIT_COND_H

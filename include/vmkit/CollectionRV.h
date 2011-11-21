@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef _MVM_COLLECTIONRV_H_
-#define _MVM_COLLECTIONRV_H_
+#ifndef _VMKIT_COLLECTIONRV_H_
+#define _VMKIT_COLLECTIONRV_H_
 
 #include "vmkit/Cond.h"
 #include "vmkit/Locks.h"
