@@ -9,7 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "debug.h"
-#include "mvm/VirtualMachine.h"
+#include "vmkit/VirtualMachine.h"
 #include "MMTkObject.h"
 
 namespace mmtk {

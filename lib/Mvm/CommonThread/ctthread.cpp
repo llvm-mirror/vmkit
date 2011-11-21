@@ -10,11 +10,11 @@
 #include "debug.h"
 
 #include "MvmGC.h"
-#include "mvm/MethodInfo.h"
-#include "mvm/VirtualMachine.h"
-#include "mvm/Cond.h"
-#include "mvm/Locks.h"
-#include "mvm/Thread.h"
+#include "vmkit/MethodInfo.h"
+#include "vmkit/VirtualMachine.h"
+#include "vmkit/Cond.h"
+#include "vmkit/Locks.h"
+#include "vmkit/Thread.h"
 
 #include <cassert>
 #include <cstdio>

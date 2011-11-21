@@ -10,8 +10,8 @@
 #include <cassert>
 #include <signal.h>
 #include "MvmGC.h"
-#include "mvm/VirtualMachine.h"
-#include "mvm/CollectionRV.h"
+#include "vmkit/VirtualMachine.h"
+#include "vmkit/CollectionRV.h"
 
 #include "debug.h"
 

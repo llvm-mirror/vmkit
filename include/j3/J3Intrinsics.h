@@ -10,7 +10,7 @@
 #ifndef J3_INTRINSICS_H
 #define J3_INTRINSICS_H
 
-#include "mvm/JIT.h"
+#include "vmkit/JIT.h"
 
 namespace j3 {
 

@@ -20,7 +20,7 @@
 
 #include <cstdio>
 
-#include "mvm/System.h"
+#include "vmkit/System.h"
 
 using namespace llvm;
 

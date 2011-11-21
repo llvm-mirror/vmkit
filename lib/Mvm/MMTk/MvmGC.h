@@ -11,7 +11,7 @@
 #ifndef MVM_MMTK_GC_H
 #define MVM_MMTK_GC_H
 
-#include "mvm/GC.h"
+#include "vmkit/GC.h"
 #include <cstdlib>
 
 extern "C" void EmptyDestructor();

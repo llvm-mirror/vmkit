@@ -14,7 +14,7 @@
 #include <cassert>
 #include <cstdio>
 
-#include "mvm/Thread.h"
+#include "vmkit/Thread.h"
 
 extern "C" void __llvm_gcroot(void**, void*) __attribute__((nothrow));
 #define llvm_gcroot(a, b) __llvm_gcroot((void**)&a, b)

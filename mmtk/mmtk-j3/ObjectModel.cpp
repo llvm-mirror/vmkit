@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/System.h"
-#include "mvm/VirtualMachine.h"
+#include "vmkit/System.h"
+#include "vmkit/VirtualMachine.h"
 #include "MMTkObject.h"
 #include "debug.h"
 

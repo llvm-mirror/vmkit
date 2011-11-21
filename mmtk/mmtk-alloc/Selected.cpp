@@ -11,7 +11,7 @@
 #include "MvmGC.h"
 #include "../mmtk-j3/MMTkObject.h"
 
-#include "mvm/VirtualMachine.h"
+#include "vmkit/VirtualMachine.h"
 
 #include <sys/mman.h>
 #include <set>

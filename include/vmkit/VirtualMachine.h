@@ -12,10 +12,10 @@
 
 #include "llvm/ADT/DenseMap.h"
 
-#include "mvm/Allocator.h"
-#include "mvm/CollectionRV.h"
-#include "mvm/Locks.h"
-#include "mvm/GC.h"
+#include "vmkit/Allocator.h"
+#include "vmkit/CollectionRV.h"
+#include "vmkit/Locks.h"
+#include "vmkit/GC.h"
 
 #include <cassert>
 #include <map>

@@ -11,7 +11,7 @@
 #define MVM_ALLOCATOR_H
 
 #include "llvm/Support/Allocator.h"
-#include "mvm/Locks.h"
+#include "vmkit/Locks.h"
 
 #include <cstring>
 

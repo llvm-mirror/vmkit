@@ -9,10 +9,10 @@
 
 #include <cassert>
 
-#include "mvm/Cond.h"
-#include "mvm/Locks.h"
-#include "mvm/Thread.h"
-#include "mvm/VirtualMachine.h"
+#include "vmkit/Cond.h"
+#include "vmkit/Locks.h"
+#include "vmkit/Thread.h"
+#include "vmkit/VirtualMachine.h"
 #include "MvmGC.h"
 #include <cerrno>
 #include <sys/time.h>

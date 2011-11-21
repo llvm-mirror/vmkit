@@ -11,7 +11,7 @@
 #include <cstdlib>
 
 #include "MvmGC.h"
-#include "mvm/VirtualMachine.h"
+#include "vmkit/VirtualMachine.h"
 
 using namespace mvm;
 

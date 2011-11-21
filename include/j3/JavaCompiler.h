@@ -15,8 +15,8 @@
 #include <string>
 #include <dlfcn.h>
 
-#include "mvm/GC.h"
-#include "mvm/Allocator.h"
+#include "vmkit/GC.h"
+#include "vmkit/Allocator.h"
 
 namespace mvm {
   class UTF8;

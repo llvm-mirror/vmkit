@@ -9,7 +9,7 @@
 
 #include <jni.h>
 
-#include "mvm/System.h"
+#include "vmkit/System.h"
 
 #include "ClasspathReflect.h"
 #include "JavaArray.h"

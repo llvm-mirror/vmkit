@@ -12,7 +12,7 @@
 
 #include "types.h"
 
-#include "mvm/UTF8.h"
+#include "vmkit/UTF8.h"
 
 namespace j3 {
 	using mvm::UTF8;

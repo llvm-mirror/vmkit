@@ -10,10 +10,10 @@
 #ifndef JNJVM_JAVA_OBJECT_H
 #define JNJVM_JAVA_OBJECT_H
 
-#include "mvm/Allocator.h"
-#include "mvm/UTF8.h"
-#include "mvm/Locks.h"
-#include "mvm/Thread.h"
+#include "vmkit/Allocator.h"
+#include "vmkit/UTF8.h"
+#include "vmkit/Locks.h"
+#include "vmkit/Thread.h"
 #include "MvmGC.h"
 
 #include "types.h"

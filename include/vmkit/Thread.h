@@ -17,7 +17,7 @@
 #include "debug.h"
 #include "types.h"
 
-#include "mvm/System.h"
+#include "vmkit/System.h"
 
 
 namespace mvm {

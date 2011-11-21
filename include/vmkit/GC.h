@@ -12,7 +12,7 @@
 #define MVM_GC_H
 
 #include <stdint.h>
-#include "mvm/System.h"
+#include "vmkit/System.h"
 
 class VirtualTable;
 

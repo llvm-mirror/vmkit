@@ -18,8 +18,8 @@
 
 #include "llvm/Target/TargetMachine.h"
 
-#include "mvm/MethodInfo.h"
-#include "mvm/GC.h"
+#include "vmkit/MethodInfo.h"
+#include "vmkit/GC.h"
 
 namespace llvm {
   class Constant;

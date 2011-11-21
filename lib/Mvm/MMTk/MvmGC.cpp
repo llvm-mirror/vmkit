@@ -9,7 +9,7 @@
 
 #include "MvmGC.h"
 #include "MutatorThread.h"
-#include "mvm/VirtualMachine.h"
+#include "vmkit/VirtualMachine.h"
 
 #include <set>
 

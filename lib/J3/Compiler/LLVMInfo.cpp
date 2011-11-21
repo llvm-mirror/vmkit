@@ -17,7 +17,7 @@
 #include "llvm/Target/TargetData.h"
 
 
-#include "mvm/JIT.h"
+#include "vmkit/JIT.h"
 
 #include "JavaConstantPool.h"
 #include "JavaString.h"

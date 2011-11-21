@@ -14,7 +14,7 @@
 #ifndef JNJVM_JAVA_ARRAY_H
 #define JNJVM_JAVA_ARRAY_H
 
-#include "mvm/Allocator.h"
+#include "vmkit/Allocator.h"
 
 #include "types.h"
 

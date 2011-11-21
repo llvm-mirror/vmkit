@@ -20,7 +20,7 @@
 #include <llvm/Module.h>
 #include <llvm/Type.h>
 
-#include "mvm/JIT.h"
+#include "vmkit/JIT.h"
 
 #include "debug.h"
 

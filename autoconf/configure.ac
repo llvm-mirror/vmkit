@@ -50,7 +50,7 @@ AC_CONFIG_SRCDIR([lib/Mvm/Runtime/Object.cpp])
 dnl Quit if the source directory has already been configured.
 dnl NOTE: This relies upon undocumented autoconf behavior.
 if test ${srcdir} != "." ; then
-  if test -f ${srcdir}/include/mvm/config.h ; then
+  if test -f ${srcdir}/include/vmkit/config.h ; then
     AC_MSG_ERROR([Already configured in ${srcdir}])
   fi
 fi
@@ -369,7 +369,7 @@ dnl WARNING: dnl If you add or remove any of the following config headers, then
 dnl you MUST also update Makefile.rules so that the variable FilesToConfig
 dnl contains the same list of files as AC_CONFIG_HEADERS below. This ensures the
 dnl files can be updated automatically when their *.in sources change.
-AC_CONFIG_HEADERS([include/mvm/config.h])
+AC_CONFIG_HEADERS([include/vmkit/config.h])
 
 dnl Verify that the source directory is valid
 AC_CONFIG_SRCDIR(["Makefile.common.in"])

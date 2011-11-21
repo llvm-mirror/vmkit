@@ -10,9 +10,9 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
 
-#include "mvm/Allocator.h"
-#include "mvm/MethodInfo.h"
-#include "mvm/VirtualMachine.h"
+#include "vmkit/Allocator.h"
+#include "vmkit/MethodInfo.h"
+#include "vmkit/VirtualMachine.h"
 #include "MvmGC.h"
 
 #include <dlfcn.h>

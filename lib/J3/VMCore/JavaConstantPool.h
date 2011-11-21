@@ -10,7 +10,7 @@
 #ifndef JNJVM_JAVA_CONSTANT_POOL_H
 #define JNJVM_JAVA_CONSTANT_POOL_H
 
-#include "mvm/Allocator.h"
+#include "vmkit/Allocator.h"
 #include "types.h"
 
 #include "UTF8.h"

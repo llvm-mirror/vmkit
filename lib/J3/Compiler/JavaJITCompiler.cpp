@@ -26,7 +26,7 @@
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 
 #include "MvmGC.h"
-#include "mvm/VirtualMachine.h"
+#include "vmkit/VirtualMachine.h"
 
 #include "JavaClass.h"
 #include "JavaConstantPool.h"

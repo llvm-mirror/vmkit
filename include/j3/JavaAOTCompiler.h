@@ -10,8 +10,8 @@
 #ifndef J3_AOT_COMPILER_H
 #define J3_AOT_COMPILER_H
 
-#include "mvm/MvmDenseMap.h"
-#include "mvm/UTF8.h"
+#include "vmkit/MvmDenseMap.h"
+#include "vmkit/UTF8.h"
 #include "j3/JavaLLVMCompiler.h"
 
 namespace j3 {

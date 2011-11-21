@@ -12,7 +12,7 @@
 
 #include "types.h"
 
-#include "mvm/Allocator.h"
+#include "vmkit/Allocator.h"
 
 #include "JnjvmClassLoader.h"
 

@@ -12,7 +12,7 @@
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 
-#include "mvm/JIT.h"
+#include "vmkit/JIT.h"
 
 #include "JavaAccess.h"
 #include "JavaArray.h"

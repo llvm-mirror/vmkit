@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/JIT.h"
+#include "vmkit/JIT.h"
 
 #ifdef HAVE_DISASSEMBLER
 

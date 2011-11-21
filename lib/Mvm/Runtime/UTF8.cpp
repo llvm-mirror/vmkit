@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/Allocator.h"
-#include "mvm/UTF8.h"
+#include "vmkit/Allocator.h"
+#include "vmkit/UTF8.h"
 
 namespace mvm {
 

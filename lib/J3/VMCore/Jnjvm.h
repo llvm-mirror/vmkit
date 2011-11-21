@@ -14,12 +14,12 @@
 
 #include "types.h"
 
-#include "mvm/Allocator.h"
-#include "mvm/MethodInfo.h"
-#include "mvm/VirtualMachine.h"
-#include "mvm/Cond.h"
-#include "mvm/Locks.h"
-#include "mvm/ObjectLocks.h"
+#include "vmkit/Allocator.h"
+#include "vmkit/MethodInfo.h"
+#include "vmkit/VirtualMachine.h"
+#include "vmkit/Cond.h"
+#include "vmkit/Locks.h"
+#include "vmkit/ObjectLocks.h"
 
 #include "JnjvmConfig.h"
 #include "JNIReferences.h"

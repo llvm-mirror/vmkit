@@ -9,7 +9,7 @@
 
 // for dlopen and dlsym
 #include <dlfcn.h> 
-#include "mvm/MethodInfo.h"
+#include "vmkit/MethodInfo.h"
 
 #include "JavaClass.h"
 #include "JavaUpcalls.h"

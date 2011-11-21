@@ -10,7 +10,7 @@
 #ifndef JNI_REFERENCES_H
 #define JNI_REFERENCES_H
 
-#include "mvm/Allocator.h"
+#include "vmkit/Allocator.h"
 
 namespace j3 {
 

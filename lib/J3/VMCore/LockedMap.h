@@ -23,9 +23,9 @@
 
 #include "types.h"
 
-#include "mvm/Allocator.h"
-#include "mvm/MvmDenseMap.h"
-#include "mvm/Locks.h"
+#include "vmkit/Allocator.h"
+#include "vmkit/MvmDenseMap.h"
+#include "vmkit/Locks.h"
 #include "UTF8.h"
 
 namespace j3 {

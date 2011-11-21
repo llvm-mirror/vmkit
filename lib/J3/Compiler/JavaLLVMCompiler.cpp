@@ -14,7 +14,7 @@
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Target/TargetData.h"
 
-#include "mvm/JIT.h"
+#include "vmkit/JIT.h"
 
 #include "JavaClass.h"
 #include "JavaJIT.h"

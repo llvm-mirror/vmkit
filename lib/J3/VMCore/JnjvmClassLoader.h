@@ -17,7 +17,7 @@
 #include "types.h"
 
 
-#include "mvm/Allocator.h"
+#include "vmkit/Allocator.h"
 
 #include "JavaObject.h"
 #include "JnjvmConfig.h"

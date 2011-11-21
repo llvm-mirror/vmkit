@@ -9,7 +9,7 @@
 
 #include <zlib.h>
 
-#include "mvm/Allocator.h"
+#include "vmkit/Allocator.h"
 
 #include "JavaArray.h"
 #include "Reader.h"

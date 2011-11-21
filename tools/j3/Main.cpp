@@ -8,10 +8,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "MvmGC.h"
-#include "mvm/JIT.h"
-#include "mvm/MethodInfo.h"
-#include "mvm/VirtualMachine.h"
-#include "mvm/Thread.h"
+#include "vmkit/JIT.h"
+#include "vmkit/MethodInfo.h"
+#include "vmkit/VirtualMachine.h"
+#include "vmkit/Thread.h"
 
 #include "j3/JavaJITCompiler.h"
 #include "../../lib/J3/VMCore/JnjvmClassLoader.h"

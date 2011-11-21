@@ -37,12 +37,12 @@
 #include <llvm/Target/TargetOptions.h>
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 
-#include "mvm/JIT.h"
-#include "mvm/Locks.h"
-#include "mvm/ObjectLocks.h"
-#include "mvm/Thread.h"
-#include "mvm/VirtualMachine.h"
-#include "mvm/GC.h"
+#include "vmkit/JIT.h"
+#include "vmkit/Locks.h"
+#include "vmkit/ObjectLocks.h"
+#include "vmkit/Thread.h"
+#include "vmkit/VirtualMachine.h"
+#include "vmkit/GC.h"
 #include "MutatorThread.h"
 #include "MvmGC.h"
 

@@ -39,9 +39,9 @@
 
 
 #include "MvmGC.h"
-#include "mvm/JIT.h"
-#include "mvm/VirtualMachine.h"
-#include "mvm/Thread.h"
+#include "vmkit/JIT.h"
+#include "vmkit/VirtualMachine.h"
+#include "vmkit/Thread.h"
 
 #include "j3/JavaAOTCompiler.h"
 

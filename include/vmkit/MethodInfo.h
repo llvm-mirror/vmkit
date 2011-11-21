@@ -10,9 +10,9 @@
 #ifndef MVM_METHODINFO_H
 #define MVM_METHODINFO_H
 
-#include "mvm/Allocator.h"
-#include "mvm/System.h"
-#include "mvm/GC.h"
+#include "vmkit/Allocator.h"
+#include "vmkit/System.h"
+#include "vmkit/GC.h"
 
 namespace mvm {
 

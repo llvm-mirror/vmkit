@@ -10,7 +10,7 @@
 #ifndef JNJVM_JAVA_UPCALLS_H
 #define JNJVM_JAVA_UPCALLS_H
 
-#include "mvm/Allocator.h"
+#include "vmkit/Allocator.h"
 
 #include "JnjvmConfig.h"
 

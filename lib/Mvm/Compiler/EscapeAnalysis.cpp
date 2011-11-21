@@ -23,7 +23,7 @@
 #include <cstddef>
 #include <map>
 
-#include "mvm/GC.h"
+#include "vmkit/GC.h"
 
 using namespace llvm;
 

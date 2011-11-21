@@ -2,9 +2,9 @@
 #define _UTF8_INTERNAL_H_
 
 #include <map>
-#include "mvm/Allocator.h"
-#include "mvm/MvmDenseMap.h"
-#include "mvm/MvmDenseSet.h"
+#include "vmkit/Allocator.h"
+#include "vmkit/MvmDenseMap.h"
+#include "vmkit/MvmDenseSet.h"
 
 namespace mvm {
 

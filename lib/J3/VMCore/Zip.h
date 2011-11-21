@@ -12,7 +12,7 @@
 
 #include <map>
 
-#include "mvm/Allocator.h"
+#include "vmkit/Allocator.h"
 
 namespace j3 {
 
