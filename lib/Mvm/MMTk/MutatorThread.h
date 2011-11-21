@@ -12,7 +12,7 @@
 #define MVM_MUTATOR_THREAD_H
 
 #include "mvm/Allocator.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Thread.h"
 
 namespace mvm {
 

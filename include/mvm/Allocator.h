@@ -11,7 +11,7 @@
 #define MVM_ALLOCATOR_H
 
 #include "llvm/Support/Allocator.h"
-#include "mvm/Threads/Locks.h"
+#include "mvm/Locks.h"
 
 #include <cstring>
 

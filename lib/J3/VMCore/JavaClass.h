@@ -15,8 +15,8 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/MethodInfo.h"
-#include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Locks.h"
+#include "mvm/Cond.h"
+#include "mvm/Locks.h"
 
 #include "JavaAccess.h"
 #include "JavaObject.h"

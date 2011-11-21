@@ -25,7 +25,7 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/MvmDenseMap.h"
-#include "mvm/Threads/Locks.h"
+#include "mvm/Locks.h"
 #include "UTF8.h"
 
 namespace j3 {

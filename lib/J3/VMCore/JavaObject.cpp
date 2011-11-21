@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/Threads/Locks.h"
+#include "mvm/Locks.h"
 
 #include "JavaArray.h"
 #include "JavaClass.h"

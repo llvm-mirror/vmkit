@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Locks.h"
+#include "mvm/Thread.h"
 
 #include "JavaClass.h"
 #include "JavaObject.h"

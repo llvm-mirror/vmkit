@@ -18,7 +18,7 @@
 #include "llvm/Target/TargetData.h"
 
 #include "mvm/UTF8.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Thread.h"
 
 #include "j3/J3Intrinsics.h"
 #include "j3/JavaAOTCompiler.h"

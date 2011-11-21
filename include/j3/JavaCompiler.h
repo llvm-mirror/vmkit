@@ -15,7 +15,7 @@
 #include <string>
 #include <dlfcn.h>
 
-#include "mvm/GC/GC.h"
+#include "mvm/GC.h"
 #include "mvm/Allocator.h"
 
 namespace mvm {

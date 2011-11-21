@@ -10,7 +10,7 @@
 #ifndef J3_REFERENCE_QUEUE_H
 #define J3_REFERENCE_QUEUE_H
 
-#include "mvm/Threads/Locks.h"
+#include "mvm/Locks.h"
 
 #include "JavaThread.h"
 

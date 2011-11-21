@@ -9,9 +9,9 @@
 
 #include <cassert>
 
-#include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Cond.h"
+#include "mvm/Locks.h"
+#include "mvm/Thread.h"
 #include "mvm/VirtualMachine.h"
 #include "MvmGC.h"
 #include <cerrno>

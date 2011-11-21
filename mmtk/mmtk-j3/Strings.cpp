@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mvm/Threads/Thread.h"
+#include "mvm/Thread.h"
 
 #include "MMTkObject.h"
 

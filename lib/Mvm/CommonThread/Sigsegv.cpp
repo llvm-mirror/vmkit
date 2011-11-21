@@ -11,7 +11,7 @@
 #include "mvm/MethodInfo.h"
 #include "mvm/System.h"
 #include "mvm/VirtualMachine.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Thread.h"
 
 #include <csignal>
 #include <cstdio>

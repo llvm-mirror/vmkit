@@ -11,7 +11,7 @@
 #include <signal.h>
 #include "MvmGC.h"
 #include "mvm/VirtualMachine.h"
-#include "mvm/Threads/CollectionRV.h"
+#include "mvm/CollectionRV.h"
 
 #include "debug.h"
 

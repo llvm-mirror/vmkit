@@ -11,10 +11,10 @@
 #define MVM_OBJECT_LOCKS_H
 
 #include "mvm/Allocator.h"
-#include "mvm/GC/GC.h"
-#include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/GC.h"
+#include "mvm/Cond.h"
+#include "mvm/Locks.h"
+#include "mvm/Thread.h"
 
 namespace mvm {
 

@@ -41,7 +41,7 @@
 #include "MvmGC.h"
 #include "mvm/JIT.h"
 #include "mvm/VirtualMachine.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Thread.h"
 
 #include "j3/JavaAOTCompiler.h"
 

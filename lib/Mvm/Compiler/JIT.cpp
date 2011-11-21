@@ -38,11 +38,11 @@
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 
 #include "mvm/JIT.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/Threads/ObjectLocks.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Locks.h"
+#include "mvm/ObjectLocks.h"
+#include "mvm/Thread.h"
 #include "mvm/VirtualMachine.h"
-#include "mvm/GC/GC.h"
+#include "mvm/GC.h"
 #include "MutatorThread.h"
 #include "MvmGC.h"
 

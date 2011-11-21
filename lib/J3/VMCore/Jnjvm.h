@@ -17,9 +17,9 @@
 #include "mvm/Allocator.h"
 #include "mvm/MethodInfo.h"
 #include "mvm/VirtualMachine.h"
-#include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/Threads/ObjectLocks.h"
+#include "mvm/Cond.h"
+#include "mvm/Locks.h"
+#include "mvm/ObjectLocks.h"
 
 #include "JnjvmConfig.h"
 #include "JNIReferences.h"

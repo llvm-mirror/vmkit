@@ -2259,7 +2259,7 @@ VMKIT_COPYRIGHT="Copyright (c) 2003-2011 Universite Pierre et Marie Curie."
 
 
 if test ${srcdir} != "." ; then
-  if test -f ${srcdir}/include/mvm/Config/config.h ; then
+  if test -f ${srcdir}/include/mvm/config.h ; then
     as_fn_error $? "Already configured in ${srcdir}" "$LINENO" 5
   fi
 fi
@@ -5780,7 +5780,7 @@ done
 
 
 
-ac_config_headers="$ac_config_headers include/mvm/Config/config.h"
+ac_config_headers="$ac_config_headers include/mvm/config.h"
 
 
 
@@ -6515,7 +6515,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "setup") CONFIG_COMMANDS="$CONFIG_COMMANDS setup" ;;
-    "include/mvm/Config/config.h") CONFIG_HEADERS="$CONFIG_HEADERS include/mvm/Config/config.h" ;;
+    "include/mvm/config.h") CONFIG_HEADERS="$CONFIG_HEADERS include/mvm/config.h" ;;
     "Makefile.common") CONFIG_FILES="$CONFIG_FILES Makefile.common" ;;
     "Makefile.config") CONFIG_FILES="$CONFIG_FILES Makefile.config" ;;
     "lib/J3/ClassLib/Classpath.h") CONFIG_FILES="$CONFIG_FILES lib/J3/ClassLib/Classpath.h" ;;

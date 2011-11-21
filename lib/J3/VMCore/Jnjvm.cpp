@@ -18,7 +18,7 @@
 #include <string>
 #include "debug.h"
 
-#include "mvm/Threads/Thread.h"
+#include "mvm/Thread.h"
 #include "MvmGC.h"
 
 #include "ClasspathReflect.h"

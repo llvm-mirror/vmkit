@@ -12,8 +12,8 @@
 
 #include "mvm/Allocator.h"
 #include "mvm/UTF8.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Locks.h"
+#include "mvm/Thread.h"
 #include "MvmGC.h"
 
 #include "types.h"

@@ -13,9 +13,9 @@
 #include "llvm/ADT/DenseMap.h"
 
 #include "mvm/Allocator.h"
-#include "mvm/Threads/CollectionRV.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/GC/GC.h"
+#include "mvm/CollectionRV.h"
+#include "mvm/Locks.h"
+#include "mvm/GC.h"
 
 #include <cassert>
 #include <map>

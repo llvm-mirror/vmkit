@@ -12,9 +12,9 @@
 #include "MvmGC.h"
 #include "mvm/MethodInfo.h"
 #include "mvm/VirtualMachine.h"
-#include "mvm/Threads/Cond.h"
-#include "mvm/Threads/Locks.h"
-#include "mvm/Threads/Thread.h"
+#include "mvm/Cond.h"
+#include "mvm/Locks.h"
+#include "mvm/Thread.h"
 
 #include <cassert>
 #include <cstdio>
