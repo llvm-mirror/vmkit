@@ -1,16 +1,10 @@
-/* include/mvm/Config/config.h.in.  Generated from autoconf/configure.ac by autoheader.  */
+/* include/vmkit/config.h.in.  Generated from autoconf/configure.ac by autoheader.  */
 
 /* Define to 1 if the system has the type `int64_t'. */
 #undef HAVE_INT64_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
-
-/* Define to 1 if you have the `gc' library (-lgc). */
-#undef HAVE_LIBGC
-
-/* Define to 1 if you have the `pthread' library (-lpthread). */
-#undef HAVE_LIBPTHREAD
 
 /* Define to 1 if you have the `z' library (-lz). */
 #undef HAVE_LIBZ
@@ -20,9 +14,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
-
-/* Using pthread library */
-#undef HAVE_PTHREAD
 
 /* Define to 1 if you have the `setjmp' function. */
 #undef HAVE_SETJMP
@@ -66,17 +57,20 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#undef RETSIGTYPE
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
+
+/* Building on a platform with 64bit cas */
+#undef WITH_64
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
