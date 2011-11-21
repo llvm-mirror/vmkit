@@ -471,7 +471,6 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   newDirectByteBuffer =
     UPCALL_CLASS(loader, "java/nio/DirectByteBuffer");
 
-  //TODO: Revisit this one, verify signature.
   InitDirectByteBuffer =
     UPCALL_METHOD(loader, "java/nio/DirectByteBuffer", "<init>", "(JI)V",
                   ACC_VIRTUAL);
@@ -549,7 +548,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_ARRAY_CLASS(loader, "java/lang/Class", 1);
 
   bufferAddress =
-    UPCALL_FIELD(loader, "java/nio/Buffer", "address", "Lgnu/classpath/Pointer;",
+    UPCALL_FIELD(loader, "java/nio/Buffer", "address", "J",
                  ACC_VIRTUAL);
 
   vmdataClassLoader =
