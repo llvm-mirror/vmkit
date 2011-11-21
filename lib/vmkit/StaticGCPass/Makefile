@@ -1,15 +1,18 @@
-##===- lib/Mvm/Makefile ------------------------------------*- Makefile -*-===##
-# 
-#                     The vmkit project
+##===- lib/vmkit/StaticGCPass/Makefile -----------------------*- Makefile -*-===##
+#
+#                            The VMKit project
 #
 # This file is distributed under the University of Illinois Open Source
 # License. See LICENSE.TXT for details.
-# 
+#
 ##===----------------------------------------------------------------------===##
-LEVEL = ../..
+
+LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-DIRS = CommonThread MMTk Runtime Compiler JITGCPass
+LIBRARYNAME = StaticGCPass
+LOADABLE_MODULE = 1
 
 include $(LEVEL)/Makefile.common
+

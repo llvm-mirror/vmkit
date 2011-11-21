@@ -567,7 +567,7 @@ PACKAGE_STRING='vmkit 0.31svn'
 PACKAGE_BUGREPORT='nicolas.geoffray@gmail.com'
 PACKAGE_URL=''
 
-ac_unique_file="lib/Mvm/Runtime/Object.cpp"
+ac_unique_file="lib/vmkit/Runtime/Object.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -2530,7 +2530,7 @@ else
 fi
 
 
-GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk"
+GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/vmkit/MMTk"
 
 
 

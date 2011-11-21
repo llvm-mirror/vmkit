@@ -44,7 +44,7 @@ AC_PREREQ(2.59)
 
 dnl Verify that the source directory is valid. This makes sure that we are
 dnl configuring VMKit and not some other package (it validates --srcdir argument)
-AC_CONFIG_SRCDIR([lib/Mvm/Runtime/Object.cpp])
+AC_CONFIG_SRCDIR([lib/vmkit/Runtime/Object.cpp])
 
 
 dnl Quit if the source directory has already been configured.
@@ -174,7 +174,7 @@ AC_ARG_WITH(mmtk-plan,
        [[MMTK_PLAN=org.mmtk.plan.marksweep.MS]]
 )
 
-GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/Mvm/MMTk"
+GC_FLAGS="-I\$(PROJ_SRC_ROOT)/lib/vmkit/MMTk"
 
 AC_SUBST([GC_FLAGS])
 AC_SUBST([MMTK_PLAN])

@@ -1,4 +1,4 @@
-##===- lib/Mvm/CommonThread/Makefile -----------------------*- Makefile -*-===##
+##===- lib/vmkit/CommonThread/Makefile -----------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #

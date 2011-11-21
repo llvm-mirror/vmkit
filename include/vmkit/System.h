@@ -134,7 +134,7 @@ public:
     return kThreadIDMask;
   }
 
-  // Apply this mask to verify that the current thread was created by Mvm.
+  // Apply this mask to verify that the current thread was created by vmkit.
   static word_t GetVmkitThreadMask() {
     return kVmkitThreadMask;
   }

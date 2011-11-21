@@ -1,4 +1,4 @@
-##===- lib/Mvm/MMTk/Makefile -------------------------------*- Makefile -*-===##
+##===- lib/vmkit/CommonThread/Makefile -----------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #
@@ -8,8 +8,11 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
+EXTRA_DIST = Sigsegv-linux-x64.inc Sigsegv-macos-x64.inc Sigsegv-linux-x86.inc
+
 include $(LEVEL)/Makefile.config
 
-MODULE_WITH_GC = MMTk
+MODULE_WITH_GC = CommonThread
 
 include $(LEVEL)/Makefile.common
+
