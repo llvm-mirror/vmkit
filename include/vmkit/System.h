@@ -64,11 +64,11 @@ const int kWordSizeLog2 = kWordSize == 4 ? 2 : 3;
 #if ARCH_X64
 const word_t kThreadStart   = 0x0000000110000000LL;
 const word_t kThreadIDMask  = 0xFFFFFFFFFFF00000LL;
-const word_t kMvmThreadMask = 0xFFFFFFFFF0000000LL;
+const word_t kVmkitThreadMask = 0xFFFFFFFFF0000000LL;
 #else
 const word_t kThreadStart   = 0x10000000;
 const word_t kThreadIDMask  = 0x7FF00000;
-const word_t kMvmThreadMask = 0xF0000000;
+const word_t kVmkitThreadMask = 0xF0000000;
 #endif
 
 #if MACOS_OS
@@ -135,8 +135,8 @@ public:
   }
 
   // Apply this mask to verify that the current thread was created by Mvm.
-  static word_t GetMvmThreadMask() {
-    return kMvmThreadMask;
+  static word_t GetVmkitThreadMask() {
+    return kVmkitThreadMask;
   }
 
   // Get the memory start of thread stack addresses.

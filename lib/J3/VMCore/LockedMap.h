@@ -24,7 +24,7 @@
 #include "types.h"
 
 #include "vmkit/Allocator.h"
-#include "vmkit/MvmDenseMap.h"
+#include "vmkit/VmkitDenseMap.h"
 #include "vmkit/Locks.h"
 #include "UTF8.h"
 
@@ -111,25 +111,25 @@ public:
 class ClassMap : public mvm::PermanentObject {
 public:
   ClassMap() {}
-  ClassMap(mvm::MvmDenseMap<const mvm::UTF8*, UserCommonClass*>* precompiled) : map(*precompiled) {}
+  ClassMap(mvm::VmkitDenseMap<const mvm::UTF8*, UserCommonClass*>* precompiled) : map(*precompiled) {}
 
   mvm::LockRecursive lock;
-  mvm::MvmDenseMap<const mvm::UTF8*, UserCommonClass*> map;
-  typedef mvm::MvmDenseMap<const mvm::UTF8*, UserCommonClass*>::iterator iterator;
+  mvm::VmkitDenseMap<const mvm::UTF8*, UserCommonClass*> map;
+  typedef mvm::VmkitDenseMap<const mvm::UTF8*, UserCommonClass*>::iterator iterator;
 };
 
 class TypeMap : public mvm::PermanentObject {
 public:
   mvm::LockNormal lock;
-  mvm::MvmDenseMap<const mvm::UTF8*, Typedef*> map;
-  typedef mvm::MvmDenseMap<const mvm::UTF8*, Typedef*>::iterator iterator;
+  mvm::VmkitDenseMap<const mvm::UTF8*, Typedef*> map;
+  typedef mvm::VmkitDenseMap<const mvm::UTF8*, Typedef*>::iterator iterator;
 };
 
 class SignMap : public mvm::PermanentObject {
 public:
   mvm::LockNormal lock;
-  mvm::MvmDenseMap<const mvm::UTF8*, Signdef*> map;
-  typedef mvm::MvmDenseMap<const mvm::UTF8*, Signdef*>::iterator iterator;
+  mvm::VmkitDenseMap<const mvm::UTF8*, Signdef*> map;
+  typedef mvm::VmkitDenseMap<const mvm::UTF8*, Signdef*>::iterator iterator;
 };
 
 } // end namespace j3

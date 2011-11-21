@@ -3,8 +3,8 @@
 
 #include <map>
 #include "vmkit/Allocator.h"
-#include "vmkit/MvmDenseMap.h"
-#include "vmkit/MvmDenseSet.h"
+#include "vmkit/VmkitDenseMap.h"
+#include "vmkit/VmkitDenseSet.h"
 
 namespace mvm {
 
@@ -76,9 +76,9 @@ struct UTF8MapKey {
   }
 };
 
-// Provide MvmDenseMapInfo for UTF8.
+// Provide VmkitDenseMapInfo for UTF8.
 template<>
-struct MvmDenseMapInfo<const UTF8*> {
+struct VmkitDenseMapInfo<const UTF8*> {
   static inline const UTF8* getEmptyKey() {
     return &EmptyKey;
   }
@@ -98,9 +98,9 @@ struct MvmDenseMapInfo<const UTF8*> {
 };
 
 
-// Provide MvmDenseMapInfo for UTF8MapKey.
+// Provide VmkitDenseMapInfo for UTF8MapKey.
 template<>
-struct MvmDenseMapInfo<UTF8MapKey> {
+struct VmkitDenseMapInfo<UTF8MapKey> {
   static inline const UTF8MapKey getEmptyKey() {
     static UTF8MapKey EmptyKey(NULL, -1);
     return EmptyKey;
@@ -121,11 +121,11 @@ struct MvmDenseMapInfo<UTF8MapKey> {
 
 class UTF8Map : public mvm::PermanentObject {
 public:
-  typedef MvmDenseSet<UTF8MapKey, const UTF8*>::iterator iterator;
+  typedef VmkitDenseSet<UTF8MapKey, const UTF8*>::iterator iterator;
   
   LockNormal lock;
   BumpPtrAllocator& allocator;
-  MvmDenseSet<UTF8MapKey, const UTF8*> map;
+  VmkitDenseSet<UTF8MapKey, const UTF8*> map;
 
   const UTF8* lookupOrCreateAsciiz(const char* asciiz); 
   const UTF8* lookupOrCreateReader(const uint16* buf, uint32 size);
@@ -133,7 +133,7 @@ public:
   const UTF8* lookupReader(const uint16* buf, uint32 size);
   
   UTF8Map(BumpPtrAllocator& A) : allocator(A) {}
-  UTF8Map(BumpPtrAllocator& A, MvmDenseSet<UTF8MapKey, const UTF8*>* m)
+  UTF8Map(BumpPtrAllocator& A, VmkitDenseSet<UTF8MapKey, const UTF8*>* m)
       : allocator(A), map(*m) {}
 
   ~UTF8Map() {

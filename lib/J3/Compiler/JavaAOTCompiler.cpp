@@ -1041,7 +1041,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
   return ConstantStruct::get(STy, ClassElts);
 }
 
-Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::MvmDenseMap<const UTF8*, CommonClass*>& map) {
+Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::VmkitDenseMap<const UTF8*, CommonClass*>& map) {
   StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.J3DenseMapType->getContainedType(0));
   Module& Mod = *getLLVMModule();
@@ -1055,7 +1055,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::MvmDenseMap<con
     ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, map.NumBuckets * 2);
 
     for (uint32 i = 0; i < map.NumBuckets; ++i) {
-      mvm::MvmPair<const UTF8*, CommonClass*> pair = map.Buckets[i];
+      mvm::VmkitPair<const UTF8*, CommonClass*> pair = map.Buckets[i];
       if (pair.first == &mvm::TombstoneKey) {
         TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, UTF8TombstoneGV, JavaIntrinsics.ptrType));
         TempElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
@@ -1086,7 +1086,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::MvmDenseMap<con
                             ConstantStruct::get(STy, elements), "ClassMap");
 }
 
-Constant* JavaAOTCompiler::CreateConstantFromUTF8Map(const mvm::MvmDenseSet<mvm::UTF8MapKey, const UTF8*>& set) {
+Constant* JavaAOTCompiler::CreateConstantFromUTF8Map(const mvm::VmkitDenseSet<mvm::UTF8MapKey, const UTF8*>& set) {
   StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.J3DenseMapType->getContainedType(0));
   Module& Mod = *getLLVMModule();

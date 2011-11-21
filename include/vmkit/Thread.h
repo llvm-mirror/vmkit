@@ -219,9 +219,9 @@ public:
     internalClearException();
   }
 
-  bool isMvmThread() {
+  bool isVmkitThread() {
     if (!baseAddr) return false;
-    else return (((word_t)this) & System::GetMvmThreadMask()) == baseAddr;
+    else return (((word_t)this) & System::GetVmkitThreadMask()) == baseAddr;
   }
 
   /// baseAddr - The base address for all threads.

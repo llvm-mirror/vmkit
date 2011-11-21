@@ -1,4 +1,4 @@
-//===- MvmDenseMap.h - Dense probed hash table ------------------*- C++ -*-===//
+//===- VmkitDenseSet.h - Dense probed hash set --------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,14 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file defines the MvmDenseMap copied from llvm/ADT/DenseMap.h, but
+// This file defines the VmkitDenseSet class copied from llvm/ADT/DenseMap.h, but
 // without storing pairs.
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef VMKIT_DENSEMAP_H
-#define VMKIT_DENSEMAP_H
+#ifndef VMKIT_DENSESET_H
+#define VMKIT_DENSESET_H
 
+#include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/PointerLikeTypeTraits.h"
 #include "llvm/Support/type_traits.h"
@@ -28,30 +29,17 @@
 
 namespace mvm {
 
-template<typename T>
-struct MvmDenseMapInfo {
-  //static inline T getEmptyKey();
-  //static inline T getTombstoneKey();
-  //static unsigned getHashValue(const T &Val);
-  //static bool isEqual(const T &LHS, const T &RHS);
-};
-
-template<typename KeyT, typename ValueT,
-         typename KeyInfoT = MvmDenseMapInfo<KeyT>,
+template<typename ValueT,
+         typename ValueInfoT = VmkitDenseMapInfo<ValueT>,
          bool IsConst = false>
-class MvmDenseMapIterator;
-
-template<typename KeyT, typename ValueT>
-struct MvmPair {
-  KeyT first;
-  ValueT second;
-};
+class VmkitDenseSetIterator;
 
 template<typename KeyT, typename ValueT,
-         typename KeyInfoT = MvmDenseMapInfo<KeyT> >
-class MvmDenseMap {
+         typename KeyInfoT = VmkitDenseMapInfo<KeyT>,
+         typename ValueInfoT = VmkitDenseMapInfo<ValueT> >
+class VmkitDenseSet {
 public:
-  typedef MvmPair<KeyT, ValueT> BucketT;
+  typedef ValueT BucketT;
   uint32_t NumBuckets;
   BucketT *Buckets;
 
@@ -63,18 +51,17 @@ public:
   typedef ValueT mapped_type;
   typedef BucketT value_type;
 
-  explicit MvmDenseMap(unsigned NumInitBuckets = 0) {
+  explicit VmkitDenseSet(unsigned NumInitBuckets = 0) {
     IsPrecompiled = false;
     init(NumInitBuckets);
   }
 
-  ~MvmDenseMap() {
-    const KeyT EmptyKey = getEmptyKey(), TombstoneKey = getTombstoneKey();
+  ~VmkitDenseSet() {
+    const ValueT EmptyValue = getEmptyValue(), TombstoneValue = getTombstoneValue();
     for (BucketT *P = Buckets, *E = Buckets+NumBuckets; P != E; ++P) {
-      if (!KeyInfoT::isEqual(P->first, EmptyKey) &&
-          !KeyInfoT::isEqual(P->first, TombstoneKey))
-        P->second.~ValueT();
-      P->first.~KeyT();
+      if (!ValueInfoT::isEqual(*P, EmptyValue) &&
+          !ValueInfoT::isEqual(*P, TombstoneValue))
+        (*P).~ValueT();
     }
 #ifndef NDEBUG
     if (NumBuckets)
@@ -85,8 +72,8 @@ public:
     }
   }
 
-  typedef MvmDenseMapIterator<KeyT, ValueT, KeyInfoT> iterator;
-  typedef MvmDenseMapIterator<KeyT, ValueT, KeyInfoT, true> const_iterator;
+  typedef VmkitDenseSetIterator<ValueT, ValueInfoT> iterator;
+  typedef VmkitDenseSetIterator<ValueT, ValueInfoT, true> const_iterator;
   inline iterator begin() {
     // When the map is empty, avoid the overhead of AdvancePastEmptyBuckets().
     return empty() ? end() : iterator(Buckets, Buckets+NumBuckets);
@@ -104,7 +91,7 @@ public:
   bool empty() const { return NumEntries == 0; }
   unsigned size() const { return NumEntries; }
 
-  /// Grow the densemap so that it has at least Size buckets. Does not shrink
+  /// Grow the denseset so that it has at least Size buckets. Does not shrink
   void resize(size_t Size) {
     if (Size > NumBuckets)
       grow(Size);
@@ -120,21 +107,21 @@ public:
       return;
     }
 
-    const KeyT EmptyKey = getEmptyKey(), TombstoneKey = getTombstoneKey();
+    const ValueT EmptyValue = getEmptyValue(), TombstoneValue = getTombstoneValue();
     for (BucketT *P = Buckets, *E = Buckets+NumBuckets; P != E; ++P) {
-      if (!KeyInfoT::isEqual(P->first, EmptyKey)) {
-        if (!KeyInfoT::isEqual(P->first, TombstoneKey)) {
-          P->second.~ValueT();
+      if (!ValueInfoT::isEqual(*P, EmptyValue)) {
+        if (!ValueInfoT::isEqual(*P, TombstoneValue)) {
+          P->~ValueT();
           --NumEntries;
         }
-        P->first = EmptyKey;
+        *P = EmptyValue;
       }
     }
     assert(NumEntries == 0 && "Node count imbalance!");
     NumTombstones = 0;
   }
 
-  /// count - Return true if the specified key is in the map.
+  /// count - Return true if the specified key is in the set.
   bool count(const KeyT &Val) const {
     BucketT *TheBucket;
     return LookupBucketFor(Val, TheBucket);
@@ -158,7 +145,7 @@ public:
   ValueT lookup(const KeyT &Val) const {
     BucketT *TheBucket;
     if (LookupBucketFor(Val, TheBucket))
-      return TheBucket->second;
+      return *TheBucket;
     return ValueT();
   }
 
@@ -190,21 +177,21 @@ public:
     if (!LookupBucketFor(Val, TheBucket))
       return false; // not in map.
 
-    TheBucket->second.~ValueT();
-    TheBucket->first = getTombstoneKey();
+    (*TheBucket).~ValueT();
+    *TheBucket = getTombstoneValue();
     --NumEntries;
     ++NumTombstones;
     return true;
   }
   void erase(iterator I) {
     BucketT *TheBucket = &*I;
-    TheBucket->second.~ValueT();
-    TheBucket->first = getTombstoneKey();
+    (*TheBucket).~ValueT();
+    *TheBucket = getTombstoneValue();
     --NumEntries;
     ++NumTombstones;
   }
 
-  void swap(MvmDenseMap& RHS) {
+  void swap(VmkitDenseSet& RHS) {
     std::swap(NumBuckets, RHS.NumBuckets);
     std::swap(Buckets, RHS.Buckets);
     std::swap(NumEntries, RHS.NumEntries);
@@ -220,19 +207,18 @@ public:
   }
 
   ValueT &operator[](const KeyT &Key) {
-    return FindAndConstruct(Key).second;
+    return FindAndConstruct(Key);
   }
 
   /// isPointerIntoBucketsArray - Return true if the specified pointer points
-  /// somewhere into the MvmDenseMap's array of buckets (i.e. either to a key or
-  /// value in the MvmDenseMap).
+  /// somewhere into the VmkitDenseSet's array of buckets.
   bool isPointerIntoBucketsArray(const void *Ptr) const {
     return Ptr >= Buckets && Ptr < Buckets+NumBuckets;
   }
 
   /// getPointerIntoBucketsArray() - Return an opaque pointer into the buckets
   /// array.  In conjunction with the previous method, this can be used to
-  /// determine whether an insertion caused the MvmDenseMap to reallocate.
+  /// determine whether an insertion caused the VmkitDenseSet to reallocate.
   const void *getPointerIntoBucketsArray() const { return Buckets; }
 
 private:
@@ -258,30 +244,29 @@ private:
     }
 
     // If we are writing over a tombstone, remember this.
-    if (!KeyInfoT::isEqual(TheBucket->first, getEmptyKey()))
+    if (!ValueInfoT::isEqual(*TheBucket, getEmptyValue()))
       --NumTombstones;
 
-    TheBucket->first = Key;
-    new (&TheBucket->second) ValueT(Value);
+    new (TheBucket) ValueT(Value);
     return TheBucket;
   }
 
   static unsigned getHashValue(const KeyT &Val) {
     return KeyInfoT::getHashValue(Val);
   }
-  static const KeyT getEmptyKey() {
-    return KeyInfoT::getEmptyKey();
+  static const ValueT getEmptyValue() {
+    return ValueInfoT::getEmptyKey();
   }
-  static const KeyT getTombstoneKey() {
-    return KeyInfoT::getTombstoneKey();
+  static const ValueT getTombstoneValue() {
+    return ValueInfoT::getTombstoneKey();
   }
 
   /// LookupBucketFor - Lookup the appropriate bucket for Val, returning it in
   /// FoundBucket.  If the bucket contains the key and a value, this returns
   /// true, otherwise it returns a bucket with an empty marker or tombstone and
   /// returns false.
-  bool LookupBucketFor(const KeyT &Val, BucketT *&FoundBucket) const {
-    unsigned BucketNo = getHashValue(Val);
+  bool LookupBucketFor(const KeyT &Key, BucketT *&FoundBucket) const {
+    unsigned BucketNo = getHashValue(Key);
     unsigned ProbeAmt = 1;
     BucketT *BucketsPtr = Buckets;
 
@@ -292,23 +277,20 @@ private:
 
     // FoundTombstone - Keep track of whether we find a tombstone while probing.
     BucketT *FoundTombstone = 0;
-    const KeyT EmptyKey = getEmptyKey();
-    const KeyT TombstoneKey = getTombstoneKey();
-    assert(!KeyInfoT::isEqual(Val, EmptyKey) &&
-           !KeyInfoT::isEqual(Val, TombstoneKey) &&
-           "Empty/Tombstone value shouldn't be inserted into map!");
+    const ValueT EmptyValue = getEmptyValue();
+    const ValueT TombstoneValue = getTombstoneValue();
 
     while (1) {
       BucketT *ThisBucket = BucketsPtr + (BucketNo & (NumBuckets-1));
       // Found Val's bucket?  If so, return it.
-      if (KeyInfoT::isEqual(ThisBucket->first, Val)) {
+      if (ValueInfoT::isEqualKey(*ThisBucket, Key)) {
         FoundBucket = ThisBucket;
         return true;
       }
 
       // If we found an empty bucket, the key doesn't exist in the set.
       // Insert it and return the default value.
-      if (KeyInfoT::isEqual(ThisBucket->first, EmptyKey)) {
+      if (ValueInfoT::isEqual(*ThisBucket, EmptyValue)) {
         // If we've already seen a tombstone while probing, fill it in instead
         // of the empty bucket we eventually probed to.
         if (FoundTombstone) ThisBucket = FoundTombstone;
@@ -318,7 +300,7 @@ private:
 
       // If this is a tombstone, remember it.  If Val ends up not in the map, we
       // prefer to return it than something that would require more probing.
-      if (KeyInfoT::isEqual(ThisBucket->first, TombstoneKey) && !FoundTombstone)
+      if (ValueInfoT::isEqual(*ThisBucket, TombstoneValue) && !FoundTombstone)
         FoundTombstone = ThisBucket;  // Remember the first tombstone found.
 
       // Otherwise, it's a hash collision or a tombstone, continue quadratic
@@ -340,10 +322,10 @@ private:
     assert(InitBuckets && (InitBuckets & (InitBuckets-1)) == 0 &&
            "# initial buckets must be a power of two!");
     Buckets = static_cast<BucketT*>(operator new(sizeof(BucketT)*InitBuckets));
-    // Initialize all the keys to EmptyKey.
-    const KeyT EmptyKey = getEmptyKey();
+    // Initialize all the entries to EmptyValue.
+    const ValueT EmptyValue = getEmptyValue();
     for (unsigned i = 0; i != InitBuckets; ++i)
-      new (&Buckets[i].first) KeyT(EmptyKey);
+      new (&Buckets[i]) ValueT(EmptyValue);
   }
 
   void grow(unsigned AtLeast) {
@@ -359,28 +341,27 @@ private:
     NumTombstones = 0;
     Buckets = static_cast<BucketT*>(operator new(sizeof(BucketT)*NumBuckets));
 
-    // Initialize all the keys to EmptyKey.
-    const KeyT EmptyKey = getEmptyKey();
+    // Initialize all the values to EmptyValue.
+    const ValueT EmptyValue = getEmptyValue();
     for (unsigned i = 0, e = NumBuckets; i != e; ++i)
-      new (&Buckets[i].first) KeyT(EmptyKey);
+      new (&Buckets[i]) ValueT(EmptyValue);
 
     // Insert all the old elements.
-    const KeyT TombstoneKey = getTombstoneKey();
+    const ValueT TombstoneValue = getTombstoneValue();
     for (BucketT *B = OldBuckets, *E = OldBuckets+OldNumBuckets; B != E; ++B) {
-      if (!KeyInfoT::isEqual(B->first, EmptyKey) &&
-          !KeyInfoT::isEqual(B->first, TombstoneKey)) {
-        // Insert the key/value into the new table.
+      if (!ValueInfoT::isEqual(*B, EmptyValue) &&
+          !ValueInfoT::isEqual(*B, TombstoneValue)) {
+        // Insert the value into the new table.
         BucketT *DestBucket;
-        bool FoundVal = LookupBucketFor(B->first, DestBucket);
+        KeyT key = ValueInfoT::toKey(*B);
+        bool FoundVal = LookupBucketFor(key, DestBucket);
         (void)FoundVal; // silence warning.
         assert(!FoundVal && "Key already in new map?");
-        DestBucket->first = B->first;
-        new (&DestBucket->second) ValueT(B->second);
+        new (DestBucket) ValueT(*B);
 
         // Free the value.
-        B->second.~ValueT();
+        (*B).~ValueT();
       }
-      B->first.~KeyT();
     }
 
 #ifndef NDEBUG
@@ -405,20 +386,19 @@ private:
     NumTombstones = 0;
     Buckets = static_cast<BucketT*>(operator new(sizeof(BucketT)*NumBuckets));
 
-    // Initialize all the keys to EmptyKey.
-    const KeyT EmptyKey = getEmptyKey();
+    // Initialize all the entries to EmptyValue.
+    const ValueT EmptyValue = getEmptyValue();
     for (unsigned i = 0, e = NumBuckets; i != e; ++i)
-      new (&Buckets[i].first) KeyT(EmptyKey);
+      new (&Buckets[i]) ValueT(EmptyValue);
 
     // Free the old buckets.
-    const KeyT TombstoneKey = getTombstoneKey();
+    const ValueT TombstoneValue = getTombstoneValue();
     for (BucketT *B = OldBuckets, *E = OldBuckets+OldNumBuckets; B != E; ++B) {
-      if (!KeyInfoT::isEqual(B->first, EmptyKey) &&
-          !KeyInfoT::isEqual(B->first, TombstoneKey)) {
+      if (!ValueInfoT::isEqual(*B, EmptyValue) &&
+          !ValueInfoT::isEqual(*B, TombstoneValue)) {
         // Free the value.
-        B->second.~ValueT();
+        (*B).~ValueT();
       }
-      B->first.~KeyT();
     }
 
 #ifndef NDEBUG
@@ -436,7 +416,7 @@ private:
   
 public:
   /// Return the approximate size (in bytes) of the actual map.
-  /// This is just the raw memory used by MvmDenseMap.
+  /// This is just the raw memory used by VmkitDenseSet.
   /// If entries are pointers to objects, the size of the referenced objects
   /// are not included.
   size_t getMemorySize() const {
@@ -444,12 +424,12 @@ public:
   }
 };
 
-template<typename KeyT, typename ValueT,
-         typename KeyInfoT, bool IsConst>
-class MvmDenseMapIterator {
-  typedef MvmPair<KeyT, ValueT> Bucket;
-  typedef MvmDenseMapIterator<KeyT, ValueT, KeyInfoT, true> ConstIterator;
-  friend class MvmDenseMapIterator<KeyT, ValueT, KeyInfoT, true>;
+template<typename ValueT,
+         typename ValueInfoT, bool IsConst>
+class VmkitDenseSetIterator {
+  typedef ValueT Bucket;
+  typedef VmkitDenseSetIterator<ValueT, ValueInfoT, true> ConstIterator;
+  friend class VmkitDenseSetIterator<ValueT, ValueInfoT, true>;
 public:
   typedef ptrdiff_t difference_type;
   typedef typename llvm::conditional<IsConst, const Bucket, Bucket>::type value_type;
@@ -459,17 +439,16 @@ public:
 private:
   pointer Ptr, End;
 public:
-  MvmDenseMapIterator() : Ptr(0), End(0) {}
+  VmkitDenseSetIterator() : Ptr(0), End(0) {}
 
-  MvmDenseMapIterator(pointer Pos, pointer E) : Ptr(Pos), End(E) {
+  VmkitDenseSetIterator(pointer Pos, pointer E) : Ptr(Pos), End(E) {
     AdvancePastEmptyBuckets();
   }
 
   // If IsConst is true this is a converting constructor from iterator to
   // const_iterator and the default copy constructor is used.
   // Otherwise this is a copy constructor for iterator.
-  MvmDenseMapIterator(const MvmDenseMapIterator<KeyT, ValueT,
-                                          KeyInfoT, false>& I)
+  VmkitDenseSetIterator(const VmkitDenseSetIterator<ValueT, ValueInfoT, false>& I)
     : Ptr(I.Ptr), End(I.End) {}
 
   reference operator*() const {
@@ -486,27 +465,27 @@ public:
     return Ptr != RHS.operator->();
   }
 
-  inline MvmDenseMapIterator& operator++() {  // Preincrement
+  inline VmkitDenseSetIterator& operator++() {  // Preincrement
     ++Ptr;
     AdvancePastEmptyBuckets();
     return *this;
   }
-  MvmDenseMapIterator operator++(int) {  // Postincrement
-    MvmDenseMapIterator tmp = *this; ++*this; return tmp;
+  VmkitDenseSetIterator operator++(int) {  // Postincrement
+    VmkitDenseSetIterator tmp = *this; ++*this; return tmp;
   }
 
 private:
   void AdvancePastEmptyBuckets() {
-    const KeyT Empty = KeyInfoT::getEmptyKey();
-    const KeyT Tombstone = KeyInfoT::getTombstoneKey();
+    const ValueT Empty = ValueInfoT::getEmptyKey();
+    const ValueT Tombstone = ValueInfoT::getTombstoneKey();
 
     while (Ptr != End &&
-           (KeyInfoT::isEqual(Ptr->first, Empty) ||
-            KeyInfoT::isEqual(Ptr->first, Tombstone)))
+           (ValueInfoT::isEqual(*Ptr, Empty) ||
+            ValueInfoT::isEqual(*Ptr, Tombstone)))
       ++Ptr;
   }
 };
 
-} // end namespace j3
+} // end namespace mvm
 
 #endif

@@ -10,7 +10,7 @@
 #ifndef J3_AOT_COMPILER_H
 #define J3_AOT_COMPILER_H
 
-#include "vmkit/MvmDenseMap.h"
+#include "vmkit/VmkitDenseMap.h"
 #include "vmkit/UTF8.h"
 #include "j3/JavaLLVMCompiler.h"
 
@@ -98,8 +98,8 @@ private:
   llvm::Constant* CreateConstantFromJavaObject(JavaObject* obj);
   llvm::Constant* CreateConstantFromClassBytes(ClassBytes* bytes);
   llvm::Constant* CreateConstantFromJavaConstantPool(JavaConstantPool* ctp);
-  llvm::Constant* CreateConstantFromClassMap(const mvm::MvmDenseMap<const UTF8*, CommonClass*>& map);
-  llvm::Constant* CreateConstantFromUTF8Map(const mvm::MvmDenseSet<mvm::UTF8MapKey, const UTF8*>& set);
+  llvm::Constant* CreateConstantFromClassMap(const mvm::VmkitDenseMap<const UTF8*, CommonClass*>& map);
+  llvm::Constant* CreateConstantFromUTF8Map(const mvm::VmkitDenseSet<mvm::UTF8MapKey, const UTF8*>& set);
   void AddInitializerToClass(llvm::GlobalVariable* varGV, CommonClass* classDef);
   llvm::Constant* getUTF8(const UTF8* val);
   

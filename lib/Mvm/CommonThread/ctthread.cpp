@@ -41,7 +41,7 @@ void Thread::exit(int value) {
 
 void Thread::yield(void) {
   Thread* th = mvm::Thread::get();
-  if (th->isMvmThread()) {
+  if (th->isVmkitThread()) {
     if (th->doYield && !th->inRV) {
       th->MyVM->rendezvous.join();
     }
@@ -180,7 +180,7 @@ void Thread::scanStack(word_t closure) {
 }
 
 void Thread::enterUncooperativeCode(uint16_t level) {
-  if (isMvmThread()) {
+  if (isVmkitThread()) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
       // Get the caller.
@@ -197,7 +197,7 @@ void Thread::enterUncooperativeCode(uint16_t level) {
 }
 
 void Thread::enterUncooperativeCode(word_t SP) {
-  if (isMvmThread()) {
+  if (isVmkitThread()) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
       // The cas is not necessary, but it does a memory barrier.
@@ -209,7 +209,7 @@ void Thread::enterUncooperativeCode(word_t SP) {
 }
 
 void Thread::leaveUncooperativeCode() {
-  if (isMvmThread()) {
+  if (isVmkitThread()) {
     if (!inRV) {
       assert(lastSP && "No last SP when leaving uncooperative code");
       word_t savedSP = lastSP;

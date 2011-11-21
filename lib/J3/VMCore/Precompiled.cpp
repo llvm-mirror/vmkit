@@ -150,12 +150,12 @@ bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   upcalls->OfLong->classLoader = loader;
   upcalls->OfDouble->classLoader = loader;
 
-  mvm::MvmDenseSet<mvm::UTF8MapKey, const UTF8*>* precompiledUTF8Map =
-    reinterpret_cast<mvm::MvmDenseSet<mvm::UTF8MapKey, const UTF8*>*>(dlsym(nativeHandle, "UTF8Map"));
+  mvm::VmkitDenseSet<mvm::UTF8MapKey, const UTF8*>* precompiledUTF8Map =
+    reinterpret_cast<mvm::VmkitDenseSet<mvm::UTF8MapKey, const UTF8*>*>(dlsym(nativeHandle, "UTF8Map"));
   loader->hashUTF8 = new (loader->allocator, "UTF8Map") UTF8Map(loader->allocator, precompiledUTF8Map);
   
-  mvm::MvmDenseMap<const UTF8*, CommonClass*>* precompiledClassMap =
-    reinterpret_cast<mvm::MvmDenseMap<const UTF8*, CommonClass*>*>(dlsym(nativeHandle, "ClassMap"));
+  mvm::VmkitDenseMap<const UTF8*, CommonClass*>* precompiledClassMap =
+    reinterpret_cast<mvm::VmkitDenseMap<const UTF8*, CommonClass*>*>(dlsym(nativeHandle, "ClassMap"));
   loader->classes = new (loader->allocator, "ClassMap") ClassMap(precompiledClassMap);
 
   for (ClassMap::iterator i = loader->getClasses()->map.begin(),
