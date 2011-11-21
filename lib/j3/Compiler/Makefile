@@ -1,4 +1,4 @@
-##===- lib/J3/Compiler/Makefile ----------------------------*- Makefile -*-===##
+##===- lib/j3/Compiler/Makefile ----------------------------*- Makefile -*-===##
 # 
 #                     The VMKit project
 #

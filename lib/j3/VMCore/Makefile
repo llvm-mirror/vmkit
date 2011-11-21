@@ -1,4 +1,4 @@
-##===- lib/J3/VMCore/Makefile ------------------------------*- Makefile -*-===##
+##===- lib/j3/VMCore/Makefile ------------------------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #

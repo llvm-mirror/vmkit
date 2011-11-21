@@ -15,7 +15,7 @@ MODULE_NAME = MMTKRuntime
 LIBRARYNAME = MMTKRuntime
 LOADABLE_MODULE = 1
 
-CXX.Flags += -I$(PROJ_SRC_DIR)/../../lib/J3/VMCore
+CXX.Flags += -I$(PROJ_SRC_DIR)/../../lib/j3/VMCore
 
 include $(LEVEL)/Makefile.common
 

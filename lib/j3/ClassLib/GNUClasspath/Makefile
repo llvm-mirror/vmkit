@@ -1,4 +1,4 @@
-##===- lib/J3/ClassLib/GNUClasspath/Makefile ---------------*- Makefile -*-===##
+##===- lib/j3/ClassLib/GNUClasspath/Makefile ---------------*- Makefile -*-===##
 # 
 #                     The vmkit project
 #

@@ -25,5 +25,5 @@ include $(LEVEL)/Makefile.common
 #------------------------------------------------------------------------
 FilesToConfig := \
   include/llvm/Config/config.h \
-  lib/J3/Classpath/Classpath.h \
+  lib/j3/Classpath/Classpath.h \
 FilesToConfigPATH  := $(addprefix $(LLVM_OBJ_ROOT)/,$(FilesToConfig))

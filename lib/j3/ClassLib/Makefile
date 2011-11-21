@@ -1,4 +1,4 @@
-##===- lib/J3/ClassLib/Makefile ----------------------------*- Makefile -*-===##
+##===- lib/j3/ClassLib/Makefile ----------------------------*- Makefile -*-===##
 #
 #                     The vmkit project
 #
