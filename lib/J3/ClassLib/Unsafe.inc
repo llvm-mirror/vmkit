@@ -351,9 +351,8 @@ JavaObject* unsafe, JavaObject* clazz) {
 
   Jnjvm* vm = JavaThread::get()->getJVM();
 
-  CommonClass * cl = JavaObject::getClass(clazz);
+  UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, clazz, false);
   assert(cl && cl->isClass());
-  cl->asClass()->resolveClass();
   cl->asClass()->initialiseClass(vm);
 
   END_NATIVE_EXCEPTION;
