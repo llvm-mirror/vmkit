@@ -63,7 +63,7 @@ int main(int argc, char **argv, char **envp) {
   std::string OutputFilename;
 
   // Initialize base components.  
-  MvmModule::initialise(argc, argv);
+  VmkitModule::initialise(argc, argv);
   Collector::initialise(argc, argv);
   
   // Create the allocator that will allocate the bootstrap loader and the JVM.

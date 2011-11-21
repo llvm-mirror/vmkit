@@ -1795,8 +1795,8 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   JavaLLVMCompiler(ModuleID) {
 
   std::string Error;
-  const Target* TheTarget(TargetRegistry::lookupTarget(mvm::MvmModule::getHostTriple(), Error));
-  TargetMachine* TM = TheTarget->createTargetMachine(mvm::MvmModule::getHostTriple(), "", "");
+  const Target* TheTarget(TargetRegistry::lookupTarget(mvm::VmkitModule::getHostTriple(), Error));
+  TargetMachine* TM = TheTarget->createTargetMachine(mvm::VmkitModule::getHostTriple(), "", "");
   TheTargetData = TM->getTargetData();
   TheModule->setDataLayout(TheTargetData->getStringRepresentation());
   TheModule->setTargetTriple(TM->getTargetTriple());

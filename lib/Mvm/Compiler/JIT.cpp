@@ -59,7 +59,7 @@ namespace mvm {
   void linkVmkitGC();
 }
 
-const char* MvmModule::getHostTriple() {
+const char* VmkitModule::getHostTriple() {
 #ifdef LLVM_HOSTTRIPLE
   return LLVM_HOSTTRIPLE;
 #else
@@ -81,7 +81,7 @@ DisableOptimizations("disable-opt",
 static llvm::cl::list<const llvm::PassInfo*, bool, llvm::PassNameParser>
 PassList(llvm::cl::desc("Optimizations available:"));
 
-void MvmModule::initialise(int argc, char** argv) {
+void VmkitModule::initialise(int argc, char** argv) {
   linkVmkitGC(); 
   llvm_start_multithreaded();
 
@@ -138,7 +138,7 @@ void MvmModule::initialise(int argc, char** argv) {
 }
 
 
-void MvmModule::runPasses(llvm::Function* func,
+void VmkitModule::runPasses(llvm::Function* func,
                           llvm::FunctionPassManager* pm) {
   pm->run(*func);
 }
@@ -194,7 +194,7 @@ namespace mvm {
   llvm::FunctionPass* createInlineMallocPass();
 }
 
-void MvmModule::addCommandLinePasses(FunctionPassManager* PM) {
+void VmkitModule::addCommandLinePasses(FunctionPassManager* PM) {
   addPass(PM, createVerifierPass());        // Verify that input is correct
 
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
@@ -241,15 +241,15 @@ void MvmModule::addCommandLinePasses(FunctionPassManager* PM) {
   PM->doInitialization();
 }
 
-LockRecursive MvmModule::protectEngine;
+LockRecursive VmkitModule::protectEngine;
 
 // We protect the creation of IR with the protectEngine. Note that
 // codegen'ing a function may also create IR objects.
-void MvmModule::protectIR() {
+void VmkitModule::protectIR() {
   protectEngine.lock();
 }
 
-void MvmModule::unprotectIR() {
+void VmkitModule::unprotectIR() {
   protectEngine.unlock();
 }
 
@@ -382,7 +382,7 @@ void BaseIntrinsics::init(llvm::Module* module) {
 }
 
 
-Frames* MvmModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, BumpPtrAllocator& allocator, void* meta) {
+Frames* VmkitModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, BumpPtrAllocator& allocator, void* meta) {
   JITCodeEmitter* JCE = jit->getCodeEmitter();
   int NumDescriptors = 0;
   for (GCFunctionInfo::iterator J = FI->begin(), JE = FI->end(); J != JE; ++J) {

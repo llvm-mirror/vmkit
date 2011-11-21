@@ -169,7 +169,7 @@ public:
 };
 
 
-class MvmModule {
+class VmkitModule {
 public:
    static mvm::LockRecursive protectEngine;
 

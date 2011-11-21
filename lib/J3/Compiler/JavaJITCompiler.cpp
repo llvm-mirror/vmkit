@@ -163,7 +163,7 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   executionEngine->RegisterJITEventListener(&listener);
   TheTargetData = executionEngine->getTargetData();
   TheModule->setDataLayout(TheTargetData->getStringRepresentation());
-  TheModule->setTargetTriple(mvm::MvmModule::getHostTriple());
+  TheModule->setTargetTriple(mvm::VmkitModule::getHostTriple());
   JavaIntrinsics.init(TheModule);
   initialiseAssessorInfo();  
 
@@ -320,7 +320,7 @@ void JavaJITCompiler::setMethod(Function* func, void* ptr, const char* name) {
 }
 
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth, Class* customizeFor) {
-  mvm::MvmModule::protectIR();
+  mvm::VmkitModule::protectIR();
   Function* func = parseFunction(meth, customizeFor);
   void* res = executionEngine->getPointerToGlobal(func);
 
@@ -328,12 +328,12 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth, Class* customizeFor
     llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*func);
   
     Jnjvm* vm = JavaThread::get()->getJVM();
-    mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, meth);
+    mvm::VmkitModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, meth);
 
     // Now that it's compiled, we don't need the IR anymore
     func->deleteBody();
   }
-  mvm::MvmModule::unprotectIR();
+  mvm::VmkitModule::unprotectIR();
   if (customizeFor == NULL || !getMethodInfo(meth)->isCustomizable) {
     meth->code = res;
   }
@@ -341,7 +341,7 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth, Class* customizeFor
 }
 
 void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
-  mvm::MvmModule::protectIR();
+  mvm::VmkitModule::protectIR();
   void* res = executionEngine->getPointerToGlobal(F);
  
   // If the stub was already generated through an equivalent signature,
@@ -350,12 +350,12 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
     llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*F);
   
     Jnjvm* vm = JavaThread::get()->getJVM();
-    mvm::MvmModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, NULL);
+    mvm::VmkitModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, NULL);
   
     // Now that it's compiled, we don't need the IR anymore
     F->deleteBody();
   }
-  mvm::MvmModule::unprotectIR();
+  mvm::VmkitModule::unprotectIR();
   return res;
 }
 
@@ -363,7 +363,7 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
 extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   llvm::llvm_shutdown_obj X; 
    
-  mvm::MvmModule::initialise(argc, argv);
+  mvm::VmkitModule::initialise(argc, argv);
   mvm::Collector::initialise(argc, argv);
  
   mvm::ThreadAllocator allocator;
