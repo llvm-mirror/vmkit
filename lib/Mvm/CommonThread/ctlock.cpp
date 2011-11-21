@@ -13,7 +13,7 @@
 #include "vmkit/Locks.h"
 #include "vmkit/Thread.h"
 #include "vmkit/VirtualMachine.h"
-#include "MvmGC.h"
+#include "VmkitGC.h"
 #include <cerrno>
 #include <sys/time.h>
 #include <pthread.h>

@@ -44,7 +44,7 @@
 #include "vmkit/VirtualMachine.h"
 #include "vmkit/GC.h"
 #include "MutatorThread.h"
-#include "MvmGC.h"
+#include "VmkitGC.h"
 
 #include <dlfcn.h>
 #include <sys/mman.h>

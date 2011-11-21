@@ -25,7 +25,7 @@
 #include "llvm/Target/TargetData.h"
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 
-#include "MvmGC.h"
+#include "VmkitGC.h"
 #include "vmkit/VirtualMachine.h"
 
 #include "JavaClass.h"

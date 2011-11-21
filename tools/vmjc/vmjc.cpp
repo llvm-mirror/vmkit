@@ -38,7 +38,7 @@
 #include "llvm/Target/TargetMachine.h"
 
 
-#include "MvmGC.h"
+#include "VmkitGC.h"
 #include "vmkit/JIT.h"
 #include "vmkit/VirtualMachine.h"
 #include "vmkit/Thread.h"

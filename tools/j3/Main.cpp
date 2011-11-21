@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "MvmGC.h"
+#include "VmkitGC.h"
 #include "vmkit/JIT.h"
 #include "vmkit/MethodInfo.h"
 #include "vmkit/VirtualMachine.h"

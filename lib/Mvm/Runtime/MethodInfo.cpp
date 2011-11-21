@@ -13,7 +13,7 @@
 #include "vmkit/Allocator.h"
 #include "vmkit/MethodInfo.h"
 #include "vmkit/VirtualMachine.h"
-#include "MvmGC.h"
+#include "VmkitGC.h"
 
 #include <dlfcn.h>
 

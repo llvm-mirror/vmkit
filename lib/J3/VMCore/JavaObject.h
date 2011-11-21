@@ -14,7 +14,7 @@
 #include "vmkit/UTF8.h"
 #include "vmkit/Locks.h"
 #include "vmkit/Thread.h"
-#include "MvmGC.h"
+#include "VmkitGC.h"
 
 #include "types.h"
 

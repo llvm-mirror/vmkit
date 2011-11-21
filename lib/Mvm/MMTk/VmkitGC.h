@@ -1,4 +1,4 @@
-//===----------- MvmGC.h - Garbage Collection Interface -------------------===//
+//===----------- VmkitGC.h - Garbage Collection Interface -------------------===//
 //
 //                     The VMKit project
 //

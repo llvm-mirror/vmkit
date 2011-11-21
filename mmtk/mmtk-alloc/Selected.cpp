@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "MutatorThread.h"
-#include "MvmGC.h"
+#include "VmkitGC.h"
 #include "../mmtk-j3/MMTkObject.h"
 
 #include "vmkit/VirtualMachine.h"

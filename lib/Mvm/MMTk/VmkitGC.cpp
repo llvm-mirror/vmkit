@@ -1,4 +1,4 @@
-//===----------- MvmGC.cpp - Garbage Collection Interface -----------------===//
+//===----------- VmkitGC.cpp - Garbage Collection Interface -----------------===//
 //
 //                     The VMKit project
 //
@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "MvmGC.h"
+#include "VmkitGC.h"
 #include "MutatorThread.h"
 #include "vmkit/VirtualMachine.h"
 

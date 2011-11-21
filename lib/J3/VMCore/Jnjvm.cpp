@@ -19,7 +19,7 @@
 #include "debug.h"
 
 #include "vmkit/Thread.h"
-#include "MvmGC.h"
+#include "VmkitGC.h"
 
 #include "ClasspathReflect.h"
 #include "JavaArray.h"

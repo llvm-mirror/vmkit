@@ -10,7 +10,7 @@
 #include "debug.h"
 #include "vmkit/VirtualMachine.h"
 #include "MMTkObject.h"
-#include "MvmGC.h"
+#include "VmkitGC.h"
 
 namespace mmtk {
 

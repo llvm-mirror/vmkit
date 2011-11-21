@@ -12,7 +12,7 @@
 
 #include "ClasspathReflect.h"
 #include "JavaObject.h"
-#include "MvmGC.h"
+#include "VmkitGC.h"
 
 namespace j3 {
 

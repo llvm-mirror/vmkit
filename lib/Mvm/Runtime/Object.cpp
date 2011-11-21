@@ -10,7 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "MvmGC.h"
+#include "VmkitGC.h"
 #include "vmkit/VirtualMachine.h"
 
 using namespace mvm;
