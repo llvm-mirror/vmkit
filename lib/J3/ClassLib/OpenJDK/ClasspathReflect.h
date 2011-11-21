@@ -59,7 +59,7 @@ public:
   static void setProtectionDomain(JavaObjectClass* cl, JavaObject* pd) {
     llvm_gcroot(cl, 0);
     llvm_gcroot(pd, 0);
-    mvm::Collector::objectReferenceWriteBarrier(
+    vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)cl, (gc**)&(cl->pd), (gc*)pd);
   }
 
@@ -69,27 +69,27 @@ public:
   }
 
   static void staticTracer(JavaObjectClass* obj, word_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->cachedConstructor, closure);
-    mvm::Collector::markAndTrace(obj, &obj->newInstanceCallerCache, closure);
-    mvm::Collector::markAndTrace(obj, &obj->name, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaredFields, closure);
-    mvm::Collector::markAndTrace(obj, &obj->publicFields, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaredMethods, closure);
-    mvm::Collector::markAndTrace(obj, &obj->publicMethods, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaredConstructors, closure);
-    mvm::Collector::markAndTrace(obj, &obj->publicConstructors, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaredPublicFields, closure);
-    mvm::Collector::markAndTrace(obj, &obj->genericInfo, closure);
-    mvm::Collector::markAndTrace(obj, &obj->enumConstants, closure);
-    mvm::Collector::markAndTrace(obj, &obj->enumConstantDictionary, closure);
-    mvm::Collector::markAndTrace(obj, &obj->annotations, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
-    mvm::Collector::markAndTrace(obj, &obj->annotationType, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->cachedConstructor, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->newInstanceCallerCache, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->name, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredFields, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->publicFields, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredMethods, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->publicMethods, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredConstructors, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->publicConstructors, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredPublicFields, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->genericInfo, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->enumConstants, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->enumConstantDictionary, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->annotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->annotationType, closure);
 
     UserCommonClass * cl = getClass(obj);
     if (cl) {
       JavaObject** Obj = cl->classLoader->getJavaClassLoaderPtr();
-      if (*Obj) mvm::Collector::markAndTraceRoot(Obj, closure);
+      if (*Obj) vmkit::Collector::markAndTraceRoot(Obj, closure);
     }
   }
 
@@ -126,18 +126,18 @@ private:
 public:
 
   static void staticTracer(JavaObjectField* obj, word_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->clazz, closure);
-    mvm::Collector::markAndTrace(obj, &obj->name, closure);
-    mvm::Collector::markAndTrace(obj, &obj->type, closure);
-    mvm::Collector::markAndTrace(obj, &obj->signature, closure);
-    mvm::Collector::markAndTrace(obj, &obj->genericInfo, closure);
-    mvm::Collector::markAndTrace(obj, &obj->annotations, closure);
-    mvm::Collector::markAndTrace(obj, &obj->fieldAccessor, closure);
-    mvm::Collector::markAndTrace(obj, &obj->overrideFieldAccessor, closure);
-    mvm::Collector::markAndTrace(obj, &obj->root, closure);
-    mvm::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
-    mvm::Collector::markAndTrace(obj, &obj->securityCheckTargetClassCache, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->clazz, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->name, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->type, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->signature, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->genericInfo, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->annotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->fieldAccessor, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->overrideFieldAccessor, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->root, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->securityCheckTargetClassCache, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
   }
 
   static JavaField* getInternalField(JavaObjectField* self) {
@@ -181,21 +181,21 @@ private:
 public:
 
   static void staticTracer(JavaObjectMethod* obj, word_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->clazz, closure);
-    mvm::Collector::markAndTrace(obj, &obj->name, closure);
-    mvm::Collector::markAndTrace(obj, &obj->returnType, closure);
-    mvm::Collector::markAndTrace(obj, &obj->parameterTypes, closure);
-    mvm::Collector::markAndTrace(obj, &obj->exceptionTypes, closure);
-    mvm::Collector::markAndTrace(obj, &obj->Signature, closure);
-    mvm::Collector::markAndTrace(obj, &obj->genericInfo, closure);
-    mvm::Collector::markAndTrace(obj, &obj->annotations, closure);
-    mvm::Collector::markAndTrace(obj, &obj->parameterAnnotations, closure);
-    mvm::Collector::markAndTrace(obj, &obj->annotationDefault, closure);
-    mvm::Collector::markAndTrace(obj, &obj->methodAccessor, closure);
-    mvm::Collector::markAndTrace(obj, &obj->root, closure);
-    mvm::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
-    mvm::Collector::markAndTrace(obj, &obj->securityCheckTargetClassCache, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->clazz, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->name, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->returnType, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->parameterTypes, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->exceptionTypes, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->Signature, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->genericInfo, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->annotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->parameterAnnotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->annotationDefault, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->methodAccessor, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->root, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->securityCheckTargetClassCache, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
   }
 
   static JavaMethod* getInternalMethod(JavaObjectMethod* self);
@@ -230,17 +230,17 @@ private:
 
 public:
   static void staticTracer(JavaObjectConstructor* obj, word_t closure) {
-    mvm::Collector::markAndTrace(obj, &obj->clazz, closure);
-    mvm::Collector::markAndTrace(obj, &obj->parameterTypes, closure);
-    mvm::Collector::markAndTrace(obj, &obj->exceptionTypes, closure);
-    mvm::Collector::markAndTrace(obj, &obj->signature, closure);
-    mvm::Collector::markAndTrace(obj, &obj->genericInfo, closure);
-    mvm::Collector::markAndTrace(obj, &obj->annotations, closure);
-    mvm::Collector::markAndTrace(obj, &obj->parameterAnnotations, closure);
-    mvm::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
-    mvm::Collector::markAndTrace(obj, &obj->constructorAccessor, closure);
-    mvm::Collector::markAndTrace(obj, &obj->root, closure);
-    mvm::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->clazz, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->parameterTypes, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->exceptionTypes, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->signature, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->genericInfo, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->annotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->parameterAnnotations, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->securityCheckCache, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->constructorAccessor, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->root, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredAnnotations, closure);
   }
 
   static JavaMethod* getInternalMethod(JavaObjectConstructor* self);
@@ -266,7 +266,7 @@ public:
   static void setDetailedMessage(JavaObjectThrowable* self, JavaObject* obj) {
     llvm_gcroot(self, 0);
     llvm_gcroot(obj, 0);
-    mvm::Collector::objectReferenceWriteBarrier(
+    vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)self, (gc**)&(self->detailedMessage), (gc*)obj);
   }
 
@@ -276,10 +276,10 @@ public:
     llvm_gcroot(stackTrace, 0);
 
     stackTrace = internalFillInStackTrace(self);
-    mvm::Collector::objectReferenceWriteBarrier(
+    vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)self, (gc**)&(self->backtrace), (gc*)stackTrace);
 
-    mvm::Collector::objectReferenceWriteBarrier(
+    vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)self, (gc**)&(self->cause), (gc*)self);
 
     self->stackTrace = NULL;
@@ -301,9 +301,9 @@ public:
     llvm_gcroot(self, 0);
     llvm_gcroot(r, 0);
     llvm_gcroot(q, 0);
-    mvm::Collector::objectReferenceWriteBarrier(
+    vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)self, (gc**)&(self->referent), (gc*)r);
-    mvm::Collector::objectReferenceWriteBarrier(
+    vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)self, (gc**)&(self->queue), (gc*)q);
   }
 

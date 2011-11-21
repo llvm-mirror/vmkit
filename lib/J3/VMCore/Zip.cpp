@@ -17,7 +17,7 @@
 
 using namespace j3;
 
-ZipArchive::ZipArchive(ClassBytes* bytes, mvm::BumpPtrAllocator& A) : allocator(A) {
+ZipArchive::ZipArchive(ClassBytes* bytes, vmkit::BumpPtrAllocator& A) : allocator(A) {
   this->bytes = bytes;
   findOfscd();
   if (ofscd > -1) addFiles();

@@ -30,7 +30,7 @@
 #include <string>
 
 using namespace j3;
-using namespace mvm;
+using namespace vmkit;
 
 #include "FrametablesExterns.inc"
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv, char **envp) {
   Collector::initialise(argc, argv);
   
   // Create the allocator that will allocate the bootstrap loader and the JVM.
-  mvm::BumpPtrAllocator Allocator;
+  vmkit::BumpPtrAllocator Allocator;
   JavaAOTCompiler* AOT;
   if (EmitClassBytes) {
     AOT = new JavaAOTCompiler("AOT");
@@ -90,7 +90,7 @@ int main(int argc, char **argv, char **envp) {
     vm->doExit = false;
     JavaThread* th = new JavaThread(vm);
     vm->setMainThread(th);
-    th->start((void (*)(mvm::Thread*))mainCompilerLoaderStart);
+    th->start((void (*)(vmkit::Thread*))mainCompilerLoaderStart);
     vm->waitForExit();
 
     AOT = (JavaAOTCompiler*)loader->getCompiler();

@@ -28,7 +28,7 @@ private:
   gc** References;
   uint32 QueueLength;
   uint32 CurrentIndex;
-  mvm::SpinLock QueueLock;
+  vmkit::SpinLock QueueLock;
   uint8_t semantics;
 
   gc* processReference(gc*, ReferenceThread*, word_t closure);
@@ -102,9 +102,9 @@ public:
   
   /// ToEnqueueLock - A lock to protect access to the queue.
   ///
-  mvm::LockNormal EnqueueLock;
-  mvm::Cond EnqueueCond;
-  mvm::SpinLock ToEnqueueLock;
+  vmkit::LockNormal EnqueueLock;
+  vmkit::Cond EnqueueCond;
+  vmkit::SpinLock ToEnqueueLock;
 
   void addToEnqueue(gc* obj);
 
@@ -142,7 +142,7 @@ class FinalizerThread : public JavaThread {
 public:
     /// FinalizationQueueLock - A lock to protect access to the queue.
   ///
-  mvm::SpinLock FinalizationQueueLock;
+  vmkit::SpinLock FinalizationQueueLock;
 
   /// finalizationQueue - A list of allocated objets that contain a finalize
   /// method.
@@ -181,11 +181,11 @@ public:
   
   /// finalizationCond - Condition variable to wake up finalization threads.
   ///
-  mvm::Cond FinalizationCond;
+  vmkit::Cond FinalizationCond;
 
   /// finalizationLock - Lock for the condition variable.
   ///
-  mvm::LockNormal FinalizationLock;
+  vmkit::LockNormal FinalizationLock;
 
   static void finalizerStart(FinalizerThread*);
 

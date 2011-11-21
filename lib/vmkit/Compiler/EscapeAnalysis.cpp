@@ -243,7 +243,7 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
 }
 }
 
-namespace mvm {
+namespace vmkit {
 FunctionPass* createEscapeAnalysisPass() {
   return new EscapeAnalysis();
 }

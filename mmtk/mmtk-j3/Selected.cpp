@@ -13,7 +13,7 @@
 namespace mmtk {
 
 extern "C" MMTkObject* Java_org_j3_config_Selected_00024Mutator_get__() {
-  return (MMTkObject*)mvm::MutatorThread::get()->MutatorContext;
+  return (MMTkObject*)vmkit::MutatorThread::get()->MutatorContext;
 }
 
 }

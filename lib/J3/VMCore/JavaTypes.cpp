@@ -59,7 +59,7 @@ ObjectTypedef::ObjectTypedef(const UTF8* name, UTF8Map* map) {
 
 word_t Signdef::staticCallBuf() {
   if (!_staticCallBuf) {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_buf");
     bool unused = false;
@@ -75,7 +75,7 @@ word_t Signdef::staticCallBuf() {
 
 word_t Signdef::virtualCallBuf() {
   if (!_virtualCallBuf) {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_buf");
     bool unused = false;
@@ -91,7 +91,7 @@ word_t Signdef::virtualCallBuf() {
 
 word_t Signdef::staticCallAP() {
   if (!_staticCallAP) {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_ap");
     bool unused = false;
@@ -107,7 +107,7 @@ word_t Signdef::staticCallAP() {
 
 word_t Signdef::virtualCallAP() {
   if (!_virtualCallAP) {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_ap");
     bool unused = false;
@@ -123,7 +123,7 @@ word_t Signdef::virtualCallAP() {
 
 word_t Signdef::virtualCallStub() {
   if (!_virtualCallAP) {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "virtual_stub");
     bool unused = false;
@@ -139,7 +139,7 @@ word_t Signdef::virtualCallStub() {
 
 word_t Signdef::specialCallStub() {
   if (!_specialCallStub) {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "special_stub");
     bool unused = false;
@@ -155,7 +155,7 @@ word_t Signdef::specialCallStub() {
 
 word_t Signdef::staticCallStub() {
   if (!_staticCallStub) {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     char* buf = (char*)allocator.Allocate((keyName->size << 1) + 1 + 11);
     nativeName(buf, "static_stub");
     bool unused = false;

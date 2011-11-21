@@ -59,7 +59,7 @@ public:
 
   /// nonDaemonLock - Protection lock for the nonDaemonThreads variable.
   ///
-  mvm::SpinLock nonDaemonLock;
+  vmkit::SpinLock nonDaemonLock;
 
   /// ThreadSystem - Allocates a thread system management, initializing the
   /// lock, the condition variable and setting the initial number of non
@@ -104,7 +104,7 @@ public:
 
 /// Jnjvm - A JVM. Each execution of a program allocates a Jnjvm.
 ///
-class Jnjvm : public mvm::VirtualMachine {
+class Jnjvm : public vmkit::VirtualMachine {
   friend class JnjvmClassLoader;
 public:
   /// throwable - The java/lang/Throwable class. In an isolate
@@ -130,7 +130,7 @@ private:
   virtual void addFinalizationCandidate(gc* obj);
   virtual size_t getObjectSize(gc* obj);
   virtual const char* getObjectTypeName(gc* obj);
-  virtual void printMethod(mvm::FrameInfo* FI, word_t ip, word_t addr);
+  virtual void printMethod(vmkit::FrameInfo* FI, word_t ip, word_t addr);
 
 
   /// CreateError - Creates a Java object of the specified exception class
@@ -209,7 +209,7 @@ public:
   
   /// lockSystem - The lock system to allocate and manage Java locks.
   ///
-  mvm::LockSystem lockSystem;
+  vmkit::LockSystem lockSystem;
   
   /// argumentsInfo - The command line arguments given to the vm
   ///
@@ -237,7 +237,7 @@ public:
 
   /// globalRefsLock - Lock for adding a new global reference.
   ///
-  mvm::LockNormal globalRefsLock;
+  vmkit::LockNormal globalRefsLock;
   
   /// appClassLoader - The bootstrap class loader.
   ///
@@ -338,8 +338,8 @@ public:
 
   /// Jnjvm - Allocates a new JVM.
   ///
-  Jnjvm(mvm::BumpPtrAllocator& Alloc,
-        mvm::CompiledFrames** frames,
+  Jnjvm(vmkit::BumpPtrAllocator& Alloc,
+        vmkit::CompiledFrames** frames,
         JnjvmBootstrapLoader* loader);
   
   /// runApplication - Runs the application with the given command line.

@@ -18,12 +18,12 @@ extern "C" MMTkObject* Java_org_j3_mmtk_ActivePlan_getNextMutator__(MMTkActivePl
   assert(A && "No active plan");
   
   if (A->current == NULL) {
-    A->current = (mvm::MutatorThread*)mvm::Thread::get()->MyVM->mainThread;
-  } else if (A->current->next() == mvm::Thread::get()->MyVM->mainThread) {
+    A->current = (vmkit::MutatorThread*)vmkit::Thread::get()->MyVM->mainThread;
+  } else if (A->current->next() == vmkit::Thread::get()->MyVM->mainThread) {
     A->current = NULL;
     return NULL;
   } else {
-    A->current = (mvm::MutatorThread*)A->current->next();
+    A->current = (vmkit::MutatorThread*)A->current->next();
   }
 
   if (A->current->MutatorContext == 0) {

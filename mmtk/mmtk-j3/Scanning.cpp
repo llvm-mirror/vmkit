@@ -17,24 +17,24 @@ namespace mmtk {
 extern "C" void Java_org_j3_mmtk_Scanning_computeThreadRoots__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) {
   // When entering this function, all threads are waiting on the rendezvous to
   // finish.
-  mvm::Thread* th = mvm::Thread::get();
-  mvm::Thread* tcur = th;
+  vmkit::Thread* th = vmkit::Thread::get();
+  vmkit::Thread* tcur = th;
   
   do {
     tcur->scanStack(reinterpret_cast<word_t>(TL));
-    tcur = (mvm::Thread*)tcur->next();
+    tcur = (vmkit::Thread*)tcur->next();
   } while (tcur != th);
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_computeGlobalRoots__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) { 
-  mvm::Thread::get()->MyVM->tracer(reinterpret_cast<word_t>(TL));
+  vmkit::Thread::get()->MyVM->tracer(reinterpret_cast<word_t>(TL));
   
-	mvm::Thread* th = mvm::Thread::get();
-  mvm::Thread* tcur = th;
+	vmkit::Thread* th = vmkit::Thread::get();
+  vmkit::Thread* tcur = th;
   
   do {
     tcur->tracer(reinterpret_cast<word_t>(TL));
-    tcur = (mvm::Thread*)tcur->next();
+    tcur = (vmkit::Thread*)tcur->next();
   } while (tcur != th);
 }
 

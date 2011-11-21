@@ -25,7 +25,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-using namespace mvm;
+using namespace vmkit;
 
 int Thread::kill(void* tid, int signo) {
   return pthread_kill((pthread_t)tid, signo);
@@ -40,7 +40,7 @@ void Thread::exit(int value) {
 }
 
 void Thread::yield(void) {
-  Thread* th = mvm::Thread::get();
+  Thread* th = vmkit::Thread::get();
   if (th->isVmkitThread()) {
     if (th->doYield && !th->inRV) {
       th->MyVM->rendezvous.join();
@@ -102,7 +102,7 @@ void Thread::printBacktrace() {
 }
 
 void Thread::getFrameContext(word_t* buffer) {
-  mvm::StackWalker Walker(this);
+  vmkit::StackWalker Walker(this);
   uint32_t i = 0;
 
   while (word_t ip = *Walker) {
@@ -112,7 +112,7 @@ void Thread::getFrameContext(word_t* buffer) {
 }
 
 uint32_t Thread::getFrameContextLength() {
-  mvm::StackWalker Walker(this);
+  vmkit::StackWalker Walker(this);
   uint32_t i = 0;
 
   while (*Walker) {
@@ -151,10 +151,10 @@ void StackWalker::operator++() {
   }
 }
 
-StackWalker::StackWalker(mvm::Thread* th) {
+StackWalker::StackWalker(vmkit::Thread* th) {
   thread = th;
   frame = th->lastKnownFrame;
-  if (mvm::Thread::get() == th) {
+  if (vmkit::Thread::get() == th) {
     addr = System::GetCallerAddress();
     addr = System::GetCallerOfAddress(addr);
   } else {
@@ -234,7 +234,7 @@ word_t Thread::waitOnSP() {
   }
   
   // Finally, yield until lastSP is not set.
-  while ((sp = lastSP) == 0) mvm::Thread::yield();
+  while ((sp = lastSP) == 0) vmkit::Thread::yield();
 
   assert(sp != 0 && "Still no sp");
   return sp;
@@ -282,13 +282,13 @@ public:
     uint32 pagesize = System::GetPageSize();
     for (uint32 i = 0; i < NR_THREADS; ++i) {
       word_t addr = baseAddr + (i * STACK_SIZE) + pagesize
-        + mvm::System::GetAlternativeStackSize();
+        + vmkit::System::GetAlternativeStackSize();
       mprotect((void*)addr, pagesize, PROT_NONE);
     }
 
     memset((void*)used, 0, NR_THREADS * sizeof(uint32));
     allocPtr = 0;
-    mvm::Thread::baseAddr = baseAddr;
+    vmkit::Thread::baseAddr = baseAddr;
   }
 
   word_t allocate() {
@@ -323,7 +323,7 @@ extern void sigsegvHandler(int, siginfo_t*, void*);
 /// thread specific data, registers the thread to the GC and calls the
 /// given routine of th.
 ///
-void Thread::internalThreadStart(mvm::Thread* th) {
+void Thread::internalThreadStart(vmkit::Thread* th) {
   th->baseSP  = System::GetCallerAddress();
 
   // Set the alternate stack as the second page of the thread's
@@ -353,7 +353,7 @@ void Thread::internalThreadStart(mvm::Thread* th) {
 
 
 /// start - Called by the creator of the thread to run the new thread.
-int Thread::start(void (*fct)(mvm::Thread*)) {
+int Thread::start(void (*fct)(vmkit::Thread*)) {
   pthread_attr_t attributs;
   pthread_attr_init(&attributs);
   pthread_attr_setstack(&attributs, this, STACK_SIZE);
@@ -381,7 +381,7 @@ void* Thread::operator new(size_t sz) {
 
 /// releaseThread - Remove the stack of the thread from the list of stacks
 /// in use.
-void Thread::releaseThread(mvm::Thread* th) {
+void Thread::releaseThread(vmkit::Thread* th) {
   // It seems like the pthread implementation in Linux is clearing with NULL
   // the stack of the thread. So we have to get the thread id before
   // calling pthread_join.

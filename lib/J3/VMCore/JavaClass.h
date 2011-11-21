@@ -73,7 +73,7 @@ public:
 /// Attribut - This class represents JVM attributes to Java class, methods and
 /// fields located in the .class file.
 ///
-class Attribut : public mvm::PermanentObject {
+class Attribut : public vmkit::PermanentObject {
 public:
   
   /// name - The name of the attribut. These are specified in the JVM book.
@@ -156,7 +156,7 @@ public:
 /// object that stays in memory has a reference to the class. Same for
 /// super or interfaces.
 ///
-class CommonClass : public mvm::PermanentObject {
+class CommonClass : public vmkit::PermanentObject {
 
 public:
   
@@ -436,7 +436,7 @@ public:
   
   /// ownerClass - Who is initializing this class.
   ///
-  mvm::Thread* ownerClass;
+  vmkit::Thread* ownerClass;
   
   /// bytes - The .class file of this class.
   ///
@@ -496,13 +496,13 @@ public:
 
   /// getOwnerClass - Get the thread that is currently initializing the class.
   ///
-  mvm::Thread* getOwnerClass() const {
+  vmkit::Thread* getOwnerClass() const {
     return ownerClass;
   }
 
   /// setOwnerClass - Set the thread that is currently initializing the class.
   ///
-  void setOwnerClass(mvm::Thread* th) {
+  void setOwnerClass(vmkit::Thread* th) {
     ownerClass = th;
   }
  
@@ -822,7 +822,7 @@ public:
 
 /// JavaMethod - This class represents Java methods.
 ///
-class JavaMethod : public mvm::PermanentObject {
+class JavaMethod : public vmkit::PermanentObject {
 private:
 
   /// _signature - The signature of this method. Null if not resolved.
@@ -899,12 +899,12 @@ public:
 
   /// lookupLineNumber - Find the line number based on the given frame info.
   ///
-  uint16 lookupLineNumber(mvm::FrameInfo* FI);
+  uint16 lookupLineNumber(vmkit::FrameInfo* FI);
   
   /// lookupCtpIndex - Lookup the constant pool index pointed by the opcode
   /// related to the given frame info.
   ///
-  uint16 lookupCtpIndex(mvm::FrameInfo* FI);
+  uint16 lookupCtpIndex(vmkit::FrameInfo* FI);
   
   /// getSignature - Get the signature of thes method, resolving it if
   /// necessary.
@@ -1079,7 +1079,7 @@ public:
 
 /// JavaField - This class represents a Java field.
 ///
-class JavaField  : public mvm::PermanentObject {
+class JavaField  : public vmkit::PermanentObject {
 private:
   /// _signature - The signature of the field. Null if not resolved.
   ///

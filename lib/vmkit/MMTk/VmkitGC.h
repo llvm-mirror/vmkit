@@ -72,7 +72,7 @@ extern "C" void arrayWriteBarrier(void* ref, void** ptr, void* value);
 extern "C" void fieldWriteBarrier(void* ref, void** ptr, void* value);
 extern "C" void nonHeapWriteBarrier(void** ptr, void* value);
 
-namespace mvm {
+namespace vmkit {
   
 class Collector {
 public:

@@ -379,7 +379,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
   final_object_iterator I = finalObjects.find(obj);
   if (I == End) {
   
-    if (mvm::Collector::begOf(obj)) {
+    if (vmkit::Collector::begOf(obj)) {
       Type* Ty = 0;
       CommonClass* cl = JavaObject::getClass(obj);
       
@@ -1041,7 +1041,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassArray(ClassArray* cl) {
   return ConstantStruct::get(STy, ClassElts);
 }
 
-Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::VmkitDenseMap<const UTF8*, CommonClass*>& map) {
+Constant* JavaAOTCompiler::CreateConstantFromClassMap(const vmkit::VmkitDenseMap<const UTF8*, CommonClass*>& map) {
   StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.J3DenseMapType->getContainedType(0));
   Module& Mod = *getLLVMModule();
@@ -1055,11 +1055,11 @@ Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::VmkitDenseMap<c
     ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, map.NumBuckets * 2);
 
     for (uint32 i = 0; i < map.NumBuckets; ++i) {
-      mvm::VmkitPair<const UTF8*, CommonClass*> pair = map.Buckets[i];
-      if (pair.first == &mvm::TombstoneKey) {
+      vmkit::VmkitPair<const UTF8*, CommonClass*> pair = map.Buckets[i];
+      if (pair.first == &vmkit::TombstoneKey) {
         TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, UTF8TombstoneGV, JavaIntrinsics.ptrType));
         TempElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
-      } else if (pair.first == &mvm::EmptyKey) {
+      } else if (pair.first == &vmkit::EmptyKey) {
         TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, UTF8EmptyGV, JavaIntrinsics.ptrType));
         TempElts.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
       } else {
@@ -1086,7 +1086,7 @@ Constant* JavaAOTCompiler::CreateConstantFromClassMap(const mvm::VmkitDenseMap<c
                             ConstantStruct::get(STy, elements), "ClassMap");
 }
 
-Constant* JavaAOTCompiler::CreateConstantFromUTF8Map(const mvm::VmkitDenseSet<mvm::UTF8MapKey, const UTF8*>& set) {
+Constant* JavaAOTCompiler::CreateConstantFromUTF8Map(const vmkit::VmkitDenseSet<vmkit::UTF8MapKey, const UTF8*>& set) {
   StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.J3DenseMapType->getContainedType(0));
   Module& Mod = *getLLVMModule();
@@ -1101,9 +1101,9 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8Map(const mvm::VmkitDenseSet<mv
 
     for (uint32 i = 0; i < set.NumBuckets; ++i) {
       const UTF8* utf8 = set.Buckets[i];
-      if (utf8 == &mvm::EmptyKey) {
+      if (utf8 == &vmkit::EmptyKey) {
         TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, UTF8EmptyGV, JavaIntrinsics.ptrType));
-      } else if (utf8 == &mvm::TombstoneKey) {
+      } else if (utf8 == &vmkit::TombstoneKey) {
         TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, UTF8TombstoneGV, JavaIntrinsics.ptrType));
       } else {
         TempElts.push_back(ConstantExpr::getCast(Instruction::BitCast, getUTF8(utf8), JavaIntrinsics.ptrType));
@@ -1795,8 +1795,8 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   JavaLLVMCompiler(ModuleID) {
 
   std::string Error;
-  const Target* TheTarget(TargetRegistry::lookupTarget(mvm::VmkitModule::getHostTriple(), Error));
-  TargetMachine* TM = TheTarget->createTargetMachine(mvm::VmkitModule::getHostTriple(), "", "");
+  const Target* TheTarget(TargetRegistry::lookupTarget(vmkit::VmkitModule::getHostTriple(), Error));
+  TargetMachine* TM = TheTarget->createTargetMachine(vmkit::VmkitModule::getHostTriple(), "", "");
   TheTargetData = TM->getTargetData();
   TheModule->setDataLayout(TheTargetData->getStringRepresentation());
   TheModule->setTargetTriple(TM->getTargetTriple());
@@ -2047,7 +2047,7 @@ void extractFiles(ClassBytes* bytes,
                   std::vector<Class*>& classes) {
   ZipArchive archive(bytes, bootstrapLoader->allocator);
    
-  mvm::BumpPtrAllocator allocator; 
+  vmkit::BumpPtrAllocator allocator; 
   char* realName = (char*)allocator.Allocate(4096, "temp");
   for (ZipArchive::table_iterator i = archive.filetable.begin(), 
        e = archive.filetable.end(); i != e; ++i) {
@@ -2225,7 +2225,7 @@ void mainCompilerStart(JavaThread* th) {
     }
 
   } else {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     char* realName = (char*)allocator.Allocate(size + 1);
     if (size > 6 && !strcmp(&name[size - 6], ".class")) {
       memcpy(realName, name, size - 6);
@@ -2276,7 +2276,7 @@ void JavaAOTCompiler::compileFile(Jnjvm* vm, const char* n) {
   name = n;
   JavaThread* th = new JavaThread(vm);
   vm->setMainThread(th);
-  th->start((void (*)(mvm::Thread*))mainCompilerStart);
+  th->start((void (*)(vmkit::Thread*))mainCompilerStart);
   vm->waitForExit();
 }
 

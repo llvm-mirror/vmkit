@@ -160,7 +160,7 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     
     PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
     PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
-    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", mvm::PrintString(this).cString());
+    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", vmkit::PrintString(this).cString());
 
     JavaField* fields = cl->getStaticFields();
     for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
@@ -844,7 +844,7 @@ void ClArgumentsInfo::extractClassFromJar(Jnjvm* vm, int argc, char** argv,
     return;
   }
 
-  mvm::BumpPtrAllocator allocator;
+  vmkit::BumpPtrAllocator allocator;
   ZipArchive* archive = new(allocator, "TempZipArchive")
       ZipArchive(bytes, allocator);
   if (archive->getOfscd() != -1) {
@@ -1005,7 +1005,7 @@ void ClArgumentsInfo::readArgs(Jnjvm* vm) {
     } else if (!(strcmp(cur, "-verbosegc"))) {
       nyi();
     } else if (!(strcmp(cur, "-verbose:gc"))) {
-      mvm::Collector::verbose = 1;
+      vmkit::Collector::verbose = 1;
     } else if (!(strcmp(cur, "-verbose:jni"))) {
       nyi();
     } else if (!(strcmp(cur, "-version"))) {
@@ -1064,11 +1064,11 @@ void Jnjvm::loadBootstrap() {
   // First create system threads.
   finalizerThread = new FinalizerThread(this);
   finalizerThread->start(
-      (void (*)(mvm::Thread*))FinalizerThread::finalizerStart);
+      (void (*)(vmkit::Thread*))FinalizerThread::finalizerStart);
     
   referenceThread = new ReferenceThread(this);
   referenceThread->start(
-      (void (*)(mvm::Thread*))ReferenceThread::enqueueStart);
+      (void (*)(vmkit::Thread*))ReferenceThread::enqueueStart);
   
   // Initialise the bootstrap class loader if it's not
   // done already.
@@ -1200,7 +1200,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
       method->invokeIntStatic(this, method->classDef, &args);
     } else {
       fprintf(stderr, "Main method not public.\n");
-      mvm::System::Exit(1);
+      vmkit::System::Exit(1);
     }
   } CATCH {
   } END_CATCH;
@@ -1219,7 +1219,7 @@ void Jnjvm::executeClass(const char* className, ArrayObject* args) {
                       "Can not print stack trace.\n");
     } END_CATCH;
     // Program failed. Exit with return code not 0.
-    mvm::System::Exit(1);
+    vmkit::System::Exit(1);
   }
 }
 
@@ -1303,7 +1303,7 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
 void ThreadSystem::leave() {
   nonDaemonLock.lock();
   --nonDaemonThreads;
-  if (nonDaemonThreads == 0) mvm::Thread::get()->MyVM->exit();
+  if (nonDaemonThreads == 0) vmkit::Thread::get()->MyVM->exit();
   nonDaemonLock.unlock();  
 }
 
@@ -1317,11 +1317,11 @@ void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argc = argc;
   argumentsInfo.argv = argv;
   mainThread = new JavaThread(this);
-  mainThread->start((void (*)(mvm::Thread*))mainJavaStart);
+  mainThread->start((void (*)(vmkit::Thread*))mainJavaStart);
 }
 
-Jnjvm::Jnjvm(mvm::BumpPtrAllocator& Alloc,
-             mvm::CompiledFrames** frames,
+Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,
+             vmkit::CompiledFrames** frames,
              JnjvmBootstrapLoader* loader) : 
   VirtualMachine(Alloc, frames), lockSystem(Alloc) {
 
@@ -1436,15 +1436,15 @@ const char* Jnjvm::getObjectTypeName(gc* object) {
 
 // Helper function to run J3 without JIT.
 extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
-  mvm::Collector::initialise(argc, argv);
+  vmkit::Collector::initialise(argc, argv);
  
-  mvm::ThreadAllocator allocator; 
+  vmkit::ThreadAllocator allocator; 
   char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));
   memcpy(newArgv + 1, argv, argc * sizeof(char*));
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;
  
-  mvm::BumpPtrAllocator Allocator;
+  vmkit::BumpPtrAllocator Allocator;
   JavaCompiler* Comp = new JavaCompiler();
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
@@ -1456,9 +1456,9 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   return 0; 
 }
 
-void Jnjvm::printMethod(mvm::FrameInfo* FI, word_t ip, word_t addr) {
+void Jnjvm::printMethod(vmkit::FrameInfo* FI, word_t ip, word_t addr) {
   if (FI->Metadata == NULL) {
-    mvm::MethodInfoHelper::print(ip, addr);
+    vmkit::MethodInfoHelper::print(ip, addr);
     return;
   }
   JavaMethod* meth = (JavaMethod*)FI->Metadata;

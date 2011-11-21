@@ -38,7 +38,7 @@ namespace llvm {
   class Type;
 }
 
-namespace mvm {
+namespace vmkit {
 
 class LockRecursive;
 
@@ -171,7 +171,7 @@ public:
 
 class VmkitModule {
 public:
-   static mvm::LockRecursive protectEngine;
+   static vmkit::LockRecursive protectEngine;
 
    static void runPasses(llvm::Function* func, llvm::FunctionPassManager*);
    static void initialise(int argc, char** argv);
@@ -179,7 +179,7 @@ public:
    static Frames* addToVM(VirtualMachine* VM,
                           llvm::GCFunctionInfo* GFI,
                           llvm::JIT* jit,
-                          mvm::BumpPtrAllocator& allocator,
+                          vmkit::BumpPtrAllocator& allocator,
                           void* meta);
 
    static int disassemble(unsigned int* addr);
@@ -192,6 +192,6 @@ public:
    static const char* getHostTriple();
 };
 
-} // end namespace mvm
+} // end namespace vmkit
 
 #endif // VMKIT_JIT_H

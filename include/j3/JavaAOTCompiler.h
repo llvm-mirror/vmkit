@@ -21,7 +21,7 @@ class Attribut;
 class ClassBytes;
 class JnjvmBootstrapLoader;
 
-using mvm::UTF8;
+using vmkit::UTF8;
 
 class JavaAOTCompiler : public JavaLLVMCompiler {
 
@@ -98,8 +98,8 @@ private:
   llvm::Constant* CreateConstantFromJavaObject(JavaObject* obj);
   llvm::Constant* CreateConstantFromClassBytes(ClassBytes* bytes);
   llvm::Constant* CreateConstantFromJavaConstantPool(JavaConstantPool* ctp);
-  llvm::Constant* CreateConstantFromClassMap(const mvm::VmkitDenseMap<const UTF8*, CommonClass*>& map);
-  llvm::Constant* CreateConstantFromUTF8Map(const mvm::VmkitDenseSet<mvm::UTF8MapKey, const UTF8*>& set);
+  llvm::Constant* CreateConstantFromClassMap(const vmkit::VmkitDenseMap<const UTF8*, CommonClass*>& map);
+  llvm::Constant* CreateConstantFromUTF8Map(const vmkit::VmkitDenseSet<vmkit::UTF8MapKey, const UTF8*>& set);
   void AddInitializerToClass(llvm::GlobalVariable* varGV, CommonClass* classDef);
   llvm::Constant* getUTF8(const UTF8* val);
   

@@ -23,7 +23,7 @@
 
 using namespace llvm;
 
-namespace mvm {
+namespace vmkit {
 
   class InlineMalloc : public FunctionPass {
   public:

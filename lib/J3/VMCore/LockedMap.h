@@ -42,12 +42,12 @@ struct ltarray16 {
   bool operator()(const ArrayUInt16 *const s1, const ArrayUInt16 *const s2) const;
 };
 
-class StringMap : public mvm::PermanentObject {
+class StringMap : public vmkit::PermanentObject {
 public:
   typedef std::map<const ArrayUInt16 *const, JavaString*, ltarray16>::iterator iterator;
   typedef JavaString* (*funcCreate)(const ArrayUInt16 *const& V, Jnjvm* vm);
 
-  mvm::LockNormal lock;
+  vmkit::LockNormal lock;
   std::map<const ArrayUInt16 *const, JavaString*, ltarray16,
            std::allocator<std::pair<const ArrayUInt16 *const, JavaString*> > > map;
   
@@ -108,28 +108,28 @@ public:
 };
 
 
-class ClassMap : public mvm::PermanentObject {
+class ClassMap : public vmkit::PermanentObject {
 public:
   ClassMap() {}
-  ClassMap(mvm::VmkitDenseMap<const mvm::UTF8*, UserCommonClass*>* precompiled) : map(*precompiled) {}
+  ClassMap(vmkit::VmkitDenseMap<const vmkit::UTF8*, UserCommonClass*>* precompiled) : map(*precompiled) {}
 
-  mvm::LockRecursive lock;
-  mvm::VmkitDenseMap<const mvm::UTF8*, UserCommonClass*> map;
-  typedef mvm::VmkitDenseMap<const mvm::UTF8*, UserCommonClass*>::iterator iterator;
+  vmkit::LockRecursive lock;
+  vmkit::VmkitDenseMap<const vmkit::UTF8*, UserCommonClass*> map;
+  typedef vmkit::VmkitDenseMap<const vmkit::UTF8*, UserCommonClass*>::iterator iterator;
 };
 
-class TypeMap : public mvm::PermanentObject {
+class TypeMap : public vmkit::PermanentObject {
 public:
-  mvm::LockNormal lock;
-  mvm::VmkitDenseMap<const mvm::UTF8*, Typedef*> map;
-  typedef mvm::VmkitDenseMap<const mvm::UTF8*, Typedef*>::iterator iterator;
+  vmkit::LockNormal lock;
+  vmkit::VmkitDenseMap<const vmkit::UTF8*, Typedef*> map;
+  typedef vmkit::VmkitDenseMap<const vmkit::UTF8*, Typedef*>::iterator iterator;
 };
 
-class SignMap : public mvm::PermanentObject {
+class SignMap : public vmkit::PermanentObject {
 public:
-  mvm::LockNormal lock;
-  mvm::VmkitDenseMap<const mvm::UTF8*, Signdef*> map;
-  typedef mvm::VmkitDenseMap<const mvm::UTF8*, Signdef*>::iterator iterator;
+  vmkit::LockNormal lock;
+  vmkit::VmkitDenseMap<const vmkit::UTF8*, Signdef*> map;
+  typedef vmkit::VmkitDenseMap<const vmkit::UTF8*, Signdef*>::iterator iterator;
 };
 
 } // end namespace j3

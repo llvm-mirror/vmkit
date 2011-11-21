@@ -13,9 +13,9 @@
 
 #include <set>
 
-using namespace mvm;
+using namespace vmkit;
 
-static mvm::SpinLock lock;
+static vmkit::SpinLock lock;
 std::set<gc*> __InternalSet__;
 int Collector::verbose = 0;
 
@@ -37,12 +37,12 @@ extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
   gc* res = (gc*)gcmalloc(sz, VT);
   if (VT->hasDestructor())
-    mvm::Thread::get()->MyVM->addFinalizationCandidate(res);
+    vmkit::Thread::get()->MyVM->addFinalizationCandidate(res);
   return res;
 }
 
 extern "C" void addFinalizationCandidate(gc* obj) {
-  mvm::Thread::get()->MyVM->addFinalizationCandidate(obj);
+  vmkit::Thread::get()->MyVM->addFinalizationCandidate(obj);
 }
 
 extern "C" void* AllocateMagicArray(int32_t sz, void* length) {

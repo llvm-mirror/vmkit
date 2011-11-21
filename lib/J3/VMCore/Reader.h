@@ -28,7 +28,7 @@ class ClassBytes {
     size = l;
   }
 
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator, int n) {
+  void* operator new(size_t sz, vmkit::BumpPtrAllocator& allocator, int n) {
     return allocator.Allocate(sizeof(uint32_t) + n * sizeof(uint8_t),
                               "Class bytes");
   }
@@ -59,12 +59,12 @@ public:
   }
 
   static double readDouble(int first, int second) {
-    return mvm::System::ReadDouble(first, second);
+    return vmkit::System::ReadDouble(first, second);
    }
 
 
   static sint64 readLong(int first, int second) {
-    return mvm::System::ReadLong(first, second);
+    return vmkit::System::ReadLong(first, second);
   }
 
   static const int SeekSet;

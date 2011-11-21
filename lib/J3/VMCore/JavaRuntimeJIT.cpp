@@ -224,7 +224,7 @@ extern "C" JavaObject* j3MultiCallNew(UserClassArray* cl, uint32 len, ...) {
 
   va_list ap;
   va_start(ap, len);
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   sint32* dims = (sint32*)allocator.Allocate(sizeof(sint32) * len);
   for (uint32 i = 0; i < len; ++i){
     dims[i] = va_arg(ap, int);
@@ -268,13 +268,13 @@ extern "C" void j3EndJNI(uint32** oldLRN) {
 
 extern "C" word_t j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
-                               mvm::KnownFrame* Frame) 
+                               vmkit::KnownFrame* Frame) 
   __attribute__((noinline));
 
 // Never throws. Does not call Java code. Can not yield a GC. May join a GC.
 extern "C" word_t j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
-                               mvm::KnownFrame* Frame) {
+                               vmkit::KnownFrame* Frame) {
   
   JavaThread* th = JavaThread::get();
  
@@ -370,9 +370,9 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   void* result = NULL;
   
   // Lookup the caller of this class.
-  mvm::StackWalker Walker(th);
+  vmkit::StackWalker Walker(th);
   ++Walker; // Remove the stub.
-  mvm::FrameInfo* FI = Walker.get();
+  vmkit::FrameInfo* FI = Walker.get();
   assert(FI->Metadata != NULL && "Wrong stack trace");
   JavaMethod* meth = (JavaMethod*)FI->Metadata;
 
@@ -430,9 +430,9 @@ extern "C" void* j3ResolveStaticStub() {
   void* result = NULL;
 
   // Lookup the caller of this class.
-  mvm::StackWalker Walker(th);
+  vmkit::StackWalker Walker(th);
   ++Walker; // Remove the stub.
-  mvm::FrameInfo* FI = Walker.get();
+  vmkit::FrameInfo* FI = Walker.get();
   assert(FI->Metadata != NULL && "Wrong stack trace");
   JavaMethod* caller = (JavaMethod*)FI->Metadata;
 
@@ -463,9 +463,9 @@ extern "C" void* j3ResolveSpecialStub() {
   void* result = NULL;
 
   // Lookup the caller of this class.
-  mvm::StackWalker Walker(th);
+  vmkit::StackWalker Walker(th);
   ++Walker; // Remove the stub.
-  mvm::FrameInfo* FI = Walker.get();
+  vmkit::FrameInfo* FI = Walker.get();
   assert(FI->Metadata != NULL && "Wrong stack trace");
   JavaMethod* caller = (JavaMethod*)FI->Metadata;
 
@@ -525,20 +525,20 @@ extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t 
 }
 
 extern "C" void j3PrintMethodStart(JavaMethod* meth) {
-  fprintf(stderr, "[%p] executing %s.%s\n", (void*)mvm::Thread::get(),
+  fprintf(stderr, "[%p] executing %s.%s\n", (void*)vmkit::Thread::get(),
           UTF8Buffer(meth->classDef->name).cString(),
           UTF8Buffer(meth->name).cString());
 }
 
 extern "C" void j3PrintMethodEnd(JavaMethod* meth) {
-  fprintf(stderr, "[%p] return from %s.%s\n", (void*)mvm::Thread::get(),
+  fprintf(stderr, "[%p] return from %s.%s\n", (void*)vmkit::Thread::get(),
           UTF8Buffer(meth->classDef->name).cString(),
           UTF8Buffer(meth->name).cString());
 }
 
 extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
                                     JavaMethod* meth) {
-  fprintf(stderr, "[%p] executing %s.%s %s at %d\n", (void*)mvm::Thread::get(),
+  fprintf(stderr, "[%p] executing %s.%s %s at %d\n", (void*)vmkit::Thread::get(),
          UTF8Buffer(meth->classDef->name).cString(),
          UTF8Buffer(meth->name).cString(),
          OpcodeNames[opcode], index);

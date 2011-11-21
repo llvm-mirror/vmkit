@@ -13,7 +13,7 @@
 #include "VmkitGC.h"
 #include "vmkit/VirtualMachine.h"
 
-using namespace mvm;
+using namespace vmkit;
 
 extern "C" void printFloat(float f) {
   fprintf(stderr, "%f\n", f);
@@ -54,7 +54,7 @@ void VirtualMachine::waitForExit() {
     if (exitingThread != NULL) {
       Thread* th = exitingThread;
       exitingThread = NULL;
-      mvm::Thread::releaseThread(th);
+      vmkit::Thread::releaseThread(th);
     }
   }
   

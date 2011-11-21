@@ -35,7 +35,7 @@ class Jnjvm;
   JavaThread* th = JavaThread::get(); \
   word_t SP = th->getLastSP(); \
   th->leaveUncooperativeCode(); \
-  mvm::KnownFrame Frame; \
+  vmkit::KnownFrame Frame; \
   th->startKnownFrame(Frame); \
   TRY {
 
@@ -59,7 +59,7 @@ class Jnjvm;
 /// It maintains thread-specific information such as its state, the current
 /// exception if there is one, the layout of the stack, etc.
 ///
-class JavaThread : public mvm::MutatorThread {
+class JavaThread : public vmkit::MutatorThread {
 public:
   
   /// jniEnv - The JNI environment of the thread.
@@ -78,7 +78,7 @@ public:
   ///
   JavaObject* vmThread;
 
-  mvm::LockingThread lockingThread;
+  vmkit::LockingThread lockingThread;
   
   /// currentAddedReferences - Current number of added local references.
   ///
@@ -120,7 +120,7 @@ public:
   /// get - Get the current thread as a J3 object.
   ///
   static JavaThread* get() {
-    return (JavaThread*)mvm::Thread::get();
+    return (JavaThread*)vmkit::Thread::get();
   }
 
   /// getJVM - Get the Java VM in which this thread executes.

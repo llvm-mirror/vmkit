@@ -16,7 +16,7 @@
 #include "vmkit/Locks.h"
 #include "vmkit/Thread.h"
 
-namespace mvm {
+namespace vmkit {
 
 class FatLock;
 class LockSystem;
@@ -26,7 +26,7 @@ public:
   /// varcond - Condition variable when the thread needs to be awaken from
   /// a wait.
   ///
-  mvm::Cond varcond;
+  vmkit::Cond varcond;
 
   /// interruptFlag - Has this thread been interrupted?
   ///
@@ -65,10 +65,10 @@ public:
 };
 
 
-class FatLock : public mvm::PermanentObject {
+class FatLock : public vmkit::PermanentObject {
 private:
-  mvm::LockRecursive internalLock;
-  mvm::SpinLock spinLock;
+  vmkit::LockRecursive internalLock;
+  vmkit::SpinLock spinLock;
   uint32_t waitingThreads;
   uint32_t lockingThreads;
   LockingThread* firstThread;
@@ -82,7 +82,7 @@ public:
   bool acquire(gc* object);
   void acquireAll(gc* object, word_t count);
   void release(gc* object, LockSystem& table);
-  mvm::Thread* getOwner();
+  vmkit::Thread* getOwner();
   bool owner();
   gc* getAssociatedObject() { return associatedObject; }
   gc** getAssociatedObjectPtr() { return &associatedObject; }
@@ -108,7 +108,7 @@ public:
   static const uint32_t BitMask = IndexSize - 1;
   static const uint32_t MaxLocks = GlobalSize * IndexSize;
 
-  mvm::BumpPtrAllocator& allocator;
+  vmkit::BumpPtrAllocator& allocator;
 
   /// LockTable - The global table that will hold the locks. The table is
   /// a two-dimensional array, and only one entry is created, so that
@@ -127,7 +127,7 @@ public:
  
   /// threadLock - Spin lock to protect the currentIndex field.
   ///
-  mvm::SpinLock threadLock;
+  vmkit::SpinLock threadLock;
   
   /// allocate - Allocate a FatLock.
   ///
@@ -139,7 +139,7 @@ public:
 
   /// LockSystem - Default constructor. Initialize the table.
   ///
-  LockSystem(mvm::BumpPtrAllocator& allocator);
+  LockSystem(vmkit::BumpPtrAllocator& allocator);
 
   /// getLock - Get a lock from an index in the table.
   ///
@@ -196,6 +196,6 @@ public:
   static FatLock* getFatLock(gc* object, LockSystem& table);
 };
 
-} // end namespace mvm
+} // end namespace vmkit
 
 #endif // VMKIT_OBJECT_LOCKS_H

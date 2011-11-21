@@ -20,7 +20,7 @@
 #include <pthread.h>
 
 
-namespace mvm {
+namespace vmkit {
 
 void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
@@ -89,7 +89,7 @@ void printDebugMessage(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   fprintf(stderr,
       "WARNING: [%p] has been waiting really long for %p (header = %p)\n",
-      (void*)mvm::Thread::get(),
+      (void*)vmkit::Thread::get(),
       (void*)object,
       (void*)object->header);
   FatLock* obj = table.getFatLockFromID(object->header);
@@ -97,7 +97,7 @@ void printDebugMessage(gc* object, LockSystem& table) {
     fprintf(stderr,
         "WARNING: [%p] is waiting on fatlock %p. "
         "Its associated object is %p. The owner is %p\n",
-        (void*)mvm::Thread::get(),
+        (void*)vmkit::Thread::get(),
         (void*)obj,
         (void*)obj->getAssociatedObject(),
         (void*)obj->owner());
@@ -106,7 +106,7 @@ void printDebugMessage(gc* object, LockSystem& table) {
 
 void ThinLock::acquire(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
-  uint64_t id = mvm::Thread::get()->getThreadID();
+  uint64_t id = vmkit::Thread::get()->getThreadID();
   word_t oldValue = 0;
   word_t newValue = 0;
   word_t yieldedValue = 0;
@@ -160,7 +160,7 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
       if (object->header & FatMask) {
         break;
       } else {
-        mvm::Thread::yield();
+        vmkit::Thread::yield();
       }
     }
     
@@ -193,7 +193,7 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
 void ThinLock::release(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   assert(owner(object, table) && "Not owner when entering release!");
-  uint64 id = mvm::Thread::get()->getThreadID();
+  uint64 id = vmkit::Thread::get()->getThreadID();
   word_t oldValue = 0;
   word_t newValue = 0;
   word_t yieldedValue = 0;
@@ -226,7 +226,7 @@ bool ThinLock::owner(gc* object, LockSystem& table) {
     FatLock* obj = table.getFatLockFromID(object->header);
     if (obj != NULL) return obj->owner();
   } else {
-    uint64 id = mvm::Thread::get()->getThreadID();
+    uint64 id = vmkit::Thread::get()->getThreadID();
     if ((object->header & System::GetThreadIDMask()) == id) return true;
   }
   return false;
@@ -252,7 +252,7 @@ bool FatLock::owner() {
   return internalLock.selfOwner();
 }
  
-mvm::Thread* FatLock::getOwner() {
+vmkit::Thread* FatLock::getOwner() {
   return internalLock.getOwner();
 }
   
@@ -277,7 +277,7 @@ void FatLock::release(gc* obj, LockSystem& table) {
   assert(associatedObject == obj && "Mismatch object in lock");
   if (!waitingThreads && !lockingThreads &&
       internalLock.recursionCount() == 1) {
-    mvm::ThinLock::removeFatLock(this, table);
+    vmkit::ThinLock::removeFatLock(this, table);
     table.deallocate(this);
   }
   internalLock.unlock();
@@ -316,7 +316,7 @@ void LockSystem::deallocate(FatLock* lock) {
   threadLock.unlock();
 }
   
-LockSystem::LockSystem(mvm::BumpPtrAllocator& all) : allocator(all) {
+LockSystem::LockSystem(vmkit::BumpPtrAllocator& all) : allocator(all) {
   assert(ThinLock::ThinCountMask > 0);
   LockTable = (FatLock* **)
     allocator.Allocate(GlobalSize * sizeof(FatLock**), "Global LockTable");
@@ -349,7 +349,7 @@ FatLock* LockSystem::allocate(gc* obj) {
   
     FatLock** tab = LockTable[index >> BitIndex];
   
-    VirtualMachine* vm = mvm::Thread::get()->MyVM;
+    VirtualMachine* vm = vmkit::Thread::get()->MyVM;
     if (tab == NULL) {
       tab = (FatLock**)vm->allocator.Allocate(
           IndexSize * sizeof(FatLock*), "Index LockTable");
@@ -385,11 +385,11 @@ FatLock* LockSystem::getFatLockFromID(word_t ID) {
 bool LockingThread::wait(
     gc* self, LockSystem& table, struct timeval* info, bool timed) {
   llvm_gcroot(self, 0);
-  assert(mvm::ThinLock::owner(self, table));
+  assert(vmkit::ThinLock::owner(self, table));
 
-  FatLock* l = mvm::ThinLock::changeToFatlock(self, table);
+  FatLock* l = vmkit::ThinLock::changeToFatlock(self, table);
   this->waitsOn = l;
-  mvm::Cond& varcondThread = this->varcond;
+  vmkit::Cond& varcondThread = this->varcond;
 
   if (this->interruptFlag != 0) {
     this->interruptFlag = 0;
@@ -431,7 +431,7 @@ bool LockingThread::wait(
       varcondThread.wait(&l->internalLock);
     }
   }
-  assert(mvm::ThinLock::owner(self, table) && "Not owner after wait");
+  assert(vmkit::ThinLock::owner(self, table) && "Not owner after wait");
       
   l->waitingThreads--;
      
@@ -477,14 +477,14 @@ bool LockingThread::wait(
     return true;
   }
   
-  assert(mvm::ThinLock::owner(self, table) && "Not owner after wait");
+  assert(vmkit::ThinLock::owner(self, table) && "Not owner after wait");
   return false;
 }
 
 void LockingThread::notify(gc* self, LockSystem& table) {
   llvm_gcroot(self, 0);
-  assert(mvm::ThinLock::owner(self, table));
-  FatLock* l = mvm::ThinLock::getFatLock(self, table);
+  assert(vmkit::ThinLock::owner(self, table));
+  FatLock* l = vmkit::ThinLock::getFatLock(self, table);
   
   if (l == NULL) return;
   LockingThread* cur = l->firstThread;
@@ -517,13 +517,13 @@ void LockingThread::notify(gc* self, LockSystem& table) {
     }
   } while (cur != l->firstThread);
 
-  assert(mvm::ThinLock::owner(self, table) && "Not owner after notify");
+  assert(vmkit::ThinLock::owner(self, table) && "Not owner after notify");
 }
 
 void LockingThread::notifyAll(gc* self, LockSystem& table) {
   llvm_gcroot(self, 0);
-  assert(mvm::ThinLock::owner(self, table));
-  FatLock* l = mvm::ThinLock::getFatLock(self, table);
+  assert(vmkit::ThinLock::owner(self, table));
+  FatLock* l = vmkit::ThinLock::getFatLock(self, table);
   if (l == NULL) return;
   LockingThread* cur = l->firstThread;
   if (cur == NULL) return;
@@ -535,7 +535,7 @@ void LockingThread::notifyAll(gc* self, LockSystem& table) {
     cur = temp;
   } while (cur != l->firstThread);
   l->firstThread = NULL;
-  assert(mvm::ThinLock::owner(self, table) && "Not owner after notifyAll");
+  assert(vmkit::ThinLock::owner(self, table) && "Not owner after notifyAll");
 }
 
 }

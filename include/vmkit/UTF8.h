@@ -6,7 +6,7 @@
 #include "vmkit/VmkitDenseMap.h"
 #include "vmkit/VmkitDenseSet.h"
 
-namespace mvm {
+namespace vmkit {
 
 class UTF8Map;
 
@@ -16,7 +16,7 @@ private:
   
   /// operator new - Redefines the new operator of this class to allocate
   /// its objects in permanent memory, not with the garbage collector.
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator, sint32 n) {
+  void* operator new(size_t sz, vmkit::BumpPtrAllocator& allocator, sint32 n) {
     return allocator.Allocate(sizeof(UTF8) + (n - 1) * sizeof(uint16), "UTF8");
   }
   
@@ -119,7 +119,7 @@ struct VmkitDenseMapInfo<UTF8MapKey> {
   }
 };
 
-class UTF8Map : public mvm::PermanentObject {
+class UTF8Map : public vmkit::PermanentObject {
 public:
   typedef VmkitDenseSet<UTF8MapKey, const UTF8*>::iterator iterator;
   
@@ -185,6 +185,6 @@ public:
 	}
 };
 
-} // end namespace mvm
+} // end namespace vmkit
 
 #endif

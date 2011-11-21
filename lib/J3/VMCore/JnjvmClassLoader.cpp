@@ -50,7 +50,7 @@ const UTF8* JavaCompiler::InlinePragma = 0;
 const UTF8* JavaCompiler::NoInlinePragma = 0;
 
 
-JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
+JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
                                            JavaCompiler* Comp, 
                                            bool dlLoad) : 
     JnjvmClassLoader(Alloc) {
@@ -162,7 +162,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
   clinitType = asciizConstructUTF8("()V");
   runName = asciizConstructUTF8("run");
   prelib = asciizConstructUTF8("lib");
-  postlib = asciizConstructUTF8(mvm::System::GetDyLibExtension());
+  postlib = asciizConstructUTF8(vmkit::System::GetDyLibExtension());
   mathName = asciizConstructUTF8("java/lang/Math");
   VMFloatName = asciizConstructUTF8("java/lang/VMFloat");
   VMDoubleName = asciizConstructUTF8("java/lang/VMDouble");
@@ -204,7 +204,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc,
 #undef DEF_UTF8 
 }
 
-JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
+JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    JnjvmClassLoader& JCL, JavaObject* loader,
                                    VMClassLoader* vmdata,
                                    Jnjvm* I) : allocator(Alloc) {
@@ -220,7 +220,7 @@ JnjvmClassLoader::JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc,
   strings = new(allocator, "StringList") StringList();
 
   vmdata->JCL = this;
-  mvm::Collector::objectReferenceNonHeapWriteBarrier(
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier(
       (gc**)&javaLoader, (gc*)loader);
   isolate = I;
 
@@ -237,11 +237,11 @@ void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
 }
 
 ClassBytes* JnjvmBootstrapLoader::openName(const UTF8* utf8) {
-  ClassBytes* res = reinterpret_cast<ClassBytes*>(dlsym(mvm::System::GetSelfHandle(),
+  ClassBytes* res = reinterpret_cast<ClassBytes*>(dlsym(vmkit::System::GetSelfHandle(),
       UTF8Buffer(utf8).toCompileName("_bytes")->cString()));
   if (res != NULL) return res;
 
-  mvm::ThreadAllocator threadAllocator;
+  vmkit::ThreadAllocator threadAllocator;
 
   char* asciiz = (char*)threadAllocator.Allocate(utf8->size + 1);
   for (sint32 i = 0; i < utf8->size; ++i) 
@@ -440,7 +440,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
   if (name->size == 0) {
     return 0;
   } else if (name->elements[0] == I_TAB) {
-    mvm::ThreadAllocator threadAllocator;
+    vmkit::ThreadAllocator threadAllocator;
     bool prim = false;
     UTF8* holder = (UTF8*)threadAllocator.Allocate(
         sizeof(UTF8) + name->size * sizeof(uint16));
@@ -463,7 +463,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
                                                        bool doResolve,
                                                        bool doThrow) {
   const UTF8* name = hashUTF8->lookupAsciiz(asciiz);
-  mvm::ThreadAllocator threadAllocator;
+  vmkit::ThreadAllocator threadAllocator;
   UserCommonClass* result = NULL;
   if (!name) name = bootstrapLoader->hashUTF8->lookupAsciiz(asciiz);
   if (!name) {
@@ -498,7 +498,7 @@ JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
                                           bool doThrow) {
   
   llvm_gcroot(str, 0);
-  mvm::ThreadAllocator allocator; 
+  vmkit::ThreadAllocator allocator; 
   UTF8* name = (UTF8*)allocator.Allocate(sizeof(UTF8) + str->count * sizeof(uint16));
  
   name->size = str->count;
@@ -534,7 +534,7 @@ UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str) {
   llvm_gcroot(str, 0);
   llvm_gcroot(value, 0);
   value = JavaString::getValue(str);
-  mvm::ThreadAllocator allocator; 
+  vmkit::ThreadAllocator allocator; 
   
   UTF8* name = (UTF8*)allocator.Allocate(sizeof(UTF8) + str->count * sizeof(uint16));
   name->size = str->count;
@@ -817,7 +817,7 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
       (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
     if (!vmdata || !VMClassLoader::isVMClassLoader(vmdata)) {
       vmdata = VMClassLoader::allocate();
-      mvm::BumpPtrAllocator* A = new mvm::BumpPtrAllocator();
+      vmkit::BumpPtrAllocator* A = new vmkit::BumpPtrAllocator();
       JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
                                                      loader, vmdata, vm);
       upcalls->vmdataClassLoader->setInstanceObjectField(loader, (JavaObject*)vmdata);
@@ -898,7 +898,7 @@ JavaString** JnjvmBootstrapLoader::UTF8ToStr(const UTF8* val) {
 
 void JnjvmBootstrapLoader::analyseClasspathEnv(const char* str) {
   ClassBytes* bytes = NULL;
-  mvm::ThreadAllocator threadAllocator;
+  vmkit::ThreadAllocator threadAllocator;
   if (str != 0) {
     unsigned int len = strlen(str);
     char* buf = (char*)threadAllocator.Allocate((len + 1) * sizeof(char));
@@ -952,7 +952,7 @@ const UTF8* JnjvmClassLoader::constructArrayName(uint32 steps,
   uint32 pos = steps;
   bool isTab = (className->elements[0] == I_TAB ? true : false);
   uint32 n = steps + len + (isTab ? 0 : 2);
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   uint16* buf = (uint16*)allocator.Allocate(n * sizeof(uint16));
     
   for (uint32 i = 0; i < steps; i++) {
@@ -981,7 +981,7 @@ word_t JnjvmClassLoader::loadInLib(const char* buf, bool& j3) {
   // code dlopen'd something itself (with RTLD_GLOBAL; OpenJDK does this).
   // To handle this, we search both ourselves and the libraries we loaded.
   word_t sym =
-    (word_t)TheCompiler->loadMethod(mvm::System::GetSelfHandle(), buf);
+    (word_t)TheCompiler->loadMethod(vmkit::System::GetSelfHandle(), buf);
 
   // Search loaded libraries as well, both as fallback and to determine
   // whether or not the symbol in question is defined by vmkit.
@@ -1052,7 +1052,7 @@ JavaString** StringList::addString(JnjvmClassLoader* JCL, JavaString* obj) {
     return next->addString(JCL, obj);
   } else {
     JCL->lock.lock();
-    mvm::Collector::objectReferenceNonHeapWriteBarrier(
+    vmkit::Collector::objectReferenceNonHeapWriteBarrier(
         (gc**)&(strings[length]), (gc*)obj);
     JavaString** res = &strings[length++];
     JCL->lock.unlock();

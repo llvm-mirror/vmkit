@@ -62,7 +62,7 @@ class Class;
 class ClassArray;
 class JnjvmClassLoader;
 
-class Classpath : public mvm::PermanentObject {
+class Classpath : public vmkit::PermanentObject {
 public:
   ISOLATE_STATIC UserClass*  newClassLoader;
   ISOLATE_STATIC JavaMethod* getSystemClassLoader;

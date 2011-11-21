@@ -20,7 +20,7 @@
 #include "vmkit/System.h"
 
 
-namespace mvm {
+namespace vmkit {
 
 class FrameInfo;
 class VirtualMachine;
@@ -137,7 +137,7 @@ public:
   
   /// start - Start the execution of a thread.
   ///
-  virtual int start(void (*fct)(mvm::Thread*));
+  virtual int start(void (*fct)(vmkit::Thread*));
   
   uint64_t getThreadID() {
     return (uint64_t)this;
@@ -188,7 +188,7 @@ private:
   /// internalThreadStart - The implementation sepcific thread starter
   /// function.
   ///
-  static void internalThreadStart(mvm::Thread* th);
+  static void internalThreadStart(vmkit::Thread* th);
 
   /// internalClearException - Clear any pending exception.
   ///
@@ -247,11 +247,11 @@ public:
   
   /// releaseThread - Free the stack so that another thread can use it.
   ///
-  static void releaseThread(mvm::Thread* th);
+  static void releaseThread(vmkit::Thread* th);
 
   /// routine - The function to invoke when the thread starts.
   ///
-  void (*routine)(mvm::Thread*);
+  void (*routine)(vmkit::Thread*);
  
   /// printBacktrace - Print the backtrace.
   ///
@@ -329,9 +329,9 @@ public:
   word_t addr;
   word_t ip;
   KnownFrame* frame;
-  mvm::Thread* thread;
+  vmkit::Thread* thread;
 
-  StackWalker(mvm::Thread* th) __attribute__ ((noinline));
+  StackWalker(vmkit::Thread* th) __attribute__ ((noinline));
   void operator++();
   word_t operator*();
   FrameInfo* get();
@@ -339,5 +339,5 @@ public:
 };
 
 
-} // end namespace mvm
+} // end namespace vmkit
 #endif // VMKIT_THREAD_H

@@ -17,7 +17,7 @@
 
 #include <dlfcn.h>
 
-namespace mvm {
+namespace vmkit {
 
 void MethodInfoHelper::scan(word_t closure, FrameInfo* FI, word_t ip, word_t addr) {
   //word_t spaddr = (word_t)addr + FI->FrameSize + sizeof(void*);

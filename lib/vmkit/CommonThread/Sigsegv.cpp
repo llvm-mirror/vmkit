@@ -16,7 +16,7 @@
 #include <csignal>
 #include <cstdio>
 
-using namespace mvm;
+using namespace vmkit;
 
 namespace {
   class Handler {
@@ -53,37 +53,37 @@ bool System::SupportsHardwareStackOverflow() {
 #endif
 
 extern "C" void ThrowStackOverflowError(word_t ip) {
-  mvm::Thread* th = mvm::Thread::get();
-  mvm::FrameInfo* FI = th->MyVM->IPToFrameInfo(ip);
+  vmkit::Thread* th = vmkit::Thread::get();
+  vmkit::FrameInfo* FI = th->MyVM->IPToFrameInfo(ip);
   if (FI->Metadata == NULL) {
     fprintf(stderr, "Thread %p received a SIGSEGV: either the VM code or an external\n"
                     "native method is bogus. Aborting...\n", (void*)th);
     abort();
   } else {
-    mvm::Thread::get()->MyVM->stackOverflowError();
+    vmkit::Thread::get()->MyVM->stackOverflowError();
   }
   UNREACHABLE();
 }
 
 extern "C" void ThrowNullPointerException(word_t ip) {
-  mvm::Thread* th = mvm::Thread::get();
-  mvm::FrameInfo* FI = th->MyVM->IPToFrameInfo(ip);
+  vmkit::Thread* th = vmkit::Thread::get();
+  vmkit::FrameInfo* FI = th->MyVM->IPToFrameInfo(ip);
   if (FI->Metadata == NULL) {
     fprintf(stderr, "Thread %p received a SIGSEGV: either the VM code or an external\n"
                     "native method is bogus. Aborting...\n", (void*)th);
     abort();
   } else {
-    mvm::Thread::get()->MyVM->nullPointerException();
+    vmkit::Thread::get()->MyVM->nullPointerException();
   }
   UNREACHABLE();
 }
 
 void sigsegvHandler(int n, siginfo_t *info, void *context) {
   Handler handler(context);
-  mvm::Thread* th = mvm::Thread::get();
+  vmkit::Thread* th = vmkit::Thread::get();
   word_t addr = (word_t)info->si_addr;
   if (th->IsStackOverflowAddr(addr)) {
-    if (mvm::System::SupportsHardwareStackOverflow()) {
+    if (vmkit::System::SupportsHardwareStackOverflow()) {
       handler.UpdateRegistersForStackOverflow();
     } else {
       fprintf(stderr, "Stack overflow in VM code or in JNI code. If it is from\n"
@@ -94,7 +94,7 @@ void sigsegvHandler(int n, siginfo_t *info, void *context) {
       abort();
     }
   } else {
-    if (mvm::System::SupportsHardwareNullCheck()) {
+    if (vmkit::System::SupportsHardwareNullCheck()) {
       handler.UpdateRegistersForNPE();
     } else {
       fprintf(stderr, "Thread %p received a SIGSEGV: either the VM code or an external\n"

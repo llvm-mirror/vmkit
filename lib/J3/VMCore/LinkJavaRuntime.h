@@ -23,7 +23,7 @@ namespace j3 {
   class Jnjvm;
 }
 
-namespace mvm {
+namespace vmkit {
   class KnownFrame;
 }
 
@@ -41,7 +41,7 @@ extern "C" JavaArray* j3MultiCallNew(UserClassArray* cl, uint32 len, ...);
 extern "C" UserClassArray* j3GetArrayClass(UserCommonClass*,
                                               UserClassArray**);
 extern "C" void j3EndJNI(uint32**);
-extern "C" void* j3StartJNI(uint32*, uint32**, mvm::KnownFrame*);
+extern "C" void* j3StartJNI(uint32*, uint32**, vmkit::KnownFrame*);
 extern "C" void j3JavaObjectAquire(JavaObject* obj);
 extern "C" void j3JavaObjectRelease(JavaObject* obj);
 extern "C" void j3ThrowException(JavaObject* obj);

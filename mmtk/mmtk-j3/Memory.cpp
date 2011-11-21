@@ -19,7 +19,7 @@ class InitCollector {
 public:
   InitCollector() {
     uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
-    void* baseAddr = mmap((void*)mvm::kGCMemoryStart, mvm::kGCMemorySize, PROT_READ | PROT_WRITE,
+    void* baseAddr = mmap((void*)vmkit::kGCMemoryStart, vmkit::kGCMemorySize, PROT_READ | PROT_WRITE,
                           flags, -1, 0);
     if (baseAddr == MAP_FAILED) {
       perror("mmap for GC memory");
@@ -32,11 +32,11 @@ public:
 InitCollector initCollector;
 
 extern "C" word_t Java_org_j3_mmtk_Memory_getHeapStartConstant__ (MMTkObject* M) {
-  return mvm::kGCMemoryStart;
+  return vmkit::kGCMemoryStart;
 }
 
 extern "C" word_t Java_org_j3_mmtk_Memory_getHeapEndConstant__ (MMTkObject* M) {
-  return mvm::kGCMemoryStart + mvm::kGCMemorySize;
+  return vmkit::kGCMemoryStart + vmkit::kGCMemorySize;
 }
 
 extern "C" word_t Java_org_j3_mmtk_Memory_getAvailableStartConstant__ (MMTkObject* M) {

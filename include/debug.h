@@ -65,7 +65,7 @@
 #endif
 
 #define UNIMPLEMENTED() {                           \
-  mvm::Thread::get()->printBacktrace();           \
+  vmkit::Thread::get()->printBacktrace();           \
   fprintf(stderr, "%s:%d\n", __FILE__, __LINE__); \
   abort(); }                                      \
 

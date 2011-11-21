@@ -47,7 +47,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   }
   
   // Don't call th->getFrameContext because it is not GC-safe.
-  mvm::StackWalker Walker(th);
+  vmkit::StackWalker Walker(th);
   uint32_t i = 0;
 
   while (intptr_t ip = *Walker) {
@@ -83,7 +83,7 @@ JavaObject* throwable) {
 }
 
 
-JavaObject* consStackElement(mvm::FrameInfo* FI, intptr_t ip) {
+JavaObject* consStackElement(vmkit::FrameInfo* FI, intptr_t ip) {
 
   JavaString* methodName = 0;
   JavaString* className = 0;
@@ -144,7 +144,7 @@ JavaObject* vmthrow, JavaObject* throwable) {
   // on the stack.
   sint32 index = 2;;
   while (index != JavaArray::getSize(stack)) {
-    mvm::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
+    vmkit::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
     if (FI->Metadata == NULL) ++index;
     else {
       JavaMethod* meth = (JavaMethod*)FI->Metadata;
@@ -158,7 +158,7 @@ JavaObject* vmthrow, JavaObject* throwable) {
   sint32 size = 0;
   sint32 cur = index;
   while (cur < JavaArray::getSize(stack)) {
-    mvm::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
+    vmkit::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
     ++cur;
     if (FI->Metadata != NULL) ++size;
   }
@@ -168,7 +168,7 @@ JavaObject* vmthrow, JavaObject* throwable) {
   
   cur = 0;
   for (sint32 i = index; i < JavaArray::getSize(stack); ++i) {
-    mvm::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, i));
+    vmkit::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, i));
     if (FI->Metadata != NULL) {
       ArrayObject::setElement(result, consStackElement(FI, ArrayPtr::getElement((ArrayPtr*)stack, i)), cur);
       cur++;

@@ -357,7 +357,7 @@ static void initialiseFunctions(Module* M) {
 static bool removePotentialNullCheck(BasicBlock* Cur, Value* Obj) {
   if (!Obj->getType()->isPointerTy()) return false;
 
-  if (mvm::System::SupportsHardwareNullCheck()) {
+  if (vmkit::System::SupportsHardwareNullCheck()) {
     for (Value::use_iterator I = Obj->use_begin(), E = Obj->use_end(); I != E; I++) {
       if (GetElementPtrInst* GE = dyn_cast<GetElementPtrInst>(*I)) {
         for (Value::use_iterator II = GE->use_begin(), EE = GE->use_end(); II != EE; II++) {

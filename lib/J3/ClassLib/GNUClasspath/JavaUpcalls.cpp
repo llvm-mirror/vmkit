@@ -523,7 +523,7 @@ extern "C" JavaString* Java_java_lang_VMSystem_getenv__Ljava_lang_String_2(JavaS
   
   BEGIN_NATIVE_EXCEPTION(0)
 
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   char* buf = JavaString::strToAsciiz(str, &allocator);
   char* res = getenv(buf);
   if (res) {

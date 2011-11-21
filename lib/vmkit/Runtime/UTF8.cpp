@@ -10,7 +10,7 @@
 #include "vmkit/Allocator.h"
 #include "vmkit/UTF8.h"
 
-namespace mvm {
+namespace vmkit {
 
 extern "C" const UTF8 TombstoneKey(-1);
 extern "C" const UTF8 EmptyKey(-1);
@@ -92,4 +92,4 @@ const UTF8* UTF8Map::lookupReader(const uint16* buf, uint32 len) {
   return res;
 }
 
-} // namespace mvm
+} // namespace vmkit

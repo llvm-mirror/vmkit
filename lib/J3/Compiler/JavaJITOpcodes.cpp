@@ -102,7 +102,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
   bool wide = false;
   uint32 jsrIndex = 0;
   uint32 start = reader.cursor;
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   for(uint32 i = 0; i < codeLength; ++i) {
     reader.cursor = start + i;
     uint8 bytecode = reader.readU1();
@@ -725,7 +725,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         Value* obj = pop();
         Value* ptr = verifyAndComputePtr(obj, index,
                                          intrinsics->JavaArrayObjectType, false);
-        if (mvm::Collector::needsWriteBarrier()) {
+        if (vmkit::Collector::needsWriteBarrier()) {
           ptr = new BitCastInst(ptr, intrinsics->ptrPtrType, "", currentBlock);
           val = new BitCastInst(val, intrinsics->ptrType, "", currentBlock);
           obj = new BitCastInst(obj, intrinsics->ptrType, "", currentBlock);

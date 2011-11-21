@@ -25,7 +25,7 @@ static int      initialised= 0;
 
 // this is the only function exported from this file
 
-int mvm::VmkitModule::disassemble(unsigned int *addr)
+int vmkit::VmkitModule::disassemble(unsigned int *addr)
 {
   
   if (!initialised)
@@ -56,7 +56,7 @@ static struct disassemble_info	info;
 static int			initialised= 0;
 
 
-int mvm::VmkitModule::disassemble(unsigned int *addr)
+int vmkit::VmkitModule::disassemble(unsigned int *addr)
 {
   if (!initialised)
     {
@@ -74,7 +74,7 @@ int mvm::VmkitModule::disassemble(unsigned int *addr)
 
 #else
 
-int mvm::VmkitModule::disassemble(unsigned int* addr) {
+int vmkit::VmkitModule::disassemble(unsigned int* addr) {
   return 0;
 }
 
@@ -82,7 +82,7 @@ int mvm::VmkitModule::disassemble(unsigned int* addr) {
 
 #else
 
-int mvm::VmkitModule::disassemble(unsigned int* addr) {
+int vmkit::VmkitModule::disassemble(unsigned int* addr) {
   return 0;
 }
 

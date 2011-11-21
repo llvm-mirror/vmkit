@@ -42,7 +42,7 @@ void start(JavaThread* thread) {
   Jnjvm* vm = thread->getJVM();
   // Wait some time to let the creator initialise these fields.
   while ((thread->javaThread == NULL) || (thread->vmThread == NULL)) {
-    mvm::Thread::yield();
+    vmkit::Thread::yield();
   }
 
   // Ok, now that the thread is created we can set the the value of vmdata,
@@ -95,7 +95,7 @@ JavaObject* vmThread, sint64 stackSize) {
  
   JavaThread* th = new JavaThread(vm);
   if (!th) vm->outOfMemoryError();
-  th->start((void (*)(mvm::Thread*))start);
+  th->start((void (*)(vmkit::Thread*))start);
   // Now that the thread has been created, initialise its object fields.
   th->initialise(javaThread, vmThread);
 
@@ -118,16 +118,16 @@ JavaObject* vmthread) {
   // It's possible that the thread to be interrupted has not finished
   // its initialization. Wait until the initialization is done.
   while (field->getInstanceObjectField(vmthread) == 0)
-    mvm::Thread::yield();
+    vmkit::Thread::yield();
   
   JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
   th->lockingThread.interruptFlag = 1;
-  mvm::FatLock* lock = th->lockingThread.waitsOn;
+  vmkit::FatLock* lock = th->lockingThread.waitsOn;
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
   // the thread has been notified.
   if (lock && th->lockingThread.nextWaiting) {
-    th->lockingThread.state = mvm::LockingThread::StateInterrupted;
+    th->lockingThread.state = vmkit::LockingThread::StateInterrupted;
   
     // Make sure the thread is waiting.
     uint32 locked = 0;
@@ -135,7 +135,7 @@ JavaObject* vmthread) {
       locked = (lock->tryAcquire() == 0);
       if (locked || (lock->getOwner() != th && lock->getOwner() != 0))
         break;
-      else mvm::Thread::yield();
+      else vmkit::Thread::yield();
     }
     
     // Interrupt the thread.
@@ -211,7 +211,7 @@ JNIEnv *env,
 jclass clazz,
 #endif
 ) {
-  mvm::Thread::yield();
+  vmkit::Thread::yield();
 }
 
 }

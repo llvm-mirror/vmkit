@@ -49,7 +49,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
 #endif
 
   // Don't call th->getFrameContext because it is not GC-safe.
-  mvm::StackWalker Walker(th);
+  vmkit::StackWalker Walker(th);
   uint32_t i = 0;
 
   while (intptr_t ip = *Walker) {
@@ -61,7 +61,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   return result;
 }
 
-JavaObject* consStackElement(mvm::FrameInfo* FI, intptr_t ip) {
+JavaObject* consStackElement(vmkit::FrameInfo* FI, intptr_t ip) {
 
   JavaString* methodName = 0;
   JavaString* className = 0;
@@ -262,18 +262,18 @@ JVM_OnExit(void (*func)(void)) {
  */
 JNIEXPORT void JNICALL
 JVM_Exit(jint code) {
-  mvm::System::Exit(code);
+  vmkit::System::Exit(code);
 }
 
 JNIEXPORT void JNICALL
 JVM_Halt(jint code) {
-  mvm::System::Exit(code);
+  vmkit::System::Exit(code);
 }
 
 JNIEXPORT void JNICALL
 JVM_GC(void) {
   BEGIN_JNI_EXCEPTION
-  mvm::Collector::collect();
+  vmkit::Collector::collect();
   RETURN_VOID_FROM_JNI;
   END_JNI_EXCEPTION
 }
@@ -309,22 +309,22 @@ JVM_TraceMethodCalls(jboolean on) {
 
 JNIEXPORT jlong JNICALL
 JVM_TotalMemory(void) {
-  return (jlong)mvm::Collector::getTotalMemory();
+  return (jlong)vmkit::Collector::getTotalMemory();
 }
 
 JNIEXPORT jlong JNICALL
 JVM_FreeMemory(void) {
-  return (jlong)mvm::Collector::getFreeMemory();
+  return (jlong)vmkit::Collector::getFreeMemory();
 }
 
 JNIEXPORT jlong JNICALL
 JVM_MaxMemory(void) {
-  return (jlong)mvm::Collector::getMaxMemory();
+  return (jlong)vmkit::Collector::getMaxMemory();
 }
 
 JNIEXPORT jint JNICALL
 JVM_ActiveProcessorCount(void) {
-  return mvm::System::GetNumberOfProcessors();
+  return vmkit::System::GetNumberOfProcessors();
 }
 
 JNIEXPORT void * JNICALL
@@ -432,7 +432,7 @@ JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint index) {
   sint32 cur = 0;
   for (sint32 i = base; i < JavaArray::getSize(stack); ++i) {
     intptr_t ip = ArrayPtr::getElement((ArrayPtr*)stack, i);
-    mvm::FrameInfo* FI = vm->IPToFrameInfo(ip);
+    vmkit::FrameInfo* FI = vm->IPToFrameInfo(ip);
     if (FI->Metadata != NULL) {
       if (cur == index) {
         result = consStackElement(FI, ip);
@@ -497,7 +497,7 @@ void start(JavaThread* thread) {
 
   // Wait some time to let the creator initialise this field
   while (thread->javaThread == NULL) {
-    mvm::Thread::yield();
+    vmkit::Thread::yield();
   }
 
   javaThread = thread->javaThread;
@@ -542,7 +542,7 @@ JVM_StartThread(JNIEnv *env, jobject _thread) {
 
   JavaThread * newTh = new JavaThread(vm);
   if (!newTh) vm->outOfMemoryError();
-  newTh->start((void (*)(mvm::Thread*))start);
+  newTh->start((void (*)(vmkit::Thread*))start);
 
   newTh->initialise(thread, 0);
 
@@ -602,7 +602,7 @@ JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio) {
 
 JNIEXPORT void JNICALL
 JVM_Yield(JNIEnv *env, jclass threadClass) {
-  mvm::Thread::yield();
+  vmkit::Thread::yield();
 }
 
 JNIEXPORT void JNICALL
@@ -638,16 +638,16 @@ JVM_Interrupt(JNIEnv *env, jobject _thread) {
   // It's possible that the thread to be interrupted has not finished
   // its initialization. Wait until the initialization is done.
   while (field->getInstanceLongField(thread) == 0)
-    mvm::Thread::yield();
+    vmkit::Thread::yield();
 
   JavaThread* th = (JavaThread*)field->getInstanceLongField(thread);
   th->lockingThread.interruptFlag = 1;
-  mvm::FatLock* lock = th->lockingThread.waitsOn;
+  vmkit::FatLock* lock = th->lockingThread.waitsOn;
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
   // the thread has been notified.
   if (lock && th->lockingThread.nextWaiting) {
-    th->lockingThread.state = mvm::LockingThread::StateInterrupted;
+    th->lockingThread.state = vmkit::LockingThread::StateInterrupted;
 
     // Make sure the thread is waiting.
     uint32 locked = 0;
@@ -655,7 +655,7 @@ JVM_Interrupt(JNIEnv *env, jobject _thread) {
       locked = (lock->tryAcquire() == 0);
       if (locked || (lock->getOwner() != th && lock->getOwner() != 0))
         break;
-      else mvm::Thread::yield();
+      else vmkit::Thread::yield();
     }
 
     // Interrupt the thread.

@@ -57,7 +57,7 @@ char* JavaString::strToAsciiz(JavaString* self) {
 }
 
 char* JavaString::strToAsciiz(JavaString* self,
-                              mvm::ThreadAllocator* allocator) {
+                              vmkit::ThreadAllocator* allocator) {
   const ArrayUInt16* value = NULL;
   llvm_gcroot(self, 0);
   llvm_gcroot(value, 0);
@@ -127,7 +127,7 @@ const UTF8* JavaString::javaToInternal(const JavaString* self, UTF8Map* map) {
   llvm_gcroot(value, 0);
   value = JavaString::getValue(self);
  
-  mvm::ThreadAllocator allocator; 
+  vmkit::ThreadAllocator allocator; 
   uint16* java = (uint16*)allocator.Allocate(self->count * sizeof(uint16));
 
   for (sint32 i = 0; i < self->count; ++i) {

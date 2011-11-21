@@ -50,7 +50,7 @@ class ZipArchive;
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
 ///
-class JnjvmClassLoader : public mvm::PermanentObject {
+class JnjvmClassLoader : public vmkit::PermanentObject {
 private:
 
   /// isolate - Which isolate defined me? Null for the bootstrap class loader.
@@ -75,7 +75,7 @@ private:
   /// JnjvmClassLoader - Allocate a user-defined class loader. Called on
   /// first use of a Java class loader.
   ///
-  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
+  JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
                    JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate);
 
   /// lookupComponentName - Try to find the component name of the given array
@@ -86,7 +86,7 @@ private:
 
 protected:
   
-  JnjvmClassLoader(mvm::BumpPtrAllocator& Alloc) : allocator(Alloc) {}
+  JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) : allocator(Alloc) {}
   
   /// TheCompiler - The Java compiler for this class loader.
   ///
@@ -106,7 +106,7 @@ protected:
 
   /// lock - Lock when loading classes.
   ///
-  mvm::LockRecursive lock;
+  vmkit::LockRecursive lock;
 
   /// registeredNatives - Stores the native function pointers corresponding
   /// to methods that were defined through JNI's RegisterNatives mechanism.
@@ -115,14 +115,14 @@ protected:
 
   /// nativesLock - Locks the registeredNatives map above
   ///
-  mvm::LockRecursive nativesLock;
+  vmkit::LockRecursive nativesLock;
 
 public:
   
   /// allocator - Reference to the memory allocator, which will allocate UTF8s,
   /// signatures and types.
   ///
-  mvm::BumpPtrAllocator& allocator;
+  vmkit::BumpPtrAllocator& allocator;
  
   /// getIsolate - Returns the isolate that created this class loader.
   ///
@@ -370,7 +370,7 @@ public:
   /// to do before any execution of a JVM. Also try to load libvmjc.so
   /// if dlLoad is not false.
   ///
-  JnjvmBootstrapLoader(mvm::BumpPtrAllocator& Alloc, JavaCompiler* Comp,
+  JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc, JavaCompiler* Comp,
                        bool dlLoad);
   
   virtual JavaString** UTF8ToStr(const UTF8* utf8);
@@ -512,7 +512,7 @@ public:
 
 #define MAXIMUM_STRINGS 100
 
-class StringList : public mvm::PermanentObject {
+class StringList : public vmkit::PermanentObject {
   friend class JnjvmClassLoader;
   friend class Jnjvm;
 

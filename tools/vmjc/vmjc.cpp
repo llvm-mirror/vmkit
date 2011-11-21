@@ -121,12 +121,12 @@ int main(int argc, char **argv) {
     return 0;
   }
    
-  mvm::VmkitModule::initialise(argc, argv);
-  mvm::Collector::initialise(argc, argv);
+  vmkit::VmkitModule::initialise(argc, argv);
+  vmkit::Collector::initialise(argc, argv);
 
   JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
 
-  mvm::BumpPtrAllocator allocator;
+  vmkit::BumpPtrAllocator allocator;
   JnjvmBootstrapLoader* loader = new(allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(allocator, Comp, false);
 

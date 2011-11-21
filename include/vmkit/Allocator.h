@@ -17,7 +17,7 @@
 
 class VirtualTable;
 
-namespace mvm {
+namespace vmkit {
 
 class BumpPtrAllocator {
 private:
@@ -75,6 +75,6 @@ public:
   }
 };
 
-} // end namespace mvm
+} // end namespace vmkit
 
 #endif // VMKIT_ALLOCATOR_H

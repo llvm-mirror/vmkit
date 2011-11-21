@@ -29,7 +29,7 @@ void JnjvmClassLoader::insertAllMethodsInVM(Jnjvm* vm) {
 void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
                                       const char* file) {
 
-  mvm::ThreadAllocator threadAllocator;
+  vmkit::ThreadAllocator threadAllocator;
   char* soName = (char*)threadAllocator.Allocate(
       strlen(name) + strlen(DYLD_EXTENSION));
   const char* ptr = strrchr(name, '/');
@@ -48,7 +48,7 @@ void JnjvmClassLoader::loadLibFromJar(Jnjvm* vm, const char* name,
 
 
 void JnjvmClassLoader::loadLibFromFile(Jnjvm* vm, const char* name) {
-  mvm::ThreadAllocator threadAllocator;
+  vmkit::ThreadAllocator threadAllocator;
   assert(classes->map.size() == 0);
   char* soName = (char*)threadAllocator.Allocate(
       strlen(name) + strlen(DYLD_EXTENSION));
@@ -98,7 +98,7 @@ extern "C" word_t vmjcNativeLoader(JavaMethod* meth) {
   sint32 mnlen = jniConsName->size;
   sint32 mtlen = jniConsType->size;
 
-  mvm::ThreadAllocator threadAllocator;
+  vmkit::ThreadAllocator threadAllocator;
   char* buf = (char*)threadAllocator.Allocate(
       3 + JNI_NAME_PRE_LEN + 1 + ((mnlen + clen + mtlen) << 3));
   word_t res = meth->classDef->classLoader->nativeLookup(meth, j3, buf);
@@ -114,7 +114,7 @@ extern "C" void staticCallback() {
 
 bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   Class* javaLangObject = (Class*)dlsym(SELF_HANDLE, "java_lang_Object");
-  void* nativeHandle = mvm::System::GetSelfHandle();
+  void* nativeHandle = vmkit::System::GetSelfHandle();
   if (javaLangObject == NULL) {
     void* handle = dlopen("libvmjc"DYLD_EXTENSION, RTLD_LAZY | RTLD_GLOBAL);
     if (handle != NULL) {
@@ -150,12 +150,12 @@ bool Precompiled::Init(JnjvmBootstrapLoader* loader) {
   upcalls->OfLong->classLoader = loader;
   upcalls->OfDouble->classLoader = loader;
 
-  mvm::VmkitDenseSet<mvm::UTF8MapKey, const UTF8*>* precompiledUTF8Map =
-    reinterpret_cast<mvm::VmkitDenseSet<mvm::UTF8MapKey, const UTF8*>*>(dlsym(nativeHandle, "UTF8Map"));
+  vmkit::VmkitDenseSet<vmkit::UTF8MapKey, const UTF8*>* precompiledUTF8Map =
+    reinterpret_cast<vmkit::VmkitDenseSet<vmkit::UTF8MapKey, const UTF8*>*>(dlsym(nativeHandle, "UTF8Map"));
   loader->hashUTF8 = new (loader->allocator, "UTF8Map") UTF8Map(loader->allocator, precompiledUTF8Map);
   
-  mvm::VmkitDenseMap<const UTF8*, CommonClass*>* precompiledClassMap =
-    reinterpret_cast<mvm::VmkitDenseMap<const UTF8*, CommonClass*>*>(dlsym(nativeHandle, "ClassMap"));
+  vmkit::VmkitDenseMap<const UTF8*, CommonClass*>* precompiledClassMap =
+    reinterpret_cast<vmkit::VmkitDenseMap<const UTF8*, CommonClass*>*>(dlsym(nativeHandle, "ClassMap"));
   loader->classes = new (loader->allocator, "ClassMap") ClassMap(precompiledClassMap);
 
   for (ClassMap::iterator i = loader->getClasses()->map.begin(),

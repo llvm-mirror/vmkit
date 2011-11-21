@@ -26,7 +26,7 @@
 #include <cstddef>
 #include <cstring>
 
-namespace mvm {
+namespace vmkit {
 
 template<typename T>
 struct VmkitDenseMapInfo {

@@ -14,7 +14,7 @@
 #include "vmkit/Locks.h"
 #include "vmkit/Thread.h"
 
-namespace mvm {
+namespace vmkit {
 
 class CollectionRV {
 protected: 
@@ -46,13 +46,13 @@ public:
   void waitRV();
   
   void startRV() {
-    mvm::Thread::get()->inRV = true;
+    vmkit::Thread::get()->inRV = true;
     lockRV();
   }
 
   void cancelRV() {
     unlockRV();
-    mvm::Thread::get()->inRV = false;
+    vmkit::Thread::get()->inRV = false;
   }
   
   void another_mark();

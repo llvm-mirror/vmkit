@@ -18,7 +18,7 @@
 #include "vmkit/GC.h"
 #include "vmkit/Allocator.h"
 
-namespace mvm {
+namespace vmkit {
   class UTF8;
 }
 
@@ -34,7 +34,7 @@ class Signdef;
 class JavaCompiler {
 public:
   
-  mvm::BumpPtrAllocator allocator;
+  vmkit::BumpPtrAllocator allocator;
 
   virtual JavaCompiler* Create(const std::string&) {
     return this;
@@ -106,8 +106,8 @@ public:
     return dlsym(handle, symbol);
   }
 
-  static const mvm::UTF8* InlinePragma;
-  static const mvm::UTF8* NoInlinePragma;
+  static const vmkit::UTF8* InlinePragma;
+  static const vmkit::UTF8* NoInlinePragma;
 
   virtual CommonClass* getUniqueBaseClass(CommonClass* cl) {
     return 0;

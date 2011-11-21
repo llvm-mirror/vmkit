@@ -44,7 +44,7 @@ int JavaObjectThrowable::getStackTraceBase(JavaObjectThrowable * self) {
   stack = self->backtrace;
   sint32 index = 2;;
   while (index != JavaArray::getSize(stack)) {
-    mvm::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
+    vmkit::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, index));
     if (FI->Metadata == NULL) ++index;
     else {
       JavaMethod* meth = (JavaMethod*)FI->Metadata;
@@ -74,7 +74,7 @@ int JavaObjectThrowable::getStackTraceDepth(JavaObjectThrowable * self) {
   sint32 size = 0;
   sint32 cur = index;
   while (cur < JavaArray::getSize(stack)) {
-    mvm::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
+    vmkit::FrameInfo* FI = vm->IPToFrameInfo(ArrayPtr::getElement((ArrayPtr*)stack, cur));
     ++cur;
     if (FI->Metadata != NULL) ++size;
   }

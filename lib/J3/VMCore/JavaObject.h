@@ -30,12 +30,12 @@ class Jnjvm;
 class Typedef;
 class UserCommonClass;
 
-class InterfaceMethodTable : public mvm::PermanentObject {
+class InterfaceMethodTable : public vmkit::PermanentObject {
 public:
 	static const uint32_t NumIndexes = 29;
 	word_t contents[NumIndexes];
 
-  static uint32_t getIndex(const mvm::UTF8* name, const mvm::UTF8* type) {
+  static uint32_t getIndex(const vmkit::UTF8* name, const vmkit::UTF8* type) {
     return (name->hash() + type->hash()) % NumIndexes;
   }
 };
@@ -107,7 +107,7 @@ public:
   /// size must contain the additional information for type checking, as well
   /// as the function pointers.
   ///
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+  void* operator new(size_t sz, vmkit::BumpPtrAllocator& allocator,
                      uint32 nbMethods) {
     return allocator.Allocate(sizeof(word_t) * (nbMethods), "Virtual table");
   }

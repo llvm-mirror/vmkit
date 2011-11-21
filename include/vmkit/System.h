@@ -56,7 +56,7 @@ typedef uint64_t word_t;
 typedef uint32_t word_t;
 #endif
 
-namespace mvm {
+namespace vmkit {
 
 const int kWordSize = sizeof(word_t);
 const int kWordSizeLog2 = kWordSize == 4 ? 2 : 3;
@@ -95,9 +95,9 @@ const word_t kVmkitThreadMask = 0xF0000000;
 
 const word_t kGCMemorySize = 0x30000000;  
 
-#define TRY { mvm::ExceptionBuffer __buffer__; if (!SETJMP(__buffer__.buffer))
+#define TRY { vmkit::ExceptionBuffer __buffer__; if (!SETJMP(__buffer__.buffer))
 #define CATCH else
-#define IGNORE else { mvm::Thread::get()->clearException(); }}
+#define IGNORE else { vmkit::Thread::get()->clearException(); }}
 #define END_CATCH }
 
 class System {
@@ -223,9 +223,9 @@ public:
 
   static uint8_t* GetLastBytePtr(word_t ptr) {
 #if ARCH_PPC
-  return ((uint8_t*)ptr) + 2 * mvm::kWordSize - 1;
+  return ((uint8_t*)ptr) + 2 * vmkit::kWordSize - 1;
 #else
-  return ((uint8_t*)ptr) + mvm::kWordSize;
+  return ((uint8_t*)ptr) + vmkit::kWordSize;
 #endif
   }
 

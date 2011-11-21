@@ -29,7 +29,7 @@ class Typedef;
 /// JavaConstantPool - This class represents a Java constant pool, a place where
 /// a Java class makes external references such as classes and methods and
 /// stores constants such as integers or UTF8s.
-class JavaConstantPool : public mvm::PermanentObject {
+class JavaConstantPool : public vmkit::PermanentObject {
 public:
   
   /// classDef - The owning class of this constant pool.
@@ -56,7 +56,7 @@ public:
   
   /// operator new - Redefine the operator to allocate the arrays of a
   /// constant pool inline.
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+  void* operator new(size_t sz, vmkit::BumpPtrAllocator& allocator,
                      uint32 ctpSize);
 
   /// CtpReaderClass - Reads a class entry.

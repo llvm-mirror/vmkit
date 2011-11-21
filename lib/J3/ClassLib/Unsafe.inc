@@ -232,7 +232,7 @@ JavaObject* unsafe, JavaObject* base, jlong offset, JavaObject* value) {
   llvm_gcroot(value, 0);
 
   JavaObject** ptr = (JavaObject**)fieldPtr(base, offset);
-  mvm::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
+  vmkit::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
 }
 
 
@@ -260,7 +260,7 @@ JavaObject* unsafe, JavaObject* base, jlong offset, JavaObject* value) {
   llvm_gcroot(value, 0);
 
   JavaObject** ptr = (JavaObject**)fieldPtr(base, offset);
-  mvm::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
+  vmkit::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
   // Ensure this value is seen.
   __sync_synchronize();
 }
@@ -287,7 +287,7 @@ JavaObject* unsafe, JavaObject* base, jlong offset, JavaObject* value) {
   llvm_gcroot(value, 0);
 
   JavaObject** ptr = (JavaObject**)fieldPtr(base, offset);
-  mvm::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
+  vmkit::Collector::objectReferenceWriteBarrier((gc*)base, (gc**)ptr, (gc*)value);
   // No barrier (difference between volatile and ordered)
 }
 
@@ -338,7 +338,7 @@ JavaObject* update) {
   llvm_gcroot(update, 0);
 
   JavaObject** ptr = (JavaObject**)fieldPtr(base, offset);
-  return mvm::Collector::objectReferenceTryCASBarrier((gc*)base, (gc**)ptr, (gc*)expect, (gc*)update);
+  return vmkit::Collector::objectReferenceTryCASBarrier((gc*)base, (gc**)ptr, (gc*)expect, (gc*)update);
 }
 
 
@@ -526,12 +526,12 @@ JavaObject* unsafe, JavaObject * obj) {
 
 JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_pageSize(
 JavaObject* unsafe) {
-  return mvm::System::GetPageSize();
+  return vmkit::System::GetPageSize();
 }
 
 JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_addressSize(
 JavaObject* unsafe) {
-  return mvm::kWordSize;
+  return vmkit::kWordSize;
 }
 
 JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_getLoadAverage(

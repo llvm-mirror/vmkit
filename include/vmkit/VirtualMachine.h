@@ -20,7 +20,7 @@
 #include <cassert>
 #include <map>
 
-namespace mvm {
+namespace vmkit {
 
 class CompiledFrames;
 class FrameInfo;
@@ -36,7 +36,7 @@ public:
 
   /// FunctionMapLock - Spin lock to protect the Functions map.
   ///
-  mvm::SpinLock FunctionMapLock;
+  vmkit::SpinLock FunctionMapLock;
 
   /// IPToFrameInfo - Map a code start instruction instruction to the FrameInfo.
   ///
@@ -57,7 +57,7 @@ public:
 /// VirtualMachine - This class is the root of virtual machine classes. It
 /// defines what a VM should be.
 ///
-class VirtualMachine : public mvm::PermanentObject {
+class VirtualMachine : public vmkit::PermanentObject {
 protected:
   VirtualMachine(BumpPtrAllocator &Alloc, CompiledFrames** frames) :
 		  allocator(Alloc), FunctionsCache(Alloc, frames) {
@@ -75,7 +75,7 @@ public:
   /// allocator - Bump pointer allocator to allocate permanent memory
   /// related to this VM.
   ///
-  mvm::BumpPtrAllocator& allocator;
+  vmkit::BumpPtrAllocator& allocator;
 
 //===----------------------------------------------------------------------===//
 // (1) Thread-related methods.
@@ -83,7 +83,7 @@ public:
 
   /// mainThread - The main thread of this VM.
   ///
-  mvm::Thread* mainThread;
+  vmkit::Thread* mainThread;
 
   /// NumberOfThreads - The number of threads that currently run under this VM.
   ///
@@ -91,29 +91,29 @@ public:
 
   /// ThreadLock - Lock to create or destroy a new thread.
   ///
-  mvm::LockNormal threadLock;
+  vmkit::LockNormal threadLock;
 
   /// ThreadVar - Condition variable to wake up the thread manager.
-  mvm::Cond threadVar;
+  vmkit::Cond threadVar;
 
   /// exitingThread - Thread that is currently exiting. Used by the thread
   /// manager to free the resources (stack) used by a thread.
-  mvm::Thread* exitingThread;
+  vmkit::Thread* exitingThread;
 
   /// doExit - Should the VM exit now?
   bool doExit;
   
   /// setMainThread - Set the main thread of this VM.
   ///
-  void setMainThread(mvm::Thread* th) { mainThread = th; }
+  void setMainThread(vmkit::Thread* th) { mainThread = th; }
   
   /// getMainThread - Get the main thread of this VM.
   ///
-  mvm::Thread* getMainThread() const { return mainThread; }
+  vmkit::Thread* getMainThread() const { return mainThread; }
 
   /// addThread - Add a new thread to the list of threads.
   ///
-  void addThread(mvm::Thread* th) {
+  void addThread(vmkit::Thread* th) {
     threadLock.lock();
     numberOfThreads++;
     if (th != mainThread) {
@@ -125,7 +125,7 @@ public:
   
   /// removeThread - Remove the thread from the list of threads.
   ///
-  void removeThread(mvm::Thread* th) {
+  void removeThread(vmkit::Thread* th) {
     threadLock.lock();
     while (exitingThread != NULL) {
       // Make sure the thread manager had a chance to consume the previous
@@ -233,5 +233,5 @@ public:
   virtual void stackOverflowError() = 0;
 };
 
-} // end namespace mvm
+} // end namespace vmkit
 #endif // VMKIT_VIRTUALMACHINE_H

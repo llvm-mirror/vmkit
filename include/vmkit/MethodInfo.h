@@ -14,7 +14,7 @@
 #include "vmkit/System.h"
 #include "vmkit/GC.h"
 
-namespace mvm {
+namespace vmkit {
 
 class FrameInfo {
 public:
@@ -48,7 +48,7 @@ public:
         reinterpret_cast<word_t>(this) + kWordSize);
   }
 
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator, uint32_t NumDescriptors, uint32_t NumOffsets) {
+  void* operator new(size_t sz, vmkit::BumpPtrAllocator& allocator, uint32_t NumDescriptors, uint32_t NumOffsets) {
     Frames* res = reinterpret_cast<Frames*>(
         allocator.Allocate(kWordSize + NumDescriptors * MethodInfoHelper::FrameInfoSize(NumOffsets), "Frames"));
     assert(System::IsWordAligned(reinterpret_cast<word_t>(res)));
@@ -95,5 +95,5 @@ public:
   }
 };
 
-} // end namespace mvm
+} // end namespace vmkit
 #endif // VMKIT_METHODINFO_H

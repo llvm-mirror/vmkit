@@ -21,7 +21,7 @@
 #include "llvm/Support/ManagedStatic.h"
 
 using namespace j3;
-using namespace mvm;
+using namespace vmkit;
 
 #include "FrametablesExterns.inc"
 
@@ -38,7 +38,7 @@ int main(int argc, char **argv, char **envp) {
   Collector::initialise(argc, argv);
  
   // Create the allocator that will allocate the bootstrap loader and the JVM.
-  mvm::BumpPtrAllocator Allocator;
+  vmkit::BumpPtrAllocator Allocator;
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);

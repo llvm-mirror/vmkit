@@ -64,7 +64,7 @@ extern "C" void Java_org_j3_runtime_VM__1assert__Z (uint8_t cond) {
 }
 
 extern "C" bool Java_org_j3_runtime_VM_buildFor64Addr__ () { 
-  return mvm::kWordSize == 8;
+  return vmkit::kWordSize == 8;
 }
 
 extern "C" bool Java_org_j3_runtime_VM_buildForIA32__ () { 

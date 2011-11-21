@@ -95,7 +95,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
 
   if (isAbstract(cl->access)) vm->instantiationException(cl);
 
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   // Allocate a buffer to store the arguments.
   jvalue* buf = size ?
       (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;

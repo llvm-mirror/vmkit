@@ -24,7 +24,7 @@ extern "C" void Java_org_j3_mmtk_Strings_write___3CI(MMTkObject* str,
 extern "C" void Java_org_j3_mmtk_Strings_writeThreadId___3CI(MMTkObject* str,
                                                              MMTkArray* msg,
                                                              sint32 len) {
-  fprintf(stderr, "[%p] ", (void*)mvm::Thread::get());
+  fprintf(stderr, "[%p] ", (void*)vmkit::Thread::get());
   
   for (sint32 i = 0; i < len; ++i) {
     fprintf(stderr, "%c", msg->elements[i]);

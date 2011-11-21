@@ -49,10 +49,10 @@
 #include <dlfcn.h>
 #include <sys/mman.h>
 
-using namespace mvm;
+using namespace vmkit;
 using namespace llvm;
 
-namespace mvm {
+namespace vmkit {
   namespace llvm_runtime {
     #include "LLVMRuntime.inc"
   }
@@ -190,7 +190,7 @@ static void AddStandardCompilePasses(FunctionPassManager* PM) {
   addPass(PM, createCFGSimplificationPass());     // Merge & remove BBs
 }
 
-namespace mvm {
+namespace vmkit {
   llvm::FunctionPass* createInlineMallocPass();
 }
 
@@ -308,7 +308,7 @@ void BaseIntrinsics::init(llvm::Module* module) {
   constantDoubleMinusInfinity = ConstantFP::get(Type::getDoubleTy(Context), MinDouble);
   constantDoubleMinusZero = ConstantFP::get(Type::getDoubleTy(Context), -0.0);
   constantFloatMinusZero = ConstantFP::get(Type::getFloatTy(Context), -0.0f);
-  constantThreadIDMask = ConstantInt::get(pointerSizeType, mvm::System::GetThreadIDMask());
+  constantThreadIDMask = ConstantInt::get(pointerSizeType, vmkit::System::GetThreadIDMask());
   constantStackOverflowMask = 
     ConstantInt::get(pointerSizeType, Thread::StackOverflowMask);
   constantFatMask = ConstantInt::get(pointerSizeType, ThinLock::FatMask);

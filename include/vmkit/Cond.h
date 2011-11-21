@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <pthread.h>
 
-namespace mvm {
+namespace vmkit {
 
 class Lock;
 
@@ -29,6 +29,6 @@ public:
   void signal(void) __attribute__ ((noinline));
 };
 
-} // end namespace mvm
+} // end namespace vmkit
 
 #endif // VMKIT_COND_H

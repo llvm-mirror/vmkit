@@ -155,7 +155,7 @@ uint32 JavaConstantPool::CtpReaderDouble(JavaConstantPool* ctp, Reader& reader,
 
 
 void*
-JavaConstantPool::operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+JavaConstantPool::operator new(size_t sz, vmkit::BumpPtrAllocator& allocator,
                                uint32 ctpSize) {
   uint32 size = sz + ctpSize * (sizeof(void*) + sizeof(sint32) + sizeof(uint8));
   return allocator.Allocate(size, "Constant pool");
@@ -188,7 +188,7 @@ const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
   }
   
   if (!ctpRes[entry]) {
-    mvm::ThreadAllocator allocator;
+    vmkit::ThreadAllocator allocator;
     Reader reader(classDef->bytes, ctpDef[entry]);
     uint32 len = reader.readU2();
     uint16* buf = (uint16*)allocator.Allocate(len * sizeof(uint16));

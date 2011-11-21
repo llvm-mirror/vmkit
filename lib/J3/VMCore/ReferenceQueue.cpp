@@ -40,7 +40,7 @@ void invokeEnqueue(gc* res) {
   TRY {
     enqueueReference(res);
   } IGNORE;
-  mvm::Thread::get()->clearException();
+  vmkit::Thread::get()->clearException();
 }
 
 void ReferenceThread::enqueueStart(ReferenceThread* th) {
@@ -109,7 +109,7 @@ void clearReferent(gc* _obj) {
 }
 
 gc* ReferenceQueue::processReference(gc* reference, ReferenceThread* th, word_t closure) {
-  if (!mvm::Collector::isLive(reference, closure)) {
+  if (!vmkit::Collector::isLive(reference, closure)) {
     clearReferent(reference);
     return NULL;
   }
@@ -123,16 +123,16 @@ gc* ReferenceQueue::processReference(gc* reference, ReferenceThread* th, word_t 
   if (semantics == SOFT) {
     // TODO: are we are out of memory? Consider that we always are for now.
     if (false) {
-      mvm::Collector::retainReferent(referent, closure);
+      vmkit::Collector::retainReferent(referent, closure);
     }
   } else if (semantics == PHANTOM) {
     // Nothing to do.
   }
 
   gc* newReference =
-      mvm::Collector::getForwardedReference(reference, closure);
-  if (mvm::Collector::isLive(referent, closure)) {
-    gc* newReferent = mvm::Collector::getForwardedReferent(referent, closure);
+      vmkit::Collector::getForwardedReference(reference, closure);
+  if (vmkit::Collector::isLive(referent, closure)) {
+    gc* newReferent = vmkit::Collector::getForwardedReferent(referent, closure);
     setReferent(newReference, newReferent);
     return newReference;
   } else {
@@ -215,8 +215,8 @@ void FinalizerThread::scanFinalizationQueue(word_t closure) {
   for (uint32 i = 0; i < CurrentIndex; ++i) {
     gc* obj = FinalizationQueue[i];
 
-    if (!mvm::Collector::isLive(obj, closure)) {
-      obj = mvm::Collector::retainForFinalize(FinalizationQueue[i], closure);
+    if (!vmkit::Collector::isLive(obj, closure)) {
+      obj = vmkit::Collector::retainForFinalize(FinalizationQueue[i], closure);
       
       if (CurrentFinalizedIndex >= ToBeFinalizedLength)
         growToBeFinalizedQueue();
@@ -225,7 +225,7 @@ void FinalizerThread::scanFinalizationQueue(word_t closure) {
       ToBeFinalized[CurrentFinalizedIndex++] = obj;
     } else {
       FinalizationQueue[NewIndex++] =
-        mvm::Collector::getForwardedFinalizable(obj, closure);
+        vmkit::Collector::getForwardedFinalizable(obj, closure);
     }
   }
   CurrentIndex = NewIndex;
@@ -247,7 +247,7 @@ void invokeFinalize(gc* res) {
   TRY {
     invokeFinalizer(res);
   } IGNORE;
-  mvm::Thread::get()->clearException();
+  vmkit::Thread::get()->clearException();
 }
 
 void FinalizerThread::finalizerStart(FinalizerThread* th) {

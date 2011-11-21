@@ -35,7 +35,7 @@ public:
   }
 };
 
-namespace mvm {
+namespace vmkit {
   // TODO(ngeoffray): Make these two constants easily configurable. For now they
   // work for all our supported GCs.
   static const uint32_t GCBits = 8;

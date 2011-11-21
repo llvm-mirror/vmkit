@@ -17,7 +17,7 @@ ArrayObject* GetClassContext() {
   Jnjvm* vm = th->getJVM();
   uint32 length = th->getFrameContextLength();
 
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   uintptr_t* buffer = (uintptr_t*)allocator.Allocate(length * sizeof(uintptr_t));
 
   uint32 finalSize = th->getJavaFrameContext((void**)buffer);

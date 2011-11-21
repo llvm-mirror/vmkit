@@ -37,7 +37,7 @@ void Handler::UpdateRegistersForNPE() {
 }
 
 void Handler::UpdateRegistersForStackOverflow() {
-  word_t alt_stack = mvm::Thread::get()->GetAlternativeStackStart();
+  word_t alt_stack = vmkit::Thread::get()->GetAlternativeStackStart();
   ((ucontext_t*)context)->uc_mcontext.gregs[REG_RDI] = System::GetIPFromCallerAddress(((ucontext_t*)context)->uc_mcontext.gregs[REG_RBP]);
   ((ucontext_t*)context)->uc_mcontext.gregs[REG_RSI] = ((ucontext_t*)context)->uc_mcontext.gregs[REG_RBP];
   ((ucontext_t*)context)->uc_mcontext.gregs[REG_RSP] = alt_stack;

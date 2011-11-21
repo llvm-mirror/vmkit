@@ -18,7 +18,7 @@
 
 #include "debug.h"
 
-using namespace mvm;
+using namespace vmkit;
 
 int Collector::verbose = 0;
 extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I(word_t, int32_t) ALWAYS_INLINE;
@@ -67,7 +67,7 @@ extern "C" void addFinalizationCandidate(gc* obj) __attribute__((always_inline))
 
 extern "C" void addFinalizationCandidate(gc* obj) {
   llvm_gcroot(obj, 0);
-  mvm::Thread::get()->MyVM->addFinalizationCandidate(obj);
+  vmkit::Thread::get()->MyVM->addFinalizationCandidate(obj);
 }
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
@@ -81,18 +81,18 @@ extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
 extern "C" void arrayWriteBarrier(void* ref, void** ptr, void* value) {
   JnJVM_org_j3_bindings_Bindings_arrayWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
       (gc*)ref, (gc**)ptr, (gc*)value);
-  if (mvm::Thread::get()->doYield) mvm::Collector::collect();
+  if (vmkit::Thread::get()->doYield) vmkit::Collector::collect();
 }
 
 extern "C" void fieldWriteBarrier(void* ref, void** ptr, void* value) {
   JnJVM_org_j3_bindings_Bindings_fieldWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
       (gc*)ref, (gc**)ptr, (gc*)value);
-  if (mvm::Thread::get()->doYield) mvm::Collector::collect();
+  if (vmkit::Thread::get()->doYield) vmkit::Collector::collect();
 }
 
 extern "C" void nonHeapWriteBarrier(void** ptr, void* value) {
   JnJVM_org_j3_bindings_Bindings_nonHeapWriteBarrier__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2((gc**)ptr, (gc*)value);
-  if (mvm::Thread::get()->doYield) mvm::Collector::collect();
+  if (vmkit::Thread::get()->doYield) vmkit::Collector::collect();
 }
 
 void MutatorThread::init(Thread* _th) {
@@ -222,7 +222,7 @@ void Collector::objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) {
 
 bool Collector::objectReferenceTryCASBarrier(gc* ref, gc** slot, gc* old, gc* value) {
   bool res = JnJVM_org_j3_bindings_Bindings_writeBarrierCAS__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2(ref, slot, old, value);
-  if (mvm::Thread::get()->doYield) mvm::Collector::collect();
+  if (vmkit::Thread::get()->doYield) vmkit::Collector::collect();
   return res;
 }
 

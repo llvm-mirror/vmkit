@@ -55,7 +55,7 @@ static const char I_SEP = '/';
 /// which has not been loaded yet. Typedefs are hashed on the name of the class.
 /// Hashing is for memory purposes, not for comparison.
 ///
-class Typedef : public mvm::PermanentObject {
+class Typedef : public vmkit::PermanentObject {
 public:
   
   /// keyName - The name of the Typedef. It is the representation of a class
@@ -274,7 +274,7 @@ public:
 /// Java signature. Signdefs are hashed for memory purposes, not equality
 /// purposes.
 ///
-class Signdef : public mvm::PermanentObject {
+class Signdef : public vmkit::PermanentObject {
 private:
   
   /// _staticCallBuf - A dynamically generated method which calls a static Java
@@ -336,7 +336,7 @@ public:
   /// operator new - Redefines the new operator of this class to allocate
   /// the arguments in the object itself.
   ///
-  void* operator new(size_t sz, mvm::BumpPtrAllocator& allocator,
+  void* operator new(size_t sz, vmkit::BumpPtrAllocator& allocator,
                      sint32 size) {
     return allocator.Allocate(sizeof(Signdef) + size * sizeof(Typedef),
                               "Signdef");

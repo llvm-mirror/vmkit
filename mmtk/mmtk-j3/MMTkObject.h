@@ -54,7 +54,7 @@ struct MMTkLock : public MMTkObject {
 };
 
 struct MMTkActivePlan : public MMTkObject {
-  mvm::MutatorThread* current;
+  vmkit::MutatorThread* current;
 };
 
 struct MMTkReferenceProcessor : public MMTkObject {

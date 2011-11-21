@@ -40,11 +40,11 @@ extern "C" gc* Java_org_j3_mmtk_ObjectModel_refToAddress__Lorg_vmmagic_unboxed_O
 }
 
 extern "C" uint8_t Java_org_j3_mmtk_ObjectModel_readAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
-  return *mvm::System::GetLastBytePtr(reinterpret_cast<word_t>(obj));
+  return *vmkit::System::GetLastBytePtr(reinterpret_cast<word_t>(obj));
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2B (MMTkObject* OM, gc* obj, uint8_t val) {
-  *mvm::System::GetLastBytePtr(reinterpret_cast<word_t>(obj)) = val;
+  *vmkit::System::GetLastBytePtr(reinterpret_cast<word_t>(obj)) = val;
 }
 
 extern "C" gc* Java_org_j3_mmtk_ObjectModel_getObjectFromStartAddress__Lorg_vmmagic_unboxed_Address_2 (MMTkObject* OM, gc* obj) {
@@ -78,11 +78,11 @@ extern "C" word_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_Object
 
 extern "C" word_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
     MMTkObject* OM, gc* src, int allocator) {
-  size_t size = mvm::Thread::get()->MyVM->getObjectSize(src);
+  size_t size = vmkit::Thread::get()->MyVM->getObjectSize(src);
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
   word_t res = JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
       src, src->getVirtualTable(), size, allocator);
-  assert((((word_t*)res)[1] & ~mvm::GCBitMask) == (((word_t*)src)[1] & ~mvm::GCBitMask));
+  assert((((word_t*)res)[1] & ~vmkit::GCBitMask) == (((word_t*)src)[1] & ~vmkit::GCBitMask));
   return res;
 }
 
@@ -94,7 +94,7 @@ extern "C" void Java_org_j3_mmtk_ObjectModel_getReferenceWhenCopiedTo__Lorg_vmma
 
 extern "C" word_t Java_org_j3_mmtk_ObjectModel_getObjectEndAddress__Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* OM, gc* object) {
-  size_t size = mvm::Thread::get()->MyVM->getObjectSize(object);
+  size_t size = vmkit::Thread::get()->MyVM->getObjectSize(object);
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
   return reinterpret_cast<word_t>(object) + size;
 }
@@ -134,7 +134,7 @@ class FakeByteArray : public MMTkObject {
 
 extern "C" FakeByteArray* Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* OM, gc* src) {
-  const char* name = mvm::Thread::get()->MyVM->getObjectTypeName(src);
+  const char* name = vmkit::Thread::get()->MyVM->getObjectTypeName(src);
   // This code is only used for debugging on a fatal error. It is fine to
   // allocate in the C++ heap.
   return new (strlen(name)) FakeByteArray(name);

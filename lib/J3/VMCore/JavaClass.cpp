@@ -572,7 +572,7 @@ void JavaField::InitStaticField(JavaObject* val) {
   void* obj = classDef->getStaticInstance();
   assert(isReference());
   JavaObject** ptr = (JavaObject**)((uint64)obj + ptrOffset);
-  mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
 }
 
 void JavaField::InitStaticField(double val) {
@@ -794,7 +794,7 @@ void Class::makeVT() {
     }
   }
 
-  mvm::BumpPtrAllocator& allocator = classLoader->allocator;
+  vmkit::BumpPtrAllocator& allocator = classLoader->allocator;
   virtualVT = new(allocator, virtualTableSize) JavaVirtualTable(this);
 }
 
@@ -818,7 +818,7 @@ static void computeMirandaMethods(Class* current,
 
 void Class::readMethods(Reader& reader) {
   uint16 nbMethods = reader.readU2();
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   if (isAbstract(access)) {
     virtualMethods = (JavaMethod*)
       allocator.Allocate(nbMethods * sizeof(JavaMethod));
@@ -874,7 +874,7 @@ void Class::readClass() {
   
   PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
   PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ", 0);
-  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", mvm::PrintBuffer(this).cString());
+  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", vmkit::PrintBuffer(this).cString());
 
   Reader reader(bytes);
   uint32 magic;
@@ -1025,7 +1025,7 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   JavaObject** obj = &(delegatee[0]);
   classLoader->lock.lock();
   if (*obj == NULL) {
-    mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)obj, (gc*)val);
+    vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)obj, (gc*)val);
   }
   classLoader->lock.unlock();
   return getDelegatee();
@@ -1401,7 +1401,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
       outOfDepth = 1;
     }
 
-    mvm::BumpPtrAllocator& allocator = C->classLoader->allocator;
+    vmkit::BumpPtrAllocator& allocator = C->classLoader->allocator;
     secondaryTypes = (JavaVirtualTable**)
       allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes,
                          "Secondary types");  
@@ -1525,7 +1525,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
         if (intf || depth != getDisplayLength()) addSuper = 1;
       }
         
-      mvm::BumpPtrAllocator& allocator = JCL->allocator;
+      vmkit::BumpPtrAllocator& allocator = JCL->allocator;
 
       if (!newSecondaryTypes) {
         if (base->nbInterfaces || addSuper) {
@@ -1619,7 +1619,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
       offset = getCacheIndex() + 2;
       nbSecondaryTypes = 2;
       
-      mvm::BumpPtrAllocator& allocator = JCL->allocator;
+      vmkit::BumpPtrAllocator& allocator = JCL->allocator;
       secondaryTypes = (JavaVirtualTable**)
         allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes,
                            "Secondary types");
@@ -1693,7 +1693,7 @@ void AnnotationReader::readElementValue() {
   }
 }
 
-uint16 JavaMethod::lookupLineNumber(mvm::FrameInfo* info) {
+uint16 JavaMethod::lookupLineNumber(vmkit::FrameInfo* info) {
   Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);      
   if (codeAtt == NULL) return 0;
   Reader reader(codeAtt, classDef->bytes);
@@ -1723,7 +1723,7 @@ uint16 JavaMethod::lookupLineNumber(mvm::FrameInfo* info) {
   return 0;
 }
 
-uint16 JavaMethod::lookupCtpIndex(mvm::FrameInfo* FI) {
+uint16 JavaMethod::lookupCtpIndex(vmkit::FrameInfo* FI) {
   Attribut* codeAtt = lookupAttribut(Attribut::codeAttribut);
   Reader reader(codeAtt, classDef->bytes);
   reader.cursor = reader.cursor + 2 + 2 + 4 + FI->SourceIndex + 1;
@@ -1765,7 +1765,7 @@ void JavaField::setInstanceObjectField(JavaObject* obj, JavaObject* val) {
   if (val != NULL) assert(val->getVirtualTable());
   assert(classDef->isResolved());
   JavaObject** ptr = (JavaObject**)((uint64)obj + ptrOffset);
-  mvm::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)val);
+  vmkit::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)val);
 }
 
 void JavaField::setStaticObjectField(JavaObject* val) {
@@ -1773,5 +1773,5 @@ void JavaField::setStaticObjectField(JavaObject* val) {
   if (val != NULL) assert(val->getVirtualTable());
   assert(classDef->isResolved());
   JavaObject** ptr = (JavaObject**)((uint64)classDef->getStaticInstance() + ptrOffset);
-  mvm::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
 }

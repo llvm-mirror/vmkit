@@ -163,7 +163,7 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   executionEngine->RegisterJITEventListener(&listener);
   TheTargetData = executionEngine->getTargetData();
   TheModule->setDataLayout(TheTargetData->getStringRepresentation());
-  TheModule->setTargetTriple(mvm::VmkitModule::getHostTriple());
+  TheModule->setTargetTriple(vmkit::VmkitModule::getHostTriple());
   JavaIntrinsics.init(TheModule);
   initialiseAssessorInfo();  
 
@@ -217,8 +217,8 @@ extern "C" void ThrowUnfoundInterface() {
   BEGIN_NATIVE_EXCEPTION(1);
 
   // Lookup the caller of this class.
-  mvm::StackWalker Walker(th);
-  mvm::FrameInfo* FI = Walker.get();
+  vmkit::StackWalker Walker(th);
+  vmkit::FrameInfo* FI = Walker.get();
   assert(FI->Metadata != NULL && "Wrong stack trace");
   JavaMethod* meth = (JavaMethod*)FI->Metadata;
 
@@ -320,7 +320,7 @@ void JavaJITCompiler::setMethod(Function* func, void* ptr, const char* name) {
 }
 
 void* JavaJITCompiler::materializeFunction(JavaMethod* meth, Class* customizeFor) {
-  mvm::VmkitModule::protectIR();
+  vmkit::VmkitModule::protectIR();
   Function* func = parseFunction(meth, customizeFor);
   void* res = executionEngine->getPointerToGlobal(func);
 
@@ -328,12 +328,12 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth, Class* customizeFor
     llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*func);
   
     Jnjvm* vm = JavaThread::get()->getJVM();
-    mvm::VmkitModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, meth);
+    vmkit::VmkitModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, meth);
 
     // Now that it's compiled, we don't need the IR anymore
     func->deleteBody();
   }
-  mvm::VmkitModule::unprotectIR();
+  vmkit::VmkitModule::unprotectIR();
   if (customizeFor == NULL || !getMethodInfo(meth)->isCustomizable) {
     meth->code = res;
   }
@@ -341,7 +341,7 @@ void* JavaJITCompiler::materializeFunction(JavaMethod* meth, Class* customizeFor
 }
 
 void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
-  mvm::VmkitModule::protectIR();
+  vmkit::VmkitModule::protectIR();
   void* res = executionEngine->getPointerToGlobal(F);
  
   // If the stub was already generated through an equivalent signature,
@@ -350,12 +350,12 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
     llvm::GCFunctionInfo& GFI = GCInfo->getFunctionInfo(*F);
   
     Jnjvm* vm = JavaThread::get()->getJVM();
-    mvm::VmkitModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, NULL);
+    vmkit::VmkitModule::addToVM(vm, &GFI, (JIT*)executionEngine, allocator, NULL);
   
     // Now that it's compiled, we don't need the IR anymore
     F->deleteBody();
   }
-  mvm::VmkitModule::unprotectIR();
+  vmkit::VmkitModule::unprotectIR();
   return res;
 }
 
@@ -363,16 +363,16 @@ void* JavaJITCompiler::GenerateStub(llvm::Function* F) {
 extern "C" int StartJnjvmWithJIT(int argc, char** argv, char* mainClass) {
   llvm::llvm_shutdown_obj X; 
    
-  mvm::VmkitModule::initialise(argc, argv);
-  mvm::Collector::initialise(argc, argv);
+  vmkit::VmkitModule::initialise(argc, argv);
+  vmkit::Collector::initialise(argc, argv);
  
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   char** newArgv = (char**)allocator.Allocate((argc + 1) * sizeof(char*));
   memcpy(newArgv + 1, argv, argc * sizeof(void*));
   newArgv[0] = newArgv[1];
   newArgv[1] = mainClass;
 
-  mvm::BumpPtrAllocator Allocator;
+  vmkit::BumpPtrAllocator Allocator;
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);

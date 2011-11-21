@@ -115,7 +115,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
   Signdef* sign = meth->getSignature();
   sint32 size = sign->nbArguments;
 
-  mvm::ThreadAllocator allocator;
+  vmkit::ThreadAllocator allocator;
   jvalue* buf = size ?
       (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
 

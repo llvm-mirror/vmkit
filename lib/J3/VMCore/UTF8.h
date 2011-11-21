@@ -15,8 +15,8 @@
 #include "vmkit/UTF8.h"
 
 namespace j3 {
-	using mvm::UTF8;
-	using mvm::UTF8Map;
+	using vmkit::UTF8;
+	using vmkit::UTF8Map;
 
 /// UTF8Buffer - Helper class to create char* buffers suitable for
 /// printf.

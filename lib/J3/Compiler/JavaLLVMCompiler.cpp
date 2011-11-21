@@ -35,18 +35,18 @@ JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   
 void JavaLLVMCompiler::resolveVirtualClass(Class* cl) {
   // Lock here because we may be called by a class resolver
-  mvm::VmkitModule::protectIR();
+  vmkit::VmkitModule::protectIR();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getVirtualType();
-  mvm::VmkitModule::unprotectIR();
+  vmkit::VmkitModule::unprotectIR();
 }
 
 void JavaLLVMCompiler::resolveStaticClass(Class* cl) {
   // Lock here because we may be called by a class initializer
-  mvm::VmkitModule::protectIR();
+  vmkit::VmkitModule::protectIR();
   LLVMClassInfo* LCI = (LLVMClassInfo*)getClassInfo(cl);
   LCI->getStaticType();
-  mvm::VmkitModule::unprotectIR();
+  vmkit::VmkitModule::unprotectIR();
 }
 
 Function* JavaLLVMCompiler::getMethod(JavaMethod* meth, Class* customizeFor) {
@@ -59,17 +59,17 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor)
   Function* func = LMI->getMethod(customizeFor);
   
   // We are jitting. Take the lock.
-  mvm::VmkitModule::protectIR();
+  vmkit::VmkitModule::protectIR();
   if (func->getLinkage() == GlobalValue::ExternalWeakLinkage) {
     JavaJIT jit(this, meth, func, customizeFor);
     if (isNative(meth->access)) {
       jit.nativeCompile();
-      mvm::VmkitModule::runPasses(func, JavaNativeFunctionPasses);
-      mvm::VmkitModule::runPasses(func, J3FunctionPasses);
+      vmkit::VmkitModule::runPasses(func, JavaNativeFunctionPasses);
+      vmkit::VmkitModule::runPasses(func, J3FunctionPasses);
     } else {
       jit.javaCompile();
-      mvm::VmkitModule::runPasses(func, JavaFunctionPasses);
-      mvm::VmkitModule::runPasses(func, J3FunctionPasses);
+      vmkit::VmkitModule::runPasses(func, JavaFunctionPasses);
+      vmkit::VmkitModule::runPasses(func, J3FunctionPasses);
     }
     func->setLinkage(GlobalValue::ExternalLinkage);
     if (!LMI->isCustomizable && jit.isCustomizable) {
@@ -82,7 +82,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor)
       }
     }
   }
-  mvm::VmkitModule::unprotectIR();
+  vmkit::VmkitModule::unprotectIR();
 
   return func;
 }
@@ -115,7 +115,7 @@ void JavaLLVMCompiler::addJavaPasses() {
   
   JavaFunctionPasses = new FunctionPassManager(TheModule);
   JavaFunctionPasses->add(new TargetData(TheModule));
-  mvm::VmkitModule::addCommandLinePasses(JavaFunctionPasses);
+  vmkit::VmkitModule::addCommandLinePasses(JavaFunctionPasses);
 }
 
 } // end namespace j3

@@ -27,7 +27,7 @@
 #include <cstddef>
 #include <cstring>
 
-namespace mvm {
+namespace vmkit {
 
 template<typename ValueT,
          typename ValueInfoT = VmkitDenseMapInfo<ValueT>,
@@ -486,6 +486,6 @@ private:
   }
 };
 
-} // end namespace mvm
+} // end namespace vmkit
 
 #endif

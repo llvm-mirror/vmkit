@@ -39,7 +39,7 @@ class JavaString : public JavaObject {
   static void setValue(JavaString* self, const ArrayUInt16* array) {
     llvm_gcroot(self, 0);
     llvm_gcroot(array, 0);
-    mvm::Collector::objectReferenceWriteBarrier(
+    vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)self, (gc**)&(self->value), (gc*)array);
   }
   static const ArrayUInt16* getValue(const JavaString* self) {
@@ -58,7 +58,7 @@ class JavaString : public JavaObject {
 
   static void stringDestructor(JavaString*);
   static char* strToAsciiz(JavaString* self);
-  static char* strToAsciiz(JavaString* self, mvm::ThreadAllocator* allocator);
+  static char* strToAsciiz(JavaString* self, vmkit::ThreadAllocator* allocator);
   static const ArrayUInt16* strToArray(JavaString* self, Jnjvm* vm);
 
   /// javaToInternal - Replaces all '/' into '.'.

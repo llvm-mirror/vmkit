@@ -19,7 +19,7 @@
 #include <pthread.h>
 
 
-namespace mvm {
+namespace vmkit {
 
 Lock::Lock() {
   pthread_mutexattr_t attr;
@@ -56,10 +56,10 @@ Lock::~Lock() {
 }
 
 bool Lock::selfOwner() {
-  return owner == mvm::Thread::get();
+  return owner == vmkit::Thread::get();
 }
 
-mvm::Thread* Lock::getOwner() {
+vmkit::Thread* Lock::getOwner() {
   return owner;
 }
 
@@ -92,7 +92,7 @@ int LockRecursive::tryLock() {
   int res = 0;
   if (!selfOwner()) {
     res = pthread_mutex_trylock((pthread_mutex_t*)&internalLock);
-    owner = mvm::Thread::get();
+    owner = vmkit::Thread::get();
   }
   ++n;
   return res;

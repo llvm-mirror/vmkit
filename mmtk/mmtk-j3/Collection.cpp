@@ -20,13 +20,13 @@ extern "C" bool Java_org_j3_mmtk_Collection_isEmergencyAllocation__ (MMTkObject*
 }
 
 extern "C" void Java_org_j3_mmtk_Collection_reportAllocationSuccess__ (MMTkObject* C) {
-  mvm::MutatorThread::get()->CollectionAttempts = 0;
+  vmkit::MutatorThread::get()->CollectionAttempts = 0;
 }
 
 extern "C" void JnJVM_org_j3_bindings_Bindings_collect__I(int why);
 
 extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C, int why) {
-  mvm::MutatorThread* th = mvm::MutatorThread::get();
+  vmkit::MutatorThread* th = vmkit::MutatorThread::get();
   if (why > 2) th->CollectionAttempts++;
 
   // Verify that another collection is not happening.
@@ -48,7 +48,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
 }
 
 extern "C" void Java_org_j3_mmtk_Collection_joinCollection__ (MMTkObject* C) {
-  mvm::Thread* th = mvm::Thread::get();
+  vmkit::Thread* th = vmkit::Thread::get();
   assert(th->inRV && "Joining collection without a rendezvous");
   th->MyVM->rendezvous.join();
 }
@@ -58,15 +58,15 @@ extern "C" int Java_org_j3_mmtk_Collection_rendezvous__I (MMTkObject* C, int whe
 }
 
 extern "C" int Java_org_j3_mmtk_Collection_maximumCollectionAttempt__ (MMTkObject* C) {
-  mvm::MutatorThread* th = mvm::MutatorThread::get();
-  mvm::MutatorThread* tcur = th;
+  vmkit::MutatorThread* th = vmkit::MutatorThread::get();
+  vmkit::MutatorThread* tcur = th;
 
   uint32_t max = 0; 
   do {
     if (tcur->CollectionAttempts > max) {
       max = tcur->CollectionAttempts;
     }
-    tcur = (mvm::MutatorThread*)tcur->next();
+    tcur = (vmkit::MutatorThread*)tcur->next();
   } while (tcur != th);
 
   return max;
@@ -85,11 +85,11 @@ extern "C" int32_t Java_org_j3_mmtk_Collection_activeGCThreadOrdinal__ (MMTkObje
 
 extern "C" void Java_org_j3_mmtk_Collection_reportPhysicalAllocationFailed__ (MMTkObject* C) { UNIMPLEMENTED(); }
 extern "C" void Java_org_j3_mmtk_Collection_triggerAsyncCollection__I (MMTkObject* C, sint32 val) {
-  mvm::Thread::get()->doYield = true;
+  vmkit::Thread::get()->doYield = true;
 }
 
 extern "C" uint8_t Java_org_j3_mmtk_Collection_noThreadsInGC__ (MMTkObject* C) {
-  mvm::Thread* th = mvm::Thread::get();
+  vmkit::Thread* th = vmkit::Thread::get();
   bool threadInGC = th->doYield;
   return !threadInGC;
 }

@@ -67,10 +67,10 @@ void JavaThread::endJNI() {
 }
 
 uint32 JavaThread::getJavaFrameContext(void** buffer) {
-  mvm::StackWalker Walker(this);
+  vmkit::StackWalker Walker(this);
   uint32 i = 0;
 
-  while (mvm::FrameInfo* FI = Walker.get()) {
+  while (vmkit::FrameInfo* FI = Walker.get()) {
     if (FI->Metadata != NULL) {
       JavaMethod* M = (JavaMethod*)FI->Metadata;
       buffer[i++] = M;
@@ -81,10 +81,10 @@ uint32 JavaThread::getJavaFrameContext(void** buffer) {
 }
 
 JavaMethod* JavaThread::getCallingMethodLevel(uint32 level) {
-  mvm::StackWalker Walker(this);
+  vmkit::StackWalker Walker(this);
   uint32 index = 0;
 
-  while (mvm::FrameInfo* FI = Walker.get()) {
+  while (vmkit::FrameInfo* FI = Walker.get()) {
     if (FI->Metadata != NULL) {
       if (index == level) {
         return (JavaMethod*)FI->Metadata;
@@ -107,9 +107,9 @@ JavaObject* JavaThread::getNonNullClassLoader() {
   JavaObject* obj = 0;
   llvm_gcroot(obj, 0);
   
-  mvm::StackWalker Walker(this);
+  vmkit::StackWalker Walker(this);
 
-  while (mvm::FrameInfo* FI = Walker.get()) {
+  while (vmkit::FrameInfo* FI = Walker.get()) {
     if (FI->Metadata != NULL) {
       JavaMethod* meth = (JavaMethod*)FI->Metadata;
       JnjvmClassLoader* loader = meth->classDef->classLoader;
@@ -123,9 +123,9 @@ JavaObject* JavaThread::getNonNullClassLoader() {
 
 
 void JavaThread::printJavaBacktrace() {
-  mvm::StackWalker Walker(this);
+  vmkit::StackWalker Walker(this);
 
-  while (mvm::FrameInfo* FI = Walker.get()) {
+  while (vmkit::FrameInfo* FI = Walker.get()) {
     if (FI->Metadata != NULL) {
       MyVM->printMethod(FI, Walker.ip, Walker.addr);
     }

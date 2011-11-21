@@ -36,7 +36,7 @@ public:
   uint8_t logSizeInBytesConstant;
 };
 
-class LLVMClassInfo : public mvm::PermanentObject {
+class LLVMClassInfo : public vmkit::PermanentObject {
   friend class JavaAOTCompiler;
   friend class JavaJITCompiler;
   friend class JavaLLVMCompiler;
@@ -75,7 +75,7 @@ public:
   }
 };
 
-class LLVMMethodInfo : public mvm::PermanentObject {
+class LLVMMethodInfo : public vmkit::PermanentObject {
 private:
   /// Compiler - The compiler for this method info.
   JavaLLVMCompiler* Compiler;
@@ -111,7 +111,7 @@ public:
 };
 
 
-class LLVMFieldInfo : public mvm::PermanentObject {
+class LLVMFieldInfo : public vmkit::PermanentObject {
 private:
   /// Compiler - The compiler for this field info.
   JavaLLVMCompiler* Compiler;
@@ -133,7 +133,7 @@ public:
   }
 };
 
-class LLVMSignatureInfo : public mvm::PermanentObject {
+class LLVMSignatureInfo : public vmkit::PermanentObject {
 private:
   /// Compiler - The compiler for this signature info.
   JavaLLVMCompiler* Compiler;
