@@ -227,8 +227,8 @@ int main(int argc, char **argv) {
     }
     gccArgv[gccArgc++] = "-lAllocator";
     gccArgv[gccArgc++] = "-lCommonThread";
-    gccArgv[gccArgc++] = "-lMvm";
-    gccArgv[gccArgc++] = "-lMvmCompiler";
+    gccArgv[gccArgc++] = "-lVmkit";
+    gccArgv[gccArgc++] = "-lVmkitCompiler";
     gccArgv[gccArgc++] = "-lGCMmap2";
     gccArgv[gccArgc++] = "-lvmjc";
     gccArgv[gccArgc++] = "-lLLVMSupport";
