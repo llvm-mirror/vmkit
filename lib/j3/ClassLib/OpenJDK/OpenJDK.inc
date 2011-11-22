@@ -13,6 +13,7 @@
 
 #include "ArrayCopy.inc"
 #include "ClassContext.inc"
+#include "DefineClass.inc"
 #include "SetProperties.inc"
 
 #include <errno.h>
@@ -1115,18 +1116,16 @@ JVM_DefineClass(JNIEnv *env, const char *name, jobject _loader, const jbyte *buf
 
   loader = _loader ? *(JavaObject**)_loader : 0;
 
-  jclass res;
+  jclass res = 0;
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader* JCL = NULL;
   JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
-
-  ClassBytes * bytes = new (JCL->allocator, len) ClassBytes(len);
-  memcpy(bytes->elements,buf,len);
   const UTF8* utfName = JCL->asciizConstructUTF8(name);
-  UserClass *cl = JCL->constructClass(utfName, bytes);
 
-  if (cl) res = (jclass)cl->getClassDelegateePtr(vm);
+  UserClass* cl = defineClass(JCL, utfName, (const char*)buf, len);
+
+  res = (jclass)cl->getClassDelegateePtr(vm, pd ? *(JavaObject**)pd : 0);
 
   RETURN_FROM_JNI(res);
 

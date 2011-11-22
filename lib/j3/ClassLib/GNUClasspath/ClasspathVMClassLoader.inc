@@ -10,6 +10,7 @@
 #include "types.h"
 
 #include "Classpath.h"
+#include "DefineClass.inc"
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
@@ -120,48 +121,27 @@ jint len,
 JavaObject* pd) {
   
   JavaObject* res = 0;
-  JavaObject* excp = 0;
   llvm_gcroot(loader, 0);
   llvm_gcroot(str, 0);
   llvm_gcroot(bytes, 0);
   llvm_gcroot(pd, 0);
   llvm_gcroot(res, 0);
-  llvm_gcroot(excp, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  
+
   // We need a name, which is unfortunately not required by the spec.
   verifyNull(str);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
 
-  JnjvmClassLoader* JCL = 
+  JnjvmClassLoader* JCL =
     JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
- 
-  int32_t size = JavaArray::getSize(bytes);
-  ClassBytes* classBytes = new (JCL->allocator, size) ClassBytes(size);
-  memcpy(classBytes->elements, JavaArray::getElements(bytes), size);
-   
-  // Before creating a class, do a check on the bytes.  
-  Reader reader(classBytes);
-  uint32 magic = reader.readU4();
-  if (magic != Jnjvm::Magic) {
-    JavaThread::get()->getJVM()->classFormatError("bad magic number");
-  }
 
-  
   const UTF8* name = JavaString::javaToInternal(str, JCL->hashUTF8);
-  UserCommonClass* cl = JCL->lookupClass(name);
-  
-  if (!cl) {
-    UserClass* cl = JCL->constructClass(name, classBytes);
-    cl->resolveClass();
 
-    res = cl->getClassDelegatee(vm, pd);
-  } else {
-    excp = vm->CreateLinkageError("duplicate class definition");
-    JavaThread::get()->throwException(excp);
-  }
+  UserClass* cl = defineClass(JCL, name,
+    (const char*)JavaArray::getElements(bytes), JavaArray::getSize(bytes));
+  res = cl->getClassDelegatee(vm, pd);
 
   END_NATIVE_EXCEPTION
 
