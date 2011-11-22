@@ -103,6 +103,7 @@ public:
   ISOLATE_STATIC UserClass*  newDirectByteBuffer;
   ISOLATE_STATIC JavaMethod* InitDirectByteBuffer;
   ISOLATE_STATIC JavaField*  vmdataClassLoader;
+  ISOLATE_STATIC UserClass*  cloneableClass;
   ISOLATE_STATIC UserClass*  enumClass;
 
   ISOLATE_STATIC JavaField* boolValue;
@@ -188,6 +189,7 @@ public:
   ISOLATE_STATIC UserClass* UnknownError;
   ISOLATE_STATIC UserClass* ClassNotFoundException;
   ISOLATE_STATIC UserClass* ArithmeticException;
+  ISOLATE_STATIC UserClass* CloneNotSupportedException;
 
   ISOLATE_STATIC JavaMethod* InitInvocationTargetException;
   ISOLATE_STATIC JavaMethod* InitArrayStoreException;
@@ -221,6 +223,7 @@ public:
   ISOLATE_STATIC JavaMethod* InitUnknownError;
   ISOLATE_STATIC JavaMethod* InitClassNotFoundException;
   ISOLATE_STATIC JavaMethod* InitArithmeticException;
+  ISOLATE_STATIC JavaMethod* InitCloneNotSupportedException;
   
   ISOLATE_STATIC JavaMethod* SystemArraycopy;
   ISOLATE_STATIC JavaMethod* VMSystemArraycopy;

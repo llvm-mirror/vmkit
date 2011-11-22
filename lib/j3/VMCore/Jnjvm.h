@@ -286,6 +286,7 @@ public:
   void classNotFoundException(JavaString* str);
   void noClassDefFoundError(UserClass* cl, const UTF8* name);
   void classFormatError(const char* str);
+  void cloneNotSupportedException();
   virtual void nullPointerException();
   virtual void stackOverflowError();
   

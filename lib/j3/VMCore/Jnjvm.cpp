@@ -301,6 +301,11 @@ void Jnjvm::nullPointerException() {
         upcalls->InitNullPointerException, (JavaString*)0);
 }
 
+void Jnjvm::cloneNotSupportedException() {
+  error(upcalls->CloneNotSupportedException,
+        upcalls->InitCloneNotSupportedException, (JavaString*)0);
+}
+
 JavaObject* Jnjvm::CreateIndexOutOfBoundsException(sint32 entry) {
   JavaString* str = NULL;
   llvm_gcroot(str, 0);
@@ -1153,6 +1158,8 @@ void Jnjvm::loadBootstrap() {
   LOAD_CLASS(upcalls->ArithmeticException); 
   LOAD_CLASS(upcalls->InstantiationException);
   LOAD_CLASS(upcalls->SystemClass);
+  LOAD_CLASS(upcalls->cloneableClass);
+  LOAD_CLASS(upcalls->CloneNotSupportedException);
 #undef LOAD_CLASS
 
   // Implementation-specific end-of-bootstrap initialization

@@ -98,7 +98,7 @@ public:
   ISOLATE_STATIC UserClass*  newDirectByteBuffer;
   ISOLATE_STATIC JavaMethod* InitDirectByteBuffer;
   ISOLATE_STATIC JavaField*  vmdataClassLoader;
-  ISOLATE_STATIC UserClass* cloneableClass;
+  ISOLATE_STATIC UserClass*  cloneableClass;
   ISOLATE_STATIC UserClass*  enumClass;
 
   ISOLATE_STATIC JavaField* boolValue;

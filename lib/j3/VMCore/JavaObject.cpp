@@ -155,8 +155,8 @@ JavaObject* JavaObject::clone(JavaObject* src) {
 
   // If this doesn't inherit the Cloneable interface, throw exception
   // TODO: Add support in both class libraries for the upcalls fields used here
-  //if (!JavaObject::instanceOf(src, vm->upcalls->cloneableClass))
-  //  vm->cloneNotSupportedException();
+  if (!JavaObject::instanceOf(src, vm->upcalls->cloneableClass))
+    vm->cloneNotSupportedException();
 
   if (cl->isArray()) {
     UserClassArray* array = cl->asArrayClass();

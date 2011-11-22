@@ -93,6 +93,7 @@ Class*      Classpath::newDirectByteBuffer;
 JavaField*  Classpath::vmdataClassLoader;
 JavaMethod* Classpath::InitDirectByteBuffer;
 Class*      Classpath::newClassLoader;
+Class*      Classpath::cloneableClass;
 
 
 JavaField*  Classpath::boolValue;
@@ -152,6 +153,7 @@ Class* Classpath::StackOverflowError;
 Class* Classpath::UnknownError;
 Class* Classpath::ClassNotFoundException;
 Class* Classpath::ArithmeticException;
+Class* Classpath::CloneNotSupportedException;
 
 JavaMethod* Classpath::InitInvocationTargetException;
 JavaMethod* Classpath::InitArrayStoreException;
@@ -185,6 +187,7 @@ JavaMethod* Classpath::InitStackOverflowError;
 JavaMethod* Classpath::InitUnknownError;
 JavaMethod* Classpath::InitClassNotFoundException;
 JavaMethod* Classpath::InitArithmeticException;
+JavaMethod* Classpath::InitCloneNotSupportedException;
 JavaMethod* Classpath::InitObject;
 JavaMethod* Classpath::FinalizeObject;
 JavaMethod* Classpath::IntToString;
@@ -783,6 +786,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   UPCALL_CLASS_EXCEPTION(loader, UnknownError);
   UPCALL_CLASS_EXCEPTION(loader, ClassNotFoundException);
   UPCALL_CLASS_EXCEPTION(loader, ArithmeticException);
+  UPCALL_CLASS_EXCEPTION(loader, CloneNotSupportedException);
   
   UPCALL_METHOD_EXCEPTION(loader, InvocationTargetException);
   UPCALL_METHOD_EXCEPTION(loader, ArrayStoreException);
@@ -816,6 +820,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   UPCALL_METHOD_EXCEPTION(loader, UnknownError);
   UPCALL_METHOD_EXCEPTION(loader, ClassNotFoundException);
   UPCALL_METHOD_EXCEPTION(loader, ArithmeticException);
+  UPCALL_METHOD_EXCEPTION(loader, CloneNotSupportedException);
   
   UPCALL_METHOD_WITH_EXCEPTION(loader, NoClassDefFoundError);
   UPCALL_METHOD_WITH_EXCEPTION(loader, ExceptionInInitializerError);
@@ -840,6 +845,8 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   
   SystemClass = UPCALL_CLASS(loader, "java/lang/System");
   EnumClass = UPCALL_CLASS(loader, "java/lang/Enum");
+
+  cloneableClass = UPCALL_CLASS(loader, "java/lang/Cloneable");
 
   newThread = 
     UPCALL_CLASS(loader, "java/lang/Thread");
