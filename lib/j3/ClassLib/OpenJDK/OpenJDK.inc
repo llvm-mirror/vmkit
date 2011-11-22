@@ -110,7 +110,7 @@ jint JVM_CreateJavaVM(JavaVM **pvm, void **penv, void *args) {
 
 JNIEXPORT jint JNICALL
 JVM_IHashCode(JNIEnv *env, jobject _obj) {
-  JavaObject * obj = *(JavaObject**)_obj;
+  JavaObject * obj = _obj ? *(JavaObject**)_obj : 0;
   llvm_gcroot(obj, 0);
 
   jint hash = (obj == NULL) ? 0 : JavaObject::hashCode(obj);
@@ -226,8 +226,8 @@ JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject jsrc, jint sstart,
 
   BEGIN_JNI_EXCEPTION
 
-  src = *(JavaObject**)jsrc;
-  dst = *(JavaObject**)jdst;
+  src = jsrc ? *(JavaObject**)jsrc : 0;
+  dst = jdst ? *(JavaObject**)jdst : 0;
 
   ArrayCopy(src, sstart, dst, dstart, len);
 

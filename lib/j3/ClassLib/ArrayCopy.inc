@@ -14,8 +14,6 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
   llvm_gcroot(src, 0);
   llvm_gcroot(dst, 0);
   llvm_gcroot(cur, 0);
-  assert(src->getVirtualTable());
-  assert(dst->getVirtualTable());
 
   JavaThread* th = JavaThread::get();
   Jnjvm *vm = th->getJVM();
@@ -31,6 +29,9 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
       (JavaVirtualTable*)dst->getVirtualTable()));
     UNREACHABLE();
   }
+
+  assert(src->getVirtualTable());
+  assert(dst->getVirtualTable());
 
   UserClassArray* ts = (UserClassArray*)JavaObject::getClass(src);
   UserClassArray* td = (UserClassArray*)JavaObject::getClass(dst);
