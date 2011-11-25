@@ -2377,11 +2377,15 @@ void JavaJIT::throwException(Value* obj, bool checkNull) {
     new UnreachableInst(*llvmContext, currentBlock);
   } else {
     Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-    new StoreInst(obj, javaExceptionPtr, currentBlock);
+    if (vmkit::Collector::needsNonHeapWriteBarrier()) {
+      Instruction* ptr = new BitCastInst(javaExceptionPtr, intrinsics->ptrPtrType, "", currentBlock);
+      Instruction* val = new BitCastInst(obj, intrinsics->ptrType, "", currentBlock);
+      Value* args[2] = { ptr, val };
+      CallInst::Create(intrinsics->NonHeapWriteBarrierFunction, args, "", currentBlock);
+    } else {
+      new StoreInst(obj, javaExceptionPtr, currentBlock);
+    }
 
-    Instruction* insn = currentExceptionBlock->begin();
-    PHINode* node = dyn_cast<PHINode>(insn);
-    if (node) node->addIncoming(obj, currentBlock);
     BranchInst::Create(currentExceptionBlock, currentBlock);
   }
 }
@@ -2470,9 +2474,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     
     ex->tester = createBasicBlock("testException");
     
-    // PHI Node for the exception object
-    PHINode::Create(intrinsics->JavaObjectType, 0, "", ex->tester);
-    
     // Set the unwind destination of the instructions in the range of this
     // handler to the test block of the handler. If an instruction already has
     // a handler and thus is not the synchronize or regular end handler block,
@@ -2491,18 +2492,12 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     // Set the Java handler for this exception.
     ex->javaHandler = opcodeInfos[ex->handlerpc].newBlock;
     opcodeInfos[ex->handlerpc].handler = true;
-    
-    if (ex->javaHandler->empty()) {
-      PHINode::Create(intrinsics->JavaObjectType, 0, "", ex->javaHandler);
-    }
-
   }
 
   // Loop over all handlers to implement their tester.
   for (sint16 i = 0; i < nbe - sync; ++i) {
     Handler* cur = &handlers[i];
     BasicBlock* bbNext = 0;
-    PHINode* javaNode = 0;
     currentExceptionBlock = opcodeInfos[cur->handlerpc].exceptionBlock;
 
     // Look out where we go if we're not the handler for the exception.
@@ -2516,8 +2511,6 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
         // If there's a handler to goto, we jump to its tester block and record
         // the exception PHI node to give our exception to the tester.
         bbNext = next->tester;
-        javaNode = dyn_cast<PHINode>(bbNext->begin());
-        assert(javaNode);
       }
     } else {
       // If there's no handler after us, we jump to the end handler.
@@ -2532,7 +2525,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* VTVar = TheCompiler->getVirtualTable(cur->catchClass->virtualVT);
 
     // Get the Java exception.
-    Value* obj = currentBlock->begin();
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
     
     Value* objVT = CallInst::Create(intrinsics->GetVTFunction, obj, "",
                                     currentBlock);
@@ -2560,28 +2554,11 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
                          "");
     }
    
-    // Add the Java exception in the phi node of the handler.
-    Instruction* insn = cur->javaHandler->begin();
-    PHINode* node = dyn_cast<PHINode>(insn);
-    assert(node && "malformed exceptions");
-    node->addIncoming(obj, currentBlock);
-   
-    // Add the Java exception in the phi node of the next block.
-    if (javaNode)
-      javaNode->addIncoming(obj, currentBlock);
- 
     // If we are catching this exception, then jump to the Java Handler,
     // otherwise jump to our next handler.
     BranchInst::Create(cur->javaHandler, bbNext, cmp, currentBlock);
 
     currentBlock = cur->javaHandler;
-
-    // First thing in the handler: clear the exception.
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-    
-    // Clear exception.
-    new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr,
-                  currentBlock);
   }
  
   // Restore currentBlock.

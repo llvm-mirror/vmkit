@@ -132,10 +132,12 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       
       stack.clear();
       if (opinfo->handler) {
-        Instruction* I = opinfo->newBlock->begin();
-        assert(isa<PHINode>(I) && "Handler marlformed");
         // If it's a handler, put the exception object in the stack.
-        new StoreInst(I, objectStack[0], "", currentBlock);
+        Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
+        Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+        new StoreInst(obj, objectStack[0], "", currentBlock);
+        // And clear the exception.
+        new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr, currentBlock);
         stack.push_back(MetaInfo(upcalls->OfObject, NOP));
         currentStackIndex = 1;
       } else {
