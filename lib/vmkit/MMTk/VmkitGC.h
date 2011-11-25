@@ -58,6 +58,8 @@ extern "C" void* gcmalloc(uint32_t sz, void* VT);
 class gc : public gcRoot {
 public:
 
+	virtual void _fakeForSpecializedTracerSlot() {}
+
   size_t objectSize() const {
     abort();
     return 0;
