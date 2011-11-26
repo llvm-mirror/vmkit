@@ -177,11 +177,7 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass _sub, jclass _sup) {
 
 jint Throw(JNIEnv *env, jthrowable obj) {
   BEGIN_JNI_EXCEPTION
-  JavaObject* excp = *(JavaObject**)obj;
-  llvm_gcroot(excp, 0);
-  JavaThread* th = JavaThread::get();
-  vmkit::Collector::objectReferenceNonHeapWriteBarrier(
-      (gc**)&(th->pendingException), (gc*)excp);
+  JavaThread::get()->pendingException = *(JavaObject**)obj;
 
   RETURN_FROM_JNI(0);
 
@@ -216,8 +212,7 @@ jint ThrowNew(JNIEnv* env, jclass _Cl, const char *msg) {
                                           false, true, 0);
   str = vm->asciizToStr(msg);
   init->invokeIntSpecial(vm, realCl, res, &str);
-  vmkit::Collector::objectReferenceNonHeapWriteBarrier(
-      (gc**)&(th->pendingException), (gc*)res);
+  th->pendingException = res;
   
   RETURN_FROM_JNI(0);
   
