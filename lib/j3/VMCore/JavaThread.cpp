@@ -44,7 +44,7 @@ void JavaThread::throwException(JavaObject* obj) {
   llvm_gcroot(obj, 0);
   JavaThread* th = JavaThread::get();
   assert(th->pendingException == 0 && "pending exception already there?");
-  th->pendingException = obj;
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)&(th->pendingException), (gc*)obj);
   th->internalThrowException();
 }
 
