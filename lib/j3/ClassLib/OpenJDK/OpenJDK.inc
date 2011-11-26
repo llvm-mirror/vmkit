@@ -518,7 +518,10 @@ void start(JavaThread* thread) {
 
   assert(javaThread->getVirtualTable());
   // Run the VMThread::run function
-  vm->upcalls->runThread->invokeIntSpecial(vm, vm->upcalls->newThread, javaThread);
+
+  UserClass* thClass = (UserClass*)JavaObject::getClass(javaThread);
+
+  vm->upcalls->runThread->invokeIntSpecial(vm, thClass, javaThread);
 
   // Remove the thread from the list.
   if (!isDaemon) {
