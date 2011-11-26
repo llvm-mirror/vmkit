@@ -32,8 +32,8 @@ JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() {
 void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
   llvm_gcroot(thread, 0);
   llvm_gcroot(vmth, 0);
-  javaThread = thread;
-  vmThread = vmth;
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)&javaThread, (gc*)thread);
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)&vmThread, (gc*)vmth);
 }
 
 JavaThread::~JavaThread() {
@@ -42,16 +42,14 @@ JavaThread::~JavaThread() {
 
 void JavaThread::throwException(JavaObject* obj) {
   llvm_gcroot(obj, 0);
-  JavaThread* th = JavaThread::get();
-  assert(th->pendingException == 0 && "pending exception already there?");
-  th->pendingException = obj;
-  th->internalThrowException();
+  assert(pendingException == 0 && "pending exception already there?");
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)&pendingException, (gc*)obj);
+  internalThrowException();
 }
 
 void JavaThread::throwPendingException() {
-  JavaThread* th = JavaThread::get();
-  assert(th->pendingException);
-  th->internalThrowException();
+  assert(pendingException);
+  internalThrowException();
 }
 
 void JavaThread::startJNI() {
@@ -143,7 +141,8 @@ JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,
     next->prev = this;
     return next->addJNIReference(th, obj);
   } else {
-    localReferences[length] = obj;
+    vmkit::Collector::objectReferenceNonHeapWriteBarrier(
+        (gc**)&(localReferences[length]), (gc*)obj);
     return &localReferences[length++];
   }
 }

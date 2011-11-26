@@ -2332,16 +2332,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
     BranchInst::Create(ifNormal, currentBlock);
 
     currentBlock = ifException;
-    CallInst::Create(intrinsics->UnregisterSetjmpFunction, jmpBuffer, "", currentBlock);
- 
-    if (!currentExceptionBlock->empty()) {
-      // Get the Java exception.
-      Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr())); 
-      Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
-      Instruction* insn = currentExceptionBlock->begin();
-      PHINode* node = dyn_cast<PHINode>(insn);
-      if (node) node->addIncoming(obj, currentBlock);
-    } 
+    CallInst::Create(intrinsics->UnregisterSetjmpFunction, jmpBuffer, "", currentBlock); 
     BranchInst::Create(currentExceptionBlock, currentBlock);
     currentBlock = ifNormal; 
   }
