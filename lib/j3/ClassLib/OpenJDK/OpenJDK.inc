@@ -2399,7 +2399,14 @@ jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
 
 int
 jio_snprintf(char *str, size_t count, const char *fmt, ...) {
-  NYI();
+  va_list args;
+  int res;
+
+  va_start(args, fmt);
+  res = vsnprintf(str, count, fmt, args);
+  va_end(args);
+
+  return res;
 }
 
 int
