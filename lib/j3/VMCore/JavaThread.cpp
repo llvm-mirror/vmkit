@@ -32,8 +32,8 @@ JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() {
 void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
   llvm_gcroot(thread, 0);
   llvm_gcroot(vmth, 0);
-  javaThread = thread;
-  vmThread = vmth;
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)&javaThread, (gc*)thread);
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)&vmThread, (gc*)vmth);
 }
 
 JavaThread::~JavaThread() {
