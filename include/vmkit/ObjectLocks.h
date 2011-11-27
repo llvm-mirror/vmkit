@@ -84,6 +84,7 @@ public:
   void release(gc* object, LockSystem& table);
   vmkit::Thread* getOwner();
   bool owner();
+  void setAssociatedObject(gc* obj);
   gc* getAssociatedObject() { return associatedObject; }
   gc** getAssociatedObjectPtr() { return &associatedObject; }
 

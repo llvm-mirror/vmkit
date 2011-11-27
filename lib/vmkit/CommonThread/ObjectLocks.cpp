@@ -261,7 +261,7 @@ FatLock::FatLock(uint32_t i, gc* a) {
   assert(a != NULL);
   firstThread = NULL;
   index = i;
-  associatedObject = a;
+  setAssociatedObject(a);
   waitingThreads = 0;
   lockingThreads = 0;
   nextFreeLock = NULL;
@@ -338,7 +338,7 @@ FatLock* LockSystem::allocate(gc* obj) {
     res->nextFreeLock = 0;
     assert(res->associatedObject == NULL);
     threadLock.unlock();
-    res->associatedObject = obj;
+    res->setAssociatedObject(obj);
   } else { 
     // Get an index.
     uint32_t index = currentIndex++;
@@ -536,6 +536,11 @@ void LockingThread::notifyAll(gc* self, LockSystem& table) {
   } while (cur != l->firstThread);
   l->firstThread = NULL;
   assert(vmkit::ThinLock::owner(self, table) && "Not owner after notifyAll");
+}
+
+void FatLock::setAssociatedObject(gc* obj) {
+  llvm_gcroot(obj, 0);
+  vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)&associatedObject, (gc*)obj);
 }
 
 }
