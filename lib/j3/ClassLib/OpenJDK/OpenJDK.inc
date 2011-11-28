@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -194,12 +195,16 @@ JVM_InternString(JNIEnv *env, jstring _str) {
 /*
  * java.lang.System
  */
-JNIEXPORT jlong JNICALL
-JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored) {
+
+uint64 CurrentTimeMillis() {
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  jlong time = (tv.tv_sec * 1000LL) + (tv.tv_usec / 1000LL);
-  return time;
+  return (tv.tv_sec * 1000LL) + (tv.tv_usec / 1000LL);
+}
+
+JNIEXPORT jlong JNICALL
+JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored) {
+  return CurrentTimeMillis();
 }
 
 JNIEXPORT jlong JNICALL
@@ -209,7 +214,7 @@ JVM_NanoTime(JNIEnv *env, jclass ignored) {
 
   gettimeofday(&tv, NULL);
 
-  jlong time = (tv.tv_sec * 1000000LL) + (tv.tv_usec / 1000000LL);
+  jlong time = tv.tv_sec * 1000000000LL + tv.tv_usec * 1000LL;
 
   return time;
 }
@@ -496,8 +501,8 @@ void start(JavaThread* thread) {
 
   Jnjvm* vm = thread->getJVM();
 
-  // Wait some time to let the creator initialise this field
-  while (thread->javaThread == NULL) {
+  // Wait some time to let the creator initialise the fields
+  while (thread->javaThread == NULL || thread->sleepObject == NULL) {
     vmkit::Thread::yield();
   }
 
@@ -517,10 +522,9 @@ void start(JavaThread* thread) {
   }
 
   assert(javaThread->getVirtualTable());
-  // Run the VMThread::run function
 
+  // Run the Thread::run() function
   UserClass* thClass = (UserClass*)JavaObject::getClass(javaThread);
-
   vm->upcalls->runThread->invokeIntSpecial(vm, thClass, javaThread);
 
   // Remove the thread from the list.
@@ -533,10 +537,12 @@ void start(JavaThread* thread) {
  */
 JNIEXPORT void JNICALL
 JVM_StartThread(JNIEnv *env, jobject _thread) {
+  JavaObject * sleepObject = 0;
   JavaObject * thread = 0;
   JavaThread * javaThread = 0;
   llvm_gcroot(thread, 0);
   llvm_gcroot(javaThread, 0);
+  llvm_gcroot(sleepObject, 0);
   BEGIN_JNI_EXCEPTION
 
   thread = *(JavaObject**)_thread;
@@ -544,11 +550,16 @@ JVM_StartThread(JNIEnv *env, jobject _thread) {
   assert(thread->getVirtualTable());
   Jnjvm* vm = JavaThread::get()->getJVM();
 
+  // Create a placeholder 'sleepObject' that
+  // we track in same field as Classpath's VMThread,
+  // used solely for sleeping.
+  sleepObject = vm->upcalls->OfObject->doNew(vm);
+
   JavaThread * newTh = new JavaThread(vm);
   if (!newTh) vm->outOfMemoryError();
   newTh->start((void (*)(vmkit::Thread*))start);
 
-  newTh->initialise(thread, 0);
+  newTh->initialise(thread, sleepObject);
 
   RETURN_VOID_FROM_JNI
 
@@ -609,9 +620,63 @@ JVM_Yield(JNIEnv *env, jclass threadClass) {
   vmkit::Thread::yield();
 }
 
+static struct timeval getTimeVal(long long ms) {
+  struct timeval ret;
+  long long seconds = ms / 1000LL;
+  ret.tv_usec = 1000LL * (ms % 1000LL);
+  ret.tv_sec = seconds > LONG_MAX ? LONG_MAX : seconds;
+  return ret;
+}
+
+
 JNIEXPORT void JNICALL
 JVM_Sleep(JNIEnv *env, jclass threadClass, jlong millis) {
-  NYI();
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm * vm = th->getJVM();
+
+  // Check for invalid sleep time
+  if (millis < 0)
+    th->getJVM()->illegalArgumentException("Negative sleep value");
+
+  // If Thread is interrupted, throw exception
+  if (th->lockingThread.interruptFlag != 0) {
+    th->lockingThread.interruptFlag = 0;
+    vm->interruptedException(NULL);
+    UNREACHABLE();
+  }
+
+  // Treat sleep(0) as yield.
+  if (millis == 0) {
+    vmkit::Thread::yield();
+    RETURN_VOID_FROM_JNI
+  }
+
+  // See the Classpath sleep() implementation for inspiration here.
+  // We use a dummy per-thread 'sleepObject' to wait on instead of using
+  // a VMThread, but otherwise same implementation.
+  assert(th->sleepObject && "Missing sleep object!");
+
+  uint64 now = CurrentTimeMillis();
+
+  JavaObject::acquire(th->sleepObject);
+  while(true) {
+    struct timeval tv = getTimeVal(millis);
+    JavaObject::timedWait(th->sleepObject, tv);
+
+    uint64 then = now;
+    now = CurrentTimeMillis();
+    uint64 timePassed = now - then;
+
+    if (timePassed >= millis) break;
+
+    millis -= timePassed;
+  }
+  JavaObject::release(th->sleepObject);
+
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 JNIEXPORT jobject JNICALL

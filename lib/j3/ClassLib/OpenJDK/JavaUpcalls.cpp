@@ -224,14 +224,19 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
   JavaObject* th = NULL;
   JavaObject* name = NULL;
+  JavaObject* sleep = NULL;
   llvm_gcroot(Group, 0);
   llvm_gcroot(th, 0);
   llvm_gcroot(name, 0);
+  llvm_gcroot(sleep, 0);
 
   assert(thName && thName[0] && "Invalid thread name!");
 
   th = newThread->doNew(vm);
+  sleep = OfObject->doNew(vm);
+
   myth->javaThread = th;
+  myth->sleepObject = sleep;
 
   name = vm->asciizToStr(thName);
 

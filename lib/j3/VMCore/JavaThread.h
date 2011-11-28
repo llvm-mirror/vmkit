@@ -74,9 +74,13 @@ public:
   ///
   JavaObject* javaThread;
 
-  /// vmThread - The VMThread object of this thread.
+  /// vmThread - The VMThread object of this thread. (GNU Classpath)
+  /// sleepObject - Empty Object used to wait on for sleeping (OpenJDK)
   ///
-  JavaObject* vmThread;
+  union {
+    JavaObject* vmThread;
+    JavaObject* sleepObject;
+  };
 
   vmkit::LockingThread lockingThread;
   
