@@ -630,15 +630,17 @@ static struct timeval getTimeVal(long long ms) {
 
 
 JNIEXPORT void JNICALL
-JVM_Sleep(JNIEnv *env, jclass threadClass, jlong millis) {
+JVM_Sleep(JNIEnv *env, jclass threadClass, jlong _millis) {
 
   BEGIN_JNI_EXCEPTION
 
   Jnjvm * vm = th->getJVM();
 
   // Check for invalid sleep time
-  if (millis < 0)
+  if (_millis < 0)
     th->getJVM()->illegalArgumentException("Negative sleep value");
+
+  uint64 millis = _millis;
 
   // If Thread is interrupted, throw exception
   if (th->lockingThread.interruptFlag != 0) {
@@ -1057,7 +1059,7 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray _dim) {
       UNREACHABLE();
     }
     char* buf = (char*)allocator.Allocate(dim_len+2);
-    for(unsigned i = 0; i < dim_len; ++i) buf[i] = I_TAB;
+    for(int i = 0; i < dim_len; ++i) buf[i] = I_TAB;
     buf[dim_len] = baseChar;
     buf[dim_len+1] = '\0';
     arrayName = loader->asciizConstructUTF8(buf);
@@ -1083,6 +1085,8 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray _dim) {
   RETURN_FROM_JNI((jobject)th->pushJNIRef(array));
 
   END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
@@ -1658,8 +1662,6 @@ JVM_InvokeMethod(JNIEnv *env, jobject _m, jobject _obj, jobjectArray args0) {
 
   BEGIN_JNI_EXCEPTION
 
-  Jnjvm* vm = JavaThread::get()->getJVM();
-
   m = *(JavaObjectMethod**)_m;
 
   ret = proceedMethod(
@@ -1686,8 +1688,6 @@ JVM_NewInstanceFromConstructor(JNIEnv *env, jobject _c, jobjectArray args0) {
   llvm_gcroot(c, 0);
 
   BEGIN_JNI_EXCEPTION
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
 
   c = *(JavaObjectConstructor**)_c;
 
@@ -2448,6 +2448,7 @@ JVM_Sync(jint fd) {
 JNIEXPORT jint JNICALL
 JVM_InitializeSocketLibrary(void) {
   // Nothing to do here.
+  return 0;
 }
 
 JNIEXPORT jint JNICALL
