@@ -644,26 +644,26 @@ JVM_Interrupt(JNIEnv *env, jobject _thread) {
   while (field->getInstanceLongField(thread) == 0)
     vmkit::Thread::yield();
 
-  JavaThread* th = (JavaThread*)field->getInstanceLongField(thread);
-  th->lockingThread.interruptFlag = 1;
-  vmkit::FatLock* lock = th->lockingThread.waitsOn;
+  JavaThread* jth = (JavaThread*)field->getInstanceLongField(thread);
+  jth->lockingThread.interruptFlag = 1;
+  vmkit::FatLock* lock = jth->lockingThread.waitsOn;
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
   // the thread has been notified.
-  if (lock && th->lockingThread.nextWaiting) {
-    th->lockingThread.state = vmkit::LockingThread::StateInterrupted;
+  if (lock && jth->lockingThread.nextWaiting) {
+    jth->lockingThread.state = vmkit::LockingThread::StateInterrupted;
 
     // Make sure the thread is waiting.
     uint32 locked = 0;
     while (true) {
       locked = (lock->tryAcquire() == 0);
-      if (locked || (lock->getOwner() != th && lock->getOwner() != 0))
+      if (locked || (lock->getOwner() != jth && lock->getOwner() != 0))
         break;
       else vmkit::Thread::yield();
     }
 
     // Interrupt the thread.
-    th->lockingThread.varcond.signal();
+    jth->lockingThread.varcond.signal();
 
     // Release the lock if we acquired it.
     if (locked) lock->release(lock->getAssociatedObject(), vm->lockSystem);
