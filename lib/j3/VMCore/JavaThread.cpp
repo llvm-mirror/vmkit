@@ -143,7 +143,8 @@ JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,
     next->prev = this;
     return next->addJNIReference(th, obj);
   } else {
-    localReferences[length] = obj;
+    vmkit::Collector::objectReferenceNonHeapWriteBarrier(
+        (gc**)&(localReferences[length]), (gc*)obj);
     return &localReferences[length++];
   }
 }
