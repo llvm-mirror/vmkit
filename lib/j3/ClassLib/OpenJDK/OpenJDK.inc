@@ -794,7 +794,18 @@ JVM_AllocateNewArray(JNIEnv *env, jobject obj, jclass currClass,
 
 JNIEXPORT jobject JNICALL
 JVM_LatestUserDefinedLoader(JNIEnv *env) {
-  NYI();
+  JavaObject* res = 0;
+  llvm_gcroot(res, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  JavaThread* th = JavaThread::get();
+  res = th->getNonNullClassLoader();
+
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(res));
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
