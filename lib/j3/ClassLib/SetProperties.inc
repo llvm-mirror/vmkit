@@ -66,9 +66,6 @@ void setProperties(JavaObject * prop) {
   setProperty(vm, prop, "java.specification.version", "1.5");
   setProperty(vm, prop, "java.io.tmpdir", "/tmp");
 
-  tmp = getenv("JAVA_COMPILER");
-  if (!tmp) tmp = "gcj";
-  setProperty(vm, prop, "java.compiler", tmp);
 
   setProperty(vm, prop, "build.compiler", "gcj");
   setProperty(vm, prop, "gcj.class.path", JCL->bootClasspathEnv);

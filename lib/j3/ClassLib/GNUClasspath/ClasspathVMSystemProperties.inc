@@ -40,6 +40,11 @@ JavaObject* prop) {
 
   setProperties(prop);
 
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  const char * tmp = getenv("JAVA_COMPILER");
+  if (!tmp) tmp = "gcj";
+  setProperty(vm, prop, "java.compiler", tmp);
+
   END_NATIVE_EXCEPTION
 }
 

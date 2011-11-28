@@ -248,6 +248,11 @@ JVM_InitProperties(JNIEnv *env, jobject p) {
   setProperties(prop);
   setCommandLineProperties(prop);
 
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  const char * tmp = getenv("JAVA_COMPILER");
+  if (tmp)
+    setProperty(vm, prop, "java.compiler", tmp);
+
   RETURN_FROM_JNI(p);
 
   END_JNI_EXCEPTION
