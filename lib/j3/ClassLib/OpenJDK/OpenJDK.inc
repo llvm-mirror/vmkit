@@ -935,9 +935,89 @@ JVM_NewArray(JNIEnv *env, jclass eltClass, jint length) {
   return 0;
 }
 
+extern JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len,
+                               sint32* dims, Jnjvm* vm);
 JNIEXPORT jobject JNICALL
-JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray dim) {
-  NYI();
+JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray _dim) {
+  ArraySInt32* dim = 0;
+  JavaObjectClass * eltClassObj = 0;
+  JavaObject* array = 0;
+
+  llvm_gcroot(dim, 0);
+  llvm_gcroot(eltClassObj, 0);
+  llvm_gcroot(array, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = th->getJVM();
+
+  eltClassObj = *(JavaObjectClass**)eltClass;
+  dim = *(ArraySInt32**)_dim;
+
+  verifyNull(eltClassObj);
+  verifyNull(dim);
+
+  int dim_len = ArraySInt32::getSize(dim);
+  if(dim_len <= 0 || dim_len > 255) {
+    vm->illegalArgumentException("Too many dimensions for array");
+    UNREACHABLE();
+  }
+
+  UserCommonClass* base = JavaObjectClass::getClass(eltClassObj);
+  JnjvmClassLoader* loader = base->classLoader;
+
+  // Build array name
+  vmkit::ThreadAllocator allocator;
+  const UTF8* arrayName;
+  if (base->isPrimitive()) {
+    char baseChar;
+    if (base == vm->upcalls->OfBool) {
+      baseChar = I_BOOL;
+    } else if (base == vm->upcalls->OfByte) {
+      baseChar = I_BYTE;
+    } else if (base == vm->upcalls->OfShort) {
+      baseChar = I_SHORT;
+    } else if (base == vm->upcalls->OfChar) {
+      baseChar = I_CHAR;
+    } else if (base == vm->upcalls->OfInt) {
+      baseChar = I_INT;
+    } else if (base == vm->upcalls->OfFloat) {
+      baseChar = I_FLOAT;
+    } else if (base == vm->upcalls->OfLong) {
+      baseChar = I_LONG;
+    } else if (base == vm->upcalls->OfDouble) {
+      baseChar = I_DOUBLE;
+    } else {
+      vm->illegalArgumentException("Invalid array primitive type!");
+      UNREACHABLE();
+    }
+    char* buf = (char*)allocator.Allocate(dim_len+2);
+    for(unsigned i = 0; i < dim_len; ++i) buf[i] = I_TAB;
+    buf[dim_len] = baseChar;
+    buf[dim_len+1] = '\0';
+    arrayName = loader->asciizConstructUTF8(buf);
+  }
+  else {
+    const UTF8* baseName = base->getName();
+    arrayName = loader->constructArrayName(dim_len, baseName);
+  }
+
+  // Get class corresponding to array name
+  UserClassArray* arrayCl =
+    (UserClassArray*)loader->loadClassFromUserUTF8(arrayName, true, false, NULL);
+
+  // Convert dimensions array to internal representation
+  sint32* dims = (sint32*)allocator.Allocate(sizeof(sint32) * dim_len);
+  for (sint32 i = 0; i < dim_len; ++i){
+    dims[i] = ArraySInt32::getElement(dim, i);
+  }
+
+  // Invoke recursive helper to create this array
+  array = multiCallNewIntern(arrayCl, dim_len, dims, vm);
+
+  RETURN_FROM_JNI((jobject)th->pushJNIRef(array));
+
+  END_JNI_EXCEPTION
 }
 
 /*
