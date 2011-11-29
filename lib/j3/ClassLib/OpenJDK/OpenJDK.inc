@@ -958,8 +958,25 @@ JVM_SetArrayElement(JNIEnv *env, jobject arr, jint index, jobject val) {
   llvm_gcroot(element, 0);
 
   BEGIN_JNI_EXCEPTION
+  verifyNull(arr);
   array = *(ArrayObject**)arr;
-  element = *(JavaObject**)val;
+  element = val ? *(JavaObject**)val : NULL;
+
+  Jnjvm* vm = th->getJVM();
+
+  // Verify this is, in fact, an array
+  UserCommonClass * cl = JavaObject::getClass(array);
+  if (!cl || !cl->isArray())
+    vm->illegalArgumentException("Invalid object, expected array");
+
+  // Bounds check
+  if (index < 0 || index >= ArrayObject::getSize(array))
+    vm->indexOutOfBounds(array, index);
+
+  // Check the object is of the correct type
+  UserCommonClass * base = cl->asArrayClass()->baseClass();
+  if (element && !JavaObject::instanceOf(element, base))
+    vm->illegalArgumentException("Wrong object for array type");
 
   ArrayObject::setElement(array, element, index);
 
@@ -1043,11 +1060,11 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray _dim) {
 
   Jnjvm* vm = th->getJVM();
 
+  verifyNull(eltClass);
+  verifyNull(_dim);
+
   eltClassObj = *(JavaObjectClass**)eltClass;
   dim = *(ArraySInt32**)_dim;
-
-  verifyNull(eltClassObj);
-  verifyNull(dim);
 
   int dim_len = ArraySInt32::getSize(dim);
   if(dim_len <= 0 || dim_len > 255) {
