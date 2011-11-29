@@ -476,12 +476,14 @@ JVM_IsSilentCompiler(JNIEnv *env, jclass compCls) {
 
 JNIEXPORT jboolean JNICALL
 JVM_CompileClass(JNIEnv *env, jclass compCls, jclass cls) {
-  NYI();
+  // Unsupported.
+  return false;
 }
 
 JNIEXPORT jboolean JNICALL
 JVM_CompileClasses(JNIEnv *env, jclass cls, jstring jname) {
-  NYI();
+  // Unsupported.
+  return false;
 }
 
 JNIEXPORT jobject JNICALL
