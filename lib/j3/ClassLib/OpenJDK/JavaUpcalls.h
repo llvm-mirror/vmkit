@@ -100,6 +100,7 @@ public:
   ISOLATE_STATIC JavaField*  vmdataClassLoader;
   ISOLATE_STATIC UserClass*  cloneableClass;
   ISOLATE_STATIC UserClass*  enumClass;
+  ISOLATE_STATIC JavaMethod* ReflectInvokeMethod;
 
   ISOLATE_STATIC JavaField* boolValue;
   ISOLATE_STATIC JavaField* byteValue;

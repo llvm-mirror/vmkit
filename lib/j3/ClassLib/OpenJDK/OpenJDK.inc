@@ -1132,7 +1132,18 @@ JVM_GetCallerClass(JNIEnv *env, int n) {
   JavaThread* th = JavaThread::get();
 
   Jnjvm* vm = th->getJVM();
-  UserClass* cl = th->getCallingClassLevel(n);
+
+  // Find the requested frame
+  JavaMethod * meth = th->getCallingMethodLevel(n);
+
+  // Grab the next frame up if the frame requested is Method.invoke()
+  // TODO: Better integrate this throughout the reflection API?
+  // Note that this isn't necessary in the Classpath port only because
+  // it doesn't enforce any language access control for reflection
+  if (meth == vm->upcalls->ReflectInvokeMethod)
+    meth = th->getCallingMethodLevel(n+1);
+
+  UserClass *cl = meth->classDef;
   assert(cl);
   JavaObject * const * res = cl->getClassDelegateePtr(vm);
   RETURN_FROM_JNI((jclass)res);

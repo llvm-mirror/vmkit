@@ -83,6 +83,7 @@ JavaField*  Classpath::vmdataClassLoader;
 JavaMethod* Classpath::InitDirectByteBuffer;
 Class*      Classpath::newClassLoader;
 Class*      Classpath::cloneableClass;
+JavaMethod* Classpath::ReflectInvokeMethod;
 
 
 JavaField*  Classpath::boolValue;
@@ -729,6 +730,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   EnumClass = UPCALL_CLASS(loader, "java/lang/Enum");
 
   cloneableClass = UPCALL_CLASS(loader, "java/lang/Cloneable");
+
+  ReflectInvokeMethod =
+    UPCALL_METHOD(loader, "java/lang/reflect/Method", "invoke",
+      "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", ACC_VIRTUAL);
 
   newThread =
     UPCALL_CLASS(loader, "java/lang/Thread");
