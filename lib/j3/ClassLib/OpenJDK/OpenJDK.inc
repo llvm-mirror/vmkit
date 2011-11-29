@@ -528,14 +528,24 @@ void start(JavaThread* thread) {
 
   assert(javaThread->getVirtualTable());
 
+  // TODO: What happens if the thread throws an exception?
+
   // Run the Thread::run() function
   UserClass* thClass = (UserClass*)JavaObject::getClass(javaThread);
   vm->upcalls->runThread->invokeIntSpecial(vm, thClass, javaThread);
+
+  // Indicate that the thread is done by clearing the eetop field.
+  // and notify all waiting threads.
+  vm->upcalls->eetop->setInstanceLongField(javaThread, 0);
+  JavaObject::acquire(javaThread);
+  JavaObject::notifyAll(javaThread);
+  JavaObject::release(javaThread);
 
   // Remove the thread from the list.
   if (!isDaemon) {
     vm->threadSystem.leave();
   }
+
 }
 /*
  * java.lang.Thread
@@ -584,10 +594,9 @@ JVM_IsThreadAlive(JNIEnv *env, jobject _thread) {
   assert(thread);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  jint status = vm->upcalls->threadStatus->getInstanceInt32Field(thread);
+  jlong InternalThread =vm->upcalls->eetop->getInstanceLongField(thread);
 
-  // TODO: We don't actually maintain 'status'...
-  RETURN_FROM_JNI(status != 0);
+  RETURN_FROM_JNI(InternalThread != 0);
 
   END_JNI_EXCEPTION
 
