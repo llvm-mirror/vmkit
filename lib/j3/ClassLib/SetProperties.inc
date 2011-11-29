@@ -74,6 +74,8 @@ void setProperties(JavaObject * prop) {
   //setProperty(vm, prop, "java.library.path", TODO: getenv("LD_LIBRARY_PATH"))
   setProperty(vm, prop, "sun.boot.library.path", JCL->libClasspathEnv);
 
+  // Align behavior with GNU Classpath for now, to pass mauve test
+  setProperty(vm, prop, "sun.lang.ClassLoader.allowArraySyntax", "true");
 
   setUnameProp(vm, prop);
 
