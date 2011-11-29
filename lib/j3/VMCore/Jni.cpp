@@ -908,9 +908,28 @@ jint CallIntMethodA(JNIEnv *env, jobject _obj, jmethodID methodID,
 
 
 jlong CallLongMethod(JNIEnv *env, jobject _obj, jmethodID methodID, ...) {
-  NYI();
-  abort();
-  return 0;
+  BEGIN_JNI_EXCEPTION
+
+  verifyNull(_obj);
+
+  va_list ap;
+  va_start(ap, methodID);
+
+  // Local object references.
+  JavaObject* obj = *(JavaObject**)_obj;
+  llvm_gcroot(obj, 0);
+
+  JavaMethod* meth = (JavaMethod*)methodID;
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClass* cl = getClassFromVirtualMethod(vm, meth, JavaObject::getClass(obj));
+
+  jlong res = meth->invokeLongVirtualAP(vm, cl, obj, ap);
+  va_end(ap);
+
+  RETURN_FROM_JNI(res);
+
+  END_JNI_EXCEPTION
+  RETURN_FROM_JNI(0);
 }
 
 
