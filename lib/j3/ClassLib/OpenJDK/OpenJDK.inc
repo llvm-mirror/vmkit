@@ -528,11 +528,20 @@ void start(JavaThread* thread) {
 
   assert(javaThread->getVirtualTable());
 
-  // TODO: What happens if the thread throws an exception?
+  // Get the class for this Thread
+  UserClass* thClass = JavaObject::getClass(javaThread)->asClass();
+  assert(thClass);
+  assert(thClass->isResolved());
 
-  // Run the Thread::run() function
-  UserClass* thClass = (UserClass*)JavaObject::getClass(javaThread);
-  vm->upcalls->runThread->invokeIntSpecial(vm, thClass, javaThread);
+  // Lookup the correct run() method to call...
+  const UTF8 * runName = thClass->classLoader->hashUTF8->lookupAsciiz("run");
+  const UTF8 * runType = thClass->classLoader->hashUTF8->lookupAsciiz("()V");
+  JavaMethod * meth = thClass->lookupMethodDontThrow(runName, runType, false, true, 0);
+  assert(meth);
+
+  // Run the thread...
+  // TODO: What happens if the thread throws an exception?
+  meth->invokeIntSpecial(vm, thClass, javaThread);
 
   // Indicate that the thread is done by clearing the eetop field.
   // and notify all waiting threads.
