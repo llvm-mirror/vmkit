@@ -235,9 +235,7 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
 
   th = newThread->doNew(vm);
   sleep = OfObject->doNew(vm);
-
-  myth->javaThread = th;
-  myth->sleepObject = sleep;
+  myth->initialise(th, sleep);
 
   name = vm->asciizToStr(thName);
 

@@ -242,8 +242,9 @@ void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
   llvm_gcroot(name, 0);
 
   th = newThread->doNew(vm);
-  myth->javaThread = th;
   vmth = (JavaObjectVMThread*)newVMThread->doNew(vm);
+  myth->initialise(th, vmth);
+
   name = vm->asciizToStr(thName);
 
   initThread->invokeIntSpecial(vm, newThread, th, &vmth, &name, 1, 0); 
