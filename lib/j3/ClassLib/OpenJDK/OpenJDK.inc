@@ -2516,7 +2516,8 @@ JVM_SocketClose(jint fd) {
 
 JNIEXPORT jint JNICALL
 JVM_SocketShutdown(jint fd, jint howto) {
-  NYI();
+  // Nothing to do here.
+  return true;
 }
 
 JNIEXPORT jint JNICALL
