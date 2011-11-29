@@ -861,7 +861,7 @@ JNIEXPORT jstring JNICALL
 JVM_GetSystemPackage(JNIEnv *env, jstring name) {
   // TODO: Actually implement this
   // Not doing so doesn't seem to hurt anything, yet.
-  return NULL;
+  return name;
 }
 
 JNIEXPORT jobjectArray JNICALL
