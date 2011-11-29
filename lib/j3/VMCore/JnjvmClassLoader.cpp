@@ -1045,13 +1045,14 @@ word_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
 
 JavaString** StringList::addString(JnjvmClassLoader* JCL, JavaString* obj) {
   llvm_gcroot(obj, 0);
+  JCL->lock.lock();
   if (length == MAXIMUM_STRINGS) {
     StringList* next = new(JCL->allocator, "StringList") StringList();
     next->prev = this;
     JCL->strings = next;
+    JCL->lock.unlock();
     return next->addString(JCL, obj);
   } else {
-    JCL->lock.lock();
     vmkit::Collector::objectReferenceNonHeapWriteBarrier(
         (gc**)&(strings[length]), (gc*)obj);
     JavaString** res = &strings[length++];
