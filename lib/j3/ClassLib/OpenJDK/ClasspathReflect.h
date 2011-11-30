@@ -16,6 +16,8 @@
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaString.h"
+#include "Jnjvm.h"
+#include "JavaUpcalls.h"
 
 extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
 namespace j3 {
@@ -305,6 +307,11 @@ public:
     llvm_gcroot(q, 0);
     vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)self, (gc**)&(self->referent), (gc*)r);
+    if (!q) {
+      JavaField * field = JavaThread::get()->getJVM()->upcalls->NullRefQueue;
+      q = field->getStaticObjectField();
+    }
+    assert(q);
     vmkit::Collector::objectReferenceWriteBarrier(
         (gc*)self, (gc**)&(self->queue), (gc*)q);
   }

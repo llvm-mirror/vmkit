@@ -220,6 +220,7 @@ JavaField* Classpath::constructorClass;
 
 JavaMethod* Classpath::EnqueueReference;
 Class*      Classpath::newReference;
+JavaField*  Classpath::NullRefQueue;
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
@@ -849,6 +850,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   EnqueueReference =
     UPCALL_METHOD(loader, "java/lang/ref/Reference",  "enqueue", "()Z",
                   ACC_VIRTUAL);
+
+  NullRefQueue =
+    UPCALL_FIELD(loader, "java/lang/ref/ReferenceQueue",
+        "NULL", "Ljava/lang/ref/ReferenceQueue;", ACC_STATIC);
 
   JavaMethod* initWeakReference =
     UPCALL_METHOD(loader, "java/lang/ref/WeakReference", "<init>",

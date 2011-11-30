@@ -258,6 +258,7 @@ public:
 
   ISOLATE_STATIC JavaMethod* EnqueueReference;
   ISOLATE_STATIC Class*      newReference;
+  ISOLATE_STATIC JavaField*  NullRefQueue;
 
   ISOLATE_STATIC UserClass*  EnumClass;
 
