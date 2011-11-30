@@ -1226,7 +1226,19 @@ JVM_FindPrimitiveClass(JNIEnv *env, const char *utf) {
  */
 JNIEXPORT void JNICALL
 JVM_ResolveClass(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObjectClass * Cl = 0;
+  llvm_gcroot(Cl, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = *(JavaObjectClass**)cls;
+
+  UserCommonClass * C = JavaObjectClass::getClass(Cl);
+  assert(C && C->isClass());
+
+  C->asClass()->resolveClass();
+
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 /*
