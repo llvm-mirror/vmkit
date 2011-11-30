@@ -62,28 +62,42 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
   }
 
   if (!(dstType->isPrimitive())) {
+
     // Scan to ensure element compatibility, recording the first item
     // that requires an exception be thrown.
-    int badEl = -1;
+    // Unfortunately in the case that an element can't be assigned,
+    // System.arrayCopy is required to do the partial copy, hence this check.
+    int copyLen = len;
     for (int i = 0; i < len; i++) {
       cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
       if (cur) {
         if (!(JavaObject::getClass(cur)->isAssignableFrom(dstType))) {
-          badEl = i;
+          copyLen = i; // copy up until this element
           break;
         }
       }
     }
 
-    // Copy over the non-conflicting elements, handling overlaps
-    void* ptrDst = (void*)((int64_t)ArrayObject::getElements((ArrayObject*)dst) + dstart*sizeof(void*));
-    void* ptrSrc = (void*)((int64_t)ArrayObject::getElements((ArrayObject*)src) + sstart*sizeof(void*));
-    int copyLen = badEl == -1 ? len : badEl - 1;
-    if (copyLen > 0)
-      memmove(ptrDst, ptrSrc, copyLen * sizeof(void*));
+    // If same array, then there's a potential for overlap.
+    // Check this now, and use it to determine iteration order.
+    bool backward = (src == dst) &&
+                    (sstart < dstart) &&
+                    (sstart + copyLen > dstart);
+
+    if (backward) {
+      for(int i = copyLen - 1; i >= 0; --i) {
+        cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
+        ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);
+      }
+    } else {
+      for(int i = 0; i < copyLen; ++i) {
+        cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
+        ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);
+      }
+    }
 
     // TODO: Record the conflicting types in the exception message?
-    if (badEl != -1)
+    if (copyLen != len)
       vm->arrayStoreException();
 
   } else {
