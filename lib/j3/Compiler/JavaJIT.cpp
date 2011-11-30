@@ -152,8 +152,8 @@ void JavaJIT::invokeVirtual(uint16 index) {
     }
   }
  
-  if ((cl && isFinal(cl->access)) || 
-      (meth && (isFinal(meth->access) || isPrivate(meth->access)))) {
+  if (meth && ((cl && isFinal(cl->access)) ||
+      isFinal(meth->access) || isPrivate(meth->access))) {
     canBeDirect = true;
   }
 
@@ -183,6 +183,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
                                            true, 0);
     }
   }
+  assert((meth || !canBeDirect) && "Can't directly call a method we don't have");
  
   Typedef* retTypedef = signature->getReturnType();
   std::vector<Value*> args; // size = [signature->nbIn + 3];
