@@ -344,6 +344,12 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
     vm->noClassDefFoundError(name);
   }
 
+  ensureCached(cl);
+
+  return cl;
+}
+
+void JnjvmClassLoader::ensureCached(UserCommonClass* cl) {
   if (cl && cl->classLoader != this) {
     classes->lock.lock();
     ClassMap::iterator End = classes->map.end();
@@ -352,8 +358,6 @@ UserClass* JnjvmClassLoader::loadName(const UTF8* name, bool doResolve,
       classes->map.insert(std::make_pair(cl->name, cl));
     classes->lock.unlock();
   }
-
-  return cl;
 }
 
 
@@ -414,6 +418,7 @@ UserCommonClass* JnjvmClassLoader::lookupClassOrArray(const UTF8* name) {
 
   if (this != bootstrapLoader) {
     temp = bootstrapLoader->lookupClassOrArray(name);
+    ensureCached(temp);
     if (temp) return temp;
   }
   
@@ -450,6 +455,7 @@ UserCommonClass* JnjvmClassLoader::loadClassFromUserUTF8(const UTF8* name,
     if (prim) return constructArray(name);
     if (componentName) {
       UserCommonClass* temp = loadName(componentName, doResolve, doThrow, NULL);
+      ensureCached(temp);
       if (temp) return constructArray(name);
     }
   } else {
@@ -464,7 +470,6 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
                                                        bool doThrow) {
   const UTF8* name = hashUTF8->lookupAsciiz(asciiz);
   vmkit::ThreadAllocator threadAllocator;
-  UserCommonClass* result = NULL;
   if (!name) name = bootstrapLoader->hashUTF8->lookupAsciiz(asciiz);
   if (!name) {
     uint32 size = strlen(asciiz);
@@ -478,16 +483,6 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
     name = temp;
   }
   
-  result = lookupClass(name);
-  if ((result == NULL) && (this != bootstrapLoader)) {
-    result = bootstrapLoader->lookupClassOrArray(name);
-    if (result != NULL) {
-      if (result->isClass() && doResolve) {
-        result->asClass()->resolveClass();
-      }
-      return result;
-    }
-  }
  
   return loadClassFromUserUTF8(name, doResolve, doThrow, NULL);
 }
@@ -496,36 +491,22 @@ UserCommonClass* JnjvmClassLoader::loadClassFromAsciiz(const char* asciiz,
 UserCommonClass* 
 JnjvmClassLoader::loadClassFromJavaString(JavaString* str, bool doResolve,
                                           bool doThrow) {
-  
+
   llvm_gcroot(str, 0);
   vmkit::ThreadAllocator allocator; 
   UTF8* name = (UTF8*)allocator.Allocate(sizeof(UTF8) + str->count * sizeof(uint16));
- 
+
   name->size = str->count;
-  if (ArrayUInt16::getElement(JavaString::getValue(str), str->offset) != I_TAB) {
-    for (sint32 i = 0; i < str->count; ++i) {
-      uint16 cur = ArrayUInt16::getElement(JavaString::getValue(str), str->offset + i);
-      if (cur == '.') name->elements[i] = '/';
-      else if (cur == '/') {
-        return 0;
-      }
-      else name->elements[i] = cur;
+  for (sint32 i = 0; i < str->count; ++i) {
+    uint16 cur = ArrayUInt16::getElement(JavaString::getValue(str), str->offset + i);
+    if (cur == '.') name->elements[i] = '/';
+    else if (cur == '/') {
+      return 0;
     }
-  } else {
-    for (sint32 i = 0; i < str->count; ++i) {
-      uint16 cur = ArrayUInt16::getElement(JavaString::getValue(str), str->offset + i);
-      if (cur == '.') {
-        name->elements[i] = '/';
-      } else if (cur == '/') {
-        return 0;
-      } else {
-        name->elements[i] = cur;
-      }
-    }
+    else name->elements[i] = cur;
   }
-    
-  UserCommonClass* cls = loadClassFromUserUTF8(name, doResolve, doThrow, str);
-  return cls;
+
+  return loadClassFromUserUTF8(name, doResolve, doThrow, str);
 }
 
 UserCommonClass* JnjvmClassLoader::lookupClassFromJavaString(JavaString* str) {
@@ -585,15 +566,8 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name) {
   assert(cl && "no base class for an array");
   JnjvmClassLoader* ld = cl->classLoader;
   res = ld->constructArray(name, cl);
-  
-  if (res && res->classLoader != this) {
-    classes->lock.lock();
-    ClassMap::iterator End = classes->map.end();
-    ClassMap::iterator I = classes->map.find(res->name);
-    if (I == End)
-      classes->map.insert(std::make_pair(res->name, res));
-    classes->lock.unlock();
-  }
+
+  ensureCached(res);
   return res;
 }
 

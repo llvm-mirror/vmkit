@@ -84,6 +84,10 @@ private:
   ///
   const UTF8* lookupComponentName(const UTF8* name, UTF8* holder, bool& prim);
 
+
+  /// ensureCached - Make sure the specified class is in our classes map
+  ///
+  void ensureCached(UserCommonClass* cl);
 protected:
   
   JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) : allocator(Alloc) {}

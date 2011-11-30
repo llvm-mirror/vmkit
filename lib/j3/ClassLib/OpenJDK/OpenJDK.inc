@@ -1312,8 +1312,7 @@ JVM_FindLoadedClass(JNIEnv *env, jobject _loader, jstring name) {
   CommonClass * Cl = 0;
 
   JCL = JnjvmClassLoader::getJnjvmLoaderFromJavaObject(loader, vm);
-  if (JCL)
-   Cl = JCL->lookupClassFromJavaString(str);
+  Cl = JCL->lookupClassFromJavaString(str);
   jclass res = Cl ? (jclass)Cl->getClassDelegateePtr(vm) : 0;
   RETURN_FROM_JNI(res);
 
