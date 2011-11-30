@@ -68,11 +68,10 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
         if (!(JavaObject::getClass(cur)->isAssignableFrom(dstType))) {
           th->throwException(vm->CreateArrayStoreException(
               (JavaVirtualTable*)dst->getVirtualTable()));
-          break;
-        } else {
-          ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);
+          UNREACHABLE();
         }
       }
+      ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);
     }
   } else {
     uint32 logSize = dstType->asPrimitiveClass()->logSize;
