@@ -62,17 +62,30 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
   }
 
   if (!(dstType->isPrimitive())) {
+    // Scan to ensure element compatibility, recording the first item
+    // that requires an exception be thrown.
+    int badEl = -1;
     for (int i = 0; i < len; i++) {
       cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
       if (cur) {
         if (!(JavaObject::getClass(cur)->isAssignableFrom(dstType))) {
-          th->throwException(vm->CreateArrayStoreException(
-              (JavaVirtualTable*)dst->getVirtualTable()));
-          UNREACHABLE();
+          badEl = i;
+          break;
         }
       }
-      ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);
     }
+
+    // Copy over the non-conflicting elements, handling overlaps
+    void* ptrDst = (void*)((int64_t)ArrayObject::getElements((ArrayObject*)dst) + dstart*sizeof(void*));
+    void* ptrSrc = (void*)((int64_t)ArrayObject::getElements((ArrayObject*)src) + sstart*sizeof(void*));
+    int copyLen = badEl == -1 ? len : badEl - 1;
+    if (copyLen > 0)
+      memmove(ptrDst, ptrSrc, copyLen * sizeof(void*));
+
+    // TODO: Record the conflicting types in the exception message?
+    if (badEl != -1)
+      vm->arrayStoreException();
+
   } else {
     uint32 logSize = dstType->asPrimitiveClass()->logSize;
     void* ptrDst = (void*)((int64_t)JavaArray::getElements(dst) + (dstart << logSize));
