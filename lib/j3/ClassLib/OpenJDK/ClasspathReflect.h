@@ -32,6 +32,7 @@ private:
   JavaObject* declaredConstructors;
   JavaObject* publicConstructors;
   JavaObject* declaredPublicFields;
+  JavaObject* declaredPublicMethods;
   uint32_t classRedefinedCount;
   uint32_t lastRedefinedCount;
   JavaObject* genericInfo;
@@ -79,6 +80,7 @@ public:
     vmkit::Collector::markAndTrace(obj, &obj->declaredConstructors, closure);
     vmkit::Collector::markAndTrace(obj, &obj->publicConstructors, closure);
     vmkit::Collector::markAndTrace(obj, &obj->declaredPublicFields, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaredPublicMethods, closure);
     vmkit::Collector::markAndTrace(obj, &obj->genericInfo, closure);
     vmkit::Collector::markAndTrace(obj, &obj->enumConstants, closure);
     vmkit::Collector::markAndTrace(obj, &obj->enumConstantDictionary, closure);
