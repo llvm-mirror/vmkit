@@ -16,16 +16,13 @@ public class FieldWriteTest {
   }
 
   public static void main(String[] args) throws Exception {
-    // First time passes, the rest fail.
-    int fail = 0;
     for (int i = 0; i < 100; ++i) {
       FieldWriterThread t = new FieldWriterThread();
       t.start();
+      check(t.isAlive());
       t.join(); // Synchronization point!
-      if (!t.val) ++fail;
+      check(!t.isAlive());
+      check(t.val);
     }
-    if (fail > 0)
-      System.out.println("Failed checks: " + fail);
-    check(fail == 0);
   }
 }

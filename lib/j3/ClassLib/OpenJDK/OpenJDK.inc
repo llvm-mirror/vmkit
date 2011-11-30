@@ -516,10 +516,6 @@ void start(JavaThread* thread) {
   javaThread = thread->javaThread;
   assert(javaThread && "Didn't fix the javaThread of a j3 thread");
 
-  // Ok, now that the thread is created we can set the the value of eetop
-  // which points from the javaobject to our internal JavaThread
-  vm->upcalls->eetop->setInstanceLongField(javaThread, (long)thread);
-
   // If the thread is not a daemon, it is added to the list of threads to
   // wait until exit.
   bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
@@ -583,6 +579,10 @@ JVM_StartThread(JNIEnv *env, jobject _thread) {
 
   JavaThread * newTh = new JavaThread(vm);
   if (!newTh) vm->outOfMemoryError();
+
+  // Set the eetop field
+  vm->upcalls->eetop->setInstanceLongField(thread, (long)newTh);
+
   newTh->start((void (*)(vmkit::Thread*))start);
 
   newTh->initialise(thread, sleepObject);
