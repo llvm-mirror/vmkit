@@ -246,8 +246,10 @@ void ExceptionDescribe(JNIEnv *env) {
 
 
 void ExceptionClear(JNIEnv *env) {
-  NYI();
-  abort();
+  BEGIN_JNI_EXCEPTION
+  JavaThread::get()->pendingException = NULL;
+  RETURN_VOID_FROM_JNI
+  END_JNI_EXCEPTION
 }
 
 
