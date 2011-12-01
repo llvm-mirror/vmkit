@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-ArrayObject* GetClassContext() {
+ArrayObject* GetClassContext(uint32 level = 0) {
   ArrayObject* result = NULL;
   JavaObject* delegatee = NULL;
   llvm_gcroot(result, 0);
@@ -22,14 +22,15 @@ ArrayObject* GetClassContext() {
 
   uint32 finalSize = th->getJavaFrameContext((void**)buffer);
 
+  assert(level < finalSize);
   result = (ArrayObject*)
-    vm->upcalls->classArrayClass->doNew(finalSize, vm);
+    vm->upcalls->classArrayClass->doNew(finalSize - level, vm);
 
-  for (uint32 i = 0; i != finalSize; ++i) {
+  for (uint32 i = level; i != finalSize; ++i) {
     JavaMethod* meth = ((JavaMethod**)buffer)[i];
     assert(meth && "Wrong stack trace");
     delegatee = meth->classDef->getClassDelegatee(vm);;
-    ArrayObject::setElement(result, delegatee, i);
+    ArrayObject::setElement(result, delegatee, i - level);
   }
 
   return result;

@@ -836,7 +836,7 @@ JVM_GetClassContext(JNIEnv *env) {
   llvm_gcroot(res, 0);
   BEGIN_JNI_EXCEPTION
 
-  res = GetClassContext();
+  res = GetClassContext(1);
 
   RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(res));
   END_JNI_EXCEPTION
