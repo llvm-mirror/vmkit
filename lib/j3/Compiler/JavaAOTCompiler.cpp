@@ -2210,6 +2210,10 @@ void mainCompilerStart(JavaThread* th) {
       }
       bootstrapLoader->setCompiler(M);
     }
+
+    // We don't want strings to be interned when AOT'ing, otherwise
+    // we would call Java code.
+    bootstrapLoader->upcalls->internString = NULL;
    
     // Set the thread as the owner of the classes, so that it knows it
     // has to compile them. 

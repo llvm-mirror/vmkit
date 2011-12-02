@@ -47,7 +47,7 @@ class JavaString : public JavaObject {
     return self->value;
   }
   
-  static JavaString* stringDup(const ArrayUInt16 *const & array, Jnjvm* vm);
+  static JavaString* create(const ArrayUInt16 * array, Jnjvm* vm);
 
   /// internalToJava - Creates a copy of the UTF8 at its given offset and size
   /// with all its '.' replaced by '/'. The JVM bytecode reference classes in
@@ -56,15 +56,12 @@ class JavaString : public JavaObject {
   ///
   static JavaString* internalToJava(const UTF8* utf8, Jnjvm* vm);
 
-  static void stringDestructor(JavaString*);
   static char* strToAsciiz(JavaString* self);
   static char* strToAsciiz(JavaString* self, vmkit::ThreadAllocator* allocator);
   static const ArrayUInt16* strToArray(JavaString* self, Jnjvm* vm);
 
   /// javaToInternal - Replaces all '/' into '.'.
   static const UTF8* javaToInternal(const JavaString* self, UTF8Map* map);
-
-  static JavaVirtualTable* internStringVT;
 };
 
 } // end namespace j3

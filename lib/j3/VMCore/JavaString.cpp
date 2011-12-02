@@ -13,27 +13,18 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "LockedMap.h"
 
-using namespace j3;
+namespace j3 {
 
-JavaVirtualTable* JavaString::internStringVT = 0;
-
-JavaString* JavaString::stringDup(const ArrayUInt16 *const& _array, Jnjvm* vm) {
+JavaString* JavaString::create(const ArrayUInt16 * array, Jnjvm* vm) {
   
   JavaString* res = 0;
-  const ArrayUInt16* array = _array;
   llvm_gcroot(array, 0);
   llvm_gcroot(res, 0);
 
   UserClass* cl = vm->upcalls->newString;
   res = (JavaString*)cl->doNew(vm);
   
-  // It's a hashed string, set the destructor so that the string
-  // removes itself from the vm string map. Do this only if
-  // internStringVT exists (in case of AOT).
-  if (internStringVT) res->setVirtualTable(internStringVT);
-
   // No need to call the Java function: both the Java function and
   // this function do the same thing.
   JavaString::setValue(res, array);
@@ -91,17 +82,6 @@ const ArrayUInt16* JavaString::strToArray(JavaString* self, Jnjvm* vm) {
   }
 }
 
-void JavaString::stringDestructor(JavaString* str) {
-  const ArrayUInt16* value = NULL;
-  llvm_gcroot(str, 0);
-  llvm_gcroot(value, 0);
-  value = JavaString::getValue(str);
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  assert(vm && "No vm when destroying a string");
-  if (value != NULL) vm->hashStr.removeUnlocked(value, str);
-}
-
 JavaString* JavaString::internalToJava(const UTF8* name, Jnjvm* vm) {
   
   ArrayUInt16* array = 0;
@@ -138,4 +118,6 @@ const UTF8* JavaString::javaToInternal(const JavaString* self, UTF8Map* map) {
   
   const UTF8* res = map->lookupOrCreateReader(java, self->count);
   return res;
+}
+
 }

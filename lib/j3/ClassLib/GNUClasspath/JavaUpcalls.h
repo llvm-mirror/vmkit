@@ -155,6 +155,7 @@ public:
   ISOLATE_STATIC JavaMethod* getUncaughtExceptionHandler;
   ISOLATE_STATIC JavaMethod* uncaughtException;
   ISOLATE_STATIC UserClass*  inheritableThreadLocal;
+  ISOLATE_STATIC JavaMethod* internString;
   
 
   ISOLATE_STATIC UserClass* InvocationTargetException;

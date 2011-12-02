@@ -733,17 +733,21 @@ JavaString* Jnjvm::internalUTF8ToStr(const UTF8* utf8) {
   for (uint32 i = 0; i < size; i++) {
     ArrayUInt16::setElement(tmp, utf8->elements[i], i);
   }
-  
-  return hashStr.lookupOrCreate(const_cast<const ArrayUInt16*&>(tmp), this,
-                                JavaString::stringDup);
+
+  return constructString(tmp);
 }
 
 JavaString* Jnjvm::constructString(const ArrayUInt16* array) { 
-  JavaString* res = NULL;
+  JavaString* key = NULL;
   llvm_gcroot(array, 0);
-  llvm_gcroot(res, 0);
-  res = hashStr.lookupOrCreate(array, this, JavaString::stringDup);
-  return res;
+  llvm_gcroot(key, 0);
+  key = JavaString::create(array, this);
+  if (upcalls->internString) {
+    return (JavaString*)upcalls->internString->invokeJavaObjectStatic(
+        this, upcalls->internString->classDef, &key);
+  } else {
+    return key;
+  }
 }
 
 JavaString* Jnjvm::asciizToStr(const char* asciiz) {
@@ -1085,28 +1089,7 @@ void Jnjvm::loadBootstrap() {
   cl->resolveClass(); \
   cl->initialiseClass(this);
   
-  // If a string belongs to the vm hashmap, we must remove it when
-  // it's destroyed. So we define a new VT for strings that will be
-  // placed in the hashmap. This VT will have its destructor set so
-  // that the string is removed when deallocated.
-  upcalls->newString->resolveClass();
-  if (JavaString::internStringVT == NULL) {
-    JavaVirtualTable* stringVT = upcalls->newString->getVirtualVT();
-    uint32 size = upcalls->newString->virtualTableSize * sizeof(word_t);
-    
-    JavaString::internStringVT = 
-      (JavaVirtualTable*)bootstrapLoader->allocator.Allocate(size, "String VT");
-
-    memcpy(JavaString::internStringVT, stringVT, size);
-    
-    JavaString::internStringVT->destructor = 
-      (word_t)JavaString::stringDestructor;
-
-    // Tell the finalizer that this is a native destructor.
-    JavaString::internStringVT->operatorDelete = 
-      (word_t)JavaString::stringDestructor;
-  }
-  upcalls->newString->initialiseClass(this);
+  LOAD_CLASS(upcalls->newString);
 
   // The initialization code of the classes initialized below may require
   // to get the Java thread, so we create the Java thread object first.

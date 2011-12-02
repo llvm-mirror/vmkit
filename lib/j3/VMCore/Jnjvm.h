@@ -28,6 +28,7 @@
 namespace j3 {
 
 class ArrayObject;
+class ArrayUInt16;
 class Classpath;
 class CommonClass;
 class FinalizerThread;
@@ -243,10 +244,6 @@ public:
   ///
   JnjvmClassLoader* appClassLoader;
 
-  /// hashStr - Hash map of java/lang/String objects allocated by this JVM.
-  ///
-  StringMap hashStr;
- 
 public:
   
   /// CreateExceptions - These are the runtime exceptions thrown by Java code

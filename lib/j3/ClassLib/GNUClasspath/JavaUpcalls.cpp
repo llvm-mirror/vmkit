@@ -94,6 +94,7 @@ JavaField*  Classpath::vmdataClassLoader;
 JavaMethod* Classpath::InitDirectByteBuffer;
 Class*      Classpath::newClassLoader;
 Class*      Classpath::cloneableClass;
+JavaMethod* Classpath::internString;
 
 
 JavaField*  Classpath::boolValue;
@@ -375,27 +376,6 @@ extern "C" void Java_java_lang_ref_PhantomReference__0003Cinit_0003E__Ljava_lang
   JavaThread::get()->getJVM()->getReferenceThread()->addPhantomReference(reference);
 
   END_NATIVE_EXCEPTION
-}
-
-extern "C" JavaString* Java_java_lang_VMString_intern__Ljava_lang_String_2(
-    JavaString* obj) {
-  const ArrayUInt16* array = 0;
-  JavaString* res = 0;
-  llvm_gcroot(obj, 0);
-  llvm_gcroot(array, 0);
-  llvm_gcroot(res, 0);
-  // If the string is already interned, just return.
-  if (obj->getVirtualTable() == JavaString::internStringVT) return obj;
-  
-  BEGIN_NATIVE_EXCEPTION(0)
-  
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  array = JavaString::strToArray(obj, vm);
-  res = vm->constructString(array);
-  
-  END_NATIVE_EXCEPTION
-
-  return res;
 }
 
 extern "C" uint8 Java_java_lang_Class_isArray__(JavaObjectClass* klass) {
@@ -742,10 +722,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/ClassLoader", "loadClass",
                   "(Ljava/lang/String;)Ljava/lang/Class;", ACC_VIRTUAL);
 
-  JavaMethod* internString =
+  internString =
     UPCALL_METHOD(loader, "java/lang/VMString", "intern",
                   "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC); 
-  internString->setNative();
   
   JavaMethod* isArray =
     UPCALL_METHOD(loader, "java/lang/Class", "isArray", "()Z", ACC_VIRTUAL);

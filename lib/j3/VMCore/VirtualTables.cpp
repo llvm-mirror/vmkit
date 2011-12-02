@@ -284,26 +284,17 @@ void Jnjvm::tracer(word_t closure) {
     start = start->next;
   }
   
-  // (4) Trace the interned strings.
-  for (StringMap::iterator i = hashStr.map.begin(), e = hashStr.map.end();
-       i!= e; ++i) {
-    JavaString** str = &(i->second);
-    vmkit::Collector::markAndTraceRoot(str, closure);
-    ArrayUInt16** key = const_cast<ArrayUInt16**>(&(i->first));
-    vmkit::Collector::markAndTraceRoot(key, closure);
-  }
-
-  // (5) Trace the finalization queue.
+  // (4) Trace the finalization queue.
   for (uint32 i = 0; i < finalizerThread->CurrentFinalizedIndex; ++i) {
     vmkit::Collector::markAndTraceRoot(finalizerThread->ToBeFinalized + i, closure);
   }
   
-  // (6) Trace the reference queue
+  // (5) Trace the reference queue
   for (uint32 i = 0; i < referenceThread->ToEnqueueIndex; ++i) {
     vmkit::Collector::markAndTraceRoot(referenceThread->ToEnqueue + i, closure);
   }
  
-  // (7) Trace the locks and their associated object.
+  // (6) Trace the locks and their associated object.
   uint32 i = 0;
   for (; i < vmkit::LockSystem::GlobalSize; i++) {
     vmkit::FatLock** array = lockSystem.LockTable[i];

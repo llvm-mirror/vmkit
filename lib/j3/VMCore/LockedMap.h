@@ -30,83 +30,9 @@
 
 namespace j3 {
 
-class ArrayUInt16;
-class JavaString;
-class JnjvmClassLoader;
 class Signdef;
 class Typedef;
 class UserCommonClass;
-class UserClassArray;
-
-struct ltarray16 {
-  bool operator()(const ArrayUInt16 *const s1, const ArrayUInt16 *const s2) const;
-};
-
-class StringMap : public vmkit::PermanentObject {
-public:
-  typedef std::map<const ArrayUInt16 *const, JavaString*, ltarray16>::iterator iterator;
-  typedef JavaString* (*funcCreate)(const ArrayUInt16 *const& V, Jnjvm* vm);
-
-  vmkit::LockNormal lock;
-  std::map<const ArrayUInt16 *const, JavaString*, ltarray16,
-           std::allocator<std::pair<const ArrayUInt16 *const, JavaString*> > > map;
-  
-  inline JavaString* lookupOrCreate(const ArrayUInt16 *const array, Jnjvm* vm, funcCreate func) {
-    JavaString* res = 0;
-    llvm_gcroot(res, 0);
-    llvm_gcroot(array, 0);
-    lock.lock();
-    iterator End = map.end();
-    iterator I = map.find(array);
-    if (I == End) {
-      res = func(array, vm);
-      map.insert(std::make_pair(array, res));
-      lock.unlock();
-      return res;
-    } else {
-      lock.unlock();
-      return ((JavaString*)(I->second));
-    }
-  }
-  
-  inline void remove(const ArrayUInt16 *const array) {
-    llvm_gcroot(array, 0);
-    lock.lock();
-    map.erase(array);
-    lock.unlock();
-  }
-
-  inline JavaString* lookup(const ArrayUInt16 *const array) {
-    llvm_gcroot(array, 0);
-    lock.lock();
-    iterator End = map.end();
-    iterator I = map.find(array);
-    lock.unlock();
-    return I != End ? ((JavaString*)(I->second)) : 0; 
-  }
-
-  inline void hash(const ArrayUInt16 *const array, JavaString* str) {
-    llvm_gcroot(array, 0);
-    llvm_gcroot(str, 0);
-    lock.lock();
-    map.insert(std::make_pair(array, str));
-    lock.unlock();
-  }
-
-  inline void removeUnlocked(const ArrayUInt16 *const array, JavaString* str) {
-    llvm_gcroot(str, 0);
-    llvm_gcroot(array, 0);
-    iterator End = map.end();
-    iterator I = map.find(array);
-
-    if (I != End && I->second == str) map.erase(I); 
-  }
-
-  ~StringMap() {}
-
-  void insert(JavaString* str);
-};
-
 
 class ClassMap : public vmkit::PermanentObject {
 public:
