@@ -175,10 +175,6 @@ JVM_InternString(JNIEnv *env, jstring _str) {
   llvm_gcroot(array, 0);
   llvm_gcroot(res, 0);
 
-  // If already intern'd, just return.
-  if(str->getVirtualTable() == JavaString::internStringVT)
-    return _str;
-
   BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();

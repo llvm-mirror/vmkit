@@ -27,12 +27,7 @@
 #define OpenJDKArch "@openjdkarchdir@"
 
 // OpenJDK Bootstrap classpath
-#define OpenJDKBootPath \
-      OpenJDKJRE "/lib/rt.jar" \
-  ":" OpenJDKJRE "/lib/resources.jar" \
-  ":" OpenJDKJRE "/lib/jsse.jar" \
-  ":" OpenJDKJRE "/lib/jce.jar" \
-  ":" OpenJDKJRE "/lib/charsets.jar"
+extern const char * OpenJDKBootPath;
 
 // Location of OpenJDK's libjava.so
 #define OpenJDKLibJava OpenJDKArch "/libjava.so"

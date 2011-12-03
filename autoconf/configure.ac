@@ -304,6 +304,8 @@ AC_PATH_PROG(CAT,[cat],  [cat])
 AC_PATH_PROG(LLVMAS, [llvm-as],  [llvm-as])
 AC_PATH_PROG(LLC, [llc],  [llc])
 AC_PATH_PROG(ANT, [ant])
+AC_PATH_PROG(JAVAC, [javac], [javac])
+AC_PATH_PROG(ZIP, [zip], [zip])
 
 dnl Find the install program
 AC_PROG_INSTALL

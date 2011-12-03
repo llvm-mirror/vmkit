@@ -144,6 +144,7 @@ public:
   ISOLATE_STATIC UserClass* threadGroup;
   ISOLATE_STATIC JavaMethod* getUncaughtExceptionHandler;
   ISOLATE_STATIC JavaMethod* uncaughtException;
+  ISOLATE_STATIC JavaMethod* internString;
 
 
   ISOLATE_STATIC UserClass* InvocationTargetException;

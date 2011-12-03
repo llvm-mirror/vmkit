@@ -47,6 +47,7 @@ JavaField*  Classpath::group;
 Class*      Classpath::threadGroup;
 JavaMethod* Classpath::getUncaughtExceptionHandler;
 JavaMethod* Classpath::uncaughtException;
+JavaMethod* Classpath::internString;
 
 JavaMethod* Classpath::setContextClassLoader;
 JavaMethod* Classpath::getSystemClassLoader;
@@ -227,6 +228,14 @@ JavaField*  Classpath::RefPending;
 Class*      Classpath::RefHandlerClass;
 JavaMethod* Classpath::initRefHandler;
 JavaMethod* Classpath::threadStart;
+
+const char * OpenJDKBootPath =
+      OpenJDKJRE "/lib/rt.jar"
+  ":" OpenJDKJRE "/lib/resources.jar"
+  ":" OpenJDKJRE "/lib/jsse.jar"
+  ":" OpenJDKJRE "/lib/jce.jar"
+  ":" OpenJDKJRE "/lib/charsets.jar"
+  ":" VMKitOpenJDKZip ;
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
@@ -947,6 +956,12 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/ref/Reference", "<clinit>",
                   "()V", ACC_STATIC);
   ReferenceClassInit->setNative();
+
+  // String support
+
+  internString =
+    UPCALL_METHOD(loader, "java/lang/VMString", "intern",
+        "(Ljava/lang/String;)Ljava/lang/String;", ACC_STATIC);
 }
 
 void Classpath::InitializeSystem(Jnjvm * jvm) {
