@@ -42,6 +42,7 @@ void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
  
 /// initialise - Initialise the value of the lock.
 ///
+#if 0
 void ThinLock::removeFatLock(FatLock* fatLock, LockSystem& table) {
   gc* object = fatLock->associatedObject;
   llvm_gcroot(object, 0);
@@ -59,6 +60,7 @@ void ThinLock::removeFatLock(FatLock* fatLock, LockSystem& table) {
   assert((oldValue & NonLockBitsMask) != ID);
   fatLock->associatedObject = NULL;
 }
+#endif
   
 FatLock* ThinLock::changeToFatlock(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
@@ -275,11 +277,13 @@ void FatLock::release(gc* obj, LockSystem& table) {
   llvm_gcroot(obj, 0);
   assert(associatedObject && "No associated object when releasing");
   assert(associatedObject == obj && "Mismatch object in lock");
+#if 0
   if (!waitingThreads && !lockingThreads &&
       internalLock.recursionCount() == 1) {
     vmkit::ThinLock::removeFatLock(this, table);
     table.deallocate(this);
   }
+#endif
   internalLock.unlock();
 }
 
