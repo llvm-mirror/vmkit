@@ -221,6 +221,12 @@ JavaField* Classpath::constructorClass;
 JavaMethod* Classpath::EnqueueReference;
 Class*      Classpath::newReference;
 JavaField*  Classpath::NullRefQueue;
+JavaField*  Classpath::RefLock;
+Class*      Classpath::newRefLock;
+JavaField*  Classpath::RefPending;
+Class*      Classpath::RefHandlerClass;
+JavaMethod* Classpath::initRefHandler;
+JavaMethod* Classpath::threadStart;
 
 void Classpath::CreateJavaThread(Jnjvm* vm, JavaThread* myth,
                                  const char* thName, JavaObject* Group) {
@@ -259,11 +265,20 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   JavaObject* systemName = 0;
   JavaObject* MainGroup = 0;
   JavaObject* mainName = 0;
+  JavaObject* RefHandler = 0;
+  JavaObject* RefHandlerName = 0;
   llvm_gcroot(RG, 0);
   llvm_gcroot(SystemGroup, 0);
   llvm_gcroot(systemName, 0);
   llvm_gcroot(MainGroup, 0);
   llvm_gcroot(mainName, 0);
+  llvm_gcroot(RefHandler, 0);
+  llvm_gcroot(RefHandlerName, 0);
+
+  newRefLock->resolveClass();
+  newRefLock->initialiseClass(vm);
+  RefHandlerClass->resolveClass();
+  RefHandlerClass->initialiseClass(vm);
 
   // Resolve and initialize classes first.
   newThread->resolveClass();
@@ -292,6 +307,15 @@ void Classpath::InitializeThreading(Jnjvm* vm) {
   // Create the enqueue thread.
   assert(vm->getReferenceThread() && "VM did not set its enqueue thread");
   CreateJavaThread(vm, vm->getReferenceThread(), "Reference", SystemGroup);
+
+  // Create the ReferenceHandler thread.
+  RefHandler = RefHandlerClass->doNew(vm);
+  RefHandlerName = vm->asciizToStr("Reference Handler");
+  initRefHandler->invokeIntSpecial(vm, RefHandlerClass, RefHandler,
+      &SystemGroup, &RefHandlerName);
+  priority->setInstanceInt32Field(RefHandler, 10); // MAX_PRIORITY
+  daemon->setInstanceInt8Field(RefHandler, (uint32)true);
+  threadStart->invokeIntVirtual(vm, RefHandlerClass, RefHandler);
 }
 
 extern "C" void Java_java_lang_ref_WeakReference__0003Cinit_0003E__Ljava_lang_Object_2(
@@ -408,6 +432,23 @@ extern "C" JavaObject* Java_java_lang_reflect_AccessibleObject_getDeclaredAnnota
   END_NATIVE_EXCEPTION
 
   return res;
+}
+
+// The OpenJDK Reference clinit spawns a Thread!
+// We split that functionality out until we have threading working.
+extern "C" void Java_java_lang_ref_Reference__0003Cclinit_0003E() {
+  JavaObject* lock = 0;
+  llvm_gcroot(lock, 0);
+  BEGIN_NATIVE_EXCEPTION(0)
+  Jnjvm* vm = JavaThread::get()->getJVM();
+
+  // Initialize the static fields of this class, skip
+  // the spawning of the reference queue thread.
+  lock = vm->upcalls->newRefLock->doNew(vm);
+  vm->upcalls->RefLock->setStaticObjectField(lock);
+  vm->upcalls->RefPending->setStaticObjectField(NULL);
+
+  END_NATIVE_EXCEPTION
 }
 
 extern "C" void nativeJavaObjectClassTracer(
@@ -847,6 +888,23 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   newReference = UPCALL_CLASS(loader, "java/lang/ref/Reference");
 
+  RefLock = UPCALL_FIELD(loader, "java/lang/ref/Reference",
+      "lock", "Ljava/lang/ref/Reference$Lock;", ACC_STATIC);
+  RefPending = UPCALL_FIELD(loader, "java/lang/ref/Reference",
+      "pending", "Ljava/lang/ref/Reference;", ACC_STATIC);
+
+  newRefLock = UPCALL_CLASS(loader, "java/lang/ref/Reference$Lock");
+
+  RefHandlerClass =
+    UPCALL_CLASS(loader, "java/lang/ref/Reference$ReferenceHandler");
+  initRefHandler =
+    UPCALL_METHOD(loader, "java/lang/ref/Reference$ReferenceHandler", "<init>",
+        "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V", ACC_VIRTUAL);
+
+  threadStart =
+    UPCALL_METHOD(loader, "java/lang/Thread", "start",
+        "()V", ACC_VIRTUAL);
+
   EnqueueReference =
     UPCALL_METHOD(loader, "java/lang/ref/Reference",  "enqueue", "()Z",
                   ACC_VIRTUAL);
@@ -884,6 +942,11 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                   "(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V",
                   ACC_VIRTUAL);
   initPhantomReference->setNative();
+
+  JavaMethod * ReferenceClassInit =
+    UPCALL_METHOD(loader, "java/lang/ref/Reference", "<clinit>",
+                  "()V", ACC_STATIC);
+  ReferenceClassInit->setNative();
 }
 
 void Classpath::InitializeSystem(Jnjvm * jvm) {

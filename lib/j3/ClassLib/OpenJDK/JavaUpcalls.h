@@ -257,8 +257,14 @@ public:
   ISOLATE_STATIC JavaField* constructorClass;
 
   ISOLATE_STATIC JavaMethod* EnqueueReference;
-  ISOLATE_STATIC Class*      newReference;
+  ISOLATE_STATIC UserClass*  newReference;
   ISOLATE_STATIC JavaField*  NullRefQueue;
+  ISOLATE_STATIC JavaField*  RefLock;
+  ISOLATE_STATIC UserClass*  newRefLock;
+  ISOLATE_STATIC JavaField*  RefPending;
+  ISOLATE_STATIC UserClass*  RefHandlerClass;
+  ISOLATE_STATIC JavaMethod* initRefHandler;
+  ISOLATE_STATIC JavaMethod* threadStart;
 
   ISOLATE_STATIC UserClass*  EnumClass;
 
