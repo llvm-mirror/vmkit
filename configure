@@ -611,6 +611,8 @@ EGREP
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
+ZIP
+JAVAC
 ANT
 LLC
 LLVMAS
@@ -5242,6 +5244,88 @@ ANT=$ac_cv_path_ANT
 if test -n "$ANT"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ANT" >&5
 $as_echo "$ANT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "javac", so it can be a program name with args.
+set dummy javac; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_JAVAC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $JAVAC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_JAVAC="$JAVAC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_JAVAC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_JAVAC" && ac_cv_path_JAVAC="javac"
+  ;;
+esac
+fi
+JAVAC=$ac_cv_path_JAVAC
+if test -n "$JAVAC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JAVAC" >&5
+$as_echo "$JAVAC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "zip", so it can be a program name with args.
+set dummy zip; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_ZIP" && ac_cv_path_ZIP="zip"
+  ;;
+esac
+fi
+ZIP=$ac_cv_path_ZIP
+if test -n "$ZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
+$as_echo "$ZIP" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
