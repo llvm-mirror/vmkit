@@ -29,6 +29,12 @@
 #define NYI() \
   do{ assert(0 && "Not yet implemented!"); abort(); } while(0)
 
+// Convenience wrapper for returning a JNI ref to something
+#define RETURN_REF_FROM_JNI(a,type) {\
+  type __jni_ret_val = (type)th->pushJNIRef(a); \
+  RETURN_FROM_JNI(__jni_ret_val); \
+  }
+
 JavaObject* internalFillInStackTrace(JavaObject* throwable) {
 
   ArrayPtr* result = 0;
@@ -156,7 +162,7 @@ JVM_Clone(JNIEnv *env, jobject obj) {
   BEGIN_JNI_EXCEPTION
 
   clone = JavaObject::clone(*(JavaObject**)obj);
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(clone));
+  RETURN_REF_FROM_JNI(clone, jobject);
 
   END_JNI_EXCEPTION
 
@@ -181,7 +187,7 @@ JVM_InternString(JNIEnv *env, jstring _str) {
   array = JavaString::strToArray(str, vm);
   res = vm->constructString(array);
 
-  RETURN_FROM_JNI((jstring)th->pushJNIRef(res))
+  RETURN_REF_FROM_JNI(res, jstring);
 
   END_JNI_EXCEPTION
 
@@ -338,7 +344,8 @@ JNIEXPORT void * JNICALL
 JVM_LoadLibrary(const char *name) {
   BEGIN_JNI_EXCEPTION
   Jnjvm* vm = JavaThread::get()->getJVM();
-  RETURN_FROM_JNI(vm->bootstrapLoader->loadLib(name));
+  void * res = (void*)vm->bootstrapLoader->loadLib(name);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
 
@@ -354,7 +361,8 @@ JNIEXPORT void * JNICALL
 JVM_FindLibraryEntry(void *handle, const char *name) {
   BEGIN_JNI_EXCEPTION
   Jnjvm* vm = JavaThread::get()->getJVM();
-  RETURN_FROM_JNI((void *)vm->bootstrapLoader->loadInLib(name, handle));
+  void* res = (void *)vm->bootstrapLoader->loadInLib(name, handle);
+  RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
 
   return 0;
@@ -450,7 +458,7 @@ JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint index) {
   }
 
   assert(result && "No stack element found");
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(result));
+  RETURN_REF_FROM_JNI(result, jobject);
 
   END_JNI_EXCEPTION
 
@@ -706,7 +714,7 @@ JNIEXPORT jobject JNICALL
 JVM_CurrentThread(JNIEnv *env, jclass threadClass) {
   BEGIN_JNI_EXCEPTION
   JavaThread* th = JavaThread::get();
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(th->currentThread()));
+  RETURN_REF_FROM_JNI(th->currentThread(), jobject);
   END_JNI_EXCEPTION
 
   return 0;
@@ -792,7 +800,8 @@ JVM_IsInterrupted(JNIEnv *env, jobject _thread, jboolean clearInterrupted) {
 JNIEXPORT jboolean JNICALL
 JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj) {
   BEGIN_JNI_EXCEPTION
-  RETURN_FROM_JNI(JavaObject::owner(*(JavaObject**)obj));
+  jboolean res = JavaObject::owner(*(JavaObject**)obj);
+  RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
   return false;
 }
@@ -834,7 +843,7 @@ JVM_GetClassContext(JNIEnv *env) {
 
   res = GetClassContext(1);
 
-  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(res));
+  RETURN_REF_FROM_JNI(res, jobjectArray);
   END_JNI_EXCEPTION
 
   return 0;
@@ -890,7 +899,7 @@ JVM_LatestUserDefinedLoader(JNIEnv *env) {
   JavaThread* th = JavaThread::get();
   res = th->getNonNullClassLoader();
 
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(res));
+  RETURN_REF_FROM_JNI(res, jobject);
   END_JNI_EXCEPTION
 
   return 0;
@@ -916,7 +925,8 @@ JVM_GetArrayLength(JNIEnv *env, jobject arr) {
 
   BEGIN_JNI_EXCEPTION
   array = *(ArrayObject**)arr;
-  RETURN_FROM_JNI(ArrayObject::getSize(array));
+  jint size = ArrayObject::getSize(array);
+  RETURN_FROM_JNI(size);
 
   END_JNI_EXCEPTION
 
@@ -934,7 +944,7 @@ JVM_GetArrayElement(JNIEnv *env, jobject arr, jint index) {
   array = *(ArrayObject**)arr;
   element = ArrayObject::getElement(array, index);
 
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(element));
+  RETURN_REF_FROM_JNI(element, jobject);
 
   END_JNI_EXCEPTION
 
@@ -1032,8 +1042,7 @@ JVM_NewArray(JNIEnv *env, jclass eltClass, jint length) {
     res = (JavaObject*)array->doNew(length, vm);
   }
 
-  jobject ret = (jobject)th->pushJNIRef(res);
-  RETURN_FROM_JNI(ret);
+  RETURN_REF_FROM_JNI(res, jobject);
 
   END_JNI_EXCEPTION
 
@@ -1120,7 +1129,7 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray _dim) {
   // Invoke recursive helper to create this array
   array = multiCallNewIntern(arrayCl, dim_len, dims, vm);
 
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(array));
+  RETURN_REF_FROM_JNI(array, jobject);
 
   END_JNI_EXCEPTION
 
@@ -1399,7 +1408,7 @@ JVM_GetClassName(JNIEnv *env, jclass cls) {
   const UTF8* iname = cl->getName();
   result = JavaString::internalToJava(iname, vm);
 
-  RETURN_FROM_JNI((jstring)th->pushJNIRef(result));
+  RETURN_REF_FROM_JNI(result, jstring);
 
   END_JNI_EXCEPTION
 
@@ -1415,7 +1424,7 @@ JVM_GetClassInterfaces(JNIEnv *env, jclass cls) {
 
   ret = JavaObjectClass::getInterfaces(*(JavaObjectClass**)cls);
 
-  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jobjectArray);
 
   END_JNI_EXCEPTION
 
@@ -1433,7 +1442,7 @@ JVM_GetClassLoader(JNIEnv *env, jclass cls) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
   res = cl->classLoader->getJavaClassLoader();
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(res));
+  RETURN_REF_FROM_JNI(res, jobject);
 
   END_JNI_EXCEPTION
 
@@ -1485,7 +1494,7 @@ JVM_GetProtectionDomain(JNIEnv *env, jclass cls) {
   JOC = *(JavaObjectClass**)cls;
   pd = JavaObjectClass::getProtectionDomain(JOC);
 
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(pd));
+  RETURN_REF_FROM_JNI(pd, jobject);
 
   END_JNI_EXCEPTION
 
@@ -1508,7 +1517,8 @@ JVM_IsArrayClass(JNIEnv *env, jclass cls) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
 
-  RETURN_FROM_JNI(cl->isArray());
+  jboolean ret = cl->isArray();
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
 
@@ -1526,7 +1536,8 @@ JVM_IsPrimitiveClass(JNIEnv *env, jclass cls) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
 
-  RETURN_FROM_JNI(cl->isPrimitive());
+  jboolean ret = cl->isPrimitive();
+  RETURN_FROM_JNI(ret);
 
   END_JNI_EXCEPTION
 
@@ -1567,7 +1578,8 @@ JVM_GetClassModifiers(JNIEnv *env, jclass cls) {
 
   Cl = *(JavaObjectClass**)cls;
 
-  RETURN_FROM_JNI(JavaObjectClass::getModifiers(Cl));
+  jint res = JavaObjectClass::getModifiers(Cl);
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
 
@@ -1584,7 +1596,7 @@ JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass) {
   // TODO: Verify boolean parameter here, assuming should default to true.
   ret = JavaObjectClass::getDeclaredClasses(*(JavaObjectClass**)ofClass, false);
 
-  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jobjectArray);
 
   END_JNI_EXCEPTION
 
@@ -1600,7 +1612,7 @@ JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass) {
 
   ret = JavaObjectClass::getDeclaringClass(*(JavaObjectClass**)ofClass);
 
-  RETURN_FROM_JNI((jclass)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jclass);
 
   END_JNI_EXCEPTION
 
@@ -1623,7 +1635,7 @@ JVM_GetClassAnnotations(JNIEnv *env, jclass cls) {
 
   ret = JavaObjectClass::getDeclaredAnnotations(*(JavaObjectClass**)cls);
 
-  RETURN_FROM_JNI((jbyteArray)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jbyteArray);
 
   END_JNI_EXCEPTION
 
@@ -1643,7 +1655,7 @@ JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
 
   ret = JavaObjectClass::getDeclaredMethods(*(JavaObjectClass**)ofClass, publicOnly);
 
-  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jobjectArray);
 
   END_JNI_EXCEPTION
 
@@ -1659,7 +1671,7 @@ JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
 
   ret = JavaObjectClass::getDeclaredFields(*(JavaObjectClass**)ofClass, publicOnly);
 
-  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jobjectArray);
 
   END_JNI_EXCEPTION
 
@@ -1675,7 +1687,7 @@ JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnl
 
   ret = JavaObjectClass::getDeclaredConstructors(*(JavaObjectClass**)ofClass, publicOnly);
 
-  RETURN_FROM_JNI((jobjectArray)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jobjectArray);
 
   END_JNI_EXCEPTION
 
@@ -1702,7 +1714,8 @@ JVM_GetClassAccessFlags(JNIEnv *env, jclass cls) {
 
   // TODO: Verify this is doing what this function is supposed to do
   // (In particular regarding the comment block above)
-  RETURN_FROM_JNI(cl->asClass()->access);
+  jint res = cl->asClass()->access;
+  RETURN_FROM_JNI(res);
 
   END_JNI_EXCEPTION
 
@@ -1731,7 +1744,7 @@ JVM_InvokeMethod(JNIEnv *env, jobject _m, jobject _obj, jobjectArray args0) {
     JavaObjectMethod::getClass(m)->getDelegatee(),
     0 /* unused */ );
 
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jobject);
   END_JNI_EXCEPTION
 
   return 0;
@@ -1757,7 +1770,7 @@ JVM_NewInstanceFromConstructor(JNIEnv *env, jobject _c, jobjectArray args0) {
     JavaObjectConstructor::getClass(c)->getDelegatee(),
     0 /* unused */ );
 
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(ret));
+  RETURN_REF_FROM_JNI(ret, jobject);
   END_JNI_EXCEPTION
 
   return 0;
@@ -1873,7 +1886,7 @@ JVM_DoPrivileged(JNIEnv *env, jclass cls,
 
   res = meth->invokeJavaObjectVirtual(vm, cl, obj);
 
-  RETURN_FROM_JNI((jobject)th->pushJNIRef(res));
+  RETURN_REF_FROM_JNI(res, jobject);
 
   END_JNI_EXCEPTION
 
@@ -2310,7 +2323,8 @@ JVM_GetLastErrorString(char *buf, int len) {
   if (err != buf)
     strncpy(buf, err, len);
 
-  RETURN_FROM_JNI(strlen(buf));
+  jint len = strlen(buf);
+  RETURN_FROM_JNI(len);
 
   END_JNI_EXCEPTION
 
