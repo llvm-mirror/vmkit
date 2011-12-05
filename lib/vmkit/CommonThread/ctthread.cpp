@@ -164,6 +164,10 @@ StackWalker::StackWalker(vmkit::Thread* th) {
     }
     if (frame && (addr == frame->currentFP)) {
       frame = frame->previousFrame;
+      // Let this be called from JNI, as in
+      // OpenJDK's JVM_FillInStackTrace:
+      if (frame && frame->currentIP != 0)
+        frame = frame->previousFrame;
       assert((frame == NULL) || (frame->currentIP == 0));
     }
   }
