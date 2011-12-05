@@ -351,7 +351,7 @@ FatLock* LockSystem::allocate(gc* obj) {
       abort();
     }
   
-    FatLock** tab = LockTable[index >> BitIndex];
+    FatLock** &tab = LockTable[index >> BitIndex];
   
     VirtualMachine* vm = vmkit::Thread::get()->MyVM;
     if (tab == NULL) {
