@@ -141,7 +141,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if (thisReference && meth) {
     isCustomizable = true;
     if ((customizeFor != NULL)
-        && cl->isAssignableFrom(customizeFor)) {
+        && customizeFor->isAssignableFrom(cl)) {
       meth = customizeFor->lookupMethodDontThrow(
           meth->name, meth->type, false, true, NULL);
       assert(meth);
