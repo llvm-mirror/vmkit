@@ -3339,6 +3339,7 @@ bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
         bool customized = false;
         if (!(isFinal(cl->access) || isFinal(meth->access))) {
           if (customizeFor == NULL) return false;
+          if (!cl->isAssignableFrom(customizeFor)) return false;
           meth = customizeFor->lookupMethodDontThrow(
               meth->name, meth->type, false, true, NULL);
           assert(meth);
