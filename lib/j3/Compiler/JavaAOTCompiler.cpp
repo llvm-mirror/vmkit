@@ -787,12 +787,23 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 	Array = ConstantExpr::getBitCast(varGV, JavaIntrinsics.JavaObjectType);
 
   Elmts.push_back(Array);
+#ifndef USE_OPENJDK
+  // Classpath fields
   Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()),
                                    str->count));
   Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()),
                                    str->cachedHashCode));
   Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()),
                                    str->offset));
+#else
+  // OpenJDK fields
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()),
+                                   str->offset));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()),
+                                   str->count));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()),
+                                   str->cachedHashCode));
+#endif
  
   return ConstantStruct::get(STy, Elmts);
 }

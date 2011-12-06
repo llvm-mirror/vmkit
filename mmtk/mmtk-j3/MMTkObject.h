@@ -43,9 +43,17 @@ struct MMTkObjectArray : public MMTkObject {
 
 struct MMTkString : public MMTkObject {
   MMTkArray* value;
+#ifndef USE_OPENJDK
+  // Classpath fields
   int32_t count;
   int32_t cachedHashCode;
   int32_t offset;
+#else
+  // OpenJDK fields
+  int32_t offset;
+  int32_t count;
+  int32_t cachedHashCode;
+#endif
 };
 
 struct MMTkLock : public MMTkObject {
