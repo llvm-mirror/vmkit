@@ -187,6 +187,7 @@ JavaMethod* Classpath::SystemArraycopy;
 Class*      Classpath::SystemClass;
 JavaMethod* Classpath::initSystem;
 Class*      Classpath::EnumClass;
+Class*      Classpath::assertionStatusDirectivesClass;
 
 JavaMethod* Classpath::ErrorWithExcpNoClassDefFoundError;
 JavaMethod* Classpath::ErrorWithExcpExceptionInInitializerError;
@@ -778,6 +779,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   SystemClass = UPCALL_CLASS(loader, "java/lang/System");
   EnumClass = UPCALL_CLASS(loader, "java/lang/Enum");
 
+  assertionStatusDirectivesClass =
+    UPCALL_CLASS(loader, "java/lang/AssertionStatusDirectives");
+
   cloneableClass = UPCALL_CLASS(loader, "java/lang/Cloneable");
 
   ReflectInvokeMethod =
@@ -983,7 +987,13 @@ void Classpath::InitializeSystem(Jnjvm * jvm) {
     }
     abort();
   }
+
+  // resolve and initialize misc classes
+  assertionStatusDirectivesClass->resolveClass();
+  assertionStatusDirectivesClass->initialiseClass(jvm);
+
 }
+
 
 
 #include "ClasspathConstructor.inc"

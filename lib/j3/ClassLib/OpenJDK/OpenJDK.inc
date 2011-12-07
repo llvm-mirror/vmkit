@@ -1967,7 +1967,33 @@ JVM_DesiredAssertionStatus(JNIEnv *env, jclass unused, jclass cls) {
  */
 JNIEXPORT jobject JNICALL
 JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused) {
-  NYI();
+  JavaObject* asdObj = 0;
+  JavaObject* emptyStringArr = 0;
+  llvm_gcroot(asdObj, 0);
+  llvm_gcroot(emptyStringArr, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = th->getJVM();
+  UserClass * asdCl = vm->upcalls->assertionStatusDirectivesClass;
+  asdObj = asdCl->doNew(vm);
+
+  emptyStringArr = vm->upcalls->ArrayOfString->doNew(0, vm);
+
+  const UTF8 * classesName = asdCl->classLoader->hashUTF8->lookupAsciiz("classes");
+  const UTF8 * packagesName = asdCl->classLoader->hashUTF8->lookupAsciiz("packages");
+  const UTF8 * stringArrType = asdCl->classLoader->hashUTF8->lookupAsciiz("[Ljava/lang/String;");
+  JavaField* classes = asdCl->lookupFieldDontThrow(classesName, stringArrType, false, true, 0);
+  JavaField* packages = asdCl->lookupFieldDontThrow(packagesName, stringArrType, false, true, 0);
+  assert(classes);
+  assert(packages);
+
+  classes->setInstanceObjectField(asdObj, emptyStringArr);
+  packages->setInstanceObjectField(asdObj, emptyStringArr);
+
+  RETURN_REF_FROM_JNI(asdObj, jobject);
+  END_JNI_EXCEPTION
+
+  return NULL;
 }
 
 /*

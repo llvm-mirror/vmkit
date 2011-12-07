@@ -268,6 +268,7 @@ public:
   ISOLATE_STATIC JavaMethod* threadStart;
 
   ISOLATE_STATIC UserClass*  EnumClass;
+  ISOLATE_STATIC UserClass*  assertionStatusDirectivesClass;
 
 private:
   ISOLATE_STATIC void CreateJavaThread(Jnjvm* vm, JavaThread* myth,
