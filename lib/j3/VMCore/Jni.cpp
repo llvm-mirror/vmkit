@@ -150,7 +150,7 @@ jclass GetSuperclass(JNIEnv *env, jclass sub) {
 }
   
  
-jboolean IsAssignableFrom(JNIEnv *env, jclass _sub, jclass _sup) {
+jboolean IsSubclassOf(JNIEnv *env, jclass _sub, jclass _sup) {
   
   BEGIN_JNI_EXCEPTION
  
@@ -166,7 +166,7 @@ jboolean IsAssignableFrom(JNIEnv *env, jclass _sub, jclass _sup) {
   UserCommonClass* cl1 = 
     UserCommonClass::resolvedImplClass(vm, sub, false);
 
-  jboolean res = (jboolean)cl1->isAssignableFrom(cl2);
+  jboolean res = (jboolean)cl1->isSubclassOf(cl2);
   RETURN_FROM_JNI(res);
   
   END_JNI_EXCEPTION
@@ -4154,7 +4154,7 @@ struct JNINativeInterface_ JNI_JNIEnvTable = {
 	&FromReflectedField,
 	&ToReflectedMethod,
 	&GetSuperclass,
-	&IsAssignableFrom,
+	&IsSubclassOf,
 	&ToReflectedField,
 
 	&Throw,

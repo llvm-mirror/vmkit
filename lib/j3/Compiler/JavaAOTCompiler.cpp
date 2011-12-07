@@ -1607,7 +1607,7 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
       Tracer = ArrayObjectTracer;
     }
   } else if (classDef->isClass()) {
-    if (classDef->isAssignableFrom(
+    if (classDef->isSubclassOf(
           classDef->classLoader->bootstrapLoader->upcalls->newReference)) {
       Tracer = ReferenceObjectTracer;
     } else {

@@ -71,7 +71,7 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
     for (int i = 0; i < len; i++) {
       cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
       if (cur) {
-        if (!(JavaObject::getClass(cur)->isAssignableFrom(dstType))) {
+        if (!(JavaObject::getClass(cur)->isSubclassOf(dstType))) {
           copyLen = i; // copy up until this element
           break;
         }

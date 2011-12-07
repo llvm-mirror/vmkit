@@ -69,7 +69,7 @@ public:
   llvm::Function* ResolveInterfaceFunction;
 
   llvm::Function* VirtualLookupFunction;
-  llvm::Function* IsAssignableFromFunction;
+  llvm::Function* IsSubclassOfFunction;
   llvm::Function* IsSecondaryClassFunction;
   llvm::Function* GetDepthFunction;
   llvm::Function* GetDisplayFunction;

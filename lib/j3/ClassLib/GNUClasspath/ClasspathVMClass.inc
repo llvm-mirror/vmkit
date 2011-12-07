@@ -275,7 +275,7 @@ JavaObject* Cl1, JavaObject* Cl2) {
   UserCommonClass* cl1 = UserCommonClass::resolvedImplClass(vm, Cl1, false);
   UserCommonClass* cl2 = UserCommonClass::resolvedImplClass(vm, Cl2, false);
 
-  res = cl2->isAssignableFrom(cl1);
+  res = cl2->isSubclassOf(cl1);
 
   END_NATIVE_EXCEPTION
 

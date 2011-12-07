@@ -233,7 +233,7 @@ struct JNINativeInterface_
 						    jmethodID, jboolean);
 
   jclass   (JNICALL *GetSuperclass)                (JNIEnv *, jclass);
-  jboolean (JNICALL *IsAssignableFrom)             (JNIEnv *, jclass, jclass);
+  jboolean (JNICALL *IsSubclassOf)             (JNIEnv *, jclass, jclass);
 
   jobject  (JNICALL *ToReflectedField)		   (JNIEnv *, jclass, jfieldID,
                                                     jboolean);
@@ -686,8 +686,8 @@ public:
   jclass GetSuperclass (jclass cl0)
   { return p->GetSuperclass (this, cl0); }
 
-  jboolean IsAssignableFrom (jclass cl0, jclass cl1)
-  { return p->IsAssignableFrom (this, cl0, cl1); }
+  jboolean IsSubclassOf (jclass cl0, jclass cl1)
+  { return p->IsSubclassOf (this, cl0, cl1); }
 
   jobject ToReflectedField (jclass cl0, jfieldID fld1, jboolean val2)
   { return p->ToReflectedField (this, cl0, fld1, val2); }

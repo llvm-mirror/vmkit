@@ -501,7 +501,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* res = new LoadInst(val, "", CI);
           CI->replaceAllUsesWith(res);
           CI->eraseFromParent();
-        } else if (V == intrinsics->IsAssignableFromFunction) {
+        } else if (V == intrinsics->IsSubclassOfFunction) {
           Changed = true;
           Value* VT1 = Call.getArgument(0);
           Value* VT2 = Call.getArgument(1);

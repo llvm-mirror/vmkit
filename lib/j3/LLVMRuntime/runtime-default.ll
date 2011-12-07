@@ -208,8 +208,8 @@ declare void @j3JavaObjectAquire(%JavaObject*)
 ;;; block or method.
 declare void @j3JavaObjectRelease(%JavaObject*)
 
-;;; isAssignableFrom - Returns if a type is a subtype of another type.
-declare i1 @isAssignableFrom(%VT*, %VT*) readnone
+;;; isSubclassOf - Returns if a type is a subtype of another type.
+declare i1 @isSubclassOf(%VT*, %VT*) readnone
 
 ;;; isSecondaryClass - Returns if a type is a secondary super type of
 ;;; another type.

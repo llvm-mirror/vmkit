@@ -124,7 +124,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
         excp = th->getJavaException();
       } END_CATCH;
       if (excp) {
-        if (JavaObject::getClass(excp)->isAssignableFrom(vm->upcalls->newException)) {
+        if (JavaObject::getClass(excp)->isSubclassOf(vm->upcalls->newException)) {
           th->clearException();
           // If it's an exception, we encapsule it in an
           // invocationTargetException

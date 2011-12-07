@@ -126,7 +126,7 @@ JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
     if (isVirtual(meth->access)) {
       verifyNull(obj);
       UserCommonClass* objCl = JavaObject::getClass(obj);
-      if (!(objCl->isAssignableFrom(cl))) {
+      if (!(objCl->isSubclassOf(cl))) {
         vm->illegalArgumentException("<this> is not a valid type");
       }
 

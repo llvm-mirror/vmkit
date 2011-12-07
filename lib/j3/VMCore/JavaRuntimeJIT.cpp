@@ -387,7 +387,7 @@ extern "C" void* j3ResolveVirtualStub(JavaObject* obj) {
   ctpInfo->infoOfMethod(ctpIndex, ACC_VIRTUAL, ctpCl, origMeth);
 
   ctpInfo->resolveMethod(ctpIndex, ctpCl, utf8, sign);
-  assert(cl->isAssignableFrom(ctpCl) && "Wrong call object");
+  assert(cl->isSubclassOf(ctpCl) && "Wrong call object");
   UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
   JavaMethod* Virt = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
 

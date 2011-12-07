@@ -315,7 +315,7 @@ JavaMethod* Class::lookupSpecialMethodDontThrow(const UTF8* name,
   if (meth &&
       isSuper(current->access) &&
       current != meth->classDef &&
-      meth->classDef->isAssignableFrom(current) &&
+      meth->classDef->isSubclassOf(current) &&
       !name->equals(classLoader->bootstrapLoader->initName)) {
     meth = current->super->lookupMethodDontThrow(name, type, false, true, NULL);
   }
@@ -490,7 +490,7 @@ bool UserCommonClass::isOfTypeName(const UTF8* Tname) {
   }
 }
 
-bool UserCommonClass::isAssignableFrom(UserCommonClass* cl) {
+bool UserCommonClass::isSubclassOf(UserCommonClass* cl) {
   assert(virtualVT && cl->virtualVT);
   return virtualVT->isSubtypeOf(cl->virtualVT);
 }
@@ -1362,7 +1362,7 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
 
     Class* referenceClass = 
         C->classLoader->bootstrapLoader->upcalls->newReference;
-    if (referenceClass != NULL && C->super->isAssignableFrom(referenceClass)) {
+    if (referenceClass != NULL && C->super->isSubclassOf(referenceClass)) {
       tracer = (word_t)ReferenceObjectTracer;
     } else {
       tracer = (word_t)RegularObjectTracer;

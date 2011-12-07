@@ -49,7 +49,7 @@ int JavaObjectThrowable::getStackTraceBase(JavaObjectThrowable * self) {
     else {
       JavaMethod* meth = (JavaMethod*)FI->Metadata;
       assert(meth && "Wrong stack trace");
-      if (meth->classDef->isAssignableFrom(vm->upcalls->newThrowable)) {
+      if (meth->classDef->isSubclassOf(vm->upcalls->newThrowable)) {
         ++index;
       } else return index;
     }

@@ -61,7 +61,7 @@ void JavaJIT::updateStackInfo(Opinfo& info) {
 
 bool JavaJIT::needsInitialisationCheck(Class* cl) {
   if (cl->isReadyForCompilation() || 
-      (!cl->isInterface() && compilingClass->isAssignableFrom(cl))) {
+      (!cl->isInterface() && compilingClass->isSubclassOf(cl))) {
     return false;
   }
 
@@ -141,7 +141,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
   if (thisReference && meth) {
     isCustomizable = true;
     if ((customizeFor != NULL)
-        && customizeFor->isAssignableFrom(cl)) {
+        && customizeFor->isSubclassOf(cl)) {
       meth = customizeFor->lookupMethodDontThrow(
           meth->name, meth->type, false, true, NULL);
       assert(meth);

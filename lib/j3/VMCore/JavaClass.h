@@ -293,10 +293,10 @@ public:
   ///
   bool isOfTypeName(const UTF8* Tname);
 
-  /// isAssignableFrom - Is this class assignable from the given class? The
+  /// isSubclassOf - Is this class assignable from the given class? The
   /// classes may be of any type.
   ///
-  bool isAssignableFrom(CommonClass* cl);
+  bool isSubclassOf(CommonClass* cl);
 
   /// getClassDelegatee - Return the java/lang/Class representation of this
   /// class.

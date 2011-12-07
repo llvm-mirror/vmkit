@@ -682,7 +682,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       
       case AASTORE : {
         if (TheCompiler->hasExceptionsEnabled()) {
-          // Get val and object and don't pop them: IsAssignableFromFunction
+          // Get val and object and don't pop them: IsSubclassOfFunction
           // may go into runtime and we don't want values in registers at that
           // point.
           Value* val = new LoadInst(objectStack[currentStackIndex - 1], "",
@@ -712,7 +712,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           
           Value* VTArgs[2] = { valVT, objVT };
           
-          Value* res = CallInst::Create(intrinsics->IsAssignableFromFunction,
+          Value* res = CallInst::Create(intrinsics->IsSubclassOfFunction,
                                         VTArgs, "", currentBlock);
 
           BranchInst::Create(endBlock, exceptionBlock, res, currentBlock);
@@ -2271,7 +2271,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
                                TheVT, "");
           }
         } else {
-          res = CallInst::Create(intrinsics->IsAssignableFromFunction,
+          res = CallInst::Create(intrinsics->IsSubclassOfFunction,
                                  classArgs, "", currentBlock);
         }
 
@@ -3339,7 +3339,7 @@ bool JavaJIT::analyzeForInlining(Reader& reader, uint32 codeLength) {
         bool customized = false;
         if (!(isFinal(cl->access) || isFinal(meth->access))) {
           if (customizeFor == NULL) return false;
-          if (!customizeFor->isAssignableFrom(cl)) return false;
+          if (!customizeFor->isSubclassOf(cl)) return false;
           meth = customizeFor->lookupMethodDontThrow(
               meth->name, meth->type, false, true, NULL);
           assert(meth);

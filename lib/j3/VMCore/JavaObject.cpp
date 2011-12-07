@@ -352,5 +352,5 @@ void JavaObject::decapsulePrimitive(JavaObject* obj, Jnjvm *vm, jvalue* buf,
 bool JavaObject::instanceOf(JavaObject* self, UserCommonClass* cl) {
   llvm_gcroot(self, 0);
   if (self == NULL) return false;
-  else return getClass(self)->isAssignableFrom(cl);
+  else return getClass(self)->isSubclassOf(cl);
 }

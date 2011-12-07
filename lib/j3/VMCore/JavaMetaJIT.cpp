@@ -172,7 +172,7 @@ TYPE JavaMethod::invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObj
     meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl); \
   } \
   assert(meth && "No method found"); \
-  assert(objCl->isAssignableFrom(meth->classDef) && "Wrong type"); \
+  assert(objCl->isSubclassOf(meth->classDef) && "Wrong type"); \
   void* func = meth->compiledPtr(); \
   FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)sign->getVirtualCallBuf(); \
   JavaThread* th = JavaThread::get(); \
