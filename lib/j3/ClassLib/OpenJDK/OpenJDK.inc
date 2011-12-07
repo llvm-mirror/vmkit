@@ -255,6 +255,11 @@ JVM_InitProperties(JNIEnv *env, jobject p) {
   if (tmp)
     setProperty(vm, prop, "java.compiler", tmp);
 
+  // Override properties to indicate java version 1.6
+  setProperty(vm, prop, "java.specification.version", "1.6");
+  setProperty(vm, prop, "java.version", "1.6");
+  setProperty(vm, prop, "java.runtime.version", "1.6");
+
   RETURN_FROM_JNI(p);
 
   END_JNI_EXCEPTION
