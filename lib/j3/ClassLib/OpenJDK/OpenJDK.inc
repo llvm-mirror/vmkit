@@ -513,7 +513,11 @@ JVM_DisableCompiler(JNIEnv *env, jclass compCls) {
 void start(JavaThread* thread) {
 
   JavaObject* javaThread = NULL;
+  JavaObject* handler = NULL;
+  JavaObject* exc = NULL;
   llvm_gcroot(javaThread, 0);
+  llvm_gcroot(exc, 0);
+  llvm_gcroot(handler, 0);
 
   Jnjvm* vm = thread->getJVM();
 
@@ -546,9 +550,30 @@ void start(JavaThread* thread) {
   JavaMethod * meth = thClass->lookupMethodDontThrow(runName, runType, false, true, 0);
   assert(meth);
 
+  // Sanity check
+  assert(JavaThread::get() == thread);
+
   // Run the thread...
-  // TODO: What happens if the thread throws an exception?
-  meth->invokeIntSpecial(vm, thClass, javaThread);
+  TRY {
+    meth->invokeIntSpecial(vm, thClass, javaThread);
+  } CATCH {
+    exc = thread->pendingException;
+  } END_CATCH;
+
+  // Sanity check
+  assert(JavaThread::get() == thread);
+
+  if (exc != NULL) {
+    thread->clearException();
+    TRY {
+      handler = vm->upcalls->getUncaughtExceptionHandler->invokeJavaObjectVirtual(vm, thClass, javaThread);
+      verifyNull(handler);
+      vm->upcalls->uncaughtException->invokeIntVirtual(vm, vm->upcalls->uncaughtException->classDef, handler, &javaThread, &exc);
+    } CATCH {
+      fprintf(stderr, "Exception in thread \"(unknown)\": "
+                      "Can not print stack trace.\n");
+    } END_CATCH;
+  }
 
   // Indicate that the thread is done by clearing the eetop field.
   // and notify all waiting threads.
