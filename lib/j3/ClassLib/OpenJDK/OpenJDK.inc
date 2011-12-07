@@ -2590,7 +2590,16 @@ JVM_SendTo(jint fd, char *buf, int len,
 
 JNIEXPORT jint JNICALL
 JVM_SocketAvailable(jint fd, jint *result) {
-  NYI();
+
+  BEGIN_JNI_EXCEPTION
+
+  if(ioctl(fd, TIOCINQ, result) == -1)
+    RETURN_FROM_JNI(JNI_FALSE);
+
+  RETURN_FROM_JNI(JNI_TRUE);
+  END_JNI_EXCEPTION
+
+  RETURN_FROM_JNI(JNI_FALSE);
 }
 
 
