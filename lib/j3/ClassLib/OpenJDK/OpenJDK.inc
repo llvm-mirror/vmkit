@@ -581,10 +581,13 @@ void start(JavaThread* thread) {
     } END_CATCH;
   }
 
-  // Indicate that the thread is done by clearing the eetop field.
-  // and notify all waiting threads.
-  vm->upcalls->eetop->setInstanceLongField(javaThread, 0);
+  // Call Thread.exit()
+  vm->upcalls->threadExit->invokeIntVirtual(vm, thClass, javaThread);
+
   JavaObject::acquire(javaThread);
+  // Indicate that the thread is done by clearing the eetop field.
+  vm->upcalls->eetop->setInstanceLongField(javaThread, 0);
+  // Notify all waiting threads
   JavaObject::notifyAll(javaThread);
   JavaObject::release(javaThread);
 

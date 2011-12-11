@@ -229,6 +229,7 @@ JavaField*  Classpath::RefPending;
 Class*      Classpath::RefHandlerClass;
 JavaMethod* Classpath::initRefHandler;
 JavaMethod* Classpath::threadStart;
+JavaMethod* Classpath::threadExit;
 
 const char * OpenJDKBootPath =
       OpenJDKJRE "/lib/rt.jar"
@@ -916,6 +917,10 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   threadStart =
     UPCALL_METHOD(loader, "java/lang/Thread", "start",
+        "()V", ACC_VIRTUAL);
+
+  threadExit =
+    UPCALL_METHOD(loader, "java/lang/Thread", "exit",
         "()V", ACC_VIRTUAL);
 
   EnqueueReference =

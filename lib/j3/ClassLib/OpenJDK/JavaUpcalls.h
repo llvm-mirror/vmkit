@@ -266,6 +266,7 @@ public:
   ISOLATE_STATIC UserClass*  RefHandlerClass;
   ISOLATE_STATIC JavaMethod* initRefHandler;
   ISOLATE_STATIC JavaMethod* threadStart;
+  ISOLATE_STATIC JavaMethod* threadExit;
 
   ISOLATE_STATIC UserClass*  EnumClass;
   ISOLATE_STATIC UserClass*  assertionStatusDirectivesClass;
