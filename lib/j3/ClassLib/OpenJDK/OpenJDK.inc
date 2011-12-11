@@ -260,6 +260,12 @@ JVM_InitProperties(JNIEnv *env, jobject p) {
   setProperty(vm, prop, "java.version", "1.6");
   setProperty(vm, prop, "java.runtime.version", "1.6");
 
+  // Set additional path properties
+  // For now, ignore JAVA_HOME.  We don't want to be using a location
+  // other than the one we precompiled against anyway.
+  setProperty(vm, prop, "java.home", OpenJDKJRE);
+  setProperty(vm, prop, "java.ext.dirs", OpenJDKExtDirs);
+
   RETURN_FROM_JNI(p);
 
   END_JNI_EXCEPTION

@@ -9,6 +9,7 @@
 
 // Historically has been included here, keep it for now
 #include <jni.h>
+#include "vmkit/System.h"
 
 #ifndef USE_OPENJDK
 
@@ -23,27 +24,35 @@
 #else
 
 // OpenJDK values
-#define OpenJDKJRE "@openjdkjre@"
-#define OpenJDKArch "@openjdkarchdir@"
+#define OpenJDKPath "@openjdkpath@"
 
-// OpenJDK Bootstrap classpath
-extern const char * OpenJDKBootPath;
+// Select which architecture directory name to use
+#if ARCH_X86
+#define OpenJDKArchComp "i386"
+#elif ARCH_X64
+#define OpenJDKArchComp "amd64"
+#else
+#error "Unsupported architecture"
+#endif
 
-// Location of OpenJDK's libjava.so
-#define OpenJDKLibJava OpenJDKArch "/libjava.so"
+// Build various other paths from OpenJDKPath
+// Done this way to make them compile-time constants.
+#define OpenJDKJRE OpenJDKPath "/jre"
+#define OpenJDKArchDir OpenJDKJRE "/lib/" OpenJDKArchComp
+#define OpenJDKLibJava OpenJDKArchDir "/libjava.so"
+#define OpenJDKExtDirs OpenJDKJRE "/lib/ext"
 
 // Search path for native library files
-// TODO: Use LD_LIBRARY_PATH to second part of this?
-#define OpenJDKLibPaths \
-      OpenJDKArch \
-  ":" OpenJDKArch "/client" \
-  ":" OpenJDKArch "/server" \
-  ":" "/lib" \
-  ":" "/lib64" \
-  ":" "/usr/lib" \
-  ":" "/usr/lib64"
+#define OpenJDKSystemLibPaths "/lib:/lib64:/usr/lib:/usr/lib64"
+#define OpenJDKLibPath \
+      OpenJDKArchDir \
+  ":" OpenJDKArchDir "/server/" \
+  ":" OpenJDKSystemLibPaths
+
+// Bootstrap path. Defined in JavaUpcalls.cpp to add VMString location.
+extern const char * OpenJDKBootPath;
 
 #define ClasslibBootEnv OpenJDKBootPath
-#define ClasslibLibEnv OpenJDKLibPaths
+#define ClasslibLibEnv OpenJDKLibPath
 
 #endif // USE_OPENJDK

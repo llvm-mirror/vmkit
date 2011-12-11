@@ -206,24 +206,15 @@ AC_SUBST([classpathversion])
 dnl **************************************************************************
 dnl OpenJDK Paths
 dnl **************************************************************************
-dnl Chat with OpenJDK folk about best way to look for the things we need
-dnl For now, this should suffice.
 
-AC_ARG_WITH(openjdk-jre,
-       [AS_HELP_STRING(--with-openjdk-jre,
-           [Build J3 with OpenJDK JRE install (default is '/usr/lib/java/jre')])],
-       [[openjdkjre=$withval]],
-       [[openjdkjre=/usr/lib/java/jre]]
+AC_ARG_WITH(openjdk-path,
+       [AS_HELP_STRING(--with-openjdk-path,
+           [Build J3 with OpenJDK JRE install (default is '/usr/lib/java/')])],
+       [[openjdkpath=$withval]],
+       [[openjdkpath=/usr/lib/java/]]
 )
 
-AC_ARG_WITH(openjdk-arch-dir,
-       [AS_HELP_STRING(--with-openjdk-arch-dir,
-           [Location of architecture-specific OpenJDK libraries (default is '/usr/lib/java/jre/lib/i386')])],
-       [[openjdkarchdir=$withval]],
-       [[openjdkarchdir=/usr/lib/java/jre/lib/i386]]
-)
-AC_SUBST([openjdkjre])
-AC_SUBST([openjdkarchdir])
+AC_SUBST([openjdkpath])
 
 
 dnl **************************************************************************
@@ -253,15 +244,9 @@ case "${classpathimpl}" in
       ;;
   openjdk)
     AC_MSG_NOTICE(Validating OpenJDK installation...)
-    AC_CHECK_FILES([${openjdkjre}]
-                   [${openjdkjre}/lib/rt.jar],,
-      AC_MSG_ERROR([[Invalid OpenJDK JRE path, can't find required jar files!]]))
-    AC_CHECK_FILE([${openjdkarchdir}],,
-      AC_MSG_ERROR([[Invalid OpenJDK arch dir]]))
-    dnl Check that $archdir/client/libjava.so or $archdir/server/libjava.so exist
-    AC_CHECK_FILE([${openjdkarchdir}]/client/libjvm.$DYLIB_EXTENSION,,
-      AC_CHECK_FILE([${openjdkarchdir}]/server/libjvm.$DYLIB_EXTENSION,,
-        AC_MSG_ERROR([[Can't find libjvm.$DYLIB_EXTENSION]])))
+    AC_CHECK_FILES([${openjdkpath}]
+                   [${openjdkpath}/jre/lib/rt.jar],,
+      AC_MSG_ERROR([[Invalid OpenJDK JDK path, can't find required jar files!]]))
       ;;
   *)
     AC_MSG_ERROR([Invalid --with-classpath-impl "${classpathimpl}".  Must be one of "gnuclasspath" or "openjdk"])
