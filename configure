@@ -643,8 +643,7 @@ LDFLAGS
 CFLAGS
 CC
 classpathimpl
-openjdkarchdir
-openjdkjre
+openjdkpath
 classpathversion
 classpathlibs
 classpathglibj
@@ -713,8 +712,7 @@ with_llvmobj
 with_mmtk_plan
 with_gnu_classpath_libs
 with_gnu_classpath_glibj
-with_openjdk_jre
-with_openjdk_arch_dir
+with_openjdk_path
 with_classpath_impl
 '
       ac_precious_vars='build_alias
@@ -1354,10 +1352,8 @@ Optional Packages:
   --with-gnu-classpath-glibj
                           Build J3 with GNU Classpath install (default is
                           '/usr/share/classpath/glibj.zip')
-  --with-openjdk-jre      Build J3 with OpenJDK JRE install (default is
-                          '/usr/lib/java/jre')
-  --with-openjdk-arch-dir Location of architecture-specific OpenJDK libraries
-                          (default is '/usr/lib/java/jre/lib/i386')
+  --with-openjdk-path     Build J3 with OpenJDK JRE install (default is
+                          '/usr/lib/java/')
   --with-classpath-impl   Build J3 with the specified classpath implementation
                           (default is gnuclasspath)
 
@@ -2566,21 +2562,11 @@ fi
 
 
 
-# Check whether --with-openjdk-jre was given.
-if test "${with_openjdk_jre+set}" = set; then :
-  withval=$with_openjdk_jre; openjdkjre=$withval
+# Check whether --with-openjdk-path was given.
+if test "${with_openjdk_path+set}" = set; then :
+  withval=$with_openjdk_path; openjdkpath=$withval
 else
-  openjdkjre=/usr/lib/java/jre
-
-fi
-
-
-
-# Check whether --with-openjdk-arch-dir was given.
-if test "${with_openjdk_arch_dir+set}" = set; then :
-  withval=$with_openjdk_arch_dir; openjdkarchdir=$withval
-else
-  openjdkarchdir=/usr/lib/java/jre/lib/i386
+  openjdkpath=/usr/lib/java/
 
 fi
 
@@ -2813,15 +2799,15 @@ fi
   openjdk)
     { $as_echo "$as_me:${as_lineno-$LINENO}: Validating OpenJDK installation..." >&5
 $as_echo "$as_me: Validating OpenJDK installation..." >&6;}
-    as_ac_File=`$as_echo "ac_cv_file_${openjdkjre}" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${openjdkjre}" >&5
-$as_echo_n "checking for ${openjdkjre}... " >&6; }
+    as_ac_File=`$as_echo "ac_cv_file_${openjdkpath}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${openjdkpath}" >&5
+$as_echo_n "checking for ${openjdkpath}... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${openjdkjre}"; then
+if test -r "${openjdkpath}"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2833,21 +2819,21 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_${openjdkjre}" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_${openjdkpath}" | $as_tr_cpp` 1
 _ACEOF
 
 else
-  as_fn_error $? "Invalid OpenJDK JRE path, can't find required jar files!" "$LINENO" 5
+  as_fn_error $? "Invalid OpenJDK JDK path, can't find required jar files!" "$LINENO" 5
 fi
-as_ac_File=`$as_echo "ac_cv_file_${openjdkjre}/lib/rt.jar" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${openjdkjre}/lib/rt.jar" >&5
-$as_echo_n "checking for ${openjdkjre}/lib/rt.jar... " >&6; }
+as_ac_File=`$as_echo "ac_cv_file_${openjdkpath}/jre/lib/rt.jar" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${openjdkpath}/jre/lib/rt.jar" >&5
+$as_echo_n "checking for ${openjdkpath}/jre/lib/rt.jar... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${openjdkjre}/lib/rt.jar"; then
+if test -r "${openjdkpath}/jre/lib/rt.jar"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2859,79 +2845,11 @@ $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_${openjdkjre}/lib/rt.jar" | $as_tr_cpp` 1
+#define `$as_echo "HAVE_${openjdkpath}/jre/lib/rt.jar" | $as_tr_cpp` 1
 _ACEOF
 
 else
-  as_fn_error $? "Invalid OpenJDK JRE path, can't find required jar files!" "$LINENO" 5
-fi
-
-    as_ac_File=`$as_echo "ac_cv_file_${openjdkarchdir}" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${openjdkarchdir}" >&5
-$as_echo_n "checking for ${openjdkarchdir}... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${openjdkarchdir}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-else
-  as_fn_error $? "Invalid OpenJDK arch dir" "$LINENO" 5
-fi
-
-        as_ac_File=`$as_echo "ac_cv_file_${openjdkarchdir}/client/libjvm.$DYLIB_EXTENSION" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${openjdkarchdir}/client/libjvm.$DYLIB_EXTENSION" >&5
-$as_echo_n "checking for ${openjdkarchdir}/client/libjvm.$DYLIB_EXTENSION... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${openjdkarchdir}/client/libjvm.$DYLIB_EXTENSION"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-else
-  as_ac_File=`$as_echo "ac_cv_file_${openjdkarchdir}/server/libjvm.$DYLIB_EXTENSION" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${openjdkarchdir}/server/libjvm.$DYLIB_EXTENSION" >&5
-$as_echo_n "checking for ${openjdkarchdir}/server/libjvm.$DYLIB_EXTENSION... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${openjdkarchdir}/server/libjvm.$DYLIB_EXTENSION"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-else
-  as_fn_error $? "Can't find libjvm.$DYLIB_EXTENSION" "$LINENO" 5
-fi
-
+  as_fn_error $? "Invalid OpenJDK JDK path, can't find required jar files!" "$LINENO" 5
 fi
 
       ;;
