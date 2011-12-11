@@ -574,7 +574,7 @@ void start(JavaThread* thread) {
     TRY {
       handler = vm->upcalls->getUncaughtExceptionHandler->invokeJavaObjectVirtual(vm, thClass, javaThread);
       verifyNull(handler);
-      vm->upcalls->uncaughtException->invokeIntVirtual(vm, vm->upcalls->uncaughtException->classDef, handler, &javaThread, &exc);
+      vm->upcalls->uncaughtException->invokeIntVirtual(vm, thClass, handler, &javaThread, &exc);
     } CATCH {
       fprintf(stderr, "Exception in thread \"(unknown)\": "
                       "Can not print stack trace.\n");
