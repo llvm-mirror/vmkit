@@ -7,6 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/Constants.h"
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
@@ -37,6 +38,7 @@ namespace vmmagic {
   char LowerMagic::ID = 0;
   static RegisterPass<LowerMagic> X("LowerMagic",
                                     "Lower magic calls");
+  typedef SmallPtrSet<Instruction*,128> InstSet;
 
 static const char* AddressClass = "JnJVM_org_vmmagic_unboxed_Address_";
 static const char* AddressZeroMethod = 0;
@@ -353,24 +355,25 @@ static void initialiseFunctions(Module* M) {
   }
 }
 
-
-static bool removePotentialNullCheck(BasicBlock* Cur, Value* Obj) {
+static bool removePotentialNullCheck(BasicBlock* Cur, Value* Obj, InstSet& RemoveSet) {
   if (!Obj->getType()->isPointerTy()) return false;
 
   if (vmkit::System::SupportsHardwareNullCheck()) {
+    bool changed = false;
     for (Value::use_iterator I = Obj->use_begin(), E = Obj->use_end(); I != E; I++) {
       if (GetElementPtrInst* GE = dyn_cast<GetElementPtrInst>(*I)) {
         for (Value::use_iterator II = GE->use_begin(), EE = GE->use_end(); II != EE; II++) {
           if (LoadInst* LI = dyn_cast<LoadInst>(*II)) {
             if (LI->isVolatile()) {
               assert(LI->use_empty());
-              LI->eraseFromParent();
-              return true;
+              RemoveSet.insert(LI);
+              changed = true;
             }
           }
         }
       }
     }
+    return changed;
   } else {
     BasicBlock* BB = Cur->getUniquePredecessor();
     LLVMContext& Context = Cur->getParent()->getContext();
@@ -425,6 +428,8 @@ bool LowerMagic::runOnFunction(Function& F) {
   }
 
 
+  InstSet RemoveSet;
+
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
@@ -447,7 +452,7 @@ bool LowerMagic::runOnFunction(Function& F) {
             Changed = true;
             // Remove the null check
             if (Call.arg_begin() != Call.arg_end()) {
-              removePotentialNullCheck(Cur, Call.getArgument(0));
+              removePotentialNullCheck(Cur, Call.getArgument(0), RemoveSet);
             }
 
             if (!strcmp(FCur->getName().data(), AddressZeroMethod)) {
@@ -700,7 +705,7 @@ bool LowerMagic::runOnFunction(Function& F) {
             Changed = true;
             // Remove the null check
             if (Call.arg_begin() != Call.arg_end()) {
-              removePotentialNullCheck(Cur, Call.getArgument(0));
+              removePotentialNullCheck(Cur, Call.getArgument(0), RemoveSet);
             }
 
             if (!strcmp(FCur->getName().data(), ExtentToWordMethod)) {
@@ -828,7 +833,7 @@ bool LowerMagic::runOnFunction(Function& F) {
             Changed = true;
             // Remove the null check
             if (Call.arg_begin() != Call.arg_end()) {
-              removePotentialNullCheck(Cur, Call.getArgument(0));
+              removePotentialNullCheck(Cur, Call.getArgument(0), RemoveSet);
             }
             
             if (!strcmp(FCur->getName().data(), OffsetSLTMethod)) {
@@ -955,7 +960,7 @@ bool LowerMagic::runOnFunction(Function& F) {
             Changed = true;
             // Remove the null check
             if (Call.arg_begin() != Call.arg_end()) {
-              removePotentialNullCheck(Cur, Call.getArgument(0));
+              removePotentialNullCheck(Cur, Call.getArgument(0), RemoveSet);
             }
 
             if (!strcmp(FCur->getName().data(), ObjectReferenceNullReferenceMethod)) {
@@ -994,7 +999,7 @@ bool LowerMagic::runOnFunction(Function& F) {
             Changed = true;
             // Remove the null check
             if (Call.arg_begin() != Call.arg_end()) {
-              removePotentialNullCheck(Cur, Call.getArgument(0));
+              removePotentialNullCheck(Cur, Call.getArgument(0), RemoveSet);
             }
              
             if (!strcmp(FCur->getName().data(), WordOrMethod)) {
@@ -1264,6 +1269,13 @@ bool LowerMagic::runOnFunction(Function& F) {
         }
     }
   }
+
+  Changed |= !RemoveSet.empty();
+  for (InstSet::iterator I = RemoveSet.begin(),
+       E = RemoveSet.end(); I != E; ++I) {
+    (*I)->eraseFromParent();
+  }
+
   return Changed;
 }
 
