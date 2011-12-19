@@ -2644,13 +2644,13 @@ JVM_Accept(jint fd, struct sockaddr *him, jint *len) {
 JNIEXPORT jint JNICALL
 JVM_RecvFrom(jint fd, char *buf, int nBytes,
                   int flags, struct sockaddr *from, int *fromlen) {
-  NYI();
+  return recvfrom(fd, buf, nBytes, flags, from, (socklen_t*)fromlen);
 }
 
 JNIEXPORT jint JNICALL
 JVM_SendTo(jint fd, char *buf, int len,
                 int flags, struct sockaddr *to, int tolen) {
-  NYI();
+  return sendto(fd, buf, len, flags, to, (socklen_t)tolen);
 }
 
 JNIEXPORT jint JNICALL
@@ -2675,12 +2675,12 @@ JVM_GetSockName(jint fd, struct sockaddr *him, int *len) {
 
 JNIEXPORT jint JNICALL
 JVM_GetSockOpt(jint fd, int level, int optname, char *optval, int *optlen) {
-  NYI();
+  return getsockopt(fd, level, optname, optval, (socklen_t*)optlen);
 }
 
 JNIEXPORT jint JNICALL
 JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen) {
-  NYI();
+  return setsockopt(fd, level, optname, optval, optlen);
 }
 
 /*
