@@ -1661,7 +1661,37 @@ JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass) {
 /* Generics support (JDK 1.5) */
 JNIEXPORT jstring JNICALL
 JVM_GetClassSignature(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObjectClass * Cl = 0;
+  jstring sig = 0;
+  llvm_gcroot(Cl, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Cl = cls ? *(JavaObjectClass**)cls : 0;
+  verifyNull(Cl);
+
+  Jnjvm* vm = th->getJVM();
+  CommonClass* CC =
+    UserCommonClass::resolvedImplClass(vm, Cl, false);
+  Class* cl = CC->asClass();
+
+  // Primitives, arrays, interfaces...
+  if (!cl) RETURN_FROM_JNI(0);
+
+  Attribut* sigAtt = cl->lookupAttribut(Attribut::signatureAttribut);
+
+  if (sigAtt) {
+    Reader reader(sigAtt, cl->bytes);
+    uint16 index = reader.readU2();
+
+    sig = (jstring)cl->classLoader->UTF8ToStr(cl->getConstantPool()->UTF8At(index));
+  }
+
+  RETURN_FROM_JNI(sig);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /* Annotations support (JDK 1.5) */
@@ -2800,7 +2830,55 @@ JVM_InitAgentProperties(JNIEnv *env, jobject agent_props) {
  */
 JNIEXPORT jobjectArray JNICALL
 JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass) {
-  NYI();
+  JavaObjectClass * Cl = 0;
+  ArrayObject * arr = 0;
+  llvm_gcroot(Cl, 0);
+  llvm_gcroot(arr, 0);
+
+  BEGIN_JNI_EXCEPTION
+  Jnjvm * vm = th->getJVM();
+
+  Cl = ofClass ? *(JavaObjectClass**)ofClass : 0;
+  verifyNull(Cl);
+
+  CommonClass* CC =
+    UserCommonClass::resolvedImplClass(vm, Cl, false);
+  Class* cl = CC->asClass();
+
+  // Primitives arrays, interfaces...
+  if (!cl) RETURN_FROM_JNI(0);
+
+  Attribut* emAtt = cl->lookupAttribut(Attribut::enclosingMethodAttribut);
+
+  if (emAtt) {
+    Reader reader(emAtt, cl->bytes);
+    uint16 class_index = reader.readU2();
+    uint16 method_index = reader.readU2();
+
+    JavaConstantPool * cpl = cl->getConstantPool();
+    CommonClass * enclosingClass = cpl->loadClass(class_index, true);
+    assert(enclosingClass);
+
+    arr = (ArrayObject*)vm->upcalls->ArrayOfObject->doNew(3,vm);
+    ArrayObject::setElement(arr, enclosingClass->getClassDelegatee(vm), 0);
+
+    if (method_index) {
+      Signdef * sign = cl->getConstantPool()->resolveNameAndSign(method_index);
+      assert(sign);
+
+      const UTF8* methodName = cpl->UTF8At((cpl->ctpDef[method_index] >> 16) & 0xFFFF);
+      assert(methodName);
+
+      ArrayObject::setElement(arr, *cl->classLoader->UTF8ToStr(methodName), 1);
+      ArrayObject::setElement(arr, *cl->classLoader->UTF8ToStr(sign->keyName), 2);
+    }
+  }
+
+  RETURN_REF_FROM_JNI(arr, jobjectArray);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*

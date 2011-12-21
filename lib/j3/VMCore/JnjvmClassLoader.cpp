@@ -150,6 +150,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
   Attribut::lineNumberTableAttribut = asciizConstructUTF8("LineNumberTable");
   Attribut::innerClassesAttribut = asciizConstructUTF8("InnerClasses");
   Attribut::sourceFileAttribut = asciizConstructUTF8("SourceFile");
+  Attribut::signatureAttribut = asciizConstructUTF8("Signature");
+  Attribut::enclosingMethodAttribut = asciizConstructUTF8("EnclosingMethod");
  
   JavaCompiler::InlinePragma =
     asciizConstructUTF8("Lorg/vmmagic/pragma/Inline;");

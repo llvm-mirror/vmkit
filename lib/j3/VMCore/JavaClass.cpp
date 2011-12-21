@@ -36,6 +36,8 @@ const UTF8* Attribut::constantAttribut = 0;
 const UTF8* Attribut::lineNumberTableAttribut = 0;
 const UTF8* Attribut::innerClassesAttribut = 0;
 const UTF8* Attribut::sourceFileAttribut = 0;
+const UTF8* Attribut::signatureAttribut = 0;
+const UTF8* Attribut::enclosingMethodAttribut = 0;
 
 Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;

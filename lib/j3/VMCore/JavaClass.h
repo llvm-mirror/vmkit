@@ -130,6 +130,16 @@ public:
   /// file.
   ///
   static const UTF8* sourceFileAttribut;
+
+  /// signatureAttribut - The "Signature" attribut.  This is used to record
+  /// generics information about a class or method.
+  ///
+  static const UTF8* signatureAttribut;
+
+  /// enclosingMEthodAttribut - The "EnclosingMethod" attribut.  This is a class
+  /// attribut that identifies the method definining a local or anonymous class
+  ///
+  static const UTF8* enclosingMethodAttribut;
   
 };
 
