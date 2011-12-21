@@ -1151,7 +1151,12 @@ llvm::Function* JavaJIT::javaCompile() {
   reader.cursor = start;
   compileOpcodes(reader, codeLen);
   
-  assert(stack.size() == 0 && "Stack not empty after compiling bytecode");
+  // This isn't a real requirement, although javac-produced bytcode does
+  // seem to adhere to it.  However jython and similar (clojure, etc) don't
+  // always create bytecode that matches this, and AFAICT rejecting the
+  // code is incorrect.
+  //assert(stack.size() == 0 && "Stack not empty after compiling bytecode");
+
   // Fix a javac(?) bug where a method only throws an exception and does
   // not return.
   pred_iterator PI = pred_begin(endBlock);
