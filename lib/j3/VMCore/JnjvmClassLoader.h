@@ -12,6 +12,7 @@
 #define JNJVM_CLASSLOADER_H
 
 #include <map>
+#include <set>
 #include <vector>
 
 #include "types.h"
@@ -45,6 +46,7 @@ class Typedef;
 class TypeMap;
 class VMClassLoader;
 class ZipArchive;
+class ArrayObject;
 
 /// JnjvmClassLoader - Runtime representation of a class loader. It contains
 /// its own tables (signatures, UTF8, types) which are mapped to a single
@@ -428,6 +430,11 @@ public:
 
   /// primitiveMap - Map of primitive classes, hashed by id.
   std::map<const char, UserClassPrimitive*> primitiveMap;
+
+  // Set of boot packages
+  std::set<const UTF8*> packages;
+
+  ArrayObject* getBootPackages(Jnjvm* vm);
 
   UserClassPrimitive* getPrimitiveClass(char id) {
     return primitiveMap[id];

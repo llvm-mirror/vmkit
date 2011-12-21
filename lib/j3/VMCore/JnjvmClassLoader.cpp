@@ -297,6 +297,23 @@ UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
     if (doResolve) cl->asClass()->resolveClass();
   }
 
+  if (cl) {
+    // If we don't have knowledge of the package containing this class,
+    // add it to the set of packages defined in this classLoader
+    UTF8Buffer buffer(name);
+    const char * cname = buffer.cString();
+    const char * slash = strrchr(cname, '/');
+    if (slash) {
+      int packagelen = slash - cname;
+      const UTF8 * package = name->extract(hashUTF8, 0, packagelen);
+      lock.lock();
+      packages.insert(package);
+      lock.unlock();
+    }
+  }
+
+
+
   return (UserClass*)cl;
 }
 
@@ -1050,5 +1067,22 @@ word_t JnjvmClassLoader::getRegisteredNative(const JavaMethod * meth) {
   nativesLock.lock();
   word_t res = registeredNatives[meth];
   nativesLock.unlock();
+  return res;
+}
+
+ArrayObject* JnjvmBootstrapLoader::getBootPackages(Jnjvm * vm) {
+  ArrayObject* res = 0;
+  llvm_gcroot(res, 0);
+
+  lock.lock();
+  res = (ArrayObject*)vm->upcalls->ArrayOfString->doNew(packages.size(), vm);
+  std::set<const UTF8*>::const_iterator I = packages.begin(),
+                                        E = packages.end();
+  for (int i = 0; I != E; ++I, ++i) {
+    ArrayObject::setElement(res, *UTF8ToStr(*I), i);
+  }
+
+  lock.unlock();
+
   return res;
 }

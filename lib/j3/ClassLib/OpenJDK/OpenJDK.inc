@@ -910,7 +910,19 @@ JVM_GetSystemPackage(JNIEnv *env, jstring name) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetSystemPackages(JNIEnv *env) {
-  NYI();
+  ArrayObject * res = 0;
+  llvm_gcroot(res, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  res = vm->bootstrapLoader->getBootPackages(vm);
+
+  RETURN_REF_FROM_JNI(res, jobjectArray);
+
+  END_JNI_EXCEPTION
+
+  return NULL;
 }
 
 /*
