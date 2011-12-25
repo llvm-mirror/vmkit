@@ -136,10 +136,6 @@ Value* LLVMClassInfo::getVirtualSize() {
   return virtualSizeConstant;
 }
 
-namespace llvm {
-  extern bool JITEmitDebugInfo;
-}
-
 static char* GetMethodName(vmkit::ThreadAllocator& allocator,
                            JavaMethod* methodDef,
                            Class* customizeFor) {
@@ -180,7 +176,7 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
   }
 
   if (result == NULL) {
-    if (Compiler->emitFunctionName() || JITEmitDebugInfo) {
+    if (Compiler->emitFunctionName()) {
       vmkit::ThreadAllocator allocator;
       char* buf = GetMethodName(
           allocator, methodDef, customizing ? customizeFor : NULL);
@@ -216,7 +212,7 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
 void LLVMMethodInfo::setCustomizedVersion(Class* cl, llvm::Function* F) {
   assert(customizedVersions.size() == 0);
   vmkit::ThreadAllocator allocator;
-  if (Compiler->emitFunctionName() || JITEmitDebugInfo) {
+  if (Compiler->emitFunctionName()) {
     char* buf = GetMethodName(allocator, methodDef, cl);
     F->setName(buf);
   }

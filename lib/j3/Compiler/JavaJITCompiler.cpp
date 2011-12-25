@@ -157,9 +157,14 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
 
   EmitFunctionName = false;
   GCInfo = NULL;
+  
+  EngineBuilder engine(TheModule);
+  TargetOptions options;
+  options.NoFramePointerElim = true;
+  engine.setTargetOptions(options);
+  engine.setEngineKind(EngineKind::JIT);
+  executionEngine = engine.create();
 
-  executionEngine = ExecutionEngine::createJIT(TheModule, 0,
-                                               0, llvm::CodeGenOpt::Default, false);
   executionEngine->RegisterJITEventListener(&listener);
   TheTargetData = executionEngine->getTargetData();
   TheModule->setDataLayout(TheTargetData->getStringRepresentation());

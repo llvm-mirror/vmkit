@@ -1806,8 +1806,12 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   JavaLLVMCompiler(ModuleID) {
 
   std::string Error;
-  const Target* TheTarget(TargetRegistry::lookupTarget(vmkit::VmkitModule::getHostTriple(), Error));
-  TargetMachine* TM = TheTarget->createTargetMachine(vmkit::VmkitModule::getHostTriple(), "", "");
+  const Target* TheTarget(TargetRegistry::lookupTarget(
+      vmkit::VmkitModule::getHostTriple(), Error));
+  TargetOptions options;
+  options.NoFramePointerElim = true;
+  TargetMachine* TM = TheTarget->createTargetMachine(
+      vmkit::VmkitModule::getHostTriple(), "", "", options);
   TheTargetData = TM->getTargetData();
   TheModule->setDataLayout(TheTargetData->getStringRepresentation());
   TheModule->setTargetTriple(TM->getTargetTriple());

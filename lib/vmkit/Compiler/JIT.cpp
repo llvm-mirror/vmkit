@@ -98,7 +98,6 @@ void VmkitModule::initialise(int argc, char** argv) {
   initializeTarget(Registry);
   InitializeNativeTarget(); 
   
-  NoFramePointerElim = true;
   DisablePrettyStackTrace = true;
 
   ThreadAllocator allocator;
