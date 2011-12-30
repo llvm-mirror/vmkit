@@ -1977,7 +1977,28 @@ JNIEXPORT jstring JNICALL JVM_ConstantPoolGetStringAt
 
 JNIEXPORT jstring JNICALL JVM_ConstantPoolGetUTF8At
 (JNIEnv *env, jobject unused, jobject jcpool, jint index) {
-  NYI();
+  JavaObjectClass* Cl = 0;
+  llvm_gcroot(Cl, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Cl = jcpool ? *(JavaObjectClass**)jcpool : 0;
+  verifyNull(Cl);
+
+  Class* cl = JavaObjectClass::getClass(Cl)->asClass();
+  assert(cl);
+
+  const UTF8* utf = cl->getConstantPool()->UTF8At(index);
+  assert(utf);
+
+  Jnjvm* vm = th->getJVM();
+  jstring str = (jstring)cl->classLoader->UTF8ToStr(utf);
+
+  RETURN_FROM_JNI(str);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 /*
