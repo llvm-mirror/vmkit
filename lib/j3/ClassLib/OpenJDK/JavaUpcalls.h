@@ -256,6 +256,8 @@ public:
   ISOLATE_STATIC JavaField* methodClass;
   ISOLATE_STATIC JavaField* fieldClass;
   ISOLATE_STATIC JavaField* constructorClass;
+  ISOLATE_STATIC UserClass* constantPoolClass;
+  ISOLATE_STATIC JavaField* constantPoolOop;
 
   ISOLATE_STATIC JavaMethod* EnqueueReference;
   ISOLATE_STATIC UserClass*  newReference;

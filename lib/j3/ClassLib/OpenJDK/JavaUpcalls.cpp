@@ -219,6 +219,8 @@ Class* Classpath::OfObject;
 JavaField* Classpath::methodClass;
 JavaField* Classpath::fieldClass;
 JavaField* Classpath::constructorClass;
+Class*     Classpath::constantPoolClass;
+JavaField* Classpath::constantPoolOop;
 
 JavaMethod* Classpath::EnqueueReference;
 Class*      Classpath::newReference;
@@ -855,6 +857,12 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_FIELD(loader, "java/lang/reflect/Constructor", "clazz",
                  "Ljava/lang/Class;", ACC_VIRTUAL);
 
+  constantPoolClass =
+    UPCALL_CLASS(loader, "sun/reflect/ConstantPool");
+  constantPoolOop =
+    UPCALL_FIELD(loader, "sun/reflect/ConstantPool", "constantPoolOop",
+                 "Ljava/lang/Object;", ACC_VIRTUAL);
+
   loader->loadName(loader->asciizConstructUTF8("java/lang/String"),
                                        true, false, NULL);
 
@@ -997,6 +1005,8 @@ void Classpath::InitializeSystem(Jnjvm * jvm) {
   assertionStatusDirectivesClass->resolveClass();
   assertionStatusDirectivesClass->initialiseClass(jvm);
 
+  constantPoolClass->resolveClass();
+  constantPoolClass->initialiseClass(jvm);
 }
 
 

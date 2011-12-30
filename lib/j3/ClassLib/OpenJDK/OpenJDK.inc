@@ -1863,7 +1863,28 @@ JVM_NewInstanceFromConstructor(JNIEnv *env, jobject _c, jobjectArray args0) {
 
 JNIEXPORT jobject JNICALL
 JVM_GetClassConstantPool(JNIEnv *env, jclass cls) {
-  NYI();
+  JavaObjectClass * Cl = 0;
+  JavaObject* CP = 0;
+  llvm_gcroot(Cl, 0);
+  llvm_gcroot(CP, 0);
+  BEGIN_JNI_EXCEPTION
+
+  Cl = cls ? *(JavaObjectClass**)cls : 0;
+  verifyNull(Cl);
+
+  Jnjvm* vm = th->getJVM();
+
+  CP = vm->upcalls->constantPoolClass->doNew(vm);
+
+  // Set the constantPoolOop field to point to the Class this
+  // ConstantPool object is supposed to represent the constant pool for.
+  vm->upcalls->constantPoolOop->setInstanceObjectField(CP, Cl);
+
+  RETURN_REF_FROM_JNI(CP, jobject);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetSize
