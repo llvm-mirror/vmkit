@@ -1709,12 +1709,36 @@ JVM_GetClassSignature(JNIEnv *env, jclass cls) {
 /* Annotations support (JDK 1.5) */
 JNIEXPORT jbyteArray JNICALL
 JVM_GetClassAnnotations(JNIEnv *env, jclass cls) {
-  JavaObject* ret = 0;
+  ArraySInt8 * ret = 0;
+  JavaObjectClass* Cl = 0;
   llvm_gcroot(ret, 0);
+  llvm_gcroot(Cl, 0);
 
   BEGIN_JNI_EXCEPTION
 
-  NYI();
+  Cl = cls ? *(JavaObjectClass**)cls : 0;
+  verifyNull(Cl);
+
+  Jnjvm* vm = th->getJVM();
+  CommonClass* CC = JavaObjectClass::getClass(Cl);
+  assert(CC);
+  Class* cl = CC->asClass();
+  assert(cl);
+
+  Attribut* annotationsAtt =
+    cl->lookupAttribut(Attribut::annotationsAttribut);
+
+  if (annotationsAtt) {
+    uint32 len = annotationsAtt->nbb;
+    ret = (ArraySInt8*)vm->upcalls->ArrayOfByte->doNew(len, vm);
+
+    Reader reader(annotationsAtt, cl->bytes);
+    for(uint32 i = 0; i < len; ++i) {
+      ArraySInt8::setElement(ret, reader.readS1(), i);
+    }
+    RETURN_REF_FROM_JNI(ret, jbyteArray);
+  }
+
   RETURN_FROM_JNI(0);
 
   END_JNI_EXCEPTION
