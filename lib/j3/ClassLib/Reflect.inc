@@ -224,18 +224,6 @@ ArrayObject* JavaObjectClass::getInterfaces(JavaObjectClass* Cl) {
   return res;
 }
 
-ArrayObject* JavaObjectClass::getDeclaredAnnotations(JavaObjectClass* Cl) {
-  // TODO: Implement me (for now just returning empty array)
-  ArrayObject* res = 0;
-  llvm_gcroot(res, 0);
-
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
-  res = (ArrayObject*)array->doNew(0, vm);
-
-  return res;
-}
-
 int32_t JavaObjectClass::getModifiers(JavaObjectClass* Cl) {
   llvm_gcroot(Cl, 0);
   int32_t res;

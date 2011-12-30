@@ -442,7 +442,9 @@ JavaObject* Cl) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  res = JavaObjectClass::getDeclaredAnnotations((JavaObjectClass*)Cl);
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
+  res = (ArrayObject*)array->doNew(0, vm);
 
   END_NATIVE_EXCEPTION
 
