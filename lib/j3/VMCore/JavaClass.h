@@ -140,7 +140,14 @@ public:
   /// attribut that identifies the method definining a local or anonymous class
   ///
   static const UTF8* enclosingMethodAttribut;
-  
+
+  /// paramAnnotationsAttribut - Annotations for parameters attribut
+  ///
+  static const UTF8* paramAnnotationsAttribut;
+
+  /// annotationDefaultAttribut - The "AnnotationDefault" attribut
+  ///
+  static const UTF8* annotationDefaultAttribut;
 };
 
 /// TaskClassMirror - The isolate specific class information: the initialization

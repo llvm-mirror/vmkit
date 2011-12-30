@@ -10,11 +10,14 @@
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
+#include "JavaConstantPool.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "Reader.h"
+
 #include "Reflect.inc"
 
 namespace j3 {
@@ -86,9 +89,13 @@ JavaObjectConstructor* JavaObjectConstructor::createFromInternalConstructor(Java
   JavaObjectConstructor* ret = 0;
   JavaObject* pArr = 0;
   JavaObject* eArr = 0;
+  ArraySInt8* ann = 0;
+  ArraySInt8* pmAnn = 0;
   llvm_gcroot(ret, 0);
   llvm_gcroot(pArr, 0);
   llvm_gcroot(eArr, 0);
+  llvm_gcroot(ann, 0);
+  llvm_gcroot(pmAnn, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader * classLoader = cons->classDef->classLoader;
@@ -98,15 +105,20 @@ JavaObjectConstructor* JavaObjectConstructor::createFromInternalConstructor(Java
   eArr = cons->getExceptionTypes(classLoader);
   ret = (JavaObjectConstructor*)Cons->doNew(vm);
   JavaObject* const* Cl = cons->classDef->getDelegateePtr();
+
+  JavaString ** sig = getSignature(cons);
+  ann = getAnnotations(cons);
+  pmAnn = getParamAnnotations(cons);
+
   vm->upcalls->initConstructor->invokeIntSpecial(vm, Cons, ret,
     Cl,           /* declaringClass */
     &pArr,        /* parameterTypes */
     &eArr,        /* checkedExceptions */
     cons->access, /* modifiers */
     i,            /* slot */
-    NULL,         /* String signature */
-    NULL,         /* annotations */
-    NULL          /* parameterAnnotations */
+    sig,          /* String signature */
+    &ann,         /* annotations */
+    &pmAnn        /* parameterAnnotations */
   );
 
   return ret;
@@ -118,11 +130,17 @@ JavaObjectMethod* JavaObjectMethod::createFromInternalMethod(JavaMethod* meth, i
   JavaObject* pArr = 0;
   JavaObject* eArr = 0;
   JavaObject* retTy = 0;
+  ArraySInt8* ann = 0;
+  ArraySInt8* pmAnn = 0;
+  ArraySInt8* defAnn = 0;
   llvm_gcroot(ret, 0);
   llvm_gcroot(str, 0);
   llvm_gcroot(pArr, 0);
   llvm_gcroot(eArr, 0);
   llvm_gcroot(retTy, 0);
+  llvm_gcroot(ann, 0);
+  llvm_gcroot(pmAnn, 0);
+  llvm_gcroot(defAnn, 0);
 
   // TODO: check parameter types
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -134,6 +152,11 @@ JavaObjectMethod* JavaObjectMethod::createFromInternalMethod(JavaMethod* meth, i
   pArr = meth->getParameterTypes(classLoader);
   eArr = meth->getExceptionTypes(classLoader);
   retTy = meth->getReturnType(classLoader);
+  JavaString ** sig = getSignature(meth);
+  ann = getAnnotations(meth);
+  pmAnn = getParamAnnotations(meth);
+  defAnn = getAnnotationDefault(meth);
+
   JavaObject* const* Cl = meth->classDef->getClassDelegateePtr(vm);
   vm->upcalls->initMethod->invokeIntSpecial(vm, Meth, ret,
     Cl,           /* declaring class */
@@ -143,10 +166,10 @@ JavaObjectMethod* JavaObjectMethod::createFromInternalMethod(JavaMethod* meth, i
     &eArr,        /* exceptions */
     meth->access, /* modifiers */
     i,            /* slot */
-    NULL,         /* signature */
-    NULL,         /* annotations */
-    NULL,         /* parameter annotations */
-    NULL);        /* default annotations */
+    sig,          /* signature */
+    &ann,         /* annotations */
+    &pmAnn,       /* parameter annotations */
+    &defAnn);     /* default annotations */
 
   return ret;
 }
@@ -154,8 +177,10 @@ JavaObjectMethod* JavaObjectMethod::createFromInternalMethod(JavaMethod* meth, i
 JavaObjectField* JavaObjectField::createFromInternalField(JavaField* field, int i) {
   JavaObjectField* ret = 0;
   JavaString* name = 0;
+  ArraySInt8* ann = 0;
   llvm_gcroot(ret, 0);
   llvm_gcroot(name, 0);
+  llvm_gcroot(ann, 0);
 
   // TODO: check parameter types
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -170,9 +195,8 @@ JavaObjectField* JavaObjectField::createFromInternalField(JavaField* field, int 
   JavaObject* const* type = fieldCl->getClassDelegateePtr(vm);
   JavaObject* const* Cl = field->classDef->getClassDelegateePtr(vm);
 
-  // TODO:Implement these!
-  JavaObject** sign = NULL;
-  JavaObject** annArray = NULL;
+  JavaString** sig = getSignature(field);
+  ann = getAnnotations(field);
 
   /* java.reflect.Field(
   *   Class declaringClass,
@@ -189,10 +213,106 @@ JavaObjectField* JavaObjectField::createFromInternalField(JavaField* field, int 
     type,
     field->access,
     i,
-    sign,
-    annArray);
+    sig,
+    ann);
 
   return ret;
+}
+
+static inline JavaString** getSignatureString(Attribut* sigAtt, Class* cl) {
+  if (!sigAtt) return 0;
+
+  Reader reader(sigAtt, cl->bytes);
+  uint16 index = reader.readU2();
+
+  return cl->classLoader->UTF8ToStr(cl->getConstantPool()->UTF8At(index));
+
+}
+
+JavaString** JavaObjectClass::getSignature(Class *cl) {
+  Attribut* sigAtt = cl->lookupAttribut(Attribut::signatureAttribut);
+  return getSignatureString(sigAtt, cl);
+}
+
+JavaString** JavaObjectField::getSignature(JavaField* field) {
+  Attribut* sigAtt = field->lookupAttribut(Attribut::signatureAttribut);
+  return getSignatureString(sigAtt, field->classDef);
+}
+
+JavaString** JavaObjectMethod::getSignature(JavaMethod* meth) {
+  Attribut* sigAtt = meth->lookupAttribut(Attribut::signatureAttribut);
+  return getSignatureString(sigAtt, meth->classDef);
+}
+
+JavaString** JavaObjectConstructor::getSignature(JavaMethod* cons) {
+  Attribut* sigAtt = cons->lookupAttribut(Attribut::signatureAttribut);
+  return getSignatureString(sigAtt, cons->classDef);
+}
+
+static inline ArraySInt8* getAttrBytes(Attribut* annotationsAtt, Class* cl) {
+  ArraySInt8* ret = 0;
+  llvm_gcroot(ret, 0);
+
+  if (!annotationsAtt) return 0;
+
+  JavaThread* th = JavaThread::get();
+  Jnjvm* vm = th->getJVM();
+
+  uint32 len = annotationsAtt->nbb;
+  ret = (ArraySInt8*)vm->upcalls->ArrayOfByte->doNew(len, vm);
+
+  Reader reader(annotationsAtt, cl->bytes);
+  for(uint32 i = 0; i < len; ++i) {
+    ArraySInt8::setElement(ret, reader.readS1(), i);
+  }
+
+  return ret;
+}
+
+ArraySInt8* JavaObjectClass::getAnnotations(Class *cl) {
+  Attribut* attr =
+    cl->lookupAttribut(Attribut::annotationsAttribut);
+
+  return getAttrBytes(attr, cl);
+}
+
+ArraySInt8* JavaObjectField::getAnnotations(JavaField *field) {
+  Attribut* attr =
+    field->lookupAttribut(Attribut::annotationsAttribut);
+
+  return getAttrBytes(attr, field->classDef);
+}
+
+ArraySInt8* JavaObjectMethod::getAnnotations(JavaMethod *meth) {
+  Attribut* attr =
+    meth->lookupAttribut(Attribut::annotationsAttribut);
+
+  return getAttrBytes(attr, meth->classDef);
+}
+ArraySInt8* JavaObjectMethod::getParamAnnotations(JavaMethod *meth) {
+  Attribut* attr =
+    meth->lookupAttribut(Attribut::paramAnnotationsAttribut);
+
+  return getAttrBytes(attr, meth->classDef);
+}
+ArraySInt8* JavaObjectMethod::getAnnotationDefault(JavaMethod *meth) {
+  Attribut* attr =
+    meth->lookupAttribut(Attribut::annotationDefaultAttribut);
+
+  return getAttrBytes(attr, meth->classDef);
+}
+
+ArraySInt8* JavaObjectConstructor::getAnnotations(JavaMethod *cons) {
+  Attribut* attr =
+    cons->lookupAttribut(Attribut::annotationsAttribut);
+
+  return getAttrBytes(attr, cons->classDef);
+}
+ArraySInt8* JavaObjectConstructor::getParamAnnotations(JavaMethod *cons) {
+  Attribut* attr =
+    cons->lookupAttribut(Attribut::paramAnnotationsAttribut);
+
+  return getAttrBytes(attr, cons->classDef);
 }
 
 } // end namespace j3

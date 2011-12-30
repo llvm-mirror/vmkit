@@ -152,6 +152,8 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
   Attribut::sourceFileAttribut = asciizConstructUTF8("SourceFile");
   Attribut::signatureAttribut = asciizConstructUTF8("Signature");
   Attribut::enclosingMethodAttribut = asciizConstructUTF8("EnclosingMethod");
+  Attribut::paramAnnotationsAttribut = asciizConstructUTF8("RuntimeVisibleParameterAnnotations");
+  Attribut::annotationDefaultAttribut = asciizConstructUTF8("AnnotationDefault");
  
   JavaCompiler::InlinePragma =
     asciizConstructUTF8("Lorg/vmmagic/pragma/Inline;");

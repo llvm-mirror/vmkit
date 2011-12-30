@@ -12,6 +12,7 @@
 
 #include "VmkitGC.h"
 
+#include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
@@ -97,7 +98,6 @@ public:
     }
   }
 
-  static ArrayObject* getDeclaredAnnotations(JavaObjectClass* Cl);
   static ArrayObject* getDeclaredClasses(JavaObjectClass* Cl, bool publicOnly);
   static ArrayObject* getDeclaredConstructors(JavaObjectClass* Cl, bool publicOnly);
   static ArrayObject* getDeclaredFields(JavaObjectClass* Cl, bool publicOnly);
@@ -105,6 +105,8 @@ public:
   static ArrayObject* getInterfaces(JavaObjectClass* Cl);
   static JavaObject* getDeclaringClass(JavaObjectClass* Cl);
   static int getModifiers(JavaObjectClass* Cl);
+  static JavaString** getSignature(Class* cl);
+  static ArraySInt8* getAnnotations(Class* cl);
 };
 
 class JavaObjectField : public JavaObject {
@@ -157,6 +159,8 @@ public:
   }
 
   static JavaObjectField* createFromInternalField(JavaField* field, int i);
+  static JavaString** getSignature(JavaField* field);
+  static ArraySInt8* getAnnotations(JavaField* field);
 };
 
 class JavaObjectMethod : public JavaObject {
@@ -211,6 +215,10 @@ public:
   }
 
   static JavaObjectMethod* createFromInternalMethod(JavaMethod* meth, int i);
+  static JavaString** getSignature(JavaMethod* meth);
+  static ArraySInt8* getAnnotations(JavaMethod* meth);
+  static ArraySInt8* getParamAnnotations(JavaMethod* meth);
+  static ArraySInt8* getAnnotationDefault(JavaMethod* meth);
 };
 
 class JavaObjectConstructor : public JavaObject {
@@ -256,6 +264,9 @@ public:
   }
 
   static JavaObjectConstructor* createFromInternalConstructor(JavaMethod* cons, int i);
+  static JavaString** getSignature(JavaMethod* cons);
+  static ArraySInt8* getAnnotations(JavaMethod* cons);
+  static ArraySInt8* getParamAnnotations(JavaMethod* cons);
 };
 
 class JavaObjectThrowable : public JavaObject {

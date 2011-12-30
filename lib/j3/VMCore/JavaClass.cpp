@@ -38,6 +38,8 @@ const UTF8* Attribut::innerClassesAttribut = 0;
 const UTF8* Attribut::sourceFileAttribut = 0;
 const UTF8* Attribut::signatureAttribut = 0;
 const UTF8* Attribut::enclosingMethodAttribut = 0;
+const UTF8* Attribut::paramAnnotationsAttribut = 0;
+const UTF8* Attribut::annotationDefaultAttribut = 0;
 
 Class* ClassArray::SuperArray;
 Class** ClassArray::InterfacesArray;

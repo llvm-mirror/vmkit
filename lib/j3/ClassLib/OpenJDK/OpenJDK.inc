@@ -1674,7 +1674,6 @@ JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass) {
 JNIEXPORT jstring JNICALL
 JVM_GetClassSignature(JNIEnv *env, jclass cls) {
   JavaObjectClass * Cl = 0;
-  jstring sig = 0;
   llvm_gcroot(Cl, 0);
 
   BEGIN_JNI_EXCEPTION
@@ -1682,24 +1681,11 @@ JVM_GetClassSignature(JNIEnv *env, jclass cls) {
   Cl = cls ? *(JavaObjectClass**)cls : 0;
   verifyNull(Cl);
 
-  Jnjvm* vm = th->getJVM();
-  CommonClass* CC =
-    UserCommonClass::resolvedImplClass(vm, Cl, false);
-  Class* cl = CC->asClass();
+  Class* cl = JavaObjectClass::getClass(Cl)->asClass();
+  if (!cl) return 0;
 
-  // Primitives, arrays, interfaces...
-  if (!cl) RETURN_FROM_JNI(0);
-
-  Attribut* sigAtt = cl->lookupAttribut(Attribut::signatureAttribut);
-
-  if (sigAtt) {
-    Reader reader(sigAtt, cl->bytes);
-    uint16 index = reader.readU2();
-
-    sig = (jstring)cl->classLoader->UTF8ToStr(cl->getConstantPool()->UTF8At(index));
-  }
-
-  RETURN_FROM_JNI(sig);
+  JavaString** sig = JavaObjectClass::getSignature(cl);
+  RETURN_FROM_JNI((jstring)sig);
 
   END_JNI_EXCEPTION
 
@@ -1718,28 +1704,12 @@ JVM_GetClassAnnotations(JNIEnv *env, jclass cls) {
 
   Cl = cls ? *(JavaObjectClass**)cls : 0;
   verifyNull(Cl);
-
-  Jnjvm* vm = th->getJVM();
-  CommonClass* CC = JavaObjectClass::getClass(Cl);
-  assert(CC);
-  Class* cl = CC->asClass();
+  Class * cl = JavaObjectClass::getClass(Cl)->asClass();
   assert(cl);
 
-  Attribut* annotationsAtt =
-    cl->lookupAttribut(Attribut::annotationsAttribut);
+  ret = JavaObjectClass::getAnnotations(cl);
 
-  if (annotationsAtt) {
-    uint32 len = annotationsAtt->nbb;
-    ret = (ArraySInt8*)vm->upcalls->ArrayOfByte->doNew(len, vm);
-
-    Reader reader(annotationsAtt, cl->bytes);
-    for(uint32 i = 0; i < len; ++i) {
-      ArraySInt8::setElement(ret, reader.readS1(), i);
-    }
-    RETURN_REF_FROM_JNI(ret, jbyteArray);
-  }
-
-  RETURN_FROM_JNI(0);
+  RETURN_REF_FROM_JNI(ret, jbyteArray);
 
   END_JNI_EXCEPTION
 
