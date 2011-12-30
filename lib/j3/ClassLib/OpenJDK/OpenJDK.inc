@@ -1961,7 +1961,6 @@ JNIEXPORT jstring JNICALL JVM_ConstantPoolGetUTF8At
   const UTF8* utf = cl->getConstantPool()->UTF8At(index);
   assert(utf);
 
-  Jnjvm* vm = th->getJVM();
   jstring str = (jstring)cl->classLoader->UTF8ToStr(utf);
 
   RETURN_FROM_JNI(str);
