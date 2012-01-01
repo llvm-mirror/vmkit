@@ -1922,7 +1922,23 @@ JNIEXPORT jobjectArray JNICALL JVM_ConstantPoolGetMemberRefInfoAt
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetIntAt
 (JNIEnv *env, jobject unused, jobject jcpool, jint index) {
-  NYI();
+  JavaObjectClass* Cl = 0;
+  llvm_gcroot(Cl, 0);
+
+  BEGIN_JNI_EXCEPTION
+
+  Cl = jcpool ? *(JavaObjectClass**)jcpool : 0;
+  verifyNull(Cl);
+
+  Class* cl = JavaObjectClass::getClass(Cl)->asClass();
+  assert(cl);
+
+  sint32 ret = cl->getConstantPool()->IntegerAt(index);
+  RETURN_FROM_JNI(ret);
+
+  END_JNI_EXCEPTION
+
+  return 0;
 }
 
 JNIEXPORT jlong JNICALL JVM_ConstantPoolGetLongAt
