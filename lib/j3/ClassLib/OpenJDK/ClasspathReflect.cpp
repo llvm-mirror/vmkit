@@ -214,7 +214,7 @@ JavaObjectField* JavaObjectField::createFromInternalField(JavaField* field, int 
     field->access,
     i,
     sig,
-    ann);
+    &ann);
 
   return ret;
 }
