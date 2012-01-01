@@ -1705,9 +1705,9 @@ JVM_GetClassAnnotations(JNIEnv *env, jclass cls) {
   Cl = cls ? *(JavaObjectClass**)cls : 0;
   verifyNull(Cl);
   Class * cl = JavaObjectClass::getClass(Cl)->asClass();
-  assert(cl);
 
-  ret = JavaObjectClass::getAnnotations(cl);
+  if (cl)
+    ret = JavaObjectClass::getAnnotations(cl);
 
   RETURN_REF_FROM_JNI(ret, jbyteArray);
 
