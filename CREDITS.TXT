@@ -8,6 +8,11 @@ beautification by scripts.  The fields are: name (N), email (E), web-address
 (W), PGP key ID and fingerprint (P), description (D), and snail-mail address
 (S).
 
+N: Will Dietz
+E: wdietz2@illinois.edu
+D: J3 OpenJDK port
+D: General robustification, misc bug fixes
+
 N: Bertil Folliot
 E: bertil.folliot@lip6.fr
 W: http://lip6.fr/Bertil.Folliot/
