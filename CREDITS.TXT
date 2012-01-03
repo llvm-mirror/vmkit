@@ -10,12 +10,12 @@ beautification by scripts.  The fields are: name (N), email (E), web-address
 
 N: Bertil Folliot
 E: bertil.folliot@lip6.fr
-W: http://www-src.lip6.fr/homepages/Bertil.Folliot/
+W: http://lip6.fr/Bertil.Folliot/
 D: Provider of much wisdom
 
 N: Nicolas Geoffray
 E: nicolas.geoffray@lip6.fr
-W: http://www-src.lip6.fr/homepages/Nicolas.Geoffray/
+W: http://lip6.fr/Nicolas.Geoffray/
 D: Architect of J3, originally a port of JnJVM to LLVM
 D: Architect of N3
 
@@ -28,5 +28,5 @@ D: Generics support in N3.
 
 N: Gael Thomas
 E: gael.thomas@lip6.fr
-W: http://www-src.lip6.fr/homepages/Gael.Thomas/
+W: http://lip6.fr/Gael.Thomas/
 D: Primary architect of JnJVM
