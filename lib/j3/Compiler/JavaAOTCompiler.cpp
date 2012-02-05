@@ -1483,17 +1483,13 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
 
   StructType* STy = StructType::get(getLLVMModule()->getContext(),
                                           Elemts);
-  
+
   std::vector<Constant*> Cts;
   Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, val->size));
-  
-  std::vector<Constant*> Vals;
-  for (sint32 i = 0; i < val->size; ++i) {
-    Vals.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), val->elements[i]));
-  }
 
-  Cts.push_back(ConstantArray::get(ATy, Vals));
-  
+  ArrayRef<uint16_t> Vals(val->elements, val->size);
+  Cts.push_back(ConstantDataArray::get(getLLVMContext(), Vals));
+
   return ConstantStruct::get(STy, Cts);
 
 }

@@ -153,13 +153,14 @@ static void EmitVmkitGlobal(const Module &M, AsmPrinter &AP, const char *Id) {
 }
 
 static bool methodNameMatches(StringRef compiledName,
-                              Constant* name,
-                              Constant* type) {
+                              ConstantDataArray* name,
+                              ConstantDataArray* type) {
   uint32_t size = compiledName.size();
   std::string str;
 
-  for (uint32_t i = 0; i < name->getNumOperands(); ++i) {
-    int16_t cur = cast<ConstantInt>(name->getOperand(i))->getZExtValue();
+  for (uint32_t i = 0; i < name->getNumElements(); ++i) {
+    ConstantInt* charInt = cast<ConstantInt>(name->getElementAsConstant(i));
+    int16_t cur = charInt->getZExtValue();
     if (cur == '/') {
       str += '_';
     } else if (cur == '_') {
@@ -173,8 +174,9 @@ static bool methodNameMatches(StringRef compiledName,
     }
   }
 
-  for (uint32_t i = 0; i < type->getNumOperands(); ++i) {
-    int16_t cur = cast<ConstantInt>(type->getOperand(i))->getZExtValue();
+  for (uint32_t i = 0; i < type->getNumElements(); ++i) {
+    ConstantInt* charInt = cast<ConstantInt>(type->getElementAsConstant(i));
+    int16_t cur = charInt->getZExtValue();
     if (cur == '(') {
       str += "__";
     } else if (cur == '/') {
@@ -247,15 +249,15 @@ Constant* FindMetadata(const Function& F) {
     for (uint32_t index = 0; index < MethodsArray->getNumOperands(); index++) {
       Constant* method = cast<Constant>(MethodsArray->getOperand(index));
 
-      Constant* name = cast<ConstantExpr>(method->getOperand(5));
-      name = cast<Constant>(name->getOperand(0));
-      name = cast<Constant>(name->getOperand(0));
-      name = cast<Constant>(name->getOperand(1));
+      Constant* namePtr = cast<ConstantExpr>(method->getOperand(5));
+      namePtr = cast<Constant>(namePtr->getOperand(0));
+      namePtr = cast<Constant>(namePtr->getOperand(0));
+      ConstantDataArray* name = cast<ConstantDataArray>(namePtr->getOperand(1));
 
-      Constant* type = cast<ConstantExpr>(method->getOperand(6));
-      type = cast<Constant>(type->getOperand(0));
-      type = cast<Constant>(type->getOperand(0));
-      type = cast<Constant>(type->getOperand(1));
+      Constant* typePtr = cast<ConstantExpr>(method->getOperand(6));
+      typePtr = cast<Constant>(typePtr->getOperand(0));
+      typePtr = cast<Constant>(typePtr->getOperand(0));
+      ConstantDataArray* type = cast<ConstantDataArray>(typePtr->getOperand(1));
 
       if (methodNameMatches(methodName, name, type)) {
         Constant* GEPs[2] = { ConstantInt::get(Type::getInt32Ty(context), 0),
