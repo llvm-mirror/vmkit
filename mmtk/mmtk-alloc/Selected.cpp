@@ -154,7 +154,7 @@ gc* Collector::getForwardedReferent(gc* val, word_t closure) {
 }
 
 void Collector::collect() {
-  Java_org_j3_mmtk_Collection_triggerCollection__I(NULL, 2);
+  Java_org_j3_mmtk_Collection_triggerCollection__I(0, 2);
 }
   
 static const char* kPrefix = "-X:gc:";

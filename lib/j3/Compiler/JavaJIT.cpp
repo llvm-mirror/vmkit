@@ -975,7 +975,7 @@ llvm::Function* JavaJIT::javaCompile() {
               UTF8Buffer(compilingMethod->name).cString());
 
   DbgSubprogram = TheCompiler->getDebugFactory()->createFunction(
-      DIDescriptor(), "", "", DIFile(), 0, DIType(), false, false);
+      DIDescriptor(), "", "", DIFile(), 0, DIType(), false, false, 0);
 
   Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
   
