@@ -1225,12 +1225,12 @@ public:
     GETINSTANCEFIELD(TYPE, TYPE_NAME)                                       \
     SETINSTANCEFIELD(TYPE, TYPE_NAME)                                       \
 
-  MK_ASSESSORS(float, Float);
-  MK_ASSESSORS(double, Double);
-  MK_ASSESSORS(uint8, Int8);
-  MK_ASSESSORS(uint16, Int16);
-  MK_ASSESSORS(uint32, Int32);
-  MK_ASSESSORS(sint64, Long);
+  MK_ASSESSORS(float, Float)
+  MK_ASSESSORS(double, Double)
+  MK_ASSESSORS(uint8, Int8)
+  MK_ASSESSORS(uint16, Int16)
+  MK_ASSESSORS(uint32, Int32)
+  MK_ASSESSORS(sint64, Long)
 
   JavaObject* getStaticObjectField() {
     assert(classDef->isResolved());
