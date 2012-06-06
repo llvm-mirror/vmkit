@@ -59,7 +59,7 @@ jclass DefineClass(JNIEnv *env, const char *name, jobject _loader,
   JavaObject * loader = _loader ? *(JavaObject**)_loader : 0;
   llvm_gcroot(loader, 0);
 
-  jclass res;
+  jclass res = NULL;
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   JnjvmClassLoader* JCL =
