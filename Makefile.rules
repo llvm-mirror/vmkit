@@ -1,5 +1,9 @@
 VMJC      := $(ToolDir)/vmjc$(EXEEXT)
 
+
+# Set the LLVM build file location 
+LLVMBuildTool   := $(LLVM_SRC_ROOT)/utils/llvm-build/llvm-build
+
 ###############################################################################
 # VMKIT_RUNTIME: Provide rules to build a .cpp file with LLVM instructions
 #                generating code matching the .ll files.
