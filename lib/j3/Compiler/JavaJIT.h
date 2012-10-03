@@ -20,8 +20,9 @@
 #include "llvm/Metadata.h"
 #include "llvm/Type.h"
 #include "llvm/Value.h"
+#include "llvm/DIBuilder.h"
+#include "llvm/DebugInfo.h"
 #include "llvm/Support/DebugLoc.h"
-#include "llvm/Analysis/DebugInfo.h"
 
 #include "types.h"
 

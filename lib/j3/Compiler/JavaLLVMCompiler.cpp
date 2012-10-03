@@ -10,7 +10,7 @@
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
-#include "llvm/Analysis/DIBuilder.h"
+#include "llvm/DIBuilder.h"
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Target/TargetData.h"
 

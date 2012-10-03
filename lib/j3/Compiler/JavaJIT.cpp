@@ -20,8 +20,6 @@
 #include <llvm/Instructions.h>
 #include <llvm/Module.h>
 #include <llvm/Type.h>
-#include <llvm/Analysis/DebugInfo.h>
-#include "llvm/Analysis/DIBuilder.h"
 #include <llvm/Support/CFG.h>
 
 #include "vmkit/JIT.h"

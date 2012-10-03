@@ -13,7 +13,7 @@
 #include "llvm/Instructions.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
-#include "llvm/Analysis/DebugInfo.h"
+#include "llvm/DebugInfo.h"
 #include "llvm/CodeGen/GCStrategy.h"
 #include <llvm/CodeGen/JITCodeEmitter.h>
 #include "llvm/CodeGen/MachineFunction.h"

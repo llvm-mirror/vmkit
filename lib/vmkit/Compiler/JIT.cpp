@@ -16,7 +16,6 @@
 #include <llvm/Module.h>
 #include <llvm/PassManager.h>
 #include <llvm/Type.h>
-#include <llvm/Analysis/DebugInfo.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/Assembly/Parser.h>
