@@ -31,7 +31,7 @@
 #include <llvm/Support/PassNameParser.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
-#include <llvm/Target/TargetData.h>
+#include <llvm/DataLayout.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <../lib/ExecutionEngine/JIT/JIT.h>

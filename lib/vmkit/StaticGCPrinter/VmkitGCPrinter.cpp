@@ -23,7 +23,7 @@
 #include "llvm/MC/MCSymbol.h"
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/Target/Mangler.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/DataLayout.h"
 #include "llvm/Target/TargetInstrInfo.h"
 #include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Target/TargetMachine.h"
@@ -289,7 +289,7 @@ Constant* FindMetadata(const Function& F) {
 /// either condition is detected in a function which uses the GC.
 ///
 void VmkitAOTGCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
-  unsigned IntPtrSize = AP.TM.getTargetData()->getPointerSize();
+  unsigned IntPtrSize = AP.TM.getDataLayout()->getPointerSize();
 
   AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getDataSection());
 

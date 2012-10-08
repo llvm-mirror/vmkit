@@ -15,7 +15,7 @@
 #include "llvm/PassManager.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/TargetRegistry.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/DataLayout.h"
 
 #include "vmkit/UTF8.h"
 #include "vmkit/Thread.h"
@@ -1808,8 +1808,8 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   options.NoFramePointerElim = true;
   TargetMachine* TM = TheTarget->createTargetMachine(
       vmkit::VmkitModule::getHostTriple(), "", "", options);
-  TheTargetData = TM->getTargetData();
-  TheModule->setDataLayout(TheTargetData->getStringRepresentation());
+  TheDataLayout = TM->getDataLayout();
+  TheModule->setDataLayout(TheDataLayout->getStringRepresentation());
   TheModule->setTargetTriple(TM->getTargetTriple());
   JavaIntrinsics.init(TheModule);
   initialiseAssessorInfo();  
@@ -1896,7 +1896,7 @@ void JavaAOTCompiler::printStats() {
   Module* Mod = getLLVMModule();
   for (Module::const_global_iterator i = Mod->global_begin(),
        e = Mod->global_end(); i != e; ++i) {
-    size += TheTargetData->getTypeAllocSize(i->getType());
+    size += TheDataLayout->getTypeAllocSize(i->getType());
   }
   fprintf(stdout, "%lluB\n", (unsigned long long int)size);
 }

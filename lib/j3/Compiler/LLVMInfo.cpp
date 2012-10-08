@@ -14,7 +14,7 @@
 #include "llvm/Module.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MutexGuard.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/DataLayout.h"
 
 
 #include "vmkit/JIT.h"
@@ -38,7 +38,7 @@ using namespace llvm;
 Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<llvm::Type*> fields;
-    const TargetData* targetData = Compiler->TheTargetData;
+    const DataLayout* targetData = Compiler->TheDataLayout;
     const StructLayout* sl = 0;
     StructType* structType = 0;
     LLVMContext& context = Compiler->getLLVMModule()->getContext();
@@ -109,7 +109,7 @@ Type* LLVMClassInfo::getStaticType() {
   
     StructType* structType = StructType::get(context, fields, false);
     staticType = PointerType::getUnqual(structType);
-    const TargetData* targetData = Compiler->TheTargetData;
+    const DataLayout* targetData = Compiler->TheDataLayout;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     // TODO: put that elsewhere.

@@ -12,7 +12,7 @@
 #include "llvm/PassManager.h"
 #include "llvm/DIBuilder.h"
 #include "llvm/Analysis/LoopPass.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/DataLayout.h"
 
 #include "vmkit/JIT.h"
 
@@ -108,13 +108,13 @@ llvm::FunctionPass* createLowerConstantCallsPass(JavaLLVMCompiler* I);
 
 void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses = new FunctionPassManager(TheModule);
-  JavaNativeFunctionPasses->add(new TargetData(TheModule));
+  JavaNativeFunctionPasses->add(new DataLayout(TheModule));
 
   J3FunctionPasses = new FunctionPassManager(TheModule);
   J3FunctionPasses->add(createLowerConstantCallsPass(this));
   
   JavaFunctionPasses = new FunctionPassManager(TheModule);
-  JavaFunctionPasses->add(new TargetData(TheModule));
+  JavaFunctionPasses->add(new DataLayout(TheModule));
   vmkit::VmkitModule::addCommandLinePasses(JavaFunctionPasses);
 }
 
