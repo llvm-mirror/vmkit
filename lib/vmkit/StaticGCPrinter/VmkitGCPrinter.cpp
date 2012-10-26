@@ -289,7 +289,7 @@ Constant* FindMetadata(const Function& F) {
 /// either condition is detected in a function which uses the GC.
 ///
 void VmkitAOTGCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
-  unsigned IntPtrSize = AP.TM.getDataLayout()->getPointerSize();
+  unsigned IntPtrSize = AP.TM.getDataLayout()->getPointerSize(0);
 
   AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getDataSection());
 
