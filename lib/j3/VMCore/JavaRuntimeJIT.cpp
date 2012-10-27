@@ -501,7 +501,7 @@ extern "C" void* j3ResolveSpecialStub() {
 
 // Does not throw an exception.
 extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t index) {
-  word_t result = NULL;
+  word_t result = 0;
   InterfaceMethodTable* IMT = JavaObject::getClass(obj)->virtualVT->IMT;
   if ((IMT->contents[index] & 1) == 0) {
     result = IMT->contents[index];
