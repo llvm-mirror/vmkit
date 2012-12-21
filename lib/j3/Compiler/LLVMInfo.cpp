@@ -209,17 +209,6 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
   return result;
 }
 
-void LLVMMethodInfo::setCustomizedVersion(Class* cl, llvm::Function* F) {
-  assert(customizedVersions.size() == 0);
-  vmkit::ThreadAllocator allocator;
-  if (Compiler->emitFunctionName()) {
-    char* buf = GetMethodName(allocator, methodDef, cl);
-    F->setName(buf);
-  }
-  methodFunction = NULL;
-  customizedVersions[cl] = F;
-}
-
 FunctionType* LLVMMethodInfo::getFunctionType() {
   if (!functionType) {
     Signdef* sign = methodDef->getSignature();
