@@ -191,9 +191,9 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
    
     result->setGC("vmkit");
     if (Compiler->useCooperativeGC()) { 
-      result->addFnAttr(Attributes::NoInline);
+      result->addFnAttr(Attribute::NoInline);
     }
-    result->addFnAttr(Attributes::NoUnwind);
+    result->addFnAttr(Attribute::NoUnwind);
     
     Compiler->functions.insert(std::make_pair(result, methodDef));
     if (!Compiler->isStaticCompiling() && !customizing && methodDef->code) {
@@ -457,8 +457,8 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   }
   
   res->setGC("vmkit");
-  res->addFnAttr(Attributes::NoInline);
-  res->addFnAttr(Attributes::NoUnwind);
+  res->addFnAttr(Attribute::NoInline);
+  res->addFnAttr(Attribute::NoUnwind);
 
   if (virt) {
     Compiler->virtualBufs[FTy] = res;
@@ -547,8 +547,8 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   }
   
   res->setGC("vmkit");
-  res->addFnAttr(Attributes::NoInline);
-  res->addFnAttr(Attributes::NoUnwind);
+  res->addFnAttr(Attribute::NoInline);
+  res->addFnAttr(Attribute::NoUnwind);
   
   if (virt) {
     Compiler->virtualAPs[FTy] = res;
@@ -665,8 +665,8 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   }
   
   stub->setGC("vmkit");
-  stub->addFnAttr(Attributes::NoInline);
-  stub->addFnAttr(Attributes::NoUnwind);
+  stub->addFnAttr(Attribute::NoInline);
+  stub->addFnAttr(Attribute::NoUnwind);
   
   if (virt) {
     Compiler->virtualStubs[FTy] = stub;

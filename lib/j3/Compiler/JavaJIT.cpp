@@ -1260,10 +1260,10 @@ llvm::Function* JavaJIT::javaCompile() {
         compilingClass->ctpInfo->UTF8At(AR.AnnotationNameIndex);
       if (name->equals(TheCompiler->InlinePragma)) {
         llvmFunction->removeFnAttr(
-            Attributes::get(*llvmContext, Attributes::NoInline));
-        llvmFunction->addFnAttr(Attributes::AlwaysInline);
+            Attribute::get(*llvmContext, Attribute::NoInline));
+        llvmFunction->addFnAttr(Attribute::AlwaysInline);
       } else if (name->equals(TheCompiler->NoInlinePragma)) {
-        llvmFunction->addFnAttr(Attributes::NoInline);
+        llvmFunction->addFnAttr(Attribute::NoInline);
       }
     }
   }

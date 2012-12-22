@@ -127,7 +127,7 @@ static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
         CallSite::arg_iterator B = CS.arg_begin(), E = CS.arg_end();
         for (CallSite::arg_iterator A = B; A != E; ++A) {
           if (A->get() == Ins && 
-              !CS.paramHasAttr(A - B + 1, Attributes::NoCapture)) {
+              !CS.paramHasAttr(A - B + 1, Attribute::NoCapture)) {
             return true;
           }
         }
