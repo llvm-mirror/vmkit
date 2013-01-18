@@ -7,14 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/BasicBlock.h"
-#include "llvm/CallingConv.h"
-#include "llvm/Constants.h"
-#include "llvm/Instructions.h"
-#include "llvm/Module.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/CallingConv.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MutexGuard.h"
-#include "llvm/DataLayout.h"
+#include "llvm/IR/DataLayout.h"
 
 
 #include "vmkit/JIT.h"

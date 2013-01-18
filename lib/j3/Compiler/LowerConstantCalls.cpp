@@ -7,11 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/Constants.h"
-#include "llvm/GlobalVariable.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/GlobalVariable.h"
 #include "llvm/Pass.h"
-#include "llvm/Function.h"
-#include "llvm/Instructions.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
