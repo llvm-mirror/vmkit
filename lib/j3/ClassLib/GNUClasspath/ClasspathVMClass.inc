@@ -535,4 +535,48 @@ JavaObject* Cl) {
   return res;
 }
 
+/**
+   * Returns the class which immediately encloses the specified class.If
+   * the class is a top-level class, this method returns null
+   *
+   * @param klass the class whose enclosing class should be returned.
+   * @return the immediate enclosing class, or nul if this is
+   *  a top-level class.
+   * @since 1.5
+   * static native Class getEnclosingClass(Class klass);
+   */
+  
+
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMClass_getEnclosingClass(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+JavaObjectClass* klass) {
+  JavaObject* res;
+  llvm_gcroot(klass, 0);
+  llvm_gcroot(res, 0);
+
+  UserCommonClass* cl = JavaObjectClass::getClass(klass);
+  const UTF8* name=cl->name;
+
+  char enclosingClassName[name->size];
+
+  int i;
+  for(i=name->size-1;i>0;i--)
+	  if((char)name->elements[i]=='$'){
+		  for (int j=0;j<i;j++)
+			  enclosingClassName[j]=(char)name->elements[j];
+		  enclosingClassName[i]=0;
+		  break;
+	  }
+
+  if(i){
+	  UserCommonClass* tmp=cl->classLoader->loadClassFromAsciiz(enclosingClassName, 0, 1);
+  	  res=tmp->getClassDelegatee((Jnjvm*)vmkit::Thread::get()->MyVM);
+	}
+
+  return res;
+}
+
 }
