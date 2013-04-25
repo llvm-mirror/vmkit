@@ -184,7 +184,7 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
                                    &timeout);
   th->leaveUncooperativeCode();
   
-  assert((!res || res == ETIMEDOUT) && "Error on timed wait");
+  //assert((!res || res == ETIMEDOUT) && "Error on timed wait");
   l->unsafeLock(n);
 
   return res;

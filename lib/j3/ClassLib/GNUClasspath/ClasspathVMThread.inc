@@ -126,6 +126,7 @@ JavaObject* vmthread) {
   
   JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
   th->lockingThread.interruptFlag = 1;
+  th->parkLock.interrupt();
   vmkit::FatLock* lock = th->lockingThread.waitsOn;
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
@@ -240,7 +241,7 @@ JavaObject* vmthread) {
     return obj;
   }
   else {
-  	switch (th->status) {
+  	switch (th->state) {
   		case vmkit::LockingThread::StateWaiting:
   			obj = vm->asciizToStr("WAITING");
   			return obj;

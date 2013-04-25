@@ -484,12 +484,34 @@ JavaObject* unsafe, jlong ptr, jlong val) {
 //===--- Park/Unpark thread support ---------------------------------------===//
 JNIEXPORT void JNICALL Java_sun_misc_Unsafe_park(
 JavaObject* unsafe, jboolean isAbsolute, jlong time) {
-  // Nothing, for now.
+  llvm_gcroot(unsafe, 0);
+  JavaThread* thread = (JavaThread*)JavaThread::get();
+  thread->parkLock.park(isAbsolute, time);
 }
 
 JNIEXPORT void JNICALL Java_sun_misc_Unsafe_unpark(
 JavaObject* unsafe, JavaObject* thread) {
-  // Nothing, for now.
+  llvm_gcroot(unsafe, 0);
+  llvm_gcroot(thread, 0);
+  JavaObject* vmthread;
+  llvm_gcroot(vmthread, 0);
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaField* field = vm->upcalls->vmdataVMThread;
+  JavaField* field2 = vm->upcalls->vmThread; 
+  
+  // It's possible that the thread to be interrupted has not finished
+  // its initialization. Wait until the initialization is done.
+  vmthread = field2->getInstanceObjectField(thread);
+  while (vmthread == 0) {
+  	JavaThread::yield();
+  	vmthread = field2->getInstanceObjectField(thread);
+  }
+  JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
+  while (th == 0) {
+  	JavaThread::yield();
+  	th = (JavaThread*)field->getInstanceObjectField(vmthread);
+  }
+  th->parkLock.unpark();
 }
 
 //===--- Monitor support --------------------------------------------------===//

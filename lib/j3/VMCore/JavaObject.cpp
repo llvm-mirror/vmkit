@@ -84,9 +84,9 @@ void JavaObject::waitIntern(
     UNREACHABLE();
   }
 
-  thread->status = (timed)? vmkit::LockingThread::StateTimeWaiting: vmkit::LockingThread::StateWaiting;
+  thread->state = (timed)? vmkit::LockingThread::StateTimeWaiting: vmkit::LockingThread::StateWaiting;
   bool interrupted = thread->lockingThread.wait(self, table, info, timed);
-  thread->status = vmkit::LockingThread::StateRunning;
+  thread->state = vmkit::LockingThread::StateRunning;
 
   if (interrupted) {
     thread->getJVM()->interruptedException(self);
@@ -238,9 +238,9 @@ void JavaObject::overflowThinLock(JavaObject* self) {
 
 void JavaObject::acquire(JavaObject* self) {
   llvm_gcroot(self, 0);
-  JavaThread::get()->status = vmkit::LockingThread::StateBlocked;
+  JavaThread::get()->state = vmkit::LockingThread::StateBlocked;
   vmkit::ThinLock::acquire(self, JavaThread::get()->getJVM()->lockSystem);
-  JavaThread::get()->status = vmkit::LockingThread::StateRunning;
+  JavaThread::get()->state = vmkit::LockingThread::StateRunning;
 }
 
 void JavaObject::release(JavaObject* self) {

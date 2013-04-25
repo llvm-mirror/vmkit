@@ -31,6 +31,7 @@ JavaThread::JavaThread(vmkit::VirtualMachine* isolate) : MutatorThread() {
   currentAddedReferences = NULL;
   javaThread = NULL;
   vmThread = NULL;
+  state = vmkit::LockingThread::StateRunning;
 }
 
 void JavaThread::initialise(JavaObject* thread, JavaObject* vmth) {
@@ -202,4 +203,97 @@ void JavaThread::throwNullPointerException(word_t methodIP)
 
 	MyVM->nullPointerException();
 	UNREACHABLE();
+}
+
+ParkLock::ParkLock() {
+	permit = 1;
+}
+
+ParkLock::~ParkLock() {
+
+}
+
+// Fill the structure t with the values from time
+// time is in nanoseconds
+void ParkLock::calculateTime(timeval* t, uint64_t time) {
+	uint64_t milli = time / 10;
+	//uint64_t microseconds = time; // /1000
+	//uint64_t seconds = microseconds / 1000000;
+	//microseconds %= 1000000;
+	t->tv_sec = milli / 1000;
+	t->tv_usec = (milli % 1000) * 1000 + time / 1000;
+}
+
+#include <sys/time.h>
+
+// Implementation of method park, see LockSupport.java
+// time is in nanoseconds if !isAboslute, otherwise it is in milliseconds
+void ParkLock::park(bool isAbsolute, uint64_t time) {
+	JavaThread* thread = (JavaThread*)vmkit::Thread::get();
+	lock.lock();
+		if (permit == 0){
+			permit = 1;
+			__sync_synchronize();
+			lock.unlock(thread);
+			return;
+		}
+		if (isAbsolute) {
+			fprintf(stderr, "PUTA MADRE QUE LO PARIO\n");
+			struct timeval  tv;
+			gettimeofday(&tv, NULL);
+			uint64_t l = tv.tv_sec*1000L + tv.tv_usec / 1000; // to milliseconds
+			if (time <= l) {
+				lock.unlock(thread);
+				return;
+			}
+			time = time - l;
+			time *= 1000000;	// to nanoseconds
+		}
+
+		if (time == 0) {
+			thread->setState(vmkit::LockingThread::StateWaiting);
+			permit = 2;
+			__sync_synchronize();
+			cond.wait(&lock);
+			permit = 1;
+		}
+		else {
+			timeval t;
+			calculateTime(&t, time);
+			thread->setState(vmkit::LockingThread::StateTimeWaiting);
+			permit = 2;
+			__sync_synchronize();
+			cond.timedWait(&lock, &t);
+			permit = 1;
+		}
+		thread->setState(vmkit::LockingThread::StateRunning);
+		__sync_synchronize();
+		//} catch (InterruptedException e) {
+		//		permit = 1;
+		//		th.interrupt();
+		//}
+	lock.unlock(thread);
+}
+
+void ParkLock::unpark() {
+	JavaThread* thread = (JavaThread*)vmkit::Thread::get();
+	lock.lock();
+		int p = permit;
+		if (p != 0) {
+			if (p == 2)
+				cond.signal();
+			else {
+				permit = 0;
+				__sync_synchronize();
+			}
+		}
+	lock.unlock(thread);
+}
+
+void ParkLock::interrupt() {
+	JavaThread* thread = (JavaThread*)vmkit::Thread::get();
+	lock.lock();
+		if (permit == 2)
+			cond.signal();
+	lock.unlock(thread);
 }
