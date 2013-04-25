@@ -665,19 +665,16 @@ UserClassArray* JnjvmClassLoader::constructArray(const UTF8* name,
   assert(baseClass->classLoader == this && 
          "constructing an array with wrong loader");
   UserClassArray* res = 0;
-  lock2.lock();
   classes->lock.lock();
   res = (UserClassArray*) classes->map.lookup(name);
-  classes->lock.unlock();
   if (res == NULL) {
     const UTF8* internalName = readerConstructUTF8(name->elements, name->size);
     res = new(allocator, "Array class") UserClassArray(this, internalName,
                                                        baseClass);
-    classes->lock.lock();
     classes->map.insert(std::make_pair(internalName, res));
-    classes->lock.unlock();
+
   }
-  lock2.unlock();
+  classes->lock.unlock();
   return res;
 }
 
