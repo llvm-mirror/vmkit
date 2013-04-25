@@ -25,18 +25,18 @@ using namespace j3;
 
 extern "C" {
 
-JNIEXPORT jint JNICALL Java_java_lang_reflect_VMMethod_getModifiersInternal(
+JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMMethod* Meth) {
+JavaObjectMethod* Meth) {
 
   jint res = 0;
   llvm_gcroot(Meth, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  JavaMethod* meth = JavaObjectVMMethod::getInternalMethod(Meth);
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   res = meth->access;
 
   END_NATIVE_EXCEPTION
@@ -44,22 +44,21 @@ JavaObjectVMMethod* Meth) {
   return res;
 }
 
-JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMMethod_getReturnType(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_getReturnType(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMMethod* Meth) {
+JavaObjectMethod* Meth) {
 
   JavaObject* res = 0;
   llvm_gcroot(Meth, 0);
   llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Meth);
 
-  JavaMethod* meth = JavaObjectVMMethod::getInternalMethod(Meth);
-  UserCommonClass* cls =  (UserCommonClass*)JavaObjectVMMethod::getClass(Meth);
-  JnjvmClassLoader* loader = cls->classLoader;
+  UserClass* cl = JavaObjectMethod::getClass(Meth);
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
+  JnjvmClassLoader* loader = cl->classLoader;
   res = meth->getReturnType(loader);
 
   END_NATIVE_EXCEPTION
@@ -68,22 +67,22 @@ JavaObjectVMMethod* Meth) {
 }
 
 
-JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMMethod_getParameterTypes(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_getParameterTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMMethod* Meth) {
+JavaObjectMethod* Meth) {
 
   JavaObject* res = 0;
   llvm_gcroot(Meth, 0);
   llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Meth);
 
-  JavaMethod* meth = JavaObjectVMMethod::getInternalMethod(Meth);
-  UserCommonClass* cls =  (UserCommonClass*)JavaObjectVMMethod::getClass(Meth);
-  JnjvmClassLoader* loader = cls->classLoader;
+  UserClass* cl = JavaObjectMethod::getClass(Meth);
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
+  JnjvmClassLoader* loader = cl->classLoader;
+
   res = meth->getParameterTypes(loader);
 
   END_NATIVE_EXCEPTION
@@ -91,13 +90,12 @@ JavaObjectVMMethod* Meth) {
   return res;
 }
 
-
-JavaObject* proceedVMMethod(JavaObjectVMMethod* Meth, JavaObject* obj,
-                          ArrayObject* args)
+JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
+                          ArrayObject* args, JavaObject* Cl, jint index)
   __attribute__((noinline));
 
-JavaObject* proceedVMMethod(JavaObjectVMMethod* Meth, JavaObject* obj,
-                          ArrayObject* args) {
+JavaObject* proceedMethod(JavaObjectMethod* Meth, JavaObject* obj,
+                          ArrayObject* args, JavaObject* Cl, jint index) {
 
   JavaObject* res = 0;
   JavaObject* exc = 0;
@@ -106,11 +104,12 @@ JavaObject* proceedVMMethod(JavaObjectVMMethod* Meth, JavaObject* obj,
   llvm_gcroot(Meth, 0);
   llvm_gcroot(obj, 0);
   llvm_gcroot(args, 0);
+  llvm_gcroot(Cl, 0);
   llvm_gcroot(exc, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaMethod* meth = JavaObjectVMMethod::getInternalMethod(Meth);
-  UserCommonClass* _cl =  (UserCommonClass*)JavaObjectVMMethod::getClass(Meth);
+
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
 
   sint32 nbArgs = args ? ArrayObject::getSize(args) : 0;
   Signdef* sign = meth->getSignature();
@@ -121,7 +120,7 @@ JavaObject* proceedVMMethod(JavaObjectVMMethod* Meth, JavaObject* obj,
       (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
 
   if (nbArgs == size) {
-    //UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+    UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
     UserClass* cl = (UserClass*)_cl;
 
     if (isVirtual(meth->access)) {
@@ -235,32 +234,33 @@ JavaObject* proceedVMMethod(JavaObjectVMMethod* Meth, JavaObject* obj,
 
 #undef RUN_METH
 
-JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMMethod_invoke(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_invokeNative(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMMethod* Meth, JavaObject* obj, ArrayObject* args) {
+JavaObjectMethod* Meth, JavaObject* obj, ArrayObject* args, JavaObject* Cl, jint index) {
 
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(Meth, 0);
   llvm_gcroot(obj, 0);
   llvm_gcroot(args, 0);
+  llvm_gcroot(Cl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Meth);
-  res = proceedVMMethod(Meth, obj, args);
+
+  res = proceedMethod(Meth, obj, args, Cl, index);
 
   END_NATIVE_EXCEPTION
 
   return res;
 }
 
-JNIEXPORT ArrayObject* JNICALL Java_java_lang_reflect_VMMethod_getExceptionTypes(
+JNIEXPORT ArrayObject* JNICALL Java_java_lang_reflect_Method_getExceptionTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMMethod* Meth) {
+JavaObjectMethod* Meth) {
 
   ArrayObject* res = 0;
   llvm_gcroot(Meth, 0);
@@ -269,10 +269,9 @@ JavaObjectVMMethod* Meth) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(Meth);
-
-  JavaMethod* meth = JavaObjectVMMethod::getInternalMethod(Meth);
-  UserCommonClass* cls =  (UserCommonClass*)JavaObjectVMMethod::getClass(Meth);
-  JnjvmClassLoader* loader = cls->classLoader;
+  UserClass* cl = JavaObjectMethod::getClass(Meth);
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
+  JnjvmClassLoader* loader = cl->classLoader;
   res = meth->getExceptionTypes(loader);
 
   END_NATIVE_EXCEPTION
@@ -280,11 +279,11 @@ JavaObjectVMMethod* Meth) {
   return res;
 }
 
-JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMMethod_getSignature(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Method_getSignature(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMMethod* Meth) {
+JavaObjectMethod* Meth) {
 
   JavaObject* result = 0;
   llvm_gcroot(Meth, 0);
@@ -293,7 +292,7 @@ JavaObjectVMMethod* Meth) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   verifyNull(Meth);
-  JavaMethod* meth = JavaObjectVMMethod::getInternalMethod(Meth);
+  JavaMethod* meth = JavaObjectMethod::getInternalMethod(Meth);
   Jnjvm* vm = JavaThread::get()->getJVM();
   result = vm->internalUTF8ToStr(meth->type);
 

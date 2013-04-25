@@ -19,20 +19,19 @@ using namespace j3;
 
 extern "C" {
 
-JNIEXPORT jint JNICALL Java_java_lang_reflect_VMField_getModifiersInternal(
+
+JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field) {
+JavaObjectField* Field) {
   jint res = 0;
 
   llvm_gcroot(Field, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
-  JavaField* field = JavaObjectVMField::getInternalField(Field);
-
+  JavaField* field = JavaObjectField::getInternalField(Field);
   res = field->access;
 
   END_NATIVE_EXCEPTION
@@ -40,11 +39,11 @@ JavaObjectVMField* Field) {
   return res;
 }
 
-JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMField_getType(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Field_getType(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field) {
+JavaObjectField* Field) {
 
   JavaObject* res = 0;
 
@@ -52,26 +51,24 @@ JavaObjectVMField* Field) {
   llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-
-  UserCommonClass* cls = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
-
-	  JnjvmClassLoader* loader = cls->classLoader;
-	  UserCommonClass* fieldCl = field->getSignature()->assocClass(loader);
-	  res = fieldCl->getClassDelegatee(vm);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
+  JnjvmClassLoader* loader = cl->classLoader;
+  UserCommonClass* fieldCl = field->getSignature()->assocClass(loader);
+  res = fieldCl->getClassDelegatee(vm);
 
   END_NATIVE_EXCEPTION
 
   return res;
 }
 
-JNIEXPORT jint JNICALL Java_java_lang_reflect_VMField_getInt(
+JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getInt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jint res = 0;
 
@@ -79,15 +76,15 @@ JavaObjectVMField* Field, JavaObject* obj) {
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-  JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   const Typedef* type = field->getSignature();
   bool stat =  isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -132,11 +129,11 @@ JavaObjectVMField* Field, JavaObject* obj) {
 
 }
 
-JNIEXPORT jlong JNICALL Java_java_lang_reflect_VMField_getLong(
+JNIEXPORT jlong JNICALL Java_java_lang_reflect_Field_getLong(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jlong res = 0;
 
@@ -144,14 +141,14 @@ JavaObjectVMField* Field, JavaObject* obj) {
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -202,11 +199,11 @@ JavaObjectVMField* Field, JavaObject* obj) {
   return res;
 }
 
-JNIEXPORT jboolean JNICALL Java_java_lang_reflect_VMField_getBoolean(
+JNIEXPORT jboolean JNICALL Java_java_lang_reflect_Field_getBoolean(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jboolean res = 0;
 
@@ -214,14 +211,14 @@ JavaObjectVMField* Field, JavaObject* obj) {
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat =  isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -248,25 +245,25 @@ JavaObjectVMField* Field, JavaObject* obj) {
 
 }
 
-JNIEXPORT jfloat JNICALL Java_java_lang_reflect_VMField_getFloat(
+JNIEXPORT jfloat JNICALL Java_java_lang_reflect_Field_getFloat(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jfloat res = 0;
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -323,25 +320,25 @@ JavaObjectVMField* Field, JavaObject* obj) {
   return res;
 }
 
-JNIEXPORT jbyte JNICALL Java_java_lang_reflect_VMField_getByte(
+JNIEXPORT jbyte JNICALL Java_java_lang_reflect_Field_getByte(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jbyte res = 0;
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -367,25 +364,25 @@ JavaObjectVMField* Field, JavaObject* obj) {
   return res;
 }
 
-JNIEXPORT jchar JNICALL Java_java_lang_reflect_VMField_getChar(
+JNIEXPORT jchar JNICALL Java_java_lang_reflect_Field_getChar(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jchar res = 0;
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -412,11 +409,11 @@ JavaObjectVMField* Field, JavaObject* obj) {
 
 }
 
-JNIEXPORT jshort JNICALL Java_java_lang_reflect_VMField_getShort(
+JNIEXPORT jshort JNICALL Java_java_lang_reflect_Field_getShort(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
 
   jshort res = 0;
@@ -424,14 +421,14 @@ JavaObjectVMField* Field, JavaObject* obj) {
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
+
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -463,26 +460,25 @@ JavaObjectVMField* Field, JavaObject* obj) {
   return res;
 }
 
-JNIEXPORT jdouble JNICALL Java_java_lang_reflect_VMField_getDouble(
+JNIEXPORT jdouble JNICALL Java_java_lang_reflect_Field_getDouble(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
   jdouble res = 0;
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -544,11 +540,11 @@ JavaObjectVMField* Field, JavaObject* obj) {
   return res;
 }
 
-JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMField_get(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Field_get(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj) {
+JavaObjectField* Field, JavaObject* obj) {
 
 
   JavaObject* res = 0;
@@ -557,15 +553,14 @@ JavaObjectVMField* Field, JavaObject* obj) {
   llvm_gcroot(res, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -627,11 +622,11 @@ JavaObjectVMField* Field, JavaObject* obj) {
   return res;
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_set(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, JavaObject* val) {
+JavaObjectField* Field, JavaObject* obj, JavaObject* val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -640,15 +635,14 @@ JavaObjectVMField* Field, JavaObject* obj, JavaObject* val) {
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  verifyNull(Field);
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   jvalue buf;
   bool stat = isStatic(field->access);
 
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -719,25 +713,24 @@ JavaObjectVMField* Field, JavaObject* obj, JavaObject* val) {
   END_NATIVE_EXCEPTION
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setBoolean(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setBoolean(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, jboolean val) {
+JavaObjectField* Field, JavaObject* obj, jboolean val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -762,25 +755,24 @@ JavaObjectVMField* Field, JavaObject* obj, jboolean val) {
 
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setByte(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setByte(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, jbyte val) {
+JavaObjectField* Field, JavaObject* obj, jbyte val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -834,25 +826,24 @@ JavaObjectVMField* Field, JavaObject* obj, jbyte val) {
   END_NATIVE_EXCEPTION
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setChar(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setChar(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, jchar val) {
+JavaObjectField* Field, JavaObject* obj, jchar val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -899,25 +890,24 @@ JavaObjectVMField* Field, JavaObject* obj, jchar val) {
   END_NATIVE_EXCEPTION
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setShort(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setShort(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, jshort val) {
+JavaObjectField* Field, JavaObject* obj, jshort val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -964,25 +954,24 @@ JavaObjectVMField* Field, JavaObject* obj, jshort val) {
   END_NATIVE_EXCEPTION
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setInt(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setInt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, jint val) {
+JavaObjectField* Field, JavaObject* obj, jint val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -1024,25 +1013,24 @@ JavaObjectVMField* Field, JavaObject* obj, jint val) {
   END_NATIVE_EXCEPTION
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setLong(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setLong(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, jlong val) {
+JavaObjectField* Field, JavaObject* obj, jlong val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -1078,25 +1066,24 @@ JavaObjectVMField* Field, JavaObject* obj, jlong val) {
   END_NATIVE_EXCEPTION
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setFloat(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setFloat(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, jfloat val) {
+JavaObjectField* Field, JavaObject* obj, jfloat val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
@@ -1126,25 +1113,24 @@ JavaObjectVMField* Field, JavaObject* obj, jfloat val) {
   END_NATIVE_EXCEPTION
 }
 
-JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setDouble(
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_setDouble(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMField* Field, JavaObject* obj, jdouble val) {
+JavaObjectField* Field, JavaObject* obj, jdouble val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  verifyNull(Field);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserCommonClass* cl = (UserCommonClass*)JavaObjectVMField::getClass(Field);
-    JavaField* field = JavaObjectVMField::getInternalField(Field);
+  UserClass* cl = JavaObjectField::getClass(Field);
+  JavaField* field = JavaObjectField::getInternalField(Field);
   bool stat = isStatic(field->access);
 
   if (stat) {
-    cl->asClass()->initialiseClass(vm);
+    cl->initialiseClass(vm);
   } else {
     verifyNull(obj);
   }
