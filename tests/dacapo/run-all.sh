@@ -8,4 +8,4 @@ dir=$3
 cmd=$4
 
 cd "$dir"
-seq $times | parallel -n0 -j "$jn" $cmd
+seq $times | parallel -n0 -j "$jn" -- $cmd

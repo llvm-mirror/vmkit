@@ -1,5 +1,7 @@
 #/bin/bash
 
+# program & ./mon-process.sh $!
+
 . ./statistics.sh
 
 input=$1
@@ -14,7 +16,9 @@ else
 fi
 
 # Collect statistics data
-rawdata="$(sudo nice -n -10 pidstat "$input_type" "$input" -hru 1 "$duration" | grep '^[# 0-9]' | sed 's/^#//g' | sed 's/^ \+//g' | tr -s ' ' ',')"
+rawdata="$(sudo nice -n -10 pidstat "$input_type" "$input" -hru 1 $duration)"
+
+rawdata="$(echo "$rawdata" | grep '^[# 0-9]' | sed 's/^#//g' | sed 's/^ \+//g' | tr -s ' ' ',')"
 head="$(echo "$rawdata" | head -1)"
 data="$(echo "$rawdata" | grep -v '^[^0-9]')"
 
