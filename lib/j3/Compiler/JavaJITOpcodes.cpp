@@ -12,6 +12,7 @@
 
 
 #include <cstring>
+#include <queue>
 
 #include <llvm/Constants.h>
 #include <llvm/DerivedTypes.h>
@@ -98,8 +99,9 @@ static inline uint32 WCALC(uint32 n, bool& wide) {
   }
 }
 
-#include <queue>
-
+/**
+ * Used in JavaJIT::findUnreachableCode to find the next instruction in the array of bytecode.
+ */
 static uint8 sum [] = {
 		2,
 		3,
@@ -112,7 +114,6 @@ static uint8 sum [] = {
 		2,
 		2
 };
-
 static uint8 sum2 [] = {
 		3,
 		3,

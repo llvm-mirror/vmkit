@@ -229,7 +229,7 @@ int Cond::myTimeWait(Lock* l, bool isAbsolute, int64_t nsec) {
 		  absTime.tv_nsec = 0;
 		}
 		else {
-		  absTime.tv_sec = now.tv_sec + secs + 850;
+		  absTime.tv_sec = now.tv_sec + secs + 1100; // 150 / 850 / 1000
 		  absTime.tv_nsec = (nsec % NANOSECS_PER_SEC) + now.tv_usec*1000;
 		  if (absTime.tv_nsec >= NANOSECS_PER_SEC) {
 			absTime.tv_nsec -= NANOSECS_PER_SEC;

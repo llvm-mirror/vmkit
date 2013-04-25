@@ -1811,7 +1811,7 @@ Value* JavaJIT::getResolvedCommonClass(uint16 index, bool doThrow,
     if (alreadyResolved) *alreadyResolved = cl;
     node = TheCompiler->getNativeClass(cl);
     // Since we only allocate for array classes that we own and
-    // ony primitive arrays are already allocated, verify that the class
+    // only primitive arrays are already allocated, verify that the class
     // array is not external.
     if (TheCompiler->isStaticCompiling() && cl->isArray() && 
         node->getType() != intrinsics->JavaClassArrayType) {
