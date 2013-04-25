@@ -49,10 +49,7 @@ extern "C" void Java_org_j3_mmtk_Scanning_resetThreadCounter__ (MMTkObject* Scan
 extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* Scanning, uint32_t id, MMTkObject* TC, gc* obj) ALWAYS_INLINE;
 
 extern "C" void Java_org_j3_mmtk_Scanning_specializedScanObject__ILorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* Scanning, uint32_t id, MMTkObject* TC, gc* obj) {
-  assert(obj && "No object to trace");
-  assert(obj->getVirtualTable() && "No virtual table");
-  assert(obj->getVirtualTable()->tracer && "No tracer in VT");
-  obj->tracer(reinterpret_cast<word_t>(TC));
+  vmkit::Thread::get()->MyVM->traceObject(obj, reinterpret_cast<word_t>(TC));
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_TraceLocal_2 (MMTkObject* Scanning, MMTkObject* TL) {
@@ -61,10 +58,7 @@ extern "C" void Java_org_j3_mmtk_Scanning_preCopyGCInstances__Lorg_mmtk_plan_Tra
 
 extern "C" void Java_org_j3_mmtk_Scanning_scanObject__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* Scanning, word_t TC, gc* obj) {
-  assert(obj && "No object to trace");
-  assert(obj->getVirtualTable() && "No virtual table");
-  assert(obj->getVirtualTable()->tracer && "No tracer in VT");
-  obj->tracer(TC);
+	vmkit::Thread::get()->MyVM->traceObject(obj, TC);
 }
 
 extern "C" void Java_org_j3_mmtk_Scanning_precopyChildren__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2 (

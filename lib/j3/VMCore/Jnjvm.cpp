@@ -1382,6 +1382,14 @@ void Jnjvm::addFinalizationCandidate(gc* object) {
   finalizerThread->addFinalizationCandidate(object);
 }
 
+// This method is called during GC so no llvm_gcroot needed.
+void Jnjvm::traceObject(gc* obj, word_t closure) {
+  assert(obj && "No object to trace");
+  assert(obj->getVirtualTable() && "No virtual table");
+  assert(obj->getVirtualTable()->tracer && "No tracer in VT");
+  obj->tracer(closure);
+}
+
 size_t Jnjvm::getObjectSize(gc* object) {
   // TODO: because this is called during GC, there is no need to do
   // llvm_gcroot. For clarity, it may be useful to have a special type
