@@ -79,11 +79,6 @@ ArrayObject* JavaObjectClass::getDeclaredMethods(JavaObjectClass* Cl, bool publi
     JnjvmClassLoader* classLoader = cl->classLoader;
     uint32 size = 0;
 		bool annot = false;
-    
-    // Check if the class is an annotation.
-    const UTF8* name = upcalls->newAnnotation->name;
-    if (realCl->inheritName(name->elements, name->size))
-      annot = true;
 
     // Ugly hack : we don't want this method to return annotationType() 
     // method for annotations. For that, we start the counter to 1 instead 
