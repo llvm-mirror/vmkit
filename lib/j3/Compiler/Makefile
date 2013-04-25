@@ -8,12 +8,9 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-EXTRA_DIST = JavaJITClasspath.inc JavaJITOpenJDK.inc
-
 include $(LEVEL)/Makefile.config
 
 MODULE_WITH_GC = J3Compiler
+INCLUDES+=-I../ClassLib/$(CLASSPATH_DIR) -I../ClassLib/ -I../VMCore -I../LLVMRuntime/$(BUILD_DIR)
 
 include $(LEVEL)/Makefile.common
-
-CXX.Flags += -I$(PROJ_OBJ_DIR)/../LLVMRuntime -I$(PROJ_SRC_DIR)/../ClassLib/$(CLASSPATH_DIR) -I$(PROJ_SRC_DIR)/../ClassLib/ -I$(PROJ_SRC_DIR)/../VMCore

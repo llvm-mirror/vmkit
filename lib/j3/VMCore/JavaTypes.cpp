@@ -11,7 +11,7 @@
 
 #include "JavaArray.h"
 #include "JavaClass.h"
-#include "JavaCompiler.h"
+#include "j3/JavaCompiler.h"
 #include "JavaTypes.h"
 
 using namespace j3;

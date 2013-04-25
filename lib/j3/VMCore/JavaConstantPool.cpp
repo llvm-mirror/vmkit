@@ -17,7 +17,7 @@
 #include "JavaAccess.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
-#include "JavaCompiler.h"
+#include "j3/JavaCompiler.h"
 #include "JavaConstantPool.h"
 #include "Jnjvm.h"
 #include "JavaThread.h"

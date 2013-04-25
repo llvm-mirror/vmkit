@@ -32,7 +32,7 @@
 #include "Classpath.h"
 #include "ClasspathReflect.h"
 #include "JavaClass.h"
-#include "JavaCompiler.h"
+#include "j3/JavaCompiler.h"
 #include "JavaConstantPool.h"
 #include "JavaString.h"
 #include "JavaThread.h"

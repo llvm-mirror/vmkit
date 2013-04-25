@@ -122,13 +122,13 @@ endif
 ifdef BUILD_FRAMETABLE
 
 ## have to remove this symbol (used elsewere)
-FRAMETABLES=FrametablesExterns.inc FrametablesSymbols.inc
+BUILT_INC+=$(patsubst %,$(BUILD_DIR)/%,FrametablesExterns.inc FrametablesSymbols.inc)
 DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(USE))
 
-FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF)
+$(BUILD_DIR)/FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF)
 	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
 
-FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF)
+$(BUILD_DIR)/FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF)
 	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
 
 clean-local::
@@ -160,6 +160,20 @@ $(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(BIN_DIR)/.dir
 $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
 	$(Echo) "Linking shared library '$(notdir $@)'"
 	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -shared -Wl,--whole-archive $(MODULE_A) -Wl,--no-whole-archive $(DEP_LIBS)
+
+###############################################################################
+# vmkit runtime generated files
+###############################################################################
+ifdef VMKIT_RUNTIME_OUT
+all:: $(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
+
+BUILT_INC+=$(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
+
+$(BUILD_DIR)/$(VMKIT_RUNTIME_OUT): $(VMKIT_RUNTIME_IN) $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Generating vmkit meta file '$@'"
+	$(Verb) cat $(VMKIT_RUNTIME_IN) | $(LLVMAS) -o - | $(LLC) -march=cpp -cppgen=contents -o $@
+
+endif
 
 #
 #
@@ -252,22 +266,13 @@ $(VMKIT_OPENJDK_ZIP): $(addprefix $(PROJ_SRC_DIR)/,$(OPENJDK_JAVA_SOURCES))
 
 endif
 
-
-
-
 #
 #
 #   NEW BUILD SYSTEM
 #
 #
 #-I$(BUILD_DIR) 
-INCLUDES+=-I. -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk \
-	-I$(PROJ_SRC_ROOT)/include/j3 \
-	-I$(PROJ_SRC_ROOT)/lib/j3/ClassLib/$(CLASSPATH_DIR) \
-	-I$(PROJ_SRC_ROOT)/lib/j3/ClassLib/ \
-	-I$(PROJ_SRC_ROOT)/lib/j3/Compiler/ \
-	-I$(PROJ_SRC_ROOT)/lib/j3/VMCore/ \
-	-I$(PROJ_SRC_ROOT)/lib/j3/LLVMRuntime/
+INCLUDES+=-I. -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR)
 
 # should remove no-unused-variable                                                                                                         
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
@@ -299,11 +304,11 @@ $(BUILD_DIR)/%-gc.bc: $(BUILD_DIR)/%.bc $(LOPT) $(PREPARE_CODE) $(SELF)
 	$(Verb) $(LOPT) $< -load=$(PREPARE_CODE) -StaticGCPass -o $@
 
 define define_compile_rule
-$(BUILD_DIR)/%.bc: %$1 $(SELF) $(FRAMETABLES) $(BUILD_DIR)/.dir
+$(BUILD_DIR)/%.bc: %$1 $(SELF) $(BUILT_INC) $(BUILD_DIR)/.dir
 	$(Echo) "Compiling '$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 
-$(BUILD_DIR)/%.bc: $(BUILD_DIR)/%$1 $(FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
+$(BUILD_DIR)/%.bc: $(BUILD_DIR)/%$1 $(BUILT_INC) $(SELF) $(BUILD_DIR)/.dir
 	$(Echo) "Compiling '$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 endef

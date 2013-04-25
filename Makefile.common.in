@@ -41,27 +41,27 @@ ifeq ($(ENABLE_OPTIMIZED),1)
 	LLC_CPP_FLAGS		:=
 	LLC_ASM_FLAGS		:= -O=2 -disable-debug-info-print
 	LLC_GLIBJ_FLAGS		:= -disable-debug-info-print
-	
+
 	OPT_BC_WITH_GC_FLAGS	:= -std-compile-opts -strip-debug
 	OPT_MMTK_FLAGS		:= -std-compile-opts -strip-debug
 	OPT_VMJC_FLAGS		:= -std-compile-opts -strip-debug
-	
+
 	PRECOMPILER_FLAGS	:= -O3
-	
+
 	VMJC_MMTK_FLAGS		:= -std-compile-opts
 	VMJC_GLIBJ_FLAGS	:= -std-compile-opts
 else
 	LLC_CPP_FLAGS		:= -O=0
 	LLC_ASM_FLAGS		:= -O=0 -asm-verbose
 	LLC_GLIBJ_FLAGS		:=
-	
+
 	OPT_BC_WITH_GC_FLAGS	:= -inline
 	OPT_MMTK_FLAGS		:=
 	OPT_VMJC_FLAGS		:= -std-compile-opts
-	
+
 	VMJC_MMTK_FLAGS		:=
 	VMJC_GLIBJ_FLAGS	:= -jit-emit-debug -std-compile-opts
-	
+
 	PRECOMPILER_FLAGS	:=
 endif
 

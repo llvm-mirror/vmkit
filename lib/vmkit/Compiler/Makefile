@@ -12,7 +12,7 @@ include $(LEVEL)/Makefile.config
 
 MODULE_WITH_GC = VmkitCompiler
 
-VMKIT_RUNTIME = $(PROJ_SRC_DIR)/LLVMRuntime.ll
-BUILT_SOURCES = LLVMRuntime.inc
+VMKIT_RUNTIME_IN=$(PROJ_SRC_DIR)/LLVMRuntime.ll
+VMKIT_RUNTIME_OUT=LLVMRuntime.inc
 
 include $(LEVEL)/Makefile.common

@@ -20,7 +20,7 @@
 #include "Jnjvm.h"
 #include "VMStaticInstance.h"
 
-#include <jni.h>
+#include "j3/jni.h"
 #include "debug.h"
 
 using namespace j3;

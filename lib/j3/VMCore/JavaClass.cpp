@@ -17,7 +17,7 @@
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
-#include "JavaCompiler.h"
+#include "j3/JavaCompiler.h"
 #include "JavaString.h"
 #include "JavaConstantPool.h"
 #include "JavaObject.h"
