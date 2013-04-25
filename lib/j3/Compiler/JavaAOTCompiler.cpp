@@ -655,8 +655,8 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
   Elmts.push_back(getVirtualTable(cl->virtualVT));
   
   // lock
-  Constant* L = ConstantInt::get(Type::getInt64Ty(getLLVMContext()), 0);
-  Elmts.push_back(ConstantExpr::getIntToPtr(L, JavaIntrinsics.ptrType));
+//  Constant* L = ConstantInt::get(Type::getInt64Ty(getLLVMContext()), 0);
+//  Elmts.push_back(ConstantExpr::getIntToPtr(L, JavaIntrinsics.ptrType));
 
   return ConstantStruct::get(STy, Elmts);
 }

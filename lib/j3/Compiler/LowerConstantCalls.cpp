@@ -143,7 +143,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
         } else if (V == intrinsics->GetVTFunction) {
           Changed = true;
           Value* val = Call.getArgument(0); // get the object
-          Value* indexes[2] = { intrinsics->constantZero, intrinsics->constantZero };
+          Value* indexes[2] = { intrinsics->constantZero, intrinsics->JavaObjectVTOffsetConstant };
           Value* VTPtr = GetElementPtrInst::Create(val, indexes, "", CI);
           Value* VT = new LoadInst(VTPtr, "", CI);
           CI->replaceAllUsesWith(VT);

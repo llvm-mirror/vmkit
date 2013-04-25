@@ -70,6 +70,13 @@ extern "C" void Java_org_j3_bindings_Bindings_setVT__Lorg_vmmagic_unboxed_Addres
  	header->toReference()->setVirtualTable(VT);
 }
 
+extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2() ALWAYS_INLINE;
+
+extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2() {
+	return gcHeader::hiddenHeaderSize();
+}
+
+
 extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(
     void* res, void* src, int size) ALWAYS_INLINE;
 

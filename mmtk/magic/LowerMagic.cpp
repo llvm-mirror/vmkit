@@ -983,6 +983,12 @@ bool LowerMagic::runOnFunction(Function& F) {
             } else if (!strcmp(FCur->getName().data(), ObjectReferenceToAddressMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
+
+              /*
+               * REMOVE ObjectReferenceToAddress offset !!!
+               */
+
+
               Constant* M = ConstantInt::get(pointerSizeType, gcHeader::hiddenHeaderSize());
               Val = BinaryOperator::CreateSub(Val, M, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);

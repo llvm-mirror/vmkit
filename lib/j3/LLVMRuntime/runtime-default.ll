@@ -5,11 +5,8 @@
 ;;; A virtual table is an array of function pointers.
 %VT = type [0 x i32 (...)*]
 
-;;; Java VT (partial definition, only needed fields)
-%JavaVT = type { i8*, i8*, i8*, [ 1 x i8* ], %JavaCommonClass* }
-
-;;; The root of all Java Objects: a VT and a lock.
-%JavaObject = type { %VT*, i8* }
+;;; The root of all Java Objects: a VT (and a lock moved into GC header).
+%JavaObject = type { %VT* }
 
 ;;; Types for Java arrays. A size of 0 means an undefined size.
 %JavaArray = type { %JavaObject, i8* }
@@ -25,15 +22,15 @@
 %ArrayUInt8 = type { %JavaObject, i8*, [0 x i8] }
 
 ;;; The task class mirror.
-;;; Field 0: The class state
-;;; Field 1: The initialization state
-;;; Field 2: The static instance
+;;; Field 1: The class state
+;;; Field 2: The initialization state
+;;; Field 3: The static instance
 %TaskClassMirror = type { i8, i1, i8* }
 
 %CircularBase = type { %VT*, %CircularBase*, %CircularBase* }
 
 ;;; Field 0:  the parent (circular base)
-;;; Field 1:  isolate_id_t IsolateID
+;;; Field 1:  size_t IsolateID
 ;;; Field 2:  void*  MyVM
 ;;; Field 3:  void*  baseSP
 ;;; Field 4:  bool   doYield
@@ -44,21 +41,21 @@
 ;;; field 9:  void*  routine
 ;;; field 10: void*  lastKnownFrame
 ;;; field 11: void*  lastExceptionBuffer
-%Thread = type { %CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*, i1 }
+%Thread = type { %CircularBase, i8*, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8* }
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 
 %JavaConstantPool = type { %JavaClass*, i32, i8*, i32*, i8** }
 
-%Attribute = type { %UTF8*, i32, i32 }
+%Attribut = type { %UTF8*, i32, i32 }
 
-%UTF8 = type { i32, [0 x i16] }
+%UTF8 = type { i8*, [0 x i16] }
 
 
-%JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribute*, i16, %JavaClass*, i32,
+%JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i32,
                     i16 }
 
-%JavaMethod = type { i8*, i16, %Attribute*, i16, %JavaClass*,
+%JavaMethod = type { i8*, i16, %Attribut*, i16, %JavaClass*,
                      %UTF8*, %UTF8*, i8, i8*, i32 }
 
 %JavaClassPrimitive = type { %JavaCommonClass, i32 }
@@ -91,11 +88,10 @@ declare void @listAllTypes(%JavaObject,
                            %JavaField,
                            %JavaMethod,
                            %UTF8,
-                           %Attribute,
+                           %Attribut,
                            %JavaThread,
                            %MutatorThread,
-                           %J3DenseMap,
-                           %JavaVT);
+                           %J3DenseMap);
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;; Constant calls for J3 runtime internal objects field accesses ;;;;;;;;;
@@ -117,7 +113,7 @@ declare %VT* @getIMT(%VT*) readnone
 declare %JavaCommonClass* @getClass(%JavaObject*) readnone 
 
 ;;; getLock - Get the lock of an object.
-declare i8* @getLock(%JavaObject*)
+;;;declare i8* @getLock(%JavaObject*)
 
 ;;; getVTFromCommonClass - Get the VT of a class from its runtime
 ;;; representation.
@@ -148,7 +144,7 @@ declare %VT* @getVTInDisplay(%VT**, i32) readnone
 declare i32 @getDepth(%VT*) readnone 
 
 ;;; getStaticInstance - Get the static instance of this class.
-declare i8* @j3GetStaticInstance(%JavaClass*) readnone 
+declare i8* @getStaticInstance(%JavaClass*) readnone 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -165,8 +161,7 @@ declare %JavaObject* @j3MultiCallNew(%JavaCommonClass*, i32, ...)
 ;;; initialisationCheck - Checks if the class has been initialized and 
 ;;; initializes if not. This is used for initialization barriers in an isolate
 ;;; environment, and in some specific scenario in a single environment.
-declare %JavaClass* @j3InitialisationCheck(%JavaClass*)
-declare %JavaClass* @j3InitialisationCheckForJavaObject(%JavaObject*)
+declare %JavaClass* @initialisationCheck(%JavaClass*) readnone 
 
 ;;; forceInitialisationCheck - Force to check initialization. The difference
 ;;; between this function and the initialisationCheck function is that the
@@ -184,9 +179,8 @@ declare void @forceLoadedCheck(%JavaCommonClass*)
 ;;; getConstantPoolAt - Get the value in the constant pool of this class.
 ;;; This function is removed by J3's LLVM pass, therefore it does
 ;;; not have an actual implementation.
-declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i32,
+declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i8**,
                                %JavaClass*, i32, ...)
-declare i8* @j3GetCachedValue(%JavaClass*, i32, i32)
 
 ;;; j3VirtualTableLookup - Look up the offset in a virtual table of a
 ;;; specific function.
@@ -224,13 +218,11 @@ declare i1 @isSecondaryClass(%VT*, %VT*) readnone
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
 ;;; class. This method is lowered to the GEP to the class delegatee in
 ;;; the common class.
-declare %JavaObject** @j3GetClassDelegateePtr(%JavaCommonClass*)
-declare %JavaObject* @j3GetClassDelegatee(%JavaCommonClass*)
+declare %JavaObject* @getClassDelegatee(%JavaCommonClass*)
 
 ;;; j3RuntimeDelegatee - Returns the java/lang/Class representation of the
 ;;; class. This method is called if the class delegatee has not been created
 ;;; yet.
-declare %JavaObject** @j3RuntimeDelegateePtr(%JavaCommonClass*)
 declare %JavaObject* @j3RuntimeDelegatee(%JavaCommonClass*)
 
 ;;; j3GetArrayClass - Get the array user class of the user class.

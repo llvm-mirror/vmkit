@@ -1429,7 +1429,7 @@ void JavaJIT::loadConstant(uint16 index) {
 void JavaJIT::JITVerifyNull(Value* obj) {
   if (TheCompiler->hasExceptionsEnabled()) {
     if (nbHandlers == 0 && vmkit::System::SupportsHardwareNullCheck()) {
-      Value* indexes[2] = { intrinsics->constantZero, intrinsics->constantZero };
+      Value* indexes[2] = { intrinsics->constantZero, intrinsics->JavaObjectVTOffsetConstant };
       Value* VTPtr = GetElementPtrInst::Create(obj, indexes, "", currentBlock);
       Instruction* VT = new LoadInst(VTPtr, "", true, currentBlock);
       VT->setDebugLoc(DebugLoc::get(currentBytecodeIndex, 1, DbgSubprogram));

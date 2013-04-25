@@ -134,6 +134,9 @@ public final class Bindings {
   private static native void setVT(Address addr , ObjectReference virtualTable);
   
   @Inline
+  private static native int hiddenHeaderSize();
+  
+  @Inline
   private static native void memcpy(
       ObjectReference to, ObjectReference from, int size);
 

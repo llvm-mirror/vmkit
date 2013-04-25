@@ -28,7 +28,6 @@ public:
 
 class gcRoot {
 	private:
-		word_t _header;
 public:
   virtual           ~gcRoot() {}
   virtual void      tracer(word_t closure) {}
