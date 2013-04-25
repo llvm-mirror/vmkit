@@ -1,8 +1,17 @@
 VMJC      := $(ToolDir)/vmjc$(EXEEXT)
 
+$(ToolBuildPath): $(ObjectsO) $(ProjLibsPaths) $(LLVMLibsPaths)
+	$(Echo) '**[30] Linking $(BuildMode) executable $(TOOLNAME) $(StripWarnMsg)'
+	$(Verb) $(Link) -o $@ $(TOOLLINKOPTS) $(ObjectsO) $(ProjLibsOptions) $(LLVMLibsOptions) $(ExtraLibs) $(TOOLLINKOPTSB) $(LIBS)
+
 $(LibName.SO): $(ObjectsO) $(ProjLibsPaths) $(LLVMLibsPaths) $(SharedLibDir)/.dir
 	$(Echo) "**[20] Linking $(BuildMode) $(SharedLibKindMessage) $(notdir $@)"
 	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -Wl,-R -Wl,'$ORIGIN' -shared $(ObjectsO)
+
+$(LibName.BCA): $(ObjectsBC) $(LibDir)/.dir $(LLVMToolDir)/llvm-ar
+	$(Echo) "**[22] Building $(BuildMode) Bytecode Archive $(notdir $@)"
+	$(Verb) $(RM) -f $@
+	$(Verb) $(LArchive) $@ $(ObjectsBC)
 
 # Set the LLVM build file location 
 LLVMBuildTool   := $(LLVM_SRC_ROOT)/utils/llvm-build/llvm-build
@@ -17,7 +26,7 @@ ifdef VMKIT_RUNTIME
 .PRECIOUS: LLVMRuntime.inc
 
 LLVMRuntime.inc : $(LLVMAS) $(LLC) $(VMKIT_RUNTIME)
-	$(Echo) "**[7] Building LLVM runtime with $(VMKIT_RUNTIME)"
+	$(Echo) "**[7] Building LLVM runtime"
 	$(Verb) cat $(VMKIT_RUNTIME) | $(LLVMAS) -o - | $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=contents -o $@
 
 all-local:: LLVMRuntime.inc
