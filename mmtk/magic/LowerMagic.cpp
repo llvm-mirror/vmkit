@@ -119,8 +119,8 @@ static const char* AddressPrepareWordAtOffsetMethod;
 //static const char* AddressAttemptIntAtOffsetMethod;
 static const char* AddressAttemptWordMethod;
 static const char* AddressAttemptWordAtOffsetMethod;
-//static const char* AddressAttemptObjectReferenceMethod;
-//static const char* AddressAttemptObjectReferenceAtOffsetMethod;
+static const char* AddressAttemptObjectReferenceMethod;
+static const char* AddressAttemptObjectReferenceAtOffsetMethod;
 //static const char* AddressAttemptAddressMethod;
 //static const char* AddressAttemptAddressAtOffsetMethod;
 
@@ -257,6 +257,7 @@ static void initialiseFunctions(Module* M) {
     AddressToWordMethod = "JnJVM_org_vmmagic_unboxed_Address_toWord__";
     AddressPrepareWordMethod = "JnJVM_org_vmmagic_unboxed_Address_prepareWord__";
     AddressAttemptWordAtOffsetMethod = "JnJVM_org_vmmagic_unboxed_Address_attempt__Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Offset_2";
+    AddressAttemptObjectReferenceAtOffsetMethod = "JnJVM_org_vmmagic_unboxed_Address_attempt__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Offset_2";
     AddressPrepareWordAtOffsetMethod = "JnJVM_org_vmmagic_unboxed_Address_prepareWord__Lorg_vmmagic_unboxed_Offset_2";
     AddressLoadWordAtOffsetMethod = "JnJVM_org_vmmagic_unboxed_Address_loadWord__Lorg_vmmagic_unboxed_Offset_2";
     AddressStoreWordAtOffsetMethod = "JnJVM_org_vmmagic_unboxed_Address_store__Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Offset_2";
@@ -269,6 +270,7 @@ static void initialiseFunctions(Module* M) {
     AddressLoadObjectReferenceAtOffsetMethod = "JnJVM_org_vmmagic_unboxed_Address_loadObjectReference__Lorg_vmmagic_unboxed_Offset_2";
     AddressLEMethod = "JnJVM_org_vmmagic_unboxed_Address_LE__Lorg_vmmagic_unboxed_Address_2";
     AddressAttemptWordMethod = "JnJVM_org_vmmagic_unboxed_Address_attempt__Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Word_2";
+    AddressAttemptObjectReferenceMethod = "JnJVM_org_vmmagic_unboxed_Address_attempt__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2";
     AddressNEMethod = "JnJVM_org_vmmagic_unboxed_Address_NE__Lorg_vmmagic_unboxed_Address_2";
     AddressToLongMethod = "JnJVM_org_vmmagic_unboxed_Address_toLong__";
     AddressMinusExtentMethod = "JnJVM_org_vmmagic_unboxed_Address_minus__Lorg_vmmagic_unboxed_Extent_2";
@@ -596,7 +598,8 @@ bool LowerMagic::runOnFunction(Function& F) {
             	Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
             	CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getName().data(), AddressAttemptWordAtOffsetMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressAttemptWordAtOffsetMethod) ||
+            		        !strcmp(FCur->getName().data(), AddressAttemptObjectReferenceAtOffsetMethod)) {
               Value* Ptr = Call.getArgument(0);
               Value* Old = Call.getArgument(1);
               Value* Val = Call.getArgument(2);
@@ -617,7 +620,8 @@ bool LowerMagic::runOnFunction(Function& F) {
 
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getName().data(), AddressAttemptWordMethod)) {
+            } else if (!strcmp(FCur->getName().data(), AddressAttemptWordMethod) ||
+            		        !strcmp(FCur->getName().data(), AddressAttemptObjectReferenceMethod)) {
               Value* Ptr = Call.getArgument(0);
               Value* Old = Call.getArgument(1);
               Value* Val = Call.getArgument(2);
@@ -983,12 +987,6 @@ bool LowerMagic::runOnFunction(Function& F) {
             } else if (!strcmp(FCur->getName().data(), ObjectReferenceToAddressMethod)) {
               Value* Val = Call.getArgument(0);
               Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
-
-              /*
-               * REMOVE ObjectReferenceToAddress offset !!!
-               */
-
-
               Constant* M = ConstantInt::get(pointerSizeType, gcHeader::hiddenHeaderSize());
               Val = BinaryOperator::CreateSub(Val, M, "", CI);
               Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
