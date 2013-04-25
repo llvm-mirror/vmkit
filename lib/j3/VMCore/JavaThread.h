@@ -33,16 +33,30 @@ class Jnjvm;
 #define BEGIN_NATIVE_EXCEPTION(level)
 #define END_NATIVE_EXCEPTION
 
+
+/*
+ * FIXME Have to find a solution for both implementations
+ */
+#ifdef USE_OPENJDK
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
   word_t SP = th->getLastSP(); \
-  bool _inUncooperative = th->isInUncooperativeCode(); \
-  if (_inUncooperative)	{\
   th->leaveUncooperativeCode(); \
   vmkit::KnownFrame Frame; \
   th->startKnownFrame(Frame); \
-  Frame.currentFP = vmkit::System::GetCallerAddress(); }\
+  Frame.currentFP = vmkit::System::GetCallerAddress();\
   TRY {
+#else
+#define BEGIN_JNI_EXCEPTION \
+  JavaThread* th = JavaThread::get(); \
+  word_t SP = th->getLastSP(); \
+  th->leaveUncooperativeCode(); \
+  vmkit::KnownFrame Frame; \
+  th->startKnownFrame(Frame); \
+  TRY {
+
+#endif
+
 
 #define END_JNI_EXCEPTION \
   } CATCH { \
@@ -50,15 +64,13 @@ class Jnjvm;
   } END_CATCH;
 
 #define RETURN_FROM_JNI(a) {\
-  if (_inUncooperative)	{\
   th->endKnownFrame(); \
-  th->enterUncooperativeCode(SP); }\
+  th->enterUncooperativeCode(SP); \
   return (a); } \
 
 #define RETURN_VOID_FROM_JNI {\
-  if (_inUncooperative)	{\
   th->endKnownFrame(); \
-  th->enterUncooperativeCode(SP); }\
+  th->enterUncooperativeCode(SP); \
   return; } \
 
 /// This is used to implement park/unpark behavior.
