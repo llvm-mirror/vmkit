@@ -37,14 +37,16 @@ public class Activator
 		aST.open();
 		
 		A service = (A)aST.getService();
-		if (service != null) {
-			System.out.println("BImpl got A @ startup");
-			
+		if (service != null)
 			a.add(service);
-			this.useA();
-		}
 		
 		context.addServiceListener(this, "(objectclass=" + A.class.getName() + ")");
+
+		if (a != null) {
+			System.out.println("BImpl got A @ startup");
+			
+			this.useA();
+		}
 		
 		b = new BImpl();
 		context.registerService(B.class.getName(), b, null);
