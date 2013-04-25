@@ -536,6 +536,9 @@ bool LowerMagic::runOnFunction(Function& F) {
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
               Val2 = new PtrToIntInst(Val2, pointerSizeType, "", CI);
+            	Constant* M = ConstantInt::get(pointerSizeType, gcHeader::hiddenHeaderSize());
+            	Val1 = BinaryOperator::CreateAdd(Val1, M, "", CI);
+            	Val2 = BinaryOperator::CreateAdd(Val2, M, "", CI);
               Value* res = new ICmpInst(CI, ICmpInst::ICMP_ULT, Val1, Val2, "");
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
@@ -545,6 +548,9 @@ bool LowerMagic::runOnFunction(Function& F) {
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
               Val2 = new PtrToIntInst(Val2, pointerSizeType, "", CI);
+            	Constant* M = ConstantInt::get(pointerSizeType, gcHeader::hiddenHeaderSize());
+            	Val1 = BinaryOperator::CreateAdd(Val1, M, "", CI);
+            	Val2 = BinaryOperator::CreateAdd(Val2, M, "", CI);
               Value* res = new ICmpInst(CI, ICmpInst::ICMP_UGT, Val1, Val2, "");
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
@@ -572,6 +578,9 @@ bool LowerMagic::runOnFunction(Function& F) {
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
               Val2 = new PtrToIntInst(Val2, pointerSizeType, "", CI);
+            	Constant* M = ConstantInt::get(pointerSizeType, gcHeader::hiddenHeaderSize());
+            	Val1 = BinaryOperator::CreateAdd(Val1, M, "", CI);
+            	Val2 = BinaryOperator::CreateAdd(Val2, M, "", CI);
               Value* res = new ICmpInst(CI, ICmpInst::ICMP_ULE, Val1, Val2, "");
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
@@ -581,6 +590,9 @@ bool LowerMagic::runOnFunction(Function& F) {
               Value* Val2 = Call.getArgument(1);
               Val1 = new PtrToIntInst(Val1, pointerSizeType, "", CI);
               Val2 = new PtrToIntInst(Val2, pointerSizeType, "", CI);
+            	Constant* M = ConstantInt::get(pointerSizeType, gcHeader::hiddenHeaderSize());
+            	Val1 = BinaryOperator::CreateAdd(Val1, M, "", CI);
+            	Val2 = BinaryOperator::CreateAdd(Val2, M, "", CI);
               Value* res = new ICmpInst(CI, ICmpInst::ICMP_UGE, Val1, Val2, "");
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
