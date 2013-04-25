@@ -7,6 +7,7 @@ set datafile commentschars "#"
 set ylabel "Average relative overhead (lower is better)"
 set ytics 1 border nomirror
 set grid ytics
+set format y "%.0f %%"
 
 set style data histogram
 set style histogram clustered gap 1

@@ -18,6 +18,7 @@ public class Activator
 	ServiceTracker j3mgrST;
 	J3Mgr j3mgr;
 	boolean correctStaleReferences;
+	long loopCount;
 
 	public void start(BundleContext bundleContext) throws Exception
 	{
@@ -29,6 +30,7 @@ public class Activator
 		if (j3mgr == null)
 			throw new BundleException("J3 Management service must be started before this service.");
 		
+		loopCount = 0;
 		correctStaleReferences = true;
 		firstBundleID = 13;
 		
@@ -46,6 +48,7 @@ public class Activator
 			worker = null;
 		}
 		
+		System.out.println("Bundle reinstallation count: " + loopCount);
 		context = null;
 	}
 
@@ -81,6 +84,8 @@ public class Activator
 				bundle.stop();
 				bundle.uninstall();
 			}
+			
+			loopCount++;
 			
 			System.gc();
 		} catch (Exception e) {
