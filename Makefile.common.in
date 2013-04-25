@@ -1,22 +1,12 @@
-# Set the name of the project here
 PROJECT_NAME := @PACKAGE_NAME@
 PROJ_VERSION := @PACKAGE_VERSION@
 
 realpath=$(shell cd $(1); $(PWD))
 
-# Set the directory root of this project's source files
 PROJ_SRC_ROOT := $(subst //,/,@abs_top_srcdir@)
-VMKIT_SRC_ROOT := $(PROJ_SRC_ROOT)
-
-# Set the root directory of this project's object files
 PROJ_OBJ_ROOT := $(subst //,/,@abs_top_builddir@)
-VMKIT_OBJ_ROOT := $(PROJ_OBJ_ROOT)
-
 PROJ_OBJ_CWD:= $(call realpath, .)
 PROJ_SRC_CWD:= $(call realpath, $(patsubst $(PROJ_OBJ_ROOT)%,$(PROJ_SRC_ROOT)%,$(PROJ_OBJ_CWD)))
-
-# Set the root directory of this project's install prefix
-PROJ_INSTALL_ROOT := @prefix@
 
 MMTK_PLAN = @MMTK_PLAN@
 MMTK_PLAN_HEADER = @MMTK_PLAN_HEADER@
@@ -48,33 +38,10 @@ OPTIMIZED=@OPTIMIZED@
 DEBUG=@DEBUG@
 ASSERT=@ASSERT@
 
- # Set this variable to the top of the LLVM source tree.
-LLVM_SRC_ROOT = @LLVM_SRC@
-
-# Set this variable to the top level directory where LLVM was built
-# (this is *not* the same as OBJ_ROOT as defined in LLVM's Makefile.config).
-LLVM_OBJ_ROOT = @LLVM_OBJ@
-
-# Define BYTECODE_LIBRARY before including LLVM's Makefile.common to get
-# dependencies right.
-BYTECODE_LIBRARY = 1
-LLVMCC_OPTION = "clang"
-ENABLE_BUILT_CLANG = 1
-LLVMCC_EMITIR_FLAG = "-emit-llvm"
-
-ifeq ($(BUILD_FRAMETABLE), 1)
-  BUILT_SOURCES = FrametablesSymbols.inc FrametablesExterns.inc
-endif
-
-REQUIRES_FRAME_POINTER	:= 1
 JAVAC_TARGET		:= 1.5
 
 ENABLE_OPTIMIZED=1
 
-CXX.Flags += @GC_FLAGS@ -fno-exceptions -Wno-variadic-macros -fno-omit-frame-pointer -fno-strict-aliasing -Wno-deprecated -ansi -fno-rtti
-
-# GNU Classpath flags
-CLASSPATH_FLAGS =
 GLIBJ = @classpathglibj@
 
 # Using conditional compilation for now, until a proper interface/architecture
@@ -83,8 +50,8 @@ ifeq (@classpathimpl@,openjdk)
 COMMON_CFLAGS+=-DUSE_OPENJDK
 endif
 
-LIBS += -lz
-
+CONFIG_FILES=@ac_config_files@
+CONFIG_HEADERS=@ac_config_headers@
 
 ifeq ($(ENABLE_OPTIMIZED),1)
 	LLC_CPP_FLAGS		:=
@@ -113,8 +80,5 @@ else
 
 	PRECOMPILER_FLAGS	:=
 endif
-
-CONFIG_FILES=@ac_config_files@
-CONFIG_HEADERS=@ac_config_headers@
 
 include $(PROJ_SRC_ROOT)/Makefile.rules
