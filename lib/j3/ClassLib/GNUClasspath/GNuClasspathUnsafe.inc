@@ -15,11 +15,9 @@ JavaObject* unsafe, JavaObject* thread) {
   
   // It's possible that the thread to be interrupted has not finished
   // its initialization. Wait until the initialization is done.
-  fprintf(stderr, "Case -1\n");
   vmthread = field2->getInstanceObjectField(thread);
   while (vmthread == 0) {
   	JavaThread::yield();
-  	fprintf(stderr, "Case 0\n");
   	vmthread = field2->getInstanceObjectField(thread);
   }
   JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
@@ -30,7 +28,6 @@ JavaObject* unsafe, JavaObject* thread) {
   }
   //fprintf(stderr, "unparking started %lld\n", th->getThreadID());
   th->parkLock.unpark();
-  fprintf(stderr, "Case 2\n");
   //fprintf(stderr, "unparking done %lld\n", th->getThreadID());
 }
 
