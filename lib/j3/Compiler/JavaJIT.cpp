@@ -1266,6 +1266,9 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
  
+  if (compilingMethod->name->compare("ijvm_tests_Runner_loop") == 0) {
+	  llvmFunction->dump();
+  }
   return llvmFunction;
 }
 

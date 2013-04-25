@@ -331,6 +331,9 @@ public:
   bool isZombie() const {return zombie;}
   void markZombie(bool becomeZombie = true) {zombie = becomeZombie;}
 
+  int64_t getAssociatedBundleID();
+  void setAssociatedBundleID(int64_t newID);
+
   friend class Class;
   friend class CommonClass;
   friend class StringList;

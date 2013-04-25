@@ -11,6 +11,7 @@
 #define JNJVM_JAVA_VM_H
 
 #include <vector>
+#include <map>
 
 #include "types.h"
 
@@ -351,10 +352,23 @@ public:
   ///
   void loadBootstrap();
 
+public:
+  void resetReferencesToBundle(int64_t bundleID);
   virtual void resetReferenceIfStale(const void* source, void** ref);
+
+  int64_t getClassLoaderBundleID(JnjvmClassLoader* loader);
+  JnjvmClassLoader* getBundleClassLoader(int64_t bundleID);
+  void setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader);
+
+  typedef std::map<int64_t, JnjvmClassLoader*>	bundleClassLoadersType;
+
+protected:
   void resetReferenceIfStale(const JavaObject *source, class VMClassLoader** ref);
   void resetReferenceIfStale(const JavaObject *source, class VMStaticInstance** ref);
   void resetReferenceIfStale(const JavaObject *source, class JavaObject** ref);
+
+  vmkit::LockRecursive bundleClassLoadersLock;
+  bundleClassLoadersType bundleClassLoaders;
 };
 
 } // end namespace j3

@@ -1,0 +1,29 @@
+Index: knopflerfish/osgi/framework/src/j3/vm/OSGi.java
+===================================================================
+--- knopflerfish/osgi/framework/src/j3/vm/OSGi.java	1970-01-01 01:00:00.000000000 +0100
++++ knopflerfish/osgi/framework/src/j3/vm/OSGi.java	2012-10-27 00:08:43.000000000 +0200
+@@ -0,0 +1,6 @@
++package j3.vm;
++
++public class OSGi
++{
++	public static native void associateBundleClass(long bundleID, Class classObject);
++}
+Index: knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleClassLoader.java
+===================================================================
+--- knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleClassLoader.java	2012-10-27 02:29:49.852807353 +0200
++++ knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleClassLoader.java	2012-10-27 02:36:22.287024825 +0200
+@@ -819,9 +819,12 @@
+     }
+     Vector av = classPath.componentExists(path, onlyFirst);
+     if (av != null) {
+       try {
+-        return action.get(av, path, name, pkg, this);
++        Object cl = action.get(av, path, name, pkg, this);
++        if (cl instanceof Class)
++          j3.vm.OSGi.associateBundleClass(getBundle().getBundleId(), (Class)cl);
++        return cl;
+       } catch (IOException ioe) {
+         fwCtx.listeners.frameworkError(bpkgs.bg.bundle, ioe);
+         return null;
+       }

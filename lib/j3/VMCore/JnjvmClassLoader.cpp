@@ -240,6 +240,24 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
   assert(loadClass && "Loader does not have a loadClass function");
 }
 
+int64_t JnjvmClassLoader::getAssociatedBundleID()
+{
+	return vm->getClassLoaderBundleID(this);
+}
+
+void JnjvmClassLoader::setAssociatedBundleID(int64_t newID)
+{
+	int64_t oldBundleID = vm->getClassLoaderBundleID(this);
+	if (oldBundleID != -1) {
+		if (oldBundleID == newID) return;	// Nothing to do
+
+		// Remove old bundle ID
+		vm->setBundleClassLoader(oldBundleID, NULL);
+	}
+
+	vm->setBundleClassLoader(newID, this);
+}
+
 void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
   // Set the new compiler.
   TheCompiler = Comp;

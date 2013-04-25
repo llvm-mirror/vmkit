@@ -187,8 +187,8 @@ void Class::tracer(word_t closure) {
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
     TaskClassMirror &M = IsolateInfo[i];
     if (M.staticInstance != NULL) {
-      for (uint32 i = 0; i < nbStaticFields; ++i) {
-        JavaField& field = staticFields[i];
+      for (uint32 j = 0; j < nbStaticFields; ++j) {
+        JavaField& field = staticFields[j];
         if (field.isReference()) {
           JavaObject** ptr = field.getStaticObjectFieldPtr();
           vmkit::Collector::markAndTraceRoot(delegatee[i], ptr, closure);

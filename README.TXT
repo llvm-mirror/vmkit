@@ -93,3 +93,16 @@ svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit
 
 ./configure --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/home/koutheir/PhD/VMKit/classpath/lib --with-gnu-classpath-glibj=/usr/local/classpath/share/classpath/glibj.zip
 make -j12 ENABLE_OPTIMIZED=0 REQUIRES_FRAME_POINTER=1 KEEP_SYMBOLS=1 DEBUG_RUNTIME=1 DEBUG_SYMBOLS=1
+
+=============
+Knopflerfish:
+=============
+
+* Apply patch:
+cd knopflerfish
+patch -p1 < ../ijvm/knopflerfish.patch
+cd ..
+
+* Recompile Knopflerfish:
+cd knopflerfish/osgi
+ant default

@@ -176,6 +176,28 @@ public:
 };
 
 
+class LockGuard
+{
+protected:
+	Lock& lock;
+
+private:	//Disabled constructors
+	LockGuard();
+	LockGuard(const LockGuard&);
+
+public:
+	LockGuard(Lock& l) :
+		lock(l)
+	{
+		lock.lock();
+	}
+
+	virtual ~LockGuard()
+	{
+		lock.unlock();
+	}
+};
+
 } // end namespace vmkit
 
 #endif // VMKIT_LOCKS_H
