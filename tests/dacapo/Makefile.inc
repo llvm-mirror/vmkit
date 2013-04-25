@@ -1,10 +1,12 @@
 TEMP_LEVEL			:= ../..
+BUILD_MODE			:= Release+Asserts
+# BUILD_MODE		:= Debug+Asserts
 DACAPO				:= $(PWD)/$(LEVEL)/jars/dacapo-$(DACAPO_VERSION).jar
 LOG_DIR				:= $(LEVEL)/logs
 LOG_DIR_FROM_TEMP	:= $(PWD)/$(LOG_DIR)
-J3_PATH				:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/vmkit2/Debug+Asserts/bin/j3
+J3_PATH				:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/vmkit2/$(BUILD_MODE)/bin/j3
 TEMP_J3				:= $(PWD)/$(LEVEL)/$(DACAPO_VERSION)/j3
-IJVM_PATH			:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/ijvm/Debug+Asserts/bin/j3
+IJVM_PATH			:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/ijvm/$(BUILD_MODE)/bin/j3
 TEMP_IJVM			:= $(PWD)/$(LEVEL)/$(DACAPO_VERSION)/ijvm
 
 ifndef ENABLE_J3
