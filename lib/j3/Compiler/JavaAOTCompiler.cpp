@@ -1393,9 +1393,6 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // minJDKVersionBuild
   ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->minJDKVersionBuild));
 
-  // zombie
-  ClassElts.push_back(ConstantInt::get(Type::getInt8Ty(getLLVMContext()), cl->zombie));
-
   return ConstantStruct::get(STy, ClassElts);
 }
 

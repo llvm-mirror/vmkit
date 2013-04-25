@@ -10,9 +10,9 @@
 
 using namespace std;
 
-#define DEBUG_VERBOSE_STALE_REF		1
-
 #if RESET_STALE_REFERENCES
+
+#define DEBUG_VERBOSE_STALE_REF		1
 
 namespace j3 {
 
@@ -56,29 +56,6 @@ void Jnjvm::notifyBundleUninstalled(int64_t bundleID)
 #if DEBUG_VERBOSE_STALE_REF
 	cerr << "Bundle uninstalled: bundleID=" << bundleID << endl;
 #endif
-
-	scanStaleReferences = true;		// Enable stale references scanning
-	vmkit::Collector::collect();	// Start a garbage collection now
-}
-
-void Jnjvm::notifyServiceUnregistered(int64_t bundleID, JavaObjectClass* classObject)
-{
-	llvm_gcroot(classObject, 0);
-
-	JnjvmClassLoader* loader = this->getBundleClassLoader(bundleID);
-	if (!loader) return;
-
-	if (!loader->isStaleReferencesCorrectionEnabled()) return;
-
-	CommonClass* ccl = JavaObjectClass::getClass(classObject);
-	if (!ccl->isClass() && !ccl->isInterface()) {
-		this->illegalArgumentException("Service class is not a class or an interface"); return;}
-
-#if DEBUG_VERBOSE_STALE_REF
-	cerr << "Service unregistered: bundleID=" << bundleID << " class=" << *ccl->name << endl;
-#endif
-
-	ccl->asClass()->markZombie(true);
 
 	scanStaleReferences = true;		// Enable stale references scanning
 	vmkit::Collector::collect();	// Start a garbage collection now
@@ -160,18 +137,6 @@ extern "C" void Java_j3_vm_OSGi_notifyBundleUninstalled(jlong bundleID)
 
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	vm->notifyBundleUninstalled(bundleID);
-
-#endif
-}
-
-extern "C" void Java_j3_vm_OSGi_notifyServiceUnregistered(jlong bundleID, JavaObjectClass* classObject)
-{
-	llvm_gcroot(classObject, 0);
-
-#if RESET_STALE_REFERENCES
-
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	vm->notifyServiceUnregistered(bundleID, classObject);
 
 #endif
 }

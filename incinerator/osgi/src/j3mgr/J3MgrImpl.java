@@ -2,15 +2,15 @@ package j3mgr;
 
 import j3.J3Mgr;
 
-import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
-import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.packageadmin.PackageAdmin;
 
 public class J3MgrImpl
-	implements J3Mgr, BundleListener, AllServiceListener
+	implements J3Mgr, BundleListener
 {
 	BundleContext context;
 	
@@ -19,13 +19,11 @@ public class J3MgrImpl
 		context = bundleContext;
 		
 		context.addBundleListener(this);
-		context.addServiceListener(this);
 	}
 
 	public void close()
 	{
 		context.removeBundleListener(this);
-		context.removeServiceListener(this);
 		context = null;
 	}
 
@@ -39,20 +37,20 @@ public class J3MgrImpl
 		return j3.vm.OSGi.isBundleStaleReferenceCorrected(bundle.getBundleId());
 	}
 
-	public void serviceChanged(ServiceEvent event)
-	{
-		if (event.getType() != ServiceEvent.UNREGISTERING) return;
-		// WARNING: Service is NOT yet unregistered here. Find a solution to know when it is.
-		j3.vm.OSGi.notifyServiceUnregistered(
-			event.getServiceReference().getBundle().getBundleId(),
-			context.getService(event.getServiceReference()).getClass()
-			);
-	}
-
 	public void bundleChanged(BundleEvent event)
 	{
 		if (event.getType() != BundleEvent.UNINSTALLED) return;
 		j3.vm.OSGi.notifyBundleUninstalled(event.getBundle().getBundleId());
+		refreshFramework();
+	}
+	
+	void refreshFramework()
+	{
+		ServiceReference<?> pkgAdminRef = (ServiceReference<?>)context.getServiceReference(
+			"org.osgi.service.packageadmin.PackageAdmin");
+		PackageAdmin pkgAdmin = (PackageAdmin)context.getService(pkgAdminRef);
+		pkgAdmin.refreshPackages(null);
+		context.ungetService(pkgAdminRef);
 	}
 	
 	// THE FOLLOWING METHODS ARE DEBUGGING HELPERS

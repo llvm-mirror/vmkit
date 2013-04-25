@@ -333,9 +333,11 @@ public:
 
 protected:
   bool staleRefCorrected;
+  bool zombie;
 
 public:
-  void markZombie(bool becomeZombie = true);
+  bool isZombie() const {return zombie;}
+  void markZombie(bool becomeZombie = true) {zombie = becomeZombie;}
   bool isStaleReferencesCorrectionEnabled() {return staleRefCorrected;}
   void setStaleReferencesCorrectionEnabled(bool enable) {staleRefCorrected = enable;}
 

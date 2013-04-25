@@ -215,7 +215,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
 	allocator(Alloc)
 #if RESET_STALE_REFERENCES
-	,staleRefCorrected(false)
+	,staleRefCorrected(false), zombie(false)
 #endif
 {
 }
@@ -225,7 +225,7 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    VMClassLoader* vmdata,
                                    Jnjvm* VM) : allocator(Alloc)
 #if RESET_STALE_REFERENCES
-	,staleRefCorrected(false)
+	,staleRefCorrected(false), zombie(false)
 #endif
 {
   llvm_gcroot(loader, 0);
@@ -1142,21 +1142,6 @@ void JnjvmClassLoader::setAssociatedBundleID(int64_t newID)
 	}
 
 	vm->setBundleClassLoader(newID, this);
-}
-
-void JnjvmClassLoader::markZombie(bool becomeZombie)
-{
-	classes->lock.lock();
-
-	for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end(); i != e; ++i) {
-		CommonClass* ccl = i->second;
-		if (ccl->classLoader != this) continue;
-		if (!ccl->isClass() && !ccl->isInterface()) continue;
-
-		ccl->asClass()->markZombie(becomeZombie);
-	}
-
-	classes->lock.unlock();
 }
 
 #endif

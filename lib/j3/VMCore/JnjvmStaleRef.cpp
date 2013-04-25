@@ -40,6 +40,17 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMClassLoader** ref)
 
 	// Don't touch fake Java objects that exist only as bridges between the
 	// Java object model and the C++ object model.
+
+#if DEBUG_VERBOSE_STALE_REF
+
+	JnjvmClassLoader* loader = (**ref).getClassLoader();
+	if (!loader->isZombie()) return;
+
+	cerr << "WARNING: Ignored stale reference ref=" << ref << " obj=" << **ref;
+	if (source) cerr << " source=" << *source;
+	cerr << endl;
+
+#endif
 }
 
 void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMStaticInstance** ref)
@@ -48,6 +59,17 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMStaticInstance** r
 
 	// Don't touch fake Java objects that exist only as bridges between the
 	// Java object model and the C++ object model.
+
+#if DEBUG_VERBOSE_STALE_REF
+
+	JnjvmClassLoader* loader = (**ref).getOwningClass()->classLoader;
+	if (!loader->isZombie()) return;
+
+	cerr << "WARNING: Ignored stale reference ref=" << ref << " obj=" << **ref;
+	if (source) cerr << " source=" << *source;
+	cerr << endl;
+
+#endif
 }
 
 void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
@@ -58,9 +80,8 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 
 	if (source) {
 		CommonClass* ccl = JavaObject::getClass(source);
-		if (ccl->isClass() || ccl->isInterface())
-			if (ccl->asClass()->isZombie())
-				cerr << "WARNING: Source object is stale source=" << *source << endl;
+		if (ccl->classLoader->isZombie())
+			cerr << "WARNING: Source object is stale source=" << *source << endl;
 	}
 
 #endif
@@ -68,8 +89,7 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 	CommonClass* ccl = JavaObject::getClass(*ref);
 	assert (ccl && "Object Class is not null.");
 
-	if (!ccl->isClass() && !ccl->isInterface()) return;
-	if (!ccl->asClass()->isZombie()) return;
+	if (!ccl->classLoader->isZombie()) return;
 
 #if DEBUG_VERBOSE_STALE_REF
 
