@@ -88,7 +88,7 @@ MODULE=$(TOOL)
 all:: $(BIN_DIR)/$(TOOL)$(EXEEXT)
 
 $(BIN_DIR)/$(TOOL)$(EXEEXT): $(DEP_LIBS) $(SELF) $(BIN_DIR)/.dir
-	$(Echo) 'Linking executable $(notdir $@)'
+	$(Echo) 'Linking executable:     $(notdir $@)'
 	$(Verb) $(CLANGXX) -o $@ $(DEP_LIBS) $(MY_LIBS) $(MY_LDFLAGS) 
 
 endif
@@ -99,7 +99,7 @@ MODULE=$(LIBRARY)
 all:: $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT)
 
 $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
-	$(Echo) "Linking shared library $(notdir $@)"
+	$(Echo) "Linking shared library: $(notdir $@)"
 	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -Wl,-R -Wl,'$ORIGIN' -shared $(ObjectsO)
 endif
 
@@ -131,6 +131,7 @@ endif
 
 ifdef BUILD_FRAMETABLE
 
+## have to remove this symbol (used elsewere)
 FRAMETABLES=FrametablesExterns.inc FrametablesSymbols.inc
 DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(USE))
 
@@ -146,13 +147,13 @@ clean-local::
 endif
 
 $(MODULE_A): $(OBJ_FILES) $(SELF) $(LIB_DIR)/.dir
-	$(Echo) "Building archive $(notdir $@)"
+	$(Echo) "Building archive:       $(notdir $@)"
 	-$(Verb) $(RM) -f $@
 	$(Verb) $(Archive) $@ $(OBJ_FILES)
 	$(Verb) $(Ranlib) $@
 
 $(MODULE_BC): $(BC_FILES) $(SELF) $(LIB_DIR)/.dir
-	$(Echo) "Building module $(notdir $@)"
+	$(Echo) "Building module:        $(notdir $@)"
 	$(Verb) $(LLVMLINK) $(BC_FILES) -o $(MODULE_BC)
 
 endif
@@ -226,18 +227,11 @@ clean-local::
 endif
 
 ###############################################################################
-# MODULE_WITH_GC: Provide rules for building .cpp files into an archive with
-#                 GC symbol information.
-###############################################################################
-
-###############################################################################
-# BUILD_FRAMETABLE: Generate files for easy access of frametables at runtime.
-###############################################################################
-
-###############################################################################
 # COMPILE_OPENJDK_ZIP: Build the specified java sources and zip them up
 ###############################################################################
 ifeq ($(COMPILE_OPENJDK_ZIP), 1)
+
+$(error must verify the open jdk building process)
 
 # Some variables
 VMKIT_OPENJDK_ZIP=$(PROJ_OBJ_DIR)/vmkit-openjdk.zip
@@ -246,7 +240,6 @@ CLASSES_DIR=$(PROJ_OBJ_DIR)/classes
 all-local:: $(VMKIT_OPENJDK_ZIP)
 clean-local::
 	-$(Verb) $(RM) -f $(CLASSES_DIR) $(VMKIT_OPENJDK_ZIP)
-
 
 $(VMKIT_OPENJDK_ZIP): $(addprefix $(PROJ_SRC_DIR)/,$(OPENJDK_JAVA_SOURCES))
 	$(Echo) "**[13] Building OpenJDK java sources into zip"
@@ -278,10 +271,13 @@ INCLUDES+=-I. -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk \
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
 COMMON_CFLAGS+=  -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer  -ansi -pedantic $(WARN_CFLAGS) -fPIC
 
-CFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cflgas)
+CFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cflags)
 CXXFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cxxflags)
 MY_LDFLAGS+=$(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
 MY_LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
+
+DEPEND_OPTIONS=-MMD -MP -MF "$(BUILD_DIR)/$$*.d.tmp" -MT "$(BUILD_DIR)/$$*.bc" -MT "$(BUILD_DIR)/$$*.d"
+DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUILD_DIR)/$$*.d.tmp"; exit 1; fi
 
 $(LibName.BCA): $(ObjectsBC) $(LibDir)/.dir $(LLVMToolDir)/llvm-ar
 	$(Echo) "**[22] Building $(BuildMode) Bytecode Archive $(notdir $@)"
@@ -289,17 +285,35 @@ $(LibName.BCA): $(ObjectsBC) $(LibDir)/.dir $(LLVMToolDir)/llvm-ar
 	$(Verb) $(LArchive) $@ $(ObjectsBC)
 
 $(BUILD_DIR)/%-gc.o: $(BUILD_DIR)/%-gc.bc $(LLC) $(SELF)
-	$(Echo) "Assembling:       $(notdir $<)"
+	$(Echo) "Assembling:             $(notdir $<)"
 	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim -load=$(PREPARE_CODE) $< -o $@
 
 $(BUILD_DIR)/%.o: $(BUILD_DIR)/%.bc $(LLC) $(SELF)
-	$(Echo) "Assembling:       $(notdir $<)"
+	$(Echo) "Assembling:             $(notdir $<)"
 	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $< -o $@
 
 $(BUILD_DIR)/%-gc.bc: $(BUILD_DIR)/%.bc $(LOPT) $(PREPARE_CODE) $(SELF)
-	$(Echo) "Preparing for gc: $(notdir $<)"
+	$(Echo) "Preparing for gc:       $(notdir $<)"
 	$(Verb) $(LOPT) $< -load=$(PREPARE_CODE) -StaticGCPass -o $@
 
-$(BUILD_DIR)/%.bc: %.cpp $(FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
-	$(Echo) "Compiling:        $(notdir $<)"
-	$(Verb) $(CLANGXX) -S $(CXXFLAGS) -emit-llvm -c "$<" -o $@
+define define_compile_rule
+$(BUILD_DIR)/%.bc: %$1 $(SELF) $(FRAMETABLES) $(BUILD_DIR)/.dir
+	$(Echo) "Compiling:              $(notdir $$<)"
+	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
+
+$(BUILD_DIR)/%.bc: $(BUILD_DIR)/%$1 $(FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Compiling:              $(notdir $$<)"
+	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
+endef
+
+$(eval $(call define_compile_rule,.cpp,$(CLANGXX),$(CXXFLAGS)))
+$(eval $(call define_compile_rule,.cc,$(CLANGXX),$(CXXFLAGS)))
+$(eval $(call define_compile_rule,.c,$(CLANG),$(CFLAGS)))
+
+ifneq ($(MAKECMDGOALS),tidy)
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),distclean)
+-include $(patsubst %.o, %.d, $(OBJ_FILES))
+endif
+endif
+endif
