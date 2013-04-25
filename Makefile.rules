@@ -43,13 +43,15 @@ LLC_OPT+=-relocation-model=pic -disable-cfi -disable-fp-elim
 
 OPT_MMTK_FLAGS=-std-compile-opts -strip-debug
 
-INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR)
+INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR) \
+					-I$(shell $(LLVM_CONFIG) --includedir)
 
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
-COMMON_CFLAGS+=  -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer -ansi -pedantic $(WARN_CFLAGS) -fPIC
+COMMON_CFLAGS+= -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer -ansi -pedantic $(WARN_CFLAGS) -fPIC \
+								-O3 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 
-CFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cflags)
-CXXFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cxxflags)
+CFLAGS+=$(COMMON_CFLAGS)
+CXXFLAGS+=$(COMMON_CFLAGS) -fvisibility-inlines-hidden -fno-exceptions -fno-rtti -Woverloaded-virtual -Wcast-qual
 LDFLAGS+=$(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
 LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
 
