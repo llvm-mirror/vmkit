@@ -12,8 +12,8 @@ public class Activator
 	implements BundleActivator, Runnable
 {
 	static final boolean correctStaleReferences = false;
-	static final String targetBundle = "file:///home/koutheir/PhD/VMKit/knopflerfish.verbatim/osgi/jars/http/http_all-3.1.2.jar";
-	static final long firstBundleID = 6;
+	static final String targetBundle = "file:///home/koutheir/PhD/VMKit/knopflerfish/osgi/jars/http/http_all-3.1.2.jar";
+	static final long firstBundleID = 8;
 	
 	BundleContext context;
 	Thread worker;
@@ -89,6 +89,7 @@ public class Activator
 				currentState == Bundle.STARTING) {
 				thisBundle.stop();
 			}
+			worker = null;
 		} catch (BundleException e) {
 			e.printStackTrace();
 		}
@@ -96,6 +97,8 @@ public class Activator
 	
 	void uninstallBundle(Bundle bundle) throws Throwable
 	{	
+		if (bundle == null) return;
+		
 		try {
 			j3mgr.setBundleStaleReferenceCorrected(
 				bundle.getBundleId(), correctStaleReferences);

@@ -1,11 +1,14 @@
 
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 #include "VmkitGC.h"
 #include "Jnjvm.h"
 #include "ClasspathReflect.h"
+#include "JavaUpcalls.h"
 #include "j3/jni.h"
+#include "JavaArray.h"
 
 
 using namespace std;
@@ -66,6 +69,25 @@ void Jnjvm::dumpClassLoaderBundles()
 	for (bundleClassLoadersType::const_iterator i = bundleClassLoaders.begin(), e = bundleClassLoaders.end(); i != e; ++i) {
 		cerr << "classLoader=" << i->second << "\tbundleID=" << i->first << endl;
 	}
+}
+
+ArrayLong* Jnjvm::getReferencesToObject(const JavaObject* obj)
+{
+	if (!obj) return NULL;
+
+	findReferencesToObject = obj;
+	vmkit::Collector::collect();
+
+	size_t count = foundReferencerObjects.size();
+	ArrayLong* r = static_cast<ArrayLong*>(upcalls->ArrayOfLong->doNew(count, this));
+	if (!r) {this->outOfMemoryError(); return r;}
+
+	ArrayLong::ElementType* elements = ArrayLong::getElements(r);
+	for (size_t i=0; i < count; ++i) {
+		elements[i] = reinterpret_cast<ArrayLong::ElementType>(foundReferencerObjects[i]);
+	}
+
+	return r;
 }
 
 JnjvmClassLoader* Jnjvm::getBundleClassLoader(int64_t bundleID)
@@ -169,6 +191,31 @@ extern "C" void Java_j3_vm_OSGi_dumpClassLoaderBundles()
 
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	vm->dumpClassLoaderBundles();
+
+#endif
+}
+
+extern "C" ArrayLong* Java_j3_vm_OSGi_getReferencesToObject(jlong objectPointer)
+{
+#if RESET_STALE_REFERENCES
+
+	Jnjvm* vm = JavaThread::get()->getJVM();
+	return vm->getReferencesToObject(reinterpret_cast<const JavaObject*>((intptr_t)objectPointer));
+
+#endif
+}
+
+extern "C" JavaString* Java_j3_vm_OSGi_dumpObject(jlong objectPointer)
+{
+#if RESET_STALE_REFERENCES
+
+	if (!objectPointer) return NULL;
+	const JavaObject& obj = *reinterpret_cast<const JavaObject*>((intptr_t)objectPointer);
+	std::ostringstream ss;
+	ss << obj;
+
+	Jnjvm* vm = JavaThread::get()->getJVM();
+	return vm->asciizToStr(ss.str().c_str());
 
 #endif
 }

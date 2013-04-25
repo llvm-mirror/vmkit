@@ -14,5 +14,7 @@ public interface J3Mgr
 	public void setBundleStaleReferenceCorrected(
 		String bundleNameOrID, String corrected) throws Throwable;
 	public void isBundleStaleReferenceCorrected(
-		String bundleNameOrID) throws Throwable;
+			String bundleNameOrID) throws Throwable;
+	public void dumpReferencesToObject(
+			String objectPointer) throws Throwable;
 }

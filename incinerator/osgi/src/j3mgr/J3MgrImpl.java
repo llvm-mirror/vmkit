@@ -1,5 +1,8 @@
 package j3mgr;
 
+import java.util.Set;
+import java.util.TreeSet;
+
 import j3.J3Mgr;
 
 import org.osgi.framework.Bundle;
@@ -118,5 +121,54 @@ public class J3MgrImpl
 	public void dumpClassLoaderBundles() throws Throwable
 	{
 		j3.vm.OSGi.dumpClassLoaderBundles();
+	}
+
+	public void dumpReferencesToObject(String objectPointer) throws Throwable
+	{
+		int radix = 10;
+		if (objectPointer.startsWith("0x")) {
+			objectPointer = objectPointer.substring(2);
+			radix = 16;
+		}
+
+		long obj = Long.parseLong(objectPointer, radix);
+		
+		dumpReferencesToObject(obj, null, 4);
+		System.out.println(";");
+	}
+	
+	public void dumpReferencesToObject(long obj, Set<Long> objects, int depth) throws Throwable
+	{
+		if (obj == 0) {
+			System.out.print("0x0");
+			return;
+		}
+/*		
+		if (objects == null)
+			objects = new TreeSet<Long>();
+		
+		Long Obj = new Long(obj);
+		if ((depth <= 0) || objects.contains(Obj)) {
+			System.out.print(j3.vm.OSGi.dumpObject(obj));
+			return;	// Already dumped or depth reached
+		}
+		objects.add(Obj);
+*/	
+		if (depth <= 0) {
+			System.out.print(j3.vm.OSGi.dumpObject(obj));
+			return;	// Already dumped or depth reached
+		}
+		
+		System.out.print(j3.vm.OSGi.dumpObject(obj) + "<<{");
+		long[] refs = j3.vm.OSGi.getReferencesToObject(obj);
+		if (refs != null && refs.length > 0) {
+			dumpReferencesToObject(refs[0], objects, depth - 1);
+			
+			for (int i=1; i < refs.length; ++i) {
+				System.out.print(",");
+				dumpReferencesToObject(refs[i], objects, depth - 1);
+			}
+		}
+		System.out.print("}");
 	}
 }
