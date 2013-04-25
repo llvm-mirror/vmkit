@@ -16,7 +16,7 @@ BUILT_SOURCES = Precompiled.bc BootstrapClasses.bc
 
 include $(LEVEL)/Makefile.common
 
-PRECOMPILER := $(ToolDir)/precompiler$(EXEEXT)
+PRECOMPILER := $(BIN_DIR)/precompiler$(EXEEXT)
 
 ifndef VERBOSE
   J3.Flags := > /dev/null
@@ -32,11 +32,11 @@ generated.bc: $(PRECOMPILER) HelloWorld.class
 
 Precompiled.bc: HelloWorld.class $(PREPARE_CODE) generated.bc
 	$(Echo) "Building precompiled bootstrap code"
-	$(Verb) $(MKDIR) $(ObjDir)
-	$(Verb) $(LLC) -disable-branch-fold -disable-cfi -disable-debug-info-print -disable-fp-elim $(PRECOMPILER_FLAGS) -load=$(PREPARE_CODE) generated.bc -o $(ObjDir)/Precompiled.s
-	$(Verb) $(CC) -c $(ObjDir)/Precompiled.s -o $(ObjDir)/Precompiled.o
-	$(Verb) $(Archive) $(LibDir)/libPrecompiled.a $(ObjDir)/Precompiled.o
-	$(Verb) $(Ranlib) $(LibDir)/libPrecompiled.a
+	$(Verb) $(MKDIR) $(BUILD_DIR)
+	$(Verb) $(LLC) -disable-branch-fold -disable-cfi -disable-debug-info-print -disable-fp-elim $(PRECOMPILER_FLAGS) -load=$(PREPARE_CODE) generated.bc -o $(BUILD_DIR)/Precompiled.s
+	$(Verb) $(CC) -c $(BUILD_DIR)/Precompiled.s -o $(BUILD_DIR)/Precompiled.o
+	$(Verb) $(Archive) $(LIB_DIR)/libPrecompiled.a $(BUILD_DIR)/Precompiled.o
+	$(Verb) $(Ranlib) $(LIB_DIR)/libPrecompiled.a
 	$(Verb) $(CP) generated.bc Precompiled.bc
 
 classes.bc: $(PRECOMPILER)
@@ -45,11 +45,11 @@ classes.bc: $(PRECOMPILER)
 
 BootstrapClasses.bc: classes.bc
 	$(Echo) "Building precompiled classes"
-	$(Verb) $(MKDIR) $(ObjDir)
-	$(Verb) $(LLC) classes.bc -o $(ObjDir)/BootstrapClasses.s
-	$(Verb) $(CC) -c $(ObjDir)/BootstrapClasses.s -o $(ObjDir)/BootstrapClasses.o
-	$(Verb) $(Archive) $(LibDir)/libBootstrapClasses.a $(ObjDir)/BootstrapClasses.o
-	$(Verb) $(Ranlib) $(LibDir)/libBootstrapClasses.a
+	$(Verb) $(MKDIR) $(BUILD_DIR)
+	$(Verb) $(LLC) classes.bc -o $(BUILD_DIR)/BootstrapClasses.s
+	$(Verb) $(CC) -c $(BUILD_DIR)/BootstrapClasses.s -o $(BUILD_DIR)/BootstrapClasses.o
+	$(Verb) $(Archive) $(LIB_DIR)/libBootstrapClasses.a $(BUILD_DIR)/BootstrapClasses.o
+	$(Verb) $(Ranlib) $(LIB_DIR)/libBootstrapClasses.a
 	$(Verb) $(CP) classes.bc BootstrapClasses.bc
 
 clean-local::

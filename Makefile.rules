@@ -56,6 +56,7 @@ MKDIR=mkdir -p
 TOUCH=touch
 
 PREPARE_CODE=$(LIB_DIR)/prepare-code$(SHLIBEXT)
+VMJC=$(BIN_DIR)/vmjc$(EXEEXT)
 
 %/.dir:
 	$(Verb) $(MKDIR) $(dir $@) && $(TOUCH) $@
@@ -165,7 +166,6 @@ $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.di
 # OLD BUILD SYSTEM
 #
 #
-VMJC      := $(ToolDir)/vmjc$(EXEEXT)
 
 # Set the LLVM build file location 
 LLVMBuildTool   := $(LLVM_SRC_ROOT)/utils/llvm-build/llvm-build
@@ -196,7 +196,7 @@ endif
 
 ifdef RUN_ANT
 
-MMTkLib = $(LibDir)/libFinalMMTk.a
+MMTkLib = $(LIB_DIR)/libFinalMMTk.a
 
 ifeq ($(shell [ ! -e $(MMTkLib) ] && echo "1"), 1)
   COMPILE_MMTK = 1
@@ -206,26 +206,26 @@ ifeq ($(COMPILE_MMTK), 1)
 all::
 	$(Verb) $(ANT) -buildfile $(PROJ_OBJ_ROOT)/mmtk/java/build.xml
 	$(Echo) "**[12] Building $(BuildMode) $(JARNAME).jar $(notdir $@) $(OPT_MMTK_FLAGS)"
-	$(Verb) $(LOPT) -load=$(LibDir)/JITGCPass$(SHLIBEXT) $(OPT_MMTK_FLAGS) -JITGCPass -f $(LibDir)/MMTKAlloc.bc -o $(LibDir)/MMTKAlloc.bc
-	$(Verb) $(VMJC) $(VMJC_MMTK_FLAGS) -load=$(LibDir)/MMTKRuntime$(SHLIBEXT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic $(PROJ_OBJ_ROOT)/mmtk/java/$(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=$(PROJ_SRC_ROOT)/mmtk/java/vmkit.properties -disable-stubs -assume-compiled
-	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) $(OPT_MMTK_FLAGS) -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
-	$(Verb) $(LLVMLINK) -o $(LibDir)/FinalMMTk.bc $(LibDir)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LibDir)/MMTKRuntime.bc
-	$(Verb) $(LOPT) $(LibDir)/FinalMMTk.bc -load=$(PREPARE_CODE) $(OPT_MMTK_FLAGS) -StaticGCPass -o $(LibDir)/FinalMMTk.bc
-	$(Verb) $(MKDIR) $(ObjDir)
-	$(Verb) $(LLC) $(LLC_ASM_FLAGS) -disable-fp-elim -disable-cfi -load=$(PREPARE_CODE) $(LibDir)/FinalMMTk.bc -o $(ObjDir)/FinalMMTk.s
-	$(Verb) $(GREP) -v '\.loc[^0-9]\+[0-9]\+ 0' $(ObjDir)/FinalMMTk.s > $(ObjDir)/FinalMMTk.s.remove_invalid_dot_loc
-	$(Verb) $(MV) -f $(ObjDir)/FinalMMTk.s.remove_invalid_dot_loc $(ObjDir)/FinalMMTk.s
-	$(Verb) $(LLVMCC) -c $(ObjDir)/FinalMMTk.s -o $(ObjDir)/FinalMMTk.o
-	$(Verb) $(Archive) $(LibDir)/libFinalMMTk.a $(ObjDir)/FinalMMTk.o
-	$(Verb) $(Ranlib) $(LibDir)/libFinalMMTk.a
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=VTgcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkMallocInline.inc
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=fieldWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkFieldWriteInline.inc
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=arrayWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkArrayWriteInline.inc
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=nonHeapWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkNonHeapWriteInline.inc
+	$(Verb) $(LOPT) -load=$(LIB_DIR)/JITGCPass$(SHLIBEXT) $(OPT_MMTK_FLAGS) -JITGCPass -f $(LIB_DIR)/MMTKAlloc.bc -o $(LIB_DIR)/MMTKAlloc.bc
+	$(Verb) $(VMJC) $(VMJC_MMTK_FLAGS) -load=$(LIB_DIR)/MMTKRuntime$(SHLIBEXT) -load=$(LIB_DIR)/MMTKMagic$(SHLIBEXT) -LowerMagic $(PROJ_OBJ_ROOT)/mmtk/java/$(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=$(PROJ_SRC_ROOT)/mmtk/java/vmkit.properties -disable-stubs -assume-compiled
+	$(Verb) $(LOPT) -load=$(LIB_DIR)/MMTKMagic$(SHLIBEXT) $(OPT_MMTK_FLAGS) -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
+	$(Verb) $(LLVMLINK) -o $(LIB_DIR)/FinalMMTk.bc $(LIB_DIR)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LIB_DIR)/MMTKRuntime.bc
+	$(Verb) $(LOPT) $(LIB_DIR)/FinalMMTk.bc -load=$(PREPARE_CODE) $(OPT_MMTK_FLAGS) -StaticGCPass -o $(LIB_DIR)/FinalMMTk.bc
+	$(Verb) $(MKDIR) $(BUILD_DIR)
+	$(Verb) $(LLC) $(LLC_ASM_FLAGS) -disable-fp-elim -disable-cfi -load=$(PREPARE_CODE) $(LIB_DIR)/FinalMMTk.bc -o $(BUILD_DIR)/FinalMMTk.s
+	$(Verb) $(GREP) -v '\.loc[^0-9]\+[0-9]\+ 0' $(BUILD_DIR)/FinalMMTk.s > $(BUILD_DIR)/FinalMMTk.s.remove_invalid_dot_loc
+	$(Verb) $(MV) -f $(BUILD_DIR)/FinalMMTk.s.remove_invalid_dot_loc $(BUILD_DIR)/FinalMMTk.s
+	$(Verb) $(LLVMCC) -c $(BUILD_DIR)/FinalMMTk.s -o $(BUILD_DIR)/FinalMMTk.o
+	$(Verb) $(Archive) $(LIB_DIR)/libFinalMMTk.a $(BUILD_DIR)/FinalMMTk.o
+	$(Verb) $(Ranlib) $(LIB_DIR)/libFinalMMTk.a
+	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=VTgcmalloc $(LIB_DIR)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkMallocInline.inc
+	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=fieldWriteBarrier $(LIB_DIR)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkFieldWriteInline.inc
+	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=arrayWriteBarrier $(LIB_DIR)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkArrayWriteInline.inc
+	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=nonHeapWriteBarrier $(LIB_DIR)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkNonHeapWriteInline.inc
 endif
 
 clean-local::
-	$(Verb) $(RM) -rf classes $(JARNAME).jar $(JARNAME).bc $(JARNAME)-optimized.bc $(ObjDir)
+	$(Verb) $(RM) -rf classes $(JARNAME).jar $(JARNAME).bc $(JARNAME)-optimized.bc $(BUILD_DIR)
 endif
 
 ###############################################################################
@@ -281,7 +281,7 @@ MY_LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
 DEPEND_OPTIONS=-MMD -MP -MF "$(BUILD_DIR)/$$*.d.tmp" -MT "$(BUILD_DIR)/$$*.bc" -MT "$(BUILD_DIR)/$$*.d"
 DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUILD_DIR)/$$*.d.tmp"; exit 1; fi
 
-$(LibName.BCA): $(ObjectsBC) $(LibDir)/.dir $(LLVMToolDir)/llvm-ar
+$(LibName.BCA): $(ObjectsBC) $(LIB_DIR)/.dir $(LLVMToolDir)/llvm-ar
 	$(Echo) "**[22] Building $(BuildMode) Bytecode Archive $(notdir $@)"
 	$(Verb) $(RM) -f $@
 	$(Verb) $(LArchive) $@ $(ObjectsBC)
