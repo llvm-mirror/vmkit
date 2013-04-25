@@ -579,4 +579,22 @@ JavaObjectClass* klass) {
   return res;
 }
 
+// Returns the class which immediately encloses the specified class.
+// If the class is a top-level class, this method returns null.
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMClass_getEnclosingClass(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+jclass clazz,
+#endif
+JavaObjectClass* Cl) {
+  llvm_gcroot(Cl, 0);
+
+  UserCommonClass* cl = JavaObjectClass::getClass(Cl);
+  if (!cl->isClass()) return NULL;
+
+  UserClass *outerCl = cl->asClass()->getOuterClass();
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  return outerCl->getClassDelegatee(vm, NULL);
+}
+
 }
