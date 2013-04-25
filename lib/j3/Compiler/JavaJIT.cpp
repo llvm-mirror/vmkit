@@ -1099,6 +1099,10 @@ llvm::Function* JavaJIT::javaCompile() {
     }
 #endif
 
+    if (compilingMethod->name->compare("ijvm_tests_Runner_loop") == 0) {
+  	  llvmFunction->dump();
+    }
+
   nbHandlers = readExceptionTable(reader, codeLen);
   if (nbHandlers != 0) {
     jmpBuffer = new AllocaInst(ArrayType::get(Type::getInt8Ty(*llvmContext), sizeof(vmkit::ExceptionBuffer)), "", currentBlock);
@@ -1266,9 +1270,6 @@ llvm::Function* JavaJIT::javaCompile() {
     }
   }
  
-  if (compilingMethod->name->compare("ijvm_tests_Runner_loop") == 0) {
-	  llvmFunction->dump();
-  }
   return llvmFunction;
 }
 

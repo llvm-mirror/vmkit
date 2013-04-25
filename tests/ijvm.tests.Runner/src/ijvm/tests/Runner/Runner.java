@@ -41,14 +41,14 @@ public class Runner
 		System.out.println("Stopped runner thread: " + Thread.currentThread().getName());
 	}
 	
-	void ijvm_tests_Runner_loop(long delay) throws Exception
+	void ijvm_tests_Runner_loop(long delay) throws InterruptedException
 	{
 		synchronized(obj) {
 			iteration(delay);
 		}
 	}
 	
-	void iteration(long delay) throws Exception
+	void iteration(long delay) throws InterruptedException
 	{
 		while (sleeping)
 			obj.wait();
