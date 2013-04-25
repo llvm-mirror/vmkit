@@ -128,6 +128,74 @@ JavaObjectVMMethod* VMMeth, JavaObjectClass* annotationClass) {
   return res;
 }
 
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMMethod_getDeclaredAnnotations(
+#ifdef NATIVE_JNI
+JNIEnv *env, 
+#endif
+JavaObjectVMMethod* VMMethod) { 
+  JavaObject* res = 0;
+  JavaObject* annon = 0;
+  JavaObject* newHashMap = 0;
+  JavaObject* annotationClass = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(annon, 0);
+  llvm_gcroot(newHashMap, 0);
+  llvm_gcroot(VMMethod, 0);
+  llvm_gcroot(annotationClass, 0);
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  Classpath* upcalls = vm->upcalls;
+
+  /* Retrieving VMMethod.class attributes list */
+  UserClass* compilingClass = JavaObjectVMMethod::getClass(VMMethod);
+  JavaMethod* method = JavaObjectVMMethod::getInternalMethod(VMMethod);
+  JavaAttribute* annotationsAtt =
+    method->lookupAttribute(JavaAttribute::annotationsAttribute);
+  dprintf("JavaMethod : %s\n", UTF8Buffer(method->name).cString());
+  
+	JnjvmClassLoader* loader = compilingClass->classLoader;
+
+  if (annotationsAtt) {
+    Reader reader(annotationsAtt, compilingClass->bytes);
+    AnnotationReader AR(reader, compilingClass);
+    uint16 numAnnotations = reader.readU2();
+    
+    UserClassArray* array = upcalls->annotationArrayClass;
+    res = array->doNew(numAnnotations, vm);
+    for (uint16 i = 0; i < numAnnotations; ++i) {
+			uint16 typeIndex = reader.readU2();
+			const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
+			newHashMap = AR.createAnnotationMapValues();
+			
+			annoType = annoType->extract(loader->hashUTF8, 1,annoType->size-1);
+			dprintf("Annotation type : %s\n", UTF8Buffer(annoType).cString());
+			UserClass* AnnonClass = 0;
+			UserCommonClass* commClass = loader->lookupClass(annoType);
+			
+			if (commClass) 
+				AnnonClass = commClass -> asClass();
+			else
+				AnnonClass = loader->loadName(annoType, true, true, NULL);
+				
+			if (!AnnonClass) {
+				assert(AnnonClass && "Panic, imposible conditions");
+				abort();
+			}
+			dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
+			annotationClass = AnnonClass->getClassDelegatee(vm);
+			
+			annon = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
+			ArrayObject::setElement((ArrayObject *)res, annon, i);
+		} // end for
+  }
+
+  END_NATIVE_EXCEPTION
+  return res;
+}
+
+
 JNIEXPORT jint JNICALL Java_java_lang_reflect_VMMethod_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env,
