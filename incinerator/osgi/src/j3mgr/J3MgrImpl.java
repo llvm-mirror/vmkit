@@ -27,17 +27,22 @@ public class J3MgrImpl
 		context = null;
 	}
 
-	public void setBundleStaleReferenceCorrected(long bundleID, boolean corrected) throws Exception
+	public void setBundleStaleReferenceCorrected(
+		long bundleID, boolean corrected) throws Throwable
 	{
 		j3.vm.OSGi.setBundleStaleReferenceCorrected(bundleID, corrected);
 		
-		if (corrected && (context.getBundle(bundleID) == null)) {
-			j3.vm.OSGi.notifyBundleUninstalled(bundleID);
-			refreshFramework();
-		}
+		if (!corrected || (context.getBundle(bundleID) != null))
+			return;	// Bundle ignored, or still installed
+		
+		// Inexistent bundle to be corrected, probably uninstalled,
+		// Notify the VM now.
+		j3.vm.OSGi.notifyBundleUninstalled(bundleID);
+		refreshFramework();
 	}
 
-	public boolean isBundleStaleReferenceCorrected(long bundleID) throws Exception
+	public boolean isBundleStaleReferenceCorrected(
+		long bundleID) throws Throwable
 	{
 		return j3.vm.OSGi.isBundleStaleReferenceCorrected(bundleID);
 	}
@@ -45,14 +50,18 @@ public class J3MgrImpl
 	public void bundleChanged(BundleEvent event)
 	{
 		if (event.getType() != BundleEvent.UNINSTALLED) return;
-		j3.vm.OSGi.notifyBundleUninstalled(event.getBundle().getBundleId());
-		refreshFramework();
+		
+		try {
+			j3.vm.OSGi.notifyBundleUninstalled(event.getBundle().getBundleId());
+			refreshFramework();
+		} catch (Throwable e) {}
 	}
 	
 	void refreshFramework()
 	{
-		ServiceReference<?> pkgAdminRef = (ServiceReference<?>)context.getServiceReference(
-			"org.osgi.service.packageadmin.PackageAdmin");
+		ServiceReference<?> pkgAdminRef =
+			(ServiceReference<?>)context.getServiceReference(
+				"org.osgi.service.packageadmin.PackageAdmin");
 		PackageAdmin pkgAdmin = (PackageAdmin)context.getService(pkgAdminRef);
 		pkgAdmin.refreshPackages(null);
 		context.ungetService(pkgAdminRef);
@@ -61,17 +70,25 @@ public class J3MgrImpl
 	// THE FOLLOWING METHODS ARE DEBUGGING HELPERS
 	// THEY SHOULD BE REMOVED IN PRODUCTION
 	
-	public void setBundleStaleReferenceCorrected(String bundleNameOrID, String corrected) throws Exception
+	public void setBundleStaleReferenceCorrected(
+		String bundleNameOrID, String corrected) throws Throwable
 	{
 		long bundleID = getBundleID(bundleNameOrID);
+		if (bundleID == -1) throw new IllegalArgumentException(bundleNameOrID);
+
 		setBundleStaleReferenceCorrected(bundleID, corrected.equals("yes"));
 	}
 	
-	public void isBundleStaleReferenceCorrected(String bundleNameOrID) throws Exception
+	public void isBundleStaleReferenceCorrected(
+		String bundleNameOrID) throws Throwable
 	{
 		long bundleID = getBundleID(bundleNameOrID);
+		if (bundleID == -1) throw new IllegalArgumentException(bundleNameOrID);
+		
 		boolean value = isBundleStaleReferenceCorrected(bundleID);
-		System.out.println("isBundleStaleReferenceCorrected(bundleID=" + bundleID + ") = " + (value ? "yes" : "no"));
+		System.out.println(
+			"isBundleStaleReferenceCorrected(bundleID=" + bundleID + ") = " +
+			(value ? "yes" : "no"));
 	}
 
 	long getBundleID(String symbolicNameOrID)
@@ -79,8 +96,11 @@ public class J3MgrImpl
 		try {
 			long bundleID = Long.parseLong(symbolicNameOrID);
 			
-			if (context.getBundle(bundleID) == null)
-				System.out.println("WARNING: bundleID=" + bundleID + " is invalid.");
+			if (context.getBundle(bundleID) == null) {
+				System.out.println(
+					"WARNING: bundleID=" + bundleID +
+					" is invalid, probably already uninstalled.");
+			}
 			
 			return (bundleID < 0) ? -1 : bundleID;
 		} catch (NumberFormatException e) {
@@ -95,7 +115,7 @@ public class J3MgrImpl
 		return -1;
 	}
 
-	public void dumpClassLoaderBundles()
+	public void dumpClassLoaderBundles() throws Throwable
 	{
 		j3.vm.OSGi.dumpClassLoaderBundles();
 	}
