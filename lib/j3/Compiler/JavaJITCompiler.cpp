@@ -22,7 +22,7 @@
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/DataLayout.h"
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 #include <../lib/ExecutionEngine/RuntimeDyld/JITRegistrar.h>
 
@@ -177,8 +177,8 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID, bool compilingMMTk
   executionEngine = engine.create();
 
   executionEngine->RegisterJITEventListener(&listener);
-  TheTargetData = executionEngine->getTargetData();
-  TheModule->setDataLayout(TheTargetData->getStringRepresentation());
+  TheDataLayout = executionEngine->getDataLayout();
+  TheModule->setDataLayout(TheDataLayout->getStringRepresentation());
   TheModule->setTargetTriple(vmkit::VmkitModule::getHostTriple());
   JavaIntrinsics.init(TheModule);
   initialiseAssessorInfo();  

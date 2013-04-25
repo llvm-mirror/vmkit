@@ -9,6 +9,7 @@
 
 #include <llvm/CallingConv.h>
 #include <llvm/Constants.h>
+#include <llvm/DebugInfo.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/Instructions.h>
 #include <llvm/LinkAllPasses.h>
@@ -32,7 +33,7 @@
 #include <llvm/Support/PassNameParser.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
-#include <llvm/Target/TargetData.h>
+#include <llvm/DataLayout.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <../lib/ExecutionEngine/JIT/JIT.h>

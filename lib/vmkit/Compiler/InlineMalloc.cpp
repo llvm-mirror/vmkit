@@ -16,7 +16,7 @@
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/DataLayout.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
 #include "vmkit/JIT.h"
@@ -45,7 +45,7 @@ bool InlineMalloc::runOnFunction(Function& F) {
   Function* ArrayWriteBarrier = F.getParent()->getFunction("arrayWriteBarrier");
   Function* NonHeapWriteBarrier = F.getParent()->getFunction("nonHeapWriteBarrier");
   bool Changed = false;
-  const TargetData *TD = getAnalysisIfAvailable<TargetData>();
+  const DataLayout *TD = getAnalysisIfAvailable<DataLayout>();
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {

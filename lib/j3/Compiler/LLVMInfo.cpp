@@ -14,7 +14,7 @@
 #include "llvm/Module.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MutexGuard.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/DataLayout.h"
 
 
 #include "vmkit/JIT.h"
@@ -38,7 +38,7 @@ using namespace llvm;
 Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<llvm::Type*> fields;
-    const TargetData* targetData = Compiler->TheTargetData;
+    const DataLayout* targetData = Compiler->TheDataLayout;
     const StructLayout* sl = 0;
     StructType* structType = 0;
     LLVMContext& context = Compiler->getLLVMModule()->getContext();
@@ -109,7 +109,7 @@ Type* LLVMClassInfo::getStaticType() {
   
     StructType* structType = StructType::get(context, fields, false);
     staticType = PointerType::getUnqual(structType);
-    const TargetData* targetData = Compiler->TheTargetData;
+    const DataLayout* targetData = Compiler->TheDataLayout;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     // TODO: put that elsewhere.
@@ -191,9 +191,9 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
    
     result->setGC("vmkit");
     if (Compiler->useCooperativeGC()) { 
-      result->addFnAttr(Attribute::NoInline);
+      result->addFnAttr(Attributes::NoInline);
     }
-    result->addFnAttr(Attribute::NoUnwind);
+    result->addFnAttr(Attributes::NoUnwind);
     
     Compiler->functions.insert(std::make_pair(result, methodDef));
     if (!Compiler->isStaticCompiling() && !customizing && methodDef->code) {
@@ -468,8 +468,8 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   }
   
   res->setGC("vmkit");
-  res->addFnAttr(Attribute::NoInline);
-  res->addFnAttr(Attribute::NoUnwind);
+  res->addFnAttr(Attributes::NoInline);
+  res->addFnAttr(Attributes::NoUnwind);
 
   if (virt) {
     Compiler->virtualBufs[FTy] = res;
@@ -558,8 +558,8 @@ Function* LLVMSignatureInfo::createFunctionCallAP(bool virt) {
   }
   
   res->setGC("vmkit");
-  res->addFnAttr(Attribute::NoInline);
-  res->addFnAttr(Attribute::NoUnwind);
+  res->addFnAttr(Attributes::NoInline);
+  res->addFnAttr(Attributes::NoUnwind);
   
   if (virt) {
     Compiler->virtualAPs[FTy] = res;
@@ -676,8 +676,8 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   }
   
   stub->setGC("vmkit");
-  stub->addFnAttr(Attribute::NoInline);
-  stub->addFnAttr(Attribute::NoUnwind);
+  stub->addFnAttr(Attributes::NoInline);
+  stub->addFnAttr(Attributes::NoUnwind);
   
   if (virt) {
     Compiler->virtualStubs[FTy] = stub;
