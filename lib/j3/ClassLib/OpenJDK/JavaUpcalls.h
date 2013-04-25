@@ -89,6 +89,8 @@ public:
   /*
    * TODO Implement annotation support on openJDK.
    */
+  ISOLATE_STATIC JavaField* vmThread;
+  ISOLATE_STATIC JavaField* vmdataVMThread;
   ISOLATE_STATIC UserClass*  newVMConstructor;
   ISOLATE_STATIC UserClass*  newHashMap;
   ISOLATE_STATIC JavaMethod* initHashMap;

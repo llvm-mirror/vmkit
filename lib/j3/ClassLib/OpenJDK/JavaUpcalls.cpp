@@ -73,6 +73,8 @@ JavaMethod* Classpath::initField;
 /*
  * TODO Implement annotation support on openJDK.
  */
+JavaField*  Classpath::vmThread;
+JavaField*  Classpath::vmdataVMThread;
 UserClass*	Classpath::newVMConstructor;
 UserClass*	Classpath::newHashMap;
 JavaMethod*	Classpath::initHashMap;
