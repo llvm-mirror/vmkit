@@ -938,7 +938,8 @@ void Class::getMinimalJDKVersion(uint16 major, uint16 minor, unsigned int& JDKMa
 
 bool Class::isClassVersionSupported(uint16 major, uint16 minor)
 {
-	const int supportedJavaMinorVersion = 5;	// Java 1.5
+	//const int supportedJavaMinorVersion = 5;	// Java 1.5
+	const int supportedJavaMinorVersion = 6;	// Java 1.6
 
 	unsigned int JDKMajor, JDKMinor, JDKBuild;
 	Class::getMinimalJDKVersion(major, minor, JDKMajor, JDKMinor, JDKBuild);
