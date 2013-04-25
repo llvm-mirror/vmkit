@@ -21,6 +21,7 @@
 
 #include <cstdio>
 
+#include "vmkit/GC.h"
 #include "vmkit/System.h"
 
 using namespace llvm;
@@ -582,11 +583,18 @@ bool LowerMagic::runOnFunction(Function& F) {
               res = new ZExtInst(res, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(res);
               CI->eraseFromParent();
-            } else if (!strcmp(FCur->getName().data(), AddressToObjectReferenceMethod) ||
-                       !strcmp(FCur->getName().data(), AddressToWordMethod)) {
-              Value* Val = Call.getArgument(0);
-              Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
-              CI->replaceAllUsesWith(Val);
+            } else if (!strcmp(FCur->getName().data(), AddressToObjectReferenceMethod)){
+            	Value* Val = Call.getArgument(0);
+            	Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
+            	Constant* M = ConstantInt::get(pointerSizeType, gcHeader::hiddenHeaderSize());
+            	Val = BinaryOperator::CreateAdd(Val, M, "", CI);
+            	Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
+            	CI->replaceAllUsesWith(Val);
+            	CI->eraseFromParent();
+            } else if(!strcmp(FCur->getName().data(), AddressToWordMethod)) {
+            	Value* Val = Call.getArgument(0);
+            	Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
+            	CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
             } else if (!strcmp(FCur->getName().data(), AddressAttemptWordAtOffsetMethod)) {
               Value* Ptr = Call.getArgument(0);
@@ -974,7 +982,10 @@ bool LowerMagic::runOnFunction(Function& F) {
               CI->eraseFromParent();
             } else if (!strcmp(FCur->getName().data(), ObjectReferenceToAddressMethod)) {
               Value* Val = Call.getArgument(0);
-              Val = new BitCastInst(Val, FCur->getReturnType(), "", CI);
+              Val = new PtrToIntInst(Val, pointerSizeType, "", CI);
+              Constant* M = ConstantInt::get(pointerSizeType, gcHeader::hiddenHeaderSize());
+              Val = BinaryOperator::CreateSub(Val, M, "", CI);
+              Val = new IntToPtrInst(Val, FCur->getReturnType(), "", CI);
               CI->replaceAllUsesWith(Val);
               CI->eraseFromParent();
             } else if (!strcmp(FCur->getName().data(), ObjectReferenceToObjectMethod)) {

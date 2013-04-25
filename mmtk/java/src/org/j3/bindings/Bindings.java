@@ -43,7 +43,7 @@ public final class Bindings {
     Selected.Mutator mutator = Selected.Mutator.get();
     int allocator = mutator.checkAllocator(size, 0, 0);
     Address res = mutator.alloc(size, 0, 0, allocator, 0);
-    res.store(virtualTable);
+    setVT(res, virtualTable);
     mutator.postAlloc(res.toObjectReference(), virtualTable, size, allocator);
     return res;
   }
@@ -130,6 +130,9 @@ public final class Bindings {
     return to;
   }
 
+  @Inline
+  private static native void setVT(Address addr , ObjectReference virtualTable);
+  
   @Inline
   private static native void memcpy(
       ObjectReference to, ObjectReference from, int size);

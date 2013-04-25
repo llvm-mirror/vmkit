@@ -21,12 +21,14 @@ int Collector::verbose = 0;
 
 extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
   gc* res = 0;
+  gcHeader* head = 0;
   VirtualTable* VT = (VirtualTable*)_VT;
   sz += gcHeader::hiddenHeaderSize();
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
-  res = (gc*)malloc(sz);
-  memset((void*)res, 0, sz);
-  
+  head = (gcHeader*)malloc(sz);
+  memset((void*)head, 0, sz);
+  res = head->toReference();
+
   lock.acquire();
   __InternalSet__.insert(res);
   lock.release();
