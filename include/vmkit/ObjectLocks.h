@@ -193,7 +193,7 @@ public:
   /// release - Release the lock.
   static void release(gc* object, LockSystem& table, vmkit::Thread* ownerThread = NULL);
 
-  /// owner - Returns true if the curren thread is the owner of this object's
+  /// owner - Returns true if the current thread is the owner of this object's
   /// lock.
   static bool owner(gc* object, LockSystem& table);
 
