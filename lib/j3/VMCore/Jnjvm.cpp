@@ -34,7 +34,7 @@
 #include "LinkJavaRuntime.h"
 #include "LockedMap.h"
 #include "Reader.h"
-#include "ReferenceQueue.h"
+#include "JavaReferenceQueue.h"
 #include "VMStaticInstance.h"
 #include "Zip.h"
 

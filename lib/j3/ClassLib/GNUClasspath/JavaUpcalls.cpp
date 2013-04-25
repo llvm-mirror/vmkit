@@ -15,7 +15,7 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "ReferenceQueue.h"
+#include "JavaReferenceQueue.h"
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \

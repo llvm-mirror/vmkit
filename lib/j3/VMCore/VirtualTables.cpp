@@ -31,7 +31,7 @@
 #include "Jnjvm.h"
 #include "JnjvmClassLoader.h"
 #include "LockedMap.h"
-#include "ReferenceQueue.h"
+#include "JavaReferenceQueue.h"
 #include "VMStaticInstance.h"
 #include "Zip.h"
 
