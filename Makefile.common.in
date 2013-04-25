@@ -77,7 +77,7 @@ Archive=@AR@ cru
 Ranlib=@RANLIB@
 NM=@NM@
 LD=@LD@
-MKDIR=mkdir -p @MKDIR@
+MKDIR=@MKDIR_P@
 TOUCH=@TOUCH@
 GREP=@GREP@
 

@@ -21,7 +21,7 @@ ifndef VERBOSE
   PRECOMPILER_OPT := > /dev/null
 endif
 
-$(BUILD_DIR)/Precompiled.bc: $(BUILD_DIR)/HelloWorld.class $(LIB_DIR)/prepare-code$(SHLIBEXT) $(PRECOMPILER)
+$(BUILD_DIR)/Precompiled.bc: $(BUILD_DIR)/HelloWorld.class $(PRECOMPILER)
 	$(Echo) "Pre-compiling bootstrap code"
 	$(Verb) $(PRECOMPILER) -cp $(dir $<) $(basename $(notdir $<)) $(PRECOMPILER_OPT) && mv generated.bc $@
 

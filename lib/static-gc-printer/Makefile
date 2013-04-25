@@ -9,7 +9,7 @@
 
 LEVEL = ../..
 
-LIBRARY=prepare-code
+LIBRARY=static-gc-printer
 LOADABLE_MODULE = 1
 
 include $(LEVEL)/Makefile.common
