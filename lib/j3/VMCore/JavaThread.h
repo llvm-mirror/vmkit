@@ -39,6 +39,7 @@ class Jnjvm;
   th->leaveUncooperativeCode(); \
   vmkit::KnownFrame Frame; \
   th->startKnownFrame(Frame); \
+  /*Frame.currentFP = vmkit::System::GetCallerAddress(); */ \
   TRY {
 
 #define END_JNI_EXCEPTION \
