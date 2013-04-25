@@ -8,7 +8,7 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../..
 
-GEN=mmtk-vmkit
+GEN=mmtk-vmkit.bc
 MODULE=FinalMMTk
 MODULE_USE=MMTKAlloc MMTKRuntime
 NEED_BC=1

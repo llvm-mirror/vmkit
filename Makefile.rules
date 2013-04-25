@@ -116,6 +116,7 @@ VMJC=$(BIN_DIR)/vmjc$(EXEEXT)
 ###############################################################################
 ifdef TOOL
 MODULE=$(TOOL)
+#GEN+=frametables.cc
 
 all:: $(BIN_DIR)/$(TOOL)$(EXEEXT)
 endif
@@ -140,20 +141,24 @@ MODULE_A=$(LIB_DIR)/lib$(MODULE).a
 
 all:: $(MODULE_A)
 
-CLANG_FILES+=$(patsubst %.c,$(BUILD_DIR)/%,$(wildcard *.c)) \
-             $(patsubst %.cc,$(BUILD_DIR)/%,$(wildcard *.cc)) \
-             $(patsubst %.cpp,$(BUILD_DIR)/%,$(wildcard *.cpp))
+define all-suffixes
+	$(wildcard *$1) $(filter %$1, $(GEN))
+endef
 
-BC_FILES+=$(addsuffix .bc,$(CLANG_FILES) $(patsubst %,$(BUILD_DIR)/%,$(GEN)))
+CLANG_FILES+=$(patsubst %.c,$(BUILD_DIR)/%,$(call all-suffixes,.c)) \
+             $(patsubst %.cc,$(BUILD_DIR)/%,$(call all-suffixes,.cc)) \
+             $(patsubst %.cpp,$(BUILD_DIR)/%,$(call all-suffixes,.cpp))
+
+BC_FILES+=$(addsuffix .bc,$(CLANG_FILES)) $(addprefix $(BUILD_DIR)/,$(filter %.bc, $(GEN)))
 
 ifdef NEED_GC
 LLC_GC=-load=$(PREPARE_CODE)
 OPT_GC=-load=$(PREPARE_CODE) -StaticGCPass
 endif
 
-$(MODULE_A):: $(LIB_DIR)/.dir
-
 ifdef NEED_BC
+# if we need bytecode, we link a module with all the bc in the build_dir directory, optimize this module
+# assemble this module and finally create the archive
 all:: $(LIB_DIR)/$(MODULE).bc
 
 $(LIB_DIR)/$(MODULE).bc: $(BUILD_DIR)/$(MODULE)-opt.bc $(LIB_DIR)/.dir
@@ -162,16 +167,19 @@ $(LIB_DIR)/$(MODULE).bc: $(BUILD_DIR)/$(MODULE)-opt.bc $(LIB_DIR)/.dir
 $(BUILD_DIR)/$(MODULE).bc: $(BC_FILES) $(patsubst %, $(LIB_DIR)/%.bc,$(MODULE_USE))
 	$(Echo) "Linking module '$(notdir $@)'"
 	$(Verb) $(LLVMLINK) $^ -o $@
+
+MODULE_A_DEP=$(BUILD_DIR)/$(MODULE)-opt.o
+else
+# for most of the module, we avoid a full module creation, mainly because I have bugs in llc
+# in this case, we build a set of .o files and archive them together
+# each .o is optimized and assembled
+MODULE_A_DEP=$(patsubst %.bc,%-opt.o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
 endif
 
-ifdef NEED_BC
-$(MODULE_A):: $(BUILD_DIR)/$(MODULE)-opt.o
-else
-$(MODULE_A):: $(patsubst %.bc,%-opt.o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
-endif
+$(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 	$(Echo) "Building archive '$(notdir $@)'"
 	-$(Verb) $(RM) -f $@
-	$(Verb) $(Archive) $@ $^
+	$(Verb) $(Archive) $@ $(MODULE_A_DEP)
 	$(Verb) $(Ranlib) $@
 
 %.o: %.bc
@@ -183,6 +191,23 @@ endif
 	$(Verb) $(LOPT) $< $(OPT_GC) -o $@
 
 endif
+
+###############################################################################
+#   Frametables
+###############################################################################
+DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
+$(BUILD_DIR)/frametables.cc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir 
+	$(Echo) "Generating frametables in $@"
+	$(Verb) mkdir -p $(dir $@)
+	$(Verb) doit() { \
+	          echo '#include "vmkit/MethodInfo.h"'; \
+						echo 'using namespace vmkit;'; \
+						$(NM) $^ | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/'; \
+						echo 'CompiledFrames* vmkit::initialFrametables[] = {'; \
+						$(NM) $^ | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/'; \
+						echo "0"; \
+						echo "};"; \
+					}; doit
 
 ifdef BUILD_FRAMETABLE
 
