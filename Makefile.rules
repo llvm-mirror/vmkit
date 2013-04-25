@@ -1,7 +1,8 @@
 
 .PHONY: all tidy clean distclean confclean
 .SECONDARY:
-.SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll .jar $(SHLIBEXT) $(EXEEXT)
+.SUFFIXES:
+#.SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll .jar $(SHLIBEXT) $(EXEEXT)
 
 all::
 
@@ -23,6 +24,8 @@ endif
 
 ifeq ($(ASSERT),1)
   BUILD_NAME:=$(BUILD_NAME)+Asserts
+else
+  COMMON_CFLAGS+=-DNDEBUG
 endif
 
 ifeq ($(DEBUG),1)
@@ -30,21 +33,14 @@ ifeq ($(DEBUG),1)
 endif
 
 ifeq ($(OPTIMIZED),1)
-  OPT_MSG="Optimizing"
-  OPT_ID=-opt
   LLC_FLAGS+= -O=3 -disable-cfi -disable-fp-elim 
-  OPT_FLAGS+= -disable-cfi -disable-fp-elim #-std-compile-opts #-O3 # #-std-link-opts
   COMMON_CFLAGS+= -O3 -fno-strict-aliasing -fno-omit-frame-pointer 
 else
-  OPT_MSG="Performing GC pass on"
-  OPT_ID=-gc
   LLC_FLAGS+= -O0
-  OPT_FLAGS+= -disable-opt
   COMMON_CFLAGS+= -O0
 endif
 
 LLC_FLAGS+=-relocation-model=pic 
-OPT_FLAGS+=
 
 OPT_MMTK_FLAGS= -std-compile-opts -strip-debug
 
@@ -166,6 +162,19 @@ NEED_GC=1
 endif
 
 ###############################################################################
+#   GC passes
+###############################################################################
+ifdef NEED_GC
+LLC_FLAGS+=-load=$(PREPARE_CODE_LIB)
+GC_ID=-gc
+
+%$(GC_ID).bc: %.bc
+	$(Echo) "Performing GC pass on '$(notdir $<)'"
+	$(Verb) $(LOPT) $< -load=$(PREPARE_CODE_LIB) -StaticGCPass -disable-cfi -disable-fp-elim -disable-opt -o $@
+
+endif
+
+###############################################################################
 #   Module
 ###############################################################################
 ifdef MODULE
@@ -190,29 +199,24 @@ CLANG_FILES=$(patsubst %.c,$(BUILD_DIR)/%,$(call all-suffixes,.c)) \
 
 BC_FILES=$(addsuffix .bc,$(CLANG_FILES)) $(addprefix $(BUILD_DIR)/,$(filter %.bc, $(GEN)))
 
-ifdef NEED_GC
-LLC_FLAGS+=-load=$(PREPARE_CODE_LIB)
-OPT_FLAGS+=-load=$(PREPARE_CODE_LIB) -StaticGCPass
-endif
-
 ifdef NEED_BC
 # if we need bytecode, we link a module with all the bc in the build_dir directory, optimize this module
 # assemble this module and finally create the archive
 all:: $(LIB_DIR)/$(MODULE).bc
 
-$(LIB_DIR)/$(MODULE).bc $(LIB_DIR)/$(MODULE)-inliner.bc: $(LIB_DIR)/%.bc: $(BUILD_DIR)/%$(OPT_ID).bc $(LIB_DIR)/.dir
+$(LIB_DIR)/$(MODULE).bc $(LIB_DIR)/$(MODULE)-inliner.bc: $(LIB_DIR)/%.bc: $(BUILD_DIR)/%$(GC_ID).bc $(LIB_DIR)/.dir
 	$(Verb) $(CP) $< $@
 
 $(BUILD_DIR)/$(MODULE).bc: $(BC_FILES) $(patsubst %, $(LIB_DIR)/%.bc,$(MODULE_USE))
 	$(Echo) "Linking module '$(notdir $@)'"
 	$(Verb) $(LLVMLINK) $^ -o $@
 
-MODULE_A_DEP+=$(BUILD_DIR)/$(MODULE)$(OPT_ID).o
+MODULE_A_DEP+=$(BUILD_DIR)/$(MODULE)$(GC_ID).o
 else
 # for most of the module, we avoid a full module creation, mainly because I have bugs in llc
 # in this case, we build a set of .o files and archive them together
 # each .o is optimized and assembled
-MODULE_A_DEP=$(patsubst %.bc,%$(OPT_ID).o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
+MODULE_A_DEP=$(patsubst %.bc,%$(GC_ID).o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
 endif
 
 $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
@@ -221,20 +225,12 @@ $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 	$(Verb) $(Archive) $@ $(MODULE_A_DEP)
 	$(Verb) $(Ranlib) $@
 
-%.o: %.bc
-	$(Echo) "Assembling '$(notdir $<)'"
-	$(Verb) $(LLC) $(LLC_FLAGS) -filetype=obj $< -o $@
-
-%$(OPT_ID).bc: %.bc
-	$(Echo) "$(OPT_MSG) '$(notdir $<)'"
-	$(Verb) $(LOPT) $< $(OPT_FLAGS) -o $@
-
 endif
 
 ###############################################################################
 #   Inliner
 ###############################################################################
-$(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)$(OPT_ID).bc $(SELF)
+$(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)$(GC_ID).bc $(SELF)
   # cppgen doesn't like debug info
 	$(Echo) "Generating inliner $(notdir $@)"
 	$(Verb) doit() { \
@@ -259,9 +255,9 @@ $(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)$(OPT_ID).bc $(SELF)
 ###############################################################################
 DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
 
-$(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables$(OPT_ID).o $(SELF) $(BIN_DIR)/.dir
+$(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables.o $(SELF) $(BIN_DIR)/.dir
 	$(Echo) "Linking executable '$(notdir $@)'"
-	$(Verb) $(CLANGXX) -o $@  $(LDFLAGS) $(MODULE_A) $(BUILD_DIR)/frametables$(OPT_ID).o $(DEP_LIBS) $(DEP_LIBS) $(LIBS)
+	$(Verb) $(CLANGXX) -o $@  $(LDFLAGS) $(MODULE_A) $(BUILD_DIR)/frametables.o $(DEP_LIBS) $(DEP_LIBS) $(LIBS)
 
 $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
 	$(Echo) "Linking shared library '$(notdir $@)'"
@@ -300,8 +296,12 @@ endif
 ###############################################################################
 # object rules
 ###############################################################################
+%.o: %.bc
+	$(Echo) "Assembling '$(notdir $<)'"
+	$(Verb) $(LLC) $(LLC_FLAGS) -filetype=obj $< -o $@
+
 define define_compile_rule
-$(BUILD_DIR)/%.bc: %$1 $(SELF) $(BUILT_INC) $(BUILD_DIR)/.dir
+$(BUILD_DIR)/%.bc: %$1 $(BUILT_INC) $(SELF) $(BUILD_DIR)/.dir
 	$(Echo) "Compiling '$$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 
