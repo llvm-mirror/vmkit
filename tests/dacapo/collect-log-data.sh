@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-dacapo_dir=/home/koutheir/PhD/VMKit/vmkit/tests/dacapo
+dacapo_dir=/home/koutheir/PhD/VMKit/vmkit2/tests/dacapo
 log_collect_file=$dacapo_dir/logs/collected_passed.log
 log_synth_file=$dacapo_dir/logs/synth.log
 

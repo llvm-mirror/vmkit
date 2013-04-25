@@ -170,12 +170,3 @@ do
 		fi;
 	fi;
 done
-
-# gnuplot
-# set datafile separator ","
-# set xdata time
-# set timefmt "%Y-%m-%d %H:%M:%S"
-# set format x "%M:%S"
-# plot "jasmin_player.csv" using 1:3 title "Memory Usage" with lines
-# plot "jasmin_player.csv" using 1:4 title "CPU Usage" with lines
-
