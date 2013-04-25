@@ -116,6 +116,7 @@ BUILD_DIR=$(PROJ_OBJ_CWD)/$(BUILD_NAME)
 
 PREPARE_CODE=$(LIB_DIR)/prepare-code$(SHLIBEXT)
 VMJC=$(BIN_DIR)/vmjc$(EXEEXT)
+PRECOMPILER=$(BIN_DIR)/precompiler
 
 ###############################################################################
 #   Main targets
@@ -195,7 +196,7 @@ $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 
 %.o: %.bc
 	$(Echo) "Assembling '$(notdir $<)'"
-	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $(LLC_GC) $< -o $@
+	$(Verb) $(LLC) $(LLC_OPT) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $(LLC_GC) $< -o $@
 
 %-opt.bc: %.bc
 	$(Echo) "$(OPT_MSG) '$(notdir $<)'"
