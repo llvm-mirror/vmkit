@@ -115,7 +115,7 @@ void VmkitModule::initialise(int argc, char** argv) {
   }
 
   const char** llvm_argv = reinterpret_cast<const char**>(
-      allocator.Allocate((count + 3) * sizeof(char**)));
+      allocator.Allocate((count + 7) * sizeof(char**)));
   int arrayIndex = 0;
   llvm_argv[arrayIndex++] = argv[0];
 
@@ -133,6 +133,11 @@ void VmkitModule::initialise(int argc, char** argv) {
   }
   // Disable branch fold for accurate line numbers.
   llvm_argv[arrayIndex++] = "-disable-branch-fold";
+  llvm_argv[arrayIndex++] = "-fast-isel";
+  //llvm_argv[arrayIndex++] = "-stats";
+  //llvm_argv[arrayIndex++] = "-time-passes";
+  //llvm_argv[arrayIndex++] = "-info-output-file";
+  //llvm_argv[arrayIndex++] = "pepe.txt";
  
   cl::ParseCommandLineOptions(arrayIndex, const_cast<char**>(llvm_argv));
 }
@@ -159,26 +164,26 @@ static void AddStandardCompilePasses(FunctionPassManager* PM) {
    
   addPass(PM, createCFGSimplificationPass()); // Clean up disgusting code
   addPass(PM, createPromoteMemoryToRegisterPass());// Kill useless allocas
-  
+
   addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
   addPass(PM, createScalarReplAggregatesPass()); // Break up aggregate allocas
   addPass(PM, createInstructionCombiningPass()); // Cleanup for scalarrepl.
   addPass(PM, createJumpThreadingPass());        // Thread jumps.
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   addPass(PM, createInstructionCombiningPass()); // Combine silly seq's
-  
+
   addPass(PM, createCFGSimplificationPass());    // Merge & remove BBs
   addPass(PM, createReassociatePass());          // Reassociate expressions
   addPass(PM, createLoopRotatePass());           // Rotate loops.
   addPass(PM, createLICMPass());                 // Hoist loop invariants
   addPass(PM, createLoopUnswitchPass());         // Unswitch loops.
-  addPass(PM, createInstructionCombiningPass()); 
+  addPass(PM, createInstructionCombiningPass());
   addPass(PM, createIndVarSimplifyPass());       // Canonicalize indvars
   addPass(PM, createLoopDeletionPass());         // Delete dead loops
   addPass(PM, createLoopUnrollPass());           // Unroll small loops*/
   addPass(PM, createInstructionCombiningPass()); // Clean up after the unroller
   addPass(PM, createGVNPass());                  // Remove redundancies
-  addPass(PM, createMemCpyOptPass());             // Remove memcpy / form memset  
+  addPass(PM, createMemCpyOptPass());             // Remove memcpy / form memset
   addPass(PM, createSCCPPass());                 // Constant prop with SCCP
 
   // Run instcombine after redundancy elimination to exploit opportunities
