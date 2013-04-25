@@ -36,8 +36,8 @@ ifeq ($(OPTIMIZED),1)
   LLC_FLAGS+= -O=3 -disable-cfi -disable-fp-elim 
   COMMON_CFLAGS+= -O3 -fno-strict-aliasing -fno-omit-frame-pointer 
 else
-  LLC_FLAGS+= -O=0 
-  COMMON_CFLAGS+= -O0
+  LLC_FLAGS+= -O=0 -disable-cfi -disable-fp-elim 
+  COMMON_CFLAGS+= -O0 -fno-strict-aliasing -fno-omit-frame-pointer 
 endif
 
 LLC_FLAGS+=-relocation-model=pic 
