@@ -52,12 +52,18 @@ public class J3MgrImpl
 
 	public void bundleChanged(BundleEvent event)
 	{
-		if (event.getType() != BundleEvent.UNINSTALLED) return;
-		
-		try {
-			j3.vm.OSGi.notifyBundleUninstalled(event.getBundle().getBundleId());
-			refreshFramework();
-		} catch (Throwable e) {}
+		int type = event.getType();
+		if (type == BundleEvent.UNINSTALLED) {
+			try {
+				refreshFramework();
+				j3.vm.OSGi.notifyBundleUninstalled(event.getBundle().getBundleId());
+			} catch (Throwable e) {}
+		} else if (type == BundleEvent.UPDATED) {
+			try {
+				refreshFramework();
+				j3.vm.OSGi.notifyBundleUpdated(event.getBundle().getBundleId());
+			} catch (Throwable e) {}
+		}
 	}
 	
 	void refreshFramework()

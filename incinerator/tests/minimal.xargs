@@ -39,12 +39,12 @@
 
 -istart  j3mgr_1.0.0.jar
 
--install  ijvm.tests.A_1.0.0.jar
--install  ijvm.tests.C_1.0.0.jar
--install  ijvm.tests.AImpl_1.0.0.jar
--install  ijvm.tests.BImpl_1.0.0.jar
--install  ijvm.tests.CImpl_1.0.0.jar
--install  ijvm.tests.DImpl_1.0.0.jar
+-istart  ijvm.tests.A_1.0.0.jar
+-istart  ijvm.tests.C_1.0.0.jar
+-istart  ijvm.tests.AImpl_1.0.0.jar
+-istart  ijvm.tests.BImpl_1.0.0.jar
+-istart  ijvm.tests.CImpl_1.0.0.jar
+-istart  ijvm.tests.DImpl_1.0.0.jar
 
 -install ijvm.tests.Runner_1.0.0.jar
 

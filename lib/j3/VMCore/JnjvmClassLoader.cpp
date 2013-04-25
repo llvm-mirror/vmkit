@@ -215,7 +215,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
 	allocator(Alloc)
 #if RESET_STALE_REFERENCES
-	,staleRefCorrected(false), zombie(false)
+	,staleRefCorrected(true), zombie(false)
 #endif
 {
 }
@@ -225,7 +225,7 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    VMClassLoader* vmdata,
                                    Jnjvm* VM) : allocator(Alloc)
 #if RESET_STALE_REFERENCES
-	,staleRefCorrected(false), zombie(false)
+	,staleRefCorrected(true), zombie(false)
 #endif
 {
   llvm_gcroot(loader, 0);
@@ -884,7 +884,7 @@ JnjvmClassLoader::~JnjvmClassLoader() {
   cerr << "Bundle class loader unloaded, bundleID=" << this->getAssociatedBundleID() << endl;
 #endif
 
-  this->setAssociatedBundleID(-1);
+  vm->removeClassLoaderFromBundles(this);
 
 #endif
 
@@ -1153,15 +1153,7 @@ int64_t JnjvmClassLoader::getAssociatedBundleID()
 
 void JnjvmClassLoader::setAssociatedBundleID(int64_t newID)
 {
-	int64_t oldBundleID = vm->getClassLoaderBundleID(this);
-	if (oldBundleID != -1) {
-		if (oldBundleID == newID) return;	// Nothing to do
-
-		// Remove old bundle ID
-		vm->setBundleClassLoader(oldBundleID, NULL);
-	}
-
-	vm->setBundleClassLoader(newID, this);
+	vm->addBundleClassLoader(newID, this);
 }
 
 #endif

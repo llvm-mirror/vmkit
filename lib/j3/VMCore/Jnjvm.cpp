@@ -1352,7 +1352,7 @@ Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,
              JnjvmBootstrapLoader* loader) : 
   VirtualMachine(Alloc, frames), lockSystem(Alloc)
 #if RESET_STALE_REFERENCES
-	, scanStaleReferences(false), findReferencesToObject(NULL)
+	, scanStaleReferences(false) //, findReferencesToObject(NULL)
 #endif
 {
 
@@ -1401,8 +1401,8 @@ void Jnjvm::startCollection() {
 
 #endif
 
-	if (findReferencesToObject != NULL)
-		foundReferencerObjects.clear();
+//	if (findReferencesToObject != NULL)
+//		foundReferencerObjects.clear();
 
 #endif
 
@@ -1425,7 +1425,7 @@ void Jnjvm::endCollectionBeforeUnlockingWorld()
 
 	// Stale references can no more exist, until a bundle is uninstalled later.
 	scanStaleReferences = false;
-	findReferencesToObject = NULL;
+//	findReferencesToObject = NULL;
 
 #endif
 }

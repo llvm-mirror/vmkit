@@ -22,8 +22,8 @@ void Jnjvm::resetReferenceIfStale(const void* source, void** ref)
 	src = const_cast<JavaObject*>(reinterpret_cast<const JavaObject*>(source));
 	JavaObject **objRef = reinterpret_cast<JavaObject**>(ref);
 
-	if (findReferencesToObject == *objRef)
-		foundReferencerObjects.push_back(src);
+//	if (findReferencesToObject == *objRef)
+//		foundReferencerObjects.push_back(src);
 
 	if (!scanStaleReferences) return;	// Stale references scanning disabled
 

@@ -13,12 +13,16 @@ stop 12
 framework call j3.J3Mgr isBundleStaleReferenceCorrected 39
 framework call j3.J3Mgr setBundleStaleReferenceCorrected 8 yes
 
+enter framework
+call j3.J3Mgr isBundleStaleReferenceCorrected 14
+call j3.J3Mgr setBundleStaleReferenceCorrected 14 yes
+update 14
+
 call j3.J3Mgr dumpClassLoaderBundles
 
-enter framework
 stop 8
 uninstall 8
 refresh
 meminfo -gc
-call j3.J3Mgr setBundleStaleReferenceCorrected 8 yes
+call j3.J3Mgr setBundleStaleReferenceCorrected 14 yes
 call j3.J3Mgr dumpReferencesToObject 0x51934ab4

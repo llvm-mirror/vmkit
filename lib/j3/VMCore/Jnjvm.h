@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <map>
+#include <list>
 
 #include "types.h"
 
@@ -369,18 +370,23 @@ public:
 #if RESET_STALE_REFERENCES
 
 public:
+  typedef std::list<JnjvmClassLoader*>				classLoadersListType;
+  typedef std::map<int64_t, classLoadersListType>	bundleClassLoadersType;
+
   void setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected);
   bool isBundleStaleReferenceCorrected(int64_t bundleID);
+  void dumpClassLoaders(const classLoadersListType& class_loaders);
+  void dumpBundleClassLoaders(int64_t bundleID);
   void dumpClassLoaderBundles();
-  class ArrayLong* getReferencesToObject(const JavaObject* obj);
+//  class ArrayLong* getReferencesToObject(const JavaObject* obj);
 
   void notifyBundleUninstalled(int64_t bundleID);
+  void notifyBundleUpdated(int64_t bundleID);
 
   int64_t getClassLoaderBundleID(JnjvmClassLoader* loader);
-  JnjvmClassLoader* getBundleClassLoader(int64_t bundleID);
-  void setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader);
-
-  typedef std::map<int64_t, JnjvmClassLoader*>	bundleClassLoadersType;
+  void getBundleClassLoaders(int64_t bundleID, classLoadersListType& class_loaders);
+  void addBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader);
+  void removeClassLoaderFromBundles(JnjvmClassLoader* loader);
 
   virtual void resetReferenceIfStale(const void* source, void** ref);
 
@@ -393,8 +399,8 @@ protected:
   vmkit::LockRecursive bundleClassLoadersLock;
   bundleClassLoadersType bundleClassLoaders;
   volatile bool scanStaleReferences;
-  const JavaObject* findReferencesToObject;
-  std::vector<const JavaObject*> foundReferencerObjects;
+//  const JavaObject* findReferencesToObject;
+//  std::vector<const JavaObject*> foundReferencerObjects;
 
 #endif
 };
