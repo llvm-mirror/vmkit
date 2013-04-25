@@ -19,45 +19,28 @@ using namespace j3;
 
 extern "C" {
 
-bool getClassAndFieldPointerByVMField(JavaObject* vmField, UserCommonClass** cls, JavaField** m)
+bool getClassAndFieldPointerByVMField(JavaObjectVMField* vmField, UserCommonClass** cls, JavaField** m)
   __attribute__ ((noinline));
 
-bool getClassAndFieldPointerByVMField(JavaObject* vmField, UserCommonClass** cls, JavaField** m) {
+bool getClassAndFieldPointerByVMField(JavaObjectVMField* vmField, UserCommonClass** cls, JavaField** m) {
 	JavaObject* res = 0;
-	JavaField* field = 0;
-	JavaField* fieldSlot = 0;
-	UserCommonClass* cl = 0;
 	// Local object references
 	llvm_gcroot(vmField, 0);
 	llvm_gcroot(res, 0);
 
 	BEGIN_NATIVE_EXCEPTION(0)
 	// Store local reference
-	cl = JavaObject::getClass(vmField);
-	if (cl->isClass()) {
-		const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz("clazz");
-		const UTF8* type = cl->classLoader->hashUTF8->lookupAsciiz("Ljava/lang/Class;");
-		const UTF8* nameSlot = cl->classLoader->hashUTF8->lookupAsciiz("slot");
-		const UTF8* typeSlot = cl->classLoader->hashUTF8->lookupAsciiz("I");
-		if (name && nameSlot && type && typeSlot) {
-			field = cl->asClass()->lookupField(name, type, false, true,0);
-			fieldSlot = cl->asClass()->lookupField(nameSlot, typeSlot, false, true,0);
-			res = field->getInstanceObjectField(vmField);
-			int slot = fieldSlot->getInstanceInt32Field(vmField);
-			*cls = JavaObjectClass::getClass((JavaObjectClass*)res);
-			*m = &((*cls)->asClass()->virtualFields[slot]);
-			return true;
-		}
-	}
+	*cls = (UserCommonClass*)JavaObjectVMField::getClass(vmField);
+	*m = JavaObjectVMField::getInternalField(vmField);
 	END_NATIVE_EXCEPTION
-	return false;
+	return true;
 }
 
 JNIEXPORT jint JNICALL Java_java_lang_reflect_VMField_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field) {
+JavaObjectVMField* Field) {
   jint res = 0;
 
   llvm_gcroot(Field, 0);
@@ -80,7 +63,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMField_getType(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field) {
+JavaObjectVMField* Field) {
 
   JavaObject* res = 0;
 
@@ -108,7 +91,7 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_VMField_getInt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
   jint res = 0;
 
@@ -178,7 +161,7 @@ JNIEXPORT jlong JNICALL Java_java_lang_reflect_VMField_getLong(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
   jlong res = 0;
 
@@ -254,7 +237,7 @@ JNIEXPORT jboolean JNICALL Java_java_lang_reflect_VMField_getBoolean(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
   jboolean res = 0;
 
@@ -307,7 +290,7 @@ JNIEXPORT jfloat JNICALL Java_java_lang_reflect_VMField_getFloat(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
   jfloat res = 0;
   llvm_gcroot(Field, 0);
@@ -389,7 +372,7 @@ JNIEXPORT jbyte JNICALL Java_java_lang_reflect_VMField_getByte(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
   jbyte res = 0;
   llvm_gcroot(Field, 0);
@@ -440,7 +423,7 @@ JNIEXPORT jchar JNICALL Java_java_lang_reflect_VMField_getChar(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
   jchar res = 0;
   llvm_gcroot(Field, 0);
@@ -492,7 +475,7 @@ JNIEXPORT jshort JNICALL Java_java_lang_reflect_VMField_getShort(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
 
   jshort res = 0;
@@ -550,7 +533,7 @@ JNIEXPORT jdouble JNICALL Java_java_lang_reflect_VMField_getDouble(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
   jdouble res = 0;
   llvm_gcroot(Field, 0);
@@ -637,7 +620,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMField_get(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj) {
+JavaObjectVMField* Field, JavaObject* obj) {
 
 
   JavaObject* res = 0;
@@ -726,7 +709,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_set(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, JavaObject* val) {
+JavaObjectVMField* Field, JavaObject* obj, JavaObject* val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -824,7 +807,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setBoolean(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, jboolean val) {
+JavaObjectVMField* Field, JavaObject* obj, jboolean val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -873,7 +856,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setByte(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, jbyte val) {
+JavaObjectVMField* Field, JavaObject* obj, jbyte val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -951,7 +934,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setChar(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, jchar val) {
+JavaObjectVMField* Field, JavaObject* obj, jchar val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -1022,7 +1005,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setShort(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, jshort val) {
+JavaObjectVMField* Field, JavaObject* obj, jshort val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -1093,7 +1076,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setInt(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, jint val) {
+JavaObjectVMField* Field, JavaObject* obj, jint val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -1159,7 +1142,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setLong(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, jlong val) {
+JavaObjectVMField* Field, JavaObject* obj, jlong val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -1219,7 +1202,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setFloat(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, jfloat val) {
+JavaObjectVMField* Field, JavaObject* obj, jfloat val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);
@@ -1273,7 +1256,7 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_VMField_setDouble(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Field, JavaObject* obj, jdouble val) {
+JavaObjectVMField* Field, JavaObject* obj, jdouble val) {
 
   llvm_gcroot(Field, 0);
   llvm_gcroot(obj, 0);

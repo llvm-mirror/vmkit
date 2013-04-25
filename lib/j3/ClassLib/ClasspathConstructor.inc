@@ -25,45 +25,27 @@ using namespace j3;
 
 extern "C" {
 
-bool getClassAndMethodPointerByVMConstructor(JavaObject* vmCons, UserCommonClass** cls, JavaMethod** m)
+bool getClassAndMethodPointerByVMConstructor(JavaObjectVMConstructor* vmCons, UserCommonClass** cls, JavaMethod** m)
   __attribute__ ((noinline));
 
-bool getClassAndMethodPointerByVMConstructor(JavaObject* vmCons, UserCommonClass** cls, JavaMethod** m) {
+bool getClassAndMethodPointerByVMConstructor(JavaObjectVMConstructor* vmCons, UserCommonClass** cls, JavaMethod** m) {
 	JavaObject* res = 0;
-	JavaField* field = 0;
-	JavaField* fieldSlot = 0;
-	UserCommonClass* cl = 0;
 	// Local object references
 	llvm_gcroot(vmCons, 0);
 	llvm_gcroot(res, 0);
 
 	BEGIN_NATIVE_EXCEPTION(0)
-	// Store local reference
-	cl = JavaObject::getClass(vmCons);
-	if (cl->isClass()) {
-		const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz("clazz");
-		const UTF8* type = cl->classLoader->hashUTF8->lookupAsciiz("Ljava/lang/Class;");
-		const UTF8* nameSlot = cl->classLoader->hashUTF8->lookupAsciiz("slot");
-		const UTF8* typeSlot = cl->classLoader->hashUTF8->lookupAsciiz("I");
-		if (name && nameSlot && type && typeSlot) {
-			field = cl->asClass()->lookupField(name, type, false, true,0);
-			fieldSlot = cl->asClass()->lookupField(nameSlot, typeSlot, false, true,0);
-			res = field->getInstanceObjectField(vmCons);
-			int slot = fieldSlot->getInstanceInt32Field(vmCons);
-			*cls = JavaObjectClass::getClass((JavaObjectClass*)res);
-			*m = &((*cls)->asClass()->virtualMethods[slot]);
-			return true;
-		}
-	}
+		*cls = (UserCommonClass*)JavaObjectVMConstructor::getClass(vmCons);
+		*m = JavaObjectVMConstructor::getInternalMethod(vmCons);
 	END_NATIVE_EXCEPTION
-	return false;
+	return true;
 }
 
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_VMConstructor_getParameterTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* cons) {
+JavaObjectVMConstructor* cons) {
 
 	JavaObject* res = 0;
 	UserCommonClass* cls = 0;
@@ -88,7 +70,7 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_VMConstructor_getModifiersInternal
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* cons) {
+JavaObjectVMConstructor* cons) {
 
 	jint res = 0;
 
@@ -184,7 +166,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMConstructor_construct(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* cons, ArrayObject* args) {
+JavaObjectVMConstructor* cons, ArrayObject* args) {
 
   JavaObject* res = 0;
   JavaMethod* m = 0;
@@ -207,7 +189,7 @@ ArrayObject* JNICALL Java_java_lang_reflect_VMConstructor_getExceptionTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* cons) {
+JavaObjectVMConstructor* cons) {
 
   ArrayObject* res = 0;
   JavaMethod* m = 0;
@@ -233,7 +215,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMConstructor_getSignature(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObject* Meth) {
+JavaObjectVMConstructor* Meth) {
 
   JavaObject* result = 0;
   JavaMethod* m = 0;
