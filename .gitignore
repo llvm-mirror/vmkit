@@ -9,6 +9,7 @@
 
 bin
 Debug+Asserts
+Release+Asserts
 
 Makefile.common
 Makefile.config
