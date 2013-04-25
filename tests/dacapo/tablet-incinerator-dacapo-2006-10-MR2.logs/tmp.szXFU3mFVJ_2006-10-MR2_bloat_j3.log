@@ -1,3 +1,0 @@
-===== DaCapo bloat starting =====
-Optimized with: EDU.purdue.cs.bloat.optimize.Main -only EDU.purdue.cs.bloat.trans -pre -dce -diva -prop -stack-alloc -peel-loops all -f EDU.purdue.cs.bloat.trans.CompactArrayInitializer ./scratch/optimizedcode
-===== DaCapo bloat PASSED in 225075 msec =====
