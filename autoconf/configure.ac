@@ -95,6 +95,8 @@ AC_CACHE_CHECK([type of operating system we're going to host on],
     vmkit_cv_platform_type="Unix" ;;
   *-*-darwin*)
     DYLIB_EXTENSION="dylib"
+		SHLIBEXT=".dylib"
+    SHOPT="-fno-common -Wl,-flat_namespace -Wl,-undefined,suppress"
     vmkit_cv_os_type="Darwin"
     vmkit_cv_platform_type="Unix" ;;
   *-*-freebsd*)
@@ -119,6 +121,8 @@ AC_CACHE_CHECK([type of operating system we're going to host on],
     vmkit_cv_platform_type="Unix" ;;
   *-*-linux*)
     DYLIB_EXTENSION="so"
+    SHLIBEXT=".so"
+    LDOPT="-Wl,-export-dynamic"
     vmkit_cv_os_type="Linux"
     vmkit_cv_platform_type="Unix" ;;
   *-*-solaris*)
@@ -142,6 +146,10 @@ esac])
 dnl Make sure we aren't attempting to configure for an unknown system
 
 AC_SUBST([DYLIB_EXTENSION])
+AC_SUBST([SHOPT])
+AC_SUBST([LDOPT])
+AC_SUBST([SHLIBEXT])
+AC_SUBST([EXEEXT])
 
 dnl===-----------------------------------------------------------------------===
 dnl===

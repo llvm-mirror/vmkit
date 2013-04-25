@@ -1,5 +1,8 @@
 VMJC      := $(ToolDir)/vmjc$(EXEEXT)
 
+$(LibName.SO): $(ObjectsO) $(ProjLibsPaths) $(LLVMLibsPaths) $(SharedLibDir)/.dir
+	$(Echo) "**[20] Linking $(BuildMode) $(SharedLibKindMessage) $(notdir $@)"
+	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -Wl,-R -Wl,'$ORIGIN' -shared $(ObjectsO)
 
 # Set the LLVM build file location 
 LLVMBuildTool   := $(LLVM_SRC_ROOT)/utils/llvm-build/llvm-build
@@ -14,7 +17,7 @@ ifdef VMKIT_RUNTIME
 .PRECIOUS: LLVMRuntime.inc
 
 LLVMRuntime.inc : $(LLVMAS) $(LLC) $(VMKIT_RUNTIME)
-	$(Echo) "Building LLVM runtime with $(VMKIT_RUNTIME)"
+	$(Echo) "**[7] Building LLVM runtime with $(VMKIT_RUNTIME)"
 	$(Verb) cat $(VMKIT_RUNTIME) | $(LLVMAS) -o - | $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=contents -o $@
 
 all-local:: LLVMRuntime.inc
@@ -35,7 +38,7 @@ ifdef VMJC_ASSEMBLY
 glibj.zip.s : $(LOPT) $(LLC) $(VMJC)
 
 glibj.zip.bc :
-	$(Echo) "Compiling glibj.zip to llvm"
+	$(Echo) "**[8] Compiling glibj.zip to llvm"
 	$(Verb) if test -d $(GLIBJ); then \
 	  $(VMJC) -f $(VMJC_GLIBJ_FLAGS) $(GLIBJ)/glibj.zip -o glibj.zip.bc; \
 	else \
@@ -43,15 +46,15 @@ glibj.zip.bc :
 	fi
 
 glibj-optimized.zip.bc : glibj.zip.bc
-	$(Echo) "Optimizing glibj.zip"
+	$(Echo) "**[9] Optimizing glibj.zip"
 	$(Verb) $(LOPT) $(OPT_VMJC_FLAGS) -f glibj.zip.bc -o glibj-optimized.zip.bc
 
 glibj.zip.s : glibj-optimized.zip.bc
-	$(Echo) "Compiling glibj.zip.bc to native"
+	$(Echo) "**[10] Compiling glibj.zip.bc to native"
 	$(Verb) $(LLC) $(LLC_GLIBJ_FLAGS) -disable-cfi -relocation-model=pic -disable-fp-elim glibj-optimized.zip.bc -o glibj.zip.s
 
 $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
-	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
+	$(Echo) "**[11] Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
 	$(Verb) $(Compile.C) $< -o $(ObjDir)/$*.o
 
 clean-local::
@@ -73,7 +76,7 @@ endif
 ifeq ($(COMPILE_MMTK), 1)
   all::
 	$(Verb) $(ANT) -buildfile $(PROJ_OBJ_ROOT)/mmtk/java/build.xml
-	$(Echo) Building $(BuildMode) $(JARNAME).jar $(notdir $@)
+	$(Echo) "**[12] Building $(BuildMode) $(JARNAME).jar $(notdir $@)"
 	$(Verb) $(LOPT) -load=$(LibDir)/JITGCPass$(SHLIBEXT) $(OPT_MMTK_FLAGS) -JITGCPass -f $(LibDir)/MMTKAlloc.bc -o $(LibDir)/MMTKAlloc.bc
 	$(Verb) $(VMJC) $(VMJC_MMTK_FLAGS) -load=$(LibDir)/MMTKRuntime$(SHLIBEXT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic $(PROJ_OBJ_ROOT)/mmtk/java/$(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=$(PROJ_SRC_ROOT)/mmtk/java/vmkit.properties -disable-stubs -assume-compiled
 	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) $(OPT_MMTK_FLAGS) -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
@@ -104,7 +107,6 @@ endif
 ifdef MODULE_WITH_GC
 
 ObjectsBCWithGC   := $(BaseNameSources:%=$(ObjDir)/%_gc.bc)
-#ObjectsSWithGC    := $(BaseNameSources:%=$(ObjDir)/%_gc.s)
 ObjectsWithGC     := $(BaseNameSources:%=$(ObjDir)/%_gc.o)
 AModule           := $(LibDir)/lib$(MODULE_WITH_GC).a
 
@@ -115,19 +117,14 @@ $(ObjectsBCWithGC): $(ObjDir)/%_gc.bc: $(ObjDir)/%.bc $(LOPT)
 $(ObjectsWithGC): $(ObjDir)/%_gc.o: $(ObjDir)/%_gc.bc $(LLC)
 	$(Echo) "**[5] Compiling $*.bc to $*.o for $(BuildMode) build" # $(LLC_ASM_FLAGS)
 	$(Verb) $(LLC) -filetype=obj -disable-cfi -disable-fp-elim -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPrinter$(SHLIBEXT) $< -o $@
-#	$(Verb) $(LLC) $(LLC_ASM_FLAGS) -disable-cfi -disable-fp-elim -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPrinter$(SHLIBEXT) $< -o $@
-
-#$(ObjectsWithGC): $(ObjDir)/%_gc.o: $(ObjDir)/%_gc.s $(ObjDir)/.dir
-#	$(Echo) "Compiling $*.s for $(BuildMode) build $(PIC_FLAG) $(Compile.C)"
-#	$(Verb) $(Compile.C) $< -o $@
 
 $(AModule): $(ObjectsWithGC) $(LibDir)/.dir
-	$(Echo) Building $(BuildMode) Archive Library $(notdir $@)
+	$(Echo) "**[6] Building $(BuildMode) Archive Library $(notdir $@)"
 	-$(Verb) $(RM) -f $@
 	$(Verb) $(Archive) $@ $(ObjectsWithGC)
 	$(Verb) $(Ranlib) $@
 
-all-local:: $(AModule)
+all-local:: $(AModule) $(OModule)
 
 clean-local::
 	-$(Verb) $(RM) -f $(AModule) $(ObjectsBCWithGC) $(ObjectsSWithGC) $(ObjectsWithGC)
@@ -168,7 +165,7 @@ clean-local::
 
 
 $(VMKIT_OPENJDK_ZIP): $(addprefix $(PROJ_SRC_DIR)/,$(OPENJDK_JAVA_SOURCES))
-	$(Echo) "Building OpenJDK java sources into zip"
+	$(Echo) "**[13] Building OpenJDK java sources into zip"
 	-$(Verb) $(RM) -rf $@ $(CLASSES_DIR)
 	$(Verb) $(MKDIR) $(CLASSES_DIR)
 	$(Verb) $(JAVAC) $^ -d $(CLASSES_DIR)
@@ -205,7 +202,7 @@ $(ObjectsBC): $(ObjDir)/%.bc: %.cpp $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "**[1] Compiling $*.cpp for $(BuildMode) build (bytecode)"
 	$(Verb) $(CLANGXX) -S $(CXXFLAGS) -emit-llvm -c "$<" -o $@
 
-$(ObjDir)/%.ll: %.cpp $(ObjDir)/.dir $(BUILT_SOURCES)
+$(ObjDir)/%.ll: %.cpp $(ObjDir)/.dir $(BUILT_SOURCES) $(LLVMCXX)
 	$(Echo) "**[2] Compiling $*.cpp for $(BuildMode) build (bytecode)"
 	$(Verb) $(CLANGXX) -S $(CXXFLAGS) -emit-llvm -c "$<" -o $@
 

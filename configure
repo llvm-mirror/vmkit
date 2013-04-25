@@ -637,7 +637,6 @@ CXXFLAGS
 CXX
 CPP
 OBJEXT
-EXEEXT
 ac_ct_CC
 CPPFLAGS
 LDFLAGS
@@ -651,6 +650,10 @@ classpathglibj
 MMTK_PLAN
 GC_FLAGS
 WITH_64
+EXEEXT
+SHLIBEXT
+LDOPT
+SHOPT
 DYLIB_EXTENSION
 target_os
 target_vendor
@@ -2461,6 +2464,8 @@ else
     vmkit_cv_platform_type="Unix" ;;
   *-*-darwin*)
     DYLIB_EXTENSION="dylib"
+		SHLIBEXT=".dylib"
+    SHOPT="-fno-common -Wl,-flat_namespace -Wl,-undefined,suppress"
     vmkit_cv_os_type="Darwin"
     vmkit_cv_platform_type="Unix" ;;
   *-*-freebsd*)
@@ -2485,6 +2490,8 @@ else
     vmkit_cv_platform_type="Unix" ;;
   *-*-linux*)
     DYLIB_EXTENSION="so"
+    SHLIBEXT=".so"
+    LDOPT="-Wl,-export-dynamic"
     vmkit_cv_os_type="Linux"
     vmkit_cv_platform_type="Unix" ;;
   *-*-solaris*)
@@ -2507,6 +2514,10 @@ esac
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $vmkit_cv_os_type" >&5
 $as_echo "$vmkit_cv_os_type" >&6; }
+
+
+
+
 
 
 
