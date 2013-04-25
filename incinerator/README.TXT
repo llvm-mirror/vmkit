@@ -3,7 +3,7 @@ Requirements:
 =============
 
 * Install required packages (Debian):
-apt-get install ant libgconf2-dev libgtk2.0-dev sharutils
+apt-get install ant antlr libgconf2-dev libgtk2.0-dev sharutils
 
 * Install required packages (SUSE):
 zypper install ant gconf2-devel gtk2-devel
@@ -62,11 +62,11 @@ cd ..
 * Patch it:
 
 cd llvm
-patch -p1 < ../ijvm/llvm.patch
+patch -p1 < ../ijvm/patches/llvm.patch
 
 * Make it (release mode):
 
-./configure --enable-optimized --enable-assertions --enable-jit --enable-threads --enable-pthreads --enable-pic --enable-targets=x86,cpp --disable-docs --disable-doxygen
+./configure --enable-optimized --enable-assertions --enable-jit --enable-threads --enable-pthreads --enable-pic --enable-targets=host,cpp --disable-docs --disable-doxygen
 make -j12 ENABLE_OPTIMIZED=1 BUILD_EXAMPLES=0 ENABLE_DOCS=0
 ln -s Release+Asserts Debug+Asserts
 
@@ -83,8 +83,7 @@ VMKit:
 
 git clone git://scm.gforge.inria.fr/vmkit2/vmkit2.git -b ijvm ijvm
 or:
-git clone git+ssh://YOUR_USER_NAME.gforge.inria.fr//gitroot/vmkit2/vmkit2.git -b ijvm ijvm
-
+git clone git+ssh://YOUR_USER_NAME@scm.gforge.inria.fr//gitroot/vmkit2/vmkit2.git -b ijvm ijvm
 * You can also get it via svn:
 
 svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit
