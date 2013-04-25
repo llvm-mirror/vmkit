@@ -36,7 +36,8 @@ public:
     llvm_gcroot(Class, 0);
     res = (VMStaticInstance*)gc::operator new(sizeof(VMStaticInstance), &VT);
     res->OwningClass = Class;
-
+    printf("VMStaticInstance operator new @%p\n", res);
+    fflush(NULL);
     return res;
   }
 

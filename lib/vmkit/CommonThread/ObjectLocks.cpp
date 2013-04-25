@@ -19,6 +19,9 @@
 #include <sys/time.h>
 #include <pthread.h>
 
+#include "../../j3/VMCore/JavaObject.h"
+#include "../../j3/VMCore/JavaClass.h"
+#include "../../j3/VMCore/UTF8.h"
 
 namespace vmkit {
 
@@ -189,6 +192,7 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
   }
 
   assert(owner(object, table) && "Not owner after quitting acquire!");
+  printf("LOCK ACQUIRED curThread = %08llX, OWNER of object @%p on ThreadIDMask = %08llX\n", id, object, object->header() & System::GetThreadIDMask());
 }
 
 /// release - Release the lock.
@@ -199,6 +203,7 @@ void ThinLock::release(gc* object, LockSystem& table) {
   word_t oldValue = 0;
   word_t newValue = 0;
   word_t yieldedValue = 0;
+
   if ((object->header() & ~NonLockBitsMask) == id) {
     do {
       oldValue = object->header();
@@ -218,6 +223,9 @@ void ThinLock::release(gc* object, LockSystem& table) {
       yieldedValue = __sync_val_compare_and_swap(&(object->header()), oldValue, newValue);
     } while ((object->header() & ThinCountMask) == count);
   }
+
+  printf("LOCK RELEASED curThread = %08llX, OWNER of object @%p on ThreadIDMask = %08llX\n", id, object, object->header() & System::GetThreadIDMask());
+
 }
 
 /// owner - Returns true if the curren thread is the owner of this object's
@@ -225,11 +233,19 @@ void ThinLock::release(gc* object, LockSystem& table) {
 bool ThinLock::owner(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   if (object->header() & FatMask) {
+  	printf("OWNER on FatMask\n");
     FatLock* obj = table.getFatLockFromID(object->header());
     if (obj != NULL) return obj->owner();
   } else {
+  	bool res = false;
     uint64 id = vmkit::Thread::get()->getThreadID();
-    if ((object->header() & System::GetThreadIDMask()) == id) return true;
+    res = ((object->header() & System::GetThreadIDMask()) == id);
+    printf("CHECK OWNER curThread = %08llX, OWNER of object @%p (header @%p) on ThreadIDMask = %08llX\n", id, object, &object->header(), object->header() & System::GetThreadIDMask());
+    fflush(NULL);
+    if (res)
+    	return true;
+    else
+    	printf("THREAD IS NOT THE OWNER OF OBJECT %p OF TYPE %s\n", object, j3::UTF8Buffer(((j3::JavaVirtualTable*)(object->getVirtualTable()))->cl->getName()).cString());
   }
   return false;
 }

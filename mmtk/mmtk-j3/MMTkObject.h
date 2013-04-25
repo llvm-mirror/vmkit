@@ -28,7 +28,7 @@ struct MMTkVirtualTable : public VirtualTable {
 
 struct MMTkObject {
   MMTkVirtualTable* virtualTable;
-  word_t header;
+  gcHeader header;
 };
 
 struct MMTkArray : public MMTkObject {

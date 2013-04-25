@@ -3851,6 +3851,7 @@ jint MonitorExit(JNIEnv *env, jobject _obj) {
   if (Obj != NULL) {
 
     if (!JavaObject::owner(Obj)) {
+    	printf("IN Jni.cpp: 3854 EXCEPTION\n");
       JavaThread::get()->getJVM()->illegalMonitorStateException(Obj);    
     }
   

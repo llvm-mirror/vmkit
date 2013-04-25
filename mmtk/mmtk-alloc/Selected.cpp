@@ -210,8 +210,8 @@ void Collector::initialise(int argc, char** argv) {
 }
 
 extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {
-  void* val = MutatorThread::get()->Allocator.Allocate(size);
-  ((void**)val)[0] = VT;
+  gc* val = (gc*)MutatorThread::get()->Allocator.Allocate(size);
+  val->setVirtualTable(VT);
   return val;
 }
 

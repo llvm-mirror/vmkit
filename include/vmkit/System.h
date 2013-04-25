@@ -203,9 +203,9 @@ public:
 
   static uint8_t* GetLastBytePtr(word_t ptr) {
 #if ARCH_PPC
-  return ((uint8_t*)ptr) + 2 * vmkit::kWordSize - 1;
+  return ((uint8_t*)ptr) + vmkit::kWordSize - 1;
 #else
-  return ((uint8_t*)ptr) + vmkit::kWordSize;
+  return ((uint8_t*)ptr);
 #endif
   }
 

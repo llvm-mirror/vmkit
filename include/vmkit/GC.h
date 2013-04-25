@@ -33,7 +33,7 @@ public:
   virtual           ~gcRoot() {}
   virtual void      tracer(word_t closure) {}
 
-  word_t& header(){return _header; }
+  word_t& header(){return toHeader()->_header; }
   
   inline gcHeader* toHeader() { return (gcHeader*)((uintptr_t)this - gcHeader::hiddenHeaderSize()); }
 

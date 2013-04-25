@@ -12,6 +12,8 @@
 #include "debug.h"
 #include "types.h"
 
+#include "vmkit/System.h"
+
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
@@ -270,6 +272,8 @@ JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
   res = (JavaObject*)gc::operator new(size, VT);
   JavaArray::setSize(res, n);
+  printf("UserClassArray operator new @%p\n", res);
+  fflush(NULL);
   return res;
 }
 
@@ -451,7 +455,8 @@ JavaObject* UserClass::doNew(Jnjvm* vm, isolate_id_t isolateID) {
          && "Uninitialized class when allocating.");
   assert(getVirtualVT() && "No VT\n");
   res = (JavaObject*)gc::operator new(getVirtualSize(), getVirtualVT());
-
+  printf("UserClass operator new @%p\n", res);
+  fflush(NULL);
   return res;
 }
 

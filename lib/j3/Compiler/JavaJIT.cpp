@@ -1915,7 +1915,7 @@ void JavaJIT::invokeNew(uint16 index) {
   
   Class* cl = 0;
   Value* Cl = getResolvedClass(index, true, true, &cl);
-          
+
   Value* VT = 0;
   Value* Size = 0;
   

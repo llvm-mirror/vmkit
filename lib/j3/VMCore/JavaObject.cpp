@@ -74,6 +74,9 @@ void JavaObject::waitIntern(
   vmkit::LockSystem& table = thread->getJVM()->lockSystem;
 
   if (!owner(self)) {
+  	printf("IN JavaObject.cpp: 77 EXCEPTION\n");
+  	thread->printBacktrace();
+  	thread->getJVM()->exit();
     thread->getJVM()->illegalMonitorStateException(self);
     UNREACHABLE();
   }
@@ -128,6 +131,12 @@ void JavaObject::notify(JavaObject* self) {
   vmkit::LockSystem& table = thread->getJVM()->lockSystem;
 
   if (!owner(self)) {
+  	fflush(NULL);
+  	printf("IN JavaObject.cpp: 128 EXCEPTION\n");
+  	thread->printBacktrace();
+  	fflush(NULL);
+  	thread->getJVM()->exit();
+
     thread->getJVM()->illegalMonitorStateException(self);
     UNREACHABLE();
   }
@@ -140,6 +149,10 @@ void JavaObject::notifyAll(JavaObject* self) {
   vmkit::LockSystem& table = thread->getJVM()->lockSystem;
 
   if (!owner(self)) {
+  	printf("IN JavaObject.cpp: 140 EXCEPTION\n");
+  	thread->printBacktrace();
+  	thread->getJVM()->exit();
+
     thread->getJVM()->illegalMonitorStateException(self);
     UNREACHABLE();
   }

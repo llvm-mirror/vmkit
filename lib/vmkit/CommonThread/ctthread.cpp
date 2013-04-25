@@ -525,6 +525,8 @@ void* Thread::operator new(size_t sz) {
   void* res = (void*)TheStackManager.allocate();
   // Make sure the thread information is cleared.
   if (res != NULL) memset(res, 0, sz);
+  printf("Thread operator new @%p\n", res);
+  fflush(NULL);
   return res;
 }
 

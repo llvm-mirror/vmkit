@@ -1122,6 +1122,7 @@ void Jnjvm::loadBootstrap() {
       (void (*)(vmkit::Thread*))FinalizerThread::finalizerStart);
     
   referenceThread = new ReferenceThread(this);
+  printf("Reference Thread is @%p\n", referenceThread);
   referenceThread->start(
       (void (*)(vmkit::Thread*))ReferenceThread::enqueueStart);
   
