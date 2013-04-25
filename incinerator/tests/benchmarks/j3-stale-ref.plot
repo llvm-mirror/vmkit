@@ -1,7 +1,7 @@
 #!/usr/bin/gnuplot -p
 
 set datafile separator ","
-set datafile missing '-'
+set datafile missing '_'
 set datafile commentschars "#"
 
 set ylabel "Memory usage (lower is better)"
@@ -18,13 +18,10 @@ set timefmt "%M:%S"
 
 # set title "Stale reference memory leaks in J3 and Incinerator"
 
+#set term svg
+#set term postscript clip 12
+#set term latex
 set term wxt 0
 plot	\
-	'j3-stale-ref.csv' using 1:(column(11)*1024) linecolor rgb "blue" linewidth "2pt" title "J3" with lines,	\
-	'j3-stale-ref-corrected.csv' using 1:(column(11)*1024) linecolor rgb "red" linewidth "2pt" title "Incinerator" with lines
-
-#set term latex
-#set term postscript clip 12
-#plot	\
-#	'j3-stale-ref.csv' using 1:(column(11)*1024) linecolor rgb "blue" linewidth "2pt" title "J3" with lines,	\
-#	'j3-stale-ref-corrected.csv' using 1:(column(11)*1024) linecolor rgb "red" linewidth "2pt" title "Incinerator" with lines
+	'j3-stale-ref.csv' using 1:(column(11)*1024) linecolor rgb "grey" linewidth "2pt" title "J3" with lines,	\
+	'j3-stale-ref-corrected.csv' using 1:(column(11)*1024) linecolor rgb "orange" linewidth "2pt" title "Incinerator" with lines
