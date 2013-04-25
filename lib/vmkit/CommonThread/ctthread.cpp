@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
 #include <sched.h>
 #include <signal.h>
 #include <unistd.h>
@@ -160,6 +161,9 @@ StackWalker::StackWalker(vmkit::Thread* th) {
   } else {
     addr = th->waitOnSP();
     if (frame) {
+    	if (frame->currentFP < addr) {
+    		fprintf(stderr, "Error in thread with pointer %p because %x < %x\n", th, frame->currentFP, addr);
+    	}
       assert(frame->currentFP >= addr);
     }
     if (frame && (addr == frame->currentFP)) {
@@ -362,6 +366,7 @@ void Thread::internalThreadStart(vmkit::Thread* th) {
   //sigaction(SIGTERM, &sa, NULL);
 
   assert(th->MyVM && "VM not set in a thread");
+  fprintf(stderr, "Thread %p has TID %ld\n", th,syscall(SYS_gettid) );
   th->MyVM->rendezvous.addThread(th);
   th->routine(th);
   th->MyVM->removeThread(th);

@@ -786,8 +786,10 @@ JVM_Interrupt(JNIEnv *env, jobject _thread) {
 
   JavaThread* jth = (JavaThread*)field->getInstanceLongField(thread);
   jth->lockingThread.interruptFlag = 1;
+  //jth->parkLock.unpark();
+  jth->parkLock.interrupt();
   vmkit::FatLock* lock = jth->lockingThread.waitsOn;
-  jth->parkLock.unpark();
+  
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
   // the thread has been notified.
@@ -2585,7 +2587,19 @@ JVM_Close(jint fd) {
 JNIEXPORT jint JNICALL
 JVM_Read(jint fd, char *buf, jint nbytes) {
   BEGIN_JNI_EXCEPTION
-  jint res = read(fd, buf, nbytes);
+  vmkit::Thread* th = vmkit::Thread::get();
+  assert(th && "Thread was not found");
+  //void* ptr = __builtin_frame_address(0);
+  jint res = 0;
+  if (fd)
+  	res = read(fd, buf, nbytes);
+  else {
+  	//th->enterUncooperativeCode((uint16_t)2);
+  	//res = read(fd, buf, nbytes);
+  	//th->leaveUncooperativeCode();
+  	res = 1;
+  	buf[0] = 'a';
+  }
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
   return -1;
