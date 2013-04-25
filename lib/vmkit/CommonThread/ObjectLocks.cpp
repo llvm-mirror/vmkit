@@ -32,11 +32,11 @@ void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
   word_t newValue = 0;
   word_t yieldedValue = 0;
   do {
-    oldValue = object->header;
+    oldValue = object->header();
     newValue = obj->getID() | (oldValue & NonLockBitsMask);
     assert(obj->associatedObject == object);
-    yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-  } while (((object->header) & ~NonLockBitsMask) != ID);
+    yieldedValue = __sync_val_compare_and_swap(&(object->header()), oldValue, newValue);
+  } while (((object->header()) & ~NonLockBitsMask) != ID);
   assert(obj->associatedObject == object);
 }
  
@@ -53,9 +53,9 @@ void ThinLock::removeFatLock(FatLock* fatLock, LockSystem& table) {
 
   ID = fatLock->getID();
   do {
-    oldValue = object->header;
+    oldValue = object->header();
     newValue = oldValue & NonLockBitsMask;
-    yieldedValue = __sync_val_compare_and_swap(&object->header, oldValue, newValue);
+    yieldedValue = __sync_val_compare_and_swap(&object->header(), oldValue, newValue);
   } while (oldValue != yieldedValue);
   assert((oldValue & NonLockBitsMask) != ID);
   fatLock->associatedObject = NULL;
@@ -64,23 +64,23 @@ void ThinLock::removeFatLock(FatLock* fatLock, LockSystem& table) {
   
 FatLock* ThinLock::changeToFatlock(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
-  if (!(object->header & FatMask)) {
+  if (!(object->header() & FatMask)) {
     FatLock* obj = table.allocate(object);
-    uint32 count = (object->header & ThinCountMask) >> ThinCountShift;
+    uint32 count = (object->header() & ThinCountMask) >> ThinCountShift;
     obj->acquireAll(object, count + 1);
     word_t oldValue = 0;
     word_t newValue = 0;
     word_t yieldedValue = 0;
     word_t ID = obj->getID();
     do {
-      oldValue = object->header;
+      oldValue = object->header();
       newValue = ID | (oldValue & NonLockBitsMask);
       assert(obj->associatedObject == object);
-      yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-    } while (((object->header) & ~NonLockBitsMask) != ID);
+      yieldedValue = __sync_val_compare_and_swap(&(object->header()), oldValue, newValue);
+    } while (((object->header()) & ~NonLockBitsMask) != ID);
     return obj;
   } else {
-    FatLock* res = table.getFatLockFromID(object->header);
+    FatLock* res = table.getFatLockFromID(object->header());
     assert(res && "Lock deallocated while held.");
     assert(res->associatedObject == object);
     return res;
@@ -93,8 +93,8 @@ void printDebugMessage(gc* object, LockSystem& table) {
       "WARNING: [%p] has been waiting really long for %p (header = %p)\n",
       (void*)vmkit::Thread::get(),
       (void*)object,
-      (void*)object->header);
-  FatLock* obj = table.getFatLockFromID(object->header);
+      (void*)object->header());
+  FatLock* obj = table.getFatLockFromID(object->header());
   if (obj != NULL) {
     fprintf(stderr,
         "WARNING: [%p] is waiting on fatlock %p. "
@@ -113,15 +113,15 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
   word_t newValue = 0;
   word_t yieldedValue = 0;
 
-  if ((object->header & System::GetThreadIDMask()) == id) {
+  if ((object->header() & System::GetThreadIDMask()) == id) {
     assert(owner(object, table) && "Inconsistent lock");
-    if ((object->header & ThinCountMask) != ThinCountMask) {
-      uint32 count = object->header & ThinCountMask;
+    if ((object->header() & ThinCountMask) != ThinCountMask) {
+      uint32 count = object->header() & ThinCountMask;
       do {
-        oldValue = object->header;
+        oldValue = object->header();
         newValue = oldValue + ThinCountAdd;
-        yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-      } while ((object->header & ThinCountMask) == count);
+        yieldedValue = __sync_val_compare_and_swap(&(object->header()), oldValue, newValue);
+      } while ((object->header() & ThinCountMask) == count);
     } else {
       overflowThinLock(object, table);
     }
@@ -130,12 +130,12 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
   }
 
   do {
-    oldValue = object->header & NonLockBitsMask;
+    oldValue = object->header() & NonLockBitsMask;
     newValue = oldValue | id;
-    yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-  } while ((object->header & ~NonLockBitsMask) == 0);
+    yieldedValue = __sync_val_compare_and_swap(&(object->header()), oldValue, newValue);
+  } while ((object->header() & ~NonLockBitsMask) == 0);
 
-  if (((object->header) & ~NonLockBitsMask) == id) {
+  if (((object->header()) & ~NonLockBitsMask) == id) {
     assert(owner(object, table) && "Not owner after quitting acquire!");
     return;
   }
@@ -143,12 +143,12 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
   // Simple counter to lively diagnose possible dead locks in this code.
   int counter = 0;  
   while (true) {
-    if (object->header & FatMask) {
-      FatLock* obj = table.getFatLockFromID(object->header);
+    if (object->header() & FatMask) {
+      FatLock* obj = table.getFatLockFromID(object->header());
       if (obj != NULL) {
         if (obj->acquire(object)) {
-          assert((object->header & FatMask) && "Inconsistent lock");
-          assert((table.getFatLockFromID(object->header) == obj) && "Inconsistent lock");
+          assert((object->header() & FatMask) && "Inconsistent lock");
+          assert((table.getFatLockFromID(object->header()) == obj) && "Inconsistent lock");
           assert(owner(object, table) && "Not owner after acquring fat lock!");
           break;
         }
@@ -158,30 +158,30 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
     counter++;
     if (counter == 1000) printDebugMessage(object, table);
 
-    while (object->header & ~NonLockBitsMask) {
-      if (object->header & FatMask) {
+    while (object->header() & ~NonLockBitsMask) {
+      if (object->header() & FatMask) {
         break;
       } else {
         vmkit::Thread::yield();
       }
     }
     
-    if ((object->header & ~NonLockBitsMask) == 0) {
+    if ((object->header() & ~NonLockBitsMask) == 0) {
       FatLock* obj = table.allocate(object);
       obj->internalLock.lock();
       do {
-        oldValue = object->header & NonLockBitsMask;
+        oldValue = object->header() & NonLockBitsMask;
         newValue = oldValue | obj->getID();
         assert(obj->associatedObject == object);
-        yieldedValue = __sync_val_compare_and_swap(&object->header, oldValue, newValue);
-      } while ((object->header & ~NonLockBitsMask) == 0);
+        yieldedValue = __sync_val_compare_and_swap(&object->header(), oldValue, newValue);
+      } while ((object->header() & ~NonLockBitsMask) == 0);
 
       if ((getFatLock(object, table) != obj)) {
-        assert((object->header & ~NonLockBitsMask) != obj->getID());
+        assert((object->header() & ~NonLockBitsMask) != obj->getID());
         obj->internalLock.unlock();
         table.deallocate(obj);
       } else {
-        assert((object->header & ~NonLockBitsMask) == obj->getID());
+        assert((object->header() & ~NonLockBitsMask) == obj->getID());
         assert(owner(object, table) && "Inconsistent lock");
         break;
       }
@@ -199,24 +199,24 @@ void ThinLock::release(gc* object, LockSystem& table) {
   word_t oldValue = 0;
   word_t newValue = 0;
   word_t yieldedValue = 0;
-  if ((object->header & ~NonLockBitsMask) == id) {
+  if ((object->header() & ~NonLockBitsMask) == id) {
     do {
-      oldValue = object->header;
+      oldValue = object->header();
       newValue = oldValue & NonLockBitsMask;
-      yieldedValue = __sync_val_compare_and_swap(&object->header, oldValue, newValue);
-    } while ((object->header & ~NonLockBitsMask) == id);
-  } else if (object->header & FatMask) {
-    FatLock* obj = table.getFatLockFromID(object->header);
+      yieldedValue = __sync_val_compare_and_swap(&object->header(), oldValue, newValue);
+    } while ((object->header() & ~NonLockBitsMask) == id);
+  } else if (object->header() & FatMask) {
+    FatLock* obj = table.getFatLockFromID(object->header());
     assert(obj && "Lock deallocated while held.");
     obj->release(object, table);
   } else {
-    assert(((object->header & ThinCountMask) > 0) && "Inconsistent state");    
-    uint32 count = (object->header & ThinCountMask);
+    assert(((object->header() & ThinCountMask) > 0) && "Inconsistent state");
+    uint32 count = (object->header() & ThinCountMask);
     do {
-      oldValue = object->header;
+      oldValue = object->header();
       newValue = oldValue - ThinCountAdd;
-      yieldedValue = __sync_val_compare_and_swap(&(object->header), oldValue, newValue);
-    } while ((object->header & ThinCountMask) == count);
+      yieldedValue = __sync_val_compare_and_swap(&(object->header()), oldValue, newValue);
+    } while ((object->header() & ThinCountMask) == count);
   }
 }
 
@@ -224,12 +224,12 @@ void ThinLock::release(gc* object, LockSystem& table) {
 /// lock.
 bool ThinLock::owner(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
-  if (object->header & FatMask) {
-    FatLock* obj = table.getFatLockFromID(object->header);
+  if (object->header() & FatMask) {
+    FatLock* obj = table.getFatLockFromID(object->header());
     if (obj != NULL) return obj->owner();
   } else {
     uint64 id = vmkit::Thread::get()->getThreadID();
-    if ((object->header & System::GetThreadIDMask()) == id) return true;
+    if ((object->header() & System::GetThreadIDMask()) == id) return true;
   }
   return false;
 }
@@ -237,8 +237,8 @@ bool ThinLock::owner(gc* object, LockSystem& table) {
 /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.
 FatLock* ThinLock::getFatLock(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
-  if (object->header & FatMask) {
-    return table.getFatLockFromID(object->header);
+  if (object->header() & FatMask) {
+    return table.getFatLockFromID(object->header());
   } else {
     return NULL;
   }

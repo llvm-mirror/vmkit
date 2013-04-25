@@ -34,7 +34,7 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
   assert(HashMask != 0);
   assert(vmkit::HashBits != 0);
 
-  word_t header = self->header;
+  word_t header = self->header();
   word_t GCBits;
   GCBits = header & vmkit::GCBitMask;
   word_t val = header & HashMask;
@@ -54,16 +54,16 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
   assert(val <= HashMask);
 
   do {
-    header = self->header;
+    header = self->header();
     if ((header & HashMask) != 0) break;
     word_t newHeader = header | val;
     assert((newHeader & ~HashMask) == header);
-    __sync_val_compare_and_swap(&(self->header), header, newHeader);
+    __sync_val_compare_and_swap(&(self->header()), header, newHeader);
   } while (true);
 
-  assert((self->header & HashMask) != 0);
-  assert(GCBits == (self->header & vmkit::GCBitMask));
-  return (self->header & HashMask) ^ (word_t)getClass(self);
+  assert((self->header() & HashMask) != 0);
+  assert(GCBits == (self->header() & vmkit::GCBitMask));
+  return (self->header() & HashMask) ^ (word_t)getClass(self);
 }
 
 

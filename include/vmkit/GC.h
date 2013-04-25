@@ -15,13 +15,28 @@
 #include "vmkit/System.h"
 
 class VirtualTable;
+class gc;
+
+class gcHeader {
+public:
+	word_t _header;
+
+	inline gc* toReference() { return (gc*)((uintptr_t)this + hiddenHeaderSize()); }
+
+	static inline size_t hiddenHeaderSize() { return sizeof(gcHeader); }
+};
 
 class gcRoot {
+	private:
+		word_t _header;
 public:
   virtual           ~gcRoot() {}
   virtual void      tracer(word_t closure) {}
-  word_t header;
+
+  word_t& header(){return _header; }
   
+  inline gcHeader* toHeader() { return (gcHeader*)((uintptr_t)this - gcHeader::hiddenHeaderSize()); }
+
   /// getVirtualTable - Returns the virtual table of this object.
   ///
   VirtualTable* getVirtualTable() const {
