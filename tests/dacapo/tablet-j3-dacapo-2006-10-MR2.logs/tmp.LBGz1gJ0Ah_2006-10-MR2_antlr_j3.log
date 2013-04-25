@@ -1,0 +1,408 @@
+===== DaCapo antlr starting =====
+Running antlr on grammar antlr/cpp/calc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/column.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/data.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/expr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/html.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/idl.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/instr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/cpp/instr.g:26:40: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/cpp/instr.g:26:40:     k==1:"else"
+./scratch/antlr/cpp/instr.g:26:40:     k==2:LBRACE,"if",ID
+Running antlr on grammar antlr/cpp/javadoclex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/javadocparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/java.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/javalex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/javaparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/java.tree.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/lexer.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/parser1.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/parser2.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/P.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/rewrite.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/subc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+error: grammar TinyCParser not defined
+Running antlr on grammar antlr/cpp/t.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/treewalk.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/cpp/treewalk.g:28:17: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/cpp/treewalk.g:28:17:     k==1:"else"
+Running antlr on grammar antlr/csharp/calc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/data.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/expr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/html.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/idl.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/instr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/csharp/instr.g:21:40: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/csharp/instr.g:21:40:     k==1:"else"
+./scratch/antlr/csharp/instr.g:21:40:     k==2:LBRACE,"if",ID
+./scratch/antlr/csharp/instr.g:49:35: warning:lexical nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/csharp/instr.g:49:35:     k==1:'\n'
+Running antlr on grammar antlr/csharp/javadoclex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/javadocparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/java.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/javalex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/javaparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/java.tree.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/lexer.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/csharp/lexer.g:36: warning:lexical nondeterminism upon
+./scratch/antlr/csharp/lexer.g:36:     k==1:'*'
+./scratch/antlr/csharp/lexer.g:36:     k==2:'/'
+./scratch/antlr/csharp/lexer.g:36:     between alt 1 and exit branch of block
+Running antlr on grammar antlr/csharp/t.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/tinyc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/csharp/tinyc.g:78:17: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/csharp/tinyc.g:78:17:     k==1:"else"
+Running antlr on grammar antlr/csharp/track.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/unicode.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/calc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/data.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/expr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/html.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/idl.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/instr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/instr.g:16:40: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/instr.g:16:40:     k==1:"else"
+./scratch/antlr/java/instr.g:16:40:     k==2:LBRACE,"if",ID
+./scratch/antlr/java/instr.g:44:35: warning:lexical nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/instr.g:44:35:     k==1:'\n'
+Running antlr on grammar antlr/java/javadoclex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/javadocparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/java.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/javalex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/javaparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/java.tree.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/lexer.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/lexer.g:35: warning:lexical nondeterminism upon
+./scratch/antlr/java/lexer.g:35:     k==1:'*'
+./scratch/antlr/java/lexer.g:35:     k==2:'/'
+./scratch/antlr/java/lexer.g:35:     between alt 1 and exit branch of block
+Running antlr on grammar antlr/java/links.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/pascal.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/pascal.g:250: warning:nondeterminism upon
+./scratch/antlr/java/pascal.g:250:     k==1:SEMI
+./scratch/antlr/java/pascal.g:250:     k==2:RPAREN,SEMI,"end"
+./scratch/antlr/java/pascal.g:250:     between alt 1 and exit branch of block
+./scratch/antlr/java/pascal.g:375: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/pascal.g:375:     k==1:IDENT
+./scratch/antlr/java/pascal.g:375:     k==2:ASSIGN
+./scratch/antlr/java/pascal.g:380: warning:nondeterminism between alts 2 and 3 of block upon
+./scratch/antlr/java/pascal.g:380:     k==1:IDENT
+./scratch/antlr/java/pascal.g:380:     k==2:POINTER
+./scratch/antlr/java/pascal.g:466: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/pascal.g:466:     k==1:IDENT
+./scratch/antlr/java/pascal.g:466:     k==2:COMMA,RPAREN,SEMI,EQUAL,PLUS,MINUS,DOTDOT,RBRACK,"of","end",NOT_EQUAL,LT,LE,GE,GT,"in","or",STAR,SLASH,"div","mod","and","then","else","do","until","to","downto"
+./scratch/antlr/java/pascal.g:466: warning:nondeterminism between alts 1 and 4 of block upon
+./scratch/antlr/java/pascal.g:466:     k==1:IDENT
+./scratch/antlr/java/pascal.g:466:     k==2:COMMA,RPAREN,SEMI,EQUAL,PLUS,MINUS,DOTDOT,RBRACK,"of","end",NOT_EQUAL,LT,LE,GE,GT,"in","or",STAR,SLASH,"div","mod","and","then","else","do","until","to","downto"
+./scratch/antlr/java/pascal.g:466: warning:nondeterminism between alts 2 and 4 of block upon
+./scratch/antlr/java/pascal.g:466:     k==1:IDENT
+./scratch/antlr/java/pascal.g:466:     k==2:COMMA,RPAREN,SEMI,EQUAL,PLUS,MINUS,DOTDOT,RBRACK,"of","end",NOT_EQUAL,LT,LE,GE,GT,"in","or",STAR,SLASH,"div","mod","and","then","else","do","until","to","downto"
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:DOT,COMMA,RPAREN,LBRACK,POINTER
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 1 and 3 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 1 and 4 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 2 and 3 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 2 and 4 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 3 and 4 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:559:7: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/pascal.g:559:7:     k==1:"else"
+./scratch/antlr/java/pascal.g:559:7:     k==2:SEMI,IDENT,NUM_INT,"end","case","goto","begin","if","else","while","repeat","until","for","with"
+Running antlr on grammar antlr/java/P.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/rewrite.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/subc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+error: grammar TinyCParser not defined
+Running antlr on grammar antlr/java/t.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/TinyBasic.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/TinyBasicTreeWalker.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/TinyBasicTreeWalker.g:86:17: warning:Rule 'assign_statement' returns a value
+Running antlr on grammar antlr/java/tinyc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/tinyc.g:74:17: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/tinyc.g:74:17:     k==1:"else"
+Running antlr on grammar antlr/java/track.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/treewalk.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/treewalk.g:20:17: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/treewalk.g:20:17:     k==1:"else"
+Running antlr on grammar antlr/java/unicode.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/xml.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/xml.g:73: warning:nongreedy block may exit incorrectly due
+./scratch/antlr/java/xml.g:73:     	to limitations of linear approximate lookahead (first k-1 sets
+./scratch/antlr/java/xml.g:73:     	in lookahead not singleton).
+Running antlr on grammar antlr/cpp/calc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/column.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/data.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/expr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/html.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/idl.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/instr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/cpp/instr.g:26:40: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/cpp/instr.g:26:40:     k==1:"else"
+./scratch/antlr/cpp/instr.g:26:40:     k==2:LBRACE,"if",ID
+Running antlr on grammar antlr/cpp/javadoclex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/javadocparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/java.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/javalex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/javaparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/java.tree.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/lexer.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/parser1.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/parser2.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/P.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/rewrite.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/subc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+error: grammar TinyCParser not defined
+Running antlr on grammar antlr/cpp/t.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/cpp/treewalk.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/cpp/treewalk.g:28:17: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/cpp/treewalk.g:28:17:     k==1:"else"
+Running antlr on grammar antlr/csharp/calc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/data.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/expr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/html.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/idl.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/instr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/csharp/instr.g:21:40: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/csharp/instr.g:21:40:     k==1:"else"
+./scratch/antlr/csharp/instr.g:21:40:     k==2:LBRACE,"if",ID
+./scratch/antlr/csharp/instr.g:49:35: warning:lexical nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/csharp/instr.g:49:35:     k==1:'\n'
+Running antlr on grammar antlr/csharp/javadoclex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/javadocparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/java.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/javalex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/javaparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/java.tree.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/lexer.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/csharp/lexer.g:36: warning:lexical nondeterminism upon
+./scratch/antlr/csharp/lexer.g:36:     k==1:'*'
+./scratch/antlr/csharp/lexer.g:36:     k==2:'/'
+./scratch/antlr/csharp/lexer.g:36:     between alt 1 and exit branch of block
+Running antlr on grammar antlr/csharp/t.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/tinyc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/csharp/tinyc.g:78:17: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/csharp/tinyc.g:78:17:     k==1:"else"
+Running antlr on grammar antlr/csharp/track.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/csharp/unicode.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/calc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/data.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/expr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/html.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/idl.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/instr.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/instr.g:16:40: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/instr.g:16:40:     k==1:"else"
+./scratch/antlr/java/instr.g:16:40:     k==2:LBRACE,"if",ID
+./scratch/antlr/java/instr.g:44:35: warning:lexical nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/instr.g:44:35:     k==1:'\n'
+Running antlr on grammar antlr/java/javadoclex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/javadocparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/java.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/javalex.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/javaparse.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/java.tree.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/lexer.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/lexer.g:35: warning:lexical nondeterminism upon
+./scratch/antlr/java/lexer.g:35:     k==1:'*'
+./scratch/antlr/java/lexer.g:35:     k==2:'/'
+./scratch/antlr/java/lexer.g:35:     between alt 1 and exit branch of block
+Running antlr on grammar antlr/java/links.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/pascal.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/pascal.g:250: warning:nondeterminism upon
+./scratch/antlr/java/pascal.g:250:     k==1:SEMI
+./scratch/antlr/java/pascal.g:250:     k==2:RPAREN,SEMI,"end"
+./scratch/antlr/java/pascal.g:250:     between alt 1 and exit branch of block
+./scratch/antlr/java/pascal.g:375: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/pascal.g:375:     k==1:IDENT
+./scratch/antlr/java/pascal.g:375:     k==2:ASSIGN
+./scratch/antlr/java/pascal.g:380: warning:nondeterminism between alts 2 and 3 of block upon
+./scratch/antlr/java/pascal.g:380:     k==1:IDENT
+./scratch/antlr/java/pascal.g:380:     k==2:POINTER
+./scratch/antlr/java/pascal.g:466: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/pascal.g:466:     k==1:IDENT
+./scratch/antlr/java/pascal.g:466:     k==2:COMMA,RPAREN,SEMI,EQUAL,PLUS,MINUS,DOTDOT,RBRACK,"of","end",NOT_EQUAL,LT,LE,GE,GT,"in","or",STAR,SLASH,"div","mod","and","then","else","do","until","to","downto"
+./scratch/antlr/java/pascal.g:466: warning:nondeterminism between alts 1 and 4 of block upon
+./scratch/antlr/java/pascal.g:466:     k==1:IDENT
+./scratch/antlr/java/pascal.g:466:     k==2:COMMA,RPAREN,SEMI,EQUAL,PLUS,MINUS,DOTDOT,RBRACK,"of","end",NOT_EQUAL,LT,LE,GE,GT,"in","or",STAR,SLASH,"div","mod","and","then","else","do","until","to","downto"
+./scratch/antlr/java/pascal.g:466: warning:nondeterminism between alts 2 and 4 of block upon
+./scratch/antlr/java/pascal.g:466:     k==1:IDENT
+./scratch/antlr/java/pascal.g:466:     k==2:COMMA,RPAREN,SEMI,EQUAL,PLUS,MINUS,DOTDOT,RBRACK,"of","end",NOT_EQUAL,LT,LE,GE,GT,"in","or",STAR,SLASH,"div","mod","and","then","else","do","until","to","downto"
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:DOT,COMMA,RPAREN,LBRACK,POINTER
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 1 and 3 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 1 and 4 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 2 and 3 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 2 and 4 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:520: warning:nondeterminism between alts 3 and 4 of block upon
+./scratch/antlr/java/pascal.g:520:     k==1:IDENT
+./scratch/antlr/java/pascal.g:520:     k==2:COMMA,RPAREN
+./scratch/antlr/java/pascal.g:559:7: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/pascal.g:559:7:     k==1:"else"
+./scratch/antlr/java/pascal.g:559:7:     k==2:SEMI,IDENT,NUM_INT,"end","case","goto","begin","if","else","while","repeat","until","for","with"
+Running antlr on grammar antlr/java/P.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/rewrite.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/subc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+error: grammar TinyCParser not defined
+Running antlr on grammar antlr/java/t.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/TinyBasic.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/TinyBasicTreeWalker.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/TinyBasicTreeWalker.g:86:17: warning:Rule 'assign_statement' returns a value
+Running antlr on grammar antlr/java/tinyc.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/tinyc.g:74:17: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/tinyc.g:74:17:     k==1:"else"
+Running antlr on grammar antlr/java/track.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/treewalk.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/treewalk.g:20:17: warning:nondeterminism between alts 1 and 2 of block upon
+./scratch/antlr/java/treewalk.g:20:17:     k==1:"else"
+Running antlr on grammar antlr/java/unicode.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+Running antlr on grammar antlr/java/xml.g
+ANTLR Parser Generator   Version 2.7.2   1989-2003 jGuru.com
+./scratch/antlr/java/xml.g:73: warning:nongreedy block may exit incorrectly due
+./scratch/antlr/java/xml.g:73:     	to limitations of linear approximate lookahead (first k-1 sets
+./scratch/antlr/java/xml.g:73:     	in lookahead not singleton).
+===== DaCapo antlr PASSED in 94328 msec =====

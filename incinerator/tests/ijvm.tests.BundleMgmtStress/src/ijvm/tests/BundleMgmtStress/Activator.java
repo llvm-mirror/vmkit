@@ -11,13 +11,14 @@ import org.osgi.util.tracker.ServiceTracker;
 public class Activator
 	implements BundleActivator, Runnable
 {
+	static final boolean correctStaleReferences = false;
+	
 	BundleContext context;
 	Thread worker;
 	boolean cancelWork;
 	long firstBundleID;
 	ServiceTracker j3mgrST;
 	J3Mgr j3mgr;
-	boolean correctStaleReferences;
 	long loopCount;
 
 	public void start(BundleContext bundleContext) throws Exception
@@ -31,7 +32,6 @@ public class Activator
 			throw new BundleException("J3 Management service must be started before this service.");
 		
 		loopCount = 0;
-		correctStaleReferences = true;
 		firstBundleID = 13;
 		
 		cancelWork = false;

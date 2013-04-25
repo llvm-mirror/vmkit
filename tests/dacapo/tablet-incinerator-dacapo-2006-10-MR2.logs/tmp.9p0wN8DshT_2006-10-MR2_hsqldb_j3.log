@@ -1,0 +1,43 @@
+===== DaCapo hsqldb starting =====
+*********************************************************
+* PseudoJDBCBench v1.1                                  *
+*********************************************************
+
+Scale factor value: 64
+Number of clients: 20
+Number of transactions per client: 40
+
+Initializing dataset...DBMS: HSQL Database Engine
+In transaction mode
+	80000	 records inserted
+	160000	 records inserted
+	240000	 records inserted
+	320000	 records inserted
+	400000	 records inserted
+	480000	 records inserted
+	560000	 records inserted
+	640000	 records inserted
+done.
+
+* Starting Benchmark Run *
+
+* Benchmark Report *
+* Featuring <direct queries> <auto-commit> 
+--------------------
+0 / 800 failed to complete.
+
+* Benchmark Report *
+* Featuring <direct queries> <transactions> 
+--------------------
+0 / 800 failed to complete.
+
+* Benchmark Report *
+* Featuring <prepared statements> <auto-commit> 
+--------------------
+0 / 800 failed to complete.
+
+* Benchmark Report *
+* Featuring <prepared statements> <transactions> 
+--------------------
+0 / 800 failed to complete.
+===== DaCapo hsqldb PASSED in 270047 msec =====

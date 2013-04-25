@@ -1,0 +1,18 @@
+===== DaCapo eclipse starting =====
+<setting up workspace...>
+<creating projects..............................................................>
+<running tests at level 0...>
+<performing build tests...>
+	org.apache.ant (not open) opening cleaning building
+	org.junit (not open) opening cleaning building
+	org.eclipse.osgi (not open) opening cleaning building
+<performing type hierarchy tests...>
+	Hierarchy: org.eclipse.help.internal HelpPlugin
+<performing AST tests...>
+	AST creation: org.eclipse.jdt.internal.compiler.parser
+<performing completion tests...>
+	Completion: Completion>Name>Empty
+	Completion: Completion>Name>Empty>No Method
+<performing search tests...>
+	Searching: indexing
+===== DaCapo eclipse PASSED in 1437422 msec =====

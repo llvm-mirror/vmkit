@@ -1,0 +1,24 @@
+===== DaCapo chart starting =====
+Exception in thread "main" java.awt.AWTError: Cannot load AWT toolkit: gnu.java.awt.peer.gtk.GtkToolkit
+   at java.awt.Toolkit.getDefaultToolkit(Toolkit.java:607)
+   at java.awt.Font.tk(Font.java:317)
+   at java.awt.Font.getPeerFromToolkit(Font.java:329)
+   at java.awt.Font.<init>(Font.java:381)
+   at org.jfree.chart.axis.Axis.<clinit>(Axis.java:129)
+   at org.jfree.chart.ChartFactory.createXYLineChart(ChartFactory.java:1525)
+   at dacapo.chart.Graph.plotGraph(Graph.java:217)
+   at dacapo.chart.Graph.<init>(Graph.java:39)
+   at dacapo.chart.Plotter.main(Plotter.java:39)
+   at dacapo.chart.ChartHarness.iterate(ChartHarness.java:38)
+   at dacapo.Benchmark.run(Benchmark.java:126)
+   at dacapo.TestHarness.runBenchmark(TestHarness.java:302)
+   at dacapo.TestHarness.main(TestHarness.java:242)
+   at Harness.main(Harness.java:5)
+Caused by: java.lang.UnsatisfiedLinkError: Native library `gtkpeer' not found (as file `libgtkpeer.so') in gnu.classpath.boot.library.path and java.library.path
+   at java.lang.Runtime.loadLibrary(Runtime.java:763)
+   at java.lang.System.loadLibrary(System.java:671)
+   at gnu.java.awt.peer.gtk.GtkToolkit.<clinit>(GtkToolkit.java:177)
+   at java.lang.VMClass.forName(VMClass.java:0)
+   at java.lang.Class.forName(Class.java:233)
+   at java.awt.Toolkit.getDefaultToolkit(Toolkit.java:583)
+   ...13 more

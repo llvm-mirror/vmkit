@@ -18,6 +18,7 @@ set boxwidth 1
 # set title "Incinerator overhead in Dacapo benchmarks"
 
 set xtics axis nomirror rotate by 20 offset -2,graph -0.1
+#set xtics axis nomirror rotate by 20 offset -2,graph -0.03
 set border 3
 
 #set term svg
@@ -25,4 +26,7 @@ set border 3
 #set term latex
 set term wxt 1
 plot	\
-	'dacapo-avg-overhead.csv' using 4:xtic(2) notitle linecolor rgb "grey"
+	'dacapo-avg-overhead.csv' using 4:xtic(2) title "Powerful computer" linecolor rgb "orange"
+#	'dacapo-tablet-avg-overhead.csv' using 4:xtic(2) title "Resource-constrained computer" linecolor rgb "grey"
+
+#set xtics axis nomirror rotate by 20 offset 0,graph 0

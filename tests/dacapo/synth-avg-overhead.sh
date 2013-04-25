@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Generate overhead between a reference engine (e.g. reference VM stats) and another engine (e.g. feature-enabled VM stats).
+# Gets in input two synthesized and reduced stats data.
+
 . ./float.sh
 float_scale=4
 

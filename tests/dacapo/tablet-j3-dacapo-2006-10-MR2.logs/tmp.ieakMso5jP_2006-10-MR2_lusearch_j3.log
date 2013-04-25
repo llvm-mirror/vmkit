@@ -1,0 +1,22 @@
+===== DaCapo lusearch starting =====
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+GCWarning: Live ratio greater than 1: 1.00
+4 query batches completed
+8 query batches completed
+12 query batches completed
+16 query batches completed
+20 query batches completed
+24 query batches completed
+28 query batches completed
+32 query batches completed
+===== DaCapo lusearch PASSED in 286055 msec =====

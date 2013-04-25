@@ -3,7 +3,9 @@
 -Forg.knopflerfish.framework.debug.errors=true
 -Forg.knopflerfish.framework.debug.packages=false
 -Forg.knopflerfish.framework.debug.classloader=false
+-Forg.knopflerfish.framework.debug.permissions=true
 -Forg.osgi.framework.system.packages.extra=
+
 
 -Forg.knopflerfish.startlevel.use=true
 
