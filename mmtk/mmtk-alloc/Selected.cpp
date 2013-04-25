@@ -60,6 +60,9 @@ extern "C" void* JnJVM_org_j3_bindings_Bindings_prealloc__I(int sz) ALWAYS_INLIN
 extern "C" void* JnJVM_org_j3_bindings_Bindings_postalloc__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(
 		void* object, void* type, int sz) ALWAYS_INLINE;
 
+extern "C" void* JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(
+    int sz, void* VT) ALWAYS_INLINE;
+
 extern "C" void* prealloc(uint32_t size) {
 	gc* res = 0;
   gcHeader* head = 0;
@@ -75,12 +78,25 @@ extern "C" void postalloc(gc* obj, void* type, uint32_t size) {
 	JnJVM_org_j3_bindings_Bindings_postalloc__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(obj, type, size);
 }
 
+/**************************************
+ * Sample of code using pre/post alloc. It is slower but you can have
+ * a better control of objects allocation.
+ *
 extern "C" void* gcmalloc(uint32_t sz, void* type) {
   gc* res = 0;
   llvm_gcroot(res, 0);
 	sz += gcHeader::hiddenHeaderSize();
 	res = (gc*) prealloc(sz);
 	postalloc(res, type, sz);
+	return res;
+}
+*/
+
+extern "C" void* gcmalloc(uint32_t sz, void* type) {
+  gc* res = 0;
+  llvm_gcroot(res, 0);
+	sz += gcHeader::hiddenHeaderSize();
+	res = ((gcHeader*)JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, type))->toReference();
 	return res;
 }
 

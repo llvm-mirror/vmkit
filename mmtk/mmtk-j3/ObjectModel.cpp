@@ -62,6 +62,14 @@ Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectRe
   return (val == oldValue);
 }
 
+extern "C" void Java_org_j3_bindings_Bindings_setType__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2(
+                    gc* obj, void* type) ALWAYS_INLINE;
+
+extern "C" void Java_org_j3_bindings_Bindings_setType__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2(
+                    gc* obj, void* type) {
+	vmkit::Thread::get()->MyVM->setType(obj, type);
+}
+
 extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__() ALWAYS_INLINE;
 
 extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__() {
