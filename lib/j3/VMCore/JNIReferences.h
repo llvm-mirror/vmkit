@@ -38,6 +38,7 @@ public:
 
   void removeJNIReferences(JavaThread* th, uint32_t num);
 
+  uint32_t getLength() { return length; }
 };
 
 class JNIGlobalReferences {

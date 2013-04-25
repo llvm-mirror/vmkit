@@ -271,15 +271,30 @@ void FatalError(JNIEnv *env, const char *msg) {
 
 
 jint PushLocalFrame(JNIEnv* env, jint capacity) {
-  NYI();
-  abort();
+  JavaThread* th = JavaThread::get();
+  std::pair<uint32_t*,int> frame;
+  frame.first = th->currentAddedReferences;
+  frame.second = th->localJNIRefs->getLength();
+  th->JNIlocalFrames.push_back(frame);
+  th->startJNI();
   return 0;
 }
 
 jobject PopLocalFrame(JNIEnv* env, jobject result) {
-  NYI();
-  abort();
-  return 0;
+	if(result){
+	  NYI();
+	  abort();
+	}
+  JavaThread* th = JavaThread::get();
+  th->endJNI();
+  std::pair<uint32_t*, int> frame = th->JNIlocalFrames.back();
+  th->currentAddedReferences = frame.first;
+
+  uint32_t toRemove = th->localJNIRefs->getLength() - frame.second;
+  assert(toRemove >= 0 && "Local frame has negative number of references to remove");
+  th->JNIlocalFrames.pop_back();
+  th->localJNIRefs->removeJNIReferences(th,toRemove);
+  return result;
 }
 
 

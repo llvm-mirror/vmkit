@@ -103,6 +103,9 @@ public:
 
   vmkit::LockingThread lockingThread;
   
+  /// JNI implementation fields
+  ///
+
   /// currentAddedReferences - Current number of added local references.
   ///
   uint32_t* currentAddedReferences;
@@ -110,6 +113,14 @@ public:
   /// localJNIRefs - List of local JNI references.
   ///
   JNILocalReferences* localJNIRefs;
+
+  /// JNIlocalFrames - vector of JNI Frames
+  /// pair represents { oldAddedReferences, capacity }
+  ///
+  std::vector< std::pair<uint32_t*, int> > JNIlocalFrames;
+
+  ///
+  ///
 
   // State of this Thread
   int state;

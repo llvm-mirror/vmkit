@@ -154,6 +154,8 @@ JavaObject** JNILocalReferences::addJNIReference(JavaThread* th,
   }
 }
 
+/// TODO optimize this function with iterative impl.
+///
 void JNILocalReferences::removeJNIReferences(JavaThread* th, uint32_t num) {
     
   if (th->localJNIRefs != this) {
