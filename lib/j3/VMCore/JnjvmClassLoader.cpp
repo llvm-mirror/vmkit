@@ -868,6 +868,8 @@ JnjvmClassLoader::~JnjvmClassLoader() {
 	cerr << "Bundle class loader unloaded, bundleID=" << this->getAssociatedBundleID() << endl;
 #endif
 
+	this->setAssociatedBundleID(-1);
+
   if (vm) {
     vm->removeFrameInfos(TheCompiler);
   }
