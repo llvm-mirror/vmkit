@@ -322,6 +322,7 @@ public:
 StackThreadManager TheStackManager;
 
 extern void sigsegvHandler(int, siginfo_t*, void*);
+extern void sigsTermHandler(int n, siginfo_t *info, void *context);
 
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
@@ -347,6 +348,18 @@ void Thread::internalThreadStart(vmkit::Thread* th) {
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
   sigaction(SIGBUS, &sa, NULL);
+  // to handle termination
+  st.ss_sp = (void*)th->GetAlternativeStackEnd();
+  st.ss_flags = 0;
+  st.ss_size = System::GetAlternativeStackSize();
+  sigaltstack(&st, NULL);
+  sigfillset(&mask);
+  sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
+  sa.sa_mask = mask;
+  sa.sa_sigaction = sigsTermHandler;
+  sigaction(SIGHUP, &sa, NULL);
+  sigaction(SIGINT, &sa, NULL);
+  //sigaction(SIGTERM, &sa, NULL);
 
   assert(th->MyVM && "VM not set in a thread");
   th->MyVM->rendezvous.addThread(th);
