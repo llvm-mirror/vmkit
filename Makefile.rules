@@ -1,4 +1,28 @@
 
+LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
+
+#LLVMAS
+#LLC
+#LOPT
+#LLVMLINK
+#MV
+#LLVMCC
+#Archive
+#Ranlib
+#RM
+CLANGXX=$(LLVM_BIN)/clang++
+LLVMAS=$(LLVM_BIN)/llvm-as
+LLC=$(LLVM_BIN)/llc
+LOPT=$(LLVM_BIN)/opt
+LLVMLINK=$(LLVM_BIN)/llvm-link
+MV=mv
+LLVMCC=$(LLVM_BIN)/clang
+Archive=ar cru
+Ranlib=ranlib
+RM=rm
+NM=nm
+LArchive=$(LLVM_BIN)/llvm-ar rcsf
+
 #
 #
 # OLD BUILD SYSTEM
@@ -27,40 +51,6 @@ all-local:: LLVMRuntime.inc
 clean-local::
 	$(Verb) $(RM) -f LLVMRuntime.inc
 
-endif
-
-###############################################################################
-# VMJC_ASSEMBLY: Provide rules to build glibj.zip.s.
-###############################################################################
-
-ifdef VMJC_ASSEMBLY
-
-.PRECIOUS: glibj.zip.s
-
-glibj.zip.s : $(LOPT) $(LLC) $(VMJC)
-
-glibj.zip.bc :
-	$(Echo) "**[8] Compiling glibj.zip to llvm"
-	$(Verb) if test -d $(GLIBJ); then \
-	  $(VMJC) -f $(VMJC_GLIBJ_FLAGS) $(GLIBJ)/glibj.zip -o glibj.zip.bc; \
-	else \
-	  $(VMJC) -f $(VMJC_GLIBJ_FLAGS) $(GLIBJ) -o glibj.zip.bc; \
-	fi
-
-glibj-optimized.zip.bc : glibj.zip.bc
-	$(Echo) "**[9] Optimizing glibj.zip"
-	$(Verb) $(LOPT) $(OPT_VMJC_FLAGS) -f glibj.zip.bc -o glibj-optimized.zip.bc
-
-glibj.zip.s : glibj-optimized.zip.bc
-	$(Echo) "**[10] Compiling glibj.zip.bc to native"
-	$(Verb) $(LLC) $(LLC_GLIBJ_FLAGS) -disable-cfi -relocation-model=pic -disable-fp-elim glibj-optimized.zip.bc -o glibj.zip.s
-
-$(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
-	$(Echo) "**[11] Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
-	$(Verb) $(Compile.C) $< -o $(ObjDir)/$*.o
-
-clean-local::
-	$(Verb) $(RM) -f glibj.zip.s glibj.zip.bc glibj-optimized.zip.bc
 endif
 
 ###############################################################################
@@ -140,10 +130,10 @@ endif
 ifdef BUILD_FRAMETABLE
 
 FrametablesExterns.inc: $(ProjLibsPaths)
-	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
+	$(Verb) $(NM) $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
 
 FrametablesSymbols.inc: $(ProjLibsPaths)
-	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
+	$(Verb) $(NM) $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
 
 all-local:: FrametablesExterns.inc FrametablesSymbols.inc
 
@@ -183,7 +173,6 @@ endif
 #   NEW BUILD SYSTEM
 #
 #
-LLVM_BIN=`$(LLVM_CONFIG) --bindir`
 
 CLANGXX=$(LLVM_BIN)/clang++
 LOPT=$(LLVM_BIN)/opt

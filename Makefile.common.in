@@ -20,7 +20,7 @@ REQUIRES_FRAME_POINTER	:= 1
 JAVAC_TARGET		:= 1.5
 
 # Include LLVM's Master Makefile.
-include $(LLVM_OBJ_ROOT)/Makefile.common
+include $(PROJ_SRC_ROOT)/Makefile.common.llvm
 
 CXX.Flags += @GC_FLAGS@ -fno-exceptions -Wno-variadic-macros -fno-omit-frame-pointer -fno-strict-aliasing -Wno-deprecated -ansi -fno-rtti
 
