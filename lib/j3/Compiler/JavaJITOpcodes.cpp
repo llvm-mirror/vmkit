@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG 0
-#define JNJVM_COMPILE 0
-#define JNJVM_EXECUTE 0
+#define JNJVM_COMPILE 2
+#define JNJVM_EXECUTE 1
+
 
 #include <cstring>
 
@@ -107,9 +107,9 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
     reader.cursor = start + i;
     uint8 bytecode = reader.readU1();
     
-    PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
+    PRINT_DEBUG(JNJVM_COMPILE, 1, DARK_BLUE, "\t[at %5d] %-5d ", i,
                 bytecode);
-    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "compiling ");
+    PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, " compiling ");
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecode]);
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n");
     
@@ -2380,12 +2380,15 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
 }
 
 void JavaJIT::exploreOpcodes(Reader& reader, uint32 codeLength) {
+	PRINT_DEBUG(JNJVM_COMPILE, 1, DARK_YELLOW, "exploreOpcodes %d \n", codeLength);
+
   bool wide = false;
   uint32 start = reader.cursor;
   for(uint32 i = 0; i < codeLength; ++i) {
     reader.cursor = start + i;
     uint8 bytecode = reader.readU1();
-    PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "\t[at %5d] %-5d ", i,
+
+    PRINT_DEBUG(JNJVM_COMPILE, 1, DARK_CYAN, "\t[at %5d] %-5d ", i,
                 bytecode);
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "exploring ");
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_CYAN, OpcodeNames[bytecode]);

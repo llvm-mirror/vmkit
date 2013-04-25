@@ -8,8 +8,8 @@
 //===----------------------------------------------------------------------===//
 
 
-#define DEBUG 0
-#define JNJVM_COMPILE 0
+//#define DEBUG 0
+#define JNJVM_COMPILE 2
 #define JNJVM_EXECUTE 0
 
 #include <string>
@@ -375,7 +375,7 @@ static llvm::Function* GetNativeCallee(JavaLLVMCompiler* TheCompiler,
 
 llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
   
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "native compile %s.%s\n",
+  PRINT_DEBUG(JNJVM_COMPILE, 1, DARK_GREEN, "nativeCompile %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
   
@@ -958,8 +958,8 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   reader.cursor = start;
   compileOpcodes(reader, codeLen);
   
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL,
-              "--> end inline compiling %s.%s\n",
+  PRINT_DEBUG(JNJVM_COMPILE, 1, DARK_MAGENTA,
+              "--> end inlineCompile for %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
 
@@ -993,7 +993,9 @@ static char* setInstructionName(char *s, size_t maxlen, const char * format, ...
 }
 
 llvm::Function* JavaJIT::javaCompile() {
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "compiling %s.%s\n",
+
+  PRINT_DEBUG(JNJVM_COMPILE, 1, DARK_CYAN, "javacompile for (%s.)%s.%s\n",
+			  (compilingClass->super)?UTF8Buffer(compilingClass->super->name).cString():"",
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
 
@@ -1270,7 +1272,7 @@ llvm::Function* JavaJIT::javaCompile() {
  
   delete[] opcodeInfos;
 
-  PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "--> end compiling %s.%s\n",
+  PRINT_DEBUG(JNJVM_COMPILE, 1, DARK_CYAN, "--> end of javacompile for %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
    

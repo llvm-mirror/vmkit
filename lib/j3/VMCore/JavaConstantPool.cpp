@@ -52,8 +52,7 @@ uint32 JavaConstantPool::CtpReaderClass(JavaConstantPool* ctp, Reader& reader,
                                    uint32 index) {
   uint16 entry = reader.readU2();
   ctp->ctpDef[index] = entry;
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\t\tutf8 is at %d\n", e,
-              entry);
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\t\tutf8 is at %d\n",entry);
   return 1;
 }
   
@@ -61,8 +60,7 @@ uint32 JavaConstantPool::CtpReaderInteger(JavaConstantPool* ctp, Reader& reader,
                                      uint32 index) {
   uint32 val = reader.readU4();
   ctp->ctpDef[index] = val;
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\tinteger: %d\n", e,
-              val);
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\tinteger: %d\n", val);
   return 1;
 }
   
@@ -70,8 +68,7 @@ uint32 JavaConstantPool::CtpReaderFloat(JavaConstantPool* ctp, Reader& reader,
                                    uint32 index) { 
   uint32 val = reader.readU4();
   ctp->ctpDef[index] = val;
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\tfloat: %d\n", e,
-              val);
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <class>\tfloat: %d\n", val);
   return 1;
 }
   
@@ -139,8 +136,8 @@ uint32 JavaConstantPool::CtpReaderLong(JavaConstantPool* ctp, Reader& reader,
                                        uint32 index) {
   ctp->ctpDef[index + 1] = reader.readU4();
   ctp->ctpDef[index] = reader.readU4();
-  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <long>%d %d\n", index,
-              ctpDef[e], ctpDef[e + 1]);
+  PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <long>%d %d %d\n", index,
+              ctp->ctpDef[index], ctp->ctpDef[index + 1]);
   return 2;
 }
 
@@ -223,7 +220,7 @@ const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
     ctpRes[entry] = const_cast<UTF8*>(utf8);
   
     PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <utf8>\t\t\"%s\"\n",
-                entry, UTF8Buffer(utf8)->cString());
+                entry, UTF8Buffer(utf8).cString());
 
   }
   return (const UTF8*)ctpRes[entry];

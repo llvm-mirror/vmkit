@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define JNJVM_LOAD 0
+#define JNJVM_LOAD 1
 
 #include "debug.h"
 #include "types.h"
@@ -887,12 +887,10 @@ void Class::readMethods(Reader& reader) {
 }
 
 void Class::readClass() {
+  PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "readClass \t");
+  PRINT_DEBUG(JNJVM_LOAD, 0, DARK_MAGENTA, "%s\n", UTF8Buffer(this->name).cString());
 
   assert(getInitializationState() == loaded && "Wrong init state");
-  
-  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
-  PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "reading ", 0);
-  PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", vmkit::PrintBuffer(this).cString());
 
   Reader reader(bytes);
   uint32 magic;

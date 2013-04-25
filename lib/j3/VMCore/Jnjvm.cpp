@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define JNJVM_LOAD 0
+#define JNJVM_LOAD 1
 
 #include <cfloat>
 #include <climits>
@@ -44,7 +44,7 @@ const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
-/// initialiseClass - Java class initialisation. Java specification §2.17.5.
+/// initialiseClass - Java class initialization. Java specification §2.17.5.
 
 void UserClass::initialiseClass(Jnjvm* vm) {
   JavaObject* exc = NULL;
@@ -158,9 +158,9 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     //    final static variables and fields of interfaces whose values are 
     //    compile-time constants are initialized first.
     
-    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ", 0);
-    PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ", 0);
-    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", vmkit::PrintString(this).cString());
+    //PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "; ");
+    PRINT_DEBUG(JNJVM_LOAD, 0, LIGHT_GREEN, "clinit ");
+    PRINT_DEBUG(JNJVM_LOAD, 0, COLOR_NORMAL, "%s\n", UTF8Buffer(this->name).cString());
 
     JavaField* fields = cl->getStaticFields();
     for (uint32 i = 0; i < cl->nbStaticFields; ++i) {
@@ -1344,6 +1344,13 @@ ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
 }
 
 void Jnjvm::startCollection() {
+
+#if DEBUG > 0
+	printf("Start Collection\n");
+	vmkit::Thread::get()->printBacktrace();
+	fflush(stdout);
+#endif
+
   finalizerThread->FinalizationQueueLock.acquire();
   referenceThread->ToEnqueueLock.acquire();
   referenceThread->SoftReferencesQueue.acquire();
@@ -1359,6 +1366,12 @@ void Jnjvm::endCollection() {
   referenceThread->PhantomReferencesQueue.release();
   finalizerThread->FinalizationCond.broadcast();
   referenceThread->EnqueueCond.broadcast();
+
+#if DEBUG > 0
+  printf("End Collection\n");
+  vmkit::Thread::get()->printBacktrace();
+  fflush(stdout);
+#endif
 }
   
 void Jnjvm::scanWeakReferencesQueue(word_t closure) {
