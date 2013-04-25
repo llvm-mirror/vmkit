@@ -122,7 +122,7 @@ protected:
 
   /// Lock to add Strings
   ///
-  vmkit::SpinLock lockForStrings;
+  vmkit::LockNormal lockForStrings;
 
   /// lock2 - Lock when loading classes.
   ///
