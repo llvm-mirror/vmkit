@@ -20,8 +20,9 @@
 
 namespace j3 {
 
-class ReferenceThread;
+template <class T> class ReferenceThread;
 class Jnjvm;
+
 
 class ReferenceQueue {
 private:
@@ -31,7 +32,41 @@ private:
   vmkit::SpinLock QueueLock;
   uint8_t semantics;
 
-  gc* processReference(gc*, ReferenceThread*, word_t closure);
+  template <class T>
+  gc* processReference(gc* reference, ReferenceThread<T>* th, word_t closure) {
+    if (!vmkit::Collector::isLive(reference, closure)) {
+      vmkit::Thread::get()->MyVM->clearObjectReferent(reference);
+      return NULL;
+    }
+
+    gc* referent = *(vmkit::Thread::get()->MyVM->getObjectReferentPtr(reference));
+
+    if (!referent) {
+      return NULL;
+    }
+
+    if (semantics == SOFT) {
+      // TODO: are we are out of memory? Consider that we always are for now.
+      if (false) {
+        vmkit::Collector::retainReferent(referent, closure);
+      }
+    } else if (semantics == PHANTOM) {
+      // Nothing to do.
+    }
+
+    gc* newReference =
+        vmkit::Collector::getForwardedReference(reference, closure);
+    if (vmkit::Collector::isLive(referent, closure)) {
+      gc* newReferent = vmkit::Collector::getForwardedReferent(referent, closure);
+      vmkit::Thread::get()->MyVM->setObjectReferent(newReference, newReferent);
+      return newReference;
+    } else {
+    	vmkit::Thread::get()->MyVM->clearObjectReferent(newReference);
+      th->addToEnqueue(newReference);
+      return NULL;
+    }
+  }
+
 public:
 
   static const uint8_t WEAK = 1;
@@ -79,10 +114,22 @@ public:
     QueueLock.release();
   }
 
-  void scan(ReferenceThread* thread, word_t closure);
+  template <class T>
+  void scan(ReferenceThread<T>* thread, word_t closure) {
+    uint32 NewIndex = 0;
+
+    for (uint32 i = 0; i < CurrentIndex; ++i) {
+      gc* obj = References[i];
+      gc* res = processReference(obj, thread, closure);
+      if (res) References[NewIndex++] = res;
+    }
+
+    CurrentIndex = NewIndex;
+  }
+
 };
 
-class ReferenceThread : public JavaThread {
+template <class T_THREAD> class ReferenceThread : public T_THREAD {
 public:
   /// WeakReferencesQueue - The queue of weak references.
   ///
@@ -99,16 +146,57 @@ public:
   gc** ToEnqueue;
   uint32 ToEnqueueLength;
   uint32 ToEnqueueIndex;
-  
+
   /// ToEnqueueLock - A lock to protect access to the queue.
   ///
   vmkit::LockNormal EnqueueLock;
   vmkit::Cond EnqueueCond;
   vmkit::SpinLock ToEnqueueLock;
 
-  void addToEnqueue(gc* obj);
+  static void enqueueStart(ReferenceThread* th){
+    gc* res = NULL;
+    llvm_gcroot(res, 0);
 
-  static void enqueueStart(ReferenceThread*);
+    while (true) {
+      th->EnqueueLock.lock();
+      while (th->ToEnqueueIndex == 0) {
+        th->EnqueueCond.wait(&th->EnqueueLock);
+      }
+      th->EnqueueLock.unlock();
+
+      while (true) {
+        th->ToEnqueueLock.acquire();
+        if (th->ToEnqueueIndex != 0) {
+          res = th->ToEnqueue[th->ToEnqueueIndex - 1];
+          --th->ToEnqueueIndex;
+        }
+        th->ToEnqueueLock.release();
+        if (!res) break;
+
+        vmkit::Thread::get()->MyVM->invokeEnqueueReference(res);
+        res = NULL;
+      }
+    }
+  }
+
+  void addToEnqueue(gc* obj) {
+    llvm_gcroot(obj, 0);
+    if (ToEnqueueIndex >= ToEnqueueLength) {
+      uint32 newLength = ToEnqueueLength * GROW_FACTOR;
+      gc** newQueue = new gc*[newLength];
+      if (!newQueue) {
+        fprintf(stderr, "I don't know how to handle reference overflow yet!\n");
+        abort();
+      }
+      for (uint32 i = 0; i < ToEnqueueLength; ++i) {
+        newQueue[i] = ToEnqueue[i];
+      }
+      delete[] ToEnqueue;
+      ToEnqueue = newQueue;
+      ToEnqueueLength = newLength;
+    }
+    ToEnqueue[ToEnqueueIndex++] = obj;
+  }
 
   /// addWeakReference - Add a weak reference to the queue.
   ///
@@ -116,14 +204,14 @@ public:
     llvm_gcroot(ref, 0);
     WeakReferencesQueue.addReference(ref);
   }
-  
+
   /// addSoftReference - Add a weak reference to the queue.
   ///
   void addSoftReference(gc* ref) {
     llvm_gcroot(ref, 0);
     SoftReferencesQueue.addReference(ref);
   }
-  
+
   /// addPhantomReference - Add a weak reference to the queue.
   ///
   void addPhantomReference(gc* ref) {
@@ -131,16 +219,27 @@ public:
     PhantomReferencesQueue.addReference(ref);
   }
 
-  ReferenceThread(Jnjvm* vm);
+  ReferenceThread(vmkit::VirtualMachine* vm) : T_THREAD(vm), WeakReferencesQueue(ReferenceQueue::WEAK),
+      									SoftReferencesQueue(ReferenceQueue::SOFT),
+      									PhantomReferencesQueue(ReferenceQueue::PHANTOM) {
+    ToEnqueue = new gc*[INITIAL_QUEUE_SIZE];
+    ToEnqueueLength = INITIAL_QUEUE_SIZE;
+    ToEnqueueIndex = 0;
+  }
 
   ~ReferenceThread() {
     delete[] ToEnqueue;
   }
 };
 
+class JavaReferenceThread : public ReferenceThread<JavaThread> {
+public:
+	JavaReferenceThread(Jnjvm* vm) : ReferenceThread<JavaThread>(vm) {}
+};
+
 class FinalizerThread : public JavaThread {
 public:
-    /// FinalizationQueueLock - A lock to protect access to the queue.
+  /// FinalizationQueueLock - A lock to protect access to the queue.
   ///
   vmkit::SpinLock FinalizationQueueLock;
 

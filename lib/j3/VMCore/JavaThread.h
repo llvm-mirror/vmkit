@@ -119,7 +119,7 @@ public:
   
   /// JavaThread - Creates a Java thread.
   ///
-  JavaThread(Jnjvm* isolate);
+  JavaThread(vmkit::VirtualMachine* isolate);
 
   void initialise(JavaObject* thread, JavaObject* vmth);
   

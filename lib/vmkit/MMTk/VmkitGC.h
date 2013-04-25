@@ -65,8 +65,8 @@ public:
     return 0;
   }
 
-  void* operator new(size_t sz, VirtualTable *VT) {
-    return gcmallocUnresolved(sz, VT);
+  void* operator new(size_t sz, void *type) {
+    return gcmallocUnresolved(sz, type);
   }
 };
 

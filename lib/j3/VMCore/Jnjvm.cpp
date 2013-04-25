@@ -1075,9 +1075,9 @@ void Jnjvm::loadBootstrap() {
   finalizerThread->start(
       (void (*)(vmkit::Thread*))FinalizerThread::finalizerStart);
     
-  referenceThread = new ReferenceThread(this);
+  referenceThread = new JavaReferenceThread(this);
   referenceThread->start(
-      (void (*)(vmkit::Thread*))ReferenceThread::enqueueStart);
+      (void (*)(vmkit::Thread*))JavaReferenceThread::enqueueStart);
   
   // Initialise the bootstrap class loader if it's not
   // done already.
@@ -1378,21 +1378,84 @@ void Jnjvm::scanFinalizationQueue(word_t closure) {
 }
 
 void Jnjvm::addFinalizationCandidate(gc* object) {
-  llvm_gcroot(object, 0);
-  if (object->getVirtualTable()->hasDestructor())
-  	finalizerThread->addFinalizationCandidate(object);
+	JavaObject* src = 0;
+	llvm_gcroot(object, 0);
+	llvm_gcroot(src, 0);
+  src = (JavaObject*)object;
+  if (src->getVirtualTable()->hasDestructor())
+  	finalizerThread->addFinalizationCandidate(src);
 }
 
-void Jnjvm::setType(gcHeader* header, void* type) {
-	header->toReference()->setVirtualTable((VirtualTable*)type);
+/*
+ * PUT THIS INTO A SEPARATED FILE
+ */
+
+typedef void (*destructor_t)(void*);
+
+void invokeFinalizer(gc* _obj) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaObject* obj = (JavaObject*)_obj;
+  llvm_gcroot(obj, 0);
+  JavaMethod* meth = vm->upcalls->FinalizeObject;
+  UserClass* cl = JavaObject::getClass(obj)->asClass();
+  meth->invokeIntVirtualBuf(vm, cl, obj, 0);
+}
+
+void invokeFinalize(gc* res) {
+  llvm_gcroot(res, 0);
+  TRY {
+    invokeFinalizer(res);
+  } IGNORE;
+  vmkit::Thread::get()->clearException();
+}
+
+/*
+ *
+ */
+
+void Jnjvm::finalizeObject(gc* object) {
+	JavaObject* res = 0;
+	llvm_gcroot(object, 0);
+	llvm_gcroot(res, 0);
+	res = (JavaObject*) object;
+  JavaVirtualTable* VT = res->getVirtualTable();
+  if (VT->operatorDelete) {
+    destructor_t dest = (destructor_t)VT->destructor;
+    dest(res);
+  } else {
+    invokeFinalize(res);
+  }
+}
+
+void Jnjvm::setType(gc* header, void* type) {
+	JavaObject* src = 0;
+	llvm_gcroot(src, 0);
+	llvm_gcroot(header, 0);
+	src = (JavaObject*) header;
+	src->setVirtualTable((JavaVirtualTable*)type);
+}
+
+void* Jnjvm::getType(gc* header) {
+	JavaObject* src = 0;
+	llvm_gcroot(src, 0);
+	llvm_gcroot(header, 0);
+	src = (JavaObject*) header;
+	return src->getVirtualTable();
 }
 
 // This method is called during GC so no llvm_gcroot needed.
-void Jnjvm::traceObject(gc* obj, word_t closure) {
+void Jnjvm::traceObject(gc* _obj, word_t closure) {
+	JavaObject* obj = 0;
+	obj = (JavaObject*)_obj;
   assert(obj && "No object to trace");
   assert(obj->getVirtualTable() && "No virtual table");
   assert(obj->getVirtualTable()->tracer && "No tracer in VT");
   obj->tracer(closure);
+}
+
+// This method is called during GC so no llvm_gcroot needed.
+bool Jnjvm::isCorruptedType(gc* obj) {
+	return ((JavaObject*)obj)->getVirtualTable();
 }
 
 size_t Jnjvm::getObjectSize(gc* object) {

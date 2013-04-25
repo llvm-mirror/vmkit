@@ -188,6 +188,10 @@ public:
   ///
   virtual void addFinalizationCandidate(gc* object) {}
 
+  /// finalizeObject - Called by the finalizer thread for objects finalization.
+  ///
+  virtual void finalizeObject(gc* res) {}
+
   /// tracer - Trace this virtual machine's GC-objects.
   ///
   virtual void tracer(word_t closure) {}
@@ -199,7 +203,11 @@ public:
   /// setType - Method called when allocating an object. The VirtualMachine has to
   /// set the identity of the object (identity is determined by user).
   ///
-  virtual void setType(gcHeader* header, void* type) = 0;
+  virtual void setType(gc* header, void* type) = 0;
+
+  /// getType - Gets the type of given object.
+  ///
+  virtual void* getType(gc* header) = 0;
 
   /// getObjectSize - Get the size of this object. Used by copying collectors.
   ///
@@ -217,6 +225,15 @@ public:
 #if RESET_STALE_REFERENCES
   virtual void resetReferenceIfStale(const void* source, void** ref) {}
 #endif
+
+//===----------------------------------------------------------------------===//
+// (2.5) GC-DEBUG-related methods.
+//===----------------------------------------------------------------------===//
+
+  /// isCorruptedType - Return true if object is corrupted.
+  ///
+  virtual bool isCorruptedType(gc* header) { return false; }
+
 
 //===----------------------------------------------------------------------===//
 // (3) Backtrace-related methods.
@@ -246,7 +263,34 @@ public:
 
   virtual void nullPointerException() = 0;
   virtual void stackOverflowError() = 0;
+
+//===----------------------------------------------------------------------===//
+// (6) ReferenceQueue-related methods (if used).
+//     You have to create a class which inherits from specialized ReferenceThread class.
+//  			e.g: class MyReferenceThread : public ReferenceThread<YourThread> (see ReferenceQueue.h)
+//
+//     Then once thread has been started you can enqueue references and the reference thread
+//     delegates enqueuing process to the virtual machine threw the following methods.
+//===----------------------------------------------------------------------===//
+
+  /// invokeEnqueueReference - This method is called whenever an object is enqueued in
+  /// Soft, Weak or Phantom reference queues.
+  ///
+  virtual void invokeEnqueueReference(gc* ref) {}
+
+  /// clearObjectReferent - Clears object's referent
+  ///
+  virtual void clearObjectReferent(gc* ref) {}
+
+  /// getObjectReferentPtr - returns object referent's pointer
+  ///
+  virtual gc** getObjectReferentPtr(gc* _obj) { abort(); return NULL; }
+
+  /// setObjectReferent - set the referent of an object
+  ///
+  virtual void setObjectReferent(gc* _obj, gc* val) {}
 };
+
 
 } // end namespace vmkit
 #endif // VMKIT_VIRTUALMACHINE_H

@@ -63,6 +63,7 @@ extern "C" void* JnJVM_org_j3_bindings_Bindings_postalloc__Lorg_vmmagic_unboxed_
 extern "C" void* prealloc(uint32_t size) {
 	gc* res = 0;
   gcHeader* head = 0;
+  llvm_gcroot(res, 0);
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
   head = (gcHeader*) JnJVM_org_j3_bindings_Bindings_prealloc__I(size);
   res = head->toReference();
@@ -70,7 +71,7 @@ extern "C" void* prealloc(uint32_t size) {
 }
 
 extern "C" void postalloc(gc* obj, void* type, uint32_t size) {
-	vmkit::Thread::get()->MyVM->setType(obj->toHeader(), type);
+	vmkit::Thread::get()->MyVM->setType(obj, type);
 	JnJVM_org_j3_bindings_Bindings_postalloc__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(obj, type, size);
 }
 
@@ -132,37 +133,25 @@ bool Collector::isLive(gc* ptr, word_t closure) {
 
 void Collector::scanObject(void** ptr, word_t closure) {
   if ((*ptr) != NULL) {
-    assert(((gc*)(*ptr))->getVirtualTable());
+    assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr)));
   }
-#if RESET_STALE_REFERENCES
-  // Allow the VM to reset references if needed
-  vmkit::Thread::get()->MyVM->resetReferenceIfStale(NULL, ptr);
-#endif
   JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(closure, ptr);
 }
  
 void Collector::markAndTrace(void* source, void* ptr, word_t closure) {
   void** ptr_ = (void**)ptr;
   if ((*ptr_) != NULL) {
-    assert(((gc*)(*ptr_))->getVirtualTable());
+    assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr_)));
   }
-  if ((*(void**)ptr) != NULL) assert(((gc*)(*(void**)ptr))->getVirtualTable());
-#if RESET_STALE_REFERENCES
-  // Allow the VM to reset references if needed
-  vmkit::Thread::get()->MyVM->resetReferenceIfStale(source, ptr_);
-#endif
+  if ((*(void**)ptr) != NULL) assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*(void**)ptr)));
   JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
 }
   
-void Collector::markAndTraceRoot(void* source, void* ptr, word_t closure) {
+void Collector::markAndTraceRoot(void* ptr, word_t closure) {
   void** ptr_ = (void**)ptr;
   if ((*ptr_) != NULL) {
-    assert(((gc*)(*ptr_))->getVirtualTable());
+    assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr_)));
   }
-#if RESET_STALE_REFERENCES
-  // Allow the VM to reset references if needed
-  vmkit::Thread::get()->MyVM->resetReferenceIfStale(source, ptr_);
-#endif
   JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(closure, ptr, true);
 }
 
@@ -235,9 +224,9 @@ void Collector::initialise(int argc, char** argv) {
   JnJVM_org_j3_bindings_Bindings_boot__Lorg_vmmagic_unboxed_Extent_2Lorg_vmmagic_unboxed_Extent_2_3Ljava_lang_String_2(20 * 1024 * 1024, 100 * 1024 * 1024, arguments);
 }
 
-extern "C" void* MMTkMutatorAllocate(uint32_t size, VirtualTable* VT) {
+extern "C" void* MMTkMutatorAllocate(uint32_t size, void* type) {
   gc* val = (gc*)MutatorThread::get()->Allocator.Allocate(size);
-  val->setVirtualTable(VT);
+  vmkit::Thread::get()->MyVM->setType(val, type);
   return val;
 }
 

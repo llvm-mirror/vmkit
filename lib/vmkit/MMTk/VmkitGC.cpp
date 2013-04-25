@@ -36,7 +36,7 @@ extern "C" void* prealloc(uint32_t sz) {
 }
 
 extern "C" void postalloc(gc* obj, void* type, uint32_t size) {
-	vmkit::Thread::get()->MyVM->setType(obj->toHeader(), type);
+	vmkit::Thread::get()->MyVM->setType(obj, type);
 }
 
 extern "C" void* gcmalloc(uint32_t sz, void* type) {
@@ -53,19 +53,20 @@ extern "C" void* gcmallocUnresolved(uint32_t sz, void* type) {
 	return res;
 }
 
-extern "C" void addFinalizationCandidate(gc* obj) {
-  vmkit::Thread::get()->MyVM->addFinalizationCandidate(obj);
-}
-
+// Do not insert MagicArray ref to InternalSet of references.
 extern "C" void* AllocateMagicArray(int32_t sz, void* length) {
-	sz += gcHeader::hiddenHeaderSize();
 	gcHeader* head = 0;
   gc* res = 0;
-  head = (gcHeader*)malloc(sz);
-  memset((void*)head, 0, sz);
-  res = head->toReference();
-  res->setVirtualTable((VirtualTable*)length);
+	sz += gcHeader::hiddenHeaderSize();
+	head = (gcHeader*)malloc(sz);
+	memset((void*)head, 0, sz);
+	res = head->toReference();
+	vmkit::Thread::get()->MyVM->setType(res, length);
   return res;
+}
+
+extern "C" void addFinalizationCandidate(gc* obj) {
+  vmkit::Thread::get()->MyVM->addFinalizationCandidate(obj);
 }
 
 void* Collector::begOf(gc* obj) {

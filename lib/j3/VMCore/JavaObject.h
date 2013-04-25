@@ -237,6 +237,18 @@ private:
   
 public:
 
+  /// getVirtualTable - Returns the java virtual table of this object.
+  ///
+  JavaVirtualTable* getVirtualTable() const {
+    return ((JavaVirtualTable**)(this))[0];
+  }
+
+  /// setVirtualTable - Sets the java virtual table of this object.
+  ///
+  void setVirtualTable(JavaVirtualTable* VT) {
+    ((JavaVirtualTable**)(this))[0] = VT;
+  }
+
   /// getClass - Returns the class of this object.
   ///
   static UserCommonClass* getClass(const JavaObject* self) {

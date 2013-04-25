@@ -23,10 +23,10 @@
 using namespace j3;
 using namespace std;
 
-JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() { 
+JavaThread::JavaThread(vmkit::VirtualMachine* isolate) : MutatorThread() {
   MyVM = isolate;
   pendingException = NULL;
-  jniEnv = isolate->jniEnv;
+  jniEnv = ((Jnjvm*)isolate)->jniEnv;
   localJNIRefs = new JNILocalReferences();
   currentAddedReferences = NULL;
   javaThread = NULL;
