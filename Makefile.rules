@@ -15,6 +15,7 @@ ifeq ($(OPTIMIZED),1)
     BUILD_NAME:=$(BUILD_NAME)+Debug
   endif
 else
+	$(warning "Non-optimized mode compile but the executable is broken")
   ifeq ($(DEBUG),1)
     BUILD_NAME:=Debug
   else
@@ -33,16 +34,17 @@ ifeq ($(DEBUG),1)
 endif
 
 ifeq ($(OPTIMIZED),1)
-  LLC_FLAGS+= -O=3 -disable-cfi -disable-fp-elim 
-  COMMON_CFLAGS+= -O3 -fno-strict-aliasing -fno-omit-frame-pointer 
+  LLC_FLAGS+= -O=3
+  OPT_FLAGS+= -disable-opt
+  COMMON_CFLAGS+= -O3
 else
-  LLC_FLAGS+= -O=0 #-disable-cfi -disable-fp-elim 
-  OPT_FLAGS+=-inline # unable to find which function I have to mark as always_inline... We have to investigate...
+  LLC_FLAGS+= -O=0 
+  OPT_FLAGS+= -inline # unable to find which function I have to mark as always_inline... We have to investigate...
   COMMON_CFLAGS+= -O0
 endif
 
-LLC_FLAGS+=-relocation-model=pic 
-OPT_FLAGS+=-disable-opt # optimized by llc (previously: -disable-cfi -disable-fp-elim)
+LLC_FLAGS+=-disable-cfi -disable-fp-elim -relocation-model=pic 
+OPT_FLAGS+=-disable-cfi -disable-fp-elim 
 
 INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR) \
 					-I$(shell $(LLVM_CONFIG) --includedir)
@@ -50,10 +52,10 @@ INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vm
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
 COMMON_CFLAGS+= $(INCLUDES) -ansi -pedantic $(WARN_CFLAGS) -fPIC \
 								-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS \
-								-fno-strict-aliasing -fno-omit-frame-pointer 
+								-fno-strict-aliasing -fno-omit-frame-pointer -fvisibility-inlines-hidden 
 
 CFLAGS+=$(COMMON_CFLAGS) 
-CXXFLAGS+=$(COMMON_CFLAGS) -Woverloaded-virtual -Wcast-qual -fno-rtti -fno-exceptions -fvisibility-inlines-hidden 
+CXXFLAGS+=$(COMMON_CFLAGS) -Woverloaded-virtual -Wcast-qual -fno-rtti -fno-exceptions
 LDFLAGS+=$(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
 LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
 
