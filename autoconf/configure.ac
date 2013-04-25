@@ -55,8 +55,8 @@ if test ${srcdir} != "." ; then
   fi
 fi
 
-dnl Place all of the extra autoconf files into the config subdirectory. Tell                                                      
-dnl various tools where the m4 autoconf macros are.                                                                               
+dnl Place all of the extra autoconf files into the config subdirectory. Tell
+dnl various tools where the m4 autoconf macros are.
 AC_CONFIG_AUX_DIR([./autoconf])
 
 
@@ -166,9 +166,9 @@ case $target_cpu in
     AC_SUBST([WITH_64], [1]);;
 esac
 
-dnl **************************************************************************                                                             
-dnl optimization and debug                                                                                                                 
-dnl **************************************************************************                                                             
+dnl **************************************************************************
+dnl optimization and debug
+dnl **************************************************************************
 AC_ARG_ENABLE(optimized,
               AS_HELP_STRING([--enable-optimized],
                              [Build with all optimization flag enable (default is yes)]),,
@@ -276,7 +276,7 @@ AC_ARG_WITH(classpath-impl,
 
 case "${classpathimpl}" in
   gnuclasspath)
-    AC_MSG_NOTICE(Validing GNU Classpath installation...)
+    AC_MSG_NOTICE(Validating GNU Classpath installation...)
     AC_CHECK_FILES([${classpathlibs}]
                    [${classpathlibs}/libjavaio.$DYLIB_EXTENSION]
                    [${classpathlibs}/libjavalang.$DYLIB_EXTENSION]
