@@ -335,22 +335,29 @@ UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
   return (UserClass*)cl;
 }
 
-UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
-                                          JavaString* strName) {
+UserCommonClass* JnjvmClassLoader::internalLoadCreateClass(const UTF8* name, JavaString* strName)
+{
   JavaObject* obj = 0;
   llvm_gcroot(strName, 0);
   llvm_gcroot(obj, 0);
+
+  UserClass* forCtp = loadClass;
+  if (strName == NULL) {
+    strName = JavaString::internalToJava(name, vm);
+  }
+
+  obj = loadClassMethod->invokeJavaObjectVirtual(vm, forCtp, javaLoader, &strName);
+  return JavaObjectClass::getClass(((JavaObjectClass*)obj));
+}
+
+UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
+                                          JavaString* strName) {
+  llvm_gcroot(strName, 0);
   
   UserCommonClass* cl = lookupClass(name);
   
   if (!cl) {
-    UserClass* forCtp = loadClass;
-    if (strName == NULL) {
-      strName = JavaString::internalToJava(name, vm);
-    }
-    obj = loadClassMethod->invokeJavaObjectVirtual(vm, forCtp, javaLoader,
-                                                   &strName);
-    cl = JavaObjectClass::getClass(((JavaObjectClass*)obj));
+    cl = internalLoadCreateClass(name, strName);
   }
   
   if (cl && doResolve && cl->isClass()) {
