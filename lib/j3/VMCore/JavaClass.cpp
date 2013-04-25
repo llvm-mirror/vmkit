@@ -281,7 +281,7 @@ JavaObject* UserClassArray::doNew(sint32 n, Jnjvm* vm) {
     cl->asPrimitiveClass()->logSize : (sizeof(JavaObject*) == 8 ? 3 : 2);
   VirtualTable* VT = virtualVT;
   uint32 size = sizeof(JavaObject) + sizeof(ssize_t) + (n << logSize);
-  res = (JavaObject*)gc::operator new(size, VT);
+  res = (JavaObject*)JavaObject::operator new(size, VT);
   JavaArray::setSize(res, n);
   return res;
 }
@@ -465,7 +465,7 @@ JavaObject* UserClass::doNew(Jnjvm* vm) {
           this == classLoader->bootstrapLoader->upcalls->newClass)
          && "Uninitialized class when allocating.");
   assert(getVirtualVT() && "No VT\n");
-  res = (JavaObject*)gc::operator new(getVirtualSize(), getVirtualVT());
+  res = (JavaObject*)JavaObject::operator new(getVirtualSize(), getVirtualVT());
   return res;
 }
 

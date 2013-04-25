@@ -177,7 +177,7 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   // Set the pointer to methods that will be inlined, so that these methods
   // do not get compiled by the JIT.
   executionEngine->updateGlobalMapping(
-      JavaIntrinsics.AllocateFunction, (void*)(word_t)gcmalloc);
+      JavaIntrinsics.AllocateFunction, (void*)(word_t)VTgcmalloc);
   executionEngine->updateGlobalMapping(
       JavaIntrinsics.ArrayWriteBarrierFunction, (void*)(word_t)arrayWriteBarrier);
   executionEngine->updateGlobalMapping(

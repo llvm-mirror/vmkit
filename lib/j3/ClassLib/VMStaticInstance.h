@@ -34,7 +34,7 @@ public:
     VMStaticInstance* res = 0;
     llvm_gcroot(res, 0);
     llvm_gcroot(Class, 0);
-    res = (VMStaticInstance*)gc::operator new(sizeof(VMStaticInstance), &VT);
+    res = (VMStaticInstance*)JavaObject::operator new(sizeof(VMStaticInstance), &VT);
     res->OwningClass = Class;
     printf("VMStaticInstance operator new @%p\n", res);
     fflush(NULL);

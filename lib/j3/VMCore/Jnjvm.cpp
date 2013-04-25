@@ -1378,12 +1378,8 @@ void Jnjvm::scanFinalizationQueue(word_t closure) {
 }
 
 void Jnjvm::addFinalizationCandidate(gc* object) {
-	JavaObject* src = 0;
 	llvm_gcroot(object, 0);
-	llvm_gcroot(src, 0);
-  src = (JavaObject*)object;
-  if (src->getVirtualTable()->hasDestructor())
-  	finalizerThread->addFinalizationCandidate(src);
+	finalizerThread->addFinalizationCandidate(object);
 }
 
 void Jnjvm::setType(gc* header, void* type) {

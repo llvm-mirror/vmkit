@@ -88,7 +88,7 @@ static const char* AddressLoadAddressAtOffsetMethod;
 static const char* AddressLoadWordMethod;
 static const char* AddressLoadWordAtOffsetMethod;
 static const char* AddressStoreObjectReferenceMethod;
-//static const char* AddressStoreObjectReferenceAtOffsetMethod;
+static const char* AddressStoreObjectReferenceAtOffsetMethod;
 static const char* AddressStoreAddressMethod;
 static const char* AddressStoreAddressAtOffsetMethod;
 //static const char* AddressStoreFloatMethod;
@@ -243,6 +243,7 @@ static void initialiseFunctions(Module* M) {
     AddressZeroMethod = "JnJVM_org_vmmagic_unboxed_Address_zero__";
     AddressMaxMethod = "JnJVM_org_vmmagic_unboxed_Address_max__";
     AddressStoreObjectReferenceMethod = "JnJVM_org_vmmagic_unboxed_Address_store__Lorg_vmmagic_unboxed_ObjectReference_2";
+    AddressStoreObjectReferenceAtOffsetMethod = "JnJVM_org_vmmagic_unboxed_Address_store__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Offset_2";
     AddressLoadObjectReferenceMethod = "JnJVM_org_vmmagic_unboxed_Address_loadObjectReference__";
     AddressLoadAddressMethod = "JnJVM_org_vmmagic_unboxed_Address_loadAddress__";
     AddressLoadWordMethod = "JnJVM_org_vmmagic_unboxed_Address_loadWord__";
@@ -672,7 +673,8 @@ bool LowerMagic::runOnFunction(Function& F) {
             } else if (!strcmp(FCur->getName().data(), AddressStoreWordAtOffsetMethod) ||
                        !strcmp(FCur->getName().data(), AddressStoreAddressAtOffsetMethod) ||
                        !strcmp(FCur->getName().data(), AddressStoreByteAtOffsetMethod) ||
-                       !strcmp(FCur->getName().data(), AddressStoreShortAtOffsetMethod)) {
+                       !strcmp(FCur->getName().data(), AddressStoreShortAtOffsetMethod) ||
+                       !strcmp(FCur->getName().data(), AddressStoreObjectReferenceAtOffsetMethod)) {
               Value* Ptr = Call.getArgument(0);
               Value* Val = Call.getArgument(1);
               Value* Offset = Call.getArgument(2);

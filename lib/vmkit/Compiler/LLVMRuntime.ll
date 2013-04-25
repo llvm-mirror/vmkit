@@ -62,13 +62,16 @@ declare i64 @llvm.atomic.cmp.swap.i64.p0i64(i64*, i64, i64) nounwind
 declare void @unconditionalSafePoint() nounwind
 declare void @conditionalSafePoint() nounwind
 declare void @llvm.gcroot(i8**, i8*)
-declare i8* @gcmalloc(i32, i8*)
-declare i8* @gcmallocUnresolved(i32, i8*)
+declare i8* @vmkitgcmalloc(i32, i8*)
+declare i8* @vmkitgcmallocUnresolved(i32, i8*)
 declare void @addFinalizationCandidate(i8*)
 declare void @arrayWriteBarrier(i8*, i8**, i8*)
 declare void @fieldWriteBarrier(i8*, i8**, i8*)
 declare void @nonHeapWriteBarrier(i8**, i8*)
-
+;;;;;;;;;;;;;;; Optimized Allocators for VT based Object Layout ;;;;;;;;;;;;;;;
+declare i8* @VTgcmalloc(i32, i8*)
+declare i8* @VTgcmallocUnresolved(i32, i8*)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 declare i32 @_setjmp(i8*) nounwind

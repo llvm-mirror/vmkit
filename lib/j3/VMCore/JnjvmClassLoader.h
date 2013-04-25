@@ -498,7 +498,7 @@ public:
   static VMClassLoader* allocate() {
     VMClassLoader* res = 0;
     llvm_gcroot(res, 0);
-    res = (VMClassLoader*)gc::operator new(sizeof(VMClassLoader), &VT);
+    res = (VMClassLoader*)JavaObject::operator new(sizeof(VMClassLoader), &VT);
     return res;
   }
 

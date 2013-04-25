@@ -121,8 +121,8 @@ bool LowerJavaRT::runOnModule(Module& M) {
   F->replaceAllUsesWith(Constant::getNullValue(F->getType()));
   F->eraseFromParent();
  
-  // Replace gcmalloc with the allocator of MMTk objects in VMKit
-  F = M.getFunction("gcmalloc");
+  // Replace VTgcmalloc with the allocator of MMTk objects in VMKit
+  F = M.getFunction("vmkitgcmalloc");
   Function* Ma = M.getFunction("AllocateMagicArray");
 
   Function* NewFunction = 

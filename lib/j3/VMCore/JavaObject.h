@@ -238,6 +238,12 @@ private:
   
 public:
 
+  /// operator new - Optimized operator new for VT based objects
+  ///
+  void* operator new(size_t sz, VirtualTable *VT) {
+	    return VTgcmallocUnresolved(sz, VT);
+	  }
+
   /// getVirtualTable - Returns the java virtual table of this object.
   ///
   JavaVirtualTable* getVirtualTable() const {

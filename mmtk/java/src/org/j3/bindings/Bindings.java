@@ -25,6 +25,7 @@ import org.vmmagic.pragma.Inline;
 import org.vmmagic.unboxed.Address;
 import org.vmmagic.unboxed.Extent;
 import org.vmmagic.unboxed.ObjectReference;
+import org.vmmagic.unboxed.Offset;
 
 import org.vmutil.options.AddressOption;
 import org.vmutil.options.BooleanOption;
@@ -39,15 +40,25 @@ import org.vmutil.options.StringOption;
 
 public final class Bindings {
 	  @Inline
-	  private static Address gcmalloc(int size, ObjectReference virtualTable) {
+	  private static Address vmkitgcmalloc(int size, ObjectReference type) {
 	    Selected.Mutator mutator = Selected.Mutator.get();
 	    int allocator = mutator.checkAllocator(size, 0, 0);
 	    Address res = mutator.alloc(size, 0, 0, allocator, 0);
-	    setType(res.toObjectReference(), virtualTable);
-	    mutator.postAlloc(res.toObjectReference(), virtualTable, size, allocator);
+	    setType(res.toObjectReference(), type);
+	    mutator.postAlloc(res.toObjectReference(), type, size, allocator);
 	    return res;
 	  }
 	
+	  @Inline
+	  private static Address VTgcmalloc(int size, ObjectReference virtualTable) {
+	    Selected.Mutator mutator = Selected.Mutator.get();
+	    int allocator = mutator.checkAllocator(size, 0, 0);
+	    Address res = mutator.alloc(size, 0, 0, allocator, 0);
+	    res.store(virtualTable, Offset.zero().plus(hiddenHeaderSize()));
+	    mutator.postAlloc(res.toObjectReference(), virtualTable, size, allocator);
+	    return res;
+	  }
+
 	@Inline
 	private static Address prealloc(int size) {
 		Selected.Mutator mutator = Selected.Mutator.get();

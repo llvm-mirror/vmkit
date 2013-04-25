@@ -59,21 +59,24 @@ class VirtualTable {
   /// getVirtualTable - Returns the virtual table of this reference.
   ///
   static const VirtualTable* getVirtualTable(gc* ref) {
-  	llvm_gcroot(ref, 0);
     return ((VirtualTable**)(ref))[0];
   }
 
   /// setVirtualTable - Sets the virtual table of this reference.
   ///
   static void setVirtualTable(gc* ref, VirtualTable* VT) {
-  	llvm_gcroot(ref, 0);
     ((VirtualTable**)(ref))[0] = VT;
   }
 
 };
 
-extern "C" void* gcmallocUnresolved(uint32_t sz, void* type);
-extern "C" void* gcmalloc(uint32_t sz, void* type);
+extern "C" void* vmkitgcmallocUnresolved(uint32_t sz, void* type);
+extern "C" void* vmkitgcmalloc(uint32_t sz, void* type);
+
+/************** Only for Virtual Table based objects *************************/
+extern "C" void* VTgcmallocUnresolved(uint32_t sz, VirtualTable* VT);
+extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT);
+/*****************************************************************************/
 
 class gc : public gcRoot {
 public:
@@ -84,7 +87,7 @@ public:
   }
 
   void* operator new(size_t sz, void *type) {
-    return gcmallocUnresolved(sz, type);
+    return vmkitgcmallocUnresolved(sz, type);
   }
 };
 
