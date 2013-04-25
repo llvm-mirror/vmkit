@@ -216,17 +216,11 @@ void JavaJIT::findUnreachableCode(Reader& reader, uint32 codeLen) {
 			uint8 b2,b3,b4;
 			switch (bytecode) {
 				case GOTO:
-					b1 = reader.readU1();
-					b2 = reader.readU1();
-					step = (b1 << 8) | b2;
+					step = reader.readS2();
 					next_index = i_opcode + step;
 					break;
 				case GOTO_W:
-					next_index = reader.readU1();
-					b2 = reader.readU1();
-					b3 = reader.readU1();
-					b4 = reader.readU1();
-					step32 =  (next_index << 24) | (b2 << 16) | (b3 << 8) | b4;
+					step32 =  reader.readS4();
 					next_index = step32 + i_opcode;
 					break;
 				case MULTIANEWARRAY:
@@ -240,9 +234,7 @@ void JavaJIT::findUnreachableCode(Reader& reader, uint32 codeLen) {
 						opcodeInfos[next_index].isReachable = true;
 						queue.push(next_index);
 					}
-					b1 = reader.readU1();
-					b2 = reader.readU1();
-					step = (b1 << 8) | b2;
+					step = reader.readS2();
 					next_index = i_opcode + step;
 					break;
 				case JSR_W:
@@ -251,11 +243,7 @@ void JavaJIT::findUnreachableCode(Reader& reader, uint32 codeLen) {
 						opcodeInfos[next_index].isReachable = true;
 						queue.push(next_index);
 					}
-					next_index = reader.readU1();
-					b2 = reader.readU1();
-					b3 = reader.readU1();
-					b4 = reader.readU1();
-					step32 =  (next_index << 24) | (b2 << 16) | (b3 << 8) | b4;
+					step32 =  reader.readS4();
 					next_index = step32 + i_opcode;
 					break;
 				case WIDE:
@@ -271,37 +259,19 @@ void JavaJIT::findUnreachableCode(Reader& reader, uint32 codeLen) {
 					x = i_opcode & 0x03; // remainder of division by 4
 					reader.cursor = start + 4 - x + i_opcode;
 					// default
-					defaultIndex = reader.readU1();
-					b2 = reader.readU1();
-					b3 = reader.readU1();
-					b4 = reader.readU1();
-					step32 =  (defaultIndex << 24) | (b2 << 16) | (b3 << 8) | b4;
+					step32 =  reader.readS4();
 					defaultIndex = step32 + i_opcode;
 					if (defaultIndex < codeLen && !opcodeInfos[defaultIndex].isReachable) {
 						opcodeInfos[defaultIndex].isReachable = true;
 						queue.push(defaultIndex);
 					}
 					// low
-					lowIndex = reader.readU1();
-					b2 = reader.readU1();
-					b3 = reader.readU1();
-					b4 = reader.readU1();
-					step32 =  (lowIndex << 24) | (b2 << 16) | (b3 << 8) | b4;
-					lowIndex = step32 + i_opcode;
+					lowIndex = reader.readS4();
 					// high
-					highIndex = reader.readU1();
-					b2 = reader.readU1();
-					b3 = reader.readU1();
-					b4 = reader.readU1();
-					step32 =  (highIndex << 24) | (b2 << 16) | (b3 << 8) | b4;
-					highIndex = step32 + i_opcode;
+					highIndex = reader.readS4();
 					// all options
 					for (int i = 0 ; i < highIndex - lowIndex + 1 ; i++) {
-						next_index = reader.readU1();
-						b2 = reader.readU1();
-						b3 = reader.readU1();
-						b4 = reader.readU1();
-						step32 =  (next_index << 24) | (b2 << 16) | (b3 << 8) | b4;
+						step32 =  reader.readS4();
 						next_index = step32 + i_opcode;
 						if (next_index < codeLen && !opcodeInfos[next_index].isReachable) {
 							opcodeInfos[next_index].isReachable = true;
@@ -315,32 +285,19 @@ void JavaJIT::findUnreachableCode(Reader& reader, uint32 codeLen) {
 					x = i_opcode & 0x03; // remainder of division by 4
 					reader.cursor = start + 4 - x + i_opcode;
 					// default
-					defaultIndex = reader.readU1();
-					b2 = reader.readU1();
-					b3 = reader.readU1();
-					b4 = reader.readU1();
-					step32 =  (defaultIndex << 24) | (b2 << 16) | (b3 << 8) | b4;
+					step32 =  reader.readS4();//(defaultIndex << 24) | (b2 << 16) | (b3 << 8) | b4;
 					defaultIndex = step32 + i_opcode;
 					if (defaultIndex < codeLen && !opcodeInfos[defaultIndex].isReachable) {
 						opcodeInfos[defaultIndex].isReachable = true;
 						queue.push(defaultIndex);
 					}
 					// npairs
-					lowIndex = reader.readU1();
-					b2 = reader.readU1();
-					b3 = reader.readU1();
-					b4 = reader.readU1();
-					step32 =  (lowIndex << 24) | (b2 << 16) | (b3 << 8) | b4;
-					lowIndex = step32 + i_opcode;
+					lowIndex = reader.readS4();
 					// all options
 					for (int i = 0 ; i < lowIndex ; i++) {
 						reader.cursor += 4; // skipping match
 						// offset
-						next_index = reader.readU1();
-						b2 = reader.readU1();
-						b3 = reader.readU1();
-						b4 = reader.readU1();
-						step32 =  (next_index << 24) | (b2 << 16) | (b3 << 8) | b4;
+						step32 =  reader.readS4();
 						next_index = step32 + i_opcode;
 						if (next_index < codeLen && !opcodeInfos[next_index].isReachable) {
 							opcodeInfos[next_index].isReachable = true;
@@ -365,9 +322,6 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
   uint32 jsrIndex = 0;
   uint32 start = reader.cursor;
   // Some compilers like Scala and Kotlin produce unreachable code.
-  // However, it looks as this only occur when exception handlers are presented
-  // I assume this is true, so I only check unreachable code if the method has exception handlers
-  // nbHandlers
   if (!opcodeInfos[0].isReachable) {
 	  findUnreachableCode(reader, codeLength);
 	  reader.cursor = start;
