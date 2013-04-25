@@ -15,8 +15,8 @@
 #include "j3/LLVMInfo.h"
 
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/Module.h"
 
 #include <map>
 
@@ -51,7 +51,7 @@ protected:
   llvm::Module* TheModule;
   llvm::DIBuilder* DebugFactory;  
   J3Intrinsics JavaIntrinsics;
-  const llvm::DataLayout* TheDataLayout;
+  const llvm::TargetData* TheTargetData;
 
 private:  
   bool enabledException;

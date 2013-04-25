@@ -7,14 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/CallingConv.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/Module.h"
+#include "llvm/BasicBlock.h"
+#include "llvm/CallingConv.h"
+#include "llvm/Constants.h"
+#include "llvm/Instructions.h"
+#include "llvm/Module.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MutexGuard.h"
-#include "llvm/IR/DataLayout.h"
+#include "llvm/Target/TargetData.h"
 
 
 #include "vmkit/JIT.h"
@@ -38,7 +38,7 @@ using namespace llvm;
 Type* LLVMClassInfo::getVirtualType() {
   if (!virtualType) {
     std::vector<llvm::Type*> fields;
-    const DataLayout* targetData = Compiler->TheDataLayout;
+    const TargetData* targetData = Compiler->TheTargetData;
     const StructLayout* sl = 0;
     StructType* structType = 0;
     LLVMContext& context = Compiler->getLLVMModule()->getContext();
@@ -109,7 +109,7 @@ Type* LLVMClassInfo::getStaticType() {
   
     StructType* structType = StructType::get(context, fields, false);
     staticType = PointerType::getUnqual(structType);
-    const DataLayout* targetData = Compiler->TheDataLayout;
+    const TargetData* targetData = Compiler->TheTargetData;
     const StructLayout* sl = targetData->getStructLayout(structType);
     
     // TODO: put that elsewhere.
@@ -207,6 +207,17 @@ Function* LLVMMethodInfo::getMethod(Class* customizeFor) {
     methodFunction = result;
   }
   return result;
+}
+
+void LLVMMethodInfo::setCustomizedVersion(Class* cl, llvm::Function* F) {
+  assert(customizedVersions.size() == 0);
+  vmkit::ThreadAllocator allocator;
+  if (Compiler->emitFunctionName()) {
+    char* buf = GetMethodName(allocator, methodDef, cl);
+    F->setName(buf);
+  }
+  methodFunction = NULL;
+  customizedVersions[cl] = F;
 }
 
 FunctionType* LLVMMethodInfo::getFunctionType() {

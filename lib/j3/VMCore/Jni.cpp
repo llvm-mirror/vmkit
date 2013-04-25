@@ -459,7 +459,7 @@ jboolean IsInstanceOf(JNIEnv *env, jobject _obj, jclass clazz) {
 
   END_JNI_EXCEPTION
 
-  RETURN_FROM_JNI(0);
+  return JNI_FALSE;
 }
 
 

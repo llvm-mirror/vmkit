@@ -7,16 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llvm/IR/CallingConv.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/DebugInfo.h>
-#include <llvm/IR/DerivedTypes.h>
-#include <llvm/IR/Instructions.h>
+#include <llvm/CallingConv.h>
+#include <llvm/Constants.h>
+#include <llvm/DerivedTypes.h>
+#include <llvm/Instructions.h>
 #include <llvm/LinkAllPasses.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
+#include <llvm/LLVMContext.h>
+#include <llvm/Module.h>
 #include <llvm/PassManager.h>
-#include <llvm/IR/Type.h>
+#include <llvm/Type.h>
+#include <llvm/Analysis/DebugInfo.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/Assembly/Parser.h>
@@ -32,7 +32,7 @@
 #include <llvm/Support/PassNameParser.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
-#include <llvm/IR/DataLayout.h>
+#include <llvm/Target/TargetData.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <../lib/ExecutionEngine/JIT/JIT.h>

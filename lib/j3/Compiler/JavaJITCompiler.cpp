@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/DebugInfo.h"
+#include "llvm/Constants.h"
+#include "llvm/DerivedTypes.h"
+#include "llvm/Function.h"
+#include "llvm/Instructions.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/Module.h"
+#include "llvm/Analysis/DebugInfo.h"
 #include "llvm/CodeGen/GCStrategy.h"
 #include <llvm/CodeGen/JITCodeEmitter.h>
 #include "llvm/CodeGen/MachineFunction.h"
@@ -22,7 +22,7 @@
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/DataLayout.h"
+#include "llvm/Target/TargetData.h"
 #include <../lib/ExecutionEngine/JIT/JIT.h>
 
 #include "VmkitGC.h"
@@ -166,8 +166,8 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   executionEngine = engine.create();
 
   executionEngine->RegisterJITEventListener(&listener);
-  TheDataLayout = executionEngine->getDataLayout();
-  TheModule->setDataLayout(TheDataLayout->getStringRepresentation());
+  TheTargetData = executionEngine->getTargetData();
+  TheModule->setDataLayout(TheTargetData->getStringRepresentation());
   TheModule->setTargetTriple(vmkit::VmkitModule::getHostTriple());
   JavaIntrinsics.init(TheModule);
   initialiseAssessorInfo();  

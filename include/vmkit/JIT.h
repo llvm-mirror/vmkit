@@ -33,7 +33,7 @@ namespace llvm {
   class JIT;
   class Module;
   class PointerType;
-  class DataLayout;
+  class TargetData;
   class TargetMachine;
   class Type;
 }

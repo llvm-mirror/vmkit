@@ -7,16 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/Module.h"
+#include "llvm/Constants.h"
+#include "llvm/GlobalVariable.h"
+#include "llvm/Function.h"
+#include "llvm/Instructions.h"
+#include "llvm/Module.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/DataLayout.h"
+#include "llvm/Target/TargetData.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
 #include "vmkit/JIT.h"
@@ -45,7 +45,7 @@ bool InlineMalloc::runOnFunction(Function& F) {
   Function* ArrayWriteBarrier = F.getParent()->getFunction("arrayWriteBarrier");
   Function* NonHeapWriteBarrier = F.getParent()->getFunction("nonHeapWriteBarrier");
   bool Changed = false;
-  const DataLayout *TD = getAnalysisIfAvailable<DataLayout>();
+  const TargetData *TD = getAnalysisIfAvailable<TargetData>();
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {

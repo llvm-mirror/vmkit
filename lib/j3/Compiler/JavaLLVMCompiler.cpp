@@ -7,12 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/Module.h"
 #include "llvm/PassManager.h"
-#include "llvm/DIBuilder.h"
+#include "llvm/Analysis/DIBuilder.h"
 #include "llvm/Analysis/LoopPass.h"
-#include "llvm/IR/DataLayout.h"
+#include "llvm/Target/TargetData.h"
 
 #include "vmkit/JIT.h"
 
@@ -61,7 +61,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor)
   // We are jitting. Take the lock.
   vmkit::VmkitModule::protectIR();
   if (func->getLinkage() == GlobalValue::ExternalWeakLinkage) {
-    JavaJIT jit(this, meth, func, LMI->isCustomizable? customizeFor : NULL);
+    JavaJIT jit(this, meth, func, customizeFor);
     if (isNative(meth->access)) {
       jit.nativeCompile();
       vmkit::VmkitModule::runPasses(func, JavaNativeFunctionPasses);
@@ -75,9 +75,11 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor)
     if (!LMI->isCustomizable && jit.isCustomizable) {
       // It's the first time we parsed the method and we just found
       // out it can be customized.
-      // TODO(geoffray): return a customized version to this caller.
       meth->isCustomizable = true;
       LMI->isCustomizable = true;
+      if (customizeFor != NULL) {
+        LMI->setCustomizedVersion(customizeFor, func);
+      }
     }
   }
   vmkit::VmkitModule::unprotectIR();
@@ -106,13 +108,13 @@ llvm::FunctionPass* createLowerConstantCallsPass(JavaLLVMCompiler* I);
 
 void JavaLLVMCompiler::addJavaPasses() {
   JavaNativeFunctionPasses = new FunctionPassManager(TheModule);
-  JavaNativeFunctionPasses->add(new DataLayout(TheModule));
+  JavaNativeFunctionPasses->add(new TargetData(TheModule));
 
   J3FunctionPasses = new FunctionPassManager(TheModule);
   J3FunctionPasses->add(createLowerConstantCallsPass(this));
   
   JavaFunctionPasses = new FunctionPassManager(TheModule);
-  JavaFunctionPasses->add(new DataLayout(TheModule));
+  JavaFunctionPasses->add(new TargetData(TheModule));
   vmkit::VmkitModule::addCommandLinePasses(JavaFunctionPasses);
 }
 

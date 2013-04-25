@@ -13,8 +13,6 @@ EXTRA_DIST = ArrayCopy.inc \
              ClasspathConstructor.inc \
              ClasspathField.inc \
              ClasspathMethod.inc \
-             DefineClass.inc \
-             Reflect.inc \
              SetProperties.inc \
              Unsafe.inc
 

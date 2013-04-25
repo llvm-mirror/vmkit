@@ -7,15 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
+#include "llvm/BasicBlock.h"
+#include "llvm/Constants.h"
+#include "llvm/Instructions.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/Module.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/TargetRegistry.h"
-#include "llvm/IR/DataLayout.h"
+#include "llvm/Target/TargetData.h"
 
 #include "vmkit/UTF8.h"
 #include "vmkit/Thread.h"
@@ -1808,8 +1808,8 @@ JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
   options.NoFramePointerElim = true;
   TargetMachine* TM = TheTarget->createTargetMachine(
       vmkit::VmkitModule::getHostTriple(), "", "", options);
-  TheDataLayout = TM->getDataLayout();
-  TheModule->setDataLayout(TheDataLayout->getStringRepresentation());
+  TheTargetData = TM->getTargetData();
+  TheModule->setDataLayout(TheTargetData->getStringRepresentation());
   TheModule->setTargetTriple(TM->getTargetTriple());
   JavaIntrinsics.init(TheModule);
   initialiseAssessorInfo();  
@@ -1896,7 +1896,7 @@ void JavaAOTCompiler::printStats() {
   Module* Mod = getLLVMModule();
   for (Module::const_global_iterator i = Mod->global_begin(),
        e = Mod->global_end(); i != e; ++i) {
-    size += TheDataLayout->getTypeAllocSize(i->getType());
+    size += TheTargetData->getTypeAllocSize(i->getType());
   }
   fprintf(stdout, "%lluB\n", (unsigned long long int)size);
 }

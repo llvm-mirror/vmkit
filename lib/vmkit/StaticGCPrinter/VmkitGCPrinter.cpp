@@ -7,23 +7,23 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Type.h"
+#include "llvm/Constants.h"
+#include "llvm/DerivedTypes.h"
+#include "llvm/Type.h"
 #include "llvm/CodeGen/GCs.h"
 #include "llvm/CodeGen/GCStrategy.h"
 #include "llvm/CodeGen/AsmPrinter.h"
 #include "llvm/CodeGen/GCMetadataPrinter.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
-#include "llvm/IR/Module.h"
+#include "llvm/Module.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCSymbol.h"
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/Target/Mangler.h"
-#include "llvm/IR/DataLayout.h"
+#include "llvm/Target/TargetData.h"
 #include "llvm/Target/TargetInstrInfo.h"
 #include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Target/TargetMachine.h"
@@ -289,7 +289,7 @@ Constant* FindMetadata(const Function& F) {
 /// either condition is detected in a function which uses the GC.
 ///
 void VmkitAOTGCMetadataPrinter::finishAssembly(AsmPrinter &AP) {
-  unsigned IntPtrSize = AP.TM.getDataLayout()->getPointerSize(0);
+  unsigned IntPtrSize = AP.TM.getTargetData()->getPointerSize();
 
   AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getDataSection());
 

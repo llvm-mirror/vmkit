@@ -1,0 +1,144 @@
+
+body {
+	font-family: 'Times New Roman', serif
+}
+
+.tiny {
+	font-style: italic;
+	font-size:90%;
+}
+
+h1 {
+	background: Beige; 
+	color: brown;
+	font-family: 'Times New Roman', serif
+	font-size: 130%;
+	font-variant: small-caps;
+	font-weight: 400;
+	line-height: 120%;
+	margin: 0px 0px 0px 0px;
+}
+
+h2 {
+	background: rgb(220,220,245); 
+	color: black;
+	font-family: 'Times New Roman', serif
+	font-size: 110%;
+	font-weight: 700;
+	line-height: 100%;
+	margin: 18px 0px 0px 0px;
+}
+
+h3 {
+	background: rgb(240,240,240); 
+	font-family: 'Times New Roman', serif
+	color: black;
+	font-size: 100%;
+	font-weight: 400;
+	line-height: 100%;
+}
+
+h1.name {
+  background: white;
+	font-family: 'Georgia', 'Times New Roman', serif;
+	font-size: 185%;
+	font-weight: 700;
+	font-variant: small-caps;
+}
+
+a.name {
+	color: Maroon;
+	text-decoration: none;
+}
+
+a.name:hover {
+	color: rgb(120,120,120);
+}
+
+table.contact {
+	font-family: arial, serif;
+}
+
+pre.mdoc {
+  border-style: groove;
+  border-width: 2px;
+  border-color: black;
+	background: rgb(245,245,220); 
+	color: rgb(60,60,200); 
+	padding: 2px 3px 2px 3px;
+}
+
+.cadre {
+	background: white; 
+	font-family: 'Times New Roman', serif;
+	font-size: 100%;
+	font-weight: 400;
+	line-height: 100%;
+	text-decoration: none;
+}
+
+table.cadre {
+	border-collapse: collapse;
+}
+
+h3.cadre {
+	color: brown;
+	margin: 3px 0px 2px 0px;
+}
+
+h2.cadre {
+	background: Beige; 
+	color: black;
+	font-family: 'Times New Roman', serif
+	font-size: 110%;
+	margin: 0px 0px 0px 0px;
+}
+
+tr.cadre {
+	border-bottom: 3px solid Beige;
+}
+
+td.cadre {
+	border-left: 3px solid Beige;
+}
+
+a.cadre {
+	color: rgb(120,120,120);
+	text-decoration: none;
+}
+
+a.cadre:hover {
+	color: brown;
+	text-decoration: none;
+}
+
+a.cadre-selected {
+  color: brown;
+	text-decoration: none;
+}
+
+.ls input {
+  color: brown;
+  background-color: white;
+	font-family: 'Times New Roman', serif
+	font-size: 100%;
+	font-variant: small-caps;
+	font-weight: normal;
+	line-height: 100%;
+	margin: 0px 0px 0px 0px;
+	text-decoration: none;
+	border: none;
+	font-variant: small-caps;
+}
+
+.ls input:hover {
+	color: rgb(120,120,120);
+}
+
+.ls a {
+	color: blue;
+}
+
+.ls a:hover {
+  color: brown;
+}
