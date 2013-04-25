@@ -109,22 +109,23 @@ void Jnjvm::notifyBundleUninstalled(int64_t bundleID)
 
 #if DEBUG_VERBOSE_STALE_REF
 	cerr << "Bundle uninstalled: bundleID=" << bundleID
-		<< " classLoaders={" << bundleClassLoaders[bundleID] << "}";
+		<< " classLoaders={" << bundleClassLoaders[bundleID] << "}" << endl;
 #endif
 
 	scanStaleReferences = true;		// Enable stale references scanning
-	vmkit::Collector::collect();	// Start a garbage collection now
+//	vmkit::Collector::collect();	// Start a garbage collection now
 }
 
 void Jnjvm::notifyBundleUpdated(int64_t bundleID)
 {
 	classLoadersListType class_loaders;
 	this->getBundleClassLoaders(bundleID, class_loaders);
-	if (class_loaders.size() == 0) return;
+	if (class_loaders.size() <= 1)
+		return; // An updated bundle must have at least two attached class loaders
 
 #if DEBUG_VERBOSE_STALE_REF
 	cerr << "Bundle updated: bundleID=" << bundleID
-		<< " classLoaders={" << bundleClassLoaders[bundleID] << "}";
+		<< " classLoaders={" << bundleClassLoaders[bundleID] << "}" << endl;
 #endif
 
 	// Mark previous bundle's class loaders as a zombies.
@@ -142,7 +143,7 @@ void Jnjvm::notifyBundleUpdated(int64_t bundleID)
 	}
 
 	scanStaleReferences = true;		// Enable stale references scanning
-	vmkit::Collector::collect();	// Start a garbage collection now
+//	vmkit::Collector::collect();	// Start a garbage collection now
 }
 
 /*
@@ -221,13 +222,20 @@ void Jnjvm::addBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader)
 	classLoadersListType::const_iterator
 		b = class_loaders.begin(),
 		e = class_loaders.end();
-	if (std::find(b, e, loader) != e) return;
+	if (std::find(b, e, loader) != e)
+		return;	// Class loader already associated with the bundle, do nothing
 
 	class_loaders.push_front(loader);
 
+	// If there are more than one class loaders associated with the bundle then
+	// this must be an updated bundle, signal this
+	if (class_loaders.size() > 1)
+		notifyBundleUpdated(bundleID);
 #if DEBUG_VERBOSE_STALE_REF
-	cerr << "Bundle installed/updated: bundleID=" << bundleID
-		<< " classLoaders={" << class_loaders << "}" << endl;
+	else {
+		cerr << "Bundle installed: bundleID=" << bundleID
+			<< " classLoader={" << bundleClassLoaders[bundleID] << "}" << endl;
+	}
 #endif
 }
 
@@ -247,12 +255,15 @@ void Jnjvm::removeClassLoaderFromBundles(JnjvmClassLoader* loader)
 
 	i->second.remove(loader);
 
-#if DEBUG_VERBOSE_STALE_REF
-	cerr << "Bundle uninstalled: " << *i;
-#endif
-
-	if (i->second.size() == 0)
+	if (i->second.size() == 0) {
 		bundleClassLoaders.erase(i->first);
+
+#if DEBUG_VERBOSE_STALE_REF
+		cerr << "Bundle unloaded: " << *i;
+	} else {
+		cerr << "Bundle class loader unloaded: classLoader=" << loader << " " << *i;
+#endif
+	}
 }
 
 }
