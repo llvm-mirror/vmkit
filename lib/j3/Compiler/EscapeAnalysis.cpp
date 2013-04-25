@@ -23,10 +23,7 @@
 #include <cstddef>
 #include <map>
 
-#include "vmkit/GC.h"
-#include "vmkit/Thread.h"
-#include "vmkit/VirtualMachine.h"
-#include <stdio.h>
+#include "VmkitGC.h"
 
 using namespace llvm;
 
@@ -56,14 +53,13 @@ namespace {
 bool EscapeAnalysis::runOnFunction(Function& F) {
   bool Changed = false;
   Function* Allocator = F.getParent()->getFunction("gcmalloc");
-  Function* hasFinalizer = F.getParent()->getFunction("hasFinalizer");
-  if (!Allocator || !hasFinalizer) return Changed;
+  if (!Allocator) return Changed;
 
   LoopInfo* LI = &getAnalysis<LoopInfo>();
 
-  for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) {
+  for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI;
-
+   
     // Get the parent loop if there is one. If the allocation happens in a loop
     // we must make sure that the allocated value is not used outside of
     // the loop. If the allocation does not escape and it is only used inside
@@ -119,23 +115,23 @@ bool EscapeAnalysis::runOnFunction(Function& F) {
 
 
 static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
-  for (Value::use_iterator I = Ins->use_begin(), E = Ins->use_end();
+  for (Value::use_iterator I = Ins->use_begin(), E = Ins->use_end(); 
        I != E; ++I) {
     if (Instruction* II = dyn_cast<Instruction>(*I)) {
-      if (II->getOpcode() == Instruction::Call ||
+      if (II->getOpcode() == Instruction::Call || 
           II->getOpcode() == Instruction::Invoke) {
-
+        
         CallSite CS(II);
         if (!CS.onlyReadsMemory()) return true;
-
+        
         CallSite::arg_iterator B = CS.arg_begin(), E = CS.arg_end();
         for (CallSite::arg_iterator A = B; A != E; ++A) {
-          if (A->get() == Ins &&
+          if (A->get() == Ins && 
               !CS.paramHasAttr(A - B + 1, Attributes::NoCapture)) {
             return true;
           }
         }
-
+       
         // We must also consider the value returned by the function.
         if (II->getType() == Ins->getType()) {
           if (escapes(II, visited)) return true;
@@ -180,12 +176,12 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
 
   ConstantInt* CI = dyn_cast<ConstantInt>(Size);
   bool hasFinalizer = true;
-
+  
   if (CI) {
     if (ConstantExpr* CE = dyn_cast<ConstantExpr>(VT)) {
       if (ConstantInt* C = dyn_cast<ConstantInt>(CE->getOperand(0))) {
-        void* type = (void*)C->getZExtValue();
-        hasFinalizer = vmkit::Thread::get()->MyVM->hasFinalizer(type);
+        VirtualTable* Table = (VirtualTable*)C->getZExtValue();
+        hasFinalizer = (((void**)Table)[0] != 0);
       } else {
         GlobalVariable* GV = dyn_cast<GlobalVariable>(CE->getOperand(0));
         if (GV->hasInitializer()) {
@@ -208,7 +204,7 @@ bool EscapeAnalysis::processMalloc(Instruction* I, Value* Size, Value* VT,
     Alloc->eraseFromParent();
     return true;
   }
-
+  
   uint64_t NSize = CI->getZExtValue();
   // If the class has a finalize method, do not stack allocate the object.
   if (NSize < pageSize && !hasFinalizer) {
