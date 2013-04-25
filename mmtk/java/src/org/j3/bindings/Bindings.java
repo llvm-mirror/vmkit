@@ -176,7 +176,7 @@ public final class Bindings {
       Selected.Mutator mutator = Selected.Mutator.get();
       return mutator.objectReferenceTryCompareAndSwap(src, slot, old, value, slot.toWord(), slot.toWord(), Constants.INSTANCE_FIELD);
     } else {
-      return slot.attempt(old.toAddress().toWord(), value.toAddress().toWord());
+      return slot.attempt(old, value);
     }
   }
 
