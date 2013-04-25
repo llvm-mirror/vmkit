@@ -2,7 +2,7 @@ TEMP_LEVEL			:= ../..
 DACAPO				:= $(PWD)/$(LEVEL)/jars/dacapo-$(DACAPO_VERSION).jar
 LOG_DIR				:= $(LEVEL)/logs
 LOG_DIR_FROM_TEMP	:= $(PWD)/$(LOG_DIR)
-J3_PATH				:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/vmkit_stale_ref/Debug+Asserts/bin/j3
+J3_PATH				:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/vmkit2/Debug+Asserts/bin/j3
 TEMP_J3				:= $(PWD)/$(LEVEL)/$(DACAPO_VERSION)/j3
 IJVM_PATH			:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/ijvm/Debug+Asserts/bin/j3
 TEMP_IJVM			:= $(PWD)/$(LEVEL)/$(DACAPO_VERSION)/ijvm
@@ -23,7 +23,7 @@ all: $(VM) $(LOG_DIR) $(DECAPO_BENCHMARKS)
 $(LOG_DIR):
 	@mkdir -p $@ 2>/dev/null
 
-$(DECAPO_BENCHMARKS):
+$(DECAPO_BENCHMARKS): $(DACAPO)
 	@-$(J3_DEFINED) && echo "Dacapo benchmark version " $(DACAPO_VERSION) ": j3 ==> " $@
 	@-$(J3_DEFINED) && rm -rf $(TEMP_J3)/$@ && mkdir -p $(TEMP_J3)/$@
 	@-$(J3_DEFINED) && cd $(TEMP_J3)/$@ && $(J3_PATH) -jar $(DACAPO) $(DACAPO_ARGS) $@ >$(LOG_DIR_FROM_TEMP)/j3-$@-$(DACAPO_VERSION).log 2>&1
