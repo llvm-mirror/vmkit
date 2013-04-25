@@ -88,7 +88,7 @@ ArrayObject* JavaObjectClass::getDeclaredMethods(JavaObjectClass* Cl, bool publi
     // Ugly hack : we don't want this method to return annotationType() 
     // method for annotations. For that, we start the counter to 1 instead 
     // of 0.
-    for (uint32 i = annot?1:0 ; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
+    for (uint32 i = 0 ; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
          ++i) {
       JavaMethod* meth = &realCl->virtualMethods[i];
       bool pub = isPublic(meth->access);
@@ -103,7 +103,7 @@ ArrayObject* JavaObjectClass::getDeclaredMethods(JavaObjectClass* Cl, bool publi
     ret = (ArrayObject*)upcalls->methodArrayClass->doNew(size, vm);
 
     sint32 index = 0;
-    for (uint32 i = annot?1:0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
+    for (uint32 i = 0; i < realCl->nbVirtualMethods + realCl->nbStaticMethods;
          ++i) {
       JavaMethod* meth = &realCl->virtualMethods[i];
       bool pub = isPublic(meth->access);

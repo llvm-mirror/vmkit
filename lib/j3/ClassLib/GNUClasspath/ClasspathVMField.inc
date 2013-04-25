@@ -28,7 +28,7 @@
 
 #include "Reader.h"
 
-#if 1
+#if 0
 using namespace vmkit;
 #define dprintf(...) do { printf("ClasspathVMField: "); printf(__VA_ARGS__); } while(0)
 #else
@@ -159,10 +159,9 @@ JavaObjectVMField* VMField) {
 			else
 				AnnonClass = loader->loadName(annoType, true, true, NULL);
 				
-			if (!AnnonClass) {
-				assert(AnnonClass && "Panic, imposible conditions");
-				abort();
-			}
+			
+			assert(AnnonClass && "Panic, imposible conditions");
+			
 			dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
 			annotationClass = AnnonClass->getClassDelegatee(vm);
 			

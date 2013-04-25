@@ -179,10 +179,7 @@ JavaObjectVMMethod* VMMethod) {
 			else
 				AnnonClass = loader->loadName(annoType, true, true, NULL);
 				
-			if (!AnnonClass) {
-				assert(AnnonClass && "Panic, imposible conditions");
-				abort();
-			}
+			assert(AnnonClass && "Panic, imposible conditions");
 			dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
 			annotationClass = AnnonClass->getClassDelegatee(vm);
 			
