@@ -68,6 +68,13 @@ struct Opinfo {
 
   /// backEdge - If this block is a back edge.
   bool backEdge;
+
+
+  // isReachable - Indicate if the opcode is Reachable
+  bool isReachable;
+
+  // index of its handler, 0 if none
+  uint16 handlerPC;
 };
 
 /// JavaJIT - The compilation engine of J3. Parses the bycode and returns
@@ -251,6 +258,10 @@ private:
   /// loadConstant - Load a constant from the _ldc bytecode.
   void loadConstant(uint16 index);
 
+  /// mark every opcode as reachable or unreachable
+  void findUnreachableCode(Reader& reader, uint32 codeLen);
+
+
 //===------------------------- Runtime exceptions -------------------------===//
   
   /// JITVerifyNull - Insert a null pointer check in the LLVM code.
@@ -357,6 +368,11 @@ private:
       return new llvm::LoadInst(longStack[currentStackIndex - 1], "", false,
                                 currentBlock);
     } else {
+      llvm::Value* ttt = objectStack[currentStackIndex - 1];
+      if (((unsigned int)ttt) < 0xFFF) {
+
+    	  printf("Why in method %s.%s???\n" , UTF8Buffer(compilingClass->name).cString(), UTF8Buffer(compilingMethod->name).cString() );
+      }
       return new llvm::LoadInst(objectStack[currentStackIndex - 1], "",
                                 false, currentBlock);
     }

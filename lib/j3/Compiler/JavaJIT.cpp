@@ -1178,8 +1178,11 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 
   reader.cursor = start;
+  findUnreachableCode(reader, codeLen);
+
+  reader.cursor = start;
   compileOpcodes(reader, codeLen);
-  
+
   // This isn't a real requirement, although javac-produced bytcode does
   // seem to adhere to it.  However jython and similar (clojure, etc) don't
   // always create bytecode that matches this, and AFAICT rejecting the
@@ -2490,6 +2493,8 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     ex->endpc     = reader.readU2();
     ex->handlerpc = reader.readU2();
 
+    opcodeInfos[ex->handlerpc].isReachable = true;
+
     ex->catche = reader.readU2();
 
     if (ex->catche) {
@@ -2512,6 +2517,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     for (uint16 i = ex->startpc; i < ex->endpc; ++i) {
       if (opcodeInfos[i].exceptionBlock == endExceptionBlock) {
         opcodeInfos[i].exceptionBlock = ex->tester;
+        //opcodeInfos[i].handlerPC = ex->handlerpc;
       }
     }
 
