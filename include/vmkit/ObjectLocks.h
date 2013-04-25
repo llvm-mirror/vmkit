@@ -44,11 +44,18 @@ public:
   ///
   FatLock* waitsOn;
 
+
+  /* Java thread states **************************************************************/
+
+  static const unsigned int StateNew = 0;
   static const unsigned int StateRunning = 1;
-  static const unsigned int StateWaiting = 2;
-  static const unsigned int StateTimeWaiting = 3;
-  static const unsigned int StateInterrupted = 4;
-  static const unsigned int StateBlocked = 5;
+  static const unsigned int StateBlocked = 2;
+  static const unsigned int StateWaiting = 3;
+  static const unsigned int StateTimeWaiting = 4;
+  static const unsigned int StateTerminated = 5;
+  static const unsigned int StateParked = 6;
+  static const unsigned int StateTimeParked = 7;
+  static const unsigned int StateInterrupted = 40;
 
   /// state - The current state of this thread: Running, Waiting or Interrupted.
   uint32 state;
