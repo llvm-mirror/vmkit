@@ -37,9 +37,7 @@ ifeq ($(OPTIMIZED),1)
   COMMON_CFLAGS+= -O3 -fno-strict-aliasing -fno-omit-frame-pointer 
   OPT_MMTK_FLAGS= -std-compile-opts
 else
-  $(error "fix me: what are the good flags?")
   LLC_FLAGS+= -O0
-  OPT_FLAGS+=-inline
   COMMON_CFLAGS+= -O0
   OPT_MMTK_FLAGS= 
 endif

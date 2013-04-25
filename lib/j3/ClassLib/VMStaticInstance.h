@@ -47,7 +47,7 @@ public:
 
   /// Is the object a VMStaticInstance object?
   ///
-  static bool isVMStaticInstance(const JavaObject* obj) {
+  static bool isVMStaticInstance(const JavaObject* obj) __attribute__ ((always_inline)) {
     llvm_gcroot(obj, 0);
     return obj->getVirtualTable() == &VT;
   }

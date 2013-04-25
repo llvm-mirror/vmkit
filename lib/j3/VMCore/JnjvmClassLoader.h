@@ -510,7 +510,7 @@ public:
 
   /// Is the object a VMClassLoader object?
   ///
-  static bool isVMClassLoader(const JavaObject* obj) {
+  static bool isVMClassLoader(const JavaObject* obj) __attribute__ ((always_inline)) {
     llvm_gcroot(obj, 0);
     return obj->getVirtualTable() == &VT;
   }

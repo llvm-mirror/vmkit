@@ -29,7 +29,7 @@ private:
 
 public:
   
-  static UserCommonClass* getClass(JavaObjectClass* cl) {
+  static UserCommonClass* getClass(JavaObjectClass* cl) __attribute__ ((always_inline)) {
     llvm_gcroot(cl, 0);
     return cl->vmdata;
   }
@@ -91,7 +91,7 @@ public:
 		return &(cls->asClass()->virtualFields[self->slot]);
 	}
 
-	static UserClass* getClass(JavaObjectVMField* self) {
+	static UserClass* getClass(JavaObjectVMField* self) __attribute__ ((always_inline)) {
 		llvm_gcroot(self, 0);
 		UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
 		return cls->asClass();
@@ -117,7 +117,7 @@ public:
     return JavaObjectVMField::getInternalField(self->vmField);
   }
 
-  static UserClass* getClass(JavaObjectField* self) {
+  static UserClass* getClass(JavaObjectField* self) __attribute__ ((always_inline)) {
     llvm_gcroot(self, 0);
     return JavaObjectVMField::getClass(self->vmField);
   }
@@ -139,7 +139,7 @@ public:
 
 	static JavaMethod* getInternalMethod(JavaObjectVMMethod* self);
 
-	static UserClass* getClass(JavaObjectVMMethod* self) {
+	static UserClass* getClass(JavaObjectVMMethod* self) __attribute__ ((always_inline)) {
 		llvm_gcroot(self, 0);
 		UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
 		return cls->asClass();
@@ -162,7 +162,7 @@ public:
   
   static JavaMethod* getInternalMethod(JavaObjectMethod* self);
   
-  static UserClass* getClass(JavaObjectMethod* self) {
+  static UserClass* getClass(JavaObjectMethod* self) __attribute__ ((always_inline)) {
     llvm_gcroot(self, 0);
     return JavaObjectVMMethod::getClass(self->vmMethod);
   }
@@ -184,7 +184,7 @@ public:
 
   static JavaMethod* getInternalMethod(JavaObjectVMConstructor* self);
 
-  static UserClass* getClass(JavaObjectVMConstructor* self) {
+  static UserClass* getClass(JavaObjectVMConstructor* self) __attribute__ ((always_inline)) {
     llvm_gcroot(self, 0);
     UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
     return cls->asClass();

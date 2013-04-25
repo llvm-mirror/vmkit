@@ -263,7 +263,7 @@ public:
 
   /// getClass - Returns the class of this object.
   ///
-  static UserCommonClass* getClass(const JavaObject* self) {
+  static UserCommonClass* getClass(const JavaObject* self) __attribute__ ((always_inline)) {
     llvm_gcroot(self, 0);
     return ((JavaVirtualTable*)self->getVirtualTable())->cl;
   }

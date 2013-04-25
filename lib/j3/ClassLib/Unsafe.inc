@@ -14,7 +14,7 @@
 /// base/offset pair.  Non-trivial due to our handling of static instances,
 /// and this also handles null-checking as required.
 ///
-static inline uint8 *fieldPtr(JavaObject *base, int64_t offset,
+inline uint8 *fieldPtr(JavaObject *base, int64_t offset,
   bool throwOnNull = true) {
 
   // For most uses, a 'null' base should throw an exception.
