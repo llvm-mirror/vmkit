@@ -19,6 +19,8 @@ CONFIG_HEADERS=@ac_config_headers@
 ###############################################################################
 MMTK_PLAN = @MMTK_PLAN@
 
+LLVM_RTTI = @LLVM_RTTI@
+
 CLASSPATH_IMPL = @classpathimpl@
 
 ifeq ($(CLASSPATH_IMPL),gnuclasspath)

@@ -640,6 +640,7 @@ CC
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
+LLVM_RTTI
 LLVM_CONFIG
 ZIP
 JAVAC
@@ -3590,6 +3591,9 @@ fi
 if test -z ${LLVM_CONFIG}; then
     as_fn_error $? "Unable to find llvm-config, please specify its path" "$LINENO" 5
 fi
+
+LLVM_RTTI=$(if $LLVM_CONFIG --cxxflags|grep "\-fno-rtti" > /dev/null 2>&1;then echo -fno-rtti;fi)
+
 
 
 

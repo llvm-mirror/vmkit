@@ -56,8 +56,8 @@ COMMON_CFLAGS+= $(INCLUDES) -ansi -pedantic $(WARN_CFLAGS) -fPIC \
 								-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS \
 								-fno-strict-aliasing -fno-omit-frame-pointer -fvisibility-inlines-hidden 
 
-CFLAGS+=$(COMMON_CFLAGS) 
-CXXFLAGS+=$(COMMON_CFLAGS) -Woverloaded-virtual -Wcast-qual -fno-rtti -fno-exceptions
+CFLAGS+=$(COMMON_CFLAGS)
+CXXFLAGS+=$(COMMON_CFLAGS) -Woverloaded-virtual -Wcast-qual -fno-exceptions $(LLVM_RTTI)
 LDFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
 SHOPT+=$(COMMON_CFLAGS)
 LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz

@@ -347,7 +347,10 @@ if test -z ${LLVM_CONFIG}; then
     AC_MSG_ERROR([Unable to find llvm-config, please specify its path])
 fi
 
+LLVM_RTTI=$(if $LLVM_CONFIG --cxxflags|grep "\-fno-rtti" > /dev/null 2>&1;then echo -fno-rtti;fi)
+
 AC_SUBST([LLVM_CONFIG])
+AC_SUBST([LLVM_RTTI])
 
 dnl Find the install program
 AC_PROG_INSTALL
