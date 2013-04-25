@@ -10,7 +10,7 @@
 #ifndef VMKIT_VIRTUALMACHINE_H
 #define VMKIT_VIRTUALMACHINE_H
 
-#define RESET_STALE_REFERENCES	1
+#include "vmkit/config.h"
 
 #include "llvm/ADT/DenseMap.h"
 
