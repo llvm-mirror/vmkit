@@ -103,8 +103,8 @@ public:
   llvm::Function* GetFinalFloatFieldFunction;
   llvm::Function* GetFinalDoubleFieldFunction;
   
+  llvm::Constant* JavaArraySizeOffsetConstant;
   llvm::Constant* JavaArrayElementsOffsetConstant;
-  llvm::Constant* HeaderArraySizeOffsetConstant;
   llvm::Constant* HeaderObjectLockOffsetConstant;
   llvm::Constant* JavaObjectVTOffsetConstant;
 

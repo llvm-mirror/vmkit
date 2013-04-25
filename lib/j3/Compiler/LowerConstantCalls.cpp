@@ -133,7 +133,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* val = Call.getArgument(0); // get the array
           Value* array = new BitCastInst(val, intrinsics->JavaArrayType,
                                          "", CI);
-          Value* args[2] = { intrinsics->constantZero, 
+          Value* args[2] = { intrinsics->constantZero,
                              intrinsics->JavaArraySizeOffsetConstant };
           Value* ptr = GetElementPtrInst::Create(array, args, "", CI);
           Value* load = new LoadInst(ptr, "", CI);

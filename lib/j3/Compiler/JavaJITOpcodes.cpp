@@ -2164,12 +2164,16 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         TheVT = new BitCastInst(TheVT, intrinsics->ptrType, "", currentBlock);
         Instruction* res = invoke(intrinsics->AllocateFunction, size, TheVT, "",
                                   currentBlock);
+        Value* cast = new BitCastInst(res, intrinsics->JavaArrayType, "",
+                                      currentBlock);
 
-
-        Value* header = objectToHeader(res);
         // Set the size
+        Value* gep4[2] = { intrinsics->constantZero,
+                           intrinsics->JavaArraySizeOffsetConstant };
+        Value* GEP = GetElementPtrInst::Create(cast, gep4, "", currentBlock);
+
         arg1 = new IntToPtrInst(arg1, intrinsics->ptrType, "", currentBlock);
-        new StoreInst(arg1, header, currentBlock);
+        new StoreInst(arg1, GEP, currentBlock);
        
         addHighLevelType(res, dcl ? dcl : upcalls->ArrayOfObject);
         res = new BitCastInst(res, intrinsics->JavaObjectType, "", currentBlock);
