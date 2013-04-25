@@ -535,14 +535,6 @@ void start(JavaThread* thread) {
   javaThread = thread->javaThread;
   assert(javaThread && "Didn't fix the javaThread of a j3 thread");
 
-  // If the thread is not a daemon, it is added to the list of threads to
-  // wait until exit.
-  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
-
-  if (!isDaemon) {
-    vm->threadSystem.enter();
-  }
-
   assert(javaThread->getVirtualTable());
 
   // Get the class for this Thread
@@ -592,6 +584,7 @@ void start(JavaThread* thread) {
   JavaObject::release(javaThread);
 
   // Remove the thread from the list.
+  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
   if (!isDaemon) {
     vm->threadSystem.leave();
   }
@@ -625,6 +618,14 @@ JVM_StartThread(JNIEnv *env, jobject _thread) {
 
   // Set the eetop field
   vm->upcalls->eetop->setInstanceLongField(thread, (long)newTh);
+
+  // If the thread is not a daemon, it is added to the list of threads to
+  // wait until exit.
+  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
+
+  if (!isDaemon) {
+    vm->threadSystem.enter();
+  }
 
   newTh->start((void (*)(vmkit::Thread*))start);
 
