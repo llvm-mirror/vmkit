@@ -268,6 +268,8 @@ void BaseIntrinsics::init(llvm::Module* module) {
   pointerSizeType = module->getPointerSize() == Module::Pointer32 ?
     Type::getInt32Ty(Context) : Type::getInt64Ty(Context);
 
+  UTF8SizeType = Type::getInt32Ty(Context);
+
   // Constant declaration
   constantLongMinusOne = ConstantInt::get(Type::getInt64Ty(Context), (uint64_t)-1);
   constantLongZero = ConstantInt::get(Type::getInt64Ty(Context), 0);

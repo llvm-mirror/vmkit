@@ -1477,7 +1477,7 @@ Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val)
 Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
   std::vector<Type*> Elemts;
   ArrayType* ATy = ArrayType::get(Type::getInt16Ty(getLLVMContext()), val->size);
-  Elemts.push_back(JavaIntrinsics.pointerSizeType);
+  Elemts.push_back(JavaIntrinsics.UTF8SizeType);
 
   Elemts.push_back(ATy);
 
@@ -1485,7 +1485,7 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8(const UTF8* val) {
                                           Elemts);
 
   std::vector<Constant*> Cts;
-  Cts.push_back(ConstantInt::get(JavaIntrinsics.pointerSizeType, val->size));
+  Cts.push_back(ConstantInt::get(JavaIntrinsics.UTF8SizeType, val->size));
 
   ArrayRef<uint16_t> Vals(val->elements, val->size);
   Cts.push_back(ConstantDataArray::get(getLLVMContext(), Vals));

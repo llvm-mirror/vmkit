@@ -508,10 +508,10 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
       // don't throw if no field, the exception will be thrown just in time  
       if (field) {
         if (!stat) {
-          ctpRes[index] = (void*)field->ptrOffset;
+          ctpRes[index] = (void*)(uintptr_t)field->ptrOffset;
         } else if (lookup->isReady()) {
           void* S = field->classDef->getStaticInstance();
-          ctpRes[index] = (void*)((uint64)S + field->ptrOffset);
+          ctpRes[index] = (void*)(uintptr_t)((uint64)S + field->ptrOffset);
         }
       }
       return field;

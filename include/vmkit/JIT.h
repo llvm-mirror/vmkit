@@ -166,6 +166,7 @@ public:
   llvm::PointerType* ptrPtrType;
   llvm::Type* arrayPtrType;
   llvm::Type* pointerSizeType;
+  llvm::Type* UTF8SizeType;
 };
 
 
