@@ -24,8 +24,7 @@ endif
 
 HelloWorld.class: HelloWorld.java
 	$(Echo) "Compiling trainer"
-#	$(Verb) javac -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) $< -d .
-	$(Verb) javac $< -d .
+	$(Verb) javac -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) $< -d .
 
 generated.bc: $(PRECOMPILER) HelloWorld.class
 	$(Echo) "Pre-compiling bootstrap code"
