@@ -41,6 +41,7 @@ namespace vmkit {
 
 bool InlineMalloc::runOnFunction(Function& F) {
   Function* VTMalloc = F.getParent()->getFunction("VTgcmalloc");
+  Function* vmkitMalloc = F.getParent()->getFunction("vmkitgcmalloc");
   Function* FieldWriteBarrier = F.getParent()->getFunction("fieldWriteBarrier");
   Function* ArrayWriteBarrier = F.getParent()->getFunction("arrayWriteBarrier");
   Function* NonHeapWriteBarrier = F.getParent()->getFunction("nonHeapWriteBarrier");
@@ -57,7 +58,8 @@ bool InlineMalloc::runOnFunction(Function& F) {
       }
       CallSite Call(I);
       Function* Temp = Call.getCalledFunction();
-      if (Temp == VTMalloc) {
+      if (Temp == VTMalloc ||
+      		Temp == vmkitMalloc) {
         if (dyn_cast<Constant>(Call.getArgument(0))) {
           InlineFunctionInfo IFI(NULL, DL);
           Changed |= InlineFunction(Call, IFI);

@@ -179,6 +179,8 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   executionEngine->updateGlobalMapping(
       JavaIntrinsics.AllocateFunction, (void*)(word_t)VTgcmalloc);
   executionEngine->updateGlobalMapping(
+      JavaIntrinsics.AllocateFunction, (void*)(word_t)vmkitgcmalloc);
+  executionEngine->updateGlobalMapping(
       JavaIntrinsics.ArrayWriteBarrierFunction, (void*)(word_t)arrayWriteBarrier);
   executionEngine->updateGlobalMapping(
       JavaIntrinsics.FieldWriteBarrierFunction, (void*)(word_t)fieldWriteBarrier);

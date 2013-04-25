@@ -85,8 +85,8 @@ public:
 }
 
 class VirtualTable;
-extern "C" void* VTgcmallocUnresolved(uint32_t sz, VirtualTable* VT);
-extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT);
+extern "C" void* VTgcmallocUnresolved(uint32_t sz, void* VT);
+extern "C" void* VTgcmalloc(uint32_t sz, void* VT);
 extern "C" void EmptyDestructor();
 
 /*
@@ -147,14 +147,12 @@ class VirtualTable {
   /// getVirtualTable - Returns the virtual table of this reference.
   ///
   static const VirtualTable* getVirtualTable(gc* ref) {
-    llvm_gcroot(ref, 0);
     return ((VirtualTable**)(ref))[0];
   }
 
   /// setVirtualTable - Sets the virtual table of this reference.
   ///
   static void setVirtualTable(gc* ref, VirtualTable* VT) {
-    llvm_gcroot(ref, 0);
     ((VirtualTable**)(ref))[0] = VT;
   }
 

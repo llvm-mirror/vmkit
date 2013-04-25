@@ -119,7 +119,7 @@ extern "C" void* vmkitgcmallocUnresolved(uint32_t sz, void* type) {
  * Optimized gcmalloc for VT based object layout.                             *
  *****************************************************************************/
 
-extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT) {
+extern "C" void* VTgcmalloc(uint32_t sz, void* VT) {
 	gc* res = 0;
 	llvm_gcroot(res, 0);
 	sz += gcHeader::hiddenHeaderSize();
@@ -128,11 +128,11 @@ extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT) {
 	return res;
 }
 
-extern "C" void* VTgcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
+extern "C" void* VTgcmallocUnresolved(uint32_t sz, void* VT) {
   gc* res = 0;
   llvm_gcroot(res, 0);
   res = (gc*)VTgcmalloc(sz, VT);
-  if (VT->hasDestructor()) addFinalizationCandidate(res);
+  if (((VirtualTable*)VT)->hasDestructor()) addFinalizationCandidate(res);
   return res;
 }
 
@@ -294,8 +294,12 @@ void Collector::initialise(int argc, char** argv) {
 
 extern "C" void* MMTkMutatorAllocate(uint32_t size, void* type) {
   gc* val = NULL;
+  gcHeader* head = NULL;
   llvm_gcroot(val, 0);
-  val = (gc*)MutatorThread::get()->Allocator.Allocate(size);
+  size += gcHeader::hiddenHeaderSize();
+  size = llvm::RoundUpToAlignment(size, sizeof(void*));
+  head = (gcHeader*)MutatorThread::get()->Allocator.Allocate(size);
+  val = head->toReference();
   vmkit::Thread::get()->MyVM->setType(val, type);
   return val;
 }

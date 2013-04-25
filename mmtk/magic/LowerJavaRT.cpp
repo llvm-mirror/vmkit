@@ -122,7 +122,7 @@ bool LowerJavaRT::runOnModule(Module& M) {
   F->eraseFromParent();
  
   // Replace VTgcmalloc with the allocator of MMTk objects in VMKit
-  F = M.getFunction("vmkitgcmalloc");
+  F = M.getFunction("VTgcmalloc");
   Function* Ma = M.getFunction("AllocateMagicArray");
 
   Function* NewFunction = 
@@ -134,6 +134,13 @@ bool LowerJavaRT::runOnModule(Module& M) {
   
   Ma->replaceAllUsesWith(NewFunction);
   Ma->eraseFromParent();
+
+//  // Replace vmkitgcmalloc with the allocator of MMTk objects in VMKit
+//  F = M.getFunction("vmkitgcmalloc");
+//
+//  F->replaceAllUsesWith(NewFunction);
+//  F->eraseFromParent();
+
 
   // Finally, remove GC info from the methods. They must not have any
   // gcroot.
