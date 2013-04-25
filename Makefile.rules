@@ -32,30 +32,31 @@ endif
 ifeq ($(OPTIMIZED),1)
   OPT_MSG="Optimizing"
   OPT_ID=-opt
-#  LLC_FLAGS+=
-#  OPT_FLAGS+=
-#  COMMON_CFLAGS+=
+  LLC_FLAGS+= -O=3 -disable-cfi -disable-fp-elim 
+  OPT_FLAGS+= -disable-cfi -disable-fp-elim #-std-compile-opts #-O3 # #-std-link-opts
+  COMMON_CFLAGS+= -O3 -fno-strict-aliasing -fno-omit-frame-pointer 
 else
   OPT_MSG="Performing GC pass on"
   OPT_ID=-gc
-#  LLC_FLAGS+=-O0
-#  OPT_FLAGS+=-inline -disable-opt
-#  COMMON_CFLAGS+=-O0
+  LLC_FLAGS+= -O0
+  OPT_FLAGS+= -disable-opt
+  COMMON_CFLAGS+= -O0
 endif
 
-LLC_FLAGS+=-relocation-model=pic -disable-cfi -disable-fp-elim
+LLC_FLAGS+=-relocation-model=pic 
+OPT_FLAGS+=
 
-OPT_MMTK_FLAGS=-std-compile-opts -strip-debug
+OPT_MMTK_FLAGS= -std-compile-opts -strip-debug
 
 INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR) \
 					-I$(shell $(LLVM_CONFIG) --includedir)
 
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
-COMMON_CFLAGS+= -O3 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer -ansi -pedantic $(WARN_CFLAGS) -fPIC \
+COMMON_CFLAGS+= $(INCLUDES) -ansi -pedantic $(WARN_CFLAGS) -fPIC \
 								-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 
 CFLAGS+=$(COMMON_CFLAGS) 
-CXXFLAGS+=$(COMMON_CFLAGS) -fno-exceptions -fno-rtti -Woverloaded-virtual -Wcast-qual -fvisibility-inlines-hidden 
+CXXFLAGS+=$(COMMON_CFLAGS) -Woverloaded-virtual -Wcast-qual -fno-rtti -fno-exceptions -fvisibility-inlines-hidden 
 LDFLAGS+=$(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
 LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
 
