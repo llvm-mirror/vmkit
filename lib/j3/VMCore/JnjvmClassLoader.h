@@ -116,9 +116,13 @@ protected:
   ///
   SignMap* javaSignatures;
 
-  /// lock - Lock when adding packages and Strings.
+  /// lock - Lock to add packages.
   ///
-  vmkit::LockRecursive lock;
+  vmkit::LockNormal lock;
+
+  /// Lock to add Strings
+  ///
+  vmkit::SpinLock lockForStrings;
 
   /// lock2 - Lock when loading classes.
   ///
@@ -567,7 +571,7 @@ public:
     length = 0;
   }
 
-  JavaString** addString(JnjvmClassLoader* JCL, JavaString* obj);
+  JavaString** addString(JnjvmClassLoader* JCL, JavaString* obj, bool hasTheLock = false);
 };
 
 } // end namespace j3

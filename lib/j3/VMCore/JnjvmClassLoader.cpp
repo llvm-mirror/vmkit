@@ -1079,21 +1079,24 @@ word_t JnjvmClassLoader::nativeLookup(JavaMethod* meth, bool& j3,
 }
 
 
-JavaString** StringList::addString(JnjvmClassLoader* JCL, JavaString* obj) {
+JavaString** StringList::addString(JnjvmClassLoader* JCL, JavaString* obj, bool hasTheLock) {
   llvm_gcroot(obj, 0);
-  JCL->lock.lock();
+  if (!hasTheLock)
+	  JCL->lockForStrings.lock();
   if (length == MAXIMUM_STRINGS) {
     StringList* next = new(JCL->allocator, "StringList") StringList();
     next->prev = this;
     JCL->strings = next;
-    JavaString** res = next->addString(JCL, obj);
-    JCL->lock.unlock();
+    JavaString** res = next->addString(JCL, obj, true);
+    if (!hasTheLock)
+    	JCL->lockForStrings.unlock();
     return res;
   } else {
     vmkit::Collector::objectReferenceNonHeapWriteBarrier(
         (gc**)&(strings[length]), (gc*)obj);
     JavaString** res = &strings[length++];
-    JCL->lock.unlock();
+    if (!hasTheLock)
+    	JCL->lockForStrings.unlock();
     return res;
   }
 }
