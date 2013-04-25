@@ -436,7 +436,7 @@ bool LockingThread::wait(
     return true;
   }
   
-  this->state = (timed && (info->tv_sec > 0 || info->tv_usec>0))? LockingThread::StateTimeWaiting : LockingThread::StateWaiting;
+  this->state = LockingThread::StateWaiting;
 
   if (l->firstThread) {
     assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
@@ -500,7 +500,7 @@ bool LockingThread::wait(
       this->nextWaiting = NULL;
       this->prevWaiting = NULL;
     } else {
-      assert(!this->prevWaiting && "Inconstitent state");
+      assert(!this->prevWaiting && "Inconsistent state");
       // Notify lost, notify someone else.
       notify(self, table);
     }

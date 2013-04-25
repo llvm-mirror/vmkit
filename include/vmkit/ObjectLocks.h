@@ -44,11 +44,11 @@ public:
   ///
   FatLock* waitsOn;
 
-  static const unsigned int StateRunning = 0;
-  static const unsigned int StateWaiting = 1;
-  static const unsigned int StateTimeWaiting = 2;
-  static const unsigned int StateInterrupted = 3;
-  static const unsigned int StateBlocked = 4;
+  static const unsigned int StateRunning = 1;
+  static const unsigned int StateWaiting = 2;
+  static const unsigned int StateTimeWaiting = 3;
+  static const unsigned int StateInterrupted = 4;
+  static const unsigned int StateBlocked = 5;
 
   /// state - The current state of this thread: Running, Waiting or Interrupted.
   uint32 state;

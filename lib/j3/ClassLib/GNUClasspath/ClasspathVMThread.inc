@@ -240,7 +240,7 @@ JavaObject* vmthread) {
     return obj;
   }
   else {
-  	switch (th->lockingThread.state) {
+  	switch (th->status) {
   		case vmkit::LockingThread::StateWaiting:
   			obj = vm->asciizToStr("WAITING");
   			return obj;
@@ -250,12 +250,10 @@ JavaObject* vmthread) {
   		case vmkit::LockingThread::StateBlocked:
   			obj = vm->asciizToStr("BLOCKED");
   			return obj;
-  		default:
+  		default: // both RUNNABLE and INTERRUPTED
   			obj = vm->asciizToStr("RUNNABLE");
   			return obj;
   	}
-  	obj = vm->asciizToStr("TERMINATED");
-  	return obj;
   }
   
   END_NATIVE_EXCEPTION

@@ -94,6 +94,8 @@ public:
   ///
   JNILocalReferences* localJNIRefs;
 
+  int status;
+
 
   JavaObject** pushJNIRef(JavaObject* obj) {
     llvm_gcroot(obj, 0);
@@ -111,6 +113,7 @@ public:
   /// JavaThread - Empty constructor, used to get the VT.
   ///
   JavaThread() {
+	  status = vmkit::LockingThread::StateRunning;
   }
 
   /// ~JavaThread - Delete any potential malloc'ed objects used by this thread.
