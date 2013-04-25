@@ -355,7 +355,7 @@ JavaMethod* Class::lookupMethodDontThrow(const UTF8* name, const UTF8* type,
     methods = getVirtualMethods();
     nb = nbVirtualMethods;
   }
-  
+
   for (uint32 i = 0; i < nb; ++i) {
     JavaMethod& res = methods[i];
     if (res.name->equals(name) && res.type->equals(type)) {
@@ -835,7 +835,8 @@ static void computeMirandaMethods(Class* current,
 }
 
 void Class::readMethods(Reader& reader) {
-  uint16 nbMethods = reader.readU2();
+
+  uint32 nbMethods = reader.readU2();
   vmkit::ThreadAllocator allocator;
   if (isAbstract(access)) {
     virtualMethods = (JavaMethod*)
@@ -845,9 +846,10 @@ void Class::readMethods(Reader& reader) {
       new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
   }
   staticMethods = virtualMethods + nbMethods;
-  for (int i = 0; i < nbMethods; i++) {
+  for (uint32 i = 0; i < nbMethods; i++) {
     uint16 access = reader.readU2();
     const UTF8* name = ctpInfo->UTF8At(reader.readU2());
+
     const UTF8* type = ctpInfo->UTF8At(reader.readU2());
     JavaMethod* meth = 0;
     if (isStatic(access)) {
@@ -870,8 +872,13 @@ void Class::readMethods(Reader& reader) {
     nbMethods += size;
     JavaMethod* realMethods =
       new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
+
+    if (nbMethods < size) {
+        	printf("Error in class %s\n", UTF8Buffer(name).cString());
+    }
     memcpy(realMethods + size, virtualMethods,
            sizeof(JavaMethod) * (nbMethods - size));
+
     nbVirtualMethods += size;
     staticMethods = realMethods + nbVirtualMethods;
     if (size != 0) {
