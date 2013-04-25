@@ -438,19 +438,69 @@ JavaObject* Cl) {
 	fprintf(stderr, "Java_java_lang_VMClass_getDeclaredAnnotations not implemented\n");
   abort();
 
-  ArrayObject* res = 0;
+  JavaObject* res = 0;
+  JavaObject* annon = 0;
+  JavaObject* newHashMap = 0;
+  JavaObject* annotationClass = 0;
   llvm_gcroot(res, 0);
+  llvm_gcroot(annon, 0);
+  llvm_gcroot(newHashMap, 0);
   llvm_gcroot(Cl, 0);
+  llvm_gcroot(annotationClass, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClassArray* array = vm->upcalls->constructorArrayAnnotation;
-  res = (ArrayObject*)array->doNew(0, vm);
+  Classpath* upcalls = vm->upcalls;
+
+  /* Retrieving VMField.class attributes list */
+  UserClass* compilingClass = JavaObject::getClass(Cl)->asClass();
+  //JavaField* field = JavaObjectVMField::getInternalField(VMField);
+  JavaAttribute* annotationsAtt =
+    compilingClass->lookupAttribute(JavaAttribute::annotationsAttribute);
+  //dprintf("JavaClass : %s\n", UTF8Buffer(field->name).cString());
+  
+  //UserCommonClass* cl = JavaObject::getClass(VMField);
+	JnjvmClassLoader* loader = compilingClass->classLoader;
+
+  if (annotationsAtt) {
+    Reader reader(annotationsAtt, compilingClass->bytes);
+    AnnotationReader AR(reader, compilingClass);
+    uint16 numAnnotations = reader.readU2();
+    
+    UserClassArray* array = upcalls->annotationArrayClass;
+    res = array->doNew(numAnnotations, vm);
+		/*dprintf("JavaField : %s % with %d fields \n", UTF8Buffer(field->name).cString(), numAnnotations);
+    for (uint16 i = 0; i < numAnnotations; ++i) {
+			uint16 typeIndex = reader.readU2();
+			const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
+			newHashMap = AR.createAnnotationMapValues();
+			
+			annoType = annoType->extract(loader->hashUTF8, 1,annoType->size-1);
+			dprintf("Annotation type : %s\n", UTF8Buffer(annoType).cString());
+			UserClass* AnnonClass = 0;
+			UserCommonClass* commClass = loader->lookupClass(annoType);
+			
+			if (commClass) 
+				AnnonClass = commClass -> asClass();
+			else
+				AnnonClass = loader->loadName(annoType, true, true, NULL);
+				
+			if (!AnnonClass) {
+				assert(AnnonClass && "Panic, imposible conditions");
+				abort();
+			}
+			dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
+			annotationClass = AnnonClass->getClassDelegatee(vm);
+			
+			annon = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
+			ArrayObject::setElement((ArrayObject *)res, annon, i);
+		} // end for
+		*/
+  }
 
   END_NATIVE_EXCEPTION
-
-  return res;
+  return (ArrayObject*)res;
 }
 
 JNIEXPORT jboolean Java_java_lang_VMClass_isAnonymousClass(
