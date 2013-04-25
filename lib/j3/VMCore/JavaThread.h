@@ -36,10 +36,12 @@ class Jnjvm;
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
   word_t SP = th->getLastSP(); \
+  bool _inUncooperative = th->isInUncooperativeCode(); \
+  if (_inUncooperative)	{\
   th->leaveUncooperativeCode(); \
   vmkit::KnownFrame Frame; \
   th->startKnownFrame(Frame); \
-  /*Frame.currentFP = vmkit::System::GetCallerAddress(); */\
+  Frame.currentFP = vmkit::System::GetCallerAddress(); }\
   TRY {
 
 #define END_JNI_EXCEPTION \
@@ -48,13 +50,15 @@ class Jnjvm;
   } END_CATCH;
 
 #define RETURN_FROM_JNI(a) {\
+  if (_inUncooperative)	{\
   th->endKnownFrame(); \
-  th->enterUncooperativeCode(SP); \
+  th->enterUncooperativeCode(SP); }\
   return (a); } \
 
 #define RETURN_VOID_FROM_JNI {\
+  if (_inUncooperative)	{\
   th->endKnownFrame(); \
-  th->enterUncooperativeCode(SP); \
+  th->enterUncooperativeCode(SP); }\
   return; } \
 
 /// This is used to implement park/unpark behavior.

@@ -149,7 +149,7 @@ public:
     return pagesize;
   }
 
-  static word_t GetCallerAddress() {
+  static word_t GetCallerAddress() __attribute((always_inline)) {
 #if defined(ARCH_X86) || defined(ARCH_X64)
     return (word_t)__builtin_frame_address(0);
 #else

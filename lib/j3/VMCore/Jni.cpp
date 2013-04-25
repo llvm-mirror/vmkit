@@ -51,6 +51,18 @@ jint GetVersion(JNIEnv *env) {
   return JNI_VERSION_1_4;
 }
 
+jobject NewLocalRef(JNIEnv *env, jobject ref) {
+	JavaObject* Obj = 0;
+	llvm_gcroot(Obj, 0);
+	if (ref) {
+		JavaThread* th = JavaThread::get();
+		Obj = *(JavaObject**)ref;
+		JavaObject** res = th->localJNIRefs->addJNIReference(th, Obj);
+		return ((jweak)(jobject)res);
+	}
+	return NULL;
+}
+
 
 jclass DefineClass(JNIEnv *env, const char *name, jobject _loader,
 				   const jbyte *buf, jsize len) {
@@ -281,10 +293,6 @@ jint PushLocalFrame(JNIEnv* env, jint capacity) {
 }
 
 jobject PopLocalFrame(JNIEnv* env, jobject result) {
-	if(result){
-	  NYI();
-	  abort();
-	}
   JavaThread* th = JavaThread::get();
   th->endJNI();
   std::pair<uint32_t*, int> frame = th->JNIlocalFrames.back();
@@ -294,7 +302,7 @@ jobject PopLocalFrame(JNIEnv* env, jobject result) {
   assert(toRemove >= 0 && "Local frame has negative number of references to remove");
   th->JNIlocalFrames.pop_back();
   th->localJNIRefs->removeJNIReferences(th,toRemove);
-  return result;
+  return NewLocalRef(env, result);
 }
 
 
@@ -317,13 +325,6 @@ jboolean IsSameObject(JNIEnv *env, jobject ref1, jobject ref2) {
   
   END_JNI_EXCEPTION
   RETURN_FROM_JNI(false);
-}
-
-
-jobject NewLocalRef(JNIEnv *env, jobject ref) {
-  NYI();
-  abort();
-  return 0;
 }
 
 
@@ -4172,7 +4173,9 @@ void ReleaseStringCritical(JNIEnv *env, jstring string, const jchar *cstring) {
   abort();
 }
 
-
+/// FIXME : I copied the code of strong references. We need to implement real
+/// 		weak references.
+///
 jweak NewWeakGlobalRef(JNIEnv* env, jobject obj) {
 	JavaObject* Obj = NULL;
 	  llvm_gcroot(Obj, 0);

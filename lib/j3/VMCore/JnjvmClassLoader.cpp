@@ -824,7 +824,8 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
   
-  if (loader == NULL) return vm->bootstrapLoader;
+  if (loader == NULL)
+	  return vm->bootstrapLoader;
  
   JnjvmClassLoader* JCL = 0;
   Classpath* upcalls = vm->bootstrapLoader->upcalls;
@@ -834,7 +835,7 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
   // If the vmdata field isn't set yet, or it's set to something other than
   // a VMClassLoader (which happens in the OpenJDK port), then initialize
   // the field now.
-  if (vmdata == NULL || !VMClassLoader::isVMClassLoader(vmdata)) {
+  if (vmdata == NULL) {
     JavaObject::acquire(loader);
     vmdata = 
       (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
@@ -846,11 +847,23 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
       upcalls->vmdataClassLoader->setInstanceObjectField(loader, (JavaObject*)vmdata);
     }
     JavaObject::release(loader);
+  }
+  else if (!VMClassLoader::isVMClassLoader(vmdata)) {
+	JavaObject::acquire(loader);
+	vmdata = VMClassLoader::allocate();
+	vmkit::BumpPtrAllocator* A = new vmkit::BumpPtrAllocator();
+	JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
+												   loader, vmdata, vm);
+	upcalls->vmdataClassLoader->setInstanceObjectField(loader, (JavaObject*)vmdata);
+	JavaObject::release(loader);
   } else {
     JCL = vmdata->getClassLoader();
     assert(JCL->javaLoader == loader);
   }
-
+  if (!JCL) {
+	  assert( vmdata->getClassLoader() == JCL && "Loader is not equal to stored value");
+	  fprintf(stderr, "Error in method %s, %d because condition 1: %d\n", __FILE__, __LINE__, (vmdata == NULL || !VMClassLoader::isVMClassLoader(vmdata)));
+  }
   return JCL;
 }
 

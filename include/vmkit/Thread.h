@@ -213,6 +213,7 @@ public:
   void enterUncooperativeCode(uint16_t level = 0) __attribute__ ((noinline));
   void enterUncooperativeCode(word_t SP);
   void leaveUncooperativeCode();
+  bool isInUncooperativeCode()	{	return lastSP;	};
   word_t waitOnSP();
 
 
