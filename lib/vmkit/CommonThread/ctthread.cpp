@@ -380,6 +380,7 @@ void* Thread::operator new(size_t sz) {
   void* res = (void*)TheStackManager.allocate();
   // Make sure the thread information is cleared.
   if (res != NULL) memset(res, 0, sz);
+  assert(res && "Thread cannot be allocated because there is no room available");
   return res;
 }
 

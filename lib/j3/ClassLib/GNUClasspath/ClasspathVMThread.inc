@@ -218,4 +218,48 @@ jclass clazz,
   vmkit::Thread::yield();
 }
 
+JNIEXPORT JavaObject* JNICALL Java_java_lang_VMThread_getState(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+#endif
+JavaObject* vmthread) {
+  JavaString* obj = NULL;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(vmthread, 0);  
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  JavaField* field = vm->upcalls->vmdataVMThread; 
+  
+  // It's possible that the thread to be interrupted has not finished
+  // its initialization. Wait until the initialization is done.
+  JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
+  if (th == 0) {
+    obj = vm->asciizToStr("NEW");
+    return obj;
+  }
+  else {
+  	switch (th->lockingThread.state) {
+  		case vmkit::LockingThread::StateWaiting:
+  			obj = vm->asciizToStr("WAITING");
+  			return obj;
+  		case vmkit::LockingThread::StateTimeWaiting:
+  			obj = vm->asciizToStr("TIMED_WAITING");
+  			return obj;
+  		case vmkit::LockingThread::StateBlocked:
+  			obj = vm->asciizToStr("BLOCKED");
+  			return obj;
+  		default:
+  			obj = vm->asciizToStr("RUNNABLE");
+  			return obj;
+  	}
+  	obj = vm->asciizToStr("TERMINATED");
+  	return obj;
+  }
+  
+  END_NATIVE_EXCEPTION
+}
+
+
 }

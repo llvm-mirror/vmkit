@@ -236,12 +236,15 @@ void JavaObject::overflowThinLock(JavaObject* self) {
 
 void JavaObject::acquire(JavaObject* self) {
   llvm_gcroot(self, 0);
+  JavaThread::get()->lockingThread.state = vmkit::LockingThread::StateBlocked;
   vmkit::ThinLock::acquire(self, JavaThread::get()->getJVM()->lockSystem);
+  JavaThread::get()->lockingThread.state = vmkit::LockingThread::StateRunning;
 }
 
 void JavaObject::release(JavaObject* self) {
   llvm_gcroot(self, 0);
   vmkit::ThinLock::release(self, JavaThread::get()->getJVM()->lockSystem);
+  JavaThread::get()->lockingThread.state = vmkit::LockingThread::StateRunning;
 }
 
 bool JavaObject::owner(JavaObject* self) {
