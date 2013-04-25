@@ -2,6 +2,8 @@
 PROJECT_NAME := @PACKAGE_NAME@
 PROJ_VERSION := @PACKAGE_VERSION@
 
+realpath=$(shell cd $(1); $(PWD))
+
 # Set the directory root of this project's source files
 PROJ_SRC_ROOT := $(subst //,/,@abs_top_srcdir@)
 VMKIT_SRC_ROOT := $(PROJ_SRC_ROOT)
@@ -9,6 +11,9 @@ VMKIT_SRC_ROOT := $(PROJ_SRC_ROOT)
 # Set the root directory of this project's object files
 PROJ_OBJ_ROOT := $(subst //,/,@abs_top_builddir@)
 VMKIT_OBJ_ROOT := $(PROJ_OBJ_ROOT)
+
+PROJ_OBJ_CWD:= $(call realpath, .)
+PROJ_SRC_CWD:= $(call realpath, $(patsubst $(PROJ_OBJ_ROOT)%,$(PROJ_SRC_ROOT)%,$(PROJ_OBJ_CWD)))
 
 # Set the root directory of this project's install prefix
 PROJ_INSTALL_ROOT := @prefix@

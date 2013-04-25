@@ -1,5 +1,4 @@
 
-
 .PHONY: all tidy clean confclean
 .SECONDARY:
 .SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll $(SHLIBEXT) $(SUFFIXES)
@@ -51,7 +50,6 @@ endif
 ###############################################################################
 #   Recursive target managment
 ###############################################################################
-#SELF=$(PROJ_SRC_ROOT)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
 RECURSIVE_TARGETS=all clean
 
 $(RECURSIVE_TARGETS)::
@@ -80,29 +78,31 @@ confclean: distclean
 ###############################################################################
 #   Build system managment
 ###############################################################################
-SELF=$(LEVEL)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
+#SELF=$(PROJ_SRC_ROOT)/Makefile.rules $(PROJ_OBJ_ROOT)/Makefile.common Makefile
+
+$(LEVEL)/Makefile.common: $(PROJ_SRC_ROOT)/Makefile.common
 
 define define_config_rule
-$(LEVEL)/$1: $1.in $(PROJ_SRC_ROOT)/configure
-	$(Echo) Regenerating project files $$@
-	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status -q --$2=$$@
+$$(PROJ_OBJ_ROOT)/$1: $$(PROJ_SRC_ROOT)/$1.in $$(PROJ_SRC_ROOT)/configure
+	$(Echo) "Regenerating project files $$@"
+	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status -q --$2=$1
 	$(Verb) touch $$@
 endef
 
 $(foreach cur,$(CONFIG_FILES),$(eval $(call define_config_rule,$(cur),file)))
 $(foreach cur,$(CONFIG_HEADERS),$(eval $(call define_config_rule,$(cur),header)))
 
-$(PROJ_SRC_ROOT)/configure: $(PROJ_SRC_ROOT)/autoconf/configure.ac $(PROJ_SRC_ROOT)/autoconf/AutoRegen.sh 
+$(PROJ_OBJ_ROOT)/configure: $(PROJ_SRC_ROOT)/autoconf/configure.ac $(PROJ_SRC_ROOT)/autoconf/AutoRegen.sh 
 	$(Echo) Rebootstraping project
 	$(Verb) cd $(PROJ_SRC_ROOT)/autoconf && ./AutoRegen.sh
-	$(Verb) ./config.status --recheck
+	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status --recheck
 
 ###############################################################################
 #   Build directories
 ###############################################################################
 BIN_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
 LIB_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
-BUILD_DIR=$(BUILD_NAME)
+BUILD_DIR=$(PROJ_OBJ_CWD)/$(BUILD_NAME)
 
 LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
 
@@ -160,12 +160,13 @@ ifdef MODULE
 MODULE_A=$(LIB_DIR)/lib$(MODULE).a
 MODULE_BC=$(LIB_DIR)/$(MODULE).bc
 
-BC_FILES+=$(patsubst %.c,$(BUILD_DIR)/%$(WITH_GC).bc,$(wildcard *.c)) \
-          $(patsubst %.cc,$(BUILD_DIR)/%$(WITH_GC).bc,$(wildcard *.cc)) \
-          $(patsubst %.cpp,$(BUILD_DIR)/%$(WITH_GC).bc,$(wildcard *.cpp)) \
-          $(patsubst %,$(BUILD_DIR)/%$(WITH_GC).bc,$(GEN))
+BASE_FILES+=$(patsubst %.c,$(BUILD_DIR)/%,$(wildcard *.c)) \
+            $(patsubst %.cc,$(BUILD_DIR)/%,$(wildcard *.cc)) \
+            $(patsubst %.cpp,$(BUILD_DIR)/%,$(wildcard *.cpp)) \
+            $(patsubst %,$(BUILD_DIR)/%,$(GEN))
 
-OBJ_FILES=$(patsubst %.bc,%.o,$(BC_FILES))
+BC_FILES=$(addsuffix $(WITH_GC).bc,$(BASE_FILES))
+OBJ_FILES=$(addsuffix $(WITH_GC).o,$(BASE_FILES))
 
 all:: $(MODULE_A)
 
@@ -304,8 +305,7 @@ endif
 #   NEW BUILD SYSTEM
 #
 #
-#-I$(BUILD_DIR) 
-INCLUDES+=-I. -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR)
+INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR)
 
 # should remove no-unused-variable                                                                                                         
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
@@ -352,6 +352,6 @@ $(eval $(call define_compile_rule,.c,$(CLANG),$(CFLAGS)))
 
 ifneq ($(MAKECMDGOALS),tidy)
 ifneq ($(MAKECMDGOALS),clean)
--include $(patsubst %.o, %.d, $(OBJ_FILES))
+-include $(addsuffix .d,$(BASE_FILES))
 endif
 endif

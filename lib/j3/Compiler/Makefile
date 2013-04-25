@@ -11,6 +11,6 @@ LEVEL = ../../..
 include $(LEVEL)/Makefile.config
 
 MODULE_WITH_GC = J3Compiler
-INCLUDES+=-I../ClassLib/$(CLASSPATH_DIR) -I../ClassLib/ -I../VMCore -I../LLVMRuntime/$(BUILD_DIR)
+INCLUDES+=-I$(PROJ_SRC_ROOT)/lib/j3/ClassLib/$(CLASSPATH_DIR) -I$(PROJ_SRC_ROOT)/lib/j3/ClassLib -I$(PROJ_SRC_ROOT)/lib/j3/VMCore -I$(PROJ_SRC_ROOT)/lib/j3/LLVMRuntime
 
 include $(LEVEL)/Makefile.common

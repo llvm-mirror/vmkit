@@ -11,7 +11,7 @@ LEVEL = ../../../..
 include $(LEVEL)/Makefile.config
 
 MODULE_WITH_GC=Classpath
-INCLUDES+=-I../../VMCore -I..
+INCLUDES+=-I$(PROJ_SRC_ROOT)/lib/j3/VMCore -I$(PROJ_SRC_ROOT)/lib/j3/ClassLib
 
 include $(LEVEL)/Makefile.common
 
