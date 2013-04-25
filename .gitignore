@@ -43,3 +43,6 @@ tests/logs.zip
 tests/dacapo/*/j3
 tests/dacapo/*/ijvm
 tests/dacapo/logs
+aclocal.m4
+autom4te.cache/
+configure.bak

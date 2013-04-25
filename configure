@@ -4888,7 +4888,6 @@ fi
 
 
 
-nl===-----------------------------------------------------------------------===
 
 ac_fn_c_check_type "$LINENO" "pid_t" "ac_cv_type_pid_t" "$ac_includes_default"
 if test "x$ac_cv_type_pid_t" = xyes; then :

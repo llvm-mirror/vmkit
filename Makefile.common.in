@@ -39,6 +39,12 @@ JAVAC_TARGET		:= 1.5
 
 GLIBJ = @classpathglibj@
 
+# Using conditional compilation for now, until a proper interface/architecture
+# is figured out and implemented.
+ifeq (@classpathimpl@,openjdk)
+COMMON_CFLAGS+=-DUSE_OPENJDK
+endif
+
 ###############################################################################
 #   host dependent configurations
 ###############################################################################
@@ -76,12 +82,6 @@ TOUCH=@TOUCH@
 GREP=@GREP@
 
 ENABLE_OPTIMIZED=1
-
-# Using conditional compilation for now, until a proper interface/architecture
-# is figured out and implemented.
-ifeq (@classpathimpl@,openjdk)
-COMMON_CFLAGS+=-DUSE_OPENJDK
-endif
 
 ifeq ($(ENABLE_OPTIMIZED),1)
 	LLC_CPP_FLAGS		:=

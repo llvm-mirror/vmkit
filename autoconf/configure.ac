@@ -377,7 +377,7 @@ AC_CHECK_HEADER([zlib.h], [], \
   AC_MSG_ERROR([You need to install the zlib devel package (zlib.h).])
 )
   
-nl===-----------------------------------------------------------------------===
+dnl===-----------------------------------------------------------------------===
 dnl===
 dnl=== SECTION 7: Check for types and structures
 dnl===
