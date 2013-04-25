@@ -52,6 +52,9 @@ class ZipArchive;
 template <class T> class TJavaArray;
 typedef TJavaArray<JavaObject*> ArrayObject;
 
+#define CLASS_LOADER_STALE_REF_CORRECTED	0x1
+#define CLASS_LOADER_STALE_REF_STALE		0x2
+
 /// JnjvmClassLoader - Runtime representation of a class loader. It contains
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
@@ -342,17 +345,13 @@ public:
 #if RESET_STALE_REFERENCES
 
 protected:
-  bool staleRefCorrected;
-  bool zombie;
+  uint8_t staleRefFlags;
 
 public:
-  bool isZombie() const {return zombie;}
-  void markZombie(bool becomeZombie = true) {zombie = becomeZombie;}
-  bool isStaleReferencesCorrectionEnabled() {return staleRefCorrected;}
-  void setStaleReferencesCorrectionEnabled(bool enable) {staleRefCorrected = enable;}
-
-  // This bridges the OSGi world (bundles) to the Java world (class loaders).
-  void setAssociatedBundleID(int64_t newID);
+  bool isStale() const;
+  void markStale(bool stale = true);
+  bool isStaleReferencesCorrectionEnabled() const;
+  void setStaleReferencesCorrectionEnabled(bool enable);
 
 #endif
 

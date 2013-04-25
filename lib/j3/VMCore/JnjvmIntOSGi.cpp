@@ -19,44 +19,31 @@ using namespace std;
 
 namespace j3 {
 
-
-std::ostream& operator << (
-	std::ostream& os, const Jnjvm::classLoadersListType& obj)
-{
-	Jnjvm::classLoadersListType::const_iterator
-		i = obj.begin(), e = obj.end();
-	for (; i != e; ++i)
-		os << " " << (*i);
-	return os;
-}
-
-std::ostream& operator << (
-	std::ostream& os, const Jnjvm::bundleClassLoadersType::value_type& obj)
-{
-	return os << "bundleID=" << obj.first
-		<< " classLoaders={" << obj.second << "}" << endl;
-}
-
-std::ostream& operator << (
-	std::ostream& os, const j3::Jnjvm::bundleClassLoadersType& obj)
-{
-	Jnjvm::bundleClassLoadersType::const_iterator
-		i = obj.begin(), e = obj.end();
-	for (; i != e; ++i)
-		os << *i;
-	return os;
-}
-
 void Jnjvm::dumpClassLoaderBundles()
 {
-	cerr << bundleClassLoaders;
+	vmkit::LockGuard lg(bundleClassLoadersLock);
+	Jnjvm::bundleClassLoadersType::const_iterator
+		i = bundleClassLoaders.begin(), e = bundleClassLoaders.end();
+
+	for (; i != e; ++i)
+		cerr << "bundleID=" << i->first << " classLoader=" << i->second << endl;
+
+	staleBundleClassLoadersType::const_iterator
+		si = staleBundleClassLoaders.begin(), se = staleBundleClassLoaders.end();
+	staleBundleClassLoadersType::mapped_type::const_iterator li, le;
+	for (; si != se; ++si) {
+		cerr << "stale bundleID=" << si->first << " classLoaders={";
+		le = si->second.end();
+		li = si->second.begin();
+		for (; li != le; ++li) cerr << " " << *li;
+		cerr << "}" << endl;
+	}
 }
 
 void Jnjvm::setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected)
 {
-	classLoadersListType class_loaders;
-	this->getBundleClassLoaders(bundleID, class_loaders);
-	if (class_loaders.size() == 0) {
+	JnjvmClassLoader* loader = this->getBundleClassLoader(bundleID);
+	if (!loader) {
 		this->illegalArgumentException("Invalid bundle ID"); return;}
 
 #if DEBUG_VERBOSE_STALE_REF
@@ -67,132 +54,50 @@ void Jnjvm::setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected)
 		cerr << "no more corrected." << endl;
 #endif
 
-	classLoadersListType::iterator
-		i = class_loaders.begin(),
-		e = class_loaders.end();
-	for (; i != e; ++i)
-		(**i).setStaleReferencesCorrectionEnabled(corrected);
+	loader->setStaleReferencesCorrectionEnabled(corrected);
 }
 
 bool Jnjvm::isBundleStaleReferenceCorrected(int64_t bundleID)
 {
-	classLoadersListType class_loaders;
-	this->getBundleClassLoaders(bundleID, class_loaders);
-	if (class_loaders.size() == 0) {
+	JnjvmClassLoader* loader = this->getBundleClassLoader(bundleID);
+	if (!loader) {
 		this->illegalArgumentException("Invalid bundle ID"); return false;}
 
-	classLoadersListType::const_iterator
-		i = class_loaders.begin(),
-		e = class_loaders.end();
-	bool corrected = true;
-	for (; corrected && (i != e); ++i)
-		corrected &= (**i).isStaleReferencesCorrectionEnabled();
-
-	return corrected;
+	return loader->isStaleReferencesCorrectionEnabled();
 }
 
-void Jnjvm::notifyBundleUninstalled(int64_t bundleID)
+JnjvmClassLoader* Jnjvm::getBundleClassLoader(int64_t bundleID)
 {
-	classLoadersListType class_loaders;
-	this->getBundleClassLoaders(bundleID, class_loaders);
-	if (class_loaders.size() == 0) return;
-
-	// Mark all bundle's class loaders as a zombies.
-	// Strong references to all its loaded classes will be reset in the next garbage collection.
-	classLoadersListType::iterator
-		i = class_loaders.begin(),
-		e = class_loaders.end();
-	for (; i != e; ++i) {
-		if ((**i).isStaleReferencesCorrectionEnabled())
-			(**i).markZombie(true);
-	}
-
-#if DEBUG_VERBOSE_STALE_REF
-	cerr << "Bundle uninstalled: bundleID=" << bundleID
-		<< " classLoaders={" << bundleClassLoaders[bundleID] << "}" << endl;
-#endif
-
-	scanStaleReferences = true;		// Enable stale references scanning
-//	vmkit::Collector::collect();	// Start a garbage collection now
-}
-
-void Jnjvm::notifyBundleUpdated(int64_t bundleID)
-{
-	classLoadersListType class_loaders;
-	this->getBundleClassLoaders(bundleID, class_loaders);
-	if (class_loaders.size() <= 1)
-		return; // An updated bundle must have at least two attached class loaders
-
-#if DEBUG_VERBOSE_STALE_REF
-	cerr << "Bundle updated: bundleID=" << bundleID
-		<< " classLoaders={" << bundleClassLoaders[bundleID] << "}" << endl;
-#endif
-
-	// Mark previous bundle's class loaders as a zombies.
-	classLoadersListType::iterator
-		i = class_loaders.begin(),
-		e = class_loaders.end();
-
-	// The first class loader is the current one, the rest are previous
-	// class loaders that should be scanned for stale references.
-	++i;
-
-	for (; i != e; ++i) {
-		if ((**i).isStaleReferencesCorrectionEnabled())
-			(**i).markZombie(true);
-	}
-
-	scanStaleReferences = true;		// Enable stale references scanning
-//	vmkit::Collector::collect();	// Start a garbage collection now
-}
-
-/*
-ArrayLong* Jnjvm::getReferencesToObject(const JavaObject* obj)
-{
-	if (!obj) return NULL;
-
-	findReferencesToObject = obj;
-	vmkit::Collector::collect();
-
-	size_t count = foundReferencerObjects.size();
-	ArrayLong* r = static_cast<ArrayLong*>(upcalls->ArrayOfLong->doNew(count, this));
-	if (!r) {this->outOfMemoryError(); return r;}
-
-	ArrayLong::ElementType* elements = ArrayLong::getElements(r);
-	for (size_t i=0; i < count; ++i) {
-		elements[i] = reinterpret_cast<ArrayLong::ElementType>(foundReferencerObjects[i]);
-	}
-
-	return r;
-}
-*/
-void Jnjvm::getBundleClassLoaders(
-	int64_t bundleID, classLoadersListType& class_loaders)
-{
-	class_loaders.clear();
-	if (bundleID == -1) return;
+	if (bundleID == -1) return NULL;
 
 	vmkit::LockGuard lg(bundleClassLoadersLock);
 
 	bundleClassLoadersType::const_iterator
-		i = bundleClassLoaders.find(bundleID),
-		e = bundleClassLoaders.end();
-
-	if (i == e) return;		// Bundle not found
-	class_loaders = i->second;
+		i = bundleClassLoaders.find(bundleID), e = bundleClassLoaders.end();
+	return (i == e) ? NULL : i->second;
 }
 
-struct Jnjvm_getClassLoaderBundleID_finder {
+struct Jnjvm_getClassLoaderBundleID_InstalledBundles_finder {
 	JnjvmClassLoader* loader;
-	Jnjvm_getClassLoaderBundleID_finder(JnjvmClassLoader* l) : loader(l) {}
+	Jnjvm_getClassLoaderBundleID_InstalledBundles_finder(
+		JnjvmClassLoader* l) : loader(l) {}
 
-	bool operator() (const Jnjvm::bundleClassLoadersType::value_type& pair)
-	{
-		const Jnjvm::classLoadersListType& class_loaders = pair.second;
-		Jnjvm::classLoadersListType::const_iterator
-			b = class_loaders.begin(), e = class_loaders.end();
+	bool operator() (const Jnjvm::bundleClassLoadersType::value_type& pair) {
+		return (loader == pair.second);
+	}
+};
 
-		return std::find(b, e, loader) != e;
+struct Jnjvm_getClassLoaderBundleID_UninstalledBundles_finder {
+	JnjvmClassLoader* loader;
+	Jnjvm_getClassLoaderBundleID_UninstalledBundles_finder(
+		JnjvmClassLoader* l) : loader(l) {}
+
+	bool operator() (const Jnjvm::staleBundleClassLoadersType::value_type& pair) {
+		Jnjvm::staleBundleClassLoadersType::mapped_type::const_iterator
+			b = pair.second.begin(), e = pair.second.end();
+		Jnjvm::staleBundleClassLoadersType::mapped_type::const_iterator
+			i = std::find(b, e, loader);
+		return (i != e);
 	}
 };
 
@@ -202,68 +107,92 @@ int64_t Jnjvm::getClassLoaderBundleID(JnjvmClassLoader* loader)
 	vmkit::LockGuard lg(bundleClassLoadersLock);
 
 	bundleClassLoadersType::const_iterator
-		first = bundleClassLoaders.begin(),
-		last = bundleClassLoaders.end();
-
+		b = bundleClassLoaders.begin(),
+		e = bundleClassLoaders.end();
 	bundleClassLoadersType::const_iterator
-		i = std::find_if(first, last, Jnjvm_getClassLoaderBundleID_finder(loader));
+		i = std::find_if(b, e,
+			Jnjvm_getClassLoaderBundleID_InstalledBundles_finder(loader));
 
-	return (i == last) ? -1 : i->first;
+	if (i != e) return i->first;
+
+	// Look up in stale bundles list
+	staleBundleClassLoadersType::const_iterator
+		sb = staleBundleClassLoaders.begin(),
+		se = staleBundleClassLoaders.end();
+	staleBundleClassLoadersType::const_iterator
+		si = std::find_if(sb, se,
+			Jnjvm_getClassLoaderBundleID_UninstalledBundles_finder(loader));
+
+	return (si == se) ? -1 : si->first;
 }
 
 // Link a bundle ID (OSGi world) to a class loader (Java world).
-void Jnjvm::addBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader)
+void Jnjvm::setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader)
 {
 	if (bundleID == -1) return;
 	vmkit::LockGuard lg(bundleClassLoadersLock);
 
-	classLoadersListType& class_loaders = bundleClassLoaders[bundleID];
+	JnjvmClassLoader* previous_loader = bundleClassLoaders[bundleID];
 
-	classLoadersListType::const_iterator
-		b = class_loaders.begin(),
-		e = class_loaders.end();
-	if (std::find(b, e, loader) != e)
-		return;	// Class loader already associated with the bundle, do nothing
+	if (!loader) {
+		// Unloaded bundle
+		bundleClassLoaders.erase(bundleID);
 
-	class_loaders.push_front(loader);
-
-	// If there are more than one class loaders associated with the bundle then
-	// this must be an updated bundle, signal this
-	if (class_loaders.size() > 1)
-		notifyBundleUpdated(bundleID);
 #if DEBUG_VERBOSE_STALE_REF
-	else {
-		cerr << "Bundle installed: bundleID=" << bundleID
-			<< " classLoader={" << bundleClassLoaders[bundleID] << "}" << endl;
-	}
+	cerr << "Bundle uninstalled: bundleID=" << bundleID
+		<< " classLoader=" << previous_loader << endl;
 #endif
+	} else {
+		// Installed/Updated bundle
+		if (previous_loader == loader)
+			return;	// Same class loader already associated with the bundle, do nothing
+
+		// Associate the class loader with the bundle
+		bundleClassLoaders[bundleID] = loader;
+
+#if DEBUG_VERBOSE_STALE_REF
+		if (!previous_loader) {
+			cerr << "Bundle installed: bundleID=" << bundleID
+				<< " classLoader=" << loader << endl;
+		} else {
+			cerr << "Bundle updated: bundleID=" << bundleID
+				<< " classLoader=" << loader
+				<< " previousClassLoader=" << previous_loader << endl;
+		}
+#endif
+	}
+
+	if (previous_loader != NULL) {
+		// Mark the previous class loader as stale
+		if (previous_loader->isStaleReferencesCorrectionEnabled()) {
+			previous_loader->markStale(true);
+			staleBundleClassLoaders[bundleID].push_front(previous_loader);
+		}
+
+		// Enable stale references scanning
+		scanStaleReferences = true;
+
+		// Start a garbage collection now
+		//vmkit::Collector::collect();
+	}
 }
 
-void Jnjvm::removeClassLoaderFromBundles(JnjvmClassLoader* loader)
+void Jnjvm::classLoaderUnloaded(JnjvmClassLoader* loader)
 {
-	if (loader == NULL) return;
-	vmkit::LockGuard lg(bundleClassLoadersLock);
+	int64_t bundleID = getClassLoaderBundleID(loader);
+	if (bundleID == -1) {
+		cerr << "Class loader unloaded: " << loader << endl;
+		return;
+	}
 
-	bundleClassLoadersType::iterator
-		first = bundleClassLoaders.begin(),
-		last = bundleClassLoaders.end();
-
-	bundleClassLoadersType::iterator
-		i = std::find_if(first, last, Jnjvm_getClassLoaderBundleID_finder(loader));
-
-	if (i == last) return;
-
-	i->second.remove(loader);
-
-	if (i->second.size() == 0) {
-		bundleClassLoaders.erase(i->first);
+	staleBundleClassLoaders[bundleID].remove(loader);
+	if (staleBundleClassLoaders[bundleID].size() == 0)
+		staleBundleClassLoaders.erase(bundleID);
 
 #if DEBUG_VERBOSE_STALE_REF
-		cerr << "Bundle unloaded: " << *i;
-	} else {
-		cerr << "Bundle class loader unloaded: classLoader=" << loader << " " << *i;
+	cerr << "Class loader unloaded: " << loader
+		<< " bundleID=" << bundleID << endl;
 #endif
-	}
 }
 
 }
@@ -283,8 +212,9 @@ extern "C" void Java_j3_vm_OSGi_associateBundleClass(jlong bundleID, JavaObjectC
 
 #if RESET_STALE_REFERENCES
 
+	Jnjvm* vm = JavaThread::get()->getJVM();
 	CommonClass* ccl = JavaObjectClass::getClass(classObject);
-	ccl->classLoader->setAssociatedBundleID(bundleID);
+	vm->setBundleClassLoader(bundleID, ccl->classLoader);
 
 #endif
 }
@@ -294,17 +224,7 @@ extern "C" void Java_j3_vm_OSGi_notifyBundleUninstalled(jlong bundleID)
 #if RESET_STALE_REFERENCES
 
 	Jnjvm* vm = JavaThread::get()->getJVM();
-	vm->notifyBundleUninstalled(bundleID);
-
-#endif
-}
-
-extern "C" void Java_j3_vm_OSGi_notifyBundleUpdated(jlong bundleID)
-{
-#if RESET_STALE_REFERENCES
-
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	vm->notifyBundleUpdated(bundleID);
+	vm->setBundleClassLoader(bundleID, NULL);
 
 #endif
 }
@@ -338,34 +258,5 @@ extern "C" void Java_j3_vm_OSGi_dumpClassLoaderBundles()
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	vm->dumpClassLoaderBundles();
 
-#endif
-}
-/*
-extern "C" ArrayLong* Java_j3_vm_OSGi_getReferencesToObject(jlong objectPointer)
-{
-#if RESET_STALE_REFERENCES
-
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	return vm->getReferencesToObject(reinterpret_cast<const JavaObject*>((intptr_t)objectPointer));
-
-#else
-	return NULL;
-#endif
-}
-*/
-extern "C" JavaString* Java_j3_vm_OSGi_dumpObject(jlong objectPointer)
-{
-#if RESET_STALE_REFERENCES
-
-	if (!objectPointer) return NULL;
-	const JavaObject& obj = *reinterpret_cast<const JavaObject*>((intptr_t)objectPointer);
-	std::ostringstream ss;
-	ss << obj;
-
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	return vm->asciizToStr(ss.str().c_str());
-	
-#else
-	return NULL;
 #endif
 }

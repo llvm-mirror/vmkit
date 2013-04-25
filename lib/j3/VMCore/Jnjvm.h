@@ -370,21 +370,17 @@ public:
 #if RESET_STALE_REFERENCES
 
 public:
-  typedef std::list<JnjvmClassLoader*>				classLoadersListType;
-  typedef std::map<int64_t, classLoadersListType>	bundleClassLoadersType;
+  typedef std::map<int64_t, std::list<JnjvmClassLoader*> >	staleBundleClassLoadersType;
+  typedef std::map<int64_t, JnjvmClassLoader*>	bundleClassLoadersType;
 
   void setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected);
   bool isBundleStaleReferenceCorrected(int64_t bundleID);
   void dumpClassLoaderBundles();
-//  class ArrayLong* getReferencesToObject(const JavaObject* obj);
 
-  void notifyBundleUninstalled(int64_t bundleID);
-  void notifyBundleUpdated(int64_t bundleID);
-
+  JnjvmClassLoader* getBundleClassLoader(int64_t bundleID);
   int64_t getClassLoaderBundleID(JnjvmClassLoader* loader);
-  void getBundleClassLoaders(int64_t bundleID, classLoadersListType& class_loaders);
-  void addBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader);
-  void removeClassLoaderFromBundles(JnjvmClassLoader* loader);
+  void setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader);
+  void classLoaderUnloaded(JnjvmClassLoader* loader);
 
   virtual void resetReferenceIfStale(const void* source, void** ref);
 
@@ -396,9 +392,8 @@ protected:
   // Link between OSGi (bundle ID) and Java (class loaders).
   vmkit::LockRecursive bundleClassLoadersLock;
   bundleClassLoadersType bundleClassLoaders;
+  staleBundleClassLoadersType staleBundleClassLoaders;
   volatile bool scanStaleReferences;
-//  const JavaObject* findReferencesToObject;
-//  std::vector<const JavaObject*> foundReferencerObjects;
 
 #endif
 };

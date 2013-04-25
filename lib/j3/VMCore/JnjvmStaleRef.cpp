@@ -47,7 +47,7 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMClassLoader** ref)
 #if DEBUG_VERBOSE_STALE_REF
 
 	JnjvmClassLoader* loader = (**ref).getClassLoader();
-	if (!loader->isZombie()) return;
+	if (!loader->isStale()) return;
 /*
 	cerr << "WARNING: Ignored stale reference ref=" << ref << " obj=" << **ref;
 	if (source) cerr << " source=" << *source;
@@ -66,7 +66,7 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMStaticInstance** r
 #if DEBUG_VERBOSE_STALE_REF
 
 	JnjvmClassLoader* loader = (**ref).getOwningClass()->classLoader;
-	if (!loader->isZombie()) return;
+	if (!loader->isStale()) return;
 /*
 	cerr << "WARNING: Ignored stale reference ref=" << ref << " obj=" << **ref;
 	if (source) cerr << " source=" << *source;
@@ -83,7 +83,7 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 
 	if (source) {
 		CommonClass* ccl = JavaObject::getClass(source);
-		if (ccl->classLoader->isZombie())
+		if (ccl->classLoader->isStale())
 			cerr << "WARNING: Source object is stale source=" << *source << endl;
 	}
 
@@ -92,7 +92,7 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 	CommonClass* ccl = JavaObject::getClass(*ref);
 	assert (ccl && "Object Class is not null.");
 
-	if (!ccl->classLoader->isZombie()) return;
+	if (!ccl->classLoader->isStale()) return;
 
 #if DEBUG_VERBOSE_STALE_REF
 
