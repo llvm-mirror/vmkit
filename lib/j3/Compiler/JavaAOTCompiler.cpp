@@ -2128,7 +2128,7 @@ void mainCompilerStart(JavaThread* th) {
     ClassBytes* bytes = Reader::openFile(bootstrapLoader, name);
       
     if (!bytes) {
-      fprintf(stderr, "Can't find zip file.\n");
+      fprintf(stderr, "Can't find zip file '%s'.\n", name);
       goto end;
     }
 
