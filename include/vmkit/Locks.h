@@ -131,7 +131,7 @@ public:
   /// unlockAll - Unlock the lock, releasing it the number of times it is held.
   /// Return the number of times the lock has been locked.
   ///
-  int unlockAll();
+  int unlockAll(vmkit::Thread* ownerThread = NULL);
 
   /// lockAll - Acquire the lock count times.
   ///

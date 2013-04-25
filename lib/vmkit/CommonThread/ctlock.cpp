@@ -108,8 +108,8 @@ void LockRecursive::unlock(vmkit::Thread* ownerThread) {
   }
 }
 
-int LockRecursive::unlockAll() {
-  assert(selfOwner() && "Not owner when unlocking all");
+int LockRecursive::unlockAll(vmkit::Thread* ownerThread) {
+  assert(selfOwner(ownerThread) && "Not owner when unlocking all");
   int res = n;
   n = 0;
   owner = 0;
