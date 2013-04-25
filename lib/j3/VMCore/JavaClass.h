@@ -1013,7 +1013,7 @@ private:
 	jvalue* marshalArguments(vmkit::ThreadAllocator& allocator, va_list ap);
 
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeSpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {
+	TYPE invokeSpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__((noinline)) {
 		llvm_gcroot(obj, 0);
 		verifyNull(obj);
 
@@ -1033,7 +1033,10 @@ private:
 	}
 
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeVirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {
+	TYPE invokeVirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__((noinline)) {
+		llvm_gcroot(obj, 0);
+		verifyNull(obj);
+
 		UserCommonClass* theClass = JavaObject::getClass(obj);
 		UserClass* objCl = theClass->isArray() ? theClass->super : theClass->asClass();
 
@@ -1049,7 +1052,7 @@ private:
 	}
 
 	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
-	TYPE invokeStaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {
+	TYPE invokeStaticBuf(Jnjvm* vm, UserClass* cl, void* buf) __attribute__((noinline)) {
 		if (!cl->isReady()) {
 			cl->resolveClass();
 			cl->initialiseClass(vm);
@@ -1071,27 +1074,23 @@ private:
 	}
 
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeVirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {
+	TYPE invokeVirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) __attribute__((noinline)) {
 		llvm_gcroot(obj, 0);
-		verifyNull(obj);
-
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
 		return invokeVirtualBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
 	}
 
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeSpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {
+	TYPE invokeSpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) __attribute__((noinline)) {
 		llvm_gcroot(obj, 0);
-		verifyNull(obj);
-
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
 		return invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
 	}
 
 	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
-	TYPE invokeStaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {
+	TYPE invokeStaticAP(Jnjvm* vm, UserClass* cl, va_list ap) __attribute__((noinline)) {
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
 		return invokeStaticBuf<TYPE, FUNC_TYPE_STATIC_BUF>(vm, cl, buffer);
@@ -1224,7 +1223,7 @@ private:
   /// getStatic*Field - Get a static field.
   ///
   template <class TYPE>
-  TYPE getStaticField() {
+  TYPE getStaticField() __attribute__ ((noinline)) {
     assert(classDef->isResolved());
     void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset);
     return *static_cast<TYPE *>(ptr);
@@ -1239,7 +1238,7 @@ private:
   struct FieldSetter {
 	  /// setStatic*Field - Set a field of an object.
 	  ///
-	  static void setStaticField(const JavaField* field, TYPE val) {
+	  static void setStaticField(const JavaField* field, TYPE val) __attribute__ ((noinline)) {
 	    assert(field->classDef->isResolved());
 	    void* ptr = (void*)((uint64)field->classDef->getStaticInstance() + field->ptrOffset);
 	    *static_cast<TYPE *>(ptr) = val;
@@ -1247,7 +1246,7 @@ private:
       
 	  /// setInstance*Field - Set an instance field.
 	  ///
-	  static void setInstanceField(const JavaField* field, JavaObject* obj, TYPE val) {
+	  static void setInstanceField(const JavaField* field, JavaObject* obj, TYPE val) __attribute__ ((noinline)) {
 	    llvm_gcroot(obj, 0);
 	    assert(field->classDef->isResolved());
 	    void* ptr = (void*)((uint64)obj + field->ptrOffset);
@@ -1258,14 +1257,14 @@ private:
   /// setStatic*Field - Set a field of an object.
   ///
   template <class TYPE>
-  void setStaticField(TYPE val) {
+  void setStaticField(TYPE val) __attribute__ ((noinline)) {
     FieldSetter<TYPE>::setStaticField(this, val);
   }
 
   /// getInstance*Field - Get an instance field.
   ///
   template<class TYPE>
-  TYPE getInstanceField(JavaObject* obj) {
+  TYPE getInstanceField(JavaObject* obj) __attribute__ ((noinline)) {
     llvm_gcroot(obj, 0);
     assert(classDef->isResolved());
     void* ptr = (void*)((uint64)obj + ptrOffset);
@@ -1275,15 +1274,16 @@ private:
   /// setInstance*Field - Set an instance field.
   ///
   template<class TYPE>
-  void setInstanceField(JavaObject* obj, TYPE val) {
+  void setInstanceField(JavaObject* obj, TYPE val) __attribute__ ((noinline)) {
+    llvm_gcroot(obj, 0);
     FieldSetter<TYPE>::setInstanceField(this, obj, val);
   }
 
 #define JavaField_DECL_ASSESSORS(TYPE, TYPE_NAME)			\
-	TYPE getStatic##TYPE_NAME##Field();						\
-	void setStatic##TYPE_NAME##Field(TYPE val);				\
-	TYPE getInstance##TYPE_NAME##Field(JavaObject* obj);	\
-	void setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val);
+	TYPE getStatic##TYPE_NAME##Field() __attribute__ ((noinline));						\
+	void setStatic##TYPE_NAME##Field(TYPE val) __attribute__ ((noinline));				\
+	TYPE getInstance##TYPE_NAME##Field(JavaObject* obj) __attribute__ ((noinline));	\
+	void setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val) __attribute__ ((noinline));
 
 #define JavaField_IMPL_ASSESSORS(TYPE, TYPE_NAME)																			\
 	TYPE JavaField::getStatic##TYPE_NAME##Field() {									\
@@ -1291,8 +1291,10 @@ private:
 	void JavaField::setStatic##TYPE_NAME##Field(TYPE val) {							\
 		return setStaticField<TYPE>(val);}											\
 	TYPE JavaField::getInstance##TYPE_NAME##Field(JavaObject* obj) {				\
+		llvm_gcroot(obj, 0);														\
 		return this->getInstanceField<TYPE>(obj);}									\
 	void JavaField::setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val) {		\
+		llvm_gcroot(obj, 0);														\
 		return this->setInstanceField<TYPE>(obj, val);}
 
 public:
@@ -1343,11 +1345,12 @@ public:
 
 };
 
+
 // Specialization for TYPE=JavaObject*
 template<>
 struct JavaField::FieldSetter<JavaObject*> {
 
-  static void setStaticField(const JavaField* field, JavaObject* val) {
+  static void setStaticField(const JavaField* field, JavaObject* val) __attribute__ ((noinline)) {
 	llvm_gcroot(val, 0);
 	if (val != NULL) assert(val->getVirtualTable());
 	assert(field->classDef->isResolved());
@@ -1355,7 +1358,7 @@ struct JavaField::FieldSetter<JavaObject*> {
 	vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
   }
 
-  static void setInstanceField(const JavaField* field, JavaObject* obj, JavaObject* val) {
+  static void setInstanceField(const JavaField* field, JavaObject* obj, JavaObject* val) __attribute__ ((noinline)) {
 	llvm_gcroot(obj, 0);
 	llvm_gcroot(val, 0);
 	if (val != NULL) assert(val->getVirtualTable());
@@ -1364,6 +1367,12 @@ struct JavaField::FieldSetter<JavaObject*> {
 	vmkit::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)val);
   }
 };
+
+template <>
+void JavaField::setStaticField(JavaObject* val) __attribute__ ((noinline));
+
+template<>
+void JavaField::setInstanceField(JavaObject* obj, JavaObject* val) __attribute__ ((noinline));
 
 
 } // end namespace j3

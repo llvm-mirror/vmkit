@@ -92,8 +92,6 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 
 	if (!ccl->classLoader->isZombie()) return;
 
-	return;
-
 #if DEBUG_VERBOSE_STALE_REF
 
 	cerr << "Resetting ref=" << ref << " obj=" << **ref;
@@ -102,19 +100,16 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 
 #endif
 
-//	return;
-
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	if (JavaThread* ownerThread = (JavaThread*)vmkit::ThinLock::getOwner(*ref, vm->lockSystem)) {
-		if (vmkit::FatLock* lock = vmkit::ThinLock::getFatLock(*ref, vm->lockSystem))
+	if (JavaThread* ownerThread = (JavaThread*)vmkit::ThinLock::getOwner(*ref, this->lockSystem)) {
+		if (vmkit::FatLock* lock = vmkit::ThinLock::getFatLock(*ref, this->lockSystem))
 			lock->markAssociatedObjectAsDead();
 
 		// Notify all threads waiting on this object
-		ownerThread->lockingThread.notifyAll(*ref, vm->lockSystem, ownerThread);
+		ownerThread->lockingThread.notifyAll(*ref, this->lockSystem, ownerThread);
 
 		// Release this object
-		while (vmkit::ThinLock::getOwner(*ref, vm->lockSystem) == ownerThread)
-			vmkit::ThinLock::release(*ref, vm->lockSystem, ownerThread);
+		while (vmkit::ThinLock::getOwner(*ref, this->lockSystem) == ownerThread)
+			vmkit::ThinLock::release(*ref, this->lockSystem, ownerThread);
 	}
 
 	*ref = NULL;	// Reset the reference
