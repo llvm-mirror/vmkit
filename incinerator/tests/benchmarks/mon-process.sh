@@ -26,7 +26,7 @@ data="$(echo "$rawdata" | grep -v '^[^0-9]')"
 base_time=$(echo "$data" | head -1 | cut -d ',' -f 1)
 timefmt=%M:%S
 
-echo "$head"
+echo "#$head"
 for i in $data ; do
 	old_time=$(echo "$i" | cut -d ',' -f 1)
 	new_time=$(rebase_time_then_format $base_time $timefmt $old_time)

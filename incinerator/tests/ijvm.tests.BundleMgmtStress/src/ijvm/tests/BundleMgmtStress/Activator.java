@@ -57,7 +57,7 @@ public class Activator
 			uninstallBundle(context.getBundle(firstBundleID));
 						
 			while (!cancelWork) {
-				Bundle bundle = context.installBundle("file:///home/koutheir/PhD/VMKit/vmkit_stale_ref/tests/plugins/ijvm.tests.AImpl_1.0.0.jar");
+				Bundle bundle = context.installBundle("file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.AImpl_1.0.0.jar");
 				bundle.start();
 				Thread.sleep(20);
 				

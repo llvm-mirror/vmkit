@@ -1,34 +1,30 @@
 #!/usr/bin/gnuplot -p
 
 set datafile separator ","
-set border 3
-set xtics border nomirror
-set ytics border nomirror
+set datafile missing '-'
+set datafile commentschars "#"
 
 set ylabel "Memory usage (lower is better)"
-set xdata time
-set timefmt "%M:%S"
-set format x "%M:%S"
+set ytics border nomirror
+set grid ytics
+set yrange [0:*]
 set format y "%.1s %cB"
 
-set term wxt 0
-plot \
-	"j3-stale-ref.csv"	\
-	using 2:3	\
-	title "Presence of stale references"	\
-	with lines linewidth "2pt" linecolor rgb "red",	\
-	"j3-stale-ref-corrected.csv"	\
-	using 2:3	\
-	title "Stale references corrected"	\
-	with lines linewidth "3pt" linetype "dotted" linecolor rgb "blue"
+set xtics 15 axis nomirror
+set border 3
+set xdata time
+set format x "%M:%S"
+set timefmt "%M:%S"
 
-set term svg
-plot \
-	"j3-stale-ref.csv"	\
-	using 2:3	\
-	title "Presence of stale references"	\
-	with lines linewidth "2pt" linecolor rgb "red",	\
-	"j3-stale-ref-corrected.csv"	\
-	using 2:3	\
-	title "Stale references corrected"	\
-	with lines linewidth "3pt" linetype "dotted" linecolor rgb "blue"
+# set title "Stale reference memory leaks in J3 and Incinerator"
+
+set term wxt 0
+plot	\
+	'j3-stale-ref.csv' using 1:(column(11)*1024) linecolor rgb "blue" linewidth "2pt" title "J3" with lines,	\
+	'j3-stale-ref-corrected.csv' using 1:(column(11)*1024) linecolor rgb "red" linewidth "2pt" title "Incinerator" with lines
+
+#set term latex
+#set term postscript clip 12
+#plot	\
+#	'j3-stale-ref.csv' using 1:(column(11)*1024) linecolor rgb "blue" linewidth "2pt" title "J3" with lines,	\
+#	'j3-stale-ref-corrected.csv' using 1:(column(11)*1024) linecolor rgb "red" linewidth "2pt" title "Incinerator" with lines

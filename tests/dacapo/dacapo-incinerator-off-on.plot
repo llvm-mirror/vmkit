@@ -21,7 +21,7 @@ set bars fullwidth
 set style fill solid border 0
 set boxwidth 1
 
-set title "Incinerator overhead in Dacapo benchmarks"
+# set title "Incinerator overhead in Dacapo benchmarks"
 
 set term wxt 0
 plot	\

@@ -21,15 +21,15 @@
 
 -launch
 
--istart  file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/j3mgr_1.0.0.jar
+-istart  file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/j3mgr_1.0.0.jar
 
--istart  file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/ijvm.tests.A_1.0.0.jar
--install file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/ijvm.tests.C_1.0.0.jar
--istart  file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/ijvm.tests.AImpl_1.0.0.jar
--install  file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/ijvm.tests.BImpl_1.0.0.jar
--install file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/ijvm.tests.CImpl_1.0.0.jar
--install file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/ijvm.tests.DImpl_1.0.0.jar
+-istart  file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.A_1.0.0.jar
+-istart file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.C_1.0.0.jar
+-istart  file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.AImpl_1.0.0.jar
+-istart  file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.BImpl_1.0.0.jar
+-istart file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.CImpl_1.0.0.jar
+-istart file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.DImpl_1.0.0.jar
 
--istart file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/ijvm.tests.Runner_1.0.0.jar
+-install file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.Runner_1.0.0.jar
 
--install file:///home/koutheir/PhD/VMKit/vmkit2/incinerator/tests/plugins/ijvm.tests.BundleMgmtStress_1.0.0.jar
+-install file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.BundleMgmtStress_1.0.0.jar
