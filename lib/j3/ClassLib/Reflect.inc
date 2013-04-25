@@ -78,7 +78,6 @@ ArrayObject* JavaObjectClass::getDeclaredMethods(JavaObjectClass* Cl, bool publi
     UserClass* realCl = cl->asClass();
     JnjvmClassLoader* classLoader = cl->classLoader;
     uint32 size = 0;
-		bool annot = false;
 
     // Ugly hack : we don't want this method to return annotationType() 
     // method for annotations. For that, we start the counter to 1 instead 
