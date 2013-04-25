@@ -11,7 +11,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-LIBRARYNAME = StaticGCPass
+LIBRARY=StaticGCPass
 LOADABLE_MODULE = 1
 
 include $(LEVEL)/Makefile.common

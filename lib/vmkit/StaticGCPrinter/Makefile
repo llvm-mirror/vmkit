@@ -11,7 +11,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-LIBRARYNAME = StaticGCPrinter
+LIBRARY=StaticGCPrinter
 LOADABLE_MODULE = 1
 
 include $(LEVEL)/Makefile.common

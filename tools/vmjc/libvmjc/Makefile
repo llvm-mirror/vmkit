@@ -10,7 +10,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-LIBRARYNAME = libvmjc
+LIBRARY=libvmjc
 LOADABLE_MODULE = 1
 VMJC_ASSEMBLY = 1
 BUILT_SOURCES = glibj.zip.s

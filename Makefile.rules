@@ -77,18 +77,18 @@ endif
 ###############################################################################
 USEDLIBS:=$(patsubst %,$(LibDir)/lib%,$(USEDLIBS))
 
-ifdef TOOLNAME
-all:: $(BINDIR)/$(TOOLNAME)$(EXEEXT)
+ifdef TOOL
+all:: $(BINDIR)/$(TOOL)$(EXEEXT)
 
-$(BINDIR)/$(TOOLNAME)$(EXEEXT): $(ObjectsO) $(USEDLIBS) $(SELF) $(BINDIR)/.dir
+$(BINDIR)/$(TOOL)$(EXEEXT): $(ObjectsO) $(USEDLIBS) $(SELF) $(BINDIR)/.dir
 	$(Echo) 'Linking executable $(notdir $@)'
 	$(Verb) $(CLANGXX) -o $@ $(ObjectsO) $(USEDLIBS) $(MY_LIBS) $(MY_LDFLAGS) 
 endif
 
-ifdef LIBRARYNAME
-all:: $(LIBDIR)/$(LIBRARYNAME)$(SHLIBEXT)
+ifdef LIBRARY
+all:: $(LIBDIR)/$(LIBRARY)$(SHLIBEXT)
 
-$(LIBDIR)/$(LIBRARYNAME)$(SHLIBEXT): $(ObjectsO) $(SELF) $(LIBDIR)/.dir
+$(LIBDIR)/$(LIBRARY)$(SHLIBEXT): $(ObjectsO) $(SELF) $(LIBDIR)/.dir
 	$(Echo) "Linking shared library $(notdir $@)"
 	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -Wl,-R -Wl,'$ORIGIN' -shared $(ObjectsO)
 endif

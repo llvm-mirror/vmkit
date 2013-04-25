@@ -12,7 +12,7 @@ include $(LEVEL)/Makefile.config
 
 EXTRA_DIST = libvmjc
 
-TOOLNAME = vmjc
+TOOL=vmjc
 USEDLIBS = J3.a Classpath.a J3.a J3Compiler.a Vmkit.a VmkitCompiler.a MMTk.a CommonThread.a
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter
 

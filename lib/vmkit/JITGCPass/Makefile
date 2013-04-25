@@ -11,7 +11,7 @@ LEVEL = ../../..
 
 include $(LEVEL)/Makefile.config
 
-LIBRARYNAME = JITGCPass
+LIBRARY=JITGCPass
 LOADABLE_MODULE = 1
 USEDLIBS =
 
