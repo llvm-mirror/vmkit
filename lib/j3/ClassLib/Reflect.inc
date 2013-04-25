@@ -249,4 +249,20 @@ int32_t JavaObjectClass::getModifiers(JavaObjectClass* Cl) {
   return res;
 }
 
+JavaObject* JavaObjectClass::getEnclosingClass(JavaObjectClass* Cl)
+{
+	JavaObject* res = 0;
+	llvm_gcroot(Cl, 0);
+	llvm_gcroot(res, 0);
+
+	Jnjvm* vm = JavaThread::get()->getJVM();
+	UserCommonClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false);
+	if (cl->isClass()) {
+		UserClass *outerCl = cl->asClass()->getOuterClass();
+		if (outerCl != NULL)
+			res = outerCl->getClassDelegatee(vm, NULL);
+	}
+	return res;
+}
+
 } // end namespace j3

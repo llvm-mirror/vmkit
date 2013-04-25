@@ -70,6 +70,7 @@ public:
   static ArrayObject* getInterfaces(JavaObjectClass* Cl);
   static JavaObject* getDeclaringClass(JavaObjectClass* Cl);
   static int getModifiers(JavaObjectClass* Cl);
+  static JavaObject* getEnclosingClass(JavaObjectClass* Cl);
 };
 
 class JavaObjectVMField : public JavaObject {

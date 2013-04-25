@@ -543,14 +543,17 @@ JNIEnv *env,
 jclass clazz,
 #endif
 JavaObjectClass* Cl) {
-  llvm_gcroot(Cl, 0);
+	JavaObject* res = 0;
+	llvm_gcroot(Cl, 0);
+	llvm_gcroot(res, 0);
 
-  UserCommonClass* cl = JavaObjectClass::getClass(Cl);
-  if (!cl->isClass()) return NULL;
+	BEGIN_NATIVE_EXCEPTION(0)
 
-  UserClass *outerCl = cl->asClass()->getOuterClass();
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  return outerCl->getClassDelegatee(vm, NULL);
+	res = JavaObjectClass::getEnclosingClass(Cl);
+
+	END_NATIVE_EXCEPTION
+
+	return res;
 }
 
 }
