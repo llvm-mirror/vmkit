@@ -15,10 +15,28 @@ apt-get install default-jre default-jdk
 GNU Classpath:
 ==============
 
+* For Macos users
+sudo port install antlr
 wget http://ftp.gnu.org/gnu/classpath/classpath-0.99.tar.gz
 tar zxf classpath-0.99.tar.gz
-ln -s classpath-0.99 classpath
-cd classpath
+patch -p1 < patches/classpath-0.99.macos.patch
+cd classpath-0.99
+./configure --disable-plugin --disable-examples --disable-Werror --with-antlr-jar=/opt//local/share/java/antlr.jar
+make -j12
+cd lib
+ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.dylib;
+ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.dylib;
+ln -s ../native/jni/java-io/.libs/libjavaio.dylib;
+ln -s ../native/jni/java-lang/.libs/libjavalangreflect.dylib;
+ln -s ../native/jni/java-lang/.libs/libjavalang.dylib;
+ln -s ../native/jni/java-net/.libs/libjavanet.dylib;
+ln -s ../native/jni/java-nio/.libs/libjavanio.dylib;
+ln -s ../native/jni/java-util/.libs/libjavautil.dylib;
+
+* For Linux users:
+wget http://ftp.gnu.org/gnu/classpath/classpath-0.99.tar.gz
+tar zxf classpath-0.99.tar.gz
+cd classpath-0.99
 ./configure --disable-plugin --disable-examples --disable-Werror
 make -j12
 cd lib
@@ -31,14 +49,11 @@ ln -sf ../native/jni/java-net/.libs/libjavanet.so
 ln -sf ../native/jni/java-nio/.libs/libjavanio.so
 ln -sf ../native/jni/java-util/.libs/libjavautil.so
 
-* Go root
-cd classpath
-sudo make install
-sudo ldconfig
-
 =====
 LLVM:
 =====
+
+* Notice that installing clang is not mandatory on a recent MACOS
 
 * Get it (git):
 

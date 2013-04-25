@@ -1,0 +1,15 @@
+diff -u -r test/classpath-0.99/native/jni/java-io/java_io_VMConsole.c classpath-0.99/native/jni/java-io/java_io_VMConsole.c
+--- test/classpath-0.99/native/jni/java-io/java_io_VMConsole.c	2012-01-08 13:35:53.000000000 +0100
++++ classpath-0.99/native/jni/java-io/java_io_VMConsole.c	2012-12-03 16:25:36.000000000 +0100
+@@ -47,7 +47,11 @@
+ 
+ /*************************************************************************/
+ 
++#if defined(__APPLE__)
++#define TERMIOS_ECHO_IFLAGS (IXON|IXOFF|IXANY)
++#else
+ #define TERMIOS_ECHO_IFLAGS (IUCLC|IXON|IXOFF|IXANY)
++#endif
+ #define TERMIOS_ECHO_LFLAGS (ECHO|ECHOE|ECHOK|ECHONL|TOSTOP)
+ 
+ /*
