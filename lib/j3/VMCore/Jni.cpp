@@ -316,6 +316,7 @@ jobject PopLocalFrame(JNIEnv* env, jobject result) {
   assert(toRemove >= 0 && "Local frame has negative number of references to remove");
   th->JNIlocalFrames.pop_back();
   th->localJNIRefs->removeJNIReferences(th,toRemove);
+  *(th->currentAddedReferences) -= toRemove;
 
   if(result){
   	res = *(JavaObject**)result;

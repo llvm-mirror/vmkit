@@ -192,8 +192,8 @@ void Thread::scanStack(word_t closure) {
 
 void Thread::enterUncooperativeCode(uint16_t level) {
   if (isVmkitThread()) {
-    if (!inRV && !inUncooperativeCode) {
-      assert(!lastSP && "SP already set when entering uncooperative code");
+  	if (!inRV) {
+  		assert(!lastSP && "SP already set when entering uncooperative code");
       // Get the caller.
       word_t temp = System::GetCallerAddress();
       // Make sure to at least get the caller of the caller.
@@ -204,27 +204,25 @@ void Thread::enterUncooperativeCode(uint16_t level) {
       __sync_bool_compare_and_swap(&lastSP, 0, temp);
       if (doYield) joinRVBeforeEnter();
       assert(lastSP && "No last SP when entering uncooperative code");
-      inUncooperativeCode=true;
     }
   }
 }
 
 void Thread::enterUncooperativeCode(word_t SP) {
   if (isVmkitThread()) {
-    if (!inRV && !inUncooperativeCode) {
+  	if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
       // The cas is not necessary, but it does a memory barrier.
       __sync_bool_compare_and_swap(&lastSP, 0, SP);
       if (doYield) joinRVBeforeEnter();
       assert(lastSP && "No last SP when entering uncooperative code");
-      inUncooperativeCode=true;
     }
   }
 }
 
 void Thread::leaveUncooperativeCode() {
   if (isVmkitThread()) {
-    if (!inRV && inUncooperativeCode) {
+  	if (!inRV) {
       assert(lastSP && "No last SP when leaving uncooperative code");
       word_t savedSP = lastSP;
       // The cas is not necessary, but it does a memory barrier.
@@ -232,7 +230,6 @@ void Thread::leaveUncooperativeCode() {
       // A rendezvous has just been initiated, join it.
       if (doYield) joinRVAfterLeave(savedSP);
       assert(!lastSP && "SP has a value after leaving uncooperative code");
-      inUncooperativeCode=false;
     }
   }
 }

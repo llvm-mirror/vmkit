@@ -117,7 +117,6 @@ public:
   Thread() {
     lastExceptionBuffer = 0;
     lastKnownFrame = 0;
-    inUncooperativeCode = false;
   }
 
   /// yield - Yield the processor to another thread.
@@ -214,7 +213,7 @@ public:
   void enterUncooperativeCode(uint16_t level = 0) __attribute__ ((noinline));
   void enterUncooperativeCode(word_t SP);
   void leaveUncooperativeCode();
-  bool isInUncooperativeCode()	{	return inUncooperativeCode;	};
+  bool isInUncooperativeCode()	{	return lastSP;	};
   word_t waitOnSP();
 
 
@@ -276,10 +275,6 @@ public:
   /// lastExceptionBuffer - The last exception buffer on this thread's stack.
   ///
   ExceptionBuffer* lastExceptionBuffer;
-
-  /// inUncooperativeCode - Status of the Thread toward Collection.
-  ///
-  bool inUncooperativeCode;
 
   void internalThrowException();
 
