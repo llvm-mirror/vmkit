@@ -1,8 +1,11 @@
 
 .PHONY: all tidy clean distclean confclean
 .SECONDARY:
-.SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll .jar $(SHLIBEXT) $(SUFFIXES)
+.SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll .jar $(SHLIBEXT) $(EXEEXT)
 
+###############################################################################
+#   Main options
+###############################################################################
 ifeq ($(OPTIMIZED),1)
   BUILD_NAME:=Release
   ifeq ($(DEBUG),1)
@@ -35,6 +38,26 @@ ifeq ($(OPTIMIZED),1)
 else
 	OPT_MSG="Performing GC pass on"
 endif
+
+
+ENABLE_OPTIMIZED=1
+
+LLC_OPT+=-relocation-model=pic -disable-cfi -disable-fp-elim
+
+OPT_MMTK_FLAGS=-std-compile-opts -strip-debug
+
+INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR)
+
+WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
+COMMON_CFLAGS+=  -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer -ansi -pedantic $(WARN_CFLAGS) -fPIC
+
+CFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cflags)
+CXXFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cxxflags)
+LDFLAGS+=$(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
+LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
+
+DEPEND_OPTIONS=-MMD -MP -MF "$(BUILD_DIR)/$$*.d.tmp" -MT "$(BUILD_DIR)/$$*.bc" -MT "$(BUILD_DIR)/$$*.d"
+DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUILD_DIR)/$$*.d.tmp"; exit 1; fi
 
 ###############################################################################
 #   Nice printing
@@ -114,7 +137,7 @@ BIN_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
 LIB_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
 BUILD_DIR=$(PROJ_OBJ_CWD)/$(BUILD_NAME)
 
-PREPARE_CODE=$(LIB_DIR)/prepare-code$(SHLIBEXT)
+PREPARE_CODE_LIB=$(LIB_DIR)/prepare-code$(SHLIBEXT)
 VMJC=$(BIN_DIR)/vmjc$(EXEEXT)
 PRECOMPILER=$(BIN_DIR)/precompiler
 
@@ -164,8 +187,8 @@ CLANG_FILES=$(patsubst %.c,$(BUILD_DIR)/%,$(call all-suffixes,.c)) \
 BC_FILES=$(addsuffix .bc,$(CLANG_FILES)) $(addprefix $(BUILD_DIR)/,$(filter %.bc, $(GEN)))
 
 ifdef NEED_GC
-LLC_GC=-load=$(PREPARE_CODE)
-OPT_GC=-load=$(PREPARE_CODE) -StaticGCPass
+LLC_OPT+=-load=$(PREPARE_CODE_LIB)
+LOPT_OPT+=-load=$(PREPARE_CODE_LIB) -StaticGCPass
 endif
 
 ifdef NEED_BC
@@ -196,11 +219,11 @@ $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 
 %.o: %.bc
 	$(Echo) "Assembling '$(notdir $<)'"
-	$(Verb) $(LLC) $(LLC_OPT) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $(LLC_GC) $< -o $@
+	$(Verb) $(LLC) $(LLC_OPT) -filetype=obj $< -o $@
 
 %-opt.bc: %.bc
 	$(Echo) "$(OPT_MSG) '$(notdir $<)'"
-	$(Verb) $(LOPT) $< $(OPT_GC) -o $@
+	$(Verb) $(LOPT) $< $(LOPT_OPT) -o $@
 
 endif
 
@@ -234,7 +257,7 @@ DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
 
 $(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables-opt.o $(SELF) $(BIN_DIR)/.dir
 	$(Echo) "Linking executable '$(notdir $@)'"
-	$(Verb) $(CLANGXX) -o $@ $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables-opt.o $(DEP_LIBS) $(MY_LIBS) $(MY_LDFLAGS) 
+	$(Verb) $(CLANGXX) -o $@ $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables-opt.o $(DEP_LIBS) $(LIBS) $(LDFLAGS) 
 
 $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
 	$(Echo) "Linking shared library '$(notdir $@)'"
@@ -273,20 +296,6 @@ endif
 ###############################################################################
 # object rules
 ###############################################################################
-INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR)
-
-# should remove no-unused-variable                                                                                                         
-WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
-COMMON_CFLAGS+=  -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer  -ansi -pedantic $(WARN_CFLAGS) -fPIC
-
-CFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cflags)
-CXXFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cxxflags)
-MY_LDFLAGS+=$(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
-MY_LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
-
-DEPEND_OPTIONS=-MMD -MP -MF "$(BUILD_DIR)/$$*.d.tmp" -MT "$(BUILD_DIR)/$$*.bc" -MT "$(BUILD_DIR)/$$*.d"
-DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUILD_DIR)/$$*.d.tmp"; exit 1; fi
-
 define define_compile_rule
 $(BUILD_DIR)/%.bc: %$1 $(SELF) $(BUILT_INC) $(BUILD_DIR)/.dir
 	$(Echo) "Compiling '$$(notdir $$<)'"
