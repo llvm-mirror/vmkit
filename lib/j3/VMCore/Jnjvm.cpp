@@ -970,7 +970,17 @@ void ClArgumentsInfo::readArgs(Jnjvm* vm) {
         char* path = &cur[16];
         vm->bootstrapLoader->analyseClasspathEnv(path);
       }
-    } else if (!(strcmp(cur, "-enableassertions"))) {
+    }
+    else if (!(strncmp(cur, "-Xbootclasspath/a:", 18))) {
+	  uint32 len = strlen(cur);
+	  if (len == 18) {
+		printInformation();
+	  } else {
+		char* path = &cur[18];
+		vm->bootstrapLoader->analyseClasspathEnv(path);
+	  }
+    }
+    else if (!(strcmp(cur, "-enableassertions"))) {
       nyi();
     } else if (!(strcmp(cur, "-ea"))) {
       nyi();
