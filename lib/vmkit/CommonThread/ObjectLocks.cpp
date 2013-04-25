@@ -149,7 +149,7 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
     if (object->header() & FatMask) {
       FatLock* obj = table.getFatLockFromID(object->header());
       if (obj != NULL) {
-        if (obj->acquire(object)) {
+        if (obj->acquire(object, table)) {
           assert((object->header() & FatMask) && "Inconsistent lock");
           assert((table.getFatLockFromID(object->header()) == obj) && "Inconsistent lock");
           assert(owner(object, table) && "Not owner after acquring fat lock!");
@@ -195,10 +195,11 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
 }
 
 /// release - Release the lock.
-void ThinLock::release(gc* object, LockSystem& table) {
+void ThinLock::release(gc* object, LockSystem& table, vmkit::Thread* ownerThread) {
   llvm_gcroot(object, 0);
-  assert(owner(object, table) && "Not owner when entering release!");
-  uint64 id = vmkit::Thread::get()->getThreadID();
+  if (!ownerThread) ownerThread = vmkit::Thread::get();
+  assert((getOwner(object, table) == ownerThread) && "Not owner when entering release!");
+  uint64 id = ownerThread->getThreadID();
   word_t oldValue = 0;
   word_t newValue = 0;
   word_t yieldedValue = 0;
@@ -212,7 +213,7 @@ void ThinLock::release(gc* object, LockSystem& table) {
   } else if (object->header() & FatMask) {
     FatLock* obj = table.getFatLockFromID(object->header());
     assert(obj && "Lock deallocated while held.");
-    obj->release(object, table);
+    obj->release(object, table, ownerThread);
   } else {
     assert(((object->header() & ThinCountMask) > 0) && "Inconsistent state");
     uint32 count = (object->header() & ThinCountMask);
@@ -225,7 +226,7 @@ void ThinLock::release(gc* object, LockSystem& table) {
 
 }
 
-/// owner - Returns true if the curren thread is the owner of this object's
+/// owner - Returns true if the current thread is the owner of this object's
 /// lock.
 bool ThinLock::owner(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
@@ -239,6 +240,18 @@ bool ThinLock::owner(gc* object, LockSystem& table) {
     if (res) return true;
   }
   return false;
+}
+
+vmkit::Thread* ThinLock::getOwner(gc* object, LockSystem& table)
+{
+  llvm_gcroot(object, 0);
+  if (object->header() & FatMask) {
+	FatLock* obj = table.getFatLockFromID(object->header());
+	return (!obj) ? NULL : obj->getOwner();
+  } else {
+	uint64_t threadID = object->header() & System::GetThreadIDMask();
+	return vmkit::Thread::getByID(threadID);
+  }
 }
 
 /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.
@@ -265,7 +278,9 @@ vmkit::Thread* FatLock::getOwner() {
   return internalLock.getOwner();
 }
   
-FatLock::FatLock(uint32_t i, gc* a) {
+FatLock::FatLock(uint32_t i, gc* a) :
+	associatedObjectDead(false)
+{
   llvm_gcroot(a, 0);
   assert(a != NULL);
   firstThread = NULL;
@@ -280,7 +295,7 @@ word_t FatLock::getID() {
   return (index << ThinLock::NonLockBits) | ThinLock::FatMask;
 }
 
-void FatLock::release(gc* obj, LockSystem& table) {
+void FatLock::release(gc* obj, LockSystem& table, vmkit::Thread* ownerThread) {
   llvm_gcroot(obj, 0);
   assert(associatedObject && "No associated object when releasing");
   assert(associatedObject == obj && "Mismatch object in lock");
@@ -291,12 +306,12 @@ void FatLock::release(gc* obj, LockSystem& table) {
     table.deallocate(this);
   }
 #endif
-  internalLock.unlock();
+  internalLock.unlock(ownerThread);
 }
 
 /// acquire - Acquires the internalLock.
 ///
-bool FatLock::acquire(gc* obj) {
+bool FatLock::acquire(gc* obj, LockSystem& table) {
   llvm_gcroot(obj, 0);
     
   spinLock.lock();
@@ -308,6 +323,28 @@ bool FatLock::acquire(gc* obj) {
   spinLock.lock();
   lockingThreads--;
   spinLock.unlock();
+
+  if (this->associatedObjectIsDead()) {
+    internalLock.unlock();
+/*
+    vmkit::Thread* ownerThread = this->getOwner();
+
+    // Notify all threads waiting on this object
+    ownerThread->lockingThread.notifyAll(*ref, vm->lockSystem, ownerThread);
+
+    // Release this object
+    while (vmkit::ThinLock::getOwner(*ref, vm->lockSystem) == ownerThread)
+      vmkit::ThinLock::release(*ref, vm->lockSystem, ownerThread);
+*/
+
+	if (lockingThreads == 0) {
+      table.deallocate(this);
+    }
+
+	word_t methodIP = System::GetCallerAddress();
+	methodIP = System::GetIPFromCallerAddress(methodIP);
+    Thread::get()->throwNullPointerException(methodIP);
+  }
 
   if (associatedObject != obj) {
     internalLock.unlock();
@@ -492,9 +529,10 @@ bool LockingThread::wait(
   return false;
 }
 
-void LockingThread::notify(gc* self, LockSystem& table) {
+void LockingThread::notify(gc* self, LockSystem& table, vmkit::Thread* ownerThread) {
   llvm_gcroot(self, 0);
-  assert(vmkit::ThinLock::owner(self, table));
+  if (!ownerThread) ownerThread = vmkit::Thread::get();
+  assert(vmkit::ThinLock::getOwner(self, table) == ownerThread);
   FatLock* l = vmkit::ThinLock::getFatLock(self, table);
   
   if (l == NULL) return;
@@ -528,12 +566,13 @@ void LockingThread::notify(gc* self, LockSystem& table) {
     }
   } while (cur != l->firstThread);
 
-  assert(vmkit::ThinLock::owner(self, table) && "Not owner after notify");
+  assert((vmkit::ThinLock::getOwner(self, table) == ownerThread) && "Not owner after notify");
 }
 
-void LockingThread::notifyAll(gc* self, LockSystem& table) {
+void LockingThread::notifyAll(gc* self, LockSystem& table, vmkit::Thread* ownerThread) {
   llvm_gcroot(self, 0);
-  assert(vmkit::ThinLock::owner(self, table));
+  if (!ownerThread) ownerThread = vmkit::Thread::get();
+  assert(vmkit::ThinLock::getOwner(self, table) == ownerThread);
   FatLock* l = vmkit::ThinLock::getFatLock(self, table);
   if (l == NULL) return;
   LockingThread* cur = l->firstThread;
@@ -546,7 +585,7 @@ void LockingThread::notifyAll(gc* self, LockSystem& table) {
     cur = temp;
   } while (cur != l->firstThread);
   l->firstThread = NULL;
-  assert(vmkit::ThinLock::owner(self, table) && "Not owner after notifyAll");
+  assert((vmkit::ThinLock::getOwner(self, table) == ownerThread) && "Not owner after notifyAll");
 }
 
 void FatLock::setAssociatedObject(gc* obj) {

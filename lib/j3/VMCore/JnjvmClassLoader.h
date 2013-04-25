@@ -92,7 +92,7 @@ private:
   void ensureCached(UserCommonClass* cl);
 protected:
   
-  JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) : allocator(Alloc) {}
+  JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc);
   
   /// TheCompiler - The Java compiler for this class loader.
   ///
@@ -323,6 +323,13 @@ public:
   /// getRegisteredNative - Return the native pointer, if exists.
   ///
   word_t getRegisteredNative(const JavaMethod * meth);
+
+protected:
+  bool zombie;
+
+public:
+  bool isZombie() const {return zombie;}
+  void markZombie(bool becomeZombie = true) {zombie = becomeZombie;}
 
   friend class Class;
   friend class CommonClass;

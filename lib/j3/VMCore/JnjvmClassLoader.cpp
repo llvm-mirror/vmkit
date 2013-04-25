@@ -208,10 +208,15 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
 #undef DEF_UTF8 
 }
 
+JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
+	allocator(Alloc), zombie(false)
+{
+}
+
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    JnjvmClassLoader& JCL, JavaObject* loader,
                                    VMClassLoader* vmdata,
-                                   Jnjvm* VM) : allocator(Alloc) {
+                                   Jnjvm* VM) : allocator(Alloc), zombie(false) {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
   bootstrapLoader = JCL.bootstrapLoader;

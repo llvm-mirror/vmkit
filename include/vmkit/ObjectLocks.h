@@ -60,8 +60,8 @@ public:
   }
 
   bool wait(gc* object, LockSystem& table, struct timeval* info, bool timed);
-  void notify(gc* object, LockSystem& table);
-  void notifyAll(gc* object, LockSystem& table);
+  void notify(gc* object, LockSystem& table, vmkit::Thread* ownerThread = NULL);
+  void notifyAll(gc* object, LockSystem& table, vmkit::Thread* ownerThread = NULL);
 };
 
 
@@ -75,18 +75,22 @@ private:
   gc* associatedObject;
   uint32_t index;
   FatLock* nextFreeLock;
+  bool associatedObjectDead;
+
 public:
   FatLock(uint32_t index, gc* object);
   word_t getID();
   int tryAcquire() { return internalLock.tryLock(); }
-  bool acquire(gc* object);
+  bool acquire(gc* object, LockSystem& table);
   void acquireAll(gc* object, word_t count);
-  void release(gc* object, LockSystem& table);
+  void release(gc* object, LockSystem& table, vmkit::Thread* ownerThread = NULL);
   vmkit::Thread* getOwner();
   bool owner();
   void setAssociatedObject(gc* obj);
   gc* getAssociatedObject() { return associatedObject; }
   gc** getAssociatedObjectPtr() { return &associatedObject; }
+  bool associatedObjectIsDead() const {return associatedObjectDead;}
+  void markAssociatedObjectAsDead() {associatedObjectDead = true;}
 
   friend class LockSystem;
   friend class LockingThread;
@@ -187,11 +191,13 @@ public:
   static void acquire(gc* object, LockSystem& table);
 
   /// release - Release the lock.
-  static void release(gc* object, LockSystem& table);
+  static void release(gc* object, LockSystem& table, vmkit::Thread* ownerThread = NULL);
 
   /// owner - Returns true if the curren thread is the owner of this object's
   /// lock.
   static bool owner(gc* object, LockSystem& table);
+
+  static vmkit::Thread* getOwner(gc* object, LockSystem& table);
 
   /// getFatLock - Get the fat lock is the lock is a fat lock, 0 otherwise.
   static FatLock* getFatLock(gc* object, LockSystem& table);

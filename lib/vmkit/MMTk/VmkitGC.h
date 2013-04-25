@@ -83,7 +83,7 @@ public:
   static bool isLive(gc* ptr, word_t closure) __attribute__ ((always_inline)); 
   static void scanObject(void** ptr, word_t closure) __attribute__ ((always_inline));
   static void markAndTrace(void* source, void* ptr, word_t closure) __attribute__ ((always_inline));
-  static void markAndTraceRoot(void* ptr, word_t closure) __attribute__ ((always_inline));
+  static void markAndTraceRoot(void* source, void* ptr, word_t closure) __attribute__ ((always_inline));
   static gc*  retainForFinalize(gc* val, word_t closure) __attribute__ ((always_inline));
   static gc*  retainReferent(gc* val, word_t closure) __attribute__ ((always_inline));
   static gc*  getForwardedFinalizable(gc* val, word_t closure) __attribute__ ((always_inline));

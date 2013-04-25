@@ -55,8 +55,9 @@ Lock::~Lock() {
   pthread_mutex_destroy((pthread_mutex_t*)&internalLock);
 }
 
-bool Lock::selfOwner() {
-  return owner == vmkit::Thread::get();
+bool Lock::selfOwner(vmkit::Thread* ownerThread) {
+  if (!ownerThread) ownerThread = vmkit::Thread::get();
+  return owner == ownerThread;
 }
 
 vmkit::Thread* Lock::getOwner() {
@@ -71,8 +72,8 @@ void LockNormal::lock() {
   owner = th;
 }
 
-void LockNormal::unlock() {
-  assert(selfOwner() && "Not owner when unlocking");
+void LockNormal::unlock(vmkit::Thread* ownerThread) {
+  assert(selfOwner(ownerThread) && "Not owner when unlocking");
   owner = 0;
   pthread_mutex_unlock((pthread_mutex_t*)&internalLock);
 }
@@ -98,8 +99,8 @@ int LockRecursive::tryLock() {
   return res;
 }
 
-void LockRecursive::unlock() {
-  assert(selfOwner() && "Not owner when unlocking");
+void LockRecursive::unlock(vmkit::Thread* ownerThread) {
+  assert(selfOwner(ownerThread) && "Not owner when unlocking");
   --n;
   if (n == 0) {
     owner = 0;

@@ -66,16 +66,7 @@ extern "C" void ThrowStackOverflowError(word_t ip) {
 }
 
 extern "C" void ThrowNullPointerException(word_t ip) {
-  vmkit::Thread* th = vmkit::Thread::get();
-  vmkit::FrameInfo* FI = th->MyVM->IPToFrameInfo(ip);
-  if (FI->Metadata == NULL) {
-    fprintf(stderr, "Thread %p received a SIGSEGV: either the VM code or an external\n"
-                    "native method is bogus. Aborting...\n", (void*)th);
-    abort();
-  } else {
-    vmkit::Thread::get()->MyVM->nullPointerException();
-  }
-  UNREACHABLE();
+  vmkit::Thread::get()->throwNullPointerException(ip);
 }
 
 void sigsegvHandler(int n, siginfo_t *info, void *context) {

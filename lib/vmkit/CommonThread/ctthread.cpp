@@ -398,3 +398,16 @@ void Thread::releaseThread(vmkit::Thread* th) {
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
 }
+
+void Thread::throwNullPointerException(word_t methodIP)
+{
+	vmkit::FrameInfo* FI = MyVM->IPToFrameInfo(methodIP);
+	if (FI->Metadata == NULL) {
+		fprintf(stderr, "Thread %p received a SIGSEGV: either the VM code or an external\n"
+					"native method is bogus. Aborting...\n", (void*)this);
+		abort();
+	}
+
+	MyVM->nullPointerException();
+	UNREACHABLE();
+}

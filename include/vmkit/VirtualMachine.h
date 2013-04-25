@@ -203,6 +203,8 @@ public:
   ///
   CooperativeCollectionRV rendezvous;
 
+  virtual void resetReferenceIfStale(const void* source, void** ref) {}
+
 //===----------------------------------------------------------------------===//
 // (3) Backtrace-related methods.
 //===----------------------------------------------------------------------===//

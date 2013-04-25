@@ -350,6 +350,11 @@ public:
   /// mapping the initial thread.
   ///
   void loadBootstrap();
+
+  virtual void resetReferenceIfStale(const void* source, void** ref);
+  void resetReferenceIfStale(const JavaObject *source, class VMClassLoader** ref);
+  void resetReferenceIfStale(const JavaObject *source, class VMStaticInstance** ref);
+  void resetReferenceIfStale(const JavaObject *source, class JavaObject** ref);
 };
 
 } // end namespace j3

@@ -221,6 +221,8 @@ private:
 public:
   friend std::ostream& operator << (std::ostream&, const JavaThread&);
   void dump() const __attribute__((noinline));
+
+  virtual void throwNullPointerException(word_t methodIP);
 };
 
 } // end namespace j3

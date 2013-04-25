@@ -57,7 +57,7 @@ public:
     vmkit::Collector::markAndTrace(obj, &obj->constructor, closure);
     if (obj->vmdata) {
       JavaObject** Obj = obj->vmdata->classLoader->getJavaClassLoaderPtr();
-      if (*Obj) vmkit::Collector::markAndTraceRoot(Obj, closure);
+      if (*Obj) vmkit::Collector::markAndTraceRoot(obj, Obj, closure);
     }
   }
 

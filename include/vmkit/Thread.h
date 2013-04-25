@@ -142,7 +142,9 @@ public:
   uint64_t getThreadID() {
     return (uint64_t)this;
   }
- 
+
+  static Thread* getByID(uint64_t threadID) {return (Thread*)threadID;}
+
 public:
 
   /// IsolateID - The Isolate ID of the thread's VM.
@@ -293,6 +295,8 @@ public:
     return addr > stackOverflowCheck &&
       addr <= stackOverflowCheck + System::GetPageSize();
   }
+
+  virtual void throwNullPointerException(word_t methodIP);
 };
 
 class ExceptionBuffer {

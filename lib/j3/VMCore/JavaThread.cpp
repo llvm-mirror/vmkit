@@ -189,3 +189,12 @@ void JavaThread::dump() const
 {
 	cerr << *this << endl;
 }
+
+void JavaThread::throwNullPointerException(word_t methodIP)
+{
+	if (!this->isVmkitThread())
+		return vmkit::Thread::throwNullPointerException(methodIP);
+
+	MyVM->nullPointerException();
+	UNREACHABLE();
+}
