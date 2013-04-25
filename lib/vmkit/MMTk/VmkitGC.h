@@ -20,6 +20,7 @@ extern "C" void EmptyDestructor();
 /*
  * C++ VirtualTable data layout representation. This is the base for
  * every object layout based on virtual tables.
+ * See at J3 JavaObject.h file, JavaVirtualTable class definition for an example.
  */
 class VirtualTable {
  public:
