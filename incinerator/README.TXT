@@ -91,7 +91,7 @@ svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit
 
 * Make it (debug mode):
 
-./configure --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/usr/local/classpath/lib/classpath --with-gnu-classpath-glibj=/usr/local/classpath/share/classpath/glibj.zip
+./configure --enable-incinerator --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/usr/local/classpath/lib/classpath --with-gnu-classpath-glibj=/usr/local/classpath/share/classpath/glibj.zip
 make -j12 ENABLE_OPTIMIZED=0 REQUIRES_FRAME_POINTER=1 KEEP_SYMBOLS=1 DEBUG_RUNTIME=1 DEBUG_SYMBOLS=1
 
 =============
