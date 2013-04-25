@@ -4159,15 +4159,43 @@ void ReleaseStringCritical(JNIEnv *env, jstring string, const jchar *cstring) {
 
 
 jweak NewWeakGlobalRef(JNIEnv* env, jobject obj) {
-  NYI();
-  abort();
-  return 0;
+	JavaObject* Obj = NULL;
+	  llvm_gcroot(Obj, 0);
+
+	  BEGIN_JNI_EXCEPTION
+
+	  // Local object references.
+	  if (obj) {
+	    Obj = *(JavaObject**)obj;
+
+	    Jnjvm* vm = JavaThread::get()->getJVM();
+
+
+	    vm->globalRefsLock.lock();
+	    JavaObject** res = vm->globalRefs.addJNIReference(Obj);
+	    vm->globalRefsLock.unlock();
+
+	    RETURN_FROM_JNI((jweak)(jobject)res);
+	  } else {
+	    RETURN_FROM_JNI(0);
+	  }
+
+	  END_JNI_EXCEPTION
+	  RETURN_FROM_JNI(0);
 }
 
 
 void DeleteWeakGlobalRef(JNIEnv* env, jweak ref) {
-  NYI();
-  abort();
+	BEGIN_JNI_EXCEPTION
+
+	  Jnjvm* vm = myVM(env);
+	  vm->globalRefsLock.lock();
+	  vm->globalRefs.removeJNIReference((JavaObject**)ref);
+	  vm->globalRefsLock.unlock();
+
+	  END_JNI_EXCEPTION
+
+	  RETURN_VOID_FROM_JNI;
 }
 
 
