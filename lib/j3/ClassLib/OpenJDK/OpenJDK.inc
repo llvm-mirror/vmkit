@@ -2595,10 +2595,8 @@ JVM_Read(jint fd, char *buf, jint nbytes) {
   	res = read(fd, buf, nbytes);
   else {
   	//th->enterUncooperativeCode((uint16_t)2);
-  	//res = read(fd, buf, nbytes);
+  	res = read(fd, buf, nbytes);
   	//th->leaveUncooperativeCode();
-  	res = 1;
-  	buf[0] = 'a';
   }
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
