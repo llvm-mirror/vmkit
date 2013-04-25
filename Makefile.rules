@@ -78,29 +78,18 @@ endif
 #SELF=$(PROJ_SRC_ROOT)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
 
 ###############################################################################
-#   Linking
+#   Main targets
 ###############################################################################
-DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(MODULE) $(USE) $(USE))
-
 ifdef TOOL
 MODULE=$(TOOL)
 
 all:: $(BIN_DIR)/$(TOOL)$(EXEEXT)
-
-$(BIN_DIR)/$(TOOL)$(EXEEXT): $(DEP_LIBS) $(SELF) $(BIN_DIR)/.dir
-	$(Echo) 'Linking executable:     $(notdir $@)'
-	$(Verb) $(CLANGXX) -o $@ $(DEP_LIBS) $(MY_LIBS) $(MY_LDFLAGS) 
-
 endif
 
 ifdef LIBRARY
 MODULE=$(LIBRARY)
 
 all:: $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT)
-
-$(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
-	$(Echo) "Linking shared library: $(notdir $@)"
-	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -Wl,-R -Wl,'$ORIGIN' -shared $(ObjectsO)
 endif
 
 ###############################################################################
@@ -147,16 +136,29 @@ clean-local::
 endif
 
 $(MODULE_A): $(OBJ_FILES) $(SELF) $(LIB_DIR)/.dir
-	$(Echo) "Building archive:       $(notdir $@)"
+	$(Echo) "Building archive '$(notdir $@)'"
 	-$(Verb) $(RM) -f $@
 	$(Verb) $(Archive) $@ $(OBJ_FILES)
 	$(Verb) $(Ranlib) $@
 
 $(MODULE_BC): $(BC_FILES) $(SELF) $(LIB_DIR)/.dir
-	$(Echo) "Building module:        $(notdir $@)"
+	$(Echo) "Building module '$(notdir $@)'"
 	$(Verb) $(LLVMLINK) $(BC_FILES) -o $(MODULE_BC)
 
 endif
+
+###############################################################################
+#   Linking
+###############################################################################
+DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(USE) $(USE))
+
+$(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(BIN_DIR)/.dir
+	$(Echo) "Linking executable '$(notdir $@)'"
+	$(Verb) $(CLANGXX) -o $@ $(MODULE_A) $(DEP_LIBS) $(MY_LIBS) $(MY_LDFLAGS) 
+
+$(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
+	$(Echo) "Linking shared library '$(notdir $@)'"
+	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -shared -Wl,--whole-archive $(MODULE_A) -Wl,--no-whole-archive $(DEP_LIBS)
 
 #
 #
@@ -285,24 +287,24 @@ $(LibName.BCA): $(ObjectsBC) $(LibDir)/.dir $(LLVMToolDir)/llvm-ar
 	$(Verb) $(LArchive) $@ $(ObjectsBC)
 
 $(BUILD_DIR)/%-gc.o: $(BUILD_DIR)/%-gc.bc $(LLC) $(SELF)
-	$(Echo) "Assembling:             $(notdir $<)"
+	$(Echo) "Assembling '$(notdir $<)'"
 	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim -load=$(PREPARE_CODE) $< -o $@
 
 $(BUILD_DIR)/%.o: $(BUILD_DIR)/%.bc $(LLC) $(SELF)
-	$(Echo) "Assembling:             $(notdir $<)"
+	$(Echo) "Assembling '$(notdir $<)'"
 	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $< -o $@
 
 $(BUILD_DIR)/%-gc.bc: $(BUILD_DIR)/%.bc $(LOPT) $(PREPARE_CODE) $(SELF)
-	$(Echo) "Preparing for gc:       $(notdir $<)"
+	$(Echo) "Preparing for gc '$(notdir $<)'"
 	$(Verb) $(LOPT) $< -load=$(PREPARE_CODE) -StaticGCPass -o $@
 
 define define_compile_rule
 $(BUILD_DIR)/%.bc: %$1 $(SELF) $(FRAMETABLES) $(BUILD_DIR)/.dir
-	$(Echo) "Compiling:              $(notdir $$<)"
+	$(Echo) "Compiling '$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 
 $(BUILD_DIR)/%.bc: $(BUILD_DIR)/%$1 $(FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
-	$(Echo) "Compiling:              $(notdir $$<)"
+	$(Echo) "Compiling '$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 endef
 
