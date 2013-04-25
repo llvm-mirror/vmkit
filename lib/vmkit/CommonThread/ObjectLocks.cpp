@@ -45,7 +45,7 @@ void ThinLock::overflowThinLock(gc* object, LockSystem& table) {
  
 /// initialise - Initialise the value of the lock.
 ///
-#if 1
+#if 0
 // Disable fat lock deflation code in ObjectLocks.cpp
 // Fixes occasional assertion failure when running on multi-core machine.
 void ThinLock::removeFatLock(FatLock* fatLock, LockSystem& table) {
@@ -156,7 +156,7 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
         if (obj->acquire(object, table)) {
           assert((object->header() & FatMask) && "Inconsistent lock");
           assert((table.getFatLockFromID(object->header()) == obj) && "Inconsistent lock");
-          assert(owner(object, table) && "Not owner after acquring fat lock!");
+          assert(owner(object, table) && "Not owner after acquiring fat lock!");
           break;
         }
       }
@@ -303,7 +303,7 @@ void FatLock::release(gc* obj, LockSystem& table, vmkit::Thread* ownerThread) {
   llvm_gcroot(obj, 0);
   assert(associatedObject && "No associated object when releasing");
   assert(associatedObject == obj && "Mismatch object in lock");
-#if 1
+#if 0
   // Disable fat lock deflation code in ObjectLocks.cpp
   // Fixes occasional assertion failure when running on multi-core machine.
   if (!waitingThreads && !lockingThreads &&
@@ -441,6 +441,7 @@ bool LockingThread::wait(
   }
   
   this->state = LockingThread::StateWaiting;
+
   if (l->firstThread) {
     assert(l->firstThread->prevWaiting && l->firstThread->nextWaiting &&
            "Inconsistent list");
@@ -503,7 +504,7 @@ bool LockingThread::wait(
       this->nextWaiting = NULL;
       this->prevWaiting = NULL;
     } else {
-      assert(!this->prevWaiting && "Inconstitent state");
+      assert(!this->prevWaiting && "Inconsistent state");
       // Notify lost, notify someone else.
       notify(self, table);
     }

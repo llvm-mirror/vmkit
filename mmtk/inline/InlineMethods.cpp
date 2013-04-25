@@ -50,10 +50,7 @@ extern "C" void MMTk_InlineMethods(llvm::Module* module) {
 }
 
 namespace vmkit {
-
-extern "C" void makeLLVMFunctions_FinalMMTk(llvm::Module* mod)
-{
-  MMTk_InlineMethods(mod);
-}
-
+	extern "C" void vmkit::makeLLVMFunctions_FinalMMTk(llvm::Module* module) {
+		MMTk_InlineMethods(module);
+	}
 }

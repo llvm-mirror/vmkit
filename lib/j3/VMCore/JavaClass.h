@@ -468,7 +468,7 @@ public:
 
   /// nbVirtualMethods - The number of virtual methods.
   ///
-  uint16 nbVirtualMethods;
+  uint32 nbVirtualMethods;
   
   /// staticMethods - List of all the static methods defined by this class.
   ///

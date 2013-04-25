@@ -17,7 +17,7 @@
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
-#include "JavaCompiler.h"
+#include "j3/JavaCompiler.h"
 #include "JavaString.h"
 #include "JavaConstantPool.h"
 #include "JavaObject.h"
@@ -30,6 +30,7 @@
 
 #include <cstring>
 #include <cstdlib>
+#include <algorithm>
 
 #if 0
 using namespace vmkit;
@@ -84,17 +85,16 @@ extern "C" bool IsSubtypeIntrinsic(JavaVirtualTable* obj, JavaVirtualTable* claz
 	 return obj->isSubtypeOf(clazz);
 }
 
-static int compJavaVirtualTable (const void * elem1, const void * elem2) {
-	void * f = *((void**)elem1);
-	void * s = *((void**)elem2);
-    if (f > s) return  1;
-    if (f < s) return -1;
-    return 0;
+static bool LessThanPtrVirtualTable (JavaVirtualTable * elem1, JavaVirtualTable * elem2) {
+	return elem1 < elem2;
+}
+
+static bool equalsPtrVirtualTable (JavaVirtualTable * elem1, JavaVirtualTable * elem2) {
+	return elem1 == elem2;
 }
 
 JavaAttribute::JavaAttribute(const UTF8* name, uint32 length,
                    uint32 offset) {
-  
   this->start    = offset;
   this->nbb      = length;
   this->name     = name;
@@ -871,6 +871,30 @@ static void computeMirandaMethods(Class* current,
   }
 }
 
+static bool lessThanJavaMethods (JavaMethod* a,JavaMethod* b) {
+	bool flag = a->name->lessThan(b->name);
+	if (!flag) {
+		flag = a->name->equals(b->name);
+		if (flag) {
+			flag = a->type->lessThan(b->type);
+		}
+	}
+	return flag;
+}
+
+static bool cmpJavaMethods (JavaMethod* a,JavaMethod* b) {
+	bool flag = a->name->equals(b->name) && a->type->equals(b->type);
+	return flag;
+}
+
+static void cleanMirandaMethods(std::vector<JavaMethod*>& mirandaMethods) {
+	std::sort(mirandaMethods.begin(), mirandaMethods.end(), lessThanJavaMethods);
+	// using predicate comparison:
+	std::vector<JavaMethod*>::iterator it;
+	it = std::unique (mirandaMethods.begin(), mirandaMethods.end(), cmpJavaMethods);   // (no changes)
+	mirandaMethods.resize( std::distance(mirandaMethods.begin(),it) ); // 10 20 30 20 10
+}
+
 void Class::readMethods(Reader& reader) {
 
   uint32 nbMethods = reader.readU2();
@@ -906,13 +930,14 @@ void Class::readMethods(Reader& reader) {
     std::vector<JavaMethod*> mirandaMethods;
     computeMirandaMethods(this, this, mirandaMethods);
     uint32 size = mirandaMethods.size();
+    if (size > 100) {
+    	cleanMirandaMethods(mirandaMethods);
+    	size = mirandaMethods.size();
+    }
     nbMethods += size;
     JavaMethod* realMethods =
       new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
 
-    if (nbMethods < size) {
-        	printf("Error in class %s\n", UTF8Buffer(name).cString());
-    }
     memcpy(realMethods + size, virtualMethods,
            sizeof(JavaMethod) * (nbMethods - size));
 
@@ -1527,15 +1552,9 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
     }
 
     if (nbSecondaryTypes) {
-    	qsort(secondaryTypes, nbSecondaryTypes, sizeof(JavaVirtualTable*), compJavaVirtualTable);
-    	lastIndex = 1;
-    	JavaVirtualTable* temp = secondaryTypes[0];
-    	for (uint32 i = 1 ; i < nbSecondaryTypes ; i++ )
-    		if (secondaryTypes[i] != temp) {
-    			secondaryTypes[lastIndex++] = secondaryTypes[i];
-    			temp = secondaryTypes[i];
-    		}
-    	nbSecondaryTypes = lastIndex;
+    	std::sort(secondaryTypes, &secondaryTypes[nbSecondaryTypes],LessThanPtrVirtualTable);
+    	JavaVirtualTable** it = std::unique (secondaryTypes, &secondaryTypes[nbSecondaryTypes], equalsPtrVirtualTable);   // (no changes)
+    	nbSecondaryTypes = std::distance(secondaryTypes,it);
     	//isSortedSecondaryTypes = true;
     }
 
@@ -1774,15 +1793,9 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
     // array to point to java.lang.Object[]'s secondary list.
   }
   if (offset == getCacheIndex() && nbSecondaryTypes) {
-	qsort(secondaryTypes, nbSecondaryTypes, sizeof(JavaVirtualTable*), compJavaVirtualTable);
-	uint32 lastIndex = 1;
-	JavaVirtualTable* temp = secondaryTypes[0];
-	for (uint32 i = 1 ; i < nbSecondaryTypes ; ++i )
-		if (secondaryTypes[i] != temp) {
-			secondaryTypes[lastIndex++] = secondaryTypes[i];
-			temp = secondaryTypes[i];
-		}
-	nbSecondaryTypes = lastIndex;
+	std::sort(secondaryTypes, &secondaryTypes[nbSecondaryTypes],LessThanPtrVirtualTable);
+	JavaVirtualTable** it = std::unique (secondaryTypes, &secondaryTypes[nbSecondaryTypes], equalsPtrVirtualTable);   // (no changes)
+	nbSecondaryTypes = std::distance(secondaryTypes,it);
 	//isSortedSecondaryTypes = true;
   }
 }
@@ -2168,7 +2181,6 @@ JavaObject* AnnotationReader::createAnnotationMapValues(JavaObject* type) {
   Jnjvm * vm = JavaThread::get()->getJVM();
   Classpath* upcalls = vm->upcalls;
   UserClass* HashMap = upcalls->newHashMap;
-
   newHashMap = HashMap->doNew(vm);
   upcalls->initHashMap->invokeIntSpecial(vm, HashMap, newHashMap);
 

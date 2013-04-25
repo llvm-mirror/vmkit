@@ -22,6 +22,7 @@
 #include "vmkit/VirtualMachine.h"
 
 #include "JavaObject.h"
+#include "JavaArray.h"
 #include "JnjvmConfig.h"
 #include "UTF8.h"
 
@@ -115,9 +116,14 @@ protected:
   ///
   SignMap* javaSignatures;
 
-  /// lock - Lock when loading classes.
+  /// lock - Lock when adding packages and Strings.
   ///
   vmkit::LockRecursive lock;
+
+  /// lock2 - Lock when loading classes.
+  ///
+  vmkit::LockRecursive lock2;
+
 
   /// registeredNatives - Stores the native function pointers corresponding
   /// to methods that were defined through JNI's RegisterNatives mechanism.

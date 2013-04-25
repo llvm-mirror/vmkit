@@ -80,7 +80,6 @@ public:
 
 template<>
 void TJavaArray<JavaObject*>::setElement(TJavaArray<JavaObject*>* self, JavaObject* value, uint32_t i);
-
 typedef TJavaArray<JavaObject*> ArrayObject;
 
 /// Instantiation of the TJavaArray class for Java arrays.

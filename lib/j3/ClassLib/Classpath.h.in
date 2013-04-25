@@ -8,7 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 // Historically has been included here, keep it for now
-#include "jni.h"
+#include "j3/jni.h"
 #include "vmkit/System.h"
 
 #ifndef USE_OPENJDK

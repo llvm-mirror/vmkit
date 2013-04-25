@@ -32,7 +32,7 @@
 #include "Classpath.h"
 #include "ClasspathReflect.h"
 #include "JavaClass.h"
-#include "JavaCompiler.h"
+#include "j3/JavaCompiler.h"
 #include "JavaConstantPool.h"
 #include "JavaString.h"
 #include "JavaThread.h"
@@ -324,9 +324,11 @@ UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
     if (slash) {
       int packagelen = slash - cname;
       const UTF8 * package = name->extract(hashUTF8, 0, packagelen);
+      //classes->lock.lock();
       lock.lock();
       packages.insert(package);
       lock.unlock();
+      //classes->lock.unlock();
     }
   }
 
@@ -622,7 +624,7 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
   JavaObject* excp = NULL;
   llvm_gcroot(excp, 0);
   UserClass* res = NULL;
-  lock.lock();
+  lock2.lock();
   classes->lock.lock();
   res = (UserClass*) classes->map.lookup(name);
   classes->lock.unlock();
@@ -645,7 +647,7 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
       JavaThread::get()->clearException();    
     } END_CATCH;
   }
-  lock.unlock();
+  lock2.unlock();
   if (excp != NULL) {
     JavaThread::get()->throwException(excp);
   }
