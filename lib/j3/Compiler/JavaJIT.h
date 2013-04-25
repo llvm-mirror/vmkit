@@ -163,6 +163,9 @@ private:
   llvm::PHINode* endNode;
 
   llvm::Value* jmpBuffer;
+
+  /// return the header of an object
+  llvm::Value* objectToHeader(llvm::Value* obj);
   
   /// arraySize - Get the size of the array.
   llvm::Value* arraySize(llvm::Value* obj) {

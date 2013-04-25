@@ -46,6 +46,10 @@ void J3Intrinsics::init(llvm::Module* module) {
 
   ResolvedConstantPoolType = ptrPtrType;
  
+
+  ObjectHeaderType = PointerType::getUnqual(module->getPointerSize() == Module::Pointer32 ?
+  		    Type::getInt32Ty(Context) : Type::getInt64Ty(Context));
+
   JavaObjectType = 
     PointerType::getUnqual(module->getTypeByName("JavaObject"));
 
@@ -111,10 +115,16 @@ void J3Intrinsics::init(llvm::Module* module) {
                                           sizeof(JavaObject) + sizeof(ssize_t));
   
   
-  JavaArrayElementsOffsetConstant = constantTwo;
-  JavaArraySizeOffsetConstant = constantOne;
-  JavaObjectLockOffsetConstant = constantOne;
+
+  JavaArrayElementsOffsetConstant = constantOne;
+  //JavaArraySizeOffsetConstant = constantOne;
+  HeaderArraySizeOffsetConstant = constantZero;
+
+  //  JavaObjectLockOffsetConstant = constantOne;
+  HeaderObjectLockOffsetConstant = constantZero;
+
   JavaObjectVTOffsetConstant = constantZero;
+
 
   OffsetClassInVTConstant =
     ConstantInt::get(Type::getInt32Ty(Context),

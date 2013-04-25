@@ -30,9 +30,8 @@ public:
   llvm::Type* JavaArrayDoubleType;
   llvm::Type* JavaArrayObjectType;
   
-  llvm::Type* ExceptionBufferType;
   llvm::Type* VTType;
-  llvm::Type* JavaVTType;
+  llvm::Type* ObjectHeaderType;
   llvm::Type* JavaObjectType;
   llvm::Type* JavaArrayType;
   llvm::Type* JavaCommonClassType;
@@ -45,7 +44,7 @@ public:
   llvm::Type* UTF8Type;
   llvm::Type* JavaMethodType;
   llvm::Type* JavaFieldType;
-  llvm::Type* AttributeType;
+  llvm::Type* AttributType;
   llvm::Type* JavaThreadType;
   llvm::Type* MutatorThreadType;
   llvm::Type* J3DenseMapType;
@@ -60,7 +59,6 @@ public:
   llvm::Function* PrintMethodEndFunction;
   llvm::Function* InitialiseClassFunction;
   llvm::Function* InitialisationCheckFunction;
-  llvm::Function* InitialisationCheckForJavaObjectFunction;
   llvm::Function* ForceInitialisationCheckFunction;
   llvm::Function* ForceLoadedCheckFunction;
   llvm::Function* ClassLookupFunction;
@@ -84,10 +82,6 @@ public:
   llvm::Function* MultiCallNewFunction;
   llvm::Function* GetArrayClassFunction;
 
-//  llvm::Function *CodeMarker1Function, *CodeMarker2Function;
-  llvm::Function* SetIsolateFunction;
-  llvm::Function* GetCachedValueFunction;
-  llvm::Function* GetClassDelegateePtrFunction;
   llvm::Function* GetClassDelegateeFunction;
   llvm::Function* RuntimeDelegateeFunction;
   llvm::Function* ArrayLengthFunction;
@@ -109,9 +103,9 @@ public:
   llvm::Function* GetFinalFloatFieldFunction;
   llvm::Function* GetFinalDoubleFieldFunction;
   
-  llvm::Constant* JavaArraySizeOffsetConstant;
   llvm::Constant* JavaArrayElementsOffsetConstant;
-  llvm::Constant* JavaObjectLockOffsetConstant;
+  llvm::Constant* HeaderArraySizeOffsetConstant;
+  llvm::Constant* HeaderObjectLockOffsetConstant;
   llvm::Constant* JavaObjectVTOffsetConstant;
 
   llvm::Constant* OffsetAccessInCommonClassConstant;
@@ -123,8 +117,6 @@ public:
   llvm::Constant* OffsetStaticInstanceInTaskClassMirrorConstant;
   llvm::Constant* OffsetInitializedInTaskClassMirrorConstant;
   llvm::Constant* OffsetStatusInTaskClassMirrorConstant;
-  llvm::Constant* OffsetCommonClassInClassConstant;
-  llvm::Constant* OffsetCommonClassInJavaVirtualTableConstant;
   
   llvm::Constant* OffsetDoYieldInThreadConstant;
   llvm::Constant* OffsetIsolateIDInThreadConstant;
@@ -158,11 +150,6 @@ public:
   llvm::Function* ArrayStoreExceptionFunction;
   llvm::Function* ArithmeticExceptionFunction;
   llvm::Function* ThrowExceptionFromJITFunction;
-
-  llvm::Constant* CurrentIsolateID;
-  llvm::Constant* OffsetHandlerMethodInExceptionBufferConstant;
-  llvm::Constant* OffsetHandlerIsolateIDInExceptionBufferConstant;
-  llvm::Constant* OffsetSetJmpBufferInExceptionBufferConstant;
 };
 
 }
