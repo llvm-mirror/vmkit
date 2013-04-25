@@ -49,7 +49,7 @@ ifndef VERBOSE
 endif
 
 ###############################################################################
-#   Build system managament
+#   Recursive target managment
 ###############################################################################
 #SELF=$(PROJ_SRC_ROOT)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
 RECURSIVE_TARGETS=all clean
@@ -76,6 +76,26 @@ confclean: distclean
 
 %/.dir:
 	$(Verb) $(MKDIR) $(dir $@) && $(TOUCH) $@
+
+###############################################################################
+#   Build system managment
+###############################################################################
+SELF=$(LEVEL)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
+
+define define_config_rule
+$(LEVEL)/$1: $1.in $(PROJ_SRC_ROOT)/configure
+	$(Echo) Regenerating project files $$@
+	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status -q --$2=$$@
+	$(Verb) touch $$@
+endef
+
+$(foreach cur,$(CONFIG_FILES),$(eval $(call define_config_rule,$(cur),file)))
+$(foreach cur,$(CONFIG_HEADERS),$(eval $(call define_config_rule,$(cur),header)))
+
+$(PROJ_SRC_ROOT)/configure: $(PROJ_SRC_ROOT)/autoconf/configure.ac $(PROJ_SRC_ROOT)/autoconf/AutoRegen.sh 
+	$(Echo) Rebootstraping project
+	$(Verb) cd $(PROJ_SRC_ROOT)/autoconf && ./AutoRegen.sh
+	$(Verb) ./config.status --recheck
 
 ###############################################################################
 #   Build directories

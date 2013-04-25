@@ -607,6 +607,8 @@ ac_includes_default="\
 ac_unique_file=""Makefile.common.in""
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+ac_config_headers
+ac_config_files
 EGREP
 INSTALL_DATA
 INSTALL_SCRIPT
@@ -5972,6 +5974,8 @@ ac_config_files="$ac_config_files mmtk/java/build.xml"
 
 
 ac_config_commands="$ac_config_commands Makefile"
+
+
 
 
 

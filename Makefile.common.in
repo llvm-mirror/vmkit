@@ -109,4 +109,7 @@ else
 	PRECOMPILER_FLAGS	:=
 endif
 
-include $(VMKIT_SRC_ROOT)/Makefile.rules
+CONFIG_FILES=@ac_config_files@
+CONFIG_HEADERS=@ac_config_headers@
+
+include $(PROJ_SRC_ROOT)/Makefile.rules

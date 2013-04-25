@@ -443,5 +443,7 @@ AC_CONFIG_FILES([mmtk/java/build.xml])
 dnl Do special configuration of Makefiles
 AC_CONFIG_MAKEFILE(Makefile)
 
+AC_SUBST([ac_config_files])
+AC_SUBST([ac_config_headers])
 
 AC_OUTPUT
