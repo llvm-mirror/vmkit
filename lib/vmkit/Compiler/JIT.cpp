@@ -133,6 +133,7 @@ void VmkitModule::initialise(int argc, char** argv) {
   }
   // Disable branch fold for accurate line numbers.
   llvm_argv[arrayIndex++] = "-disable-branch-fold";
+  llvm_argv[arrayIndex++] = "-fast-isel";
   //llvm_argv[arrayIndex++] = "-stats";
   //llvm_argv[arrayIndex++] = "-time-passes";
   //llvm_argv[arrayIndex++] = "-info-output-file";
