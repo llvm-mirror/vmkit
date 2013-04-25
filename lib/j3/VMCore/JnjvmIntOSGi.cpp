@@ -10,6 +10,8 @@
 
 using namespace std;
 
+#define DEBUG_VERBOSE_STALE_REF		1
+
 #if RESET_STALE_REFERENCES
 
 namespace j3 {
@@ -19,6 +21,14 @@ void Jnjvm::setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected)
 	JnjvmClassLoader* loader = this->getBundleClassLoader(bundleID);
 	if (!loader) {
 		this->illegalArgumentException("Invalid bundle ID"); return;}
+
+#if DEBUG_VERBOSE_STALE_REF
+	cerr << "Stale references to bundleID=" << bundleID << " are ";
+	if (corrected)
+		cerr << "corrected." << endl;
+	else
+		cerr << "no more corrected." << endl;
+#endif
 
 	loader->setStaleReferencesCorrectionEnabled(corrected);
 }
@@ -43,6 +53,10 @@ void Jnjvm::notifyBundleUninstalled(int64_t bundleID)
 	// Strong references to all its loaded classes will be reset in the next garbage collection.
 	loader->markZombie(true);
 
+#if DEBUG_VERBOSE_STALE_REF
+	cerr << "Bundle uninstalled: bundleID=" << bundleID << endl;
+#endif
+
 	scanStaleReferences = true;		// Enable stale references scanning
 	vmkit::Collector::collect();	// Start a garbage collection now
 }
@@ -60,11 +74,14 @@ void Jnjvm::notifyServiceUnregistered(int64_t bundleID, JavaObjectClass* classOb
 	if (!ccl->isClass() && !ccl->isInterface()) {
 		this->illegalArgumentException("Service class is not a class or an interface"); return;}
 
-	ccl->dump();
+#if DEBUG_VERBOSE_STALE_REF
+	cerr << "Service unregistered: bundleID=" << bundleID << " class=" << *ccl->name << endl;
+#endif
+
 	ccl->asClass()->markZombie(true);
 
 	scanStaleReferences = true;		// Enable stale references scanning
-//	vmkit::Collector::collect();	// Start a garbage collection now
+	vmkit::Collector::collect();	// Start a garbage collection now
 }
 
 void Jnjvm::dumpClassLoaderBundles()
