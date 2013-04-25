@@ -14,6 +14,8 @@ for entry in $(cat "$input"|grep '^[0-9]'); do
 	time=$(echo $entry|cut -d ',' -f 2)
 	data=$(echo $entry|cut -d ',' -f '3-')
 	
-	echo "$pid,$(($time - $base_time)),$data"
+	sec=$(($time - $base_time))
+	hourminsec=$(date '+%M:%S' -d "00:00:00 CET + $sec seconds")
+	echo "$pid,$hourminsec,$data"
 done
 IFS=oldIFS
