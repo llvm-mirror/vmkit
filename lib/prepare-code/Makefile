@@ -1,4 +1,4 @@
-##===- lib/vmkit/StaticGCPrinter/Makefile --------------------*- Makefile -*-===##
+##===- lib/vmkit/StaticGCPass/Makefile -----------------------*- Makefile -*-===##
 #
 #                            The VMKit project
 #
@@ -7,11 +7,11 @@
 #
 ##===----------------------------------------------------------------------===##
 
-LEVEL = ../../..
+LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-LIBRARY=StaticGCPrinter
+LIBRARY=prepare-code
 LOADABLE_MODULE = 1
 
 include $(LEVEL)/Makefile.common
