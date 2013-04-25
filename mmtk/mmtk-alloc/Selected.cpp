@@ -59,6 +59,7 @@ extern "C" void* JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_
     int sz, void* VT) ALWAYS_INLINE;
 
 extern "C" void* gcmalloc(uint32_t sz, void* VT) {
+	sz += gcHeader::hiddenHeaderSize();
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
   return (gc*)JnJVM_org_j3_bindings_Bindings_gcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, VT);
 }
