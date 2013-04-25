@@ -40,6 +40,7 @@ public:
   }
 };
 
+
 /// JavaVirtualTable - This class is the virtual table of instances of
 /// Java classes. Besides holding function pointers for virtual calls,
 /// it contains a bunch of information useful for fast dynamic type checking.

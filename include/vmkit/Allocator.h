@@ -15,8 +15,6 @@
 
 #include <cstring>
 
-class VirtualTable;
-
 namespace vmkit {
 
 class BumpPtrAllocator {

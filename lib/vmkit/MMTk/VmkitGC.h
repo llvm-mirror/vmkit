@@ -12,23 +12,27 @@
 #define VMKIT_MMTK_GC_H
 
 #include "vmkit/GC.h"
+#include "vmkit/Locks.h"
 #include <cstdlib>
 
 extern "C" void EmptyDestructor();
 
+/*
+ * C++ VirtualTable data layout representation. This is the base for
+ * every object layout based on virtual tables.
+ */
 class VirtualTable {
  public:
   word_t destructor;
   word_t operatorDelete;
   word_t tracer;
-  word_t specializedTracers[1];
-  
+
   static uint32_t numberOfBaseFunctions() {
-    return 4;
+    return 3;
   }
 
   static uint32_t numberOfSpecializedTracers() {
-    return 1;
+    return 0;
   }
 
   word_t* getFunctions() {
@@ -50,6 +54,21 @@ class VirtualTable {
   }
 
   static void emptyTracer(void*) {}
+
+  /// getVirtualTable - Returns the virtual table of this reference.
+  ///
+  static const VirtualTable* getVirtualTable(gc* ref) {
+  	llvm_gcroot(ref, 0);
+    return ((VirtualTable**)(ref))[0];
+  }
+
+  /// setVirtualTable - Sets the virtual table of this reference.
+  ///
+  static void setVirtualTable(gc* ref, VirtualTable* VT) {
+  	llvm_gcroot(ref, 0);
+    ((VirtualTable**)(ref))[0] = VT;
+  }
+
 };
 
 extern "C" void* gcmallocUnresolved(uint32_t sz, void* type);
@@ -57,8 +76,6 @@ extern "C" void* gcmalloc(uint32_t sz, void* type);
 
 class gc : public gcRoot {
 public:
-
-	virtual void _fakeForSpecializedTracerSlot() {}
 
   size_t objectSize() const {
     abort();

@@ -30,7 +30,6 @@ static const int hashCodeIncrement = vmkit::GCBitMask + 1;
 uint16_t JavaObject::hashCodeGenerator = hashCodeIncrement;
 static const uint64_t HashMask = ((1 << vmkit::HashBits) - 1) << vmkit::GCBits;
 
-
 /// hashCode - Return the hash code of this object.
 uint32_t JavaObject::hashCode(JavaObject* self) {
   llvm_gcroot(self, 0);
