@@ -3021,7 +3021,6 @@ JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) {
     case vmkit::LockingThread::StateTerminated:
 	{
 		res = (ArraySInt32*)array->doNew(1, vm);
-		result = (jintArray)res;
 		ArraySInt32::setElement(res, javaThreadState , 0);
 		break;
 	}
@@ -3029,7 +3028,6 @@ JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) {
     case vmkit::LockingThread::StateWaiting:
 	{
 		res = (ArraySInt32*)array->doNew(2, vm);
-		result = (jintArray)res;
 		ArraySInt32::setElement(res, vmkit::LockingThread::StateWaiting , 0);
 		ArraySInt32::setElement(res, vmkit::LockingThread::StateParked , 1);
 		break;
@@ -3038,7 +3036,6 @@ JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) {
     case vmkit::LockingThread::StateTimeWaiting:
 	{
 		res = (ArraySInt32*)array->doNew(2, vm);
-		result = (jintArray)res;
 		ArraySInt32::setElement(res, vmkit::LockingThread::StateTimeWaiting , 0);
 		ArraySInt32::setElement(res, vmkit::LockingThread::StateTimeParked , 1);
 		break;
@@ -3048,7 +3045,7 @@ JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) {
 		/* Unknown state - probably incompatible JDK version */
 		break;
 	}
-	RETURN_FROM_JNI(result);
+	RETURN_REF_FROM_JNI(res, jintArray);
 	END_JNI_EXCEPTION
 	return NULL;
 }
@@ -3064,10 +3061,7 @@ JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) {
 JNIEXPORT jobjectArray JNICALL
 JVM_GetThreadStateNames(JNIEnv* env, jint javaThreadState, jintArray values) {
 	BEGIN_JNI_EXCEPTION
-	vmkit::Thread* th = vmkit::Thread::get();
-  	//th->enterUncooperativeCode();
-  	
-
+  
   ArrayObject* res = 0;
 jobjectArray result = 0;
 JavaObject* str = 0;
@@ -3088,7 +3082,6 @@ JnjvmClassLoader* loader;
 			//assert(ia.get_length() == 1 && ia.get_element(0) == THREAD_STATE_NEW);
 
 			res = (ArrayObject*)array->doNew(1, vm);
-			result = (jobjectArray)res;
 			str = (vm->asciizToStr("NEW"));
 			ArrayObject::setElement(res, str, 0);
 			break;
@@ -3097,7 +3090,6 @@ JnjvmClassLoader* loader;
     case vmkit::LockingThread::StateRunning:
 		{
 			res = (ArrayObject*)array->doNew(1, vm);
-			result = (jobjectArray)res;
 			str = (vm->asciizToStr("RUNNABLE"));
 			ArrayObject::setElement(res, str, 0);
 			break;
@@ -3106,7 +3098,6 @@ JnjvmClassLoader* loader;
     case vmkit::LockingThread::StateBlocked:
 		{
 			res = (ArrayObject*)array->doNew(1, vm);
-			result = (jobjectArray)res;
 			str = (vm->asciizToStr("BLOCKED"));
 			ArrayObject::setElement(res, str, 0);
 			break;
@@ -3115,7 +3106,6 @@ JnjvmClassLoader* loader;
     case vmkit::LockingThread::StateWaiting:
 		{
 			res = (ArrayObject*)array->doNew(2, vm);
-			result = (jobjectArray)res;
 			str = (vm->asciizToStr("WAITING.OBJECT_WAIT"));
 			ArrayObject::setElement(res, str, 0);
 			str = (vm->asciizToStr("WAITING.PARKED"));
@@ -3126,7 +3116,6 @@ JnjvmClassLoader* loader;
     case vmkit::LockingThread::StateTimeWaiting:
 		{	
 			res = (ArrayObject*)array->doNew(2, vm);
-			result = (jobjectArray)res;
 			str = (vm->asciizToStr("TIMED_WAITING.OBJECT_WAIT"));
 			ArrayObject::setElement(res, str, 0);
 			str = (vm->asciizToStr("TIMED_WAITING.PARKED"));
@@ -3137,7 +3126,6 @@ JnjvmClassLoader* loader;
     case vmkit::LockingThread::StateTerminated:
 		{
 			res = (ArrayObject*)array->doNew(1, vm);
-			result = (jobjectArray)res;
 			str = (vm->asciizToStr("TERMINATED"));
 			ArrayObject::setElement(res, str, 0);
 			break;
@@ -3148,7 +3136,7 @@ JnjvmClassLoader* loader;
 		break;
 	}
 	//th->leaveUncooperativeCode();
-	RETURN_FROM_JNI(result);
+	RETURN_REF_FROM_JNI(res, jobjectArray);
 	END_JNI_EXCEPTION
 	return NULL;
 }
