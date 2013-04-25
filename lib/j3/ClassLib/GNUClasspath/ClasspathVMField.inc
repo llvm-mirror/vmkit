@@ -28,7 +28,7 @@
 
 #include "Reader.h"
 
-#if 0
+#if 1
 using namespace vmkit;
 #define dprintf(...) do { printf("ClasspathVMField: "); printf(__VA_ARGS__); } while(0)
 #else
@@ -60,7 +60,7 @@ JavaObjectVMField* VMField, JavaObjectClass* annotationClass) {
   if (annotationClass) {
     /* Retrieving annotationClass classname */
     UserClass* clazz = JavaObjectClass::getClass(annotationClass)->asClass();
-    dprintf("searched annotation : %s in loader %ld\n\n", UTF8Buffer(clazz->name).cString(), JavaObjectClass::getClass(annotationClass)->classLoader);
+    dprintf("searched annotation : %s\n\n", UTF8Buffer(clazz->name).cString());
 
     /* Retrieving VMField.class attributes list */
     UserClass* compilingClass = JavaObjectVMField::getClass(VMField);
@@ -130,11 +130,10 @@ JavaObjectVMField* VMField) {
   /* Retrieving VMField.class attributes list */
   UserClass* compilingClass = JavaObjectVMField::getClass(VMField);
   JavaField* field = JavaObjectVMField::getInternalField(VMField);
-  Attribut* annotationsAtt =
-    field->lookupAttribut(Attribut::annotationsAttribut);
+  JavaAttribute* annotationsAtt =
+    field->lookupAttribute(JavaAttribute::annotationsAttribute);
   dprintf("JavaField : %s\n", UTF8Buffer(field->name).cString());
   
-  //UserCommonClass* cl = JavaObject::getClass(VMField);
 	JnjvmClassLoader* loader = compilingClass->classLoader;
 
   if (annotationsAtt) {
@@ -144,8 +143,7 @@ JavaObjectVMField* VMField) {
     
     UserClassArray* array = upcalls->annotationArrayClass;
     res = array->doNew(numAnnotations, vm);
-		dprintf("JavaField : %s % with %d fields \n", UTF8Buffer(field->name).cString(), numAnnotations);
-		dprintf("The loader to use is : %ld\n", loader);
+		dprintf("JavaField : %s with %d fields \n", UTF8Buffer(field->name).cString(), numAnnotations);
     for (uint16 i = 0; i < numAnnotations; ++i) {
 			uint16 typeIndex = reader.readU2();
 			const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
@@ -162,7 +160,7 @@ JavaObjectVMField* VMField) {
 				AnnonClass = loader->loadName(annoType, true, true, NULL);
 				
 			if (!AnnonClass) {
-				dprintf("AHHHHHH\n");
+				assert(AnnonClass && "Panic, imposible conditions");
 				abort();
 			}
 			dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
@@ -174,7 +172,6 @@ JavaObjectVMField* VMField) {
   }
 
   END_NATIVE_EXCEPTION
-	dprintf("getDeclaredAnnotations done\n");
   return res;
 }
 
