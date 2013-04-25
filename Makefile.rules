@@ -81,9 +81,16 @@ ifdef TOOLNAME
 all:: $(BINDIR)/$(TOOLNAME)$(EXEEXT)
 
 $(BINDIR)/$(TOOLNAME)$(EXEEXT): $(ObjectsO) $(USEDLIBS) $(SELF) $(BINDIR)/.dir
-	$(Echo) '**[30] Linking executable $(TOOLNAME)'
+	$(Echo) 'Linking executable $(notdir $@)'
 	$(Verb) $(CLANGXX) -o $@ $(ObjectsO) $(USEDLIBS) $(MY_LIBS) $(MY_LDFLAGS) 
+endif
 
+ifdef LIBRARYNAME
+all:: $(LIBDIR)/$(LIBRARYNAME)$(SHLIBEXT)
+
+$(LIBDIR)/$(LIBRARYNAME)$(SHLIBEXT): $(ObjectsO) $(SELF) $(LIBDIR)/.dir
+	$(Echo) "Linking shared library $(notdir $@)"
+	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -Wl,-R -Wl,'$ORIGIN' -shared $(ObjectsO)
 endif
 
 #
@@ -253,15 +260,6 @@ CFLAGS+=$(COMMON_CFLAGS) `$(LLVM_CONFIG) --cflgas`
 CXXFLAGS+=$(COMMON_CFLAGS) `$(LLVM_CONFIG) --cxxflags`
 MY_LDFLAGS+=`$(LLVM_CONFIG) --ldflags` $(LDOPT)
 MY_LIBS+=`$(LLVM_CONFIG) --libs` -lz
-
-$(ToolBuildPath): $(ObjectsO) $(USEDLIBS)
-	$(Echo) '**[30] Linking $(BuildMode) executable $(TOOLNAME) $(StripWarnMsg)'
-	$(Verb) $(CLANGXX) -o $@ $(ObjectsO) $(USEDLIBS) $(MY_LIBS) $(MY_LDFLAGS) 
-#	$(Verb) $(Link) -o $@ $(TOOLLINKOPTS) $(ObjectsO) $(USEDLIBS) $(TOOLLINKOPTSB) $(MY_LIBS) $(MY_LDFLAGS)
-
-$(LibName.SO): $(ObjectsO) $(ProjLibsPaths) $(LLVMLibsPaths) $(SharedLibDir)/.dir
-	$(Echo) "**[20] Linking $(BuildMode) $(SharedLibKindMessage) $(notdir $@)"
-	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -Wl,-R -Wl,'$ORIGIN' -shared $(ObjectsO)
 
 $(LibName.BCA): $(ObjectsBC) $(LibDir)/.dir $(LLVMToolDir)/llvm-ar
 	$(Echo) "**[22] Building $(BuildMode) Bytecode Archive $(notdir $@)"
