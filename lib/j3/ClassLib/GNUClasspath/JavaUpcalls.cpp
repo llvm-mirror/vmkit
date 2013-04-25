@@ -1101,9 +1101,9 @@ void Classpath::InitializeSystem(Jnjvm * jvm) {
 }
 
 #include "Classpath.inc"
-#include "ClasspathConstructor.inc"
-#include "ClasspathField.inc"
-#include "ClasspathMethod.inc"
+#include "ClasspathVMConstructor.inc"
+#include "ClasspathVMField.inc"
+#include "ClasspathVMMethod.inc"
 #include "ClasspathVMClass.inc"
 #include "ClasspathVMClassLoader.inc"
 #include "ClasspathVMObject.inc"
