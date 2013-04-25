@@ -1,0 +1,36 @@
+Framework launched
+AImpl provides A
+CImpl exports and provides C
+AImpl got C
+> bundles
+   id  level/state name
+   --------------------
+   12  1/active    C                13  1/active    A Implementation
+   15  1/active    C Implementation 10  1/active    J3 Virtual Machine Manager
+   ...
+> framework call j3.J3Mgr dumpClassLoaderBundles
+...
+classLoader=0xb4c803c8	bundleID=12
+classLoader=0xb4c7a780	bundleID=13
+...
+classLoader=0xb4c71868	bundleID=15
+> stop 13
+AImpl no more provides A
+AImpl lost C but keeps a stale reference to it
+Stopped: A Implementation (#13)
+> framework uninstall 13
+Uninstalled: A Implementation (#13)
+> framework refresh
+> framework meminfo -gc
+Total: 0  Free: 0  Max: 0  (kB)
+> bundles
+   id  level/state name
+   --------------------
+   12  1/active    C                       15  1/active    C Implementation
+   10  1/active    J3 Virtual Machine Manager
+   ...
+> framework call j3.J3Mgr dumpClassLoaderBundles
+classLoader=0xb4c803c8	bundleID=12
+classLoader=0xb4c7a780	bundleID=13
+...
+classLoader=0xb4c71868	bundleID=15
