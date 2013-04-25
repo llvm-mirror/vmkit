@@ -662,8 +662,6 @@ build_os
 build_vendor
 build_cpu
 build
-LLVM_OBJ
-LLVM_SRC
 VMKIT_COPYRIGHT
 target_alias
 host_alias
@@ -706,8 +704,6 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_llvmsrc
-with_llvmobj
 enable_optimized
 enable_debug
 enable_assert
@@ -1354,8 +1350,6 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-llvmsrc          Location of LLVM Source Code
-  --with-llvmobj          Location of LLVM Object Code
   --with-llvm-config-path=path
                           llvm-config path (use default path)
   --with-mmtk-plan=something
@@ -2237,7 +2231,7 @@ if test ${srcdir} != "." ; then
 fi
 
 ac_aux_dir=
-for ac_dir in $LLVM_SRC_ROOT/autoconf "$srcdir"/$LLVM_SRC_ROOT/autoconf; do
+for ac_dir in ./autoconf "$srcdir"/./autoconf; do
   if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
     ac_install_sh="$ac_aux_dir/install-sh -c"
@@ -2253,7 +2247,7 @@ for ac_dir in $LLVM_SRC_ROOT/autoconf "$srcdir"/$LLVM_SRC_ROOT/autoconf; do
   fi
 done
 if test -z "$ac_aux_dir"; then
-  as_fn_error $? "cannot find install-sh, install.sh, or shtool in $LLVM_SRC_ROOT/autoconf \"$srcdir\"/$LLVM_SRC_ROOT/autoconf" "$LINENO" 5
+  as_fn_error $? "cannot find install-sh, install.sh, or shtool in ./autoconf \"$srcdir\"/./autoconf" "$LINENO" 5
 fi
 
 # These three variables are undocumented and unsupported,
@@ -2263,30 +2257,6 @@ fi
 ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
-
-
-
-
-# Check whether --with-llvmsrc was given.
-if test "${with_llvmsrc+set}" = set; then :
-  withval=$with_llvmsrc; llvm_src="$withval"
-else
-  llvm_src="$LLVM_SRC_ROOT"
-fi
-
-  LLVM_SRC=$llvm_src
-
-
-# Check whether --with-llvmobj was given.
-if test "${with_llvmobj+set}" = set; then :
-  withval=$with_llvmobj; llvm_obj="$withval"
-else
-  llvm_obj="$LLVM_OBJ_ROOT"
-fi
-
-  LLVM_OBJ=$llvm_obj
-
-  ac_config_commands="$ac_config_commands setup"
 
 
 
@@ -5015,10 +4985,6 @@ ac_config_files="$ac_config_files mmtk/java/src/org/j3/config/Selected.java"
 ac_config_files="$ac_config_files mmtk/java/build.xml"
 
 
-ac_config_commands="$ac_config_commands Makefile"
-
-
-
 
 
 
@@ -5567,7 +5533,6 @@ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
 config_headers="$ac_config_headers"
-config_commands="$ac_config_commands"
 
 _ACEOF
 
@@ -5596,9 +5561,6 @@ $config_files
 
 Configuration headers:
 $config_headers
-
-Configuration commands:
-$config_commands
 
 Report bugs to <nicolas.geoffray@gmail.com>."
 
@@ -5721,11 +5683,6 @@ _ASBOX
 
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
-#
-# INIT-COMMANDS
-#
-llvm_src="${LLVM_SRC}"
-
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
@@ -5734,14 +5691,12 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "setup") CONFIG_COMMANDS="$CONFIG_COMMANDS setup" ;;
     "include/vmkit/config.h") CONFIG_HEADERS="$CONFIG_HEADERS include/vmkit/config.h" ;;
     "Makefile.common") CONFIG_FILES="$CONFIG_FILES Makefile.common" ;;
     "lib/j3/ClassLib/Classpath.h") CONFIG_FILES="$CONFIG_FILES lib/j3/ClassLib/Classpath.h" ;;
     "tools/llcj/LinkPaths.h") CONFIG_FILES="$CONFIG_FILES tools/llcj/LinkPaths.h" ;;
     "mmtk/java/src/org/j3/config/Selected.java") CONFIG_FILES="$CONFIG_FILES mmtk/java/src/org/j3/config/Selected.java" ;;
     "mmtk/java/build.xml") CONFIG_FILES="$CONFIG_FILES mmtk/java/build.xml" ;;
-    "Makefile") CONFIG_COMMANDS="$CONFIG_COMMANDS Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -5755,7 +5710,6 @@ done
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
   test "${CONFIG_HEADERS+set}" = set || CONFIG_HEADERS=$config_headers
-  test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
 # Have a temporary directory for convenience.  Make it in the build tree
@@ -6052,7 +6006,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_HEADERS"
 
 
-eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS    :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES  :H $CONFIG_HEADERS    "
 shift
 for ac_tag
 do
@@ -6296,17 +6250,9 @@ $as_echo "$as_me: $ac_file is unchanged" >&6;}
   fi
  ;;
 
-  :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
-$as_echo "$as_me: executing $ac_file commands" >&6;}
- ;;
-  esac
-
-
-  case $ac_file$ac_mode in
-    "Makefile":C) ${llvm_src}/autoconf/mkinstalldirs `dirname Makefile`
-   ${SHELL} ${llvm_src}/autoconf/install-sh -m 0644 -c ${srcdir}/Makefile Makefile ;;
 
   esac
+
 done # for ac_tag
 
 

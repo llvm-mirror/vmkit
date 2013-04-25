@@ -55,13 +55,9 @@ if test ${srcdir} != "." ; then
   fi
 fi
 
-dnl Place all of the extra autoconf files into the config subdirectory. Tell
-dnl various tools where the m4 autoconf macros are.
-AC_CONFIG_AUX_DIR([$LLVM_SRC_ROOT/autoconf])
-
-dnl Tell autoconf that this is an LLVM project being configured
-dnl This provides the --with-llvmsrc and --with-llvmobj options
-LLVM_CONFIG_PROJECT($LLVM_SRC_ROOT,$LLVM_OBJ_ROOT)
+dnl Place all of the extra autoconf files into the config subdirectory. Tell                                                      
+dnl various tools where the m4 autoconf macros are.                                                                               
+AC_CONFIG_AUX_DIR([./autoconf])
 
 
 dnl===-----------------------------------------------------------------------===
@@ -428,9 +424,6 @@ AC_CONFIG_FILES([lib/j3/ClassLib/Classpath.h])
 AC_CONFIG_FILES([tools/llcj/LinkPaths.h])
 AC_CONFIG_FILES([mmtk/java/src/org/j3/config/Selected.java])
 AC_CONFIG_FILES([mmtk/java/build.xml])
-
-dnl Do special configuration of Makefiles
-AC_CONFIG_MAKEFILE(Makefile)
 
 AC_SUBST([ac_config_files])
 AC_SUBST([ac_config_headers])

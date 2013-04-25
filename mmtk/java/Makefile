@@ -18,7 +18,7 @@ include $(LEVEL)/Makefile.common
 
 $(BUILD_DIR)/%.bc: $(BUILD_DIR)/%-lower.bc $(LIB_DIR)/MMTKMagic$(SHLIBEXT)
 	$(Echo) "Lowering magic '$(notdir $@)'"
-	$(Verb) $(LOPT) -load=$(LIB_DIR)/MMTKMagic$(SHLIBEXT) $(OPT_MMTK_FLAGS) -LowerJavaRT -f $< -o $@
+	$(Verb) $(LOPT) -load=$(LIB_DIR)/MMTKMagic$(SHLIBEXT) -LowerJavaRT $(OPT_FLAGS) -f $< -o $@
 
 $(BUILD_DIR)/%-lower.bc: $(BUILD_DIR)/%.jar $(VMJC) $(LIB_DIR)/MMTKRuntime$(SHLIBEXT) $(LIB_DIR)/MMTKMagic$(SHLIBEXT) 
 	$(Echo) "Compiling '$(notdir $<)'"

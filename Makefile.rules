@@ -35,15 +35,13 @@ endif
 ifeq ($(OPTIMIZED),1)
   LLC_FLAGS+= -O=3 -disable-cfi -disable-fp-elim 
   COMMON_CFLAGS+= -O3 -fno-strict-aliasing -fno-omit-frame-pointer 
-  OPT_MMTK_FLAGS= -std-compile-opts
 else
-  LLC_FLAGS+= -O0
+  LLC_FLAGS+= -O=0 
   COMMON_CFLAGS+= -O0
-  OPT_MMTK_FLAGS= 
 endif
 
 LLC_FLAGS+=-relocation-model=pic 
-
+OPT_FLAGS+=-disable-cfi -disable-fp-elim -disable-opt
 
 INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR) \
 					-I$(shell $(LLVM_CONFIG) --includedir)
@@ -166,13 +164,12 @@ endif
 #   GC passes
 ###############################################################################
 ifdef NEED_GC
-LLC_FLAGS+=-load=$(PREPARE_CODE_LIB)
-OPT_FLAGS+=-load=$(PREPARE_CODE_LIB) -StaticGCPass -disable-cfi -disable-fp-elim -disable-opt
+LLC_GC_FLAGS+=-load=$(PREPARE_CODE_LIB)
 GC_ID=-gc
 
 %$(GC_ID).bc: %.bc
-	$(Echo) "Performing GC pass on '$(notdir $<)'"
-	$(Verb) $(LOPT) $< $(OPT_FLAGS) -o $@
+	$(Echo) "Preparing GC '$(notdir $<)'"
+	$(Verb) $(LOPT) -load=$(PREPARE_CODE_LIB) -StaticGCPass $(OPT_FLAGS) $< -o $@
 
 endif
 
@@ -300,7 +297,7 @@ endif
 ###############################################################################
 %.o: %.bc
 	$(Echo) "Assembling '$(notdir $<)'"
-	$(Verb) $(LLC) $(LLC_FLAGS) -filetype=obj $< -o $@
+	$(Verb) $(LLC) $(LLC_FLAGS) $(LLC_GC_FLAGS) -filetype=obj $< -o $@
 
 define define_compile_rule
 $(BUILD_DIR)/%.bc: %$1 $(BUILT_INC) $(SELF) $(BUILD_DIR)/.dir
