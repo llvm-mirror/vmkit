@@ -21,6 +21,8 @@
 #include "Jnjvm.h"
 #include "VMStaticInstance.h"
 
+#include "Classpath.h"
+
 #include "j3/jni.h"
 #include "debug.h"
 
@@ -421,7 +423,9 @@ std::ostream& j3::operator << (std::ostream& os, const JavaObject& obj)
 			char *threadName = JavaString::strToAsciiz(threadNameObj);
 			os << ",name=\"" << threadName << '\"';
 			delete [] threadName;
-		} else if (ccl == vm->upcalls->newVMThread) {
+		}
+#ifndef	 OpenJDKPath
+		else if (ccl == vm->upcalls->newVMThread) {
 			const JavaObjectVMThread& vmthObj = (const JavaObjectVMThread&)obj;
 			for (int retries = 10; (!vmthObj.vmdata) && (retries >= 0); --retries)
 				usleep(100);
@@ -429,6 +433,7 @@ std::ostream& j3::operator << (std::ostream& os, const JavaObject& obj)
 			if (const JavaObject* thObj = vmthObj.vmdata->currentThread())
 				os << ",thread=" << *thObj;
 		}
+#endif
 
 		os << ')';
 	}
