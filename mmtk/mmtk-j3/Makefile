@@ -11,9 +11,8 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-MODULE_NAME = MMTKRuntime
 LIBRARY=MMTKRuntime
-LOADABLE_MODULE = 1
+NEED_BC=1
 
 CXX.Flags += -I$(PROJ_SRC_DIR)/../../lib/j3/VMCore
 

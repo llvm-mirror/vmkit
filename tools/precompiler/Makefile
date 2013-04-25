@@ -11,7 +11,7 @@ LEVEL = ../..
 include $(LEVEL)/Makefile.config
 
 TOOL=precompiler
-USEDLIBS = Classpath.a J3.a J3Compiler.a Vmkit.a VmkitCompiler.a CommonThread.a FinalMMTk.a Classpath.a J3.a J3Compiler.a Vmkit.a VmkitCompiler.a CommonThread.a FinalMMTk.a
+USE=Classpath J3 J3Compiler Vmkit VmkitCompiler CommonThread FinalMMTk
 BUILD_FRAMETABLE = 1
 LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo asmparser linker bitwriter
 

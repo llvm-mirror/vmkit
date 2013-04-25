@@ -13,7 +13,6 @@ include $(LEVEL)/Makefile.config
 
 LIBRARY=JITGCPass
 LOADABLE_MODULE = 1
-USEDLIBS =
 
 include $(LEVEL)/Makefile.common
 

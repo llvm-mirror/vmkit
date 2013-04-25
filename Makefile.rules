@@ -1,3 +1,7 @@
+.PHONY: all all-subs build-module bootstrap tidy clean distclean local-clean
+.SECONDARY:
+.SUFFIXES:
+
 ifdef NO
 ifeq ($(OPTIMIZED),1)
   BUILD_NAME:=Release
@@ -28,9 +32,8 @@ endif
 ###############################################################################
 #   Build directories
 ###############################################################################
-BINDIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
-LIBDIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
-INCDIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/include
+BIN_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
+LIB_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
 BUILD_DIR=$(BUILD_NAME)
 
 LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
@@ -52,7 +55,7 @@ LArchive=$(LLVM_BIN)/llvm-ar rcsf
 MKDIR=mkdir -p
 TOUCH=touch
 
-PREPARE_CODE=$(LIBDIR)/prepare-code$(SHLIBEXT)
+PREPARE_CODE=$(LIB_DIR)/prepare-code$(SHLIBEXT)
 
 %/.dir:
 	$(Verb) $(MKDIR) $(dir $@) && $(TOUCH) $@
@@ -63,7 +66,7 @@ clean::
 
 distclean::
 	$(Echo) "Cleaning build files"
-	$(Verb) $(RM) -Rf $(BINDIR) $(LIBDIR) $(INCDIR)
+	$(Verb) $(RM) -Rf $(BIN_DIR) $(LIB_DIR) $(INCDIR)
 
 ifeq ($(DEBUG),1)
   COMMON_CFLAGS+=-g
@@ -77,22 +80,81 @@ endif
 ###############################################################################
 #   Linking
 ###############################################################################
-USEDLIBS:=$(patsubst %,$(LibDir)/lib%,$(USEDLIBS))
+DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(MODULE) $(USE) $(USE))
 
 ifdef TOOL
-all:: $(BINDIR)/$(TOOL)$(EXEEXT)
+MODULE=$(TOOL)
 
-$(BINDIR)/$(TOOL)$(EXEEXT): $(ObjectsO) $(USEDLIBS) $(SELF) $(BINDIR)/.dir
+all:: $(BIN_DIR)/$(TOOL)$(EXEEXT)
+
+$(BIN_DIR)/$(TOOL)$(EXEEXT): $(DEP_LIBS) $(SELF) $(BIN_DIR)/.dir
 	$(Echo) 'Linking executable $(notdir $@)'
-	$(Verb) $(CLANGXX) -o $@ $(ObjectsO) $(USEDLIBS) $(MY_LIBS) $(MY_LDFLAGS) 
+	$(Verb) $(CLANGXX) -o $@ $(DEP_LIBS) $(MY_LIBS) $(MY_LDFLAGS) 
+
 endif
 
 ifdef LIBRARY
-all:: $(LIBDIR)/$(LIBRARY)$(SHLIBEXT)
+MODULE=$(LIBRARY)
 
-$(LIBDIR)/$(LIBRARY)$(SHLIBEXT): $(ObjectsO) $(SELF) $(LIBDIR)/.dir
+all:: $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT)
+
+$(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
 	$(Echo) "Linking shared library $(notdir $@)"
 	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -Wl,-R -Wl,'$ORIGIN' -shared $(ObjectsO)
+endif
+
+###############################################################################
+#   Module
+###############################################################################
+ifdef MODULE_WITH_GC
+MODULE=$(MODULE_WITH_GC)
+WITH_GC=-gc
+endif
+
+ifdef MODULE
+
+MODULE_A=$(LIB_DIR)/lib$(MODULE).a
+MODULE_BC=$(LIB_DIR)/$(MODULE).bc
+
+BC_FILES+=$(patsubst %.c,$(BUILD_DIR)/%$(WITH_GC).bc,$(wildcard *.c)) \
+          $(patsubst %.cc,$(BUILD_DIR)/%$(WITH_GC).bc,$(wildcard *.cc)) \
+          $(patsubst %.cpp,$(BUILD_DIR)/%$(WITH_GC).bc,$(wildcard *.cpp)) \
+          $(patsubst %,$(BUILD_DIR)/%$(WITH_GC).bc,$(GEN))
+
+OBJ_FILES=$(patsubst %.bc,%.o,$(BC_FILES))
+
+all:: $(MODULE_A)
+
+ifdef NEED_BC
+all:: $(MODULE_BC)
+endif
+
+ifdef BUILD_FRAMETABLE
+
+FRAMETABLES=FrametablesExterns.inc FrametablesSymbols.inc
+DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(USE))
+
+FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF)
+	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
+
+FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF)
+	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
+
+clean-local::
+	-$(Verb) $(RM) -f FrametablesExterns.inc FrametablesSymbols.inc
+
+endif
+
+$(MODULE_A): $(OBJ_FILES) $(SELF) $(LIB_DIR)/.dir
+	$(Echo) "Building archive $(notdir $@)"
+	-$(Verb) $(RM) -f $@
+	$(Verb) $(Archive) $@ $(OBJ_FILES)
+	$(Verb) $(Ranlib) $@
+
+$(MODULE_BC): $(BC_FILES) $(SELF) $(LIB_DIR)/.dir
+	$(Echo) "Building module $(notdir $@)"
+	$(Verb) $(LLVMLINK) $(BC_FILES) -o $(MODULE_BC)
+
 endif
 
 #
@@ -168,51 +230,9 @@ endif
 #                 GC symbol information.
 ###############################################################################
 
-ifdef MODULE_WITH_GC
-
-ObjectsBCWithGC   := $(BaseNameSources:%=$(ObjDir)/%_gc.bc)
-ObjectsWithGC     := $(BaseNameSources:%=$(ObjDir)/%_gc.o)
-AModule           := $(LibDir)/lib$(MODULE_WITH_GC).a
-
-$(ObjectsBCWithGC): $(ObjDir)/%_gc.bc: $(ObjDir)/%.bc $(LOPT)
-	$(Echo) "**[4] Compiling $*.bc to $*.bc (gc) for $(BuildMode) build (bytecode)" # $(OPT_BC_WITH_GC_FLAGS)
-	$(Verb) $(LOPT) $< -load=$(PREPARE_CODE) -StaticGCPass -o $@
-
-$(ObjectsWithGC): $(ObjDir)/%_gc.o: $(ObjDir)/%_gc.bc $(LLC)
-	$(Echo) "**[5] Compiling $*.bc to $*.o for $(BuildMode) build" # $(LLC_ASM_FLAGS)
-	$(Verb) $(LLC) -filetype=obj -disable-cfi -disable-fp-elim -load=$(PREPARE_CODE) $< -o $@
-
-$(AModule): $(ObjectsWithGC) $(LibDir)/.dir
-	$(Echo) "**[6] Building $(BuildMode) Archive Library $(notdir $@)"
-	-$(Verb) $(RM) -f $@
-	$(Verb) $(Archive) $@ $(ObjectsWithGC)
-	$(Verb) $(Ranlib) $@
-
-all-local:: $(AModule)
-
-clean-local::
-	-$(Verb) $(RM) -f $(AModule) $(ObjectsBCWithGC) $(ObjectsSWithGC) $(ObjectsWithGC)
-
-endif
-
 ###############################################################################
 # BUILD_FRAMETABLE: Generate files for easy access of frametables at runtime.
 ###############################################################################
-
-ifdef BUILD_FRAMETABLE
-
-FrametablesExterns.inc: $(ProjLibsPaths)
-	$(Verb) $(NM) $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
-
-FrametablesSymbols.inc: $(ProjLibsPaths)
-	$(Verb) $(NM) $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
-
-all-local:: FrametablesExterns.inc FrametablesSymbols.inc
-
-clean-local::
-	-$(Verb) $(RM) -f FrametablesExterns.inc FrametablesSymbols.inc
-
-endif
 
 ###############################################################################
 # COMPILE_OPENJDK_ZIP: Build the specified java sources and zip them up
@@ -256,26 +276,30 @@ INCLUDES+=-I. -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk \
 
 # should remove no-unused-variable                                                                                                         
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
-COMMON_CFLAGS+=  -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer  -ansi -pedantic $(WARN_CFLAGS)
+COMMON_CFLAGS+=  -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer  -ansi -pedantic $(WARN_CFLAGS) -fPIC
 
-CFLAGS+=$(COMMON_CFLAGS) `$(LLVM_CONFIG) --cflgas`
-CXXFLAGS+=$(COMMON_CFLAGS) `$(LLVM_CONFIG) --cxxflags`
-MY_LDFLAGS+=`$(LLVM_CONFIG) --ldflags` $(LDOPT)
-MY_LIBS+=`$(LLVM_CONFIG) --libs` -lz
+CFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cflgas)
+CXXFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --cxxflags)
+MY_LDFLAGS+=$(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
+MY_LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
 
 $(LibName.BCA): $(ObjectsBC) $(LibDir)/.dir $(LLVMToolDir)/llvm-ar
 	$(Echo) "**[22] Building $(BuildMode) Bytecode Archive $(notdir $@)"
 	$(Verb) $(RM) -f $@
 	$(Verb) $(LArchive) $@ $(ObjectsBC)
 
-$(ObjectsBC): $(ObjDir)/%.bc: %.cpp $(ObjDir)/.dir $(BUILT_SOURCES)
-	$(Echo) "**[1] Compiling $*.cpp for $(BuildMode) build (bytecode)"
-	$(Verb) $(CLANGXX) -S $(CXXFLAGS) -emit-llvm -c "$<" -o $@
+$(BUILD_DIR)/%-gc.o: $(BUILD_DIR)/%-gc.bc $(LLC) $(SELF)
+	$(Echo) "Assembling:       $(notdir $<)"
+	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim -load=$(PREPARE_CODE) $< -o $@
 
-$(ObjDir)/%.ll: %.cpp $(ObjDir)/.dir $(BUILT_SOURCES) $(LLVMCXX)
-	$(Echo) "**[2] Compiling $*.cpp for $(BuildMode) build (bytecode)"
-	$(Verb) $(CLANGXX) -S $(CXXFLAGS) -emit-llvm -c "$<" -o $@
+$(BUILD_DIR)/%.o: $(BUILD_DIR)/%.bc $(LLC) $(SELF)
+	$(Echo) "Assembling:       $(notdir $<)"
+	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $< -o $@
 
-$(ObjDir)/%.o: %.cpp $(ObjDir)/.dir $(BUILT_SOURCES) $(PROJ_MAKEFILE)
-	$(Echo) "**[3] Compiling $*.cpp for $(BuildMode) build" $(PIC_FLAG)
-	$(Verb) $(CLANGXX) $(CXXFLAGS) -c "$<" -o $@
+$(BUILD_DIR)/%-gc.bc: $(BUILD_DIR)/%.bc $(LOPT) $(PREPARE_CODE) $(SELF)
+	$(Echo) "Preparing for gc: $(notdir $<)"
+	$(Verb) $(LOPT) $< -load=$(PREPARE_CODE) -StaticGCPass -o $@
+
+$(BUILD_DIR)/%.bc: %.cpp $(FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Compiling:        $(notdir $<)"
+	$(Verb) $(CLANGXX) -S $(CXXFLAGS) -emit-llvm -c "$<" -o $@
