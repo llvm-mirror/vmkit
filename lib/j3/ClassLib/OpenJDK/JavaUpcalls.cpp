@@ -1052,3 +1052,4 @@ void Classpath::InitializeSystem(Jnjvm * jvm) {
 #include "ClasspathMethod.inc"
 #include "OpenJDK.inc"
 #include "Unsafe.inc"
+#include "UnsafeForOpenJDK.inc"
