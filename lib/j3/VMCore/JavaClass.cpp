@@ -1753,10 +1753,10 @@ void AnnotationReader::readElementValue() {
 JavaObject* AnnotationReader::createElementValue() {
   uint8 tag = reader.readU1();
   JavaObject* res = 0;
-  JavaObject* clazzLoaded = 0;
   JavaObject* tmp = 0;
   JavaString* str = 0;
   JavaObject* field = 0;
+  JavaObject* clazzLoaded = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(tmp, 0);
   llvm_gcroot(str, 0);
@@ -1821,38 +1821,26 @@ JavaObject* AnnotationReader::createElementValue() {
     res = JavaString::internalToJava(s, JavaThread::get()->getJVM());
 
   } else if (tag == 'e') {
-    // Element_value Enumeration not implemented
     const UTF8* n = cl->ctpInfo->UTF8At(reader.readU2());
     const UTF8* m = cl->ctpInfo->UTF8At(reader.readU2());
-    printf("I am here looking for enum %s and value %s\n", UTF8Buffer(n).cString(), UTF8Buffer(m).cString());
     JnjvmClassLoader* JCL = this->cl->classLoader;
     n = n->extract(JCL->hashUTF8, 1,n->size-1);
     UserCommonClass* cl = JCL->loadClassFromUserUTF8(n,true,false, NULL);
     if (cl != NULL && !cl->isPrimitive()) {
-    	printf("Ok, I found the class\n");
     	if (cl->asClass())
     		cl->asClass()->initialiseClass(vm);
     	clazzLoaded = cl->getClassDelegatee(vm);
     	str = JavaString::internalToJava(m, vm);
     	assert(clazzLoaded && "Class not found");
     	assert(str && "Null string");
-    	printf("Ok1\n");
     	field = upcalls->getFieldInClass->invokeJavaObjectVirtual(vm, upcalls->newClass, clazzLoaded, &str);
-    	printf("Ok2\n");
     	assert(field && "Field not found");
     	JavaObject* obj = 0;
-    	printf("Ok3\n");
     	res = upcalls->getInField->invokeJavaObjectVirtual(vm, upcalls->newField, field, &obj);
-    	printf("Ok4\n");
-    	assert(res && "Field value not found");
     } else {
     	str = JavaString::internalToJava(n, vm);
     	vm->classNotFoundException(str);
     }
-
-    //fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
-    //abort();
-
   } else if (tag == 'c') {
     ddprintf("class=");
     const UTF8* m = cl->ctpInfo->UTF8At(reader.readU2());
@@ -1878,6 +1866,7 @@ JavaObject* AnnotationReader::createElementValue() {
     if (numValues > 0)
     	res = createArrayByTag(numValues);
     else {
+    	// FIXME : Do something, I do not know the kind of array to create
     	fprintf(stderr, "Empty array not implemented %c type\n", tag);
     	abort();
     }
@@ -1896,16 +1885,22 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 	JavaObject* res = 0;
 	JavaString* str = 0;
 	JavaObject* clazzObject = 0;
+	JavaObject* field = 0;
+	JavaObject* clazzLoaded = 0;
+	JavaObject* myEnum = 0;
 	llvm_gcroot(res, 0);
 	llvm_gcroot(str, 0);
 	llvm_gcroot(clazzObject, 0);
+	llvm_gcroot(clazzLoaded, 0);
+	llvm_gcroot(field, 0);
+	llvm_gcroot(myEnum, 0);
 
 	sint32 valS;
 	uint32 valU;
 	sint64 val64S;
 	double valD;
 	float valF;
-	const UTF8* s = 0;
+	const UTF8* s = 0, *n = 0, * m = 0;
 	JnjvmClassLoader* JCL;
 	UserCommonClass* clLoaded;
 
@@ -1970,8 +1965,31 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 		ArrayObject::setElement((ArrayObject *)res, str, 0);
 		break;
 	case 'e':
-		fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
-		abort();
+		JCL = this->cl->classLoader;
+		//printf("Haciendo un arreglo del tipo : %s \n", UTF8Buffer(lastKey).cString());
+		array = JCL->constructArray(JCL->asciizConstructUTF8("[LDays;"));
+		res = array->doNew(numValues, vm);
+		n = cl->ctpInfo->UTF8At(reader.readU2());
+		m = cl->ctpInfo->UTF8At(reader.readU2());
+
+		n = n->extract(JCL->hashUTF8, 1,n->size-1);
+		clLoaded = JCL->loadClassFromUserUTF8(n,true,false, NULL);
+		if (clLoaded != NULL && !clLoaded->isPrimitive()) {
+			if (clLoaded->asClass())
+				clLoaded->asClass()->initialiseClass(vm);
+			clazzLoaded = clLoaded->getClassDelegatee(vm);
+			str = JavaString::internalToJava(m, vm);
+			assert(clazzLoaded && "Class not found");
+			assert(str && "Null string");
+			field = upcalls->getFieldInClass->invokeJavaObjectVirtual(vm, upcalls->newClass, clazzLoaded, &str);
+			assert(field && "Field not found");
+			JavaObject* obj = 0;
+			myEnum = upcalls->getInField->invokeJavaObjectVirtual(vm, upcalls->newField, field, &obj);
+			ArrayObject::setElement((ArrayObject *)res, str, 0);
+		} else {
+			str = JavaString::internalToJava(n, vm);
+			vm->classNotFoundException(str);
+		}
 		break;
 	case 'c':
 		array = upcalls->classArrayClass;
@@ -1989,10 +2007,6 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 		  vm->classNotFoundException(str);
 		}
 		ArrayObject::setElement((ArrayObject *)res, clazzObject, 0);
-		break;
-	case '[':
-		fprintf(stderr, "Only arrays of one dimensions are supported in annotations\n");
-		abort();
 		break;
 	case '@':
 		fprintf(stderr, "Annotation not supported for %c (nested annotations) type\n", tag);
@@ -2045,8 +2059,27 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 				ArrayObject::setElement((ArrayObject *)res, str, i);
 				break;
 			case 'e':
-				fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
-				abort();
+				n = cl->ctpInfo->UTF8At(reader.readU2());
+				m = cl->ctpInfo->UTF8At(reader.readU2());
+				JCL = this->cl->classLoader;
+				n = n->extract(JCL->hashUTF8, 1,n->size-1);
+				clLoaded = JCL->loadClassFromUserUTF8(n,true,false, NULL);
+				if (clLoaded != NULL && !clLoaded->isPrimitive()) {
+					if (clLoaded->asClass())
+						clLoaded->asClass()->initialiseClass(vm);
+					clazzLoaded = clLoaded->getClassDelegatee(vm);
+					str = JavaString::internalToJava(m, vm);
+					assert(clazzLoaded && "Class not found");
+					assert(str && "Null string");
+					field = upcalls->getFieldInClass->invokeJavaObjectVirtual(vm, upcalls->newClass, clazzLoaded, &str);
+					assert(field && "Field not found");
+					JavaObject* obj = 0;
+					myEnum = upcalls->getInField->invokeJavaObjectVirtual(vm, upcalls->newField, field, &obj);
+					ArrayObject::setElement((ArrayObject *)res, str, i);
+				} else {
+					str = JavaString::internalToJava(n, vm);
+					vm->classNotFoundException(str);
+				}
 				break;
 			case 'c':
 				s = cl->ctpInfo->UTF8At(reader.readU2());
@@ -2062,10 +2095,6 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 				  vm->classNotFoundException(str);
 				}
 				ArrayObject::setElement((ArrayObject *)res, clazzObject, i);
-				break;
-			case '[':
-				fprintf(stderr, "Only arrays of one dimensions are supported in annotations\n");
-				abort();
 				break;
 			case '@':
 				fprintf(stderr, "Annotation not supported for %c (nested annotations) type\n", tag);

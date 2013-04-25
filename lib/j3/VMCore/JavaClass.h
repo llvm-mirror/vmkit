@@ -66,6 +66,7 @@ public:
   Reader& reader;
   Class* cl;
   uint16 AnnotationNameIndex;
+  const UTF8* lastKey;
 
   AnnotationReader(Reader& R, Class* C) : reader(R), cl(C),
     AnnotationNameIndex(0) {}
