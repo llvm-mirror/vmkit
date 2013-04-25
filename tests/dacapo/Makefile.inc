@@ -1,6 +1,10 @@
+ifdef DEBUG
+	BUILD_MODE	:= Debug+Asserts
+else
+	BUILD_MODE	:= Release+Asserts
+endif
+
 TEMP_LEVEL			:= ../..
-BUILD_MODE			:= Release+Asserts
-# BUILD_MODE		:= Debug+Asserts
 DACAPO				:= $(PWD)/$(LEVEL)/jars/dacapo-$(DACAPO_VERSION).jar
 LOG_DIR				:= $(LEVEL)/logs
 LOG_DIR_FROM_TEMP	:= $(PWD)/$(LOG_DIR)

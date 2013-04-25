@@ -24,11 +24,15 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildArguments</key>
-					<value>-j12 ENABLE_OPTIMIZED=0 REQUIRES_FRAME_POINTER=1 KEEP_SYMBOLS=1 DEBUG_RUNTIME=1 DEBUG_SYMBOLS=1</value>
+					<value>-j12 ENABLE_OPTIMIZED=1 REQUIRES_FRAME_POINTER=1</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildCommand</key>
 					<value>make</value>
+				</dictionary>
+				<dictionary>
+					<key>org.eclipse.cdt.make.core.buildLocation</key>
+					<value>${workspace_loc:/vmkit2}</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.contents</key>
