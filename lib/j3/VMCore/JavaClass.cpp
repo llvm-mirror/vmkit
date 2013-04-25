@@ -18,6 +18,7 @@
 #include "JavaArray.h"
 #include "JavaClass.h"
 #include "JavaCompiler.h"
+#include "JavaString.h"
 #include "JavaConstantPool.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
@@ -28,6 +29,15 @@
 #include "Reader.h"
 
 #include <cstring>
+
+#if 0
+using namespace vmkit;
+#define dprintf(...) do { printf("JavaClass: "); printf(__VA_ARGS__); } while(0)
+#define ddprintf(...) do { printf(__VA_ARGS__); } while(0)
+#else
+#define dprintf(...)
+#define ddprintf(...)
+#endif
 
 using namespace j3;
 using namespace std;
@@ -333,6 +343,8 @@ JavaMethod* Class::lookupSpecialMethodDontThrow(const UTF8* name,
 JavaMethod* Class::lookupMethodDontThrow(const UTF8* name, const UTF8* type,
                                          bool isStatic, bool recurse,
                                          Class** methodCl) {
+  // This is a dirty hack because of a dirty usage pattern. See UPCALL_METHOD macro...
+  if (this == NULL) return NULL;
   
   JavaMethod* methods = 0;
   uint32 nb = 0;
@@ -1710,6 +1722,15 @@ void AnnotationReader::readAnnotation() {
   AnnotationNameIndex = typeIndex;
 }
 
+void AnnotationReader::readAnnotationElementValues() {
+  uint16 numPairs = reader.readU2();
+
+  for (uint16 j = 0; j < numPairs; ++j) {
+    reader.readU2();
+    readElementValue();
+  }
+}
+
 void AnnotationReader::readElementValue() {
   uint8 tag = reader.readU1();
   if ((tag == 'B') || (tag == 'C') || (tag == 'D') || (tag == 'F') ||
@@ -1729,6 +1750,135 @@ void AnnotationReader::readElementValue() {
       readElementValue();
     }
   }
+}
+
+JavaObject* AnnotationReader::createElementValue() {
+  uint8 tag = reader.readU1();
+  JavaObject* res = 0;
+  JavaObject* tmp = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(tmp, 0);
+	
+	Jnjvm* vm = JavaThread::get()->getJVM();
+  Classpath* upcalls = JavaThread::get()->getJVM()->upcalls;
+  ddprintf("value:");
+
+  if (tag == 'B') {
+    uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
+    ddprintf("B=%d", val);
+    res = upcalls->boolClass->doNew(vm);
+    upcalls->boolValue->setInstanceInt8Field(res, val);
+
+  } else if (tag == 'C') {
+    uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
+    ddprintf("C=%c", val);
+    res = upcalls->intClass->doNew(vm);
+    upcalls->intValue->setInstanceInt32Field(res, val);
+
+  } else if (tag == 'D') {
+    double val = cl->ctpInfo->DoubleAt(reader.readU2());
+    ddprintf("D=%f", val);
+    res = upcalls->doubleClass->doNew(vm);
+    upcalls->doubleValue->setInstanceDoubleField(res, val);
+
+  } else if (tag == 'F') {
+    float val = cl->ctpInfo->FloatAt(reader.readU2());
+    ddprintf("F=%f", val);
+    res = upcalls->floatClass->doNew(vm);
+    upcalls->floatValue->setInstanceFloatField(res, val);
+
+  } else if (tag == 'J') {
+    sint64 val = cl->ctpInfo->LongAt(reader.readU2());
+    ddprintf("J=%lld", val);
+    res = upcalls->longClass->doNew(vm);
+    upcalls->longValue->setInstanceLongField(res, val);
+
+  } else if (tag == 'S') {
+    uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
+    ddprintf("S=%d", val);
+    res = upcalls->shortClass->doNew(vm);
+    upcalls->shortValue->setInstanceInt16Field(res, val);
+    
+  } else if (tag == 'I') {
+    uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
+    ddprintf("I=%d", val);
+    res = upcalls->intClass->doNew(vm);
+    upcalls->intValue->setInstanceInt32Field(res, val);
+
+  } else if (tag == 'Z') {
+    bool val = cl->ctpInfo->IntegerAt(reader.readU2());
+    ddprintf("Z=%d", val);
+    res = upcalls->boolClass->doNew(vm);
+    upcalls->boolValue->setInstanceInt8Field(res, val);
+
+  } else if (tag == 's') {
+    const UTF8* s = cl->ctpInfo->UTF8At(reader.readU2());
+    ddprintf("s=%s", PrintBuffer(s).cString());
+    res = JavaString::internalToJava(s, JavaThread::get()->getJVM());
+
+  } else if (tag == 'e') {
+    // Element_value Enumeration not implemented
+    const UTF8* n = cl->ctpInfo->UTF8At(reader.readU2());
+    ddprintf("%s", PrintBuffer(n).cString());
+    const UTF8* m = cl->ctpInfo->UTF8At(reader.readU2());
+    ddprintf("%s", PrintBuffer(m).cString());
+    fprintf(stderr, "Annotation not supported for %c type\n", tag);
+    abort();
+
+  } else if (tag == 'c') {
+    ddprintf("class=");
+    const UTF8* m = cl->ctpInfo->UTF8At(reader.readU2());
+    ddprintf("%s", PrintBuffer(m).cString());
+
+  } else if (tag == '[') {
+    uint16 numValues = reader.readU2();
+    UserClassArray* array = upcalls->annotationArrayClass;
+    res = array->doNew(numValues, vm);
+
+    ddprintf("Tableau de %d elements\n", numValues);
+    for (uint32 i = 0; i < numValues; ++i) {
+      tmp = createElementValue();
+      ArrayObject::setElement((ArrayObject *)res, tmp, i);
+    }
+    ddprintf("Fin du Tableau");
+  } else {
+    // Element_value Annotation not implemented
+    fprintf(stderr, "Annotation not supported for %c type\n", tag);
+    abort();
+  }
+  ddprintf("\n");
+
+  return res;
+}
+
+JavaObject* AnnotationReader::createAnnotationMapValues() {
+  std::pair<JavaObject*, JavaObject*> pair;
+  JavaObject* tmp = 0;
+  JavaString* str = 0;
+  JavaObject* newHashMap = 0;
+  llvm_gcroot(tmp, 0);
+  llvm_gcroot(str, 0);
+  llvm_gcroot(newHashMap, 0);
+
+	Jnjvm * vm = JavaThread::get()->getJVM();
+  Classpath* upcalls = vm->upcalls;
+  UserClass* HashMap = upcalls->newHashMap;
+  newHashMap = HashMap->doNew(vm);
+  upcalls->initHashMap->invokeIntSpecial(vm, HashMap, newHashMap);
+
+  uint16 numPairs = reader.readU2();
+  dprintf("numPairs:%d\n", numPairs);
+  for (uint16 j = 0; j < numPairs; ++j) {
+    uint16 nameIndex = reader.readU2();
+    const UTF8* key = cl->ctpInfo->UTF8At(nameIndex);
+    dprintf("keyAn:%s|", PrintBuffer(key).cString());
+
+    tmp = createElementValue();
+    str = JavaString::internalToJava(key, JavaThread::get()->getJVM());
+    upcalls->putHashMap->invokeJavaObjectVirtual(vm, HashMap, newHashMap, &str, &tmp);
+  }
+
+  return newHashMap;
 }
 
 uint16 JavaMethod::lookupLineNumber(vmkit::FrameInfo* info) {

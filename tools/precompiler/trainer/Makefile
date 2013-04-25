@@ -19,7 +19,7 @@ include $(LEVEL)/Makefile.common
 PRECOMPILER := $(ToolDir)/precompiler$(EXEEXT)
 
 ifndef VERBOSE
-#  J3.Flags := > /dev/null
+  J3.Flags := > /dev/null
 endif
 
 HelloWorld.class: HelloWorld.java

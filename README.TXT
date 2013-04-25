@@ -3,7 +3,7 @@ Requirements:
 =============
 
 * Install required packages (Debian):
-apt-get install ant libgconf2-dev libgtk2.0-dev
+apt-get install ant libgconf2-dev libgtk2.0-dev sharutils
 
 * Install required packages (SUSE):
 zypper install ant gconf2-devel gtk2-devel
@@ -15,9 +15,9 @@ apt-get install default-jre default-jdk
 GNU Classpath:
 ==============
 
-wget http://ftp.gnu.org/gnu/classpath/classpath-0.97.2.tar.gz
-tar zxf classpath-0.97.2.tar.gz
-ln -s classpath-0.97.2 classpath
+wget http://ftp.gnu.org/gnu/classpath/classpath-0.99.tar.gz
+tar zxf classpath-0.99.tar.gz
+ln -s classpath-0.99 classpath
 cd classpath
 ./configure --disable-plugin --disable-examples --disable-Werror
 make -j12
@@ -33,8 +33,8 @@ ln -sf ../native/jni/java-util/.libs/libjavautil.so
 
 * Go root
 cd classpath
-make install
-ldconfig
+sudo make install
+sudo ldconfig
 
 =====
 LLVM:
@@ -91,7 +91,7 @@ svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit
 
 * Make it (debug mode):
 
-./configure --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/home/koutheir/PhD/VMKit/classpath/lib --with-gnu-classpath-glibj=/usr/local/classpath/share/classpath/glibj.zip
+./configure --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/usr/local/classpath/lib/classpath --with-gnu-classpath-glibj=/usr/local/classpath/share/classpath/glibj.zip
 make -j12 ENABLE_OPTIMIZED=0 REQUIRES_FRAME_POINTER=1 KEEP_SYMBOLS=1 DEBUG_RUNTIME=1 DEBUG_SYMBOLS=1
 
 =============

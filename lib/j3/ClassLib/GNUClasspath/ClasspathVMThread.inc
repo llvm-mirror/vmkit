@@ -56,6 +56,13 @@ void start(JavaThread* thread) {
   
   javaThread = thread->javaThread;
   assert(javaThread && "Didn't fix the javaThread of a j3 thread");
+  // If the thread is not a daemon, it is added to the list of threads to
+  // wait until exit.
+  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
+
+  if (!isDaemon) {
+    vm->threadSystem.enter();
+  }
  
   assert(vmThread->getVirtualTable());
   assert(javaThread->getVirtualTable());
@@ -63,7 +70,6 @@ void start(JavaThread* thread) {
   vm->upcalls->runVMThread->invokeIntSpecial(vm, vmthClass, vmThread);
  
   // Remove the thread from the list.
-  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
   if (!isDaemon) {
     vm->threadSystem.leave();
   }
@@ -89,15 +95,6 @@ JavaObject* vmThread, sint64 stackSize) {
  
   JavaThread* th = new JavaThread(vm);
   if (!th) vm->outOfMemoryError();
-
-  // If the thread is not a daemon, it is added to the list of threads to
-  // wait until exit.
-  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
-
-  if (!isDaemon) {
-    vm->threadSystem.enter();
-  }
-
   th->start((void (*)(vmkit::Thread*))start);
   // Now that the thread has been created, initialise its object fields.
   th->initialise(javaThread, vmThread);
