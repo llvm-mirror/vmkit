@@ -126,7 +126,7 @@ public final class Bindings {
     Selected.Collector plan = Selected.Collector.get();
     allocator = plan.copyCheckAllocator(from, wholeSize, 0, allocator);
     Address to = plan.allocCopy(from, wholeSize, 0, 0, allocator);
-    memcpy(to.toObjectReference(), from, size);
+    memcpy(to, from.toAddress(), wholeSize);
     plan.postCopy(to.toObjectReference(), virtualTable, size, allocator);
     return to.toObjectReference();
   }
@@ -139,8 +139,13 @@ public final class Bindings {
   
   @Inline
   private static native void memcpy(
+      Address to, Address from, int size);
+
+  @Inline
+  private static native void memcpy(
       ObjectReference to, ObjectReference from, int size);
 
+  
   @Inline
   private static void arrayWriteBarrier(ObjectReference ref, Address slot, ObjectReference value) {
     if (Selected.Constraints.get().needsObjectReferenceWriteBarrier()) {

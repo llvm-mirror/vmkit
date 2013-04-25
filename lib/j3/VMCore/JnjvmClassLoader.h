@@ -132,7 +132,7 @@ public:
  
   /// getIsolate - Returns the isolate that created this class loader.
   ///
-  Jnjvm* getIsolate() const { return vm; }
+  Jnjvm* getJVM() const { return vm; }
 
   /// getClasses - Returns the classes this class loader has loaded.
   ///
