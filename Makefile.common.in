@@ -15,12 +15,12 @@ LLVMCC_EMITIR_FLAG = "-emit-llvm"
 ifeq ($(BUILD_FRAMETABLE), 1)
   BUILT_SOURCES = FrametablesSymbols.inc FrametablesExterns.inc
 endif
-  
-ENABLE_OPTIMIZED	:= 0
+
+#ENABLE_OPTIMIZED	:= 0
 REQUIRES_FRAME_POINTER	:= 1
 JAVAC_TARGET		:= 1.5
 
-ifeq ($(ENABLE_OPTIMIZED), 0)
+ifneq ($(ENABLE_OPTIMIZED), 1)
 	CFLAGS			+= -O0
 	CXXFLAGS		+= -O0
 
