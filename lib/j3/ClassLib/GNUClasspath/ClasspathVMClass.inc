@@ -84,14 +84,15 @@ jclass clazz,
 #endif
 JavaObject* Cl, 
 jboolean publicOnly) {
-
+  JavaObjectClass* jcl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
+  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  ret = JavaObjectClass::getDeclaredConstructors((JavaObjectClass*)Cl, publicOnly);
+  ret = JavaObjectClass::getDeclaredConstructors(jcl = (JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -106,13 +107,15 @@ jclass clazz,
 JavaObject* Cl, 
 jboolean publicOnly) {
 
+  JavaObjectClass* jcl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
+  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  ret = JavaObjectClass::getDeclaredMethods((JavaObjectClass*)Cl, publicOnly);
+  ret = JavaObjectClass::getDeclaredMethods(jcl = (JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -127,12 +130,14 @@ jclass clazz,
 JavaObject* Cl, 
 jboolean ignore) {
   
+  JavaObjectClass* jcl = 0;
   jint res = 0;
   llvm_gcroot(Cl, 0);
+  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  res = JavaObjectClass::getModifiers((JavaObjectClass*)Cl);
+  res = JavaObjectClass::getModifiers(jcl = (JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
   return res;
@@ -337,14 +342,15 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl, jboolean publicOnly) {
-
+  JavaObjectClass* jcl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
+  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  ret = JavaObjectClass::getDeclaredFields((JavaObjectClass*)Cl, publicOnly);
+  ret = JavaObjectClass::getDeclaredFields(jcl = (JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -357,14 +363,15 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl) {
-
+  JavaObjectClass* jcl = 0;
   ArrayObject* res = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(Cl, 0);
+  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  res = JavaObjectClass::getInterfaces((JavaObjectClass*)Cl);
+  res = JavaObjectClass::getInterfaces(jcl = (JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
 
@@ -378,14 +385,16 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl) {
+  JavaObjectClass* jcl = 0;
   JavaObject* res = 0;
 
   llvm_gcroot(res, 0);
   llvm_gcroot(Cl, 0);
+  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  res = JavaObjectClass::getDeclaringClass((JavaObjectClass*)Cl);
+  res = JavaObjectClass::getDeclaringClass(jcl = (JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
 
@@ -399,14 +408,15 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl, bool publicOnly) {
-
+  JavaObjectClass* jcl = 0;
   ArrayObject* result = 0;
   llvm_gcroot(result, 0);
   llvm_gcroot(Cl, 0);
+  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  result = JavaObjectClass::getDeclaredClasses((JavaObjectClass*)Cl, publicOnly);
+  result = JavaObjectClass::getDeclaredClasses(jcl = (JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -435,6 +445,7 @@ jclass clazz,
 #endif
 JavaObject* Cl) {
 
+  ArrayObject* arrayRes = 0;
   JavaObject* res = 0;
   JavaObject* annon = 0;
   JavaObject* newHashMap = 0;
@@ -444,6 +455,7 @@ JavaObject* Cl) {
   llvm_gcroot(newHashMap, 0);
   llvm_gcroot(Cl, 0);
   llvm_gcroot(annotationClass, 0);
+  llvm_gcroot(arrayRes, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -461,9 +473,9 @@ JavaObject* Cl) {
     Reader reader(annotationsAtt, cl->bytes);
     AnnotationReader AR(reader, cl);
     uint16 numAnnotations = reader.readU2();
-    
+
     UserClassArray* array = upcalls->constructorArrayAnnotation;
-    res = array->doNew(numAnnotations, vm);
+    arrayRes = (ArrayObject *)(res = array->doNew(numAnnotations, vm));
     for (uint16 i = 0; i < numAnnotations; ++i) {
 		uint16 typeIndex = reader.readU2();
 		const UTF8* annoType = cl->ctpInfo->UTF8At(typeIndex);
@@ -478,7 +490,7 @@ JavaObject* Cl) {
 			AnnonClass = commClass -> asClass();
 		else
 			AnnonClass = loader->loadName(annoType, true, true, NULL);
-			
+
 		assert(AnnonClass && "Panic, imposible conditions");
 
 		dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
@@ -487,7 +499,7 @@ JavaObject* Cl) {
 		newHashMap = AR.createAnnotationMapValues(annotationClass);
 		
 		annon = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-		ArrayObject::setElement((ArrayObject *)res, annon, i);
+		ArrayObject::setElement(arrayRes, annon, i);
 	} // end for
 		
   }
