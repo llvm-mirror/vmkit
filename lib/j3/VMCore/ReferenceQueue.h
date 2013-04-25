@@ -232,12 +232,7 @@ public:
   }
 };
 
-class JavaReferenceThread : public ReferenceThread<JavaThread> {
-public:
-	JavaReferenceThread(Jnjvm* vm) : ReferenceThread<JavaThread>(vm) {}
-};
-
-class FinalizerThread : public JavaThread {
+template <class T_THREAD> class FinalizerThread : public T_THREAD {
 public:
   /// FinalizationQueueLock - A lock to protect access to the queue.
   ///
@@ -258,7 +253,21 @@ public:
 
   /// growFinalizationQueue - Grow the queue of finalizable objects.
   ///
-  void growFinalizationQueue();
+  void growFinalizationQueue() {
+    if (CurrentIndex >= QueueLength) {
+      uint32 newLength = QueueLength * GROW_FACTOR;
+      gc** newQueue = new gc*[newLength];
+      if (!newQueue) {
+        fprintf(stderr, "I don't know how to handle finalizer overflows yet!\n");
+        abort();
+      }
+      for (uint32 i = 0; i < QueueLength; ++i) newQueue[i] = FinalizationQueue[i];
+      delete[] FinalizationQueue;
+      FinalizationQueue = newQueue;
+      QueueLength = newLength;
+    }
+  }
+
   
   /// ToBeFinalized - List of objects that are scheduled to be finalized.
   ///
@@ -276,7 +285,21 @@ public:
   
   /// growToBeFinalizedQueue - Grow the queue of the to-be finalized objects.
   ///
-  void growToBeFinalizedQueue();
+  void growToBeFinalizedQueue() {
+    if (CurrentFinalizedIndex >= ToBeFinalizedLength) {
+      uint32 newLength = ToBeFinalizedLength * GROW_FACTOR;
+      gc** newQueue = new gc*[newLength];
+      if (!newQueue) {
+        fprintf(stderr, "I don't know how to handle finalizer overflows yet!\n");
+        abort();
+      }
+      for (uint32 i = 0; i < ToBeFinalizedLength; ++i) newQueue[i] = ToBeFinalized[i];
+      delete[] ToBeFinalized;
+      ToBeFinalized = newQueue;
+      ToBeFinalizedLength = newLength;
+    }
+  }
+
   
   /// finalizationCond - Condition variable to wake up finalization threads.
   ///
@@ -286,25 +309,100 @@ public:
   ///
   vmkit::LockNormal FinalizationLock;
 
-  static void finalizerStart(FinalizerThread*);
+  static void finalizerStart(FinalizerThread* th) {
+    gc* res = NULL;
+    llvm_gcroot(res, 0);
+
+    while (true) {
+      th->FinalizationLock.lock();
+      while (th->CurrentFinalizedIndex == 0) {
+        th->FinalizationCond.wait(&th->FinalizationLock);
+      }
+      th->FinalizationLock.unlock();
+
+      while (true) {
+        th->FinalizationQueueLock.acquire();
+        if (th->CurrentFinalizedIndex != 0) {
+          res = th->ToBeFinalized[th->CurrentFinalizedIndex - 1];
+          --th->CurrentFinalizedIndex;
+        }
+        th->FinalizationQueueLock.release();
+        if (!res) break;
+
+       th->MyVM->finalizeObject(res);
+
+        res = NULL;
+      }
+    }
+  }
 
   /// addFinalizationCandidate - Add an object to the queue of objects with
   /// a finalization method.
   ///
-  void addFinalizationCandidate(gc*);
+  void addFinalizationCandidate(gc* obj) {
+    llvm_gcroot(obj, 0);
+    FinalizationQueueLock.acquire();
+
+    if (CurrentIndex >= QueueLength) {
+      growFinalizationQueue();
+    }
+
+    FinalizationQueue[CurrentIndex++] = obj;
+    FinalizationQueueLock.release();
+  }
+
 
   /// scanFinalizationQueue - Scan objets with a finalized method and schedule
   /// them for finalization if they are not live.
   ///
-  void scanFinalizationQueue(word_t closure);
+  void scanFinalizationQueue(word_t closure) {
+    uint32 NewIndex = 0;
+    for (uint32 i = 0; i < CurrentIndex; ++i) {
+      gc* obj = FinalizationQueue[i];
 
-  FinalizerThread(Jnjvm* vm);
+      if (!vmkit::Collector::isLive(obj, closure)) {
+        obj = vmkit::Collector::retainForFinalize(FinalizationQueue[i], closure);
+
+        if (CurrentFinalizedIndex >= ToBeFinalizedLength)
+          growToBeFinalizedQueue();
+
+        /* Add to object table */
+        ToBeFinalized[CurrentFinalizedIndex++] = obj;
+      } else {
+        FinalizationQueue[NewIndex++] =
+          vmkit::Collector::getForwardedFinalizable(obj, closure);
+      }
+    }
+    CurrentIndex = NewIndex;
+  }
+
+
+  FinalizerThread(vmkit::VirtualMachine* vm) : T_THREAD(vm) {
+    FinalizationQueue = new gc*[INITIAL_QUEUE_SIZE];
+    QueueLength = INITIAL_QUEUE_SIZE;
+    CurrentIndex = 0;
+
+    ToBeFinalized = new gc*[INITIAL_QUEUE_SIZE];
+    ToBeFinalizedLength = INITIAL_QUEUE_SIZE;
+    CurrentFinalizedIndex = 0;
+  }
 
   ~FinalizerThread() {
     delete[] FinalizationQueue;
     delete[] ToBeFinalized;
   }
 };
+
+class JavaFinalizerThread : public FinalizerThread<JavaThread>{
+	public:
+		JavaFinalizerThread(Jnjvm* vm) : FinalizerThread<JavaThread>(vm) {}
+};
+
+class JavaReferenceThread : public ReferenceThread<JavaThread> {
+public:
+	JavaReferenceThread(Jnjvm* vm) : ReferenceThread<JavaThread>(vm) {}
+};
+
 
 } // namespace j3
 

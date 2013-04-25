@@ -1071,9 +1071,9 @@ void Jnjvm::loadBootstrap() {
   JnjvmBootstrapLoader* loader = bootstrapLoader;
   
   // First create system threads.
-  finalizerThread = new FinalizerThread(this);
+  finalizerThread = new JavaFinalizerThread(this);
   finalizerThread->start(
-      (void (*)(vmkit::Thread*))FinalizerThread::finalizerStart);
+      (void (*)(vmkit::Thread*))JavaFinalizerThread::finalizerStart);
     
   referenceThread = new JavaReferenceThread(this);
   referenceThread->start(
@@ -1384,47 +1384,6 @@ void Jnjvm::addFinalizationCandidate(gc* object) {
   src = (JavaObject*)object;
   if (src->getVirtualTable()->hasDestructor())
   	finalizerThread->addFinalizationCandidate(src);
-}
-
-/*
- * PUT THIS INTO A SEPARATED FILE
- */
-
-typedef void (*destructor_t)(void*);
-
-void invokeFinalizer(gc* _obj) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaObject* obj = (JavaObject*)_obj;
-  llvm_gcroot(obj, 0);
-  JavaMethod* meth = vm->upcalls->FinalizeObject;
-  UserClass* cl = JavaObject::getClass(obj)->asClass();
-  meth->invokeIntVirtualBuf(vm, cl, obj, 0);
-}
-
-void invokeFinalize(gc* res) {
-  llvm_gcroot(res, 0);
-  TRY {
-    invokeFinalizer(res);
-  } IGNORE;
-  vmkit::Thread::get()->clearException();
-}
-
-/*
- *
- */
-
-void Jnjvm::finalizeObject(gc* object) {
-	JavaObject* res = 0;
-	llvm_gcroot(object, 0);
-	llvm_gcroot(res, 0);
-	res = (JavaObject*) object;
-  JavaVirtualTable* VT = res->getVirtualTable();
-  if (VT->operatorDelete) {
-    destructor_t dest = (destructor_t)VT->destructor;
-    dest(res);
-  } else {
-    invokeFinalize(res);
-  }
 }
 
 void Jnjvm::setType(gc* header, void* type) {
