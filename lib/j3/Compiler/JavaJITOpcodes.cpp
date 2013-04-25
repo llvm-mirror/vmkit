@@ -114,18 +114,33 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
     PRINT_DEBUG(JNJVM_COMPILE, 1, LIGHT_BLUE, "\n");
     
     Opinfo* opinfo = &(opcodeInfos[i]);
-    
     if (opinfo->newBlock) {
       if (currentBlock->getTerminator() == 0) {
         // Load the exception object if we have branched to a handler.
+    	  bool b = false;
         if (opinfo->handler) {
           Instruction* I = opinfo->newBlock->begin();
           PHINode * node = dyn_cast<PHINode>(I);
-          assert(node && "Handler marlformed");
-          Value* obj = pop();
-          node->addIncoming(obj, currentBlock);
+          if (!node) {
+        	  //llvmFunction->dump();
+        	  //Value* obj = pop();
+        	  //PHINode* node = PHINode::Create(obj->getType(), 0, "jaja", opinfo->newBlock);
+        	  //node->addIncoming(obj, currentBlock);
+        	  // if we were in a handler and now we are in a new handler we simulate a throw
+        	  llvm::Value* arg = pop();
+        	  throwException(arg);
+        	  b = true;
+        	  // Original Code
+        	  //assert(node && "Handler marlformed");
+          }
+          else {
+
+			  Value* obj = pop();
+			  node->addIncoming(obj, currentBlock);
+          }
         }
-        branch(*opinfo, currentBlock);
+        if (!b)
+        	branch(*opinfo, currentBlock);
       }
       
       currentBlock = opinfo->newBlock;
