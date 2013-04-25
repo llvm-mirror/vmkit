@@ -1,3 +1,5 @@
+
+
 .PHONY: all tidy clean confclean
 .SECONDARY:
 .SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll $(SHLIBEXT) $(SUFFIXES)
@@ -38,7 +40,8 @@ all::
 	$(Echo) "Entering compilation process"
 endif
 
-Echo=@echo "[$(PROJECT_NAME) $(PROF)]:"
+EchoMsg="[$(PROJECT_NAME) $(PROF)]:"
+Echo=@echo $(EchoMsg)
 
 ifndef VERBOSE
 	SUB_OPT=--no-print-directory
@@ -53,7 +56,8 @@ RECURSIVE_TARGETS=all clean
 
 $(RECURSIVE_TARGETS)::
 	$(Verb) for f in $(DIRS); do \
-		$(MAKE) $(SUB_OPT) -C $$f $@ PROF=$(PROF)/$$f || exit 1; \
+		$(MAKE) $(SUB_OPT) -C $$f $@ PROF=$(PROF)/$$f; \
+		if [ $$? != 0 ]; then echo "$(EchoMsg) abort with error in $(PROF)/$$f"; exit 1; fi \
 	done; exit 0;
 
 tidy:
