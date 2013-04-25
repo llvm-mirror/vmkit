@@ -59,7 +59,7 @@
 			     section($dir, "overview",     $active, "index.php",        "Overview");
 			     section($dir, "start",        $active, "start.php",        "Get Started");
 			     section($dir, "mailings",     $active, "mailings.php",     "Mailing Lists");
-			     section($dir, "publi",        $active, "publis/Publications.php", "Publications");
+			     section($dir, "publi",        $active, "Publications.php", "Publications");
 
 					 if(basename($_SERVER["SCRIPT_FILENAME"]) == "ls.php") {
 						 echo "<p>";
