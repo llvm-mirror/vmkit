@@ -178,12 +178,9 @@ int main(int argc, char **argv) {
     }   
   }
   
-  printf("Verifying Generated Module...\n");
   if(llvm::verifyModule(*(Comp->getLLVMModule()), llvm::PrintMessageAction)){
-  	printf("ERROR !!!\n");
   	return 1;
   }
-  printf("Verification OK\n");
 
   std::string ErrorInfo;
   std::auto_ptr<raw_ostream> Out 
