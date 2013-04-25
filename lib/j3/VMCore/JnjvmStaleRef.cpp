@@ -48,11 +48,11 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMClassLoader** ref)
 
 	JnjvmClassLoader* loader = (**ref).getClassLoader();
 	if (!loader->isZombie()) return;
-
+/*
 	cerr << "WARNING: Ignored stale reference ref=" << ref << " obj=" << **ref;
 	if (source) cerr << " source=" << *source;
 	cerr << endl;
-
+*/
 #endif
 }
 
@@ -67,11 +67,11 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMStaticInstance** r
 
 	JnjvmClassLoader* loader = (**ref).getOwningClass()->classLoader;
 	if (!loader->isZombie()) return;
-
+/*
 	cerr << "WARNING: Ignored stale reference ref=" << ref << " obj=" << **ref;
 	if (source) cerr << " source=" << *source;
 	cerr << endl;
-
+*/
 #endif
 }
 

@@ -9,7 +9,7 @@ import org.osgi.service.packageadmin.PackageAdmin;
 public class Activator
 	implements BundleActivator, Runnable
 {
-	static final String targetBundle = "file:///home/koutheir/PhD/VMKit/knopflerfish-svn/osgi/jars/prefs/prefs_all-1.0.0.jar";
+	static final String targetBundle = "file:///home/koutheir/PhD/VMKit/knopflerfish/osgi/jars/http/http_all-3.1.2.jar";
 
 	BundleContext context;
 	ServiceReference pkgAdminRef;
