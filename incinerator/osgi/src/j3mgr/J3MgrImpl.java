@@ -62,6 +62,7 @@ public class J3MgrImpl
 	{
 		if (event.getType() != FrameworkEvent.PACKAGES_REFRESHED) return;
 
+		if (bundlesToKill.isEmpty()) return;
 		long bundleID = bundlesToKill.removeLast().longValue();
 		
 		System.out.println("Resetting stale references to bundle #" + bundleID);
