@@ -84,15 +84,14 @@ jclass clazz,
 #endif
 JavaObject* Cl, 
 jboolean publicOnly) {
-  JavaObjectClass* jcl = 0;
+
   ArrayObject* ret = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
-  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  ret = JavaObjectClass::getDeclaredConstructors(jcl = (JavaObjectClass*)Cl, publicOnly);
+  ret = JavaObjectClass::getDeclaredConstructors((JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -107,15 +106,13 @@ jclass clazz,
 JavaObject* Cl, 
 jboolean publicOnly) {
 
-  JavaObjectClass* jcl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
-  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  ret = JavaObjectClass::getDeclaredMethods(jcl = (JavaObjectClass*)Cl, publicOnly);
+  ret = JavaObjectClass::getDeclaredMethods((JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -130,14 +127,12 @@ jclass clazz,
 JavaObject* Cl, 
 jboolean ignore) {
   
-  JavaObjectClass* jcl = 0;
   jint res = 0;
   llvm_gcroot(Cl, 0);
-  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  res = JavaObjectClass::getModifiers(jcl = (JavaObjectClass*)Cl);
+  res = JavaObjectClass::getModifiers((JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
   return res;
@@ -342,15 +337,14 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl, jboolean publicOnly) {
-  JavaObjectClass* jcl = 0;
+
   ArrayObject* ret = 0;
   llvm_gcroot(Cl, 0);
   llvm_gcroot(ret, 0);
-  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  ret = JavaObjectClass::getDeclaredFields(jcl = (JavaObjectClass*)Cl, publicOnly);
+  ret = JavaObjectClass::getDeclaredFields((JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -363,15 +357,14 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl) {
-  JavaObjectClass* jcl = 0;
+
   ArrayObject* res = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(Cl, 0);
-  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  res = JavaObjectClass::getInterfaces(jcl = (JavaObjectClass*)Cl);
+  res = JavaObjectClass::getInterfaces((JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
 
@@ -385,16 +378,14 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl) {
-  JavaObjectClass* jcl = 0;
   JavaObject* res = 0;
 
   llvm_gcroot(res, 0);
   llvm_gcroot(Cl, 0);
-  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  res = JavaObjectClass::getDeclaringClass(jcl = (JavaObjectClass*)Cl);
+  res = JavaObjectClass::getDeclaringClass((JavaObjectClass*)Cl);
 
   END_NATIVE_EXCEPTION
 
@@ -408,15 +399,14 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl, bool publicOnly) {
-  JavaObjectClass* jcl = 0;
+
   ArrayObject* result = 0;
   llvm_gcroot(result, 0);
   llvm_gcroot(Cl, 0);
-  llvm_gcroot(jcl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  result = JavaObjectClass::getDeclaredClasses(jcl = (JavaObjectClass*)Cl, publicOnly);
+  result = JavaObjectClass::getDeclaredClasses((JavaObjectClass*)Cl, publicOnly);
 
   END_NATIVE_EXCEPTION
 
@@ -444,11 +434,7 @@ JNIEnv *env,
 jclass clazz, 
 #endif
 JavaObject* Cl) {
-  // TODO implement me
-	//fprintf(stderr, "Java_java_lang_VMClass_getDeclaredAnnotations not implemented\n");
-  //abort();
 
-  ArrayObject* arrayRes = 0;
   JavaObject* res = 0;
   JavaObject* annon = 0;
   JavaObject* newHashMap = 0;
@@ -458,7 +444,6 @@ JavaObject* Cl) {
   llvm_gcroot(newHashMap, 0);
   llvm_gcroot(Cl, 0);
   llvm_gcroot(annotationClass, 0);
-  llvm_gcroot(arrayRes, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -469,42 +454,48 @@ JavaObject* Cl) {
   //JavaField* field = JavaObjectVMField::getInternalField(VMField);
   JavaAttribute* annotationsAtt =
     cl->lookupAttribute(JavaAttribute::annotationsAttribute);
-  //dprintf("JavaClass : %s\n", UTF8Buffer(field->name).cString());
   
-	JnjvmClassLoader* loader = cl->classLoader;
+  JnjvmClassLoader* loader = cl->classLoader;
 
   if (annotationsAtt) {
     Reader reader(annotationsAtt, cl->bytes);
     AnnotationReader AR(reader, cl);
     uint16 numAnnotations = reader.readU2();
     
-    UserClassArray* array = upcalls->annotationArrayClass;
-    arrayRes = (ArrayObject *)(res = array->doNew(numAnnotations, vm));
+    UserClassArray* array = upcalls->constructorArrayAnnotation;
+    res = array->doNew(numAnnotations, vm);
     for (uint16 i = 0; i < numAnnotations; ++i) {
-			uint16 typeIndex = reader.readU2();
-			const UTF8* annoType = cl->ctpInfo->UTF8At(typeIndex);
-			newHashMap = AR.createAnnotationMapValues();
+		uint16 typeIndex = reader.readU2();
+		const UTF8* annoType = cl->ctpInfo->UTF8At(typeIndex);
+		
+		
+		annoType = annoType->extract(loader->hashUTF8, 1,annoType->size-1);
+		dprintf("Annotation type : %s\n", UTF8Buffer(annoType).cString());
+		UserClass* AnnonClass = 0;
+		UserCommonClass* commClass = loader->lookupClass(annoType);
+		
+		if (commClass) 
+			AnnonClass = commClass -> asClass();
+		else
+			AnnonClass = loader->loadName(annoType, true, true, NULL);
 			
-			annoType = annoType->extract(loader->hashUTF8, 1,annoType->size-1);
-			dprintf("Annotation type : %s\n", UTF8Buffer(annoType).cString());
-			UserClass* AnnonClass = 0;
-			UserCommonClass* commClass = loader->lookupClass(annoType);
-			
-			if (commClass) 
-				AnnonClass = commClass -> asClass();
-			else
-				AnnonClass = loader->loadName(annoType, true, true, NULL);
-				
-			assert(AnnonClass && "Panic, imposible conditions");
-	
-			dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
-			annotationClass = AnnonClass->getClassDelegatee(vm);
-			
-			annon = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-			ArrayObject::setElement(arrayRes, annon, i);
-		} // end for
+		assert(AnnonClass && "Panic, imposible conditions");
+
+		dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
+		annotationClass = AnnonClass->getClassDelegatee(vm);
+		
+		newHashMap = AR.createAnnotationMapValues(annotationClass);
+		
+		annon = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
+		ArrayObject::setElement((ArrayObject *)res, annon, i);
+	} // end for
 		
   }
+  else {
+  	UserClassArray* array = upcalls->constructorArrayAnnotation;
+    res = array->doNew(0, vm);
+  }
+  	
 
   END_NATIVE_EXCEPTION
   return (ArrayObject*)res;

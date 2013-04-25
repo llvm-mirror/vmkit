@@ -74,29 +74,25 @@ JavaObjectVMField* VMField, JavaObjectClass* annotationClass) {
       AnnotationReader AR(reader, compilingClass);
       uint16 numAnnotations = reader.readU2();
 
-      for (uint16 i = 0; i < numAnnotations; ++i) {
-				uint16 typeIndex = reader.readU2();
-				const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
+	  for (uint16 i = 0; i < numAnnotations; ++i) {
+		uint16 typeIndex = reader.readU2();
+		const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
+	
+		// Remove the L and ; in the name annotation type (L.....;)
+		// for the comparison.
+		dprintf("Comparing with  : %s\n", UTF8Buffer(annoType).cString());
+		if (clazz->name->equals(annoType->elements+1, annoType->size-2)) {
+			newHashMap = AR.createAnnotationMapValues(annotationClass);
+			break;
+		} else {
+			AR.readAnnotationElementValues();
+		}
+	  } // end for
 
-				// Remove the L and ; in the name annotation type (L.....;)
-				// for the comparison.
-				dprintf("Comparing with  : %s\n", UTF8Buffer(annoType).cString());
-				if (clazz->name->equals(annoType->elements+1, annoType->size-2)) {
-	  			newHashMap = AR.createAnnotationMapValues();
-	  			
-	  			
-	  			break;
-
-				} else {
-	  			AR.readAnnotationElementValues();
-				}
-  		} // end for
-
-  		if (newHashMap) {
-				dprintf("Annotation creation\n");
-				res = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-  		}
-
+	  if (newHashMap) {
+		dprintf("Annotation creation\n");
+		res = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
+	  }
     }
   } else {
     vm->nullPointerException();
@@ -112,7 +108,6 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMField_getDeclaredAnnotati
 JNIEnv *env, 
 #endif
 JavaObjectVMField* VMField) { 
-  ArrayObject* arrayRes = 0;
   JavaObject* res = 0;
   JavaObject* annon = 0;
   JavaObject* newHashMap = 0;
@@ -122,7 +117,6 @@ JavaObjectVMField* VMField) {
   llvm_gcroot(newHashMap, 0);
   llvm_gcroot(VMField, 0);
   llvm_gcroot(annotationClass, 0);
-  llvm_gcroot(arrayRes, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -143,16 +137,15 @@ JavaObjectVMField* VMField) {
     AnnotationReader AR(reader, compilingClass);
     uint16 numAnnotations = reader.readU2();
     
-    UserClassArray* array = upcalls->annotationArrayClass;
-    arrayRes = (ArrayObject *)(res = array->doNew(numAnnotations, vm));
+    UserClassArray* array = upcalls->constructorArrayAnnotation;
+    res = array->doNew(numAnnotations, vm);
 		dprintf("JavaField : %s with %d fields \n", UTF8Buffer(field->name).cString(), numAnnotations);
     for (uint16 i = 0; i < numAnnotations; ++i) {
 			uint16 typeIndex = reader.readU2();
 			const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
-			newHashMap = AR.createAnnotationMapValues();
-			
 			annoType = annoType->extract(loader->hashUTF8, 1,annoType->size-1);
 			dprintf("Annotation type : %s\n", UTF8Buffer(annoType).cString());
+			
 			UserClass* AnnonClass = 0;
 			UserCommonClass* commClass = loader->lookupClass(annoType);
 			
@@ -167,9 +160,15 @@ JavaObjectVMField* VMField) {
 			dprintf("Loaded class : %s \n", UTF8Buffer(AnnonClass->name).cString());
 			annotationClass = AnnonClass->getClassDelegatee(vm);
 			
+			newHashMap = AR.createAnnotationMapValues(annotationClass);
+			
 			annon = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-			ArrayObject::setElement(arrayRes, annon, i);
+			ArrayObject::setElement((ArrayObject *)res, annon, i);
 		} // end for
+  }
+  else {
+  	UserClassArray* array = upcalls->constructorArrayAnnotation;
+    res = array->doNew(0, vm);
   }
 
   END_NATIVE_EXCEPTION
