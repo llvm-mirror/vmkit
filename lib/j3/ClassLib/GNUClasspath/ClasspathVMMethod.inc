@@ -31,8 +31,10 @@ JNIEnv *env,
 #endif
 JavaObjectVMMethod* VMMeth) {
   JavaObject* res = 0;
+  JavaObject* methodType;
   llvm_gcroot(VMMeth, 0);
   llvm_gcroot(res, 0);
+  llvm_gcroot(methodType, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   dprintf("*************VMMethod_getDefaultValue*************\n");
@@ -46,6 +48,7 @@ JavaObjectVMMethod* VMMeth) {
   if (cl->inheritName(name->elements, name->size)) {
     // Find "default attribute"
     JavaMethod* method = JavaObjectVMMethod::getInternalMethod(VMMeth);
+    
     JavaAttribute* annotationsAtt =
       method->lookupAttribute(JavaAttribute::annotationDefaultAttribute);
     dprintf("JavaMethod:%s\n", UTF8Buffer(method->name).cString());
@@ -53,8 +56,8 @@ JavaObjectVMMethod* VMMeth) {
     if (annotationsAtt) {
       Reader reader(annotationsAtt, cl->bytes);
       AnnotationReader AR(reader, cl);
-
-      res = AR.createElementValue();
+	  methodType = method->getReturnType(cl->classLoader);
+      res = AR.createElementValue(true, methodType);
     }
   }
 

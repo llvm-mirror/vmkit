@@ -84,9 +84,9 @@ public:
   // createElementValue - create the Java type associated with the value
   // of the current annotation key.
   //
-  JavaObject* createElementValue();
+  JavaObject* createElementValue(bool nextParameterIsTypeOfMethod,JavaObject* type);
 
-  JavaObject* createArrayByTag(uint16 numValues);
+  void fillArray(JavaObject* res, int numValues);
 };
 
 /// Attribute - This class represents JVM attributes to Java class, methods and

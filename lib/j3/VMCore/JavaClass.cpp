@@ -1750,18 +1750,22 @@ void AnnotationReader::readElementValue() {
   }
 }
 
-JavaObject* AnnotationReader::createElementValue() {
-  uint8 tag = reader.readU1();
+JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMethod, JavaObject* type) {
   JavaObject* res = 0;
   JavaObject* tmp = 0;
   JavaString* str = 0;
   JavaObject* field = 0;
   JavaObject* clazzLoaded = 0;
+  JavaObject* classOfCurrentAnnotationProperty = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(tmp, 0);
   llvm_gcroot(str, 0);
   llvm_gcroot(clazzLoaded, 0);
   llvm_gcroot(field, 0);
+  llvm_gcroot(type, 0);
+  llvm_gcroot(classOfCurrentAnnotationProperty, 0);
+
+  uint8 tag = reader.readU1();
 	
   Jnjvm* vm = JavaThread::get()->getJVM();
   Classpath* upcalls = vm->upcalls;
@@ -1818,7 +1822,7 @@ JavaObject* AnnotationReader::createElementValue() {
   } else if (tag == 's') {
     const UTF8* s = cl->ctpInfo->UTF8At(reader.readU2());
     ddprintf("s=%s", PrintBuffer(s).cString());
-    res = JavaString::internalToJava(s, JavaThread::get()->getJVM());
+    res = JavaString::internalToJava(s, vm);
 
   } else if (tag == 'e') {
     const UTF8* n = cl->ctpInfo->UTF8At(reader.readU2());
@@ -1862,14 +1866,21 @@ JavaObject* AnnotationReader::createElementValue() {
 
   } else if (tag == '[') {
     uint16 numValues = reader.readU2();
-
-    if (numValues > 0)
-    	res = createArrayByTag(numValues);
-    else {
-    	// FIXME : Do something, I do not know the kind of array to create
-    	fprintf(stderr, "Empty array not implemented %c type\n", tag);
-    	abort();
+    if (!nextParameterIsTypeOfMethod) {
+		UserCommonClass* uss =  UserCommonClass::resolvedImplClass(vm, type, false);
+		//printf("Class name : %s\n", UTF8Buffer(uss->name).cString());
+		UserClass* clazzOfAnnotation = uss->asClass();
+		uint16 i = 0;
+		while ( i < clazzOfAnnotation->nbVirtualMethods && !(lastKey->equals(clazzOfAnnotation->virtualMethods[i].name))) i++;
+		assert((i < clazzOfAnnotation->nbVirtualMethods) && "Incorrect property for annotation");
+		classOfCurrentAnnotationProperty = clazzOfAnnotation->virtualMethods[i].getReturnType(this->cl->classLoader);
     }
+	UserClassArray* clazzOfProperty = UserCommonClass::resolvedImplClass(vm, nextParameterIsTypeOfMethod? type : classOfCurrentAnnotationProperty, false)->asArrayClass();
+
+	//printf("Class name is : %s\n", UTF8Buffer(clazzOfProperty->name).cString());
+	res = clazzOfProperty->doNew(numValues, vm);
+	assert(res && "Error creating array of that type");
+    fillArray(res, numValues);
 
   } else {
     // Element_value Annotation not implemented
@@ -1881,8 +1892,7 @@ JavaObject* AnnotationReader::createElementValue() {
   return res;
 }
 
-JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
-	JavaObject* res = 0;
+void AnnotationReader::fillArray(JavaObject* res, int numValues) {
 	JavaString* str = 0;
 	JavaObject* clazzObject = 0;
 	JavaObject* field = 0;
@@ -1894,6 +1904,8 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 	llvm_gcroot(clazzLoaded, 0);
 	llvm_gcroot(field, 0);
 	llvm_gcroot(myEnum, 0);
+
+	// FIXME : Do something with all casts
 
 	sint32 valS;
 	uint32 valU;
@@ -1907,119 +1919,8 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 	UserClassArray* array = 0;
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	Classpath* upcalls = vm->upcalls;
-	uint8 tag = reader.readU1();
-	switch (tag) {
-	case 'B':
-		array = upcalls->ArrayOfByte;
-		res = array->doNew(numValues, vm);
-		valS = cl->ctpInfo->IntegerAt(reader.readU2());
-		ArraySInt8::setElement((ArraySInt8*)res, valS, 0);
-		break;
-	case 'C':
-		array = upcalls->ArrayOfChar;
-		res = array->doNew(numValues, vm);
-		valS = cl->ctpInfo->IntegerAt(reader.readU2());
-		ArraySInt16::setElement((ArraySInt16*)res, valS, 0);
-		break;
-	case 'D':
-		array = upcalls->ArrayOfDouble;
-		res = array->doNew(numValues, vm);
-		valD = cl->ctpInfo->DoubleAt(reader.readU2());
-		ArrayDouble::setElement((ArrayDouble*)res, valD, 0);
-		break;
-	case 'F':
-		array = upcalls->ArrayOfFloat;
-		res = array->doNew(numValues, vm);
-		valF = cl->ctpInfo->FloatAt(reader.readU2());
-		ArrayFloat::setElement((ArrayFloat*)res, valF, 0);
-		break;
-	case 'J':
-		array = upcalls->ArrayOfLong;
-		res = array->doNew(numValues, vm);
-		val64S = cl->ctpInfo->LongAt(reader.readU2());
-		ArrayLong::setElement((ArrayLong*)res, val64S, 0);
-		break;
-	case 'S':
-		array = upcalls->ArrayOfShort;
-		res = array->doNew(numValues, vm);
-		valS = cl->ctpInfo->IntegerAt(reader.readU2());
-		ArraySInt16::setElement((ArraySInt16*)res, valS, 0);
-		break;
-	case 'I':
-		array = upcalls->ArrayOfInt;
-		res = array->doNew(numValues, vm);
-		valS = cl->ctpInfo->IntegerAt(reader.readU2());
-		ArraySInt32::setElement((ArraySInt32*)res, valS,0);
-		break;
-	case 'Z':
-		array = upcalls->ArrayOfBool;
-		res = array->doNew(numValues, vm);
-		valU = cl->ctpInfo->IntegerAt(reader.readU2());
-		ArrayUInt8::setElement((ArrayUInt8*)res, valU, 0);
-		break;
-	case 's':
-		array = upcalls->ArrayOfString;
-		res = array->doNew(numValues, vm);
-		s = cl->ctpInfo->UTF8At(reader.readU2());
-		str = JavaString::internalToJava(s, JavaThread::get()->getJVM());
-		ArrayObject::setElement((ArrayObject *)res, str, 0);
-		break;
-	case 'e':
-		JCL = this->cl->classLoader;
-		//printf("Haciendo un arreglo del tipo : %s \n", UTF8Buffer(lastKey).cString());
-		array = JCL->constructArray(JCL->asciizConstructUTF8("[LDays;"));
-		res = array->doNew(numValues, vm);
-		n = cl->ctpInfo->UTF8At(reader.readU2());
-		m = cl->ctpInfo->UTF8At(reader.readU2());
-
-		n = n->extract(JCL->hashUTF8, 1,n->size-1);
-		clLoaded = JCL->loadClassFromUserUTF8(n,true,false, NULL);
-		if (clLoaded != NULL && !clLoaded->isPrimitive()) {
-			if (clLoaded->asClass())
-				clLoaded->asClass()->initialiseClass(vm);
-			clazzLoaded = clLoaded->getClassDelegatee(vm);
-			str = JavaString::internalToJava(m, vm);
-			assert(clazzLoaded && "Class not found");
-			assert(str && "Null string");
-			field = upcalls->getFieldInClass->invokeJavaObjectVirtual(vm, upcalls->newClass, clazzLoaded, &str);
-			assert(field && "Field not found");
-			JavaObject* obj = 0;
-			myEnum = upcalls->getInField->invokeJavaObjectVirtual(vm, upcalls->newField, field, &obj);
-			ArrayObject::setElement((ArrayObject *)res, str, 0);
-		} else {
-			str = JavaString::internalToJava(n, vm);
-			vm->classNotFoundException(str);
-		}
-		break;
-	case 'c':
-		array = upcalls->classArrayClass;
-		res = array->doNew(numValues, vm);
-		s = cl->ctpInfo->UTF8At(reader.readU2());
-		JCL = this->cl->classLoader;
-		s = s->extract(JCL->hashUTF8, 1,s->size-1);
-		clLoaded = JCL->loadClassFromUserUTF8(s,true,false, NULL);
-		if (clLoaded != NULL && !clLoaded->isPrimitive()) {
-			if (clLoaded->asClass())
-				clLoaded->asClass()->initialiseClass(vm);
-			clazzObject = clLoaded->getClassDelegatee(vm);
-		} else {
-		  str = JavaString::internalToJava(s, vm);
-		  vm->classNotFoundException(str);
-		}
-		ArrayObject::setElement((ArrayObject *)res, clazzObject, 0);
-		break;
-	case '@':
-		fprintf(stderr, "Annotation not supported for %c (nested annotations) type\n", tag);
-		abort();
-		break;
-	default:
-		fprintf(stderr, "Wrong class file\n");
-		abort();
-		break;
-	}
-
-	for (int i = 1 ; i < numValues ; i++) {
-		uint8 tmptag = reader.readU1();
+	for (int i = 0 ; i < numValues ; i++) {
+		uint8 tag = reader.readU1();
 		switch (tag) {
 			case 'B':
 				valS = cl->ctpInfo->IntegerAt(reader.readU2());
@@ -2106,8 +2007,6 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 				break;
 			}
 	}
-
-	return res;
 }
 
 JavaObject* AnnotationReader::createAnnotationMapValues(JavaObject* type) {
@@ -2115,16 +2014,18 @@ JavaObject* AnnotationReader::createAnnotationMapValues(JavaObject* type) {
   JavaObject* tmp = 0;
   JavaString* str = 0;
   JavaObject* newHashMap = 0;
+  llvm_gcroot(type, 0);
   llvm_gcroot(tmp, 0);
   llvm_gcroot(str, 0);
   llvm_gcroot(newHashMap, 0);
-  llvm_gcroot(type, 0);
+
 
   const UTF8* key = 0;
 
   Jnjvm * vm = JavaThread::get()->getJVM();
   Classpath* upcalls = vm->upcalls;
   UserClass* HashMap = upcalls->newHashMap;
+
   newHashMap = HashMap->doNew(vm);
   upcalls->initHashMap->invokeIntSpecial(vm, HashMap, newHashMap);
 
@@ -2133,9 +2034,10 @@ JavaObject* AnnotationReader::createAnnotationMapValues(JavaObject* type) {
   for (uint16 j = 0; j < numPairs; ++j) {
     uint16 nameIndex = reader.readU2();
     key = cl->ctpInfo->UTF8At(nameIndex);
+    lastKey = key;
     dprintf("keyAn:%s|", PrintBuffer(key).cString());
 
-    tmp = createElementValue();
+    tmp = createElementValue(false, type);
     str = JavaString::internalToJava(key, vm);
     upcalls->putHashMap->invokeJavaObjectVirtual(vm, HashMap, newHashMap, &str, &tmp);
   }
