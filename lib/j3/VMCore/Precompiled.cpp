@@ -83,6 +83,9 @@ extern "C" void vmjcAddPreCompiledClass(JnjvmClassLoader* JCL,
   cl->classLoader = JCL;
 }
 
+extern "C" void vmjcAddString(const char* str) {
+  UNIMPLEMENTED();
+}
 
 extern "C" void vmjcGetClassArray(JnjvmClassLoader* JCL, ClassArray** ptr,
                                   const UTF8* name) {

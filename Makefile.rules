@@ -35,14 +35,17 @@ endif
 ifeq ($(OPTIMIZED),1)
   LLC_FLAGS+= -O=3 -disable-cfi -disable-fp-elim 
   COMMON_CFLAGS+= -O3 -fno-strict-aliasing -fno-omit-frame-pointer 
+  OPT_MMTK_FLAGS= -std-compile-opts
 else
+  $(error "fix me: what are the good flags?")
   LLC_FLAGS+= -O0
+  OPT_FLAGS+=-inline
   COMMON_CFLAGS+= -O0
+  OPT_MMTK_FLAGS= 
 endif
 
 LLC_FLAGS+=-relocation-model=pic 
 
-OPT_MMTK_FLAGS= -std-compile-opts -strip-debug
 
 INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR) \
 					-I$(shell $(LLVM_CONFIG) --includedir)
@@ -166,11 +169,12 @@ endif
 ###############################################################################
 ifdef NEED_GC
 LLC_FLAGS+=-load=$(PREPARE_CODE_LIB)
+OPT_FLAGS+=-load=$(PREPARE_CODE_LIB) -StaticGCPass -disable-cfi -disable-fp-elim -disable-opt
 GC_ID=-gc
 
 %$(GC_ID).bc: %.bc
 	$(Echo) "Performing GC pass on '$(notdir $<)'"
-	$(Verb) $(LOPT) $< -load=$(PREPARE_CODE_LIB) -StaticGCPass -disable-cfi -disable-fp-elim -disable-opt -o $@
+	$(Verb) $(LOPT) $< $(OPT_FLAGS) -o $@
 
 endif
 
