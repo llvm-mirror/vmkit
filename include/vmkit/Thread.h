@@ -145,7 +145,6 @@ public:
 
   static Thread* getByID(uint64_t threadID) {return (Thread*)threadID;}
 
-  virtual void onVMTermination()	{ fprintf(stderr, "\njajajaj\n"); }
 public:
 
   /// IsolateID - The Isolate ID of the thread's VM.
