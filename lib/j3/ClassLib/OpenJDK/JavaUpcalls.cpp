@@ -16,7 +16,7 @@
 #include "JavaThread.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
-#include "ReferenceQueue.h"
+#include "JavaReferenceQueue.h"
 
 #define COMPILE_METHODS(cl) \
   for (CommonClass::method_iterator i = cl->virtualMethods.begin(), \
@@ -70,6 +70,20 @@ ClassArray* Classpath::constructorArrayAnnotation;
 JavaField*  Classpath::constructorSlot;
 JavaMethod* Classpath::initMethod;
 JavaMethod* Classpath::initField;
+/*
+ * TODO Implement annotation support on openJDK.
+ */
+UserClass*	Classpath::newVMConstructor;
+UserClass*	Classpath::newHashMap;
+JavaMethod*	Classpath::initHashMap;
+JavaMethod*	Classpath::putHashMap;
+UserClass*	Classpath::newAnnotationHandler;
+UserClass*	Classpath::newAnnotation;
+JavaMethod*	Classpath::createAnnotation;
+JavaMethod*	Classpath::getInField;
+JavaMethod*	Classpath::getFieldInClass;
+JavaField*	Classpath::threadName;
+/***********************************************/
 Class*      Classpath::newField;
 Class*      Classpath::newMethod;
 ClassArray* Classpath::methodArrayClass;
@@ -906,17 +920,17 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
       (word_t)nativeJavaObjectFieldTracer,
       "nativeJavaObjectFieldTracer");
 
-   newVMConstructor->getVirtualVT()->setNativeTracer(
-         (word_t)nativeJavaObjectVMConstructorTracer,
-         "nativeJavaObjectVMConstructorTracer");
-
-      newVMMethod->getVirtualVT()->setNativeTracer(
-         (word_t)nativeJavaObjectVMMethodTracer,
-         "nativeJavaObjectVMMethodTracer");
-
-      newVMField->getVirtualVT()->setNativeTracer(
-         (word_t)nativeJavaObjectVMFieldTracer,
-         "nativeJavaObjectVMFieldTracer");
+//   newVMConstructor->getVirtualVT()->setNativeTracer(
+//         (word_t)nativeJavaObjectVMConstructorTracer,
+//         "nativeJavaObjectVMConstructorTracer");
+//
+//      newVMMethod->getVirtualVT()->setNativeTracer(
+//         (word_t)nativeJavaObjectVMMethodTracer,
+//         "nativeJavaObjectVMMethodTracer");
+//
+//      newVMField->getVirtualVT()->setNativeTracer(
+//         (word_t)nativeJavaObjectVMFieldTracer,
+//         "nativeJavaObjectVMFieldTracer");
 
    //TODO: Fix native tracer for java.lang.Thread to not trace through
    // the eetop field to our internal JavaThread.

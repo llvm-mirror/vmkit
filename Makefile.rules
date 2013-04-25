@@ -223,6 +223,18 @@ else
 MODULE_A_DEP=$(patsubst %.bc,%$(GC_ID).o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
 endif
 
+###############################################################################
+#   OpenJDK definitions
+###############################################################################
+ifeq ($(MODULE), Classpath)
+ifeq ($(CLASSPATH_IMPL), openjdk)
+	VMKIT_OPENJDK_ZIP=$(BUILD_DIR)/vmkit-openjdk.zip
+	CLASSES_DIR=$(PROJ_SRC_CWD)/classes
+	MODULE_A_DEP+=$(VMKIT_OPENJDK_ZIP)
+	OPENJDK_JAVA_SOURCES=$(PROJ_SRC_CWD)/java/lang/VMString.java
+endif
+endif
+
 $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 	$(Echo) "Building archive '$(notdir $@)'"
 	-$(Verb) $(RM) -f $@

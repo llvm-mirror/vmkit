@@ -249,7 +249,7 @@ JavaString** JavaObjectConstructor::getSignature(JavaMethod* cons) {
   return getSignatureString(sigAtt, cons->classDef);
 }
 
-static inline ArraySInt8* getAttrBytes(JavaAttribute* annotationsAtt, Class* cl) {
+inline ArraySInt8* getAttrBytes(JavaAttribute* annotationsAtt, Class* cl) {
   ArraySInt8* ret = 0;
   llvm_gcroot(ret, 0);
 

@@ -86,7 +86,7 @@ JavaObject* consStackElement(vmkit::FrameInfo* FI, intptr_t ip) {
   Class* cl = meth->classDef;
   className = JavaString::internalToJava(cl->name, vm);
 
-  Attribute* sourceAtt = cl->lookupAttribute(Attribute::sourceFileAttribute);
+  JavaAttribute* sourceAtt = cl->lookupAttribute(JavaAttribute::sourceFileAttribute);
 
   if (sourceAtt) {
     Reader reader(sourceAtt, cl->bytes);
@@ -600,9 +600,7 @@ JNIEXPORT void JNICALL
 JVM_StartThread(JNIEnv *env, jobject _thread) {
   JavaObject * sleepObject = 0;
   JavaObject * thread = 0;
-  JavaThread * javaThread = 0;
   llvm_gcroot(thread, 0);
-  llvm_gcroot(javaThread, 0);
   llvm_gcroot(sleepObject, 0);
   BEGIN_JNI_EXCEPTION
 
@@ -624,7 +622,8 @@ JVM_StartThread(JNIEnv *env, jobject _thread) {
 
   // If the thread is not a daemon, it is added to the list of threads to
   // wait until exit.
-  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(javaThread);
+  //bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(thread);
+  bool isDaemon = vm->upcalls->daemon->getInstanceInt8Field(thread);
 
   if (!isDaemon) {
     vm->threadSystem.enter();
@@ -1330,6 +1329,7 @@ JVM_FindClassFromClassLoader(JNIEnv *env, const char *name, jboolean init,
   }
   else {
     vm->classNotFoundException(vm->asciizToStr(name));
+    res = NULL;
   }
 
   RETURN_FROM_JNI(res);
@@ -2931,7 +2931,7 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass) {
   // Primitives arrays, interfaces...
   if (!cl) RETURN_FROM_JNI(0);
 
-  Attribute* emAtt = cl->lookupAttribute(Attribute::enclosingMethodAttribute);
+  JavaAttribute* emAtt = cl->lookupAttribute(JavaAttribute::enclosingMethodAttribute);
 
   if (emAtt) {
     Reader reader(emAtt, cl->bytes);

@@ -23,6 +23,15 @@
 extern "C" j3::JavaObject* internalFillInStackTrace(j3::JavaObject*);
 namespace j3 {
 
+	/*
+	 * TODO Implement this class for openJDK annotations
+	 */
+	class JavaObjectVMThread : public JavaObject {
+		private:
+		JavaThread* vmdata;
+	  friend std::ostream& operator << (std::ostream&, JavaObjectVMThread&);
+	};
+
 class JavaObjectClass : public JavaObject {
 private:
   JavaObject* cachedConstructor;
@@ -49,11 +58,18 @@ private:
   JavaObject * pd;
 
 public:
+  /*
+   * TODO implement annotations in openJDK
+   */
+  static bool isAnonymousClass(JavaObjectClass* Cl);
+  static JavaObject* getEnclosingClass(JavaObjectClass* Cl);
+  /*****************************************/
 
   static UserCommonClass* getClass(JavaObjectClass* cl) {
     llvm_gcroot(cl, 0);
     return cl->internalClass;
   }
+
 
   static void setClass(JavaObjectClass* cl, UserCommonClass* vmdata) {
     llvm_gcroot(cl, 0);
@@ -95,7 +111,7 @@ public:
     UserCommonClass * cl = getClass(obj);
     if (cl) {
       JavaObject** Obj = cl->classLoader->getJavaClassLoaderPtr();
-      if (*Obj) vmkit::Collector::markAndTraceRoot(Obj, closure);
+      if (*Obj) vmkit::Collector::markAndTraceRoot(Obj, Obj, closure);
     }
   }
 
