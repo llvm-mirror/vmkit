@@ -36,19 +36,21 @@ ifeq ($(OPTIMIZED),1)
   LLC_FLAGS+= -O=3 -disable-cfi -disable-fp-elim 
   COMMON_CFLAGS+= -O3 -fno-strict-aliasing -fno-omit-frame-pointer 
 else
-  LLC_FLAGS+= -O=0 -disable-cfi -disable-fp-elim 
-  COMMON_CFLAGS+= -O0 -fno-strict-aliasing -fno-omit-frame-pointer 
+  LLC_FLAGS+= -O=0 #-disable-cfi -disable-fp-elim 
+  OPT_FLAGS+=-inline # unable to find which function I have to mark as always_inline... We have to investigate...
+  COMMON_CFLAGS+= -O0
 endif
 
 LLC_FLAGS+=-relocation-model=pic 
-OPT_FLAGS+=-disable-cfi -disable-fp-elim -disable-opt
+OPT_FLAGS+=-disable-opt # optimized by llc (previously: -disable-cfi -disable-fp-elim)
 
 INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR) \
 					-I$(shell $(LLVM_CONFIG) --includedir)
 
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
 COMMON_CFLAGS+= $(INCLUDES) -ansi -pedantic $(WARN_CFLAGS) -fPIC \
-								-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
+								-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS \
+								-fno-strict-aliasing -fno-omit-frame-pointer 
 
 CFLAGS+=$(COMMON_CFLAGS) 
 CXXFLAGS+=$(COMMON_CFLAGS) -Woverloaded-virtual -Wcast-qual -fno-rtti -fno-exceptions -fvisibility-inlines-hidden 
