@@ -134,7 +134,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       if (opinfo->handler) {
         // If it's a handler, put the exception object in the stack.
         Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-        Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+        Value* obj = new LoadInst(javaExceptionPtr, "pendingException", currentBlock);
         new StoreInst(obj, objectStack[0], "", currentBlock);
         // And clear the exception.
         new StoreInst(intrinsics->JavaObjectNullConstant, javaExceptionPtr, currentBlock);
@@ -2303,7 +2303,9 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       case MONITOREXIT : {
         bool thisReference = isThisReference(currentStackIndex - 1);
         Value* obj = pop();
-        if (!thisReference) JITVerifyNull(obj);
+        // NOTE: monitorExit() should NOT throw an exception if object is null.
+        // See monitorExit() implementation.
+        // if (!thisReference) JITVerifyNull(obj);
         monitorExit(obj);
         break;
       }

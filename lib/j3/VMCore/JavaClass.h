@@ -234,6 +234,8 @@ public:
   const UTF8* getName() const   { return name; }
   Class* getSuper() const       { return super; }
   
+  std::string& getName(std::string& nameBuffer, bool linkageName = false) const;
+
   /// isArray - Is the class an array class?
   ///
   bool isArray() const {
@@ -1107,6 +1109,7 @@ public:
 	JavaMethod_DECL_INVOKE(double, Double)
 	JavaMethod_DECL_INVOKE(JavaObject*, JavaObject)
 
+	std::string& getName(std::string& nameBuffer, bool linkageName = false) const;
 	friend std::ostream& operator << (std::ostream&, const JavaMethod&);
 	void dump() const __attribute__((noinline));
   

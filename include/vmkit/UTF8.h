@@ -67,6 +67,7 @@ public:
   friend std::ostream& operator << (std::ostream&, const UTF8&);
   void dump() const __attribute__((noinline));
   int compare(const char *) const;
+  std::string& toString(std::string& buffer) const;
 };
 
 extern "C" const UTF8 TombstoneKey;

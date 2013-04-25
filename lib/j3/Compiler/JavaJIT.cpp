@@ -12,6 +12,8 @@
 #define JNJVM_COMPILE 0
 #define JNJVM_EXECUTE 0
 
+#include <string>
+#include <sstream>
 #include <cstring>
 
 #include <llvm/Constants.h>
@@ -43,6 +45,7 @@
 
 using namespace j3;
 using namespace llvm;
+using namespace std;
 
 void JavaJIT::updateStackInfo(Opinfo& info) {
   if (stackSize()) {
@@ -291,13 +294,13 @@ llvm::Value* JavaJIT::getMutatorThreadPtr() {
                               			 currentBlock);
   threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
                                        "", currentBlock);
-  threadId = new IntToPtrInst(threadId, intrinsics->MutatorThreadType, "", currentBlock);
+  threadId = new IntToPtrInst(threadId, intrinsics->MutatorThreadType, "MutatorThreadPtr", currentBlock);
 
   return threadId;
 }
 
 llvm::Value* JavaJIT::getJavaThreadPtr(llvm::Value* mutatorThreadPtr) {
-  return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "", currentBlock);
+  return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "JavaThreadPtr", currentBlock);
 }
 
 llvm::Value* JavaJIT::getIsolateIDPtr(llvm::Value* mutatorThreadPtr) { 
@@ -305,7 +308,7 @@ llvm::Value* JavaJIT::getIsolateIDPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetIsolateIDInThreadConstant };
     
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "isolateIDPtr", currentBlock);
 }
 
 llvm::Value* JavaJIT::getVMPtr(llvm::Value* mutatorThreadPtr) { 
@@ -313,7 +316,7 @@ llvm::Value* JavaJIT::getVMPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetVMInThreadConstant };
     
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "VMPtr", currentBlock);
 }
 
 llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) {
@@ -321,21 +324,21 @@ llvm::Value* JavaJIT::getDoYieldPtr(llvm::Value* mutatorThreadPtr) {
 										intrinsics->OffsetThreadInMutatorThreadConstant,
 										intrinsics->OffsetDoYieldInThreadConstant };
     
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
+	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "doYieldPtr", currentBlock);
 }
 
 llvm::Value* JavaJIT::getJNIEnvPtr(llvm::Value* javaThreadPtr) { 
 	Value* GEP[2] = { intrinsics->constantZero,
 										intrinsics->OffsetJNIInJavaThreadConstant };
     
-	return GetElementPtrInst::Create(javaThreadPtr, GEP, "", currentBlock);
+	return GetElementPtrInst::Create(javaThreadPtr, GEP, "JNIPtr", currentBlock);
 }
 
 llvm::Value* JavaJIT::getJavaExceptionPtr(llvm::Value* javaThreadPtr) { 
 	Value* GEP[2] = { intrinsics->constantZero,
 										intrinsics->OffsetJavaExceptionInJavaThreadConstant };
     
-	return GetElementPtrInst::Create(javaThreadPtr, GEP, "", currentBlock);
+	return GetElementPtrInst::Create(javaThreadPtr, GEP, "pendingExceptionPtr", currentBlock);
 }
 
 static llvm::Function* GetNativeCallee(JavaLLVMCompiler* TheCompiler,
@@ -343,9 +346,10 @@ static llvm::Function* GetNativeCallee(JavaLLVMCompiler* TheCompiler,
   LLVMSignatureInfo* LSI =
     TheCompiler->getSignatureInfo(compilingMethod->getSignature());
   FunctionType* FTy = LSI->getNativeStubType();
+  string methName;
   Function* callee = Function::Create(FTy,
                                       GlobalValue::ExternalLinkage,
-                                      "",
+                                      compilingMethod->getName(methName, true),
                                       TheCompiler->getLLVMModule());
   std::vector<Value*> args;
   Function::arg_iterator i = callee->arg_begin();
@@ -648,7 +652,7 @@ llvm::Value* JavaJIT::objectToHeader(Value* obj) {
   obj = new PtrToIntInst(obj, intrinsics->pointerSizeType, "", currentBlock);
   Value* d = ConstantInt::get(intrinsics->pointerSizeType, gcHeader::hiddenHeaderSize());
 	obj = BinaryOperator::CreateSub(obj, d, "", currentBlock);
-	return new IntToPtrInst(obj, intrinsics->ObjectHeaderType, "", currentBlock);
+	return new IntToPtrInst(obj, intrinsics->ObjectHeaderType, "objectHeader", currentBlock);
 }
 
 void JavaJIT::monitorEnter(Value* obj) {
@@ -689,6 +693,21 @@ void JavaJIT::monitorEnter(Value* obj) {
 }
 
 void JavaJIT::monitorExit(Value* obj) {
+	/*
+		obj should not be null if we are here.
+		If obj was null when monitorEnter() was run, then monitorEnter() should have
+		thrown an exception. If it was not null then, and it is null now, it must have
+		been reset by the GC (it became a stale reference) between monitorEnter() and
+		monitorExit(). In this case, just get out of the synchronize block silently.
+	*/
+    BasicBlock* nonNullObjBlock = createBasicBlock("monitorExit_nonNullObj");
+    BasicBlock* EndBlock = createBasicBlock("monitorExit_End");
+
+	Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, intrinsics->JavaObjectNullConstant, "isObjectNull");
+	BranchInst::Create(EndBlock, nonNullObjBlock, test, currentBlock);
+
+	currentBlock = nonNullObjBlock;
+
 	Value* lockPtr = objectToHeader(obj);
 
   Value* lock = new LoadInst(lockPtr, "", currentBlock);
@@ -719,17 +738,16 @@ void JavaJIT::monitorExit(Value* obj) {
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
                             oldValMask, "");
   
-  BasicBlock* OK = createBasicBlock("unsynchronize passed");
-  BasicBlock* NotOK = createBasicBlock("unsynchronize did not pass");
+  BasicBlock* LockFreeCASFailed = createBasicBlock("Lock-Free CAS Failed");
 
-  BranchInst::Create(OK, NotOK, cmp, currentBlock);
+  BranchInst::Create(EndBlock, LockFreeCASFailed, cmp, currentBlock);
 
   // The atomic cas did not work.
-  currentBlock = NotOK;
+  currentBlock = LockFreeCASFailed;
   CallInst::Create(intrinsics->ReleaseObjectFunction, obj, "", currentBlock);
-  BranchInst::Create(OK, currentBlock);
+  BranchInst::Create(EndBlock, currentBlock);
 
-  currentBlock = OK;
+  currentBlock = EndBlock;
 }
 
 void JavaJIT::beginSynchronize() {
@@ -965,13 +983,23 @@ Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
   return endNode;
 }
 
+static char* setInstructionName(char *s, size_t maxlen, const char * format, ...)
+{
+	va_list args;
+	va_start(args, format);
+    vsnprintf(s, maxlen, format, args);
+    va_end(args);
+    return s;
+}
+
 llvm::Function* JavaJIT::javaCompile() {
   PRINT_DEBUG(JNJVM_COMPILE, 1, COLOR_NORMAL, "compiling %s.%s\n",
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
 
+  string methName, methNameLink;
   DbgSubprogram = TheCompiler->getDebugFactory()->createFunction(
-      DIDescriptor(), "", "", DIFile(), 0, DIType(), false, false, 0);
+      DIDescriptor(), compilingMethod->getName(methName, false), compilingMethod->getName(methNameLink, true), DIFile(), 0, DIType(), false, false, 0);
 
   JavaAttribute* codeAtt = compilingMethod->lookupAttribute(JavaAttribute::codeAttribute);
   
@@ -996,6 +1024,9 @@ llvm::Function* JavaJIT::javaCompile() {
   
   Function* func = llvmFunction;
 
+  const size_t instNameLen = 4096;
+  char instName[instNameLen];
+
   currentBlock = createBasicBlock("start");
   endExceptionBlock = createBasicBlock("endExceptionBlock");
   unifiedUnreachable = createBasicBlock("unifiedUnreachable");
@@ -1009,7 +1040,7 @@ llvm::Function* JavaJIT::javaCompile() {
   Instruction* returnValue = NULL;
   if (returnType == intrinsics->JavaObjectType &&
       TheCompiler->useCooperativeGC()) {
-    returnValue = new AllocaInst(intrinsics->JavaObjectType, "",
+    returnValue = new AllocaInst(intrinsics->JavaObjectType, "returnValue",
                                  currentBlock);
     Instruction* cast = 
         new BitCastInst(returnValue, intrinsics->ptrPtrType, "", currentBlock);
@@ -1019,29 +1050,27 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 
   for (int i = 0; i < maxLocals; i++) {
-    intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", currentBlock));
+    intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), setInstructionName(instName, instNameLen, "int_%d", i), currentBlock));
     new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, currentBlock);
-    doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), "", currentBlock));
+    doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), setInstructionName(instName, instNameLen, "double_%d", i), currentBlock));
     new StoreInst(Constant::getNullValue(Type::getDoubleTy(*llvmContext)), doubleLocals.back(), false, currentBlock);
-    longLocals.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", currentBlock));
+    longLocals.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), setInstructionName(instName, instNameLen, "long_%d", i), currentBlock));
     new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, currentBlock);
-    floatLocals.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", currentBlock));
+    floatLocals.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), setInstructionName(instName, instNameLen, "float_%d", i), currentBlock));
     new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, currentBlock);
-    objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
-                                          currentBlock));
+    objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, setInstructionName(instName, instNameLen, "object_%d", i), currentBlock));
     // The GCStrategy will already initialize the value.
     if (!TheCompiler->useCooperativeGC())
       new StoreInst(Constant::getNullValue(intrinsics->JavaObjectType), objectLocals.back(), false, currentBlock);
   }
   
   for (int i = 0; i < maxStack; i++) {
-    objectStack.push_back(new AllocaInst(intrinsics->JavaObjectType, "",
-                                         currentBlock));
+    objectStack.push_back(new AllocaInst(intrinsics->JavaObjectType, setInstructionName(instName, instNameLen, "stack_object_%d", i), currentBlock));
     addHighLevelType(objectStack.back(), upcalls->OfObject);
-    intStack.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), "", currentBlock));
-    doubleStack.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), "", currentBlock));
-    longStack.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), "", currentBlock));
-    floatStack.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), "", currentBlock));
+    intStack.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), setInstructionName(instName, instNameLen, "stack_int_%d", i), currentBlock));
+    doubleStack.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), setInstructionName(instName, instNameLen, "stack_double_%d", i), currentBlock));
+    longStack.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), setInstructionName(instName, instNameLen, "stack_long_%d", i), currentBlock));
+    floatStack.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), setInstructionName(instName, instNameLen, "stack_float_%d", i), currentBlock));
   }
  
   uint32 index = 0;
@@ -1099,14 +1128,10 @@ llvm::Function* JavaJIT::javaCompile() {
     }
 #endif
 
-    if (compilingMethod->name->compare("ijvm_tests_Runner_loop") == 0) {
-  	  llvmFunction->dump();
-    }
-
   nbHandlers = readExceptionTable(reader, codeLen);
   if (nbHandlers != 0) {
     jmpBuffer = new AllocaInst(ArrayType::get(Type::getInt8Ty(*llvmContext), sizeof(vmkit::ExceptionBuffer)), "", currentBlock);
-    jmpBuffer = new BitCastInst(jmpBuffer, intrinsics->ptrType, "", currentBlock);
+    jmpBuffer = new BitCastInst(jmpBuffer, intrinsics->ptrType, "exceptionSavePoint", currentBlock);
   }
   
   reader.cursor = start;
@@ -1201,10 +1226,10 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock->eraseFromParent();
   } else {
     if (nbHandlers != 0) {
-      BasicBlock* ifNormal = createBasicBlock("");
-      BasicBlock* ifException = createBasicBlock("");
+      BasicBlock* ifNormal = createBasicBlock("No exception was thrown");
+      BasicBlock* ifException = createBasicBlock("Rethrow Exception");
       Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-      Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+      Value* obj = new LoadInst(javaExceptionPtr, "pendingException", currentBlock);
       Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, intrinsics->JavaObjectNullConstant, "");
       BranchInst::Create(ifException, ifNormal, test, currentBlock);
 
@@ -1350,16 +1375,15 @@ void JavaJIT::JITVerifyNull(Value* obj) {
       Instruction* VT = new LoadInst(VTPtr, "", true, currentBlock);
       VT->setDebugLoc(DebugLoc::get(currentBytecodeIndex, 1, DbgSubprogram));
     } else {
-      Constant* zero = intrinsics->JavaObjectNullConstant;
-      Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, zero, "");
+      Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, intrinsics->JavaObjectNullConstant, "");
 
-      BasicBlock* exit = createBasicBlock("verifyNullExit");
-      BasicBlock* cont = createBasicBlock("verifyNullCont");
+      BasicBlock* nullObjBlock = createBasicBlock("object is null");
+      BasicBlock* notNullObjBlock = createBasicBlock("object is not null");
 
-      BranchInst::Create(exit, cont, test, currentBlock);
-      currentBlock = exit;
+      BranchInst::Create(nullObjBlock, notNullObjBlock, test, currentBlock);
+      currentBlock = nullObjBlock;
       throwRuntimeException(intrinsics->NullPointerExceptionFunction, 0, 0);
-      currentBlock = cont;
+      currentBlock = notNullObjBlock;
     }
   } 
 }
@@ -2320,8 +2344,8 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
  
   BasicBlock* ifException = NULL;
   if (jmpBuffer != NULL) {
-    BasicBlock* doCall = createBasicBlock("");
-    ifException = createBasicBlock("");
+    BasicBlock* doCall = createBasicBlock("Perform call");
+    ifException = createBasicBlock("Exception thrown");
     Instruction* check = CallInst::Create(intrinsics->SetjmpFunction, jmpBuffer, "", currentBlock);
     check = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, check, intrinsics->constantZero, "");
     BranchInst::Create(doCall, ifException, check, currentBlock);
@@ -2394,7 +2418,7 @@ void JavaJIT::throwRuntimeException(llvm::Function* F, Value* arg1) {
 }
 
 void JavaJIT::throwRuntimeException(llvm::Function* F, Value** args, uint32 nbArgs) {
-  Instruction* obj = CallInst::Create(F, ArrayRef<Value*>(args, nbArgs), "", currentBlock);
+  Instruction* obj = CallInst::Create(F, ArrayRef<Value*>(args, nbArgs), "exceptionObject", currentBlock);
   DebugLoc DL = CreateLocation();
   obj->setDebugLoc(DL);
   throwException(obj, false);
@@ -2524,9 +2548,9 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     // Get the Java exception.
     Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
-    Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
+    Value* obj = new LoadInst(javaExceptionPtr, "pendingException", currentBlock);
     
-    Value* objVT = CallInst::Create(intrinsics->GetVTFunction, obj, "",
+    Value* objVT = CallInst::Create(intrinsics->GetVTFunction, obj, "objectVT",
                                     currentBlock);
 
     uint32 depth = cur->catchClass->virtualVT->depth;
@@ -2537,16 +2561,16 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
       Value* classArgs[2] = { objVT, VTVar };
           
       cmp = CallInst::Create(intrinsics->IsSecondaryClassFunction,
-                             classArgs, "", currentBlock);
+                             classArgs, "isSecondaryClass", currentBlock);
 
     } else {
      
       Value* inDisplay = CallInst::Create(intrinsics->GetDisplayFunction,
-                                          objVT, "", currentBlock);
+                                          objVT, "objectDisplay", currentBlock);
             
       Value* displayArgs[2] = { inDisplay, depthCl };
       Value* VTInDisplay = CallInst::Create(intrinsics->GetVTInDisplayFunction,
-                                            displayArgs, "", currentBlock);
+                                            displayArgs, "objectVTInDisplay", currentBlock);
              
       cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, VTInDisplay, VTVar,
                          "");

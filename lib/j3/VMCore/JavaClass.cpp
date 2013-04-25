@@ -1765,6 +1765,27 @@ void Class::broadcastClass() {
   JavaObject::notifyAll(delegatee);
 }
 
+std::string& CommonClass::getName(std::string& nameBuffer, bool linkageName) const
+{
+	name->toString(nameBuffer);
+
+	for (size_t i=0; i < name->size; ++i) {
+		if (name->elements[i] == '/')
+			nameBuffer[i] = linkageName ? '_' : '.';
+	}
+
+	return nameBuffer;
+}
+
+std::string& JavaMethod::getName(std::string& nameBuffer, bool linkageName) const
+{
+	classDef->getName(nameBuffer, linkageName);
+	nameBuffer += linkageName ? '_' : '.';
+
+	string methName;
+	return nameBuffer += name->toString(methName);
+}
+
 std::ostream& j3::operator << (std::ostream& os, const JavaMethod& m)
 {
 	return os << *m.classDef->name << '.' << *m.name << " (" << *m.type << ')';

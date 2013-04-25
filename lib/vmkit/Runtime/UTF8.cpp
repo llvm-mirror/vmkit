@@ -52,6 +52,16 @@ int UTF8::compare(const char *s) const
 	return diff;
 }
 
+std::string& UTF8::toString(std::string& buffer) const
+{
+	buffer.resize(size);
+
+	for (ssize_t i = 0; i < size; ++i)
+		buffer[i] = (std::string::value_type)(elements[i]);
+
+	return buffer;
+}
+
 std::ostream& operator << (std::ostream& os, const UTF8& utf8)
 {
 	for (ssize_t i = 0; i < utf8.size; ++i)
