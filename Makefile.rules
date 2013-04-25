@@ -35,10 +35,12 @@ endif
 ifeq ($(OPTIMIZED),1)
   LLC_FLAGS+= -O=3
   OPT_FLAGS+= -disable-opt
+  CPPGEN_FLAGS+=-strip-debug
   COMMON_CFLAGS+= -O3
 else
   LLC_FLAGS+=-O=0 -asm-verbose
-  OPT_FLAGS+=-disable-opt
+  OPT_FLAGS+=-disable-opt -inline
+  CPPGEN_FLAGS+=-disable-opt
   COMMON_CFLAGS+=-O0
   PRECOMPILER_OPT+=-disable-opt
 endif
@@ -175,7 +177,7 @@ GC_ID=-gc
 
 %$(GC_ID).bc: %.bc
 	$(Echo) "Preparing GC '$(notdir $<)'"
-	$(Verb) $(LOPT) -load=$(STATIC_GC_PASS_LIB) $(OPT_FLAGS) -inline -StaticGCPass $< -o $@
+	$(Verb) $(LOPT) -load=$(STATIC_GC_PASS_LIB) $(OPT_FLAGS) -StaticGCPass $< -o $@
 
 endif
 
@@ -254,7 +256,7 @@ $(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)$(GC_ID).bc $(SELF)
 			    	echo 'using namespace llvm;'; \
 						echo 'namespace vmkit {'; \
 						for F in $(EXTRACT_FUNCTIONS); do \
-							$(LOPT) $(OPT_FLAGS) $< -o - | $(LLC) $(LLC_FLAGS) -march=cpp -cppgen=function -cppfor=$$F -o - \
+							$(LOPT) $(CPPGEN_FLAGS) $< -o - | $(LLC) $(LLC_FLAGS) -march=cpp -cppgen=function -cppfor=$$F -o - \
 									| sed -e "s/makeLLVMFunction/makeLLVMFunction_$(MODULE)_$$F/"; [ $$? -ne 0 ] && exit 1; \
 						done; \
 						echo "void makeLLVMFunctions_$(MODULE)(Module *mod) {"; \
