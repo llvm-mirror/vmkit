@@ -518,17 +518,14 @@ JNIEXPORT jboolean Java_java_lang_VMClass_isAnonymousClass(
 JNIEnv *env,
 jclass clazz, 
 #endif
-JavaObject* Cl) {
+JavaObjectClass* Cl) {
  
   jboolean res = false;
   llvm_gcroot(Cl, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
   
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  UserClass* cl = UserCommonClass::resolvedImplClass(vm, Cl, false)->asClass();
-
-  if (cl) res = cl->isAnonymous;
+  res = JavaObjectClass::isAnonymousClass(Cl);
 
   END_NATIVE_EXCEPTION
 

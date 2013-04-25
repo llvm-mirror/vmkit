@@ -71,6 +71,7 @@ public:
   static JavaObject* getDeclaringClass(JavaObjectClass* Cl);
   static int getModifiers(JavaObjectClass* Cl);
   static JavaObject* getEnclosingClass(JavaObjectClass* Cl);
+  static bool isAnonymousClass(JavaObjectClass* Cl);
 };
 
 class JavaObjectVMField : public JavaObject {

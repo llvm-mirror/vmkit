@@ -991,6 +991,7 @@ void UserClass::resolveInnerOuterClasses() {
 
         if (clInner == this) {
           outerClass = clOuter;
+          if (!innerName) isAnonymous = true;
         } else if (clOuter == this) {
           if (!innerClasses) {
             innerClasses = (Class**)
@@ -998,7 +999,7 @@ void UserClass::resolveInnerOuterClasses() {
                                               "Inner classes");
           }
           clInner->setInnerAccess(accessFlags);
-          if (!innerName) isAnonymous = true;
+          if (!innerName) clInner->isAnonymous = true;
           innerClasses[nbInnerClasses++] = clInner;
         }
       }
