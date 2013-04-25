@@ -14,7 +14,6 @@
 #include <stdint.h>
 #include "vmkit/System.h"
 
-class VirtualTable;
 class gc;
 
 class gcHeader {
@@ -28,17 +27,6 @@ public:
 
 class gcRoot {
 	private:
-  /// getVirtualTable - Returns the virtual table of this object.
-  ///
-//  VirtualTable* getVirtualTable() const {
-//    return ((VirtualTable**)(this))[0];
-//  }
-  
-  /// setVirtualTable - Sets the virtual table of this object.
-  ///
-//  void setVirtualTable(VirtualTable* VT) {
-//    ((VirtualTable**)(this))[0] = VT;
-//  }
 public:
   virtual           ~gcRoot() {}
   virtual void      tracer(word_t closure) {}
