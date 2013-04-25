@@ -202,6 +202,8 @@ extern "C" ArrayLong* Java_j3_vm_OSGi_getReferencesToObject(jlong objectPointer)
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	return vm->getReferencesToObject(reinterpret_cast<const JavaObject*>((intptr_t)objectPointer));
 
+#else
+	return NULL;
 #endif
 }
 
@@ -216,6 +218,8 @@ extern "C" JavaString* Java_j3_vm_OSGi_dumpObject(jlong objectPointer)
 
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	return vm->asciizToStr(ss.str().c_str());
-
+	
+#else
+	return NULL;
 #endif
 }

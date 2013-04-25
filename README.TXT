@@ -101,7 +101,7 @@ git clone git://scm.gforge.inria.fr/vmkit2/vmkit2.git
 
 * or get as an official developer (Git):
 
-git clone git+ssh://YOUR_USER_NAME@gforge.inria.fr//gitroot/vmkit2/vmkit2.git
+git clone git+ssh://YOUR_USER_NAME@scm.gforge.inria.fr//gitroot/vmkit2/vmkit2.git
 
 * Make it (release mode):
 
