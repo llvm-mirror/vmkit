@@ -54,13 +54,18 @@ jint GetVersion(JNIEnv *env) {
 jobject NewLocalRef(JNIEnv *env, jobject ref) {
 	JavaObject* Obj = 0;
 	llvm_gcroot(Obj, 0);
+
+	BEGIN_JNI_EXCEPTION
+
 	if (ref) {
-		JavaThread* th = JavaThread::get();
 		Obj = *(JavaObject**)ref;
-		JavaObject** res = th->localJNIRefs->addJNIReference(th, Obj);
-		return ((jweak)(jobject)res);
+		jobject res = (jobject)th->pushJNIRef(Obj);
+		RETURN_FROM_JNI(res);
 	}
-	return NULL;
+
+  END_JNI_EXCEPTION
+
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -90,7 +95,7 @@ jclass DefineClass(JNIEnv *env, const char *name, jobject _loader,
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 
@@ -271,8 +276,8 @@ void ExceptionDescribe(JNIEnv *env) {
 void ExceptionClear(JNIEnv *env) {
   BEGIN_JNI_EXCEPTION
   JavaThread::get()->pendingException = NULL;
-  RETURN_VOID_FROM_JNI
   END_JNI_EXCEPTION
+  RETURN_VOID_FROM_JNI
 }
 
 
@@ -283,26 +288,44 @@ void FatalError(JNIEnv *env, const char *msg) {
 
 
 jint PushLocalFrame(JNIEnv* env, jint capacity) {
-  JavaThread* th = JavaThread::get();
+	BEGIN_JNI_EXCEPTION
+
+	JavaThread* th = JavaThread::get();
   std::pair<uint32_t*,int> frame;
   frame.first = th->currentAddedReferences;
   frame.second = th->localJNIRefs->getLength();
   th->JNIlocalFrames.push_back(frame);
-  th->startJNI();
-  return 0;
+
+  RETURN_FROM_JNI(0);
+
+  END_JNI_EXCEPTION
+
+  RETURN_FROM_JNI(0);
 }
 
 jobject PopLocalFrame(JNIEnv* env, jobject result) {
-  JavaThread* th = JavaThread::get();
-  th->endJNI();
+	JavaObject* res = NULL;
+	llvm_gcroot(res, 0);
+
+	BEGIN_JNI_EXCEPTION
+
+	JavaThread* th = JavaThread::get();
   std::pair<uint32_t*, int> frame = th->JNIlocalFrames.back();
-  th->currentAddedReferences = frame.first;
 
   uint32_t toRemove = th->localJNIRefs->getLength() - frame.second;
   assert(toRemove >= 0 && "Local frame has negative number of references to remove");
   th->JNIlocalFrames.pop_back();
   th->localJNIRefs->removeJNIReferences(th,toRemove);
-  return NewLocalRef(env, result);
+
+  if(result){
+  	res = *(JavaObject**)result;
+  	jobject ret = (jobject)th->pushJNIRef(res);
+  	RETURN_FROM_JNI(ret);
+  }
+
+  END_JNI_EXCEPTION
+
+  RETURN_FROM_JNI(0);
 }
 
 
