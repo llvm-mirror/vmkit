@@ -30,6 +30,24 @@ BUILD_NAME=Release+Asserts
 endif
 
 ###############################################################################
+#   Nice printing
+###############################################################################
+ifndef PROF
+PROF=.
+endif
+
+Echo=@echo "[$(PROJECT_NAME) $(PROF)]:"
+
+ifndef VERBOSE
+  Verb := @
+endif
+
+###############################################################################
+#   Build system managament
+###############################################################################
+#SELF=$(PROJ_SRC_ROOT)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
+
+###############################################################################
 #   Build directories
 ###############################################################################
 BIN_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
@@ -72,11 +90,6 @@ distclean::
 ifeq ($(DEBUG),1)
   COMMON_CFLAGS+=-g
 endif
-
-###############################################################################
-#   Autodependencies
-###############################################################################
-#SELF=$(PROJ_SRC_ROOT)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
 
 ###############################################################################
 #   Main targets
@@ -125,10 +138,12 @@ ifdef BUILD_FRAMETABLE
 BUILT_INC+=$(patsubst %,$(BUILD_DIR)/%,FrametablesExterns.inc FrametablesSymbols.inc)
 DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(USE))
 
-$(BUILD_DIR)/FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF)
+$(BUILD_DIR)/FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/%
+	$(Echo) "Generate $(notdir $@)"
 	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
 
-$(BUILD_DIR)/FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF)
+$(BUILD_DIR)/FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/%
+	$(Echo) "Generate $(notdir $@)"
 	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
 
 clean-local::
