@@ -209,6 +209,7 @@ JavaMethod* Classpath::FinalizeObject;
 JavaMethod* Classpath::IntToString;
 
 JavaMethod* Classpath::SystemArraycopy;
+JavaMethod* Classpath::SystemExit;
 JavaMethod* Classpath::VMSystemArraycopy;
 Class*      Classpath::SystemClass;
 Class*      Classpath::EnumClass;
@@ -912,6 +913,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                                   "(Ljava/lang/Object;ILjava/lang/Object;II)V",
                                   ACC_STATIC);
   
+  SystemExit = UPCALL_METHOD(loader, "java/lang/System", "exit",
+          "(I)V", ACC_STATIC);
+
   VMSystemArraycopy = UPCALL_METHOD(loader, "java/lang/VMSystem", "arraycopy",
                                   "(Ljava/lang/Object;ILjava/lang/Object;II)V",
                                   ACC_STATIC);

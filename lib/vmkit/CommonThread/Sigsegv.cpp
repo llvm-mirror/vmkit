@@ -94,3 +94,10 @@ void sigsegvHandler(int n, siginfo_t *info, void *context) {
     }
   }
 }
+
+void sigsTermHandler(int n, siginfo_t *info, void *context) {
+	fprintf(stderr, "\nJVM termination because user request\n");
+	Thread::get()->onVMTermination();
+	//UserClass* cl = vm->upcalls->SystemClass;
+	//vm -> upcalls->SystemExit->invokeIntStatic(vm,Class* cl, 0);
+}

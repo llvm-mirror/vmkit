@@ -243,6 +243,7 @@ public:
   ISOLATE_STATIC JavaMethod* InitCloneNotSupportedException;
   
   ISOLATE_STATIC JavaMethod* SystemArraycopy;
+  ISOLATE_STATIC JavaMethod* SystemExit;
   ISOLATE_STATIC JavaMethod* VMSystemArraycopy;
   ISOLATE_STATIC Class*      SystemClass;
   
