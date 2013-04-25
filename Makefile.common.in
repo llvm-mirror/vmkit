@@ -19,8 +19,7 @@ endif
 REQUIRES_FRAME_POINTER	:= 1
 JAVAC_TARGET		:= 1.5
 
-# Include LLVM's Master Makefile.
-include $(PROJ_SRC_ROOT)/Makefile.common.llvm
+ENABLE_OPTIMIZED=1
 
 CXX.Flags += @GC_FLAGS@ -fno-exceptions -Wno-variadic-macros -fno-omit-frame-pointer -fno-strict-aliasing -Wno-deprecated -ansi -fno-rtti
 
@@ -31,7 +30,7 @@ GLIBJ = @classpathglibj@
 # Using conditional compilation for now, until a proper interface/architecture
 # is figured out and implemented.
 ifeq (@classpathimpl@,openjdk)
-CXX.Flags += -DUSE_OPENJDK
+COMMON_CFLAGS+=-DUSE_OPENJDK
 endif
 
 LIBS += -lz

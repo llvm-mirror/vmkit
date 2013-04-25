@@ -1,6 +1,6 @@
 .PHONY: all tidy clean confclean
 .SECONDARY:
-.SUFFIXES:
+.SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll $(SHLIBEXT) $(SUFFIXES)
 
 ifdef NO
 ifeq ($(OPTIMIZED),1)
@@ -34,12 +34,15 @@ endif
 ###############################################################################
 ifndef PROF
 PROF=.
+all::
+	$(Echo) "Entering compilation process"
 endif
 
 Echo=@echo "[$(PROJECT_NAME) $(PROF)]:"
 
 ifndef VERBOSE
-  Verb := @
+	SUB_OPT=--no-print-directory
+  Verb:=@
 endif
 
 ###############################################################################
@@ -50,7 +53,7 @@ RECURSIVE_TARGETS=all clean
 
 $(RECURSIVE_TARGETS)::
 	$(Verb) for f in $(DIRS); do \
-		$(MAKE) --no-print-directory -C $$f $@ PROF=$(PROF)/$$f || exit 1; \
+		$(MAKE) $(SUB_OPT) -C $$f $@ PROF=$(PROF)/$$f || exit 1; \
 	done; exit 0;
 
 tidy:
@@ -90,11 +93,13 @@ LLVMCC=$(LLVM_BIN)/clang
 Archive=ar cru
 Ranlib=ranlib
 RM=rm
+CP=cp
 NM=nm
 LD=ld
 LArchive=$(LLVM_BIN)/llvm-ar rcsf
 MKDIR=mkdir -p
 TOUCH=touch
+GREP=grep
 
 PREPARE_CODE=$(LIB_DIR)/prepare-code$(SHLIBEXT)
 VMJC=$(BIN_DIR)/vmjc$(EXEEXT)

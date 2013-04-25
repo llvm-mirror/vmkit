@@ -12,7 +12,7 @@ EXTRA_DIST = HelloWorld.java
 
 include $(LEVEL)/Makefile.config
 
-BUILT_SOURCES = Precompiled.bc BootstrapClasses.bc
+all:: Precompiled.bc BootstrapClasses.bc
 
 include $(LEVEL)/Makefile.common
 
