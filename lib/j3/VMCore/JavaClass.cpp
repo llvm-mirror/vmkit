@@ -1829,8 +1829,6 @@ JavaObject* AnnotationReader::createElementValue() {
     ddprintf("class=");
     const UTF8* m = cl->ctpInfo->UTF8At(reader.readU2());
 
-    ddprintf("%s", PrintBuffer(m).cString());
-
     JnjvmClassLoader* JCL = this->cl->classLoader;
 
     m = m->extract(JCL->hashUTF8, 1,m->size-1);
@@ -1869,9 +1867,11 @@ JavaObject* AnnotationReader::createElementValue() {
 
 JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 	JavaObject* res = 0;
-	JavaObject* str = 0;
+	JavaString* str = 0;
+	JavaObject* clazzObject = 0;
 	llvm_gcroot(res, 0);
 	llvm_gcroot(str, 0);
+	llvm_gcroot(clazzObject, 0);
 
 	sint32 valS;
 	uint32 valU;
@@ -1879,6 +1879,8 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 	double valD;
 	float valF;
 	const UTF8* s = 0;
+	JnjvmClassLoader* JCL;
+	UserCommonClass* clLoaded;
 
 	UserClassArray* array = 0;
 	Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1945,8 +1947,21 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 		abort();
 		break;
 	case 'c':
-		fprintf(stderr, "Annotation not supported for %c (classes) type\n", tag);
-		abort();
+		array = upcalls->classArrayClass;
+		res = array->doNew(numValues, vm);
+		s = cl->ctpInfo->UTF8At(reader.readU2());
+		JCL = this->cl->classLoader;
+		s = s->extract(JCL->hashUTF8, 1,s->size-1);
+		clLoaded = JCL->loadClassFromUserUTF8(s,true,false, NULL);
+		if (clLoaded != NULL && !clLoaded->isPrimitive()) {
+			if (clLoaded->asClass())
+				clLoaded->asClass()->initialiseClass(vm);
+			clazzObject = clLoaded->getClassDelegatee(vm);
+		} else {
+		  str = JavaString::internalToJava(s, vm);
+		  vm->classNotFoundException(str);
+		}
+		ArrayObject::setElement((ArrayObject *)res, clazzObject, 0);
 		break;
 	case '[':
 		fprintf(stderr, "Only arrays of one dimensions are supported in annotations\n");
@@ -2007,8 +2022,19 @@ JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 				abort();
 				break;
 			case 'c':
-				fprintf(stderr, "Annotation not supported for %c (classes) type\n", tag);
-				abort();
+				s = cl->ctpInfo->UTF8At(reader.readU2());
+				JCL = this->cl->classLoader;
+				s = s->extract(JCL->hashUTF8, 1,s->size-1);
+				clLoaded = JCL->loadClassFromUserUTF8(s,true,false, NULL);
+				if (clLoaded != NULL && !clLoaded->isPrimitive()) {
+					if (clLoaded->asClass())
+						clLoaded->asClass()->initialiseClass(vm);
+					clazzObject = clLoaded->getClassDelegatee(vm);
+				} else {
+				  str = JavaString::internalToJava(s, vm);
+				  vm->classNotFoundException(str);
+				}
+				ArrayObject::setElement((ArrayObject *)res, clazzObject, i);
 				break;
 			case '[':
 				fprintf(stderr, "Only arrays of one dimensions are supported in annotations\n");
