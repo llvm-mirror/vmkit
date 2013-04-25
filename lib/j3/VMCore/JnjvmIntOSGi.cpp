@@ -7,7 +7,10 @@
 #include "ClasspathReflect.h"
 #include "j3/jni.h"
 
+
 using namespace std;
+
+#if RESET_STALE_REFERENCES
 
 namespace j3 {
 
@@ -60,6 +63,7 @@ void Jnjvm::setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader)
 
 }
 
+#endif
 
 using namespace j3;
 
@@ -72,8 +76,12 @@ extern "C" void Java_j3_vm_OSGi_associateBundleClass(jlong bundleID, JavaObjectC
 {
 	llvm_gcroot(classObject, 0);
 
+#if RESET_STALE_REFERENCES
+
 	CommonClass* ccl = JavaObjectClass::getClass(classObject);
 	ccl->classLoader->setAssociatedBundleID(bundleID);
+
+#endif
 }
 
 /*
@@ -83,12 +91,20 @@ extern "C" void Java_j3_vm_OSGi_associateBundleClass(jlong bundleID, JavaObjectC
 */
 extern "C" void Java_j3_vm_OSGi_resetReferencesToBundle(jlong bundleID)
 {
+#if RESET_STALE_REFERENCES
+
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	vm->resetReferencesToBundle(bundleID);
+
+#endif
 }
 
 extern "C" void Java_j3_vm_OSGi_dumpClassLoaderBundles()
 {
+#if RESET_STALE_REFERENCES
+
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	vm->dumpClassLoaderBundles();
+
+#endif
 }

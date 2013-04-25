@@ -889,8 +889,7 @@ void Class::readClass() {
 
   uint16 minor = reader.readU2();
   uint16 major = reader.readU2();
-  if (major > (uint16)0x31)        // 0x31 for Java 1.5
-    cerr << "WARNING: Class file '" << *name << "' requires a Java version that is unsupported by this JVM." << endl;
+  this->isClassVersionSupported(major, minor);
 
   uint32 ctpSize = reader.readU2();
   ctpInfo = new(classLoader->allocator, ctpSize) JavaConstantPool(this, reader,
@@ -910,6 +909,36 @@ void Class::readClass() {
   readFields(reader);
   readMethods(reader);
   attributes = readAttributes(reader, nbAttributes);
+}
+
+void Class::getMinimalJDKVersion(uint16 major, uint16 minor, unsigned int& JDKMajor, unsigned int& JDKMinor, unsigned int& JDKBuild)
+{
+	JDKMajor = 1;
+	JDKBuild = 0;
+	if (major == 45 && minor <= 3) {			// Supported by Java 1.0.2
+		JDKMinor = 0;
+		JDKBuild = 2;
+	} else if (major == 45 && minor <= 65535) {	// Supported by Java 1.1
+		JDKMinor = 1;
+	} else {									// Supported by Java 1.x (x >= 2)
+		JDKMinor = major - 43;
+		if (minor == 0) --JDKMinor;
+	}
+}
+
+bool Class::isClassVersionSupported(uint16 major, uint16 minor)
+{
+	const int supportedJavaMinorVersion = 5;	// Java 1.5
+
+	unsigned int JDKMajor, JDKMinor, JDKBuild;
+	Class::getMinimalJDKVersion(major, minor, JDKMajor, JDKMinor, JDKBuild);
+
+	bool res = (JDKMajor <= 1) && (JDKMinor <= supportedJavaMinorVersion);
+	if (!res) {
+		cerr << "WARNING: Class file '" << *name << "' requires Java version " << JDKMajor << '.' << JDKMinor <<
+			". This JVM only supports Java versions up to 1." << supportedJavaMinorVersion << '.' << endl;
+	}
+	return res;
 }
 
 void UserClass::resolveParents() {
@@ -1772,7 +1801,7 @@ std::string& CommonClass::getName(std::string& nameBuffer, bool linkageName) con
 {
 	name->toString(nameBuffer);
 
-	for (size_t i=0; i < name->size; ++i) {
+	for (int32_t i=0; i < name->size; ++i) {
 		if (name->elements[i] == '/')
 			nameBuffer[i] = linkageName ? '_' : '.';
 	}
