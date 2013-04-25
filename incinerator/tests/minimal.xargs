@@ -37,15 +37,15 @@
 
 -launch
 
--istart  j3mgr_1.0.0.jar
+-istart  j3mgr-1.0.0.jar
 
--istart  ijvm.tests.A_1.0.0.jar
--istart  ijvm.tests.C_1.0.0.jar
--istart  ijvm.tests.AImpl_1.0.0.jar
--istart  ijvm.tests.BImpl_1.0.0.jar
--istart  ijvm.tests.CImpl_1.0.0.jar
--istart  ijvm.tests.DImpl_1.0.0.jar
+-istart  ijvm.tests.A-1.0.0.jar
+-istart  ijvm.tests.C-1.0.0.jar
+-istart  ijvm.tests.AImpl-1.0.0.jar
+-istart  ijvm.tests.BImpl-1.0.0.jar
+-istart  ijvm.tests.CImpl-1.0.0.jar
+-istart  ijvm.tests.DImpl-1.0.0.jar
 
--install ijvm.tests.Runner_1.0.0.jar
+-install ijvm.tests.Runner-1.0.0.jar
 
 -install BundleReloader-1.0.0.jar

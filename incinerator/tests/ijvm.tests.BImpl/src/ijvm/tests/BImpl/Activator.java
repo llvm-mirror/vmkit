@@ -1,7 +1,5 @@
 package ijvm.tests.BImpl;
 
-import java.util.ArrayList;
-
 import ijvm.tests.A.A;
 import ijvm.tests.A.Token;
 import ijvm.tests.B.B;

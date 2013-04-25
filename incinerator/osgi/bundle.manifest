@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Bundle-Vendor: Koutheir Attouchi
 Bundle-Version: 1.0.0
-Bundle-Name: BundleReloader
+Bundle-Name: J3 Virtual Machine Manager
 Bundle-ManifestVersion: 2
-Bundle-Activator: BundleReloader.Activator
+Bundle-SymbolicName: j3mgr
+Bundle-Activator: j3mgr.Activator
+Export-Package: j3
 Import-Package: org.osgi.framework, org.osgi.service.packageadmin
-Bundle-SymbolicName: BundleReloader
-Bundle-RequiredExecutionEnvironment: OSGi/Minimum-1.0
 

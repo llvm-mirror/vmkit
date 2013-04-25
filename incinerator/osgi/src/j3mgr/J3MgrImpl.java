@@ -1,8 +1,6 @@
 package j3mgr;
 
 import java.util.Set;
-import java.util.TreeSet;
-
 import j3.J3Mgr;
 
 import org.osgi.framework.Bundle;
@@ -68,8 +66,8 @@ public class J3MgrImpl
 	
 	void refreshFramework()
 	{
-		ServiceReference<?> pkgAdminRef =
-			(ServiceReference<?>)context.getServiceReference(
+		ServiceReference pkgAdminRef =
+			(ServiceReference)context.getServiceReference(
 				"org.osgi.service.packageadmin.PackageAdmin");
 		PackageAdmin pkgAdmin = (PackageAdmin)context.getService(pkgAdminRef);
 		pkgAdmin.refreshPackages(null);

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<bundlejar>
+<resource dst="" pattern=".*\.class" src="/ijvm.tests.BundleMgmtStress/out" type="0"/>
+</bundlejar>

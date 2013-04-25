@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-Version: 1.0.0
+Bundle-Name: DImpl
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: ijvm.tests.DImpl
+Export-Package: ijvm.tests.D
+Bundle-Activator: ijvm.tests.DImpl.Activator
+Import-Package: ijvm.tests.C, org.osgi.framework, org.osgi.util.tracke
+ r
+

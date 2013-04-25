@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-Version: 1.0.0
+Bundle-Name: BImpl
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: ijvm.tests.BImpl
+Export-Package: ijvm.tests.B
+Bundle-Activator: ijvm.tests.BImpl.Activator
+Import-Package: ijvm.tests.A, org.osgi.framework, org.osgi.util.tracke
+ r
+
