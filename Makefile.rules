@@ -68,7 +68,7 @@ LArchive=$(LLVM_BIN)/llvm-ar rcsf
 ###############################################################################
 #   Linking options
 ###############################################################################
-USEDLIBS:=$(addprefix $(LibDir)/lib,$(patsubst %.a,%.a,$(USEDLIBS)))
+USEDLIBS:=$(patsubst %,$(LibDir)/lib%,$(USEDLIBS))
 
 #
 #
@@ -148,7 +148,6 @@ ifdef MODULE_WITH_GC
 ObjectsBCWithGC   := $(BaseNameSources:%=$(ObjDir)/%_gc.bc)
 ObjectsWithGC     := $(BaseNameSources:%=$(ObjDir)/%_gc.o)
 AModule           := $(LibDir)/lib$(MODULE_WITH_GC).a
-OModule           := $(LibDir)/$(MODULE_WITH_GC).o
 
 $(ObjectsBCWithGC): $(ObjDir)/%_gc.bc: $(ObjDir)/%.bc $(LOPT)
 	$(Echo) "**[4] Compiling $*.bc to $*.bc (gc) for $(BuildMode) build (bytecode)" # $(OPT_BC_WITH_GC_FLAGS)
@@ -164,11 +163,7 @@ $(AModule): $(ObjectsWithGC) $(LibDir)/.dir
 	$(Verb) $(Archive) $@ $(ObjectsWithGC)
 	$(Verb) $(Ranlib) $@
 
-$(OModule): $(ObjectsWithGC) $(LibDir)/.dir
-	$(Echo) "**[80] Linking native module $(notdir $@)"
-	$(Verb) $(LD) -r $(ObjectsWithGC) -o $@
-
-all-local:: $(OModule) $(AModule)
+all-local:: $(AModule)
 
 clean-local::
 	-$(Verb) $(RM) -f $(AModule) $(ObjectsBCWithGC) $(ObjectsSWithGC) $(ObjectsWithGC)
