@@ -1,4 +1,4 @@
-.PHONY: all all-subs build-module bootstrap tidy clean distclean local-clean
+.PHONY: all tidy clean confclean
 .SECONDARY:
 .SUFFIXES:
 
@@ -46,6 +46,29 @@ endif
 #   Build system managament
 ###############################################################################
 #SELF=$(PROJ_SRC_ROOT)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
+RECURSIVE_TARGETS=all clean
+
+$(RECURSIVE_TARGETS)::
+	$(Verb) for f in $(DIRS); do \
+		$(MAKE) --no-print-directory -C $$f $@ PROF=$(PROF)/$$f || exit 1; \
+	done; exit 0;
+
+tidy:
+	$(Echo) Cleaning temporary files
+	$(Verb) find $(PROJ_OBJ_ROOT) -iname "*~" -exec rm -f {} \;
+
+clean::
+	$(Echo) "Cleaning compilation files"
+	$(Verb) rm -Rf $(BUILD_NAME)
+
+confclean: distclean
+	$(Echo) Cleaning configuration
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/Makefile.common
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/config.status $(PROJ_OBJ_ROOT)/config.log
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/autoconf/autom4te.cache $(PROJ_OBJ_ROOT)/autoconf/configure.bak
+
+%/.dir:
+	$(Verb) $(MKDIR) $(dir $@) && $(TOUCH) $@
 
 ###############################################################################
 #   Build directories
@@ -75,17 +98,6 @@ TOUCH=touch
 
 PREPARE_CODE=$(LIB_DIR)/prepare-code$(SHLIBEXT)
 VMJC=$(BIN_DIR)/vmjc$(EXEEXT)
-
-%/.dir:
-	$(Verb) $(MKDIR) $(dir $@) && $(TOUCH) $@
-
-clean::
-	$(Echo) "Cleaning compilation files"
-	$(Verb) $(RM) -Rf $(BUILD_DIR)
-
-distclean::
-	$(Echo) "Cleaning build files"
-	$(Verb) $(RM) -Rf $(BIN_DIR) $(LIB_DIR) $(INCDIR)
 
 ifeq ($(DEBUG),1)
   COMMON_CFLAGS+=-g
@@ -138,16 +150,13 @@ ifdef BUILD_FRAMETABLE
 BUILT_INC+=$(patsubst %,$(BUILD_DIR)/%,FrametablesExterns.inc FrametablesSymbols.inc)
 DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(USE))
 
-$(BUILD_DIR)/FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/%
-	$(Echo) "Generate $(notdir $@)"
+$(BUILD_DIR)/FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Generating $(notdir $@)"
 	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
 
-$(BUILD_DIR)/FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/%
-	$(Echo) "Generate $(notdir $@)"
+$(BUILD_DIR)/FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Generating $(notdir $@)"
 	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
-
-clean-local::
-	-$(Verb) $(RM) -f FrametablesExterns.inc FrametablesSymbols.inc
 
 endif
 
@@ -185,7 +194,7 @@ all:: $(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
 BUILT_INC+=$(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
 
 $(BUILD_DIR)/$(VMKIT_RUNTIME_OUT): $(VMKIT_RUNTIME_IN) $(SELF) $(BUILD_DIR)/.dir
-	$(Echo) "Generating vmkit meta file '$@'"
+	$(Echo) "Generating '$@'"
 	$(Verb) cat $(VMKIT_RUNTIME_IN) | $(LLVMAS) -o - | $(LLC) -march=cpp -cppgen=contents -o $@
 
 endif
@@ -198,26 +207,6 @@ endif
 
 # Set the LLVM build file location 
 LLVMBuildTool   := $(LLVM_SRC_ROOT)/utils/llvm-build/llvm-build
-
-###############################################################################
-# VMKIT_RUNTIME: Provide rules to build a .cpp file with LLVM instructions
-#                generating code matching the .ll files.
-###############################################################################
-
-ifdef VMKIT_RUNTIME
-
-.PRECIOUS: LLVMRuntime.inc
-
-LLVMRuntime.inc : $(LLVMAS) $(LLC) $(VMKIT_RUNTIME)
-	$(Echo) "**[7] Building LLVM runtime $(LLC_CPP_FLAGS)"
-	$(Verb) cat $(VMKIT_RUNTIME) | $(LLVMAS) -o - | $(LLC) -march=cpp -cppgen=contents -o $@
-
-all-local:: LLVMRuntime.inc
-
-clean-local::
-	$(Verb) $(RM) -f LLVMRuntime.inc
-
-endif
 
 ###############################################################################
 # RUN_ANT: Provide rules to build MMTk into a .o file and inlining facilities.
@@ -334,8 +323,6 @@ $(eval $(call define_compile_rule,.c,$(CLANG),$(CFLAGS)))
 
 ifneq ($(MAKECMDGOALS),tidy)
 ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(MAKECMDGOALS),distclean)
 -include $(patsubst %.o, %.d, $(OBJ_FILES))
-endif
 endif
 endif
