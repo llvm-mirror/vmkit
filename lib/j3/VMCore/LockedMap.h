@@ -39,7 +39,7 @@ public:
   ClassMap() {}
   ClassMap(vmkit::VmkitDenseMap<const vmkit::UTF8*, UserCommonClass*>* precompiled) : map(*precompiled) {}
 
-  vmkit::LockRecursive lock;
+  vmkit::SpinLock lock;
   vmkit::VmkitDenseMap<const vmkit::UTF8*, UserCommonClass*> map;
   typedef vmkit::VmkitDenseMap<const vmkit::UTF8*, UserCommonClass*>::iterator iterator;
 };
