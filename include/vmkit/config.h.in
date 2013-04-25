@@ -1,2 +1,2 @@
-/* Kill stale references
+/* Kill stale references */
 #undef RESET_STALE_REFERENCES
