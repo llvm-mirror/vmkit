@@ -50,6 +50,8 @@ JavaObjectConstructor* JavaObjectConstructor::createFromInternalConstructor(Java
   llvm_gcroot(vmConsInstance, 0);
   Jnjvm* vm = JavaThread::get()->getJVM();
   VMConsClass = vm->upcalls->newVMConstructor;
+  if (!VMConsClass->isReady())
+  	VMConsClass->setInitializationState(ready);
   vmConsInstance = VMConsClass->doNew(vm);
   JavaObject* const* Cl = cons->classDef->getDelegateePtr();
   vm->upcalls->initVMConstructor->invokeIntSpecial(vm, VMConsClass, vmConsInstance, Cl, i);
@@ -70,6 +72,8 @@ JavaObjectMethod* JavaObjectMethod::createFromInternalMethod(JavaMethod* meth, i
   Jnjvm* vm = JavaThread::get()->getJVM();
 
   UserClass* VMMeth = vm->upcalls->newVMMethod;
+  if (!VMMeth->isReady())
+  	VMMeth->setInitializationState(ready);
   vmMeth = (JavaObjectVMMethod*)VMMeth->doNew(vm);
 
 
@@ -99,6 +103,8 @@ JavaObjectField* JavaObjectField::createFromInternalField(JavaField* field, int 
 
   Jnjvm* vm = JavaThread::get()->getJVM();
   UserClass* VMFieldClass = vm->upcalls->newVMField;
+  if (!VMFieldClass->isReady())
+  	VMFieldClass->setInitializationState(ready);
   vmField = VMFieldClass->doNew(vm);
   name = vm->internalUTF8ToStr(field->name);
   JavaObject* const* Cl = field->classDef->getDelegateePtr();
