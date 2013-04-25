@@ -401,28 +401,31 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
   Value *obj, *ptr, *func;
   ++i;
   func = i;
+  func->setName("func");
   ++i;
   if (virt) {
     obj = i;
     ++i;
     Args.push_back(obj);
+    obj->setName("object");
   }
   ptr = i;
-  
+  ptr->setName("nextArgPtr");
+
   Typedef* const* arguments = signature->getArgumentsType();
   for (uint32 i = 0; i < signature->nbArguments; ++i) {
   
     LLVMAssessorInfo& LAI = Compiler->getTypedefInfo(arguments[i]);
-    Value* arg = new LoadInst(ptr, "", currentBlock);
+    Value* arg = new LoadInst(ptr, "loadedArg", currentBlock);
     
     if (arguments[i]->isReference()) {
       arg = new IntToPtrInst(arg, Intrinsics.JavaObjectType, "", currentBlock);
       Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
                                 Intrinsics.JavaObjectNullConstant,
-                                arg, "");
-      BasicBlock* endBlock = BasicBlock::Create(context, "end", res);
-      BasicBlock* loadBlock = BasicBlock::Create(context, "load", res);
-      PHINode* node = PHINode::Create(Intrinsics.JavaObjectType, 2, "",
+                                arg, "isNullRefArg");
+      BasicBlock* endBlock = BasicBlock::Create(context, "refArgDone", res);
+      BasicBlock* loadBlock = BasicBlock::Create(context, "loadRefArg", res);
+      PHINode* node = PHINode::Create(Intrinsics.JavaObjectType, 2, "refArg",
                                       endBlock);
       node->addIncoming(Intrinsics.JavaObjectNullConstant, currentBlock);
       BranchInst::Create(endBlock, loadBlock, cmp, currentBlock);
@@ -430,7 +433,7 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
       arg = new BitCastInst(arg,
                             PointerType::getUnqual(Intrinsics.JavaObjectType),
                             "", currentBlock);
-      arg = new LoadInst(arg, "", false, currentBlock);
+      arg = new LoadInst(arg, "loadedRefArg", false, currentBlock);
       node->addIncoming(arg, currentBlock);
       BranchInst::Create(endBlock, currentBlock);
       currentBlock = endBlock;
@@ -438,18 +441,18 @@ Function* LLVMSignatureInfo::createFunctionCallBuf(bool virt) {
     } else if (arguments[i]->isFloat()) {
       arg = new TruncInst(arg, Compiler->AssessorInfo[I_INT].llvmType,
                           "", currentBlock);
-      arg = new BitCastInst(arg, LAI.llvmType, "", currentBlock);
+      arg = new BitCastInst(arg, LAI.llvmType, "arg", currentBlock);
     } else if (arguments[i]->isDouble()) {
-      arg = new BitCastInst(arg, LAI.llvmType, "", currentBlock);
+      arg = new BitCastInst(arg, LAI.llvmType, "arg", currentBlock);
     } else if (!arguments[i]->isLong()){
-      arg = new TruncInst(arg, LAI.llvmType, "", currentBlock);
+      arg = new TruncInst(arg, LAI.llvmType, "arg", currentBlock);
     }
     Args.push_back(arg);
-    ptr = GetElementPtrInst::Create(ptr, Intrinsics.constantOne,"",
+    ptr = GetElementPtrInst::Create(ptr, Intrinsics.constantOne,"nextArgPtr",
                                     currentBlock);
   }
 
-  Value* val = CallInst::Create(func, Args, "", currentBlock);
+  Value* val = CallInst::Create(func, Args, signature->getReturnType()->isVoid() ? "" : "retVal", currentBlock);
   if (!signature->getReturnType()->isVoid()) {
     ReturnInst::Create(context, val, currentBlock);
   } else {
@@ -598,7 +601,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   BasicBlock* callBlock = BasicBlock::Create(context, "call", stub);
   PHINode* node = NULL;
   if (!signature->getReturnType()->isVoid()) {
-    node = PHINode::Create(stub->getReturnType(), 2, "", endBlock);
+    node = PHINode::Create(stub->getReturnType(), 2, "retVal", endBlock);
   }
     
 
@@ -607,7 +610,7 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
     Value* temp = arg;
     if (Compiler->useCooperativeGC() &&
         arg->getType() == Intrinsics.JavaObjectType) {
-      temp = new AllocaInst(Intrinsics.JavaObjectType, "", currentBlock);
+      temp = new AllocaInst(Intrinsics.JavaObjectType, "arg", currentBlock);
       new StoreInst(arg, temp, "", currentBlock);
       Value* GCArgs[2] = {
         new BitCastInst(temp, Intrinsics.ptrPtrType, "", currentBlock),
@@ -615,15 +618,17 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
       };
         
       CallInst::Create(Intrinsics.llvm_gc_gcroot, GCArgs, "", currentBlock);
-    }
+    } else
+    	arg->setName("arg");
     
     TempArgs.push_back(temp);
   }
 
   if (virt) {
     if (Compiler->useCooperativeGC()) {
-      Args.push_back(new LoadInst(TempArgs[0], "", false, currentBlock));
+      Args.push_back(new LoadInst(TempArgs[0], "object", false, currentBlock));
     } else {
+      TempArgs[0]->setName("object");
       Args.push_back(TempArgs[0]);
     }
   }
@@ -631,17 +636,17 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
   Value* val = CallInst::Create(virt ? Intrinsics.ResolveVirtualStubFunction :
                                 special ? Intrinsics.ResolveSpecialStubFunction:
                                           Intrinsics.ResolveStaticStubFunction,
-                                Args, "", currentBlock);
+                                Args, "resolvedFuncPtr", currentBlock);
   
   Constant* nullValue = Constant::getNullValue(val->getType());
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ,
-                            nullValue, val, "");
+                            nullValue, val, "isNotResolved");
   BranchInst::Create(endBlock, callBlock, cmp, currentBlock);
   if (node) node->addIncoming(Constant::getNullValue(node->getType()),
                               currentBlock);
 
   currentBlock = callBlock;
-  Value* Func = new BitCastInst(val, stub->getType(), "", currentBlock);
+  Value* Func = new BitCastInst(val, stub->getType(), "resolvedFunc", currentBlock);
   
   int i = 0;
   for (Function::arg_iterator arg = stub->arg_begin();
@@ -649,11 +654,12 @@ Function* LLVMSignatureInfo::createFunctionStub(bool special, bool virt) {
     Value* temp = arg;
     if (Compiler->useCooperativeGC() &&
         arg->getType() == Intrinsics.JavaObjectType) {
-      temp = new LoadInst(TempArgs[i], "", false, currentBlock);
-    }
+      temp = new LoadInst(TempArgs[i], "arg", false, currentBlock);
+    } else
+    	temp->setName("arg");
     FunctionArgs.push_back(temp);
   }
-  Value* res = CallInst::Create(Func, FunctionArgs, "", currentBlock);
+  Value* res = CallInst::Create(Func, FunctionArgs, node ? "funcRetVal" : "", currentBlock);
   if (node) node->addIncoming(res, currentBlock);
   BranchInst::Create(endBlock, currentBlock);
 

@@ -46,29 +46,29 @@ public:
   T elements[1];
 
 public:
-  static int32_t getSize(const TJavaArray* self) __attribute__((always_inline)) {
+  static int32_t getSize(const TJavaArray* self) {
     llvm_gcroot(self, 0);
     return self->size;
   }
   
-  static T getElement(const TJavaArray* self, uint32_t i) __attribute__((always_inline)) {
+  static T getElement(const TJavaArray* self, uint32_t i) {
     llvm_gcroot(self, 0);
     assert((ssize_t)i < self->size);
     return self->elements[i];
   }
 
-  static void setElement(TJavaArray* self, T value, uint32_t i) __attribute__((always_inline)) {
+  static void setElement(TJavaArray* self, T value, uint32_t i) {
     llvm_gcroot(self, 0);
     assert((ssize_t)i < self->size);
     self->elements[i] = value;
   }
 
-  static const T* getElements(const TJavaArray* self) __attribute__((always_inline)) {
+  static const T* getElements(const TJavaArray* self) {
     llvm_gcroot(self, 0);
     return self->elements;
   }
 
-  static T* getElements(TJavaArray* self) __attribute__((always_inline)) {
+  static T* getElements(TJavaArray* self) {
     llvm_gcroot(self, 0);
     return self->elements;
   }
@@ -76,35 +76,10 @@ public:
   friend class JavaArray;
 };
 
-class ArrayObject : public JavaObject {
-public:
-  /// size - The (constant) size of the array.
-  ssize_t size;
+template<>
+void TJavaArray<JavaObject*>::setElement(TJavaArray<JavaObject*>* self, JavaObject* value, uint32_t i);
 
-  /// elements - Elements of this array. The size here is different than the
-  /// actual size of the Java array. This is to facilitate Java array accesses
-  /// in JnJVM code. The size should be set to zero, but this is invalid C99.
-  JavaObject* elements[1];
-
-public:
-  static int32_t getSize(const ArrayObject* self) {
-    llvm_gcroot(self, 0);
-    return self->size;
-  }
-  
-  static JavaObject* getElement(const ArrayObject* self, uint32_t i) __attribute__((always_inline)) {
-    llvm_gcroot(self, 0);
-    assert((ssize_t)i < self->size);
-    return self->elements[i];
-  }
-
-  static void setElement(ArrayObject* self, JavaObject* value, uint32_t i);
-
-  static JavaObject** getElements(ArrayObject* self) __attribute__((always_inline)) {
-    llvm_gcroot(self, 0);
-    return self->elements;
-  }
-};
+typedef TJavaArray<JavaObject*> ArrayObject;
 
 /// Instantiation of the TJavaArray class for Java arrays.
 #define ARRAYCLASS(name, elmt)                                \
@@ -142,7 +117,7 @@ public:
   static const unsigned int T_INT;
   static const unsigned int T_LONG;
 
-  static void setSize(JavaObject* array, int size) __attribute__((always_inline)) {
+  static void setSize(JavaObject* array, int size) {
     ArrayUInt8* obj = 0;
     llvm_gcroot(obj, 0);
     llvm_gcroot(array, 0);
@@ -150,7 +125,7 @@ public:
     obj->size = size;
   }
 
-  static sint32 getSize(const JavaObject* array) __attribute__((always_inline)) {
+  static sint32 getSize(const JavaObject* array) {
     const ArrayUInt8* obj = 0;
     llvm_gcroot(obj, 0);
     llvm_gcroot(array, 0);
@@ -158,7 +133,7 @@ public:
     return obj->size;
   }
 
-  static const unsigned char* getElements(const JavaObject* array) __attribute__((always_inline)) {
+  static const unsigned char* getElements(const JavaObject* array) {
     const ArrayUInt8* obj = 0;
     llvm_gcroot(obj, 0);
     llvm_gcroot(array, 0);
@@ -166,7 +141,7 @@ public:
     return obj->elements;
   }
 
-  static unsigned char* getElements(JavaObject* array) __attribute__((always_inline)) {
+  static unsigned char* getElements(JavaObject* array) {
     ArrayUInt8* obj = 0;
     llvm_gcroot(obj, 0);
     llvm_gcroot(array, 0);

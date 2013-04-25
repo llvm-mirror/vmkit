@@ -31,7 +31,6 @@
 
 namespace j3 {
 
-class ArrayObject;
 class ArrayUInt8;
 class ArrayUInt16;
 class Class;
@@ -47,6 +46,8 @@ class Reader;
 class Signdef;
 class Typedef;
 
+template <class T> class TJavaArray;
+typedef TJavaArray<JavaObject*> ArrayObject;
 
 /// JavaState - List of states a Java class can have. A class is ready to be
 /// used (i.e allocating instances of the class, calling methods of the class

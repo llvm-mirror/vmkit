@@ -1398,11 +1398,15 @@ void Jnjvm::addFinalizationCandidate(gc* object) {
 }
 
 void Jnjvm::setType(gc* header, void* type) {
-	JavaObject* src = 0;
+	JavaObject* src = (JavaObject*)header;
 	llvm_gcroot(src, 0);
 	llvm_gcroot(header, 0);
-	src = (JavaObject*)header;
 	src->setVirtualTable((JavaVirtualTable*)type);
+}
+
+void Jnjvm::setType(void* header, void* type)
+{
+	((JavaObject*)header)->setVirtualTable((JavaVirtualTable*)type);
 }
 
 void* Jnjvm::getType(gc* header) {

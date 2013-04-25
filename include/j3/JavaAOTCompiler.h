@@ -16,10 +16,12 @@
 
 namespace j3 {
 
-class ArrayObject;
 class JavaAttribute;
 class ClassBytes;
 class JnjvmBootstrapLoader;
+
+template <class T> class TJavaArray;
+typedef TJavaArray<JavaObject*> ArrayObject;
 
 using vmkit::UTF8;
 

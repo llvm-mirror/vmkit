@@ -1072,11 +1072,9 @@ ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
 JavaObject* CommonClass::setDelegatee(JavaObject* val) {
   llvm_gcroot(val, 0);
   JavaObject** obj = &(delegatee[0]);
-  classLoader->lock.lock();
   if (*obj == NULL) {
     vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)obj, (gc*)val);
   }
-  classLoader->lock.unlock();
   return getDelegatee();
 }
 

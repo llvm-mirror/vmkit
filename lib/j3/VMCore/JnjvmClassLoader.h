@@ -47,7 +47,9 @@ class Typedef;
 class TypeMap;
 class VMClassLoader;
 class ZipArchive;
-class ArrayObject;
+
+template <class T> class TJavaArray;
+typedef TJavaArray<JavaObject*> ArrayObject;
 
 /// JnjvmClassLoader - Runtime representation of a class loader. It contains
 /// its own tables (signatures, UTF8, types) which are mapped to a single

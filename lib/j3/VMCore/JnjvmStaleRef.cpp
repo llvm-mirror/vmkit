@@ -35,8 +35,6 @@ void Jnjvm::resetReferenceIfStale(const void* source, void** ref)
 	src = const_cast<JavaObject*>(reinterpret_cast<const JavaObject*>(source));
 	JavaObject **objRef = reinterpret_cast<JavaObject**>(ref);
 
-	return;
-
 	// Check the type of Java object. Some Java objects are not real object, but
 	// are bridges between Java and the VM objects.
 	if (VMClassLoader::isVMClassLoader(*objRef))
