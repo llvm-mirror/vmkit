@@ -9,7 +9,7 @@
 
 #include <cstdarg>
 #include <cstring>
-#include "j3/jni.h"
+#include "jni.h"
 
 #include "debug.h"
 

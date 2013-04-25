@@ -84,7 +84,7 @@ public:
   // createElementValue - create the Java type associated with the value
   // of the current annotation key.
   //
-  JavaObject* createElementValue(bool nextParameterIsTypeOfMethod,JavaObject* type, const UTF8* lastKey);
+  JavaObject* createElementValue(bool nextParameterIsTypeOfMethod, JavaObject* type, const UTF8* lastKey);
 
   void fillArray(JavaObject* res, int numValues, UserClassArray* classArray);
 };
@@ -464,7 +464,7 @@ public:
 
   /// nbVirtualMethods - The number of virtual methods.
   ///
-  uint32 nbVirtualMethods;
+  uint16 nbVirtualMethods;
   
   /// staticMethods - List of all the static methods defined by this class.
   ///

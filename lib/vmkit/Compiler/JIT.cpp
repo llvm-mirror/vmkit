@@ -257,7 +257,7 @@ void BaseIntrinsics::init(llvm::Module* module) {
 
   LLVMContext& Context = module->getContext();
 
-	makeLLVMFunctions_FinalMMTk(module);
+  makeLLVMFunctions_FinalMMTk(module);
   llvm_runtime::makeLLVMModuleContents(module);
 
   // Type declaration

@@ -10,7 +10,7 @@
 #include <llvm/Type.h>
 
 namespace vmkit {
-	extern void makeLLVMFunctions_FinalMMTk(llvm::Module*);
+	extern "C" void makeLLVMFunctions_FinalMMTk(llvm::Module*);
 }
 
 #endif

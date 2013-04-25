@@ -93,11 +93,13 @@ extern "C" void* VTgcmallocUnresolved(uint32_t sz, void* VT) {
 
 // Do not insert MagicArray ref to InternalSet of references.
 extern "C" void* AllocateMagicArray(int32_t sz, void* length) {
+	gc* res = 0;
+	llvm_gcroot(res, 0);
 	gcHeader* head = 0;
 	sz += gcHeader::hiddenHeaderSize();
 	head = (gcHeader*)malloc(sz);
 	memset((void*)head, 0, sz);
-	void* res = head->toReference();
+	res = head->toReference();
 	vmkit::Thread::get()->MyVM->setType(res, length);
 	return res;
 }

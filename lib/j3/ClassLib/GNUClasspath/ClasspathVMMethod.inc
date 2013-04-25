@@ -136,6 +136,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMMethod_getDeclaredAnnotat
 JNIEnv *env, 
 #endif
 JavaObjectVMMethod* VMMethod) { 
+  ArrayObject* arrayRes = 0;
   JavaObject* res = 0;
   JavaObject* annon = 0;
   JavaObject* newHashMap = 0;
@@ -145,6 +146,7 @@ JavaObjectVMMethod* VMMethod) {
   llvm_gcroot(newHashMap, 0);
   llvm_gcroot(VMMethod, 0);
   llvm_gcroot(annotationClass, 0);
+  llvm_gcroot(arrayRes, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -164,9 +166,9 @@ JavaObjectVMMethod* VMMethod) {
     Reader reader(annotationsAtt, compilingClass->bytes);
     AnnotationReader AR(reader, compilingClass);
     uint16 numAnnotations = reader.readU2();
-    
+
     UserClassArray* array = upcalls->constructorArrayAnnotation;
-    res = array->doNew(numAnnotations, vm);
+    arrayRes = (ArrayObject *)(res = array->doNew(numAnnotations, vm));
     for (uint16 i = 0; i < numAnnotations; ++i) {
 			uint16 typeIndex = reader.readU2();
 			const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
@@ -189,7 +191,7 @@ JavaObjectVMMethod* VMMethod) {
 			newHashMap = AR.createAnnotationMapValues(annotationClass);
 			
 			annon = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-			ArrayObject::setElement((ArrayObject *)res, annon, i);
+			ArrayObject::setElement(arrayRes, annon, i);
 		} // end for
   }
   else {

@@ -33,6 +33,12 @@
 using namespace j3;
 using namespace vmkit;
 
+#include "FrametablesExterns.inc"
+
+CompiledFrames* frametables[] = {
+  #include "FrametablesSymbols.inc"
+  NULL
+};
 
 static void mainCompilerLoaderStart(JavaThread* th) {
   Jnjvm* vm = th->getJVM();
@@ -74,7 +80,7 @@ int main(int argc, char **argv, char **envp) {
     JavaJITCompiler* JIT = JavaJITCompiler::CreateCompiler("JIT");
     JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
       JnjvmBootstrapLoader(Allocator, JIT, true);
-    Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, initialFrametables, loader);
+    Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, frametables, loader);
  
     // Run the application. 
     vm->runApplication(argc, argv);
