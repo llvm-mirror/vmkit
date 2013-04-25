@@ -22,6 +22,7 @@ void Jnjvm::resetReferencesToBundle(int64_t bundleID)
 	// garbage collection phase.
 	loader->markZombie();
 
+	scanStaleReferences = true;		// Enable stale references scanning
 	vmkit::Collector::collect();	// Start a garbage collection now
 }
 

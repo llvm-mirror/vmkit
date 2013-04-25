@@ -8,7 +8,6 @@ Index: knopflerfish/osgi/framework/src/j3/vm/OSGi.java
 +public class OSGi
 +{
 +	public static native void associateBundleClass(long bundleID, Class classObject);
-+	public static native void notifyBundleUninstalled(long bundleID);
 +}
 Index: knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleClassLoader.java
 ===================================================================
@@ -28,23 +27,3 @@ Index: knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleClassLoa
          fwCtx.listeners.frameworkError(bpkgs.bg.bundle, ioe);
          return null;
        }
-Index: knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleImpl.java
-===================================================================
---- knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleImpl.java	2013-01-15 10:58:00.907832000 +0100
-+++ knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleImpl.java	2013-02-11 10:49:24.948851000 +0100
-@@ -767,6 +767,7 @@
-       bundleThread().bundleChanged(new BundleEvent(BundleEvent.UNRESOLVED, this));
-     }
-     bundleThread().bundleChanged(new BundleEvent(BundleEvent.UPDATED, this));
-+    j3.vm.OSGi.notifyBundleUninstalled(getBundleId());
-     operation = IDLE;
- 
-     // Restart bundles previously stopped in the operation
-@@ -905,6 +906,7 @@
-       }
-     }
-     fwCtx.listeners.bundleChanged(new BundleEvent(BundleEvent.UNINSTALLED, this));
-+    j3.vm.OSGi.notifyBundleUninstalled(getBundleId());
-   }
- 
- 

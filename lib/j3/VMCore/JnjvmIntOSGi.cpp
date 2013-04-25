@@ -61,12 +61,6 @@ void Jnjvm::setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader)
 		bundleClassLoaders[bundleID] = loader;
 }
 
-void Jnjvm::notifyBundleUninstalled(int64_t bundleID)
-{
-//	if (bundleID == -1) return;
-	scanStaleReferences = true;
-}
-
 }
 
 #endif
@@ -86,21 +80,6 @@ extern "C" void Java_j3_vm_OSGi_associateBundleClass(jlong bundleID, JavaObjectC
 
 	CommonClass* ccl = JavaObjectClass::getClass(classObject);
 	ccl->classLoader->setAssociatedBundleID(bundleID);
-
-#endif
-}
-
-/*
-	This Java native method must be called by the framework whenever a bundle
-	is uninstalled or updated. It activates the logic used to scan for stale
-	references to be performed in the next GC collection.
-*/
-extern "C" void Java_j3_vm_OSGi_notifyBundleUninstalled(jlong bundleID)
-{
-#if RESET_STALE_REFERENCES
-
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	vm->notifyBundleUninstalled(bundleID);
 
 #endif
 }
