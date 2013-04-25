@@ -1,23 +1,34 @@
 package ijvm.tests.AImpl;
 
+import java.util.ArrayList;
+
 import ijvm.tests.A.Token;
 
 public class TokenImpl
 	implements Token
 {
-	static final int BigDataSize = 2 * 1024 * 1024;
+	static final int ChunkSize = 2 * 1024;
+	static final int ChunkCount = 64;
 	
-	byte[] BigData;
+	ArrayList<byte[]> BigData;
 	
 	public TokenImpl(int value)
 	{
-		BigData = new byte[BigDataSize];
-		for (int i=0; i<BigDataSize; ++i)
-			BigData[i] = (byte)(i % 256);
+		BigData = new ArrayList<byte[]>();
+		
+		for (int i=0; i<ChunkCount; ++i) {
+			byte[] chunk = new byte[ChunkSize];
+		
+			for (int j=0; j<ChunkSize; ++j)
+				chunk[j] = (byte)(j % 256);
+				
+			BigData.add(chunk);
+		}
 	}
 	
 	public int getValue()
 	{
-		return BigData[ (int)(Math.random() * BigDataSize) ];
+		byte[] chunk = BigData.get((int)(Math.random() * ChunkCount));
+		return chunk[(int)(Math.random() * ChunkSize)];
 	}
 }
