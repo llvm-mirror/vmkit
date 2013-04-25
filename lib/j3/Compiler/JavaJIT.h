@@ -369,7 +369,7 @@ private:
                                 currentBlock);
     } else {
       llvm::Value* ttt = objectStack[currentStackIndex - 1];
-      if (((unsigned int)ttt) < 0xFFF) {
+      if (((uintptr_t)ttt) < 0xFFF) {
 
     	  printf("Why in method %s.%s???\n" , UTF8Buffer(compilingClass->name).cString(), UTF8Buffer(compilingMethod->name).cString() );
       }
