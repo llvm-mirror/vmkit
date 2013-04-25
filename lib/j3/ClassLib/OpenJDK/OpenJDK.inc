@@ -787,6 +787,7 @@ JVM_Interrupt(JNIEnv *env, jobject _thread) {
   JavaThread* jth = (JavaThread*)field->getInstanceLongField(thread);
   jth->lockingThread.interruptFlag = 1;
   vmkit::FatLock* lock = jth->lockingThread.waitsOn;
+  jth->parkLock.unpark();
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
   // the thread has been notified.
@@ -2992,5 +2993,4 @@ JNIEXPORT void JNICALL
 JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t info_size) {
   NYI();
 }
-
 // vim: set ft=cpp:

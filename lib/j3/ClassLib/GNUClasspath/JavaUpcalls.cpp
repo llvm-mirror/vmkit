@@ -1169,3 +1169,4 @@ void Classpath::InitializeSystem(Jnjvm * jvm) {
 #include "ClasspathVMThread.inc"
 #include "ClasspathVMThrowable.inc"
 #include "Unsafe.inc"
+#include "GNuClasspathUnsafe.inc"
