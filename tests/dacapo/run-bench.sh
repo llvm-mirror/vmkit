@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Run a Dacapo benchmark, logging its results
+
 enable=$1
 
 if [ "$enable" -ne "1" ]; then exit 0; fi
