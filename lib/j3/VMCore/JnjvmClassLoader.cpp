@@ -879,13 +879,7 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 JnjvmClassLoader::~JnjvmClassLoader() {
 
 #if RESET_STALE_REFERENCES
-
-#if DEBUG_VERBOSE_CLASS_LOADER_UNLOADING
-  cerr << "Bundle class loader unloaded, bundleID=" << this->getAssociatedBundleID() << endl;
-#endif
-
   vm->removeClassLoaderFromBundles(this);
-
 #endif
 
   if (vm) {
@@ -1145,11 +1139,6 @@ ArrayObject* JnjvmBootstrapLoader::getBootPackages(Jnjvm * vm) {
 }
 
 #if RESET_STALE_REFERENCES
-
-int64_t JnjvmClassLoader::getAssociatedBundleID()
-{
-	return vm->getClassLoaderBundleID(this);
-}
 
 void JnjvmClassLoader::setAssociatedBundleID(int64_t newID)
 {

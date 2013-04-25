@@ -375,8 +375,6 @@ public:
 
   void setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected);
   bool isBundleStaleReferenceCorrected(int64_t bundleID);
-  void dumpClassLoaders(const classLoadersListType& class_loaders);
-  void dumpBundleClassLoaders(int64_t bundleID);
   void dumpClassLoaderBundles();
 //  class ArrayLong* getReferencesToObject(const JavaObject* obj);
 

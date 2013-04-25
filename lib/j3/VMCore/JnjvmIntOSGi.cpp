@@ -19,6 +19,39 @@ using namespace std;
 
 namespace j3 {
 
+
+std::ostream& operator << (
+	std::ostream& os, const Jnjvm::classLoadersListType& obj)
+{
+	Jnjvm::classLoadersListType::const_iterator
+		i = obj.begin(), e = obj.end();
+	for (; i != e; ++i)
+		os << " " << (*i);
+	return os;
+}
+
+std::ostream& operator << (
+	std::ostream& os, const Jnjvm::bundleClassLoadersType::value_type& obj)
+{
+	return os << "bundleID=" << obj.first
+		<< " classLoaders={" << obj.second << "}" << endl;
+}
+
+std::ostream& operator << (
+	std::ostream& os, const j3::Jnjvm::bundleClassLoadersType& obj)
+{
+	Jnjvm::bundleClassLoadersType::const_iterator
+		i = obj.begin(), e = obj.end();
+	for (; i != e; ++i)
+		os << *i;
+	return os;
+}
+
+void Jnjvm::dumpClassLoaderBundles()
+{
+	cerr << bundleClassLoaders;
+}
+
 void Jnjvm::setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected)
 {
 	classLoadersListType class_loaders;
@@ -75,7 +108,8 @@ void Jnjvm::notifyBundleUninstalled(int64_t bundleID)
 	}
 
 #if DEBUG_VERBOSE_STALE_REF
-	cerr << "Bundle uninstalled: bundleID=" << bundleID << endl;
+	cerr << "Bundle uninstalled: bundleID=" << bundleID
+		<< " classLoaders={" << bundleClassLoaders[bundleID] << "}";
 #endif
 
 	scanStaleReferences = true;		// Enable stale references scanning
@@ -90,7 +124,7 @@ void Jnjvm::notifyBundleUpdated(int64_t bundleID)
 
 #if DEBUG_VERBOSE_STALE_REF
 	cerr << "Bundle updated: bundleID=" << bundleID
-		<< ", previousClassLoaders:";
+		<< " classLoaders={" << bundleClassLoaders[bundleID] << "}";
 #endif
 
 	// Mark previous bundle's class loaders as a zombies.
@@ -105,49 +139,12 @@ void Jnjvm::notifyBundleUpdated(int64_t bundleID)
 	for (; i != e; ++i) {
 		if ((**i).isStaleReferencesCorrectionEnabled())
 			(**i).markZombie(true);
-
-#if DEBUG_VERBOSE_STALE_REF
-		cerr << " " << (*i);
-#endif
 	}
-
-#if DEBUG_VERBOSE_STALE_REF
-	cerr << endl;
-#endif
 
 	scanStaleReferences = true;		// Enable stale references scanning
 	vmkit::Collector::collect();	// Start a garbage collection now
 }
 
-void Jnjvm::dumpClassLoaders(const classLoadersListType& class_loaders)
-{
-	classLoadersListType::const_iterator
-		j = class_loaders.begin(),
-		je = class_loaders.end();
-
-	for (; j != je; ++j)
-		cerr << " " << (*j);
-}
-
-void Jnjvm::dumpBundleClassLoaders(int64_t bundleID)
-{
-	cerr << "bundleID=" << bundleID << " classLoaders:";
-	dumpClassLoaders(bundleClassLoaders[bundleID]);
-	cerr << endl;
-}
-
-void Jnjvm::dumpClassLoaderBundles()
-{
-	bundleClassLoadersType::const_iterator
-		i = bundleClassLoaders.begin(),
-		ie = bundleClassLoaders.end();
-	classLoadersListType::const_iterator j, je;
-
-	cerr << "bundleID=" << i->first << " classLoaders:";
-	for (; i != ie; ++i)
-		dumpClassLoaders(i->second);
-	cerr << endl;
-}
 /*
 ArrayLong* Jnjvm::getReferencesToObject(const JavaObject* obj)
 {
@@ -227,7 +224,11 @@ void Jnjvm::addBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader)
 	if (std::find(b, e, loader) != e) return;
 
 	class_loaders.push_front(loader);
-	dumpBundleClassLoaders(bundleID);
+
+#if DEBUG_VERBOSE_STALE_REF
+	cerr << "Bundle installed/updated: bundleID=" << bundleID
+		<< " classLoaders={" << class_loaders << "}" << endl;
+#endif
 }
 
 void Jnjvm::removeClassLoaderFromBundles(JnjvmClassLoader* loader)
@@ -246,7 +247,9 @@ void Jnjvm::removeClassLoaderFromBundles(JnjvmClassLoader* loader)
 
 	i->second.remove(loader);
 
-	dumpBundleClassLoaders(i->first);
+#if DEBUG_VERBOSE_STALE_REF
+	cerr << "Bundle uninstalled: " << *i;
+#endif
 
 	if (i->second.size() == 0)
 		bundleClassLoaders.erase(i->first);

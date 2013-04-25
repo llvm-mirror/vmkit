@@ -352,7 +352,6 @@ public:
   void setStaleReferencesCorrectionEnabled(bool enable) {staleRefCorrected = enable;}
 
   // This bridges the OSGi world (bundles) to the Java world (class loaders).
-  int64_t getAssociatedBundleID();
   void setAssociatedBundleID(int64_t newID);
 
 #endif
