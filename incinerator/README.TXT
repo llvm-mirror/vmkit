@@ -45,7 +45,11 @@ LLVM:
 git clone http://llvm.org/git/llvm.git
 cd llvm/tools
 git clone http://llvm.org/git/clang.git
-cd clang
+cd ../projects
+git clone http://llvm.org/git/compiler-rt.git
+cd compiler-rt
+git config branch.master.rebase true
+cd ../../tools/clang
 git config branch.master.rebase true
 cd ../..
 git config branch.master.rebase true
@@ -90,7 +94,8 @@ svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit
 
 * Make it (debug mode):
 
-./configure --enable-incinerator --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/usr/local/classpath/lib/classpath --with-gnu-classpath-glibj=/usr/local/classpath/share/classpath/glibj.zip
+./configure --enable-incinerator --with-mmtk-plan=org.mmtk.plan.marksweep.MS --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/home/koutheir/PhD/VMKit/classpath/lib --with-gnu-classpath-glibj=/home/koutheir/PhD/VMKit/classpath/lib/glibj.zip
+./configure --enable-incinerator --with-mmtk-plan=org.mmtk.plan.immix.Immix --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/home/koutheir/PhD/VMKit/classpath/lib --with-gnu-classpath-glibj=/home/koutheir/PhD/VMKit/classpath/lib/glibj.zip
 make -j12 ENABLE_OPTIMIZED=0 REQUIRES_FRAME_POINTER=1 KEEP_SYMBOLS=1 DEBUG_RUNTIME=1 DEBUG_SYMBOLS=1
 
 =============
