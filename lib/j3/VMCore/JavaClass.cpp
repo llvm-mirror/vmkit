@@ -355,7 +355,7 @@ JavaMethod* Class::lookupMethodDontThrow(const UTF8* name, const UTF8* type,
     methods = getVirtualMethods();
     nb = nbVirtualMethods;
   }
-
+  
   for (uint32 i = 0; i < nb; ++i) {
     JavaMethod& res = methods[i];
     if (res.name->equals(name) && res.type->equals(type)) {
@@ -604,6 +604,9 @@ void JavaField::InitStaticField(float val) {
 }
 
 void JavaField::InitStaticField(Jnjvm* vm) {
+  JavaString* obj = 0;
+  llvm_gcroot(obj, 0);
+
   const Typedef* type = getSignature();
   JavaAttribute* attribute = lookupAttribute(JavaAttribute::constantAttribute);
 
@@ -626,7 +629,8 @@ void JavaField::InitStaticField(Jnjvm* vm) {
       }
     } else if (type->isReference()) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
-      InitStaticField((JavaObject*)ctpInfo->resolveString(utf8, idx));
+      obj = ctpInfo->resolveString(utf8, idx);
+      InitStaticField(obj);
     } else {
       fprintf(stderr, "I haven't verified your class file and it's malformed:"
                       " unknown constant %s!\n",
@@ -835,8 +839,7 @@ static void computeMirandaMethods(Class* current,
 }
 
 void Class::readMethods(Reader& reader) {
-
-  uint32 nbMethods = reader.readU2();
+  uint16 nbMethods = reader.readU2();
   vmkit::ThreadAllocator allocator;
   if (isAbstract(access)) {
     virtualMethods = (JavaMethod*)
@@ -846,10 +849,9 @@ void Class::readMethods(Reader& reader) {
       new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
   }
   staticMethods = virtualMethods + nbMethods;
-  for (uint32 i = 0; i < nbMethods; i++) {
+  for (int i = 0; i < nbMethods; i++) {
     uint16 access = reader.readU2();
     const UTF8* name = ctpInfo->UTF8At(reader.readU2());
-
     const UTF8* type = ctpInfo->UTF8At(reader.readU2());
     JavaMethod* meth = 0;
     if (isStatic(access)) {
@@ -872,13 +874,8 @@ void Class::readMethods(Reader& reader) {
     nbMethods += size;
     JavaMethod* realMethods =
       new(classLoader->allocator, "Methods") JavaMethod[nbMethods];
-
-    if (nbMethods < size) {
-        	printf("Error in class %s\n", UTF8Buffer(name).cString());
-    }
     memcpy(realMethods + size, virtualMethods,
            sizeof(JavaMethod) * (nbMethods - size));
-
     nbVirtualMethods += size;
     staticMethods = realMethods + nbVirtualMethods;
     if (size != 0) {
@@ -928,7 +925,7 @@ void Class::readClass() {
   attributes = readAttributes(reader, nbAttributes);
 }
 
-void Class::getMinimalJDKVersion(uint16 major, uint16 minor, unsigned int& JDKMajor, unsigned int& JDKMinor, unsigned int& JDKBuild)
+void Class::getMinimalJDKVersion(uint16_t major, uint16_t minor, uint16_t& JDKMajor, uint16_t& JDKMinor, uint16_t& JDKBuild)
 {
 	JDKMajor = 1;
 	JDKBuild = 0;
@@ -943,17 +940,15 @@ void Class::getMinimalJDKVersion(uint16 major, uint16 minor, unsigned int& JDKMa
 	}
 }
 
-bool Class::isClassVersionSupported(uint16 major, uint16 minor)
+bool Class::isClassVersionSupported(uint16_t major, uint16_t minor)
 {
-	//const int supportedJavaMinorVersion = 5;	// Java 1.5
-	const int supportedJavaMinorVersion = 6;	// Java 1.6
+	const uint16_t supportedJavaMinorVersion = 5;	// Java 1.5
 
-	unsigned int JDKMajor, JDKMinor, JDKBuild;
-	Class::getMinimalJDKVersion(major, minor, JDKMajor, JDKMinor, JDKBuild);
+	Class::getMinimalJDKVersion(major, minor, minJDKVersionMajor, minJDKVersionMinor, minJDKVersionBuild);
 
-	bool res = (JDKMajor <= 1) && (JDKMinor <= supportedJavaMinorVersion);
+	bool res = (minJDKVersionMajor <= 1) && (minJDKVersionMinor <= supportedJavaMinorVersion);
 	if (!res) {
-		cerr << "WARNING: Class file '" << *name << "' requires Java version " << JDKMajor << '.' << JDKMinor <<
+		cerr << "WARNING: Class file '" << *name << "' requires Java version " << minJDKVersionMajor << '.' << minJDKVersionMinor <<
 			". This JVM only supports Java versions up to 1." << supportedJavaMinorVersion << '.' << endl;
 	}
 	return res;
@@ -1041,9 +1036,12 @@ ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
 }
 
 JavaObject* JavaMethod::getReturnType(JnjvmClassLoader* loader) {
+  JavaObject* obj = 0;
+  llvm_gcroot(obj, 0);
   Jnjvm* vm = JavaThread::get()->getJVM();
   Typedef* ret = getSignature()->getReturnType();
-  return getClassType(vm, loader, ret);
+  obj = getClassType(vm, loader, ret);
+  return obj;
 }
 
 ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
@@ -1089,10 +1087,11 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
 UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
                                                     JavaObject* clazz,
                                                     bool doClinit) {
-
+  JavaObjectClass* jcl = 0;
   llvm_gcroot(clazz, 0);
+  llvm_gcroot(jcl, 0);
 
-  UserCommonClass* cl = JavaObjectClass::getClass((JavaObjectClass*)clazz);
+  UserCommonClass* cl = JavaObjectClass::getClass(jcl = (JavaObjectClass*)clazz);
   assert(cl && "No class in Class object");
   if (cl->isClass()) {
     cl->asClass()->resolveClass();
@@ -1756,42 +1755,30 @@ void AnnotationReader::readElementValue() {
   }
 }
 
-JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMethod, JavaObject* type, const UTF8* lastKey) {
+JavaObject* AnnotationReader::createElementValue() {
+  uint8 tag = reader.readU1();
   JavaObject* res = 0;
   JavaObject* tmp = 0;
-  JavaString* str = 0;
-  JavaObject* field = 0;
-  JavaObject* clazzLoaded = 0;
-  JavaObject* classOfCurrentAnnotationProperty = 0;
-  JavaObject* newHashMap = 0;
-  JavaObject* annotationClass = 0;
+  ArrayObject* arrayObj = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(tmp, 0);
-  llvm_gcroot(str, 0);
-  llvm_gcroot(clazzLoaded, 0);
-  llvm_gcroot(field, 0);
-  llvm_gcroot(type, 0);
-  llvm_gcroot(classOfCurrentAnnotationProperty, 0);
-  llvm_gcroot(newHashMap, 0);
-  llvm_gcroot(annotationClass, 0);
-
-  uint8 tag = reader.readU1();
+  llvm_gcroot(arrayObj, 0);
 	
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  Classpath* upcalls = vm->upcalls;
+	Jnjvm* vm = JavaThread::get()->getJVM();
+  Classpath* upcalls = JavaThread::get()->getJVM()->upcalls;
   ddprintf("value:");
 
   if (tag == 'B') {
-    sint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
+    uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
     ddprintf("B=%d", val);
-    res = upcalls->byteClass->doNew(vm);
-    upcalls->byteValue->setInstanceInt8Field(res, val);
+    res = upcalls->boolClass->doNew(vm);
+    upcalls->boolValue->setInstanceInt8Field(res, val);
 
   } else if (tag == 'C') {
     uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
     ddprintf("C=%c", val);
-    res = upcalls->charClass->doNew(vm);
-    upcalls->charValue->setInstanceInt16Field(res, val);
+    res = upcalls->intClass->doNew(vm);
+    upcalls->intValue->setInstanceInt32Field(res, val);
 
   } else if (tag == 'D') {
     double val = cl->ctpInfo->DoubleAt(reader.readU2());
@@ -1818,7 +1805,7 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
     upcalls->shortValue->setInstanceInt16Field(res, val);
     
   } else if (tag == 'I') {
-    sint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
+    uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
     ddprintf("I=%d", val);
     res = upcalls->intClass->doNew(vm);
     upcalls->intValue->setInstanceInt32Field(res, val);
@@ -1832,85 +1819,37 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
   } else if (tag == 's') {
     const UTF8* s = cl->ctpInfo->UTF8At(reader.readU2());
     ddprintf("s=%s", PrintBuffer(s).cString());
-    res = JavaString::internalToJava(s, vm);
+    res = JavaString::internalToJava(s, JavaThread::get()->getJVM());
 
   } else if (tag == 'e') {
+    // Element_value Enumeration not implemented
     const UTF8* n = cl->ctpInfo->UTF8At(reader.readU2());
+    ddprintf("%s", PrintBuffer(n).cString());
     const UTF8* m = cl->ctpInfo->UTF8At(reader.readU2());
-    JnjvmClassLoader* JCL = this->cl->classLoader;
-    n = n->extract(JCL->hashUTF8, 1,n->size-1);
-    UserCommonClass* cl = JCL->loadClassFromUserUTF8(n,true,false, NULL);
-    if (cl != NULL && !cl->isPrimitive()) {
-    	if (cl->asClass())
-    		cl->asClass()->initialiseClass(vm);
-    	clazzLoaded = cl->getClassDelegatee(vm);
-    	str = JavaString::internalToJava(m, vm);
-    	assert(clazzLoaded && "Class not found");
-    	assert(str && "Null string");
-    	field = upcalls->getFieldInClass->invokeJavaObjectVirtual(vm, upcalls->newClass, clazzLoaded, &str);
-    	assert(field && "Field not found");
-    	JavaObject* obj = 0;
-    	res = upcalls->getInField->invokeJavaObjectVirtual(vm, upcalls->newField, field, &obj);
-    } else {
-    	str = JavaString::internalToJava(n, vm);
-    	vm->classNotFoundException(str);
-    }
+    ddprintf("%s", PrintBuffer(m).cString());
+    fprintf(stderr, "Annotation not supported for %c type\n", tag);
+    abort();
+
   } else if (tag == 'c') {
     ddprintf("class=");
     const UTF8* m = cl->ctpInfo->UTF8At(reader.readU2());
-
-    JnjvmClassLoader* JCL = this->cl->classLoader;
-
-    m = m->extract(JCL->hashUTF8, 1,m->size-1);
-
-    UserCommonClass* cl = JCL->loadClassFromUserUTF8(m,true,false, NULL);
-
-	if (cl != NULL && !cl->isPrimitive()) {
-		if (cl->asClass())
-		  cl->asClass()->initialiseClass(vm);
-		res = cl->getClassDelegatee(vm);
-	} else {
-	  str = JavaString::internalToJava(m, vm);
-	  vm->classNotFoundException(str);
-	}
+    ddprintf("%s", PrintBuffer(m).cString());
 
   } else if (tag == '[') {
     uint16 numValues = reader.readU2();
-    classOfCurrentAnnotationProperty = type;
-    if (!nextParameterIsTypeOfMethod) {
-		UserCommonClass* uss =  UserCommonClass::resolvedImplClass(vm, type, false);
-		//printf("Class name : %s\n", UTF8Buffer(uss->name).cString());
-		UserClass* clazzOfAnnotation = uss->asClass();
-		uint16 i = 0;
-		while ( i < clazzOfAnnotation->nbVirtualMethods && !(lastKey->equals(clazzOfAnnotation->virtualMethods[i].name))) i++;
-		assert((i < clazzOfAnnotation->nbVirtualMethods) && "Incorrect property for annotation");
-		classOfCurrentAnnotationProperty = clazzOfAnnotation->virtualMethods[i].getReturnType(this->cl->classLoader);
+    UserClassArray* array = upcalls->annotationArrayClass;
+    res = array->doNew(numValues, vm);
+
+    ddprintf("Tableau de %d elements\n", numValues);
+    for (uint32 i = 0; i < numValues; ++i) {
+      tmp = createElementValue();
+      arrayObj = (ArrayObject *)res;
+      ArrayObject::setElement(arrayObj, tmp, i);
     }
-	UserClassArray* clazzOfProperty = UserCommonClass::resolvedImplClass(vm, classOfCurrentAnnotationProperty, false)->asArrayClass();
-	//printf("Class name is : %s\n", UTF8Buffer(clazzOfProperty->name).cString());
-	res = clazzOfProperty->doNew(numValues, vm);
-	assert(res && "Error creating array of that type");
-    fillArray(res, numValues, clazzOfProperty);
-
-  } else if (tag == '@') {
-	  uint16 typeIndex = reader.readU2();
-	  annotationClass = type;
-	  if (!nextParameterIsTypeOfMethod) {
-	  		UserCommonClass* uss =  UserCommonClass::resolvedImplClass(vm, type, false);
-	  		//printf("Class name : %s\n", UTF8Buffer(uss->name).cString());
-	  		UserClass* clazzOfAnnotation = uss->asClass();
-	  		uint16 i = 0;
-	  		while ( i < clazzOfAnnotation->nbVirtualMethods && !(lastKey->equals(clazzOfAnnotation->virtualMethods[i].name))) i++;
-	  		assert((i < clazzOfAnnotation->nbVirtualMethods) && "Incorrect property for annotation");
-	  		annotationClass = clazzOfAnnotation->virtualMethods[i].getReturnType(this->cl->classLoader);
-	 }
-
-	  newHashMap = createAnnotationMapValues(annotationClass);
-	  res = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-  }
-  else {
+    ddprintf("Fin du Tableau");
+  } else {
     // Element_value Annotation not implemented
-    fprintf(stderr, "Wrong classfile format\n");
+    fprintf(stderr, "Annotation not supported for %c type\n", tag);
     abort();
   }
   ddprintf("\n");
@@ -1918,178 +1857,18 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
   return res;
 }
 
-void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray* classArray) {
-	llvm_gcroot(res, 0);
-	JavaString* str = 0;
-	JavaObject* clazzObject = 0;
-	JavaObject* field = 0;
-	JavaObject* clazzLoaded = 0;
-	JavaObject* myEnum = 0;
-	JavaObject* annotationClass = 0;
-	JavaObject* newHashMap = 0;
-
-	// for cast
-	ArraySInt8* aSInt8 = 0;
-	ArrayUInt8* aUInt8 = 0;
-	ArraySInt16* aSInt16 = 0;
-	ArraySInt32* aSInt32 = 0;
-	ArrayLong* aSLong = 0;
-	ArrayDouble* aDouble = 0;
-	ArrayFloat* aFloat = 0;
-	ArrayObject* aObject = 0;
-
-	llvm_gcroot(str, 0);
-	llvm_gcroot(clazzObject, 0);
-	llvm_gcroot(clazzLoaded, 0);
-	llvm_gcroot(field, 0);
-	llvm_gcroot(myEnum, 0);
-	llvm_gcroot(annotationClass, 0);
-	llvm_gcroot(newHashMap, 0);
-	llvm_gcroot(aSInt8, 0);
-	llvm_gcroot(aUInt8, 0);
-	llvm_gcroot(aSInt16, 0);
-	llvm_gcroot(aSInt32, 0);
-	llvm_gcroot(aSLong, 0);
-	llvm_gcroot(aDouble, 0);
-	llvm_gcroot(aFloat, 0);
-	llvm_gcroot(aObject, 0);
-
-	sint32 valS;
-	uint32 valU;
-	sint64 val64S;
-	double valD;
-	float valF;
-	const UTF8* s = 0, *n = 0, * m = 0;
-	JnjvmClassLoader* JCL;
-	UserCommonClass* clLoaded;
-	UserCommonClass* aaa;
-
-	UserClassArray* array = 0;
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	Classpath* upcalls = vm->upcalls;
-	for (int i = 0 ; i < numValues ; i++) {
-		uint8 tag = reader.readU1();
-		switch (tag) {
-			case 'B':
-				valS = cl->ctpInfo->IntegerAt(reader.readU2());
-				aSInt8 = (ArraySInt8*)res;
-				ArraySInt8::setElement(aSInt8, valS, i);
-				break;
-			case 'C':
-				valS = cl->ctpInfo->IntegerAt(reader.readU2());
-				aSInt16 = (ArraySInt16*)res;
-				ArraySInt16::setElement(aSInt16, valS, i);
-				break;
-			case 'D':
-				valD = cl->ctpInfo->DoubleAt(reader.readU2());
-				aDouble = (ArrayDouble*)res;
-				ArrayDouble::setElement(aDouble, valD, i);
-				break;
-			case 'F':
-				valF = cl->ctpInfo->FloatAt(reader.readU2());
-				aFloat = (ArrayFloat*)res;
-				ArrayFloat::setElement(aFloat, valF, i);
-				break;
-			case 'J':
-				val64S = cl->ctpInfo->LongAt(reader.readU2());
-				aSLong = (ArrayLong*)res;
-				ArrayLong::setElement(aSLong, val64S, i);
-				break;
-			case 'S':
-				valS = cl->ctpInfo->IntegerAt(reader.readU2());
-				aSInt16 = (ArraySInt16*)res;
-				ArraySInt16::setElement(aSInt16, valS, i);
-				break;
-			case 'I':
-				valS = cl->ctpInfo->IntegerAt(reader.readU2());
-				aSInt32 = (ArraySInt32*)res;
-				ArraySInt32::setElement(aSInt32, valS,i);
-				break;
-			case 'Z':
-				valU = cl->ctpInfo->IntegerAt(reader.readU2());
-				aUInt8 = (ArrayUInt8*)res;
-				ArrayUInt8::setElement(aUInt8, valU, i);
-				break;
-			case 's':
-				s = cl->ctpInfo->UTF8At(reader.readU2());
-				str = JavaString::internalToJava(s, JavaThread::get()->getJVM());
-				aObject = (ArrayObject *)res;
-				ArrayObject::setElement(aObject, str, i);
-				break;
-			case 'e':
-				n = cl->ctpInfo->UTF8At(reader.readU2());
-				m = cl->ctpInfo->UTF8At(reader.readU2());
-				JCL = this->cl->classLoader;
-				n = n->extract(JCL->hashUTF8, 1,n->size-1);
-				clLoaded = JCL->loadClassFromUserUTF8(n,true,false, NULL);
-				if (clLoaded != NULL && !clLoaded->isPrimitive()) {
-					if (clLoaded->asClass())
-						clLoaded->asClass()->initialiseClass(vm);
-					clazzLoaded = clLoaded->getClassDelegatee(vm);
-					str = JavaString::internalToJava(m, vm);
-					assert(clazzLoaded && "Class not found");
-					assert(str && "Null string");
-					field = upcalls->getFieldInClass->invokeJavaObjectVirtual(vm, upcalls->newClass, clazzLoaded, &str);
-					assert(field && "Field not found");
-					JavaObject* obj = 0;
-					myEnum = upcalls->getInField->invokeJavaObjectVirtual(vm, upcalls->newField, field, &obj);
-					aObject = (ArrayObject *)res;
-					ArrayObject::setElement(aObject, str, i);
-				} else {
-					str = JavaString::internalToJava(n, vm);
-					vm->classNotFoundException(str);
-				}
-				break;
-			case 'c':
-				s = cl->ctpInfo->UTF8At(reader.readU2());
-				JCL = this->cl->classLoader;
-				s = s->extract(JCL->hashUTF8, 1,s->size-1);
-				clLoaded = JCL->loadClassFromUserUTF8(s,true,false, NULL);
-				if (clLoaded != NULL && !clLoaded->isPrimitive()) {
-					if (clLoaded->asClass())
-						clLoaded->asClass()->initialiseClass(vm);
-					clazzObject = clLoaded->getClassDelegatee(vm);
-				} else {
-				  str = JavaString::internalToJava(s, vm);
-				  vm->classNotFoundException(str);
-				}
-				aObject = (ArrayObject *)res;
-				ArrayObject::setElement(aObject, clazzObject, i);
-				break;
-			case '@':
-				reader.readU2();
-				aaa = classArray->_baseClass;
-				annotationClass = aaa->getDelegatee();
-				newHashMap = createAnnotationMapValues(annotationClass);
-				clazzObject = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-				aObject = (ArrayObject *)res;
-				ArrayObject::setElement(aObject, clazzObject, i);
-				break;
-			default:
-				fprintf(stderr, "Wrong class file\n");
-				abort();
-				break;
-			}
-	}
-}
-
-JavaObject* AnnotationReader::createAnnotationMapValues(JavaObject* type) {
+JavaObject* AnnotationReader::createAnnotationMapValues() {
   std::pair<JavaObject*, JavaObject*> pair;
   JavaObject* tmp = 0;
   JavaString* str = 0;
   JavaObject* newHashMap = 0;
-  llvm_gcroot(type, 0);
   llvm_gcroot(tmp, 0);
   llvm_gcroot(str, 0);
   llvm_gcroot(newHashMap, 0);
 
-
-  const UTF8* key = 0;
-
   Jnjvm * vm = JavaThread::get()->getJVM();
   Classpath* upcalls = vm->upcalls;
   UserClass* HashMap = upcalls->newHashMap;
-
   newHashMap = HashMap->doNew(vm);
   upcalls->initHashMap->invokeIntSpecial(vm, HashMap, newHashMap);
 
@@ -2097,17 +1876,13 @@ JavaObject* AnnotationReader::createAnnotationMapValues(JavaObject* type) {
   dprintf("numPairs:%d\n", numPairs);
   for (uint16 j = 0; j < numPairs; ++j) {
     uint16 nameIndex = reader.readU2();
-    key = cl->ctpInfo->UTF8At(nameIndex);
+    const UTF8* key = cl->ctpInfo->UTF8At(nameIndex);
     dprintf("keyAn:%s|", PrintBuffer(key).cString());
 
-    tmp = createElementValue(false, type, key);
-    str = JavaString::internalToJava(key, vm);
+    tmp = createElementValue();
+    str = JavaString::internalToJava(key, JavaThread::get()->getJVM());
     upcalls->putHashMap->invokeJavaObjectVirtual(vm, HashMap, newHashMap, &str, &tmp);
   }
-
-  // annotationType
-  str = vm->asciizToStr("annotationType");
-  upcalls->putHashMap->invokeJavaObjectVirtual(vm, HashMap, newHashMap, &str, &type);
 
   return newHashMap;
 }

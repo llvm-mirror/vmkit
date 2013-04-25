@@ -1384,6 +1384,15 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   // staticSize
   ClassElts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), cl->staticSize));
 
+  // minJDKVersionMajor
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->minJDKVersionMajor));
+
+  // minJDKVersionMinor
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->minJDKVersionMinor));
+
+  // minJDKVersionBuild
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->minJDKVersionBuild));
+
   return ConstantStruct::get(STy, ClassElts);
 }
 
