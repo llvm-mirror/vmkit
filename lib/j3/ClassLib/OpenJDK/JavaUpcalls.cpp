@@ -466,21 +466,25 @@ extern "C" void Java_java_lang_ref_Reference__0003Cclinit_0003E() {
 
 extern "C" void nativeJavaObjectClassTracer(
     JavaObjectClass* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectClass::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectFieldTracer(
     JavaObjectField* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectField::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectMethodTracer(
     JavaObjectMethod* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectMethod::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectConstructorTracer(
     JavaObjectConstructor* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectConstructor::staticTracer(obj, closure);
 }
 

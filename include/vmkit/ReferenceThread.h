@@ -30,12 +30,18 @@ namespace vmkit {
 
 	  template <class T>
 	  gc* processReference(gc* reference, ReferenceThread<T>* th, word_t closure) {
+        gc *referent = NULL, *newReference = NULL, *newReferent = NULL;
+        llvm_gcroot(referent, 0);
+        llvm_gcroot(newReference, 0);
+        llvm_gcroot(newReferent, 0);
+  	    llvm_gcroot(reference, 0);
+
 	    if (!vmkit::Collector::isLive(reference, closure)) {
 	      vmkit::Thread::get()->MyVM->clearObjectReferent(reference);
 	      return NULL;
 	    }
 
-	    gc* referent = *(vmkit::Thread::get()->MyVM->getObjectReferentPtr(reference));
+	    referent = *(vmkit::Thread::get()->MyVM->getObjectReferentPtr(reference));
 
 	    if (!referent) {
 	      return NULL;
@@ -50,10 +56,10 @@ namespace vmkit {
 	      // Nothing to do.
 	    }
 
-	    gc* newReference =
+	    newReference =
 	        vmkit::Collector::getForwardedReference(reference, closure);
 	    if (vmkit::Collector::isLive(referent, closure)) {
-	      gc* newReferent = vmkit::Collector::getForwardedReferent(referent, closure);
+	      newReferent = vmkit::Collector::getForwardedReferent(referent, closure);
 	      vmkit::Thread::get()->MyVM->setObjectReferent(newReference, newReferent);
 	      return newReference;
 	    } else {
@@ -112,11 +118,14 @@ namespace vmkit {
 
 	  template <class T>
 	  void scan(ReferenceThread<T>* thread, word_t closure) {
+        gc *obj = NULL, *res = NULL;
+        llvm_gcroot(obj, 0);
+        llvm_gcroot(res, 0);
 	    uint32 NewIndex = 0;
 
 	    for (uint32 i = 0; i < CurrentIndex; ++i) {
-	      gc* obj = References[i];
-	      gc* res = processReference(obj, thread, closure);
+	      obj = References[i];
+	      res = processReference(obj, thread, closure);
 	      if (res) References[NewIndex++] = res;
 	    }
 

@@ -147,12 +147,14 @@ class VirtualTable {
   /// getVirtualTable - Returns the virtual table of this reference.
   ///
   static const VirtualTable* getVirtualTable(gc* ref) {
+    llvm_gcroot(ref, 0);
     return ((VirtualTable**)(ref))[0];
   }
 
   /// setVirtualTable - Sets the virtual table of this reference.
   ///
   static void setVirtualTable(gc* ref, VirtualTable* VT) {
+    llvm_gcroot(ref, 0);
     ((VirtualTable**)(ref))[0] = VT;
   }
 

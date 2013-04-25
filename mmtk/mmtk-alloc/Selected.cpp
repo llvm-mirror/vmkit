@@ -82,7 +82,8 @@ extern "C" void* vmkitgcmalloc(uint32_t sz, void* type) {
 }
 */
 extern "C" void* prealloc(uint32_t size) {
-	gc* res = 0;
+  gc* res = 0;
+  llvm_gcroot(res, 0);
   gcHeader* head = 0;
   llvm_gcroot(res, 0);
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
@@ -92,13 +93,14 @@ extern "C" void* prealloc(uint32_t size) {
 }
 
 extern "C" void postalloc(gc* obj, void* type, uint32_t size) {
+	llvm_gcroot(obj, 0);
 	vmkit::Thread::get()->MyVM->setType(obj, type);
 	JnJVM_org_j3_bindings_Bindings_postalloc__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(obj, type, size);
 }
 
 extern "C" void* vmkitgcmalloc(uint32_t sz, void* type) {
-  gc* res = 0;
-  llvm_gcroot(res, 0);
+	gc* res = 0;
+	llvm_gcroot(res, 0);
 	sz += gcHeader::hiddenHeaderSize();
 	sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
 	res = ((gcHeader*)JnJVM_org_j3_bindings_Bindings_vmkitgcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, type))->toReference();
@@ -118,8 +120,8 @@ extern "C" void* vmkitgcmallocUnresolved(uint32_t sz, void* type) {
  *****************************************************************************/
 
 extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT) {
-  gc* res = 0;
-  llvm_gcroot(res, 0);
+	gc* res = 0;
+	llvm_gcroot(res, 0);
 	sz += gcHeader::hiddenHeaderSize();
 	sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
 	res = ((gcHeader*)JnJVM_org_j3_bindings_Bindings_VTgcmalloc__ILorg_vmmagic_unboxed_ObjectReference_2(sz, VT))->toReference();
@@ -142,18 +144,23 @@ extern "C" void addFinalizationCandidate(gc* obj) {
 }
 
 extern "C" void arrayWriteBarrier(void* ref, void** ptr, void* value) {
+  llvm_gcroot(ref, 0);
+  llvm_gcroot(value, 0);
   JnJVM_org_j3_bindings_Bindings_arrayWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
       (gc*)ref, (gc**)ptr, (gc*)value);
   if (vmkit::Thread::get()->doYield) vmkit::Collector::collect();
 }
 
 extern "C" void fieldWriteBarrier(void* ref, void** ptr, void* value) {
+  llvm_gcroot(ref, 0);
+  llvm_gcroot(value, 0);
   JnJVM_org_j3_bindings_Bindings_fieldWriteBarrier__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
       (gc*)ref, (gc**)ptr, (gc*)value);
   if (vmkit::Thread::get()->doYield) vmkit::Collector::collect();
 }
 
 extern "C" void nonHeapWriteBarrier(void** ptr, void* value) {
+  llvm_gcroot(value, 0);
   JnJVM_org_j3_bindings_Bindings_nonHeapWriteBarrier__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2((gc**)ptr, (gc*)value);
   if (vmkit::Thread::get()->doYield) vmkit::Collector::collect();
 }
@@ -169,6 +176,7 @@ void MutatorThread::init(Thread* _th) {
 }
 
 bool Collector::isLive(gc* ptr, word_t closure) {
+  llvm_gcroot(ptr, 0);
   return JnJVM_org_j3_bindings_Bindings_isLive__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, ptr);
 }
 
@@ -176,43 +184,62 @@ void Collector::scanObject(void** ptr, word_t closure) {
   if ((*ptr) != NULL) {
     assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr)));
   }
+#if RESET_STALE_REFERENCES
+  // Allow the VM to reset references if needed
+  vmkit::Thread::get()->MyVM->resetReferenceIfStale(NULL, ptr);
+#endif
   JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(closure, ptr);
 }
  
 void Collector::markAndTrace(void* source, void* ptr, word_t closure) {
-  void** ptr_ = (void**)ptr;
-  if ((*ptr_) != NULL) {
-    assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr_)));
-  }
-  if ((*(void**)ptr) != NULL) assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*(void**)ptr)));
-  JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
+	llvm_gcroot(source, 0);
+	void** ptr_ = (void**)ptr;
+	if ((*ptr_) != NULL) {
+		assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr_)));
+	}
+	if ((*(void**)ptr) != NULL) assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*(void**)ptr)));
+#if RESET_STALE_REFERENCES
+	// Allow the VM to reset references if needed
+	vmkit::Thread::get()->MyVM->resetReferenceIfStale(source, ptr_);
+#endif
+	JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
 }
   
-void Collector::markAndTraceRoot(void* ptr, word_t closure) {
+void Collector::markAndTraceRoot(void* source, void* ptr, word_t closure) {
+  llvm_gcroot(source, 0);
   void** ptr_ = (void**)ptr;
   if ((*ptr_) != NULL) {
     assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr_)));
   }
+#if RESET_STALE_REFERENCES
+  // Allow the VM to reset references if needed
+  vmkit::Thread::get()->MyVM->resetReferenceIfStale(source, ptr_);
+#endif
   JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(closure, ptr, true);
 }
 
 gc* Collector::retainForFinalize(gc* val, word_t closure) {
+  llvm_gcroot(val, 0);
   return JnJVM_org_j3_bindings_Bindings_retainForFinalize__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
 gc* Collector::retainReferent(gc* val, word_t closure) {
+  llvm_gcroot(val, 0);
   return JnJVM_org_j3_bindings_Bindings_retainReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
 gc* Collector::getForwardedFinalizable(gc* val, word_t closure) {
+  llvm_gcroot(val, 0);
   return JnJVM_org_j3_bindings_Bindings_getForwardedFinalizable__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
 gc* Collector::getForwardedReference(gc* val, word_t closure) {
+  llvm_gcroot(val, 0);
   return JnJVM_org_j3_bindings_Bindings_getForwardedReference__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
   
 gc* Collector::getForwardedReferent(gc* val, word_t closure) {
+  llvm_gcroot(val, 0);
   return JnJVM_org_j3_bindings_Bindings_getForwardedReferent__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, val);
 }
 
@@ -266,24 +293,34 @@ void Collector::initialise(int argc, char** argv) {
 }
 
 extern "C" void* MMTkMutatorAllocate(uint32_t size, void* type) {
-  gc* val = (gc*)MutatorThread::get()->Allocator.Allocate(size);
+  gc* val = NULL;
+  llvm_gcroot(val, 0);
+  val = (gc*)MutatorThread::get()->Allocator.Allocate(size);
   vmkit::Thread::get()->MyVM->setType(val, type);
   return val;
 }
 
 void Collector::objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) {
+  llvm_gcroot(ref, 0);
+  llvm_gcroot(value, 0);
   fieldWriteBarrier((void*)ref, (void**)slot, (void*)value);
 }
 
 void Collector::objectReferenceArrayWriteBarrier(gc* ref, gc** slot, gc* value) {
+  llvm_gcroot(ref, 0);
+  llvm_gcroot(value, 0);
   arrayWriteBarrier((void*)ref, (void**)slot, (void*)value);
 }
 
 void Collector::objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) {
+  llvm_gcroot(value, 0);
   nonHeapWriteBarrier((void**)slot, (void*)value);
 }
 
 bool Collector::objectReferenceTryCASBarrier(gc* ref, gc** slot, gc* old, gc* value) {
+  llvm_gcroot(ref, 0);
+  llvm_gcroot(old, 0);
+  llvm_gcroot(value, 0);
   bool res = JnJVM_org_j3_bindings_Bindings_writeBarrierCAS__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2(ref, slot, old, value);
   if (vmkit::Thread::get()->doYield) vmkit::Collector::collect();
   return res;

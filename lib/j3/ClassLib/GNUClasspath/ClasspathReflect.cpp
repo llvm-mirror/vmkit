@@ -65,9 +65,11 @@ JavaObjectMethod* JavaObjectMethod::createFromInternalMethod(JavaMethod* meth, i
   JavaObjectMethod* ret = 0;
   JavaObjectVMMethod* vmMeth = 0;
   JavaString* str = 0;
+  JavaObject* Cl = 0;
   llvm_gcroot(ret, 0);
   llvm_gcroot(str, 0);
   llvm_gcroot(vmMeth, 0);
+  llvm_gcroot(Cl, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
 
@@ -78,7 +80,7 @@ JavaObjectMethod* JavaObjectMethod::createFromInternalMethod(JavaMethod* meth, i
 
 
   str = vm->internalUTF8ToStr(meth->name);
-  JavaObject* Cl = meth->classDef->getDelegatee();
+  Cl = meth->classDef->getDelegatee();
 
   vm->upcalls->initVMMethod->invokeIntSpecial(vm, VMMeth, vmMeth);
   vmMeth->name = str;

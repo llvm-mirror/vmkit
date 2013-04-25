@@ -112,6 +112,7 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMField_getDeclaredAnnotati
 JNIEnv *env, 
 #endif
 JavaObjectVMField* VMField) { 
+  ArrayObject* arrayRes = 0;
   JavaObject* res = 0;
   JavaObject* annon = 0;
   JavaObject* newHashMap = 0;
@@ -121,6 +122,7 @@ JavaObjectVMField* VMField) {
   llvm_gcroot(newHashMap, 0);
   llvm_gcroot(VMField, 0);
   llvm_gcroot(annotationClass, 0);
+  llvm_gcroot(arrayRes, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
@@ -142,7 +144,7 @@ JavaObjectVMField* VMField) {
     uint16 numAnnotations = reader.readU2();
     
     UserClassArray* array = upcalls->annotationArrayClass;
-    res = array->doNew(numAnnotations, vm);
+    arrayRes = (ArrayObject *)(res = array->doNew(numAnnotations, vm));
 		dprintf("JavaField : %s with %d fields \n", UTF8Buffer(field->name).cString(), numAnnotations);
     for (uint16 i = 0; i < numAnnotations; ++i) {
 			uint16 typeIndex = reader.readU2();
@@ -166,7 +168,7 @@ JavaObjectVMField* VMField) {
 			annotationClass = AnnonClass->getClassDelegatee(vm);
 			
 			annon = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-			ArrayObject::setElement((ArrayObject *)res, annon, i);
+			ArrayObject::setElement(arrayRes, annon, i);
 		} // end for
   }
 

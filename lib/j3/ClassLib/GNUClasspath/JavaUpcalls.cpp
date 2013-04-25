@@ -489,42 +489,50 @@ extern "C" JavaObject* Java_java_lang_reflect_AccessibleObject_getDeclaredAnnota
 }
 
 extern "C" void nativeJavaObjectClassTracer(
-    JavaObjectClass* obj, word_t closure) {
+  JavaObjectClass* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectClass::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectFieldTracer(
     JavaObjectField* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectField::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectMethodTracer(
     JavaObjectMethod* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectMethod::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectConstructorTracer(
     JavaObjectConstructor* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectConstructor::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectVMFieldTracer(
     JavaObjectVMField* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectVMField::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectVMMethodTracer(
     JavaObjectVMMethod* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectVMMethod::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectVMConstructorTracer(
     JavaObjectVMConstructor* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectVMConstructor::staticTracer(obj, closure);
 }
 
 extern "C" void nativeJavaObjectVMThreadTracer(
     JavaObjectVMThread* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   JavaObjectVMThread::staticTracer(obj, closure);
 }
 

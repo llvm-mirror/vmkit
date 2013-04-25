@@ -355,10 +355,10 @@ JavaObject* Jnjvm::CreateOutOfMemoryError() {
 
 JavaObject* Jnjvm::CreateStackOverflowError() {
   // Don't call init, or else we'll get a new stack overflow error.
-  JavaObject* obj = NULL;
+  JavaObjectThrowable* obj = NULL;
   llvm_gcroot(obj, 0);
-  obj = upcalls->StackOverflowError->doNew(this);
-  JavaObjectThrowable::fillInStackTrace((JavaObjectThrowable*)obj);
+  obj = (JavaObjectThrowable*)upcalls->StackOverflowError->doNew(this);
+  JavaObjectThrowable::fillInStackTrace(obj);
   return obj;
 }
 
@@ -1282,7 +1282,8 @@ void Jnjvm::mainJavaStart(JavaThread* thread) {
     UserClassArray* array = vm->bootstrapLoader->upcalls->ArrayOfString;
     args = (ArrayObject*)array->doNew(info.argc - 2, vm);
     for (int i = 2; i < info.argc; ++i) {
-      ArrayObject::setElement(args, (JavaObject*)vm->asciizToStr(info.argv[i]), i - 2);
+      str = vm->asciizToStr(info.argv[i]);
+      ArrayObject::setElement(args, str, i - 2);
     }
 
     vm->executeClass(info.className, args);
@@ -1399,7 +1400,7 @@ void Jnjvm::setType(gc* header, void* type) {
 	JavaObject* src = 0;
 	llvm_gcroot(src, 0);
 	llvm_gcroot(header, 0);
-	src = (JavaObject*) header;
+	src = (JavaObject*)header;
 	src->setVirtualTable((JavaVirtualTable*)type);
 }
 
@@ -1407,14 +1408,16 @@ void* Jnjvm::getType(gc* header) {
 	JavaObject* src = 0;
 	llvm_gcroot(src, 0);
 	llvm_gcroot(header, 0);
-	src = (JavaObject*) header;
+	src = (JavaObject*)header;
 	return src->getVirtualTable();
 }
 
 // This method is called during GC so no llvm_gcroot needed.
 void Jnjvm::traceObject(gc* _obj, word_t closure) {
-	JavaObject* obj = 0;
-	obj = (JavaObject*)_obj;
+  JavaObject* obj = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(_obj, 0);
+  obj = (JavaObject*)_obj;
   assert(obj && "No object to trace");
   assert(obj->getVirtualTable() && "No virtual table");
   assert(obj->getVirtualTable()->tracer && "No tracer in VT");
@@ -1423,7 +1426,11 @@ void Jnjvm::traceObject(gc* _obj, word_t closure) {
 
 // This method is called during GC so no llvm_gcroot needed.
 bool Jnjvm::isCorruptedType(gc* obj) {
-	return ((JavaObject*)obj)->getVirtualTable();
+	JavaObject* _obj = 0;
+	llvm_gcroot(_obj, 0);
+	llvm_gcroot(obj, 0);
+	_obj = (JavaObject*)obj;
+	return _obj->getVirtualTable();
 }
 
 size_t Jnjvm::getObjectSize(gc* object) {
@@ -1431,7 +1438,10 @@ size_t Jnjvm::getObjectSize(gc* object) {
   // llvm_gcroot. For clarity, it may be useful to have a special type
   // in this case.
   size_t size = 0;
-  JavaObject* src = (JavaObject*)object;
+  JavaObject* src = 0;
+  llvm_gcroot(object, 0);
+  llvm_gcroot(src, 0);
+  src = (JavaObject*)object;
   if (VMClassLoader::isVMClassLoader(src)) {
     size = sizeof(VMClassLoader);
   } else if (VMStaticInstance::isVMStaticInstance(src)) {
@@ -1455,7 +1465,10 @@ size_t Jnjvm::getObjectSize(gc* object) {
 }
 
 const char* Jnjvm::getObjectTypeName(gc* object) {
-  JavaObject* src = (JavaObject*)object;
+  JavaObject* src = 0;
+  llvm_gcroot(object, 0);
+  llvm_gcroot(src, 0);
+  src = (JavaObject*)object;
   if (VMClassLoader::isVMClassLoader(src)) {
     return "VMClassLoader";
   } else if (VMStaticInstance::isVMStaticInstance(src)) {

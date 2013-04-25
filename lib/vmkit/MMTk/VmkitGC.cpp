@@ -20,7 +20,8 @@ std::set<gc*> __InternalSet__;
 int Collector::verbose = 0;
 
 extern "C" void* prealloc(uint32_t sz) {
-	gc* res = 0;
+  gc* res = 0;
+  llvm_gcroot(res, 0);
   gcHeader* head = 0;
 
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
@@ -36,11 +37,13 @@ extern "C" void* prealloc(uint32_t sz) {
 }
 
 extern "C" void postalloc(gc* obj, void* type, uint32_t size) {
+	llvm_gcroot(obj, 0);
 	vmkit::Thread::get()->MyVM->setType(obj, type);
 }
 
 extern "C" void* vmkitgcmalloc(uint32_t sz, void* type) {
   gc* res = 0;
+  llvm_gcroot(res, 0);
   sz += gcHeader::hiddenHeaderSize();
   res = (gc*) prealloc(sz);
   postalloc(res, type, sz);
@@ -48,7 +51,9 @@ extern "C" void* vmkitgcmalloc(uint32_t sz, void* type) {
 }
 
 extern "C" void* vmkitgcmallocUnresolved(uint32_t sz, void* type) {
-	gc* res = (gc*)vmkitgcmalloc(sz, type);
+	gc* res = NULL;
+	llvm_gcroot(res, 0);
+	res = (gc*)vmkitgcmalloc(sz, type);
 	vmkit::Thread::get()->MyVM->addFinalizationCandidate(res);
 	return res;
 }
@@ -59,6 +64,7 @@ extern "C" void* vmkitgcmallocUnresolved(uint32_t sz, void* type) {
 
 extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT) {
   gc* res = 0;
+  llvm_gcroot(res, 0);
   gcHeader* head = 0;
   sz += gcHeader::hiddenHeaderSize();
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
@@ -75,7 +81,9 @@ extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT) {
 }
 
 extern "C" void* VTgcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
-	gc* res = (gc*)VTgcmalloc(sz, VT);
+	gc* res = NULL;
+	llvm_gcroot(res, 0);
+	res = (gc*)VTgcmalloc(sz, VT);
 	if (VT->hasDestructor())
 		vmkit::Thread::get()->MyVM->addFinalizationCandidate(res);
 	return res;
@@ -85,21 +93,24 @@ extern "C" void* VTgcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
 
 // Do not insert MagicArray ref to InternalSet of references.
 extern "C" void* AllocateMagicArray(int32_t sz, void* length) {
+	gc* res = 0;
+	llvm_gcroot(res, 0);
 	gcHeader* head = 0;
-  gc* res = 0;
 	sz += gcHeader::hiddenHeaderSize();
 	head = (gcHeader*)malloc(sz);
 	memset((void*)head, 0, sz);
 	res = head->toReference();
 	vmkit::Thread::get()->MyVM->setType(res, length);
-  return res;
+	return res;
 }
 
 extern "C" void addFinalizationCandidate(gc* obj) {
+  llvm_gcroot(obj, 0);
   vmkit::Thread::get()->MyVM->addFinalizationCandidate(obj);
 }
 
 void* Collector::begOf(gc* obj) {
+  llvm_gcroot(obj, 0);
   lock.acquire();
   std::set<gc*>::iterator I = __InternalSet__.find(obj);
   std::set<gc*>::iterator E = __InternalSet__.end();
@@ -170,19 +181,29 @@ extern "C" void nonHeapWriteBarrier(void** ptr, void* value) {
 
 
 void Collector::objectReferenceWriteBarrier(gc* ref, gc** slot, gc* value) {
+  llvm_gcroot(ref, 0);
+  llvm_gcroot(value, 0);
   *slot = value;
 }
 
 void Collector::objectReferenceArrayWriteBarrier(gc* ref, gc** slot, gc* value) {
+  llvm_gcroot(ref, 0);
+  llvm_gcroot(value, 0);
   *slot = value;
 }
 
 void Collector::objectReferenceNonHeapWriteBarrier(gc** slot, gc* value) {
+  llvm_gcroot(value, 0);
   *slot = value;
 }
 
 bool Collector::objectReferenceTryCASBarrier(gc*ref, gc** slot, gc* old, gc* value) {
-  gc* res = __sync_val_compare_and_swap(slot, old, value);
+  gc* res = NULL;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(ref, 0);
+  llvm_gcroot(old, 0);
+  llvm_gcroot(value, 0);
+  res = __sync_val_compare_and_swap(slot, old, value);
   return (old == res);
 }
 

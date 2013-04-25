@@ -52,6 +52,7 @@ public:
   }
 
   static void staticTracer(JavaObjectClass* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->pd, closure);
     vmkit::Collector::markAndTrace(obj, &obj->signers, closure);
     vmkit::Collector::markAndTrace(obj, &obj->constructor, closure);
@@ -79,6 +80,7 @@ private:
 	// others
 public:
 	static void staticTracer(JavaObjectVMField* obj, word_t closure) {
+	    llvm_gcroot(obj, 0);
 		vmkit::Collector::markAndTrace(obj, &obj->name, closure);
 		vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
 	}
@@ -105,6 +107,7 @@ private:
 public:
 
   static void staticTracer(JavaObjectField* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->p, closure);
     vmkit::Collector::markAndTrace(obj, &obj->vmField, closure);
   }
@@ -129,6 +132,7 @@ public:
 	uint32 slot;
 public:
   	static void staticTracer(JavaObjectVMMethod* obj, word_t closure) {
+	    llvm_gcroot(obj, 0);
   		vmkit::Collector::markAndTrace(obj, &obj->name, closure);
   		vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
 	}
@@ -151,6 +155,7 @@ private:
 public:
   
   static void staticTracer(JavaObjectMethod* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->p, closure);
     vmkit::Collector::markAndTrace(obj, &obj->vmMethod, closure);
   }
@@ -173,6 +178,7 @@ private:
 
 public:
   static void staticTracer(JavaObjectVMConstructor* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
 
@@ -193,6 +199,7 @@ private:
 
 public:
   static void staticTracer(JavaObjectConstructor* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->p, closure);
     vmkit::Collector::markAndTrace(obj, &obj->vmCons, closure);
   }
@@ -212,6 +219,7 @@ private:
 
 public:
   static void staticTracer(JavaObjectVMThread* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->thread, closure);
   }
 

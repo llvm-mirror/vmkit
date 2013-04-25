@@ -337,9 +337,11 @@ UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
 
 UserCommonClass* JnjvmClassLoader::internalLoadCreateClass(const UTF8* name, JavaString* strName)
 {
+  JavaObjectClass* jcl = 0;
   JavaObject* obj = 0;
   llvm_gcroot(strName, 0);
   llvm_gcroot(obj, 0);
+  llvm_gcroot(jcl, 0);
 
   UserClass* forCtp = loadClass;
   if (strName == NULL) {
@@ -347,7 +349,7 @@ UserCommonClass* JnjvmClassLoader::internalLoadCreateClass(const UTF8* name, Jav
   }
 
   obj = loadClassMethod->invokeJavaObjectVirtual(vm, forCtp, javaLoader, &strName);
-  return JavaObjectClass::getClass(((JavaObjectClass*)obj));
+  return JavaObjectClass::getClass(jcl = (JavaObjectClass*)obj);
 }
 
 UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,

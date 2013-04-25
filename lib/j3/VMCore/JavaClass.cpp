@@ -604,6 +604,9 @@ void JavaField::InitStaticField(float val) {
 }
 
 void JavaField::InitStaticField(Jnjvm* vm) {
+  JavaString* obj = 0;
+  llvm_gcroot(obj, 0);
+
   const Typedef* type = getSignature();
   JavaAttribute* attribute = lookupAttribute(JavaAttribute::constantAttribute);
 
@@ -626,7 +629,8 @@ void JavaField::InitStaticField(Jnjvm* vm) {
       }
     } else if (type->isReference()) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
-      InitStaticField((JavaObject*)ctpInfo->resolveString(utf8, idx));
+      obj = ctpInfo->resolveString(utf8, idx);
+      InitStaticField(obj);
     } else {
       fprintf(stderr, "I haven't verified your class file and it's malformed:"
                       " unknown constant %s!\n",
@@ -1033,9 +1037,12 @@ ArrayObject* JavaMethod::getParameterTypes(JnjvmClassLoader* loader) {
 }
 
 JavaObject* JavaMethod::getReturnType(JnjvmClassLoader* loader) {
+  JavaObject* obj = 0;
+  llvm_gcroot(obj, 0);
   Jnjvm* vm = JavaThread::get()->getJVM();
   Typedef* ret = getSignature()->getReturnType();
-  return getClassType(vm, loader, ret);
+  obj = getClassType(vm, loader, ret);
+  return obj;
 }
 
 ArrayObject* JavaMethod::getExceptionTypes(JnjvmClassLoader* loader) {
@@ -1083,10 +1090,11 @@ JavaObject* CommonClass::setDelegatee(JavaObject* val) {
 UserCommonClass* UserCommonClass::resolvedImplClass(Jnjvm* vm,
                                                     JavaObject* clazz,
                                                     bool doClinit) {
-
+  JavaObjectClass* jcl = 0;
   llvm_gcroot(clazz, 0);
+  llvm_gcroot(jcl, 0);
 
-  UserCommonClass* cl = JavaObjectClass::getClass((JavaObjectClass*)clazz);
+  UserCommonClass* cl = JavaObjectClass::getClass(jcl = (JavaObjectClass*)clazz);
   assert(cl && "No class in Class object");
   if (cl->isClass()) {
     cl->asClass()->resolveClass();
@@ -1754,8 +1762,10 @@ JavaObject* AnnotationReader::createElementValue() {
   uint8 tag = reader.readU1();
   JavaObject* res = 0;
   JavaObject* tmp = 0;
+  ArrayObject* arrayObj = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(tmp, 0);
+  llvm_gcroot(arrayObj, 0);
 	
 	Jnjvm* vm = JavaThread::get()->getJVM();
   Classpath* upcalls = JavaThread::get()->getJVM()->upcalls;
@@ -1836,7 +1846,8 @@ JavaObject* AnnotationReader::createElementValue() {
     ddprintf("Tableau de %d elements\n", numValues);
     for (uint32 i = 0; i < numValues; ++i) {
       tmp = createElementValue();
-      ArrayObject::setElement((ArrayObject *)res, tmp, i);
+      arrayObj = (ArrayObject *)res;
+      ArrayObject::setElement(arrayObj, tmp, i);
     }
     ddprintf("Fin du Tableau");
   } else {
@@ -1858,7 +1869,7 @@ JavaObject* AnnotationReader::createAnnotationMapValues() {
   llvm_gcroot(str, 0);
   llvm_gcroot(newHashMap, 0);
 
-	Jnjvm * vm = JavaThread::get()->getJVM();
+  Jnjvm * vm = JavaThread::get()->getJVM();
   Classpath* upcalls = vm->upcalls;
   UserClass* HashMap = upcalls->newHashMap;
   newHashMap = HashMap->doNew(vm);

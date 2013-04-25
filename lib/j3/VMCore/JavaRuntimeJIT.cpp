@@ -180,20 +180,25 @@ extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass* cl) {
 
 // Calls Java code.
 extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl) {
-  return cl->getClassDelegatee(JavaThread::get()->getJVM());
+  JavaObject* obj = 0;
+  llvm_gcroot(obj, 0);
+  obj = cl->getClassDelegatee(JavaThread::get()->getJVM());
+  return obj;
 }
 
 // Throws if one of the dimension is negative.
 JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len,
                                sint32* dims, Jnjvm* vm) {
-  assert(len > 0 && "Negative size given by VMKit");
- 
-  JavaObject* _res = cl->doNew(dims[0], vm);
+  JavaObject* _res = NULL;
   ArrayObject* res = NULL;
   JavaObject* temp = NULL;
   llvm_gcroot(_res, 0);
   llvm_gcroot(res, 0);
   llvm_gcroot(temp, 0);
+
+  assert(len > 0 && "Negative size given by VMKit");
+ 
+  _res = cl->doNew(dims[0], vm);
 
   if (len > 1) {
     res = (ArrayObject*)_res;
@@ -501,6 +506,7 @@ extern "C" void* j3ResolveSpecialStub() {
 
 // Does not throw an exception.
 extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t index) {
+  llvm_gcroot(obj, 0);
   word_t result = 0;
   InterfaceMethodTable* IMT = JavaObject::getClass(obj)->virtualVT->IMT;
   if ((IMT->contents[index] & 1) == 0) {

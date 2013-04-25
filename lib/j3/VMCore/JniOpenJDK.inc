@@ -1,10 +1,10 @@
 // OpenJDK-specific JNI implementation
 
 jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
-  BEGIN_JNI_EXCEPTION
-
   JavaObject* res = 0;
   llvm_gcroot(res, 0);
+
+  BEGIN_JNI_EXCEPTION
 
   JavaThread* th = JavaThread::get();
   Jnjvm* myvm = th->getJVM();
@@ -23,11 +23,13 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
 }
 
 void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
+  JavaObject* buf = 0;
+  llvm_gcroot(buf, 0);
+
   BEGIN_JNI_EXCEPTION
 
   // Local object references.
-  JavaObject* buf = *(JavaObject**)_buf;
-  llvm_gcroot(buf, 0);
+  buf = *(JavaObject**)_buf;
   jlong address;
 
   Jnjvm* vm = myVM(env);

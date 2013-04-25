@@ -161,10 +161,14 @@ void JavaObject::notifyAll(JavaObject* self) {
 JavaObject* JavaObject::clone(JavaObject* src) {
   JavaObject* res = 0;
   JavaObject* tmp = 0;
+  ArrayObject* srcArray = 0;
+  ArrayObject* resArray = 0;
 
   llvm_gcroot(src, 0);
   llvm_gcroot(res, 0);
   llvm_gcroot(tmp, 0);
+  llvm_gcroot(srcArray, 0);
+  llvm_gcroot(resArray, 0);
 
   UserCommonClass* cl = JavaObject::getClass(src);
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -185,9 +189,11 @@ JavaObject* JavaObject::clone(JavaObject* src) {
              (void*)((uintptr_t)src + sizeof(JavaObject) + sizeof(size_t)),
              size);
     } else {
+      srcArray = (ArrayObject*)src;
+      resArray = (ArrayObject*)res;
       for (int i = 0; i < length; i++) {
-        tmp = ArrayObject::getElement((ArrayObject*)src, i);
-        ArrayObject::setElement((ArrayObject*)res, tmp, i);
+        tmp = ArrayObject::getElement(srcArray, i);
+        ArrayObject::setElement(resArray, tmp, i);
       }
     }
   } else {
@@ -373,6 +379,9 @@ bool JavaObject::instanceOf(JavaObject* self, UserCommonClass* cl) {
 
 std::ostream& j3::operator << (std::ostream& os, JavaObjectVMThread& threadObj)
 {
+	JavaObject *obj = &threadObj;
+	llvm_gcroot(obj, 0);
+
 	for (int retries = 10; (!threadObj.vmdata) && (retries >= 0); --retries)
 		usleep(100);
 
@@ -384,9 +393,14 @@ std::ostream& j3::operator << (std::ostream& os, JavaObjectVMThread& threadObj)
 
 std::ostream& j3::operator << (std::ostream& os, const JavaObject& obj)
 {
+	JavaObject* javaLoader = NULL;
+	JavaObject *o = const_cast<JavaObject*>(&obj);
+	llvm_gcroot(javaLoader, 0);
+	llvm_gcroot(o, 0);
+
 	if (VMClassLoader::isVMClassLoader(&obj)) {
 		JnjvmClassLoader* loader = ((const VMClassLoader&)obj).getClassLoader();
-		JavaObject* javaLoader = loader->getJavaClassLoader();
+		javaLoader = loader->getJavaClassLoader();
 		CommonClass* javaCl = JavaObject::getClass(javaLoader);
 		os << &obj <<
 			"(class=j3::VMClassLoader" <<

@@ -110,7 +110,8 @@ JNIEXPORT void JNICALL Java_java_lang_VMThread_interrupt(
 JNIEnv *env,
 #endif
 JavaObject* vmthread) {
-
+  gc* obj = NULL;
+  llvm_gcroot(obj, 0);
   llvm_gcroot(vmthread, 0);  
 
   BEGIN_NATIVE_EXCEPTION(0)
@@ -145,7 +146,7 @@ JavaObject* vmthread) {
     th->lockingThread.varcond.signal();
 
     // Release the lock if we acquired it.
-    if (locked) lock->release(lock->getAssociatedObject(), vm->lockSystem);
+    if (locked) lock->release(obj = lock->getAssociatedObject(), vm->lockSystem);
   }
 
   // Here we could also raise a signal for interrupting I/O

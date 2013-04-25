@@ -1,13 +1,14 @@
 // GNUClasspath-specific JNI implementation
 
 jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
-
-  BEGIN_JNI_EXCEPTION
-
   JavaObject* res = 0;
   JavaObject* p = 0;
+  jobject ret = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(p, 0);
+  llvm_gcroot(ret, 0);
+
+  BEGIN_JNI_EXCEPTION
 
   JavaThread* th = JavaThread::get();
   Jnjvm* myvm = th->getJVM();
@@ -29,7 +30,7 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
                                                         (uint32)capacity,
                                                         (uint32)capacity, 0);
 
-  jobject ret = (jobject)th->pushJNIRef(res);
+  ret = (jobject)th->pushJNIRef(res);
   RETURN_FROM_JNI(ret);
   END_JNI_EXCEPTION
 
@@ -38,14 +39,15 @@ jobject NewDirectByteBuffer(JNIEnv *env, void *address, jlong capacity) {
 
 
 void *GetDirectBufferAddress(JNIEnv *env, jobject _buf) {
+  JavaObject* buf = 0;
+  JavaObject* address = 0;
+  llvm_gcroot(buf, 0);
+  llvm_gcroot(address, 0);
 
   BEGIN_JNI_EXCEPTION
 
   // Local object references.
-  JavaObject* buf = *(JavaObject**)_buf;
-  JavaObject* address = 0;
-  llvm_gcroot(buf, 0);
-  llvm_gcroot(address, 0);
+  buf = *(JavaObject**)_buf;
 
   Jnjvm* vm = myVM(env);
   address = vm->upcalls->bufferAddress->getInstanceObjectField(buf);

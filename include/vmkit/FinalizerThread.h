@@ -136,9 +136,12 @@ namespace vmkit {
 		/// them for finalization if they are not live.
 		///
 		void scanFinalizationQueue(word_t closure) {
+			gc* obj = NULL;
+			llvm_gcroot(obj, 0);
+
 			uint32 NewIndex = 0;
 			for (uint32 i = 0; i < CurrentIndex; ++i) {
-				gc* obj = FinalizationQueue[i];
+				obj = FinalizationQueue[i];
 
 				if (!vmkit::Collector::isLive(obj, closure)) {
 					obj = vmkit::Collector::retainForFinalize(FinalizationQueue[i], closure);

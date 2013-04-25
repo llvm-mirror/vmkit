@@ -143,23 +143,35 @@ public:
   static const unsigned int T_LONG;
 
   static void setSize(JavaObject* array, int size) {
+    ArrayUInt8* obj = 0;
+    llvm_gcroot(obj, 0);
     llvm_gcroot(array, 0);
-    ((ArrayUInt8*)array)->size = size;
+    obj = (ArrayUInt8*)array;
+    obj->size = size;
   }
 
   static sint32 getSize(const JavaObject* array) {
+    const ArrayUInt8* obj = 0;
+    llvm_gcroot(obj, 0);
     llvm_gcroot(array, 0);
-    return ((const ArrayUInt8*)array)->size;
+    obj = (const ArrayUInt8*)array;
+    return obj->size;
   }
 
   static const unsigned char* getElements(const JavaObject* array) {
+    const ArrayUInt8* obj = 0;
+    llvm_gcroot(obj, 0);
     llvm_gcroot(array, 0);
-    return ((const ArrayUInt8*)array)->elements;
+    obj = (const ArrayUInt8*)array;
+    return obj->elements;
   }
 
   static unsigned char* getElements(JavaObject* array) {
+    ArrayUInt8* obj = 0;
+    llvm_gcroot(obj, 0);
     llvm_gcroot(array, 0);
-    return ((ArrayUInt8*)array)->elements;
+    obj = (ArrayUInt8*)array;
+    return obj->elements;
   }
 };
 

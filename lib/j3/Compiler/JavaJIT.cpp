@@ -127,6 +127,8 @@ bool JavaJIT::isThisReference(int stackIndex) {
 }
 
 void JavaJIT::invokeVirtual(uint16 index) {
+  JavaObject* source = 0;
+  llvm_gcroot(source, 0);
   
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   CommonClass* cl = 0;
@@ -168,7 +170,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
  
   if (TheCompiler->isStaticCompiling()) {
     Value* obj = objectStack[stack.size() - signature->nbArguments - 1];
-    JavaObject* source = TheCompiler->getFinalObject(obj);
+    source = TheCompiler->getFinalObject(obj);
     if (source) {
       canBeDirect = true;
       CommonClass* sourceClass = JavaObject::getClass(source);
@@ -1317,13 +1319,15 @@ void JavaJIT::compareFP(Value* val1, Value* val2, Type* ty, bool l) {
 }
 
 void JavaJIT::loadConstant(uint16 index) {
+  JavaString* str = NULL;
+  llvm_gcroot(str, 0);
   JavaConstantPool* ctpInfo = compilingClass->ctpInfo;
   uint8 type = ctpInfo->typeAt(index);
   
   if (type == JavaConstantPool::ConstantString) {
     if (TheCompiler->isStaticCompiling() && !TheCompiler->useCooperativeGC()) {
       const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
-      JavaString* str = *(compilingClass->classLoader->UTF8ToStr(utf8));
+      str = *(compilingClass->classLoader->UTF8ToStr(utf8));
       Value* val = TheCompiler->getString(str);
       push(val, false, upcalls->newString);
     } else {
@@ -2012,6 +2016,9 @@ void JavaJIT::setStaticField(uint16 index) {
 }
 
 void JavaJIT::getStaticField(uint16 index) {
+  JavaObject* val = 0;
+  llvm_gcroot(val, 0);
+
   Typedef* sign = compilingClass->ctpInfo->infoOfField(index);
   LLVMAssessorInfo& LAI = TheCompiler->getTypedefInfo(sign);
   Type* type = LAI.llvmType;
@@ -2055,7 +2062,7 @@ void JavaJIT::getStaticField(uint16 index) {
         }
       } else {
         if (TheCompiler->isStaticCompiling() && !TheCompiler->useCooperativeGC()) {
-          JavaObject* val = field->getStaticObjectField();
+          val = field->getStaticObjectField();
           JnjvmClassLoader* JCL = field->classDef->classLoader;
           Value* V = TheCompiler->getFinalObject(val, sign->assocClass(JCL));
           CommonClass* cl = vmkit::Collector::begOf(val) ?

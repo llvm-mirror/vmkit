@@ -73,6 +73,7 @@ public:
   }
 
   static void staticTracer(JavaObjectClass* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->cachedConstructor, closure);
     vmkit::Collector::markAndTrace(obj, &obj->newInstanceCallerCache, closure);
     vmkit::Collector::markAndTrace(obj, &obj->name, closure);
@@ -132,6 +133,7 @@ private:
 public:
 
   static void staticTracer(JavaObjectField* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->clazz, closure);
     vmkit::Collector::markAndTrace(obj, &obj->name, closure);
     vmkit::Collector::markAndTrace(obj, &obj->type, closure);
@@ -189,6 +191,7 @@ private:
 public:
 
   static void staticTracer(JavaObjectMethod* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->clazz, closure);
     vmkit::Collector::markAndTrace(obj, &obj->name, closure);
     vmkit::Collector::markAndTrace(obj, &obj->returnType, closure);
@@ -242,6 +245,7 @@ private:
 
 public:
   static void staticTracer(JavaObjectConstructor* obj, word_t closure) {
+    llvm_gcroot(obj, 0);
     vmkit::Collector::markAndTrace(obj, &obj->clazz, closure);
     vmkit::Collector::markAndTrace(obj, &obj->parameterTypes, closure);
     vmkit::Collector::markAndTrace(obj, &obj->exceptionTypes, closure);

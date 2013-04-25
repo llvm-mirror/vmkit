@@ -80,10 +80,12 @@ VirtualTable VMStaticInstance::VT((word_t)VMStaticInstance::staticDestructor,
 
 /// Scanning java.lang.Object and primitive arrays.
 extern "C" void JavaObjectTracer(JavaObject* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
 }
 
 /// Method for scanning regular objects.
 extern "C" void RegularObjectTracer(JavaObject* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   Class* cl = JavaObject::getClass(obj)->asClass();
   assert(cl && "Not a class in regular tracer");
   vmkit::Collector::markAndTraceRoot(obj,
@@ -104,6 +106,9 @@ extern "C" void RegularObjectTracer(JavaObject* obj, word_t closure) {
 /// Method for scanning an array whose elements are JavaObjects. This method is
 /// called for all non-native Java arrays.
 extern "C" void ArrayObjectTracer(ArrayObject* obj, word_t closure) {
+  JavaObject* elt = 0;
+  llvm_gcroot(elt, 0);
+  llvm_gcroot(obj, 0);
   CommonClass* cl = JavaObject::getClass(obj);
   assert(cl && "No class");
   vmkit::Collector::markAndTraceRoot(obj,
@@ -111,7 +116,8 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj, word_t closure) {
   
 
   for (sint32 i = 0; i < ArrayObject::getSize(obj); i++) {
-    if (ArrayObject::getElement(obj, i) != NULL) {
+    elt = ArrayObject::getElement(obj, i);
+    if (elt != NULL) {
       vmkit::Collector::markAndTrace(
           obj, ArrayObject::getElements(obj) + i, closure);
     }
@@ -121,6 +127,7 @@ extern "C" void ArrayObjectTracer(ArrayObject* obj, word_t closure) {
 /// Method for scanning Java java.lang.ref.Reference objects.
 extern "C" void ReferenceObjectTracer(
     JavaObjectReference* obj, word_t closure) {
+  llvm_gcroot(obj, 0);
   Class* cl = JavaObject::getClass(obj)->asClass();
   assert(cl && "Not a class in reference tracer");
   vmkit::Collector::markAndTraceRoot(obj,

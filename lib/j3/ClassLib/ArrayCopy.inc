@@ -10,10 +10,14 @@
 
 void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint len)
 {
+  ArrayObject* arraySrc = 0;
+  ArrayObject* arrayDest = 0;
   JavaObject* cur = 0;
   llvm_gcroot(src, 0);
   llvm_gcroot(dst, 0);
   llvm_gcroot(cur, 0);
+  llvm_gcroot(arraySrc, 0);
+  llvm_gcroot(arrayDest, 0);
 
   JavaThread* th = JavaThread::get();
   Jnjvm *vm = th->getJVM();
@@ -68,8 +72,9 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
     // Unfortunately in the case that an element can't be assigned,
     // System.arrayCopy is required to do the partial copy, hence this check.
     int copyLen = len;
+    arraySrc = (ArrayObject*)src;
     for (int i = 0; i < len; i++) {
-      cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
+      cur = ArrayObject::getElement(arraySrc, i + sstart);
       if (cur) {
         if (!(JavaObject::getClass(cur)->isSubclassOf(dstType))) {
           copyLen = i; // copy up until this element
@@ -80,6 +85,7 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
 
     // If same array, then there's a potential for overlap.
     // Check this now, and use it to determine iteration order.
+    arrayDest = (ArrayObject*)dst;
     bool backward = (src == dst) &&
                     (sstart < dstart) &&
                     (sstart + copyLen > dstart);
@@ -87,12 +93,12 @@ void ArrayCopy(JavaObject* src, jint sstart, JavaObject* dst, jint dstart, jint 
     if (backward) {
       for(int i = copyLen - 1; i >= 0; --i) {
         cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
-        ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);
+        ArrayObject::setElement(arrayDest, cur, i + dstart);
       }
     } else {
       for(int i = 0; i < copyLen; ++i) {
-        cur = ArrayObject::getElement((ArrayObject*)src, i + sstart);
-        ArrayObject::setElement((ArrayObject*)dst, cur, i + dstart);
+        cur = ArrayObject::getElement(arraySrc, i + sstart);
+        ArrayObject::setElement(arrayDest, cur, i + dstart);
       }
     }
 

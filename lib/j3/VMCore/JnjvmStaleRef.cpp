@@ -27,9 +27,15 @@ void Jnjvm::resetReferencesToBundle(int64_t bundleID)
 
 void Jnjvm::resetReferenceIfStale(const void* source, void** ref)
 {
+	JavaObject *src = NULL;
+	llvm_gcroot(src, 0);
+
 	if (!ref || !(*ref)) return;	// Invalid or null reference
-	const JavaObject* src = reinterpret_cast<const JavaObject*>(source);
-	JavaObject** objRef = reinterpret_cast<JavaObject**>(ref);
+
+	src = const_cast<JavaObject*>(reinterpret_cast<const JavaObject*>(source));
+	JavaObject **objRef = reinterpret_cast<JavaObject**>(ref);
+
+	return;
 
 	// Check the type of Java object. Some Java objects are not real object, but
 	// are bridges between Java and the VM objects.
@@ -43,6 +49,8 @@ void Jnjvm::resetReferenceIfStale(const void* source, void** ref)
 
 void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMClassLoader** ref)
 {
+	llvm_gcroot(source, 0);
+
 	// Don't touch fake Java objects that exist only as bridges between the
 	// Java object model and the C++ object model.
 
@@ -60,6 +68,8 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMClassLoader** ref)
 
 void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMStaticInstance** ref)
 {
+	llvm_gcroot(source, 0);
+
 	// Don't touch fake Java objects that exist only as bridges between the
 	// Java object model and the C++ object model.
 
@@ -77,6 +87,8 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMStaticInstance** r
 
 void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 {
+	llvm_gcroot(source, 0);
+
 #if DEBUG_VERBOSE_STALE_REF
 
 	if (source) {

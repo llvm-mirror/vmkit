@@ -16,9 +16,10 @@
 using namespace j3;
 
 bool enqueueReference(gc* _obj) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* obj = (JavaObject*)_obj;
   llvm_gcroot(obj, 0);
+  llvm_gcroot(_obj, 0);
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = vm->upcalls->EnqueueReference;
   UserClass* cl = JavaObject::getClass(obj)->asClass();
   return (bool)meth->invokeIntSpecialBuf(vm, cl, obj, 0);
@@ -35,28 +36,34 @@ void Jnjvm::invokeEnqueueReference(gc* res) {
 gc** Jnjvm::getObjectReferentPtr(gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
   llvm_gcroot(obj, 0);
+  llvm_gcroot(_obj, 0);
   return (gc**)JavaObjectReference::getReferentPtr(obj);
 }
 
 void Jnjvm::setObjectReferent(gc* _obj, gc* val) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
+  JavaObject *_val = (JavaObject*)val;
   llvm_gcroot(obj, 0);
+  llvm_gcroot(_obj, 0);
   llvm_gcroot(val, 0);
-  JavaObjectReference::setReferent(obj, (JavaObject*)val);
+  llvm_gcroot(_val, 0);
+  JavaObjectReference::setReferent(obj, _val);
 }
  
 void Jnjvm::clearObjectReferent(gc* _obj) {
   JavaObjectReference* obj = (JavaObjectReference*)_obj;
   llvm_gcroot(obj, 0);
+  llvm_gcroot(_obj, 0);
   JavaObjectReference::setReferent(obj, NULL);
 }
 
 typedef void (*destructor_t)(void*);
 
 void invokeFinalizer(gc* _obj) {
-  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaObject* obj = (JavaObject*)_obj;
   llvm_gcroot(obj, 0);
+  llvm_gcroot(_obj, 0);
+  Jnjvm* vm = JavaThread::get()->getJVM();
   JavaMethod* meth = vm->upcalls->FinalizeObject;
   UserClass* cl = JavaObject::getClass(obj)->asClass();
   meth->invokeIntVirtualBuf(vm, cl, obj, 0);
@@ -71,10 +78,9 @@ void invokeFinalize(gc* res) {
 }
 
 void Jnjvm::finalizeObject(gc* object) {
-	JavaObject* res = 0;
-	llvm_gcroot(object, 0);
-	llvm_gcroot(res, 0);
-	res = (JavaObject*) object;
+  JavaObject* res = (JavaObject*)object;
+  llvm_gcroot(object, 0);
+  llvm_gcroot(res, 0);
   JavaVirtualTable* VT = res->getVirtualTable();
   if (VT->operatorDelete) {
     destructor_t dest = (destructor_t)VT->destructor;

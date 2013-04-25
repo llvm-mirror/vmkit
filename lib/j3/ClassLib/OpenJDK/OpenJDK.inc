@@ -157,11 +157,14 @@ JVM_MonitorNotifyAll(JNIEnv *env, jobject obj) {
 
 JNIEXPORT jobject JNICALL
 JVM_Clone(JNIEnv *env, jobject obj) {
+  JavaObject* src = 0;
   JavaObject * clone = 0;
   llvm_gcroot(clone, 0);
+  llvm_gcroot(src, 0);
+
   BEGIN_JNI_EXCEPTION
 
-  clone = JavaObject::clone(*(JavaObject**)obj);
+  clone = JavaObject::clone(src = *(JavaObject**)obj);
   RETURN_REF_FROM_JNI(clone, jobject);
 
   END_JNI_EXCEPTION
@@ -767,7 +770,9 @@ JVM_CountStackFrames(JNIEnv *env, jobject thread) {
 
 JNIEXPORT void JNICALL
 JVM_Interrupt(JNIEnv *env, jobject _thread) {
+  gc* obj = NULL;
   JavaObject * thread = 0;
+  llvm_gcroot(obj, 0);
   llvm_gcroot(thread, 0);
   BEGIN_JNI_EXCEPTION
 
@@ -802,7 +807,7 @@ JVM_Interrupt(JNIEnv *env, jobject _thread) {
     jth->lockingThread.varcond.signal();
 
     // Release the lock if we acquired it.
-    if (locked) lock->release(lock->getAssociatedObject(), vm->lockSystem);
+    if (locked) lock->release(obj = lock->getAssociatedObject(), vm->lockSystem);
   }
 
   // Here we could also raise a signal for interrupting I/O
@@ -1469,12 +1474,15 @@ JVM_GetClassName(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassInterfaces(JNIEnv *env, jclass cls) {
+  JavaObjectClass* cl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(ret, 0);
+  llvm_gcroot(cl, 0);
 
   BEGIN_JNI_EXCEPTION
 
-  ret = JavaObjectClass::getInterfaces(*(JavaObjectClass**)cls);
+  cl = *(JavaObjectClass**)cls;
+  ret = JavaObjectClass::getInterfaces(cl);
 
   RETURN_REF_FROM_JNI(ret, jobjectArray);
 
@@ -1640,13 +1648,16 @@ JVM_GetClassModifiers(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass) {
+  JavaObjectClass* cl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(ret, 0);
+  llvm_gcroot(cl, 0);
 
   BEGIN_JNI_EXCEPTION
 
   // TODO: Verify boolean parameter here, assuming should default to true.
-  ret = JavaObjectClass::getDeclaredClasses(*(JavaObjectClass**)ofClass, false);
+  cl = *(JavaObjectClass**)ofClass;
+  ret = JavaObjectClass::getDeclaredClasses(cl, false);
 
   RETURN_REF_FROM_JNI(ret, jobjectArray);
 
@@ -1723,12 +1734,15 @@ JVM_GetClassAnnotations(JNIEnv *env, jclass cls) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
+  JavaObjectClass* cl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(ret, 0);
+  llvm_gcroot(cl, 0);
 
   BEGIN_JNI_EXCEPTION
 
-  ret = JavaObjectClass::getDeclaredMethods(*(JavaObjectClass**)ofClass, publicOnly);
+  cl = *(JavaObjectClass**)ofClass;
+  ret = JavaObjectClass::getDeclaredMethods(cl, publicOnly);
 
   RETURN_REF_FROM_JNI(ret, jobjectArray);
 
@@ -1739,12 +1753,15 @@ JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
+  JavaObjectClass* cl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(ret, 0);
+  llvm_gcroot(cl, 0);
 
   BEGIN_JNI_EXCEPTION
 
-  ret = JavaObjectClass::getDeclaredFields(*(JavaObjectClass**)ofClass, publicOnly);
+  cl = *(JavaObjectClass**)ofClass;
+  ret = JavaObjectClass::getDeclaredFields(cl, publicOnly);
 
   RETURN_REF_FROM_JNI(ret, jobjectArray);
 
@@ -1755,12 +1772,15 @@ JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
+  JavaObjectClass* cl = 0;
   ArrayObject* ret = 0;
   llvm_gcroot(ret, 0);
+  llvm_gcroot(cl, 0);
 
   BEGIN_JNI_EXCEPTION
 
-  ret = JavaObjectClass::getDeclaredConstructors(*(JavaObjectClass**)ofClass, publicOnly);
+  cl = *(JavaObjectClass**)ofClass;
+  ret = JavaObjectClass::getDeclaredConstructors(cl, publicOnly);
 
   RETURN_REF_FROM_JNI(ret, jobjectArray);
 

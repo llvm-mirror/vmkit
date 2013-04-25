@@ -91,6 +91,8 @@ FatLock* ThinLock::changeToFatlock(gc* object, LockSystem& table) {
 }
 
 void printDebugMessage(gc* object, LockSystem& table) {
+  gc* assObj = NULL;
+  llvm_gcroot(assObj, 0);
   llvm_gcroot(object, 0);
   fprintf(stderr,
       "WARNING: [%p] has been waiting really long for %p (header = %p)\n",
@@ -104,7 +106,7 @@ void printDebugMessage(gc* object, LockSystem& table) {
         "Its associated object is %p. The owner is %p\n",
         (void*)vmkit::Thread::get(),
         (void*)obj,
-        (void*)obj->getAssociatedObject(),
+        (void*)(assObj = obj->getAssociatedObject()),
         (void*)obj->owner());
   }
 }
@@ -265,8 +267,8 @@ FatLock* ThinLock::getFatLock(gc* object, LockSystem& table) {
 }
 
 void FatLock::acquireAll(gc* object, word_t nb) {
-  assert(associatedObject == object);
   llvm_gcroot(object, 0);
+  assert(associatedObject == object);
   internalLock.lockAll(nb);
 }
 

@@ -244,6 +244,8 @@ Constant* JavaAOTCompiler::getMethodInClass(JavaMethod* meth) {
 }
 
 Constant* JavaAOTCompiler::getString(JavaString* str) {
+  llvm_gcroot(str, 0);
+
   assert(!useCooperativeGC());
   string_iterator SI = strings.find(str);
   if (SI != strings.end()) {
@@ -328,6 +330,9 @@ JavaObject* JavaAOTCompiler::getFinalObject(llvm::Value* obj) {
 }
 
 Constant* JavaAOTCompiler::HandleMagic(JavaObject* obj, CommonClass* objCl) {
+  word_t* realObj = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(realObj, 0);
 
   static const UTF8* AddressArray = objCl->classLoader->asciizConstructUTF8("org/vmmagic/unboxed/AddressArray");
   static const UTF8* WordArray = objCl->classLoader->asciizConstructUTF8("org/vmmagic/unboxed/WordArray");
@@ -340,7 +345,7 @@ Constant* JavaAOTCompiler::HandleMagic(JavaObject* obj, CommonClass* objCl) {
       name->equals(ExtentArray) || name->equals(ObjectReferenceArray) || 
       name->equals(OffsetArray)) {
     
-    word_t* realObj = (word_t*)obj;
+    realObj = (word_t*)obj;
     word_t size = realObj[0];
 
     ArrayType* ATy = ArrayType::get(JavaIntrinsics.JavaObjectType,
@@ -373,6 +378,8 @@ Constant* JavaAOTCompiler::HandleMagic(JavaObject* obj, CommonClass* objCl) {
 
 
 Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
+  llvm_gcroot(obj, 0);
+
   assert(!useCooperativeGC());
   llvm::GlobalVariable* varGV = 0;
   final_object_iterator End = finalObjects.end();
@@ -446,6 +453,11 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
+  JavaObject* val = 0;
+  JavaString* obj = 0;
+  llvm_gcroot(val, 0);
+  llvm_gcroot(obj, 0);
+
   LLVMClassInfo* LCI = getClassInfo(cl);
   Type* Ty = LCI->getStaticType();
   StructType* STy = dyn_cast<StructType>(Ty->getContainedType(0));
@@ -498,7 +510,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
             abort();
           }
         } else {
-          JavaObject* val = field.getStaticObjectField();
+          val = field.getStaticObjectField();
           if (val) {
             JnjvmClassLoader* JCL = cl->classLoader;
             CommonClass* FieldCl = field.getSignature()->assocClass(JCL);
@@ -530,7 +542,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
           Elts.push_back(JavaIntrinsics.JavaObjectNullConstant);
         } else {
           const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[idx]);
-          JavaString* obj = ctpInfo->resolveString(utf8, idx);
+          obj = ctpInfo->resolveString(utf8, idx);
           Constant* C = getString(obj);
           C = ConstantExpr::getBitCast(C, JavaIntrinsics.JavaObjectType);
           Elts.push_back(C);
@@ -657,6 +669,12 @@ Constant* JavaAOTCompiler::CreateConstantForBaseObject(CommonClass* cl) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
+  JavaObject* val = 0;
+  ArrayObject* array = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(val, 0);
+  llvm_gcroot(array, 0);
+
   assert(!useCooperativeGC());
   CommonClass* cl = JavaObject::getClass(obj);
 
@@ -692,7 +710,8 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
         abort();
       }
     } else {
-      return CreateConstantFromObjectArray((ArrayObject*)obj);
+      array = (ArrayObject*)obj;
+      return CreateConstantFromObjectArray(array);
     }
   } else {
     
@@ -744,7 +763,7 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
             abort();
           }
         } else {
-          JavaObject* val = field.getInstanceObjectField(obj);
+          val = field.getInstanceObjectField(obj);
           if (val) {
             JnjvmClassLoader* JCL = cl->classLoader;
             CommonClass* FieldCl = field.getSignature()->assocClass(JCL);
@@ -764,6 +783,8 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaObject(JavaObject* obj) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
+  llvm_gcroot(str, 0);
+
   assert(!useCooperativeGC());
   Class* cl = JavaObject::getClass(str)->asClass();
   LLVMClassInfo* LCI = getClassInfo(cl);
@@ -1442,6 +1463,9 @@ Constant* JavaAOTCompiler::CreateConstantFromFPArray(const T* val, Type* Ty) {
 }
 
 Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val) {
+  JavaObject* obj = 0;
+  llvm_gcroot(obj, 0);
+  llvm_gcroot(val, 0);
   assert(!useCooperativeGC());
   std::vector<Type*> Elemts;
   llvm::Type* Ty = JavaIntrinsics.JavaObjectType;
@@ -1461,8 +1485,9 @@ Constant* JavaAOTCompiler::CreateConstantFromObjectArray(const ArrayObject* val)
   
   std::vector<Constant*> Vals;
   for (sint32 i = 0; i < ArrayObject::getSize(val); ++i) {
-    if (ArrayObject::getElement(val, i)) {
-      Vals.push_back(getFinalObject(ArrayObject::getElement(val, i),
+    obj = ArrayObject::getElement(val, i);
+    if (obj) {
+      Vals.push_back(getFinalObject(obj,
           JavaObject::getClass(val)->asArrayClass()->baseClass()));
     } else {
       Vals.push_back(Constant::getNullValue(JavaIntrinsics.JavaObjectType));
@@ -2496,12 +2521,14 @@ void JavaAOTCompiler::generateMain(const char* name, bool jit) {
 extern std::set<gc*> __InternalSet__;
 
 CommonClass* JavaAOTCompiler::getUniqueBaseClass(CommonClass* cl) {
+  JavaObject* obj = NULL;
+  llvm_gcroot(obj, 0);
   std::set<gc*>::iterator I = __InternalSet__.begin();
   std::set<gc*>::iterator E = __InternalSet__.end();
   CommonClass* currentClass = 0;
 
   for (; I != E; ++I) {
-    JavaObject* obj = (JavaObject*)(*I);
+    obj = (JavaObject*)(*I);
     if (!VMClassLoader::isVMClassLoader(obj) &&
         !VMStaticInstance::isVMStaticInstance(obj) &&
         JavaObject::instanceOf(obj, cl)) {

@@ -28,22 +28,27 @@ extern "C" word_t Java_org_j3_mmtk_ObjectModel_readAvailableBitsWord__Lorg_vmmag
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableBitsWord__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2 (
     MMTkObject* OM, gc* obj, word_t val) {
+  llvm_gcroot(obj, 0);
   obj->header() = val;
 }
 
 extern "C" gcHeader* Java_org_j3_mmtk_ObjectModel_objectStartRef__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
+	llvm_gcroot(obj, 0);
 	return obj ? obj->toHeader() : 0;
 }
 
 extern "C" gcHeader* Java_org_j3_mmtk_ObjectModel_refToAddress__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
+	llvm_gcroot(obj, 0);
 	return obj ? obj->toHeader() : 0;
 }
 
 extern "C" uint8_t Java_org_j3_mmtk_ObjectModel_readAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
+  llvm_gcroot(obj, 0);
   return *vmkit::System::GetLastBytePtr(reinterpret_cast<word_t>(&(obj->header())));
 }
 
 extern "C" void Java_org_j3_mmtk_ObjectModel_writeAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2B (MMTkObject* OM, gc* obj, uint8_t val) {
+  llvm_gcroot(obj, 0);
   *vmkit::System::GetLastBytePtr(reinterpret_cast<word_t>(&(obj->header()))) = val;
 }
 
@@ -52,12 +57,14 @@ extern "C" gc* Java_org_j3_mmtk_ObjectModel_getObjectFromStartAddress__Lorg_vmma
 }
 
 extern "C" word_t Java_org_j3_mmtk_ObjectModel_prepareAvailableBits__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
+  llvm_gcroot(obj, 0);
   return obj->header();
 }
 
 extern "C" uint8_t
 Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Word_2Lorg_vmmagic_unboxed_Word_2(
     MMTkObject* OM, gc* obj, word_t oldValue, word_t newValue) { 
+  llvm_gcroot(obj, 0);
   word_t val = __sync_val_compare_and_swap(&(obj->header()), oldValue, newValue);
   return (val == oldValue);
 }
@@ -67,6 +74,7 @@ extern "C" void Java_org_j3_bindings_Bindings_setType__Lorg_vmmagic_unboxed_Obje
 
 extern "C" void Java_org_j3_bindings_Bindings_setType__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2(
                     gc* obj, void* type) {
+	llvm_gcroot(obj, 0);
 	vmkit::Thread::get()->MyVM->setType(obj, type);
 }
 
@@ -101,9 +109,12 @@ extern "C" word_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_Object
 
 extern "C" word_t Java_org_j3_mmtk_ObjectModel_copy__Lorg_vmmagic_unboxed_ObjectReference_2I (
     MMTkObject* OM, gc* src, int allocator) {
+  gc* res = NULL;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(src, 0);
   size_t size = vmkit::Thread::get()->MyVM->getObjectSize(src);
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
-  gc* res = (gc*)JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
+  res = (gc*)JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
       src, vmkit::Thread::get()->MyVM->getType(src), size, allocator);
   assert((res->header() & ~vmkit::GCBitMask) == (src->header() & ~vmkit::GCBitMask));
   return (word_t)res;
@@ -117,6 +128,7 @@ extern "C" void Java_org_j3_mmtk_ObjectModel_getReferenceWhenCopiedTo__Lorg_vmma
 
 extern "C" word_t Java_org_j3_mmtk_ObjectModel_getObjectEndAddress__Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* OM, gc* object) {
+  llvm_gcroot(object, 0);
   size_t size = vmkit::Thread::get()->MyVM->getObjectSize(object);
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
   return reinterpret_cast<word_t>(object) + size;
@@ -157,6 +169,7 @@ class FakeByteArray : public MMTkObject {
 
 extern "C" FakeByteArray* Java_org_j3_mmtk_ObjectModel_getTypeDescriptor__Lorg_vmmagic_unboxed_ObjectReference_2 (
     MMTkObject* OM, gc* src) {
+  llvm_gcroot(src, 0);
   const char* name = vmkit::Thread::get()->MyVM->getObjectTypeName(src);
   // This code is only used for debugging on a fatal error. It is fine to
   // allocate in the C++ heap.

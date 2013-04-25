@@ -170,12 +170,17 @@ void JNILocalReferences::removeJNIReferences(JavaThread* th, uint32_t num) {
 
 std::ostream& j3::operator << (std::ostream& os, const JavaThread& thread)
 {
+	JavaObject* jThread = NULL;
+	JavaString* threadNameObj = NULL;
+	llvm_gcroot(jThread, 0);
+	llvm_gcroot(threadNameObj, 0);
+
 	os << '[' << (void*)(&thread);
 
 	Jnjvm* vm = thread.getJVM();
-	JavaObject* jThread = thread.currentThread();
+	jThread = thread.currentThread();
 	if (vm && jThread) {
-		JavaString* threadNameObj = static_cast<JavaString*>(
+		threadNameObj = static_cast<JavaString*>(
 			vm->upcalls->threadName->getInstanceObjectField(jThread));
 		char *threadName = JavaString::strToAsciiz(threadNameObj);
 		os << '(' << threadName << ')';

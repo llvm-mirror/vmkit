@@ -1076,6 +1076,7 @@ private:
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
 	TYPE invokeVirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) __attribute__((noinline)) {
 		llvm_gcroot(obj, 0);
+		assert(cl && "Class is NULL");
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
 		return invokeVirtualBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
@@ -1084,6 +1085,7 @@ private:
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
 	TYPE invokeSpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) __attribute__((noinline)) {
 		llvm_gcroot(obj, 0);
+		assert(cl && "Class is NULL");
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
 		return invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
@@ -1091,6 +1093,7 @@ private:
 
 	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
 	TYPE invokeStaticAP(Jnjvm* vm, UserClass* cl, va_list ap) __attribute__((noinline)) {
+		assert(cl && "Class is NULL");
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
 		return invokeStaticBuf<TYPE, FUNC_TYPE_STATIC_BUF>(vm, cl, buffer);
