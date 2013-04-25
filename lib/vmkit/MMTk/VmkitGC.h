@@ -15,68 +15,8 @@
 #include "vmkit/Locks.h"
 #include <cstdlib>
 
-extern "C" void EmptyDestructor();
-
-/*
- * C++ VirtualTable data layout representation. This is the base for
- * every object layout based on virtual tables.
- * See at J3 JavaObject.h file, JavaVirtualTable class definition for an example.
- */
-class VirtualTable {
- public:
-  word_t destructor;
-  word_t operatorDelete;
-  word_t tracer;
-
-  static uint32_t numberOfBaseFunctions() {
-    return 3;
-  }
-
-  static uint32_t numberOfSpecializedTracers() {
-    return 0;
-  }
-
-  word_t* getFunctions() {
-    return &destructor;
-  }
-
-  VirtualTable(word_t d, word_t o, word_t t) {
-    destructor = d;
-    operatorDelete = o;
-    tracer = t;
-  }
-
-  VirtualTable() {
-    destructor = reinterpret_cast<word_t>(EmptyDestructor);
-  }
-
-  bool hasDestructor() {
-    return destructor != reinterpret_cast<word_t>(EmptyDestructor);
-  }
-
-  static void emptyTracer(void*) {}
-
-  /// getVirtualTable - Returns the virtual table of this reference.
-  ///
-  static const VirtualTable* getVirtualTable(gc* ref) {
-    return ((VirtualTable**)(ref))[0];
-  }
-
-  /// setVirtualTable - Sets the virtual table of this reference.
-  ///
-  static void setVirtualTable(gc* ref, VirtualTable* VT) {
-    ((VirtualTable**)(ref))[0] = VT;
-  }
-
-};
-
 extern "C" void* vmkitgcmallocUnresolved(uint32_t sz, void* type);
 extern "C" void* vmkitgcmalloc(uint32_t sz, void* type);
-
-/************** Only for Virtual Table based objects *************************/
-extern "C" void* VTgcmallocUnresolved(uint32_t sz, VirtualTable* VT);
-extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT);
-/*****************************************************************************/
 
 class gc : public gcRoot {
 public:
@@ -143,4 +83,79 @@ public:
 };
 
 }
+
+class VirtualTable;
+extern "C" void* VTgcmallocUnresolved(uint32_t sz, VirtualTable* VT);
+extern "C" void* VTgcmalloc(uint32_t sz, VirtualTable* VT);
+extern "C" void EmptyDestructor();
+
+/*
+ * C++ VirtualTable data layout representation. This is the base for
+ * every object layout based on virtual tables.
+ * See at J3 JavaObject.h file, JavaVirtualTable class definition for an example.
+ *
+ * Note: If you use VirtualTable, your object root must have a virtual destructor
+ * and a virtual method called tracer which traces all GC references contained.
+ *
+ * Here is an exemple of the minimal compatible object class you can have with VirtualTable:
+ *
+ * class myRoot : public gc {
+ *   public:
+ *   virtual      ~myRoot() {}
+ *   virtual void tracer(word_t closure) {}
+ *
+ *   void* operator new(size_t sz, VirtualTable *VT) {
+ *     return VTgcmallocUnresolved(sz, VT);
+ *	 }
+ * };
+ *
+ */
+class VirtualTable {
+ public:
+  word_t destructor;
+  word_t operatorDelete;
+  word_t tracer;
+
+  static uint32_t numberOfBaseFunctions() {
+    return 3;
+  }
+
+  static uint32_t numberOfSpecializedTracers() {
+    return 0;
+  }
+
+  word_t* getFunctions() {
+    return &destructor;
+  }
+
+  VirtualTable(word_t d, word_t o, word_t t) {
+    destructor = d;
+    operatorDelete = o;
+    tracer = t;
+  }
+
+  VirtualTable() {
+    destructor = reinterpret_cast<word_t>(EmptyDestructor);
+  }
+
+  bool hasDestructor() {
+    return destructor != reinterpret_cast<word_t>(EmptyDestructor);
+  }
+
+  static void emptyTracer(void*) {}
+
+  /// getVirtualTable - Returns the virtual table of this reference.
+  ///
+  static const VirtualTable* getVirtualTable(gc* ref) {
+    return ((VirtualTable**)(ref))[0];
+  }
+
+  /// setVirtualTable - Sets the virtual table of this reference.
+  ///
+  static void setVirtualTable(gc* ref, VirtualTable* VT) {
+    ((VirtualTable**)(ref))[0] = VT;
+  }
+
+};
+
 #endif

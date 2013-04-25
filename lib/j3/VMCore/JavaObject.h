@@ -238,6 +238,11 @@ private:
   
 public:
 
+  /// Methods to match with VirtualTable
+  ///
+  virtual           ~JavaObject() {}
+  virtual void      tracer(word_t closure) {}
+
   /// operator new - Optimized operator new for VT based objects
   ///
   void* operator new(size_t sz, VirtualTable *VT) {
