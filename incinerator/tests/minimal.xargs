@@ -1,46 +1,51 @@
--Dorg.knopflerfish.framework.main.verbosity=0
+#-Dorg.knopflerfish.framework.bundlestorage=memory
+-Dorg.knopflerfish.framework.system.export.all_13=false
+-Dorg.knopflerfish.framework.verbosity=0
 
 -Forg.knopflerfish.framework.debug.errors=true
 -Forg.knopflerfish.framework.debug.packages=false
 -Forg.knopflerfish.framework.debug.classloader=false
--Forg.knopflerfish.framework.debug.permissions=false
+#-Forg.knopflerfish.framework.debug.permissions=false
 
--Forg.osgi.framework.system.packages.extra=
+#-Forg.osgi.framework.system.packages.extra=
 
--Dhttp.proxyHost=goodway
--Dhttp.proxyPort=3128
+-Forg.knopflerfish.http.dnslookup=true
+-Forg.osgi.service.http.port=8080
 
--Dosgi.signedcontent.support=true
--Forg.osgi.framework.security=osgi
--Forg.knopflerfish.framework.all_signed=false
--Djava.security.policy=file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/java-grant-all.policy
+#-Dhttp.proxyHost=proxy
+#-Dhttp.proxyPort=3128
 
--Dorg.knopflerfish.gosg.jars=file:jars/;file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/
+#-Forg.knopflerfish.framework.all_signed=false
+
+-Dorg.knopflerfish.gosg.jars=file:///home/koutheir/PhD/VMKit/knopflerfish/osgi/jars/;file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/
 
 -Forg.knopflerfish.startlevel.use=true
 
 -init
 
--install log/log_all-3.1.2.jar
+-install log/log_all-3.1.3.jar
 -install cm/cm_all-3.0.4.jar
 -install util/util-2.0.1.jar
--istart console/console_all-3.0.3.jar
--istart frameworkcommands/frameworkcommands-3.1.0.jar
+-istart console/console_all-3.0.4.jar
+-istart frameworkcommands/frameworkcommands-3.2.0.jar
 -istart logcommands/logcommands-3.1.1.jar
 -istart cm_cmd/cm_cmd-3.0.2.jar
 -istart consoletty/consoletty-3.0.1.jar
+-istart useradmin/useradmin_api-3.0.3.jar
+-istart util/util-2.0.1.jar
+-install jsdk/jsdk_api-2.5.0.kf3-2.jar
 
 -launch
 
 -istart  j3mgr_1.0.0.jar
 
--istart  ijvm.tests.A_1.0.0.jar
--istart  ijvm.tests.C_1.0.0.jar
--istart  ijvm.tests.AImpl_1.0.0.jar
--istart  ijvm.tests.BImpl_1.0.0.jar
--istart  ijvm.tests.CImpl_1.0.0.jar
--istart  ijvm.tests.DImpl_1.0.0.jar
+-install  ijvm.tests.A_1.0.0.jar
+-install  ijvm.tests.C_1.0.0.jar
+-install  ijvm.tests.AImpl_1.0.0.jar
+-install  ijvm.tests.BImpl_1.0.0.jar
+-install  ijvm.tests.CImpl_1.0.0.jar
+-install  ijvm.tests.DImpl_1.0.0.jar
 
 -install ijvm.tests.Runner_1.0.0.jar
 
--install ijvm.tests.BundleMgmtStress_1.0.0.jar
+-install BundleReloader-1.0.0.jar

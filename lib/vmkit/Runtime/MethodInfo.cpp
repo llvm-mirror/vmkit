@@ -26,7 +26,7 @@ void MethodInfoHelper::scan(word_t closure, FrameInfo* FI, word_t ip, word_t add
     word_t obj = *(word_t*)(spaddr + FI->LiveOffsets[i]);    
     // Verify that obj does not come from a JSR bytecode.
     if (!(obj & 1)) {
-      Collector::scanObject((void**)(spaddr + FI->LiveOffsets[i]), closure);
+      Collector::scanObject(FI, (void**)(spaddr + FI->LiveOffsets[i]), closure);
     }
   }
 }

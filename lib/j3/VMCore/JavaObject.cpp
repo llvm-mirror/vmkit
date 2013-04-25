@@ -15,6 +15,7 @@
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaString.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
@@ -381,26 +382,12 @@ bool JavaObject::instanceOf(JavaObject* self, UserCommonClass* cl) {
   else return getClass(self)->isSubclassOf(cl);
 }
 
-std::ostream& j3::operator << (std::ostream& os, JavaObjectVMThread& threadObj)
-{
-	JavaObject *obj = &threadObj;
-	llvm_gcroot(obj, 0);
-
-	for (int retries = 10; (!threadObj.vmdata) && (retries >= 0); --retries)
-		usleep(100);
-
-	if (threadObj.vmdata != NULL)
-		os << *threadObj.vmdata;
-
-	return os;
-}
-
 std::ostream& j3::operator << (std::ostream& os, const JavaObject& obj)
 {
 	JavaObject* javaLoader = NULL;
-	JavaObject *o = const_cast<JavaObject*>(&obj);
+	const JavaString* threadNameObj = NULL;
 	llvm_gcroot(javaLoader, 0);
-	llvm_gcroot(o, 0);
+	llvm_gcroot(threadNameObj, 0);
 
 	if (VMClassLoader::isVMClassLoader(&obj)) {
 		JnjvmClassLoader* loader = ((const VMClassLoader&)obj).getClassLoader();
@@ -422,9 +409,28 @@ std::ostream& j3::operator << (std::ostream& os, const JavaObject& obj)
 			')';
 	} else {
 		CommonClass* ccl = JavaObject::getClass(&obj);
-		os << &obj <<
-			"(class=" << *ccl->name <<
-			')';
+		Jnjvm* vm = ccl->classLoader->getJVM();
+
+		os << &obj << "(class=" << *ccl;
+
+		if (ccl == vm->upcalls->newThread) {
+			threadNameObj = static_cast<const JavaString*>(
+				vm->upcalls->threadName->getInstanceObjectField(
+					const_cast<JavaObject*>(&obj)));
+
+			char *threadName = JavaString::strToAsciiz(threadNameObj);
+			os << ",name=\"" << threadName << '\"';
+			delete [] threadName;
+		} else if (ccl == vm->upcalls->newVMThread) {
+			const JavaObjectVMThread& vmthObj = (const JavaObjectVMThread&)obj;
+			for (int retries = 10; (!vmthObj.vmdata) && (retries >= 0); --retries)
+				usleep(100);
+
+			if (const JavaObject* thObj = vmthObj.vmdata->currentThread())
+				os << ",thread=" << *thObj;
+		}
+
+		os << ')';
 	}
 
 	return os;

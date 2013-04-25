@@ -2335,13 +2335,13 @@ void JavaField::setStaticField(JavaObject* val)
 	FieldSetter<JavaObject*>::setStaticField(this, val);
 }
 
+std::ostream& j3::operator << (std::ostream& os, const CommonClass& ccl)
+{
+	os << *ccl.name;
+	return (!ccl.super) ? (os << ';') : (os << ':' << *ccl.super);
+}
+
 void CommonClass::dump() const
 {
-	cerr << *name;
-	if (!super)
-		cerr << ';' << endl;
-	else {
-		cerr << ':';
-		super->dump();
-	}
+	cerr << *this << endl;
 }

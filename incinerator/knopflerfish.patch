@@ -13,7 +13,7 @@ Index: knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleClassLoa
 ===================================================================
 --- knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleClassLoader.java	2012-10-27 02:29:49.852807353 +0200
 +++ knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleClassLoader.java	2012-10-27 02:36:22.287024825 +0200
-@@ -819,9 +819,12 @@
+@@ -821,9 +821,12 @@
      }
      Vector av = classPath.componentExists(path, onlyFirst);
      if (av != null) {

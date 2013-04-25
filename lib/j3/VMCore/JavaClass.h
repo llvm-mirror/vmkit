@@ -399,6 +399,7 @@ public:
                                             bool doClinit);
 
   void dump() const __attribute__((noinline));
+  friend std::ostream& operator << (std::ostream& os, const CommonClass& ccl);
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive

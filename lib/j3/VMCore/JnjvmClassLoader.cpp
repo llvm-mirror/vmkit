@@ -215,7 +215,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
 	allocator(Alloc)
 #if RESET_STALE_REFERENCES
-	,zombie(false)
+	,staleRefCorrected(false), zombie(false)
 #endif
 {
 }
@@ -225,7 +225,7 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    VMClassLoader* vmdata,
                                    Jnjvm* VM) : allocator(Alloc)
 #if RESET_STALE_REFERENCES
-	, zombie(false)
+	,staleRefCorrected(false), zombie(false)
 #endif
 {
   llvm_gcroot(loader, 0);

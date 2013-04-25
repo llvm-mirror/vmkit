@@ -130,7 +130,7 @@ bool Collector::isLive(gc* ptr, word_t closure) {
   return false;
 }
 
-void Collector::scanObject(void** ptr, word_t closure) {
+void Collector::scanObject(FrameInfo* FI, void** ptr, word_t closure) {
   abort();
 }
  

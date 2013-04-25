@@ -12,11 +12,12 @@ public class Activator
 	implements BundleActivator, Runnable
 {
 	static final boolean correctStaleReferences = false;
+	static final String targetBundle = "file:///home/koutheir/PhD/VMKit/knopflerfish/osgi/jars/http/http_all-3.1.2.jar";
+	static final long firstBundleID = 8;
 	
 	BundleContext context;
 	Thread worker;
-	boolean cancelWork;
-	long firstBundleID;
+	volatile boolean cancelWork;
 	ServiceTracker j3mgrST;
 	J3Mgr j3mgr;
 	long loopCount;
@@ -28,11 +29,12 @@ public class Activator
 		j3mgrST = new ServiceTracker(context, J3Mgr.class.getName(), null);
 		j3mgrST.open();
 		j3mgr = (J3Mgr)j3mgrST.getService();
-		if (j3mgr == null)
-			throw new BundleException("J3 Management service must be started before this service.");
+		if (j3mgr == null) {
+			throw new BundleException(
+				"J3 Management service must be started before this service.");
+		}
 		
 		loopCount = 0;
-		firstBundleID = 13;
 		
 		cancelWork = false;
 		worker = new Thread(this, "Stresser");
@@ -41,11 +43,13 @@ public class Activator
 
 	public void stop(BundleContext bundleContext) throws Exception
 	{
-		cancelWork = true;
-		
-		if (worker != null) {
-			worker.join();
-			worker = null;
+		if (!cancelWork) {
+			cancelWork = true;
+			
+			if (worker != null) {
+				worker.join();
+				worker = null;
+			}
 		}
 		
 		System.out.println("Bundle reinstallation count: " + loopCount);
@@ -55,41 +59,60 @@ public class Activator
 	public void run()
 	{
 		System.out.println("Bundle management stress running...");
+		try {
+			Thread.sleep(2000);
+		} catch (Exception e) {}
 		
 		try {
 			uninstallBundle(context.getBundle(firstBundleID));
-						
+
 			while (!cancelWork) {
-				Bundle bundle = context.installBundle("file:///home/koutheir/PhD/VMKit/vmkit/incinerator/tests/plugins/ijvm.tests.AImpl_1.0.0.jar");
+				Bundle bundle = context.installBundle(targetBundle);
 				bundle.start();
-				Thread.sleep(20);
-				
-				System.out.println("Bundle started: " + bundle.getBundleId());
-				
+				Thread.sleep(100);
+								
 				uninstallBundle(bundle);
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
+			cancelWork = true;
 			e.printStackTrace();
 		}
 		
 		System.out.println("Bundle management stress done.");
-	}
-	
-	void uninstallBundle(Bundle bundle)
-	{
+		
 		try {
-			if (correctStaleReferences) {
-				j3mgr.resetReferencesToBundle(bundle);
-			} else {
-				bundle.stop();
-				bundle.uninstall();
+			cancelWork = true;
+			Bundle thisBundle = context.getBundle();
+			int currentState = thisBundle.getState();
+			
+			if (currentState == Bundle.ACTIVE ||
+				currentState == Bundle.STARTING) {
+				thisBundle.stop();
 			}
-			
-			loopCount++;
-			
-			System.gc();
-		} catch (Exception e) {
+			worker = null;
+		} catch (BundleException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	void uninstallBundle(Bundle bundle) throws Throwable
+	{	
+		if (bundle == null) return;
+		
+		try {
+			j3mgr.setBundleStaleReferenceCorrected(
+				bundle.getBundleId(), correctStaleReferences);
+		} catch (UnsatisfiedLinkError e) {
+			if (correctStaleReferences)
+				throw e;
+		}
+		
+		bundle.stop();
+		bundle.uninstall();
+		System.out.println("Uninstalled: bundleID=" + bundle.getBundleId());
+		
+		loopCount++;
+		
+		System.gc();
 	}
 }

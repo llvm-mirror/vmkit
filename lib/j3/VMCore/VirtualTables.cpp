@@ -272,6 +272,9 @@ void JnjvmBootstrapLoader::tracer(word_t closure) {
 
 
 void Jnjvm::tracer(word_t closure) {
+  JavaObject* jThread = NULL;
+  llvm_gcroot(jThread, 0);
+
   // (1) Trace the bootstrap loader.
   bootstrapLoader->tracer(closure);
   
@@ -310,7 +313,12 @@ void Jnjvm::tracer(word_t closure) {
     for (; j < vmkit::LockSystem::IndexSize; j++) {
       if (array[j] == NULL) break;
       vmkit::FatLock* lock = array[j];
-      vmkit::Collector::markAndTraceRoot(NULL, lock->getAssociatedObjectPtr(), closure);
+      jThread = NULL;
+      if (vmkit::Thread *th = lock->getOwner()) {
+        if (th->isVmkitThread())
+          jThread = ((JavaThread*)th)->currentThread();
+      }
+      vmkit::Collector::markAndTraceRoot(jThread, lock->getAssociatedObjectPtr(), closure);
     }
     for (j = j + 1; j < vmkit::LockSystem::IndexSize; j++) {
       assert(array[j] == NULL);

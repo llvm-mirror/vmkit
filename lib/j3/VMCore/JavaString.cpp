@@ -34,7 +34,7 @@ JavaString* JavaString::create(const ArrayUInt16 * array, Jnjvm* vm) {
   return res;
 }
 
-char* JavaString::strToAsciiz(JavaString* self) {
+char* JavaString::strToAsciiz(const JavaString* self) {
   const ArrayUInt16* value = NULL;
   llvm_gcroot(self, 0);
   llvm_gcroot(value, 0);
@@ -47,7 +47,7 @@ char* JavaString::strToAsciiz(JavaString* self) {
   return buf;
 }
 
-char* JavaString::strToAsciiz(JavaString* self,
+char* JavaString::strToAsciiz(const JavaString* self,
                               vmkit::ThreadAllocator* allocator) {
   const ArrayUInt16* value = NULL;
   llvm_gcroot(self, 0);

@@ -214,7 +214,7 @@ public:
 };
 
 class JavaObjectVMThread : public JavaObject {
-private:
+public:
   JavaObject* thread;
   bool running;
   JavaThread* vmdata;
@@ -232,8 +232,6 @@ public:
   }
 
   static JavaThread* getVmdata(JavaObjectVMThread* vmthread) {return vmthread->vmdata;}
-
-  friend std::ostream& operator << (std::ostream&, JavaObjectVMThread&);
 };
 
 

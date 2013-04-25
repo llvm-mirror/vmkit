@@ -1,7 +1,5 @@
 package ijvm.tests.DImpl;
 
-import java.util.ArrayList;
-
 import ijvm.tests.C.C;
 import ijvm.tests.D.D;
 
@@ -17,18 +15,14 @@ public class Activator
 	private BundleContext context;
 
 	private ServiceTracker cST;
-	private ArrayList<C> c;
 	private DImpl d;
 	
-	public Activator()
-	{
-		c = new ArrayList<C>();
-	}
-
 	public void start(BundleContext bundleContext) throws Exception
 	{
 		System.out.println("DImpl exports and provides D");
 		context = bundleContext;
+
+		d = new DImpl();
 
 		cST = new ServiceTracker(context, C.class.getName(), null);
 		cST.open();
@@ -37,12 +31,10 @@ public class Activator
 		if (service != null) {
 			System.out.println("DImpl got C @ startup");
 			
-			c.add(service);
+			d.c.add(service);
 		}
 		
 		context.addServiceListener(this, "(objectclass=" + C.class.getName() + ")");
-
-		d = new DImpl();
 		context.registerService(D.class.getName(), d, null);
 	}
 
@@ -69,7 +61,7 @@ public class Activator
 		case ServiceEvent.REGISTERED:
 			if (C.class.isInstance(service)) {
 				System.out.println("DImpl got C");
-				c.add((C)service);
+				d.c.add((C)service);
 			}
 			break;
 			

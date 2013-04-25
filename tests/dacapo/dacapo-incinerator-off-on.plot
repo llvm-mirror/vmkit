@@ -26,7 +26,10 @@ set boxwidth 1
 #set term svg
 #set term postscript clip 12
 #set term latex
-set term wxt 0
+set term epslatex
+#set term wxt 0
+#set output "dacapo-incinerator-off-on.tex"
+set output "dacapo-incinerator-off-on.eps"
 plot	\
 	'stats-j3-dacapo-2006-10-MR2.csv' using (column(4)/1000.0):(column(7)/1000.0):xtic(2) linecolor rgb "grey" title "J3, powerful computer",	\
 	'stats-incinerator-dacapo-2006-10-MR2.csv' using (column(4)/1000.0):(column(7)/1000.0):xtic(2) linecolor rgb "orange" title "Incinerator, powerful computer"

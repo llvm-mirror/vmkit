@@ -18,21 +18,15 @@ public class Activator
 	private BundleContext context;
 
 	private ServiceTracker aST;
-	private ArrayList<A> a;
-	private ArrayList<Token> tokens;
 	private BImpl b;
 	
-	public Activator()
-	{
-		a = new ArrayList<A>();
-		tokens = new ArrayList<Token>();
-	}
-
 	public void start(BundleContext bundleContext) throws Exception
 	{
 		System.out.println("BImpl exports and provides B");
 		context = bundleContext;
 
+		b = new BImpl();
+		
 		aST = new ServiceTracker(context, A.class.getName(), null);
 		aST.open();
 		
@@ -40,13 +34,11 @@ public class Activator
 		if (service != null) {
 			System.out.println("BImpl got A @ startup");
 			
-			a.add(service);
+			b.a.add(service);
 			this.useA();
 		}
 		
 		context.addServiceListener(this, "(objectclass=" + A.class.getName() + ")");
-		
-		b = new BImpl();
 		context.registerService(B.class.getName(), b, null);
 	}
 
@@ -73,7 +65,7 @@ public class Activator
 		case ServiceEvent.REGISTERED:
 			if (A.class.isInstance(service)) {
 				System.out.println("BImpl got A");
-				a.add((A)service);
+				b.a.add((A)service);
 				
 				this.useA();
 			}
@@ -89,11 +81,11 @@ public class Activator
 	
 	private void useA()
 	{
-		A oneA = a.get(a.size() - 1);
+		A oneA = b.a.get(b.a.size() - 1);
 		Token token = oneA.getToken();
 		token.getValue();
 		
-		tokens.add(token);
+		b.tokens.add(token);
 		
 		System.out.println("BImpl got Token from A");
 	}

@@ -45,6 +45,8 @@ public:
   /// in JnJVM code. The size should be set to zero, but this is invalid C99.
   T elements[1];
 
+  typedef T ElementType;
+
 public:
   static int32_t getSize(const TJavaArray* self) __attribute__((always_inline)) {
     llvm_gcroot(self, 0);

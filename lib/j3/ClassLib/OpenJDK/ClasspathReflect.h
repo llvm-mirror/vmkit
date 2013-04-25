@@ -29,7 +29,6 @@ namespace j3 {
 	class JavaObjectVMThread : public JavaObject {
 		private:
 		JavaThread* vmdata;
-	  friend std::ostream& operator << (std::ostream&, JavaObjectVMThread&);
 	};
 
 class JavaObjectClass : public JavaObject {
@@ -111,7 +110,7 @@ public:
     UserCommonClass * cl = getClass(obj);
     if (cl) {
       JavaObject** Obj = cl->classLoader->getJavaClassLoaderPtr();
-      if (*Obj) vmkit::Collector::markAndTraceRoot(Obj, Obj, closure);
+      if (*Obj) vmkit::Collector::markAndTraceRoot(obj, Obj, closure);
     }
   }
 

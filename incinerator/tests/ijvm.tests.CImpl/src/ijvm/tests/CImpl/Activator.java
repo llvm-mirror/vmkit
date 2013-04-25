@@ -1,7 +1,5 @@
 package ijvm.tests.CImpl;
 
-import java.util.ArrayList;
-
 import ijvm.tests.B.B;
 import ijvm.tests.C.C;
 
@@ -17,18 +15,14 @@ public class Activator
 	private BundleContext context;
 
 	private ServiceTracker bST;
-	private ArrayList<B> b;
 	private CImpl c;
-	
-	public Activator()
-	{
-		b = new ArrayList<B>();
-	}
 
 	public void start(BundleContext bundleContext) throws Exception
 	{
 		System.out.println("CImpl exports and provides C");
 		context = bundleContext;
+
+		c = new CImpl();
 
 		bST = new ServiceTracker(context, B.class.getName(), null);
 		bST.open();
@@ -37,12 +31,10 @@ public class Activator
 		if (service != null) {
 			System.out.println("CImpl got B @ startup");
 			
-			b.add(service);
+			c.b.add(service);
 		}
 		
 		context.addServiceListener(this, "(objectclass=" + B.class.getName() + ")");
-
-		c = new CImpl();
 		context.registerService(C.class.getName(), c, null);
 	}
 
@@ -69,7 +61,7 @@ public class Activator
 		case ServiceEvent.REGISTERED:
 			if (B.class.isInstance(service)) {
 				System.out.println("CImpl got B");
-				b.add((B)service);
+				c.b.add((B)service);
 			}
 			break;
 			

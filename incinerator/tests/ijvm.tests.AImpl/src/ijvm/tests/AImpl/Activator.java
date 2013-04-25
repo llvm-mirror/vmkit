@@ -1,7 +1,5 @@
 package ijvm.tests.AImpl;
 
-import java.util.ArrayList;
-
 import ijvm.tests.A.A;
 import ijvm.tests.C.C;
 
@@ -16,33 +14,27 @@ public class Activator
 {
 	private BundleContext context;
 	private ServiceTracker cST;
-	private ArrayList<C> c;
-	private A a;
-
-	public Activator()
-	{
-		c = new ArrayList<C>();
-	}
+	private AImpl a;
 
 	public void start(BundleContext bundleContext) throws Exception
 	{
 		System.out.println("AImpl provides A");
 		context = bundleContext;
 
+		a = new AImpl();
+
 		cST = new ServiceTracker(context, C.class.getName(), null);
 		cST.open();
-		
+				
 		C service = (C)cST.getService();
 		if (service != null) {
 			System.out.println("AImpl got C @ startup");
 			
-			c.add(service);
+			a.c.add(service);
 			this.registerMyself();
 		}
 		
 		context.addServiceListener(this, "(objectclass=" + C.class.getName() + ")");
-		
-		a = new AImpl();
 		context.registerService(A.class.getName(), a, null);	
 	}
 
@@ -69,7 +61,7 @@ public class Activator
 		case ServiceEvent.REGISTERED:
 			if (C.class.isInstance(service)) {
 				System.out.println("AImpl got C");
-				c.add((C)service);
+				a.c.add((C)service);
 				
 				this.registerMyself();
 			}
@@ -85,7 +77,7 @@ public class Activator
 	
 	private void registerMyself()
 	{
-		C oneC = c.get(c.size() - 1);
+		C oneC = a.c.get(a.c.size() - 1);
 		
 		oneC.registerObject(this);
 	}

@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-Vendor: Koutheir Attouchi
+Bundle-Version: 1.0.0
+Bundle-Name: BundleReloader
+Bundle-ManifestVersion: 2
+Bundle-Activator: BundleReloader.Activator
+Import-Package: org.osgi.framework, org.osgi.service.packageadmin
+Bundle-SymbolicName: BundleReloader
+

@@ -5,7 +5,7 @@ set datafile missing '_'
 set datafile commentschars "#"
 
 set ylabel "Average relative overhead (lower is better)"
-set ytics 1 border nomirror
+set ytics border nomirror
 set grid ytics
 set format y "%.0f %%"
 
@@ -17,8 +17,7 @@ set boxwidth 1
 
 # set title "Incinerator overhead in Dacapo benchmarks"
 
-set xtics axis nomirror rotate by 20 offset -2,graph -0.1
-#set xtics axis nomirror rotate by 20 offset -2,graph -0.03
+set xtics axis nomirror rotate by 20 offset -2,graph -0.5
 set border 3
 
 #set term svg

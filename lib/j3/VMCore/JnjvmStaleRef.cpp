@@ -13,29 +13,19 @@ using namespace std;
 
 namespace j3 {
 
-void Jnjvm::resetReferencesToBundle(int64_t bundleID)
-{
-	JnjvmClassLoader* loader = this->getBundleClassLoader(bundleID);
-	assert(loader && "No class loader is associated with the bundle");
-
-	// Mark this class loader as a zombie. Its references will be reset in the next
-	// garbage collection phase.
-	loader->markZombie();
-
-	scanStaleReferences = true;		// Enable stale references scanning
-	vmkit::Collector::collect();	// Start a garbage collection now
-}
-
 void Jnjvm::resetReferenceIfStale(const void* source, void** ref)
 {
 	JavaObject *src = NULL;
 	llvm_gcroot(src, 0);
 
-	if (!scanStaleReferences) return;	// Stale references scanning disabled
 	if (!ref || !(*ref)) return;	// Invalid or null reference
-
 	src = const_cast<JavaObject*>(reinterpret_cast<const JavaObject*>(source));
 	JavaObject **objRef = reinterpret_cast<JavaObject**>(ref);
+
+	if (findReferencesToObject == *objRef)
+		foundReferencerObjects.push_back(src);
+
+	if (!scanStaleReferences) return;	// Stale references scanning disabled
 
 	// Check the type of Java object. Some Java objects are not real object, but
 	// are bridges between Java and the VM objects.
@@ -58,11 +48,11 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMClassLoader** ref)
 
 	JnjvmClassLoader* loader = (**ref).getClassLoader();
 	if (!loader->isZombie()) return;
-
+/*
 	cerr << "WARNING: Ignored stale reference ref=" << ref << " obj=" << **ref;
 	if (source) cerr << " source=" << *source;
 	cerr << endl;
-
+*/
 #endif
 }
 
@@ -77,11 +67,11 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMStaticInstance** r
 
 	JnjvmClassLoader* loader = (**ref).getOwningClass()->classLoader;
 	if (!loader->isZombie()) return;
-
+/*
 	cerr << "WARNING: Ignored stale reference ref=" << ref << " obj=" << **ref;
 	if (source) cerr << " source=" << *source;
 	cerr << endl;
-
+*/
 #endif
 }
 

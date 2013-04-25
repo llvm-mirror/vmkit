@@ -180,7 +180,7 @@ bool Collector::isLive(gc* ptr, word_t closure) {
   return JnJVM_org_j3_bindings_Bindings_isLive__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_ObjectReference_2(closure, ptr);
 }
 
-void Collector::scanObject(void** ptr, word_t closure) {
+void Collector::scanObject(FrameInfo* FI, void** ptr, word_t closure) {
   if ((*ptr) != NULL) {
     assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr)));
   }

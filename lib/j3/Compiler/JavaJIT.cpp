@@ -686,7 +686,7 @@ void JavaJIT::monitorEnter(Value* obj) {
 
   BranchInst::Create(OK, NotOK, cmp, currentBlock);
 
-  // The atomic cast did not work.
+  // The atomic CAS did not work.
   currentBlock = NotOK;
   CallInst::Create(intrinsics->AquireObjectFunction, obj, "", currentBlock);
   BranchInst::Create(OK, currentBlock);

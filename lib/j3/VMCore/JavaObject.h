@@ -246,11 +246,8 @@ public:
   /// operator new - Optimized operator new for VT based objects
   ///
   void* operator new(size_t sz, VirtualTable *VT) {
-  	gc* obj = NULL;
-  	llvm_gcroot(obj, 0);
-  	obj = (gc*) VTgcmallocUnresolved(sz, VT);
-  	return obj;
-  }
+	    return VTgcmallocUnresolved(sz, VT);
+	  }
 
   /// getVirtualTable - Returns the java virtual table of this object.
   ///

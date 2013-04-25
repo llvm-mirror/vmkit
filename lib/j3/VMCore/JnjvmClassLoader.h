@@ -332,13 +332,14 @@ public:
 #if RESET_STALE_REFERENCES
 
 protected:
-  // A zombie class loader is one whose defining bundle was uninstalled, but it is
-  // still loaded because some references to it still exist in memory.
+  bool staleRefCorrected;
   bool zombie;
 
 public:
   bool isZombie() const {return zombie;}
   void markZombie(bool becomeZombie = true) {zombie = becomeZombie;}
+  bool isStaleReferencesCorrectionEnabled() {return staleRefCorrected;}
+  void setStaleReferencesCorrectionEnabled(bool enable) {staleRefCorrected = enable;}
 
   // This bridges the OSGi world (bundles) to the Java world (class loaders).
   int64_t getAssociatedBundleID();

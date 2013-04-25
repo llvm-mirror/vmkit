@@ -1,12 +1,24 @@
 /home/koutheir/PhD/VMKit/vmkit_stale_ref/Debug+Asserts/bin/j3 -jar framework.jar -xargs /home/koutheir/PhD/VMKit/vmkit_stale_ref/tests/minimal.xargs
 
-framework call j3.J3Mgr resetReferencesToBundle ijvm.tests.AImpl
+framework call j3.J3Mgr setBundleStaleReferenceCorrected ijvm.tests.AImpl yes
+framework call j3.J3Mgr setBundleStaleReferenceCorrected ijvm.tests.BImpl yes
+framework call j3.J3Mgr setBundleStaleReferenceCorrected ijvm.tests.CImpl yes
+stop 12
+stop 13
+stop 14
 
-framework call j3.J3Mgr resetReferencesToBundle ijvm.tests.Runner
+start 12 13 14
+stop 12
 
-framework meminfo -gc
+framework call j3.J3Mgr isBundleStaleReferenceCorrected 39
+framework call j3.J3Mgr setBundleStaleReferenceCorrected 8 yes
 
-bundles
-start 18
+call j3.J3Mgr dumpClassLoaderBundles
 
-framework call j3.J3Mgr dumpClassLoaderBundles
+enter framework
+stop 8
+uninstall 8
+refresh
+meminfo -gc
+call j3.J3Mgr setBundleStaleReferenceCorrected 8 yes
+call j3.J3Mgr dumpReferencesToObject 0x51934ab4
