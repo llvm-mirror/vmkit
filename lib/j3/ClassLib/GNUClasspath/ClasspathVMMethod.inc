@@ -308,7 +308,10 @@ JavaObject* proceedVMMethod(JavaObjectVMMethod* Meth, JavaObject* obj,
         vm->illegalArgumentException("<this> is not a valid type");
       }
 
-      if (isInterface(cl->access)) {
+      // If the given method is not implemented in the given class (e.g. a method
+      // declared in an interface, or declared abstract) then look for an implementation
+      // of it in the class of the given "this" object.
+      if (isInterface(cl->access) || isAbstract(meth->access)) {
         cl->initialiseClass(vm);
         UserClass* methodCl = 0;
         UserClass* lookup = objCl->isArray() ? objCl->super : objCl->asClass();
