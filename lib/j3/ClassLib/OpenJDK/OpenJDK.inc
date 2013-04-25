@@ -129,9 +129,10 @@ JVM_MonitorWait(JNIEnv *env, jobject obj, jlong ms) {
   BEGIN_JNI_EXCEPTION
 
   JavaObject::wait(*(JavaObject**)obj, ms, 0);
-  RETURN_VOID_FROM_JNI
 
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT void JNICALL
@@ -140,9 +141,9 @@ JVM_MonitorNotify(JNIEnv *env, jobject obj) {
 
   JavaObject::notify(*(JavaObject**)obj);
 
-  RETURN_VOID_FROM_JNI
-
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT void JNICALL
@@ -150,9 +151,10 @@ JVM_MonitorNotifyAll(JNIEnv *env, jobject obj) {
   BEGIN_JNI_EXCEPTION
 
   JavaObject::notifyAll(*(JavaObject**)obj);
-  RETURN_VOID_FROM_JNI
 
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT jobject JNICALL
@@ -169,7 +171,7 @@ JVM_Clone(JNIEnv *env, jobject obj) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -195,7 +197,7 @@ JVM_InternString(JNIEnv *env, jstring _str) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -242,8 +244,9 @@ JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject jsrc, jint sstart,
 
   ArrayCopy(src, sstart, dst, dstart, len);
 
-  RETURN_VOID_FROM_JNI
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT jobject JNICALL
@@ -274,7 +277,7 @@ JVM_InitProperties(JNIEnv *env, jobject p) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -302,8 +305,8 @@ JNIEXPORT void JNICALL
 JVM_GC(void) {
   BEGIN_JNI_EXCEPTION
   vmkit::Collector::collect();
-  RETURN_VOID_FROM_JNI;
   END_JNI_EXCEPTION
+  RETURN_VOID_FROM_JNI;
 }
 
 /* Returns the number of real-time milliseconds that have elapsed since the
@@ -364,7 +367,7 @@ JVM_LoadLibrary(const char *name) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT void JNICALL
@@ -380,7 +383,7 @@ JVM_FindLibraryEntry(void *handle, const char *name) {
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -412,9 +415,9 @@ JVM_FillInStackTrace(JNIEnv *env, jobject throwable) {
   T = *(JavaObjectThrowable**)throwable;
   JavaObjectThrowable::fillInStackTrace(T);
 
-  RETURN_VOID_FROM_JNI;
-
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI;
 }
 
 JNIEXPORT void JNICALL
@@ -438,7 +441,7 @@ JVM_GetStackTraceDepth(JNIEnv *env, jobject throwable) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jobject JNICALL
@@ -477,7 +480,7 @@ JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint index) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -634,9 +637,9 @@ JVM_StartThread(JNIEnv *env, jobject _thread) {
 
   newTh->initialise(thread, sleepObject);
 
-  RETURN_VOID_FROM_JNI
-
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT void JNICALL
@@ -658,7 +661,7 @@ JVM_IsThreadAlive(JNIEnv *env, jobject _thread) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT void JNICALL
@@ -683,8 +686,9 @@ JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio) {
 
   vm->upcalls->priority->setInstanceInt32Field(T, prio);
 
-  RETURN_VOID_FROM_JNI
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT void JNICALL
@@ -749,8 +753,9 @@ JVM_Sleep(JNIEnv *env, jclass threadClass, jlong _millis) {
   }
   JavaObject::release(th->sleepObject);
 
-  RETURN_VOID_FROM_JNI
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT jobject JNICALL
@@ -758,9 +763,10 @@ JVM_CurrentThread(JNIEnv *env, jclass threadClass) {
   BEGIN_JNI_EXCEPTION
   JavaThread* th = JavaThread::get();
   RETURN_REF_FROM_JNI(th->currentThread(), jobject);
+  
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jint JNICALL
@@ -815,8 +821,9 @@ JVM_Interrupt(JNIEnv *env, jobject _thread) {
 
   // Here we could also raise a signal for interrupting I/O
 
-  RETURN_VOID_FROM_JNI
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT jboolean JNICALL
@@ -842,7 +849,7 @@ JVM_IsInterrupted(JNIEnv *env, jobject _thread, jboolean clearInterrupted) {
 
   END_JNI_EXCEPTION
 
-  return false;
+  RETURN_FROM_JNI(JNI_FALSE);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -851,7 +858,7 @@ JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj) {
   jboolean res = JavaObject::owner(*(JavaObject**)obj);
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
-  return false;
+  RETURN_FROM_JNI(JNI_FALSE);
 }
 
 JNIEXPORT void JNICALL
@@ -892,9 +899,10 @@ JVM_GetClassContext(JNIEnv *env) {
   res = GetClassContext(1);
 
   RETURN_REF_FROM_JNI(res, jobjectArray);
+  
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jint JNICALL
@@ -931,7 +939,7 @@ JVM_GetSystemPackages(JNIEnv *env) {
 
   END_JNI_EXCEPTION
 
-  return NULL;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -960,9 +968,10 @@ JVM_LatestUserDefinedLoader(JNIEnv *env) {
   res = th->getNonNullClassLoader();
 
   RETURN_REF_FROM_JNI(res, jobject);
+  
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -990,7 +999,7 @@ JVM_GetArrayLength(JNIEnv *env, jobject arr) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jobject JNICALL
@@ -1008,7 +1017,7 @@ JVM_GetArrayElement(JNIEnv *env, jobject arr, jint index) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jvalue JNICALL
@@ -1046,8 +1055,9 @@ JVM_SetArrayElement(JNIEnv *env, jobject arr, jint index, jobject val) {
 
   ArrayObject::setElement(array, element, index);
 
-  RETURN_VOID_FROM_JNI
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 JNIEXPORT void JNICALL
@@ -1106,7 +1116,7 @@ JVM_NewArray(JNIEnv *env, jclass eltClass, jint length) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 extern JavaObject* multiCallNewIntern(UserClassArray* cl, uint32 len,
@@ -1193,7 +1203,7 @@ JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray _dim) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -1232,7 +1242,7 @@ JVM_GetCallerClass(JNIEnv *env, int n) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -1283,7 +1293,7 @@ JVM_FindPrimitiveClass(JNIEnv *env, const char *utf) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -1302,8 +1312,9 @@ JVM_ResolveClass(JNIEnv *env, jclass cls) {
 
   C->asClass()->resolveClass();
 
-  RETURN_VOID_FROM_JNI
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI
 }
 
 /*
@@ -1340,7 +1351,7 @@ JVM_FindClassFromClassLoader(JNIEnv *env, const char *name, jboolean init,
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jclass JNICALL
@@ -1360,7 +1371,7 @@ JVM_FindClassFromBootLoader(JNIEnv *env, const char *name) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -1397,7 +1408,7 @@ JVM_FindLoadedClass(JNIEnv *env, jobject _loader, jstring name) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /* Define a class */
@@ -1425,7 +1436,7 @@ JVM_DefineClass(JNIEnv *env, const char *name, jobject _loader, const jbyte *buf
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /* Define a class with a source (added in JDK1.5) */
@@ -1474,7 +1485,7 @@ JVM_GetClassName(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1493,7 +1504,7 @@ JVM_GetClassInterfaces(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jobject JNICALL
@@ -1511,7 +1522,7 @@ JVM_GetClassLoader(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -1533,7 +1544,7 @@ JVM_IsInterface(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return JNI_FALSE;
+  RETURN_FROM_JNI(JNI_FALSE);
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1563,7 +1574,7 @@ JVM_GetProtectionDomain(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT void JNICALL
@@ -1587,7 +1598,7 @@ JVM_IsArrayClass(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return JNI_FALSE;
+  RETURN_FROM_JNI(JNI_FALSE);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -1606,7 +1617,7 @@ JVM_IsPrimitiveClass(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return JNI_FALSE;
+  RETURN_FROM_JNI(JNI_FALSE);
 }
 
 JNIEXPORT jclass JNICALL
@@ -1632,7 +1643,7 @@ JVM_GetComponentType(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jint JNICALL
@@ -1648,7 +1659,7 @@ JVM_GetClassModifiers(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1668,7 +1679,7 @@ JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jclass JNICALL
@@ -1684,7 +1695,7 @@ JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /* Generics support (JDK 1.5) */
@@ -1706,7 +1717,7 @@ JVM_GetClassSignature(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /* Annotations support (JDK 1.5) */
@@ -1730,7 +1741,7 @@ JVM_GetClassAnnotations(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -1753,7 +1764,7 @@ JVM_GetClassDeclaredMethods(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1772,7 +1783,7 @@ JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, jboolean publicOnly) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1791,7 +1802,7 @@ JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnl
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /* Differs from JVM_GetClassModifiers in treatment of inner classes.
@@ -1819,7 +1830,7 @@ JVM_GetClassAccessFlags(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /* The following two reflection routines are still needed due to startup time issues */
@@ -1847,7 +1858,7 @@ JVM_InvokeMethod(JNIEnv *env, jobject _m, jobject _obj, jobjectArray args0) {
   RETURN_REF_FROM_JNI(ret, jobject);
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -1873,7 +1884,7 @@ JVM_NewInstanceFromConstructor(JNIEnv *env, jobject _c, jobjectArray args0) {
   RETURN_REF_FROM_JNI(ret, jobject);
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -1903,7 +1914,7 @@ JVM_GetClassConstantPool(JNIEnv *env, jclass cls) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetSize
@@ -1964,7 +1975,7 @@ JNIEXPORT jint JNICALL JVM_ConstantPoolGetIntAt
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jlong JNICALL JVM_ConstantPoolGetLongAt
@@ -2009,7 +2020,7 @@ JNIEXPORT jstring JNICALL JVM_ConstantPoolGetUTF8At
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -2047,7 +2058,7 @@ JVM_DoPrivileged(JNIEnv *env, jclass cls,
 
   END_JNI_EXCEPTION
 
-  return NULL;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT jobject JNICALL
@@ -2107,7 +2118,7 @@ JVM_FindSignal(const char *name) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -2150,7 +2161,7 @@ JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused) {
   RETURN_REF_FROM_JNI(asdObj, jobject);
   END_JNI_EXCEPTION
 
-  return NULL;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -2511,7 +2522,7 @@ JVM_GetLastErrorString(char *buf, int len) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -2556,7 +2567,7 @@ JVM_Open(const char *fname, jint flags, jint mode) {
   RETURN_FROM_JNI(result);
   END_JNI_EXCEPTION
 
-  return -1;
+  RETURN_FROM_JNI(-1);
 }
 
 /*
@@ -2570,9 +2581,10 @@ JVM_Close(jint fd) {
   BEGIN_JNI_EXCEPTION
   jint res = close(fd);
   RETURN_FROM_JNI(res);
+  
   END_JNI_EXCEPTION
 
-  return -1;
+  RETURN_FROM_JNI(-1);
 }
 
 /*
@@ -2600,7 +2612,7 @@ JVM_Read(jint fd, char *buf, jint nbytes) {
   //}
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
-  return -1;
+  RETURN_FROM_JNI(-1);
 }
 
 /*
@@ -2618,7 +2630,7 @@ JVM_Write(jint fd, char *buf, jint nbytes) {
   jint res = write(fd, buf, nbytes);
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
-  return -1;
+  RETURN_FROM_JNI(-1);
 }
 
 /*
@@ -2664,7 +2676,7 @@ JVM_Available(jint fd, jlong *pbytes) {
     }
   }
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -2682,7 +2694,7 @@ JVM_Lseek(jint fd, jlong offset, jint whence) {
   jlong res = lseek64(fd, offset, whence);
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -2771,7 +2783,7 @@ JVM_Accept(jint fd, struct sockaddr *him, jint *len) {
   	th->leaveUncooperativeCode();
 	RETURN_FROM_JNI(res);
 	END_JNI_EXCEPTION
-	return -1;
+	RETURN_FROM_JNI(-1);
 }
 
 JNIEXPORT jint JNICALL
@@ -2784,7 +2796,7 @@ JVM_RecvFrom(jint fd, char *buf, int nBytes,
   	th->leaveUncooperativeCode();
 	RETURN_FROM_JNI(res);
 	END_JNI_EXCEPTION
-	return -1;
+	RETURN_FROM_JNI(-1);
 }
 
 JNIEXPORT jint JNICALL
@@ -2802,6 +2814,7 @@ JVM_SocketAvailable(jint fd, jint *result) {
     RETURN_FROM_JNI(JNI_FALSE);
 
   RETURN_FROM_JNI(JNI_TRUE);
+  
   END_JNI_EXCEPTION
 
   RETURN_FROM_JNI(JNI_FALSE);
@@ -2875,9 +2888,10 @@ JVM_RawMonitorCreate(void) {
   pthread_mutex_init(L, NULL);
 
   RETURN_FROM_JNI(L);
+  
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT void JNICALL
@@ -2886,8 +2900,10 @@ JVM_RawMonitorDestroy(void *mon) {
   pthread_mutex_t* L = (pthread_mutex_t*)mon;
   pthread_mutex_destroy(L);
   free(L);
-  RETURN_VOID_FROM_JNI;
+
   END_JNI_EXCEPTION
+
+  RETURN_VOID_FROM_JNI;
 }
 
 JNIEXPORT jint JNICALL
@@ -2897,7 +2913,7 @@ JVM_RawMonitorEnter(void *mon) {
   jint res = pthread_mutex_lock(L);
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT void JNICALL
@@ -2905,8 +2921,8 @@ JVM_RawMonitorExit(void *mon) {
   BEGIN_JNI_EXCEPTION
   pthread_mutex_t* L = (pthread_mutex_t*)mon;
   pthread_mutex_unlock(L);
-  RETURN_VOID_FROM_JNI;
   END_JNI_EXCEPTION
+  RETURN_VOID_FROM_JNI;
 }
 
 /*
@@ -2988,7 +3004,7 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass) {
 
   END_JNI_EXCEPTION
 
-  return 0;
+  RETURN_FROM_JNI(0);
 }
 
 /*
@@ -3048,7 +3064,7 @@ JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) {
 	}
 	RETURN_REF_FROM_JNI(res, jintArray);
 	END_JNI_EXCEPTION
-	return NULL;
+	RETURN_FROM_JNI(0);
 }
 
 /*
@@ -3139,7 +3155,7 @@ JnjvmClassLoader* loader;
 	//th->leaveUncooperativeCode();
 	RETURN_REF_FROM_JNI(res, jobjectArray);
 	END_JNI_EXCEPTION
-	return NULL;
+	RETURN_FROM_JNI(0);
 }
 
 JNIEXPORT void JNICALL
