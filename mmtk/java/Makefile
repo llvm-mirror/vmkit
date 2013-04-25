@@ -11,8 +11,8 @@ LEVEL = ../..
 GEN=mmtk-vmkit.bc
 MODULE=FinalMMTk
 MODULE_USE=MMTKAlloc MMTKRuntime
-NEED_BC=1
 NEED_GC=1
+EXTRACT_FUNCTIONS=VTgcmalloc fieldWriteBarrier arrayWriteBarrier nonHeapWriteBarrier
 
 include $(LEVEL)/Makefile.common
 

@@ -76,6 +76,7 @@ extern "C" bool Java_org_j3_runtime_VM_buildForIA32__ () {
 }
 
 extern "C" bool Java_org_j3_runtime_VM_verifyAssertions__ () {
+	// TODO: MUST UPDATE THIS COMMENT AND TRY TO UNDERSTAND HOW IT WORKS
   // Note that DEBUG is defined in make ENABLE_OPTIMIZED=1.
   // You must provide DISABLE_ASSERTIONS=1 to not have DEBUG defined.
   // To generate MMTkInline.inc, this function returns false.

@@ -43,6 +43,7 @@
 #include "vmkit/Thread.h"
 #include "vmkit/VirtualMachine.h"
 #include "vmkit/GC.h"
+#include "vmkit/InlineCommon.h"
 #include "MutatorThread.h"
 #include "VmkitGC.h"
 
@@ -252,13 +253,11 @@ void VmkitModule::unprotectIR() {
   protectEngine.unlock();
 }
 
-extern "C" void MMTk_InlineMethods(llvm::Module* module);
-
 void BaseIntrinsics::init(llvm::Module* module) {
 
   LLVMContext& Context = module->getContext();
 
-  MMTk_InlineMethods(module);
+	makeLLVMFunctions_FinalMMTk(module);
   llvm_runtime::makeLLVMModuleContents(module);
 
   // Type declaration

@@ -42,6 +42,7 @@
 #include "vmkit/JIT.h"
 #include "vmkit/VirtualMachine.h"
 #include "vmkit/Thread.h"
+#include "vmkit/InlineCommon.h"
 
 #include "j3/JavaAOTCompiler.h"
 
@@ -205,5 +206,5 @@ int main(int argc, char **argv) {
 }
 
 // Because MMTk has not been created yet, provide this method in order to link.
-extern "C" void MMTk_InlineMethods(llvm::Module* module) {
+extern "C" void vmkit::makeLLVMFunctions_FinalMMTk(llvm::Module* module) {
 }

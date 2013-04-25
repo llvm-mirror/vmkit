@@ -9,6 +9,6 @@
 LEVEL = ../..
 
 TOOL=j3
-LINK_USE=Classpath J3 J3Compiler Vmkit VmkitCompiler CommonThread FinalMMTk InlineMMTk Precompiled BootstrapClasses
+LINK_USE=Classpath J3 J3Compiler Vmkit VmkitCompiler CommonThread FinalMMTk Precompiled BootstrapClasses
 
 include $(LEVEL)/Makefile.common

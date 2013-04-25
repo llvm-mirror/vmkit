@@ -20,6 +20,7 @@
 #include "vmkit/MethodInfo.h"
 #include "vmkit/VirtualMachine.h"
 #include "vmkit/Thread.h"
+#include "vmkit/InlineCommon.h"
 
 #include "j3/JavaAOTCompiler.h"
 #include "j3/JavaJITCompiler.h"
@@ -111,5 +112,5 @@ int main(int argc, char **argv, char **envp) {
 
 // Because we don't want inlined methods to show up in the result
 // precompiled code, provide this method in order to link.
-extern "C" void MMTk_InlineMethods(llvm::Module* module) {
+extern "C" void vmkit::makeLLVMFunctions_FinalMMTk(llvm::Module* module) {
 }

@@ -146,6 +146,12 @@ MODULE_A=$(LIB_DIR)/lib$(MODULE).a
 
 all:: $(MODULE_A)
 
+ifdef EXTRACT_FUNCTIONS
+all:: $(LIB_DIR)/$(MODULE)-inliner.o
+MODULE_A_DEP=$(LIB_DIR)/$(MODULE)-inliner.o
+NEED_BC=1
+endif
+
 define all-suffixes
 	$(wildcard *$1) $(filter %$1, $(GEN))
 endef
@@ -166,14 +172,14 @@ ifdef NEED_BC
 # assemble this module and finally create the archive
 all:: $(LIB_DIR)/$(MODULE).bc
 
-$(LIB_DIR)/$(MODULE).bc: $(BUILD_DIR)/$(MODULE)-opt.bc $(LIB_DIR)/.dir
+$(LIB_DIR)/$(MODULE).bc $(LIB_DIR)/$(MODULE)-inliner.bc: $(LIB_DIR)/%.bc: $(BUILD_DIR)/%-opt.bc $(LIB_DIR)/.dir
 	$(Verb) $(CP) $< $@
 
 $(BUILD_DIR)/$(MODULE).bc: $(BC_FILES) $(patsubst %, $(LIB_DIR)/%.bc,$(MODULE_USE))
 	$(Echo) "Linking module '$(notdir $@)'"
 	$(Verb) $(LLVMLINK) $^ -o $@
 
-MODULE_A_DEP=$(BUILD_DIR)/$(MODULE)-opt.o
+MODULE_A_DEP+=$(BUILD_DIR)/$(MODULE)-opt.o
 else
 # for most of the module, we avoid a full module creation, mainly because I have bugs in llc
 # in this case, we build a set of .o files and archive them together
@@ -196,6 +202,29 @@ $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 	$(Verb) $(LOPT) $< $(OPT_GC) -o $@
 
 endif
+
+###############################################################################
+#   Inliner
+###############################################################################
+$(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)-opt.bc $(SELF)
+  # cppgen doesn't like debug info
+	$(Echo) "Generating inliner $(notdir $@)"
+	$(Verb) doit() { \
+						echo '#include "vmkit/InlineCommon.h"'; \
+			    	echo 'using namespace llvm;'; \
+						echo 'namespace vmkit {'; \
+						for F in $(EXTRACT_FUNCTIONS); do \
+							$(LOPT) -strip-debug $< -o - | $(LLC) $(LLC_FLAGS) -march=cpp -cppgen=function -cppfor=$$F -o - \
+									| sed -e "s/makeLLVMFunction/makeLLVMFunction_$(MODULE)_$$F/"; [ $$? -ne 0 ] && exit 1; \
+						done; \
+						echo "void makeLLVMFunctions_$(MODULE)(Module *mod) {"; \
+						for F in $(EXTRACT_FUNCTIONS); do \
+							echo "  vmkit::makeLLVMFunction_$(MODULE)_$$F(mod);"; \
+						done; \
+						echo "}"; \
+						echo "}"; \
+						exit 0; \
+				 }; doit > $@
 
 ###############################################################################
 #   Linking
@@ -259,11 +288,11 @@ DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUIL
 
 define define_compile_rule
 $(BUILD_DIR)/%.bc: %$1 $(SELF) $(BUILT_INC) $(BUILD_DIR)/.dir
-	$(Echo) "Compiling '$(notdir $$<)'"
+	$(Echo) "Compiling '$$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 
 $(BUILD_DIR)/%.bc: $(BUILD_DIR)/%$1 $(BUILT_INC) $(SELF) $(BUILD_DIR)/.dir
-	$(Echo) "Compiling '$(notdir $$<)'"
+	$(Echo) "Compiling '$$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 endef
 
