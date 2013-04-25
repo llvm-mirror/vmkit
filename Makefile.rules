@@ -30,6 +30,12 @@ ifeq ($(DEBUG),1)
   COMMON_CFLAGS+=-g
 endif
 
+ifeq ($(OPTIMIZED),1)
+	OPT_MSG="Optimizing"
+else
+	OPT_MSG="Performing GC pass on"
+endif
+
 ###############################################################################
 #   Nice printing
 ###############################################################################
@@ -116,7 +122,6 @@ VMJC=$(BIN_DIR)/vmjc$(EXEEXT)
 ###############################################################################
 ifdef TOOL
 MODULE=$(TOOL)
-#GEN+=frametables.cc
 
 all:: $(BIN_DIR)/$(TOOL)$(EXEEXT)
 endif
@@ -145,11 +150,11 @@ define all-suffixes
 	$(wildcard *$1) $(filter %$1, $(GEN))
 endef
 
-CLANG_FILES+=$(patsubst %.c,$(BUILD_DIR)/%,$(call all-suffixes,.c)) \
-             $(patsubst %.cc,$(BUILD_DIR)/%,$(call all-suffixes,.cc)) \
-             $(patsubst %.cpp,$(BUILD_DIR)/%,$(call all-suffixes,.cpp))
+CLANG_FILES=$(patsubst %.c,$(BUILD_DIR)/%,$(call all-suffixes,.c)) \
+            $(patsubst %.cc,$(BUILD_DIR)/%,$(call all-suffixes,.cc)) \
+            $(patsubst %.cpp,$(BUILD_DIR)/%,$(call all-suffixes,.cpp))
 
-BC_FILES+=$(addsuffix .bc,$(CLANG_FILES)) $(addprefix $(BUILD_DIR)/,$(filter %.bc, $(GEN)))
+BC_FILES=$(addsuffix .bc,$(CLANG_FILES)) $(addprefix $(BUILD_DIR)/,$(filter %.bc, $(GEN)))
 
 ifdef NEED_GC
 LLC_GC=-load=$(PREPARE_CODE)
@@ -187,56 +192,39 @@ $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $(LLC_GC) $< -o $@
 
 %-opt.bc: %.bc
-	$(Echo) "Optimizing '$(notdir $<)'"
+	$(Echo) "$(OPT_MSG) '$(notdir $<)'"
 	$(Verb) $(LOPT) $< $(OPT_GC) -o $@
-
-endif
-
-###############################################################################
-#   Frametables
-###############################################################################
-DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
-$(BUILD_DIR)/frametables.cc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir 
-	$(Echo) "Generating frametables in $@"
-	$(Verb) mkdir -p $(dir $@)
-	$(Verb) doit() { \
-	          echo '#include "vmkit/MethodInfo.h"'; \
-						echo 'using namespace vmkit;'; \
-						$(NM) $^ | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/'; \
-						echo 'CompiledFrames* vmkit::initialFrametables[] = {'; \
-						$(NM) $^ | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/'; \
-						echo "0"; \
-						echo "};"; \
-					}; doit
-
-ifdef BUILD_FRAMETABLE
-
-## have to remove this symbol (used elsewere)
-BUILT_INC+=$(patsubst %,$(BUILD_DIR)/%,FrametablesExterns.inc FrametablesSymbols.inc)
-DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
-
-$(BUILD_DIR)/FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
-	$(Echo) "Generating $(notdir $@)"
-	$(Verb) $(NM) $(DEP_FRAMETABLES) | $(GREP) __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
-
-$(BUILD_DIR)/FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
-	$(Echo) "Generating $(notdir $@)"
-	$(Verb) $(NM) $(DEP_FRAMETABLES) | $(GREP) __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
 
 endif
 
 ###############################################################################
 #   Linking
 ###############################################################################
-DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE) $(LINK_USE))
+DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
 
-$(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(BIN_DIR)/.dir
+$(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables-opt.o $(SELF) $(BIN_DIR)/.dir
 	$(Echo) "Linking executable '$(notdir $@)'"
-	$(Verb) $(CLANGXX) -o $@ $(MODULE_A) $(DEP_LIBS) $(MY_LIBS) $(MY_LDFLAGS) 
+	$(Verb) $(CLANGXX) -o $@ $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables-opt.o $(DEP_LIBS) $(MY_LIBS) $(MY_LDFLAGS) 
 
 $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
 	$(Echo) "Linking shared library '$(notdir $@)'"
 	$(Verb) $(CLANGXX) -O0 -o $@ $(SHOPT) -shared -Wl,--whole-archive $(MODULE_A) -Wl,--no-whole-archive $(DEP_LIBS)
+
+###############################################################################
+#   Frametables
+###############################################################################
+$(BUILD_DIR)/frametables.cc: $(MODULE_A) $(DEP_LIBS) $(SELF) $(BUILD_DIR)/.dir 
+	$(Echo) "Generating frametables of $(notdir $(TOOL))" #$(notdir $(DEP_LIBS))"
+	$(Verb) doit() { \
+						F="$(MODULE_A) $(DEP_LIBS)"; \
+	          echo '#include "vmkit/MethodInfo.h"'; \
+						echo 'using namespace vmkit;'; \
+						$(NM) $$F | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/'; \
+						echo 'CompiledFrames* vmkit::initialFrametables[] = {'; \
+						$(NM) $$F | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/'; \
+						echo "0"; \
+						echo "};"; \
+					}; doit > $@
 
 ###############################################################################
 # vmkit runtime generated files

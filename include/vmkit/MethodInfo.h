@@ -95,5 +95,7 @@ public:
   }
 };
 
+extern CompiledFrames* initialFrametables[]; 
+
 } // end namespace vmkit
 #endif // VMKIT_METHODINFO_H

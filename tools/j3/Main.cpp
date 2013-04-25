@@ -23,13 +23,6 @@
 using namespace j3;
 using namespace vmkit;
 
-#include "FrametablesExterns.inc"
-
-CompiledFrames* frametables[] = {
-  #include "FrametablesSymbols.inc"
-  NULL
-};
-
 int main(int argc, char **argv, char **envp) {
   llvm::llvm_shutdown_obj X;
 
@@ -42,7 +35,7 @@ int main(int argc, char **argv, char **envp) {
   JavaJITCompiler* Comp = JavaJITCompiler::CreateCompiler("JITModule");
   JnjvmBootstrapLoader* loader = new(Allocator, "Bootstrap loader")
     JnjvmBootstrapLoader(Allocator, Comp, true);
-  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, frametables, loader);
+  Jnjvm* vm = new(Allocator, "VM") Jnjvm(Allocator, initialFrametables, loader);
  
   // Run the application. 
   vm->runApplication(argc, argv);
