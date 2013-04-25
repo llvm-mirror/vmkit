@@ -1379,7 +1379,12 @@ void Jnjvm::scanFinalizationQueue(word_t closure) {
 
 void Jnjvm::addFinalizationCandidate(gc* object) {
   llvm_gcroot(object, 0);
-  finalizerThread->addFinalizationCandidate(object);
+  if (object->getVirtualTable()->hasDestructor())
+  	finalizerThread->addFinalizationCandidate(object);
+}
+
+void Jnjvm::setType(gcHeader* header, void* type) {
+	header->toReference()->setVirtualTable((VirtualTable*)type);
 }
 
 // This method is called during GC so no llvm_gcroot needed.

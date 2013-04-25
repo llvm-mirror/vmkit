@@ -19,29 +19,38 @@ static vmkit::SpinLock lock;
 std::set<gc*> __InternalSet__;
 int Collector::verbose = 0;
 
-extern "C" void* gcmalloc(uint32_t sz, void* _VT) {
-  gc* res = 0;
+extern "C" void* prealloc(uint32_t sz) {
+	gc* res = 0;
   gcHeader* head = 0;
-  VirtualTable* VT = (VirtualTable*)_VT;
-  sz += gcHeader::hiddenHeaderSize();
+
   sz = llvm::RoundUpToAlignment(sz, sizeof(void*));
-  head = (gcHeader*)malloc(sz);
+  head = (gcHeader*) malloc(sz);
   memset((void*)head, 0, sz);
   res = head->toReference();
 
   lock.acquire();
   __InternalSet__.insert(res);
   lock.release();
-  
-  res->setVirtualTable(VT);
+
   return res;
 }
 
-extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT) {
-  gc* res = (gc*)gcmalloc(sz, VT);
-  if (VT->hasDestructor())
-    vmkit::Thread::get()->MyVM->addFinalizationCandidate(res);
+extern "C" void postalloc(gc* obj, void* type, uint32_t size) {
+	vmkit::Thread::get()->MyVM->setType(obj->toHeader(), type);
+}
+
+extern "C" void* gcmalloc(uint32_t sz, void* type) {
+  gc* res = 0;
+  sz += gcHeader::hiddenHeaderSize();
+  res = (gc*) prealloc(sz);
+  postalloc(res, type, sz);
   return res;
+}
+
+extern "C" void* gcmallocUnresolved(uint32_t sz, void* type) {
+	gc* res = (gc*)gcmalloc(sz, type);
+	vmkit::Thread::get()->MyVM->addFinalizationCandidate(res);
+	return res;
 }
 
 extern "C" void addFinalizationCandidate(gc* obj) {

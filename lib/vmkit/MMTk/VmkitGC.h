@@ -52,8 +52,8 @@ class VirtualTable {
   static void emptyTracer(void*) {}
 };
 
-extern "C" void* gcmallocUnresolved(uint32_t sz, VirtualTable* VT);
-extern "C" void* gcmalloc(uint32_t sz, void* VT);
+extern "C" void* gcmallocUnresolved(uint32_t sz, void* type);
+extern "C" void* gcmalloc(uint32_t sz, void* type);
 
 class gc : public gcRoot {
 public:

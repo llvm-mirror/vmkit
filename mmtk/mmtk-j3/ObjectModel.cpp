@@ -62,20 +62,11 @@ Java_org_j3_mmtk_ObjectModel_attemptAvailableBits__Lorg_vmmagic_unboxed_ObjectRe
   return (val == oldValue);
 }
 
-extern "C" void Java_org_j3_bindings_Bindings_setVT__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
-                    gcHeader* header, VirtualTable* VT) ALWAYS_INLINE;
-
-extern "C" void Java_org_j3_bindings_Bindings_setVT__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2(
-                    gcHeader* header, VirtualTable* VT) {
- 	header->toReference()->setVirtualTable(VT);
-}
-
 extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__() ALWAYS_INLINE;
 
 extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__() {
 	return gcHeader::hiddenHeaderSize();
 }
-
 
 extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2I(
     void* res, void* src, int size) ALWAYS_INLINE;

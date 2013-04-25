@@ -38,15 +38,20 @@ import org.vmutil.options.StringOption;
 
 
 public final class Bindings {
-  @Inline
-  private static Address gcmalloc(int size, ObjectReference virtualTable) {
-    Selected.Mutator mutator = Selected.Mutator.get();
-    int allocator = mutator.checkAllocator(size, 0, 0);
-    Address res = mutator.alloc(size, 0, 0, allocator, 0);
-    setVT(res, virtualTable);
-    mutator.postAlloc(res.toObjectReference(), virtualTable, size, allocator);
-    return res;
-  }
+	@Inline
+	private static Address prealloc(int size) {
+		Selected.Mutator mutator = Selected.Mutator.get();
+		int allocator = mutator.checkAllocator(size, 0, 0);
+		Address res = mutator.alloc(size, 0, 0, allocator, 0);
+		return res;
+	}
+	
+	@Inline
+	private static void postalloc(ObjectReference object, ObjectReference type, int size) {
+		Selected.Mutator mutator = Selected.Mutator.get();
+		int allocator = mutator.checkAllocator(size, 0, 0);
+		mutator.postAlloc(object, type, size, allocator);
+	}
 
   @Inline
   private static boolean isLive(TraceLocal closure, ObjectReference obj) {
@@ -131,9 +136,6 @@ public final class Bindings {
     return to.toObjectReference();
   }
 
-  @Inline
-  private static native void setVT(Address addr , ObjectReference virtualTable);
-  
   @Inline
   private static native int hiddenHeaderSize();
   
