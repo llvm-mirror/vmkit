@@ -3,17 +3,36 @@ Debug*
 Unoptimized*
 
 Makefile.common
+Makefile.config
+Makefile.llvmbuild
 tools/llcj/LinkPaths.h
+tools/j3/FrametablesExterns.inc
+tools/j3/FrametablesSymbols.inc
+tools/llvm-config/
+tools/precompiler/FrametablesExterns.inc
+tools/precompiler/FrametablesSymbols.inc
+tools/precompiler/trainer/
+
 lib/j3/LLVMRuntime/LLVMRuntime.inc
 lib/vmkit/Compiler/LLVMRuntime.inc
 lib/j3/ClassLib/Classpath.h
 include/vmkit/config.h
 mmtk/java/src/org/j3/config/Selected.java
 mmtk/java/build.xml
+mmtk/inline/MMTkArrayWriteInline.inc
+mmtk/inline/MMTkFieldWriteInline.inc
+mmtk/inline/MMTkNonHeapWriteInline.inc
+mmtk/inline/MMTkVMKitMallocInline.inc
+mmtk/inline/MMTkVTMallocInline.inc
 
 mmtk/java/classes/
+mmtk/java/bin/
+mmtk/java/mmtk-vmkit-optimized.bc
+mmtk/java/mmtk-vmkit.bc
+
 
 config.log
+configure.out
 config.status
 
 tests/logs.zip
