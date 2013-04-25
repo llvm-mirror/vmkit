@@ -92,11 +92,6 @@ extern "C" void* gcmalloc(uint32_t sz, void* type) {
 }
 */
 
-extern "C" int hasFinalizer(void* type) {
-	return vmkit::Thread::get()->MyVM->hasFinalizer(type);
-}
-
-
 extern "C" void* gcmalloc(uint32_t sz, void* type) {
   gc* res = 0;
   llvm_gcroot(res, 0);

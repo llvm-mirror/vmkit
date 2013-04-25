@@ -218,11 +218,6 @@ public:
   ///
   virtual const char* getObjectTypeName(gc* object) { return "An object"; }
 
-  /// hasFinalizer - Determine if the specified type has a finalizer.
-  ///
-  virtual int hasFinalizer(void* type) { return 1; }
-
-
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
   CooperativeCollectionRV rendezvous;

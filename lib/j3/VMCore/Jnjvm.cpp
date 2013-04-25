@@ -1498,9 +1498,3 @@ void Jnjvm::printMethod(vmkit::FrameInfo* FI, word_t ip, word_t addr) {
 
   fprintf(stderr, "\n");
 }
-
-int Jnjvm::hasFinalizer(void* type) {
-	JavaVirtualTable* vt = (JavaVirtualTable*)type;
-	return vt->hasDestructor();
-}
-

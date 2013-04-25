@@ -142,7 +142,6 @@ private:
   virtual void clearObjectReferent(gc* ref);
   virtual gc** getObjectReferentPtr(gc* _obj);
   virtual void setObjectReferent(gc* _obj, gc* val);
-  virtual int hasFinalizer(void* type);
 
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
