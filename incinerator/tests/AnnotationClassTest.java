@@ -28,9 +28,13 @@ public class AnnotationClassTest {
     Method m = Sample.class.getMethod("y");
     Sample sample = new Sample();
     sample.x = 14;
+    
+    f.getDeclaredAnnotations();
 
     MyAnnotation xx = (MyAnnotation)f.getAnnotation(MyAnnotation.class);
 		MyAnnotation yy = (MyAnnotation)f.getAnnotation(MyAnnotation.class);
+		
+		
 
     check(f.getInt(sample) == 14);
     f.setInt(sample, 17);
