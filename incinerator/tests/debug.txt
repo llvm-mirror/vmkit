@@ -9,3 +9,8 @@ stop 14
 
 start 12 13 14
 stop 12
+
+framework call j3.J3Mgr isBundleStaleReferenceCorrected 39
+framework call j3.J3Mgr setBundleStaleReferenceCorrected 15 yes
+
+framework call j3.J3Mgr dumpClassLoaderBundles

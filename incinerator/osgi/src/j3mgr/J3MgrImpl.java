@@ -27,14 +27,19 @@ public class J3MgrImpl
 		context = null;
 	}
 
-	public void setBundleStaleReferenceCorrected(Bundle bundle, boolean corrected) throws Exception
+	public void setBundleStaleReferenceCorrected(long bundleID, boolean corrected) throws Exception
 	{
-		j3.vm.OSGi.setBundleStaleReferenceCorrected(bundle.getBundleId(), corrected);
+		j3.vm.OSGi.setBundleStaleReferenceCorrected(bundleID, corrected);
+		
+		if (corrected && (context.getBundle(bundleID) == null)) {
+			j3.vm.OSGi.notifyBundleUninstalled(bundleID);
+			refreshFramework();
+		}
 	}
 
-	public boolean isBundleStaleReferenceCorrected(Bundle bundle) throws Exception
+	public boolean isBundleStaleReferenceCorrected(long bundleID) throws Exception
 	{
-		return j3.vm.OSGi.isBundleStaleReferenceCorrected(bundle.getBundleId());
+		return j3.vm.OSGi.isBundleStaleReferenceCorrected(bundleID);
 	}
 
 	public void bundleChanged(BundleEvent event)
@@ -56,25 +61,38 @@ public class J3MgrImpl
 	// THE FOLLOWING METHODS ARE DEBUGGING HELPERS
 	// THEY SHOULD BE REMOVED IN PRODUCTION
 	
-	public void setBundleStaleReferenceCorrected(String bundleName, String corrected) throws Exception
+	public void setBundleStaleReferenceCorrected(String bundleNameOrID, String corrected) throws Exception
 	{
-		setBundleStaleReferenceCorrected(getBundle(bundleName), corrected.equals("yes"));
+		long bundleID = getBundleID(bundleNameOrID);
+		setBundleStaleReferenceCorrected(bundleID, corrected.equals("yes"));
 	}
 	
-	public void isBundleStaleReferenceCorrected(String bundleName) throws Exception
+	public void isBundleStaleReferenceCorrected(String bundleNameOrID) throws Exception
 	{
-		boolean value = isBundleStaleReferenceCorrected(getBundle(bundleName));
-		System.out.println("isBundleStaleReferenceCorrected(" + bundleName + ") = " + (value ? "yes" : "no"));
+		long bundleID = getBundleID(bundleNameOrID);
+		boolean value = isBundleStaleReferenceCorrected(bundleID);
+		System.out.println("isBundleStaleReferenceCorrected(bundleID=" + bundleID + ") = " + (value ? "yes" : "no"));
 	}
 
-	Bundle getBundle(String symbolicName)
+	long getBundleID(String symbolicNameOrID)
 	{
+		try {
+			long bundleID = Long.parseLong(symbolicNameOrID);
+			
+			if (context.getBundle(bundleID) == null)
+				System.out.println("WARNING: bundleID=" + bundleID + " is invalid.");
+			
+			return (bundleID < 0) ? -1 : bundleID;
+		} catch (NumberFormatException e) {
+			// This is not a bundle ID, it must be a symbolic name
+		}
+		
 		Bundle[] bundles = context.getBundles();
 		for (int i=0; i < bundles.length; ++i) {
-			if (symbolicName.equals(bundles[i].getSymbolicName()))
-				return bundles[i];
+			if (symbolicNameOrID.equals(bundles[i].getSymbolicName()))
+				return bundles[i].getBundleId();
 		}
-		return null;
+		return -1;
 	}
 
 	public void dumpClassLoaderBundles()
