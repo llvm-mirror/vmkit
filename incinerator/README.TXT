@@ -59,21 +59,21 @@ cd ../projects
 svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
 cd ..
 
-* Patch it if you want to have a better debug support:
+* Patch it:
 
 cd llvm
-patch -p1 < ../vmkit2/patches/llvm.patch
+patch -p1 < ../ijvm/llvm.patch
 
 * Make it (release mode):
 
 ./configure --enable-optimized --enable-assertions --enable-jit --enable-threads --enable-pthreads --enable-pic --enable-targets=x86,cpp --disable-docs --disable-doxygen
-make -j12 BUILD_EXAMPLES=0 ENABLE_DOCS=0
+make -j12 ENABLE_OPTIMIZED=1 BUILD_EXAMPLES=0 ENABLE_DOCS=0
+ln -s Release+Asserts Debug+Asserts
 
 * You can also make it in debug mode, but this is is not necessary to debug compiled programs:
 
 ./configure --disable-optimized --enable-assertions --enable-debug-runtime --enable-debug-symbols --enable-keep-symbols --enable-jit --enable-threads --enable-pthreads --enable-pic --enable-targets=x86,cpp --disable-docs --disable-doxygen
-
-make -j12 BUILD_EXAMPLES=0 ENABLE_DOCS=0
+make -j12 ENABLE_OPTIMIZED=0 BUILD_EXAMPLES=0 ENABLE_DOCS=0
 
 ======
 VMKit:
@@ -81,16 +81,28 @@ VMKit:
 
 * Get it (git):
 
-git clone git://scm.gforge.inria.fr/vmkit2/vmkit2.git
+git clone git://scm.gforge.inria.fr/vmkit2/vmkit2.git -b ijvm ijvm
+or:
+git clone git+ssh://YOUR_USER_NAME.gforge.inria.fr//gitroot/vmkit2/vmkit2.git -b ijvm ijvm
 
-* or
+* You can also get it via svn:
 
-git clone git+ssh://YOUR_USER_NAME@gforge.inria.fr//gitroot/vmkit2/vmkit2.git
+svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit
 
 * Make it (debug mode):
 
-./configure --with-llvmsrc=@PATH_TO_LLVM@ --with-llvmobj=@PATH_TO_LLVM@ --with-gnu-classpath-libs=@PATH_TO_GNUCLASSPATH@ --with-gnu-classpath-glibj=@PATH_TO_GNUCLASSPATH@/lib/glibj.zip
+./configure --with-llvmsrc=/home/koutheir/PhD/VMKit/llvm --with-llvmobj=/home/koutheir/PhD/VMKit/llvm --with-gnu-classpath-libs=/usr/local/classpath/lib/classpath --with-gnu-classpath-glibj=/usr/local/classpath/share/classpath/glibj.zip
+make -j12 ENABLE_OPTIMIZED=0 REQUIRES_FRAME_POINTER=1 KEEP_SYMBOLS=1 DEBUG_RUNTIME=1 DEBUG_SYMBOLS=1
 
-* Buil it:
-make -j12
+=============
+Knopflerfish:
+=============
 
+* Apply patch:
+cd knopflerfish
+patch -p1 < ../ijvm/knopflerfish.patch
+cd ..
+
+* Recompile Knopflerfish:
+cd knopflerfish/osgi
+ant default
