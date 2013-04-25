@@ -555,6 +555,7 @@ bool JavaVirtualTable::isSubtypeOf(JavaVirtualTable* otherVT) {
       if (secondaryTypes[i] == otherVT) {
         cache = otherVT;
         return true;
+      }
     }
   }
   return false;
