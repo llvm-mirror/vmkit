@@ -20,6 +20,7 @@
 #include "ClasspathReflect.h"
 #include "JavaClass.h"
 #include "JavaThread.h"
+#include "JavaConstantPool.h"
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
@@ -27,7 +28,7 @@
 
 #include "Reader.h"
 
-#if 0
+#if 1
 using namespace vmkit;
 #define dprintf(...) do { printf("ClasspathVMField: "); printf(__VA_ARGS__); } while(0)
 #else
@@ -37,6 +38,72 @@ using namespace vmkit;
 using namespace j3;
 
 extern "C" {
+
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMField_getAnnotation(
+#ifdef NATIVE_JNI
+JNIEnv *env, 
+#endif
+JavaObjectVMField* VMField, JavaObjectClass* annotationClass) { 
+  JavaObject* res = 0;
+  JavaObject* newHashMap = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(newHashMap, 0);
+  llvm_gcroot(VMField, 0);
+  llvm_gcroot(annotationClass, 0);
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  Classpath* upcalls = vm->upcalls;
+
+  dprintf("*************VMField_getAnnotation*************\n");
+  if (annotationClass) {
+    /* Retrieving annotationClass classname */
+    UserClass* clazz = JavaObjectClass::getClass(annotationClass)->asClass();
+    dprintf("searched annotation : %s\n\n", UTF8Buffer(clazz->name).cString());
+
+    /* Retrieving VMField.class attributes list */
+    UserClass* compilingClass = JavaObjectVMField::getClass(VMField);
+    JavaField* field = JavaObjectVMField::getInternalField(VMField);
+    Attribut* annotationsAtt =
+      field->lookupAttribut(Attribut::annotationsAttribut);
+    dprintf("JavaField : %s\n", UTF8Buffer(field->name).cString());
+
+    if (annotationsAtt) {
+      Reader reader(annotationsAtt, compilingClass->bytes);
+      AnnotationReader AR(reader, compilingClass);
+      uint16 numAnnotations = reader.readU2();
+
+      for (uint16 i = 0; i < numAnnotations; ++i) {
+				uint16 typeIndex = reader.readU2();
+				const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
+
+				// Remove the L and ; in the name annotation type (L.....;)
+				// for the comparison.
+				dprintf("Comparing with  : %s\n", UTF8Buffer(annoType).cString());
+				if (clazz->name->equals(annoType->elements+1, annoType->size-2)) {
+	  			newHashMap = AR.createAnnotationMapValues();
+	  			break;
+
+				} else {
+	  			AR.readAnnotationElementValues();
+				}
+  		} // end for
+
+  		if (newHashMap) {
+				dprintf("Annotation creation\n");
+				res = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
+  		}
+
+    }
+  } else {
+    vm->nullPointerException();
+  }
+
+  END_NATIVE_EXCEPTION
+	dprintf("Annotation found\n");
+  return res;
+}
 
 JNIEXPORT jint JNICALL Java_java_lang_reflect_VMField_getModifiersInternal(
 #ifdef NATIVE_JNI

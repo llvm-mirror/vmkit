@@ -73,6 +73,13 @@ Class*      Classpath::newVMConstructor;
 ClassArray* Classpath::constructorArrayClass;
 ClassArray* Classpath::constructorArrayAnnotation;
 JavaField*  Classpath::constructorSlot;
+UserClass*  Classpath::newHashMap;
+JavaMethod* Classpath::initHashMap;
+JavaMethod* Classpath::putHashMap;
+JavaMethod* Classpath::createAnnotation;
+UserClass*  Classpath::newAnnotationHandler;
+UserClass*  Classpath::newAnnotation;
+UserClassArray* Classpath::annotationArrayClass;
 JavaMethod* Classpath::initMethod;
 JavaMethod* Classpath::initVMMethod;
 JavaMethod* Classpath::initField;
@@ -623,6 +630,33 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   constructorSlot =
     UPCALL_FIELD(loader, "java/lang/reflect/Constructor", "slot", "I", ACC_VIRTUAL);
+    
+    
+  newHashMap =
+    UPCALL_CLASS(loader, "java/util/HashMap");
+
+  initHashMap =
+    UPCALL_METHOD(loader, "java/util/HashMap", "<init>",
+                  "()V", ACC_VIRTUAL);  
+  putHashMap =
+    UPCALL_METHOD(loader, "java/util/HashMap", "put",
+                  "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+		  ACC_VIRTUAL);
+
+  newAnnotationHandler = 
+    UPCALL_CLASS(loader, "sun/reflect/annotation/AnnotationInvocationHandler");
+
+  createAnnotation =
+    UPCALL_METHOD(loader, "sun/reflect/annotation/AnnotationInvocationHandler",
+		  "create", "(Ljava/lang/Class;Ljava/util/Map;)Ljava/lang/annotation/Annotation;",
+		  ACC_STATIC);
+
+  annotationArrayClass =
+    UPCALL_ARRAY_CLASS(loader, "java/lang/annotation/Annotation", 1);
+    
+  newAnnotation =
+    UPCALL_CLASS(loader, "java/lang/annotation/Annotation");
+
   
   initMethod =
     UPCALL_METHOD(loader, "java/lang/reflect/Method", "<init>",

@@ -25,6 +25,109 @@ using namespace j3;
 
 extern "C" {
 
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMMethod_getDefaultValue(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+#endif
+JavaObjectVMMethod* VMMeth) {
+  JavaObject* res = 0;
+  llvm_gcroot(VMMeth, 0);
+  llvm_gcroot(res, 0);
+
+  BEGIN_NATIVE_EXCEPTION(0)
+  dprintf("*************VMMethod_getDefaultValue*************\n");
+  Classpath* upcalls = JavaThread::get()->getJVM()->upcalls;
+  UserClass* cl = JavaObjectVMMethod::getClass(VMMeth);
+  dprintf("JavaClass:%s\n", UTF8Buffer(cl->name).cString());
+
+  // Annotation interface class.
+  const UTF8* name = upcalls->newAnnotation->name;
+
+  if (cl->inheritName(name->elements, name->size)) {
+    // Find "default attribute"
+    JavaMethod* method = JavaObjectVMMethod::getInternalMethod(VMMeth);
+    Attribut* annotationsAtt =
+      method->lookupAttribut(Attribut::annotationDefaultAttribut);
+    dprintf("JavaMethod:%s\n", UTF8Buffer(method->name).cString());
+
+    if (annotationsAtt) {
+      Reader reader(annotationsAtt, cl->bytes);
+      AnnotationReader AR(reader, cl);
+
+      res = AR.createElementValue();
+    }
+  }
+
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMMethod_getAnnotation(
+#ifdef NATIVE_JNI
+JNIEnv *env, 
+#endif
+JavaObjectVMMethod* VMMeth, JavaObjectClass* annotationClass) {
+  JavaObject* res = 0;
+  JavaObject* newHashMap = 0;
+  llvm_gcroot(res, 0);
+  llvm_gcroot(newHashMap, 0);
+  llvm_gcroot(VMMeth, 0);
+  llvm_gcroot(annotationClass, 0);
+
+  BEGIN_NATIVE_EXCEPTION(0)
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  Classpath* upcalls = vm->upcalls;
+
+  dprintf("*************VMMethod_getAnnotation*************\n");
+  if (annotationClass) {
+    /* Retrieving annotationClass classname */
+    UserClass* clazz = JavaObjectClass::getClass(annotationClass)->asClass();
+    dprintf("searched annotation:%s\n\n", UTF8Buffer(clazz->name).cString());
+
+    /* Retrieving VMMethod.class attributes list */
+    UserClass* compilingClass = JavaObjectVMMethod::getClass(VMMeth);
+    JavaMethod* method = JavaObjectVMMethod::getInternalMethod(VMMeth);
+    Attribut* annotationsAtt =
+      method->lookupAttribut(Attribut::annotationsAttribut);
+    dprintf("JavaMethod:%s\n", UTF8Buffer(method->name).cString());
+
+    if (annotationsAtt) {
+      Reader reader(annotationsAtt, compilingClass->bytes);
+      AnnotationReader AR(reader, compilingClass);
+      uint16 numAnnotations = reader.readU2();
+
+      for (uint16 i = 0; i < numAnnotations; ++i) {
+	uint16 typeIndex = reader.readU2();
+	const UTF8* annoType = compilingClass->ctpInfo->UTF8At(typeIndex);
+
+	// Remove the L and ; in the name annotation type (L.....;)
+	// for the comparison.
+	if (clazz->name->equals(annoType->elements+1, annoType->size-2)) {
+	  newHashMap = AR.createAnnotationMapValues();
+	  break;
+
+	} else {
+	  AR.readAnnotationElementValues();
+	}
+      } // end for
+
+      if (newHashMap) {
+	dprintf("Annotation creation\n");
+	res = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
+      }
+
+    }
+  } else {
+    vm->nullPointerException();
+  }
+
+  END_NATIVE_EXCEPTION
+
+  return res;
+}
+
 JNIEXPORT jint JNICALL Java_java_lang_reflect_VMMethod_getModifiersInternal(
 #ifdef NATIVE_JNI
 JNIEnv *env,

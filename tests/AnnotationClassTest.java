@@ -1,6 +1,7 @@
 import java.lang.Deprecated;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,23 +11,34 @@ import java.lang.reflect.Field;
  * To change this template use File | Settings | File Templates.
  */
 public class AnnotationClassTest {
+
   static class Sample {
     @Deprecated
+    @MyAnnotation (property=5)
     public int x;
+    
+    @MyAnnotation (property=5)
+    public int y() {
+    	return x*x;
+    }
   }
 
   public static void main(String[] args) throws Exception {
     Field f = Sample.class.getField("x");
+    Method m = Sample.class.getMethod("y");
     Sample sample = new Sample();
     sample.x = 14;
 
-    Annotation xx = f.getAnnotation(Deprecated.class);
-    //Annotation[] a = f.getDeclaredAnnotations();
+    MyAnnotation xx = (MyAnnotation)f.getAnnotation(MyAnnotation.class);
+		MyAnnotation yy = (MyAnnotation)f.getAnnotation(MyAnnotation.class);
 
     check(f.getInt(sample) == 14);
     f.setInt(sample, 17);
     check(f.getInt(sample) == 17);
-    check(xx.annotationType().getCanonicalName().equals("java.lang.Deprecated"));
+    check(xx != null);
+    check(yy != null);
+    //int s = yy.property();
+    //check(s == 5);
   }
 
   private static void check(boolean b) throws Exception {

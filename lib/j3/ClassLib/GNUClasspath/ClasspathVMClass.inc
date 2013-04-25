@@ -435,6 +435,8 @@ jclass clazz,
 #endif
 JavaObject* Cl) {
   // TODO implement me
+	fprintf(stderr, "Java_java_lang_VMClass_getDeclaredAnnotations not implemented\n");
+  abort();
 
   ArrayObject* res = 0;
   llvm_gcroot(res, 0);

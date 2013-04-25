@@ -71,6 +71,19 @@ public:
     AnnotationNameIndex(0) {}
   void readAnnotation();
   void readElementValue();
+  
+  
+  void readAnnotationElementValues();
+
+  // createAnnotation - search for a specific annotation in annotation 
+  // attributes.
+  //
+  JavaObject* createAnnotationMapValues();
+  
+  // createElementValue - create the Java type associated withe the value 
+  // of the current annotation key.
+  //
+  JavaObject* createElementValue();
 };
 
 /// Attribute - This class represents JVM attributes to Java class, methods and

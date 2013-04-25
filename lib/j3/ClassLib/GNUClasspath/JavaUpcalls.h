@@ -80,6 +80,13 @@ public:
   ISOLATE_STATIC JavaMethod* getCallingClassLoader;
   ISOLATE_STATIC JavaMethod* initConstructor;
   ISOLATE_STATIC JavaMethod* initVMConstructor;
+  ISOLATE_STATIC UserClass*  newHashMap;
+  ISOLATE_STATIC JavaMethod* initHashMap;
+  ISOLATE_STATIC JavaMethod* putHashMap;
+  ISOLATE_STATIC JavaMethod* createAnnotation;
+  ISOLATE_STATIC UserClass*  newAnnotationHandler;
+  ISOLATE_STATIC UserClass*  newAnnotation;
+  ISOLATE_STATIC UserClassArray* annotationArrayClass;
   ISOLATE_STATIC UserClassArray* constructorArrayClass;
   ISOLATE_STATIC UserClassArray* constructorArrayAnnotation;
   ISOLATE_STATIC UserClass*      newConstructor;
