@@ -32,7 +32,7 @@
 #include "Classpath.h"
 #include "ClasspathReflect.h"
 #include "JavaClass.h"
-#include "j3/JavaCompiler.h"
+#include "JavaCompiler.h"
 #include "JavaConstantPool.h"
 #include "JavaString.h"
 #include "JavaThread.h"
@@ -215,7 +215,7 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
 	allocator(Alloc)
 #if RESET_STALE_REFERENCES
-	,staleRefCorrected(false), zombie(false)
+	,staleRefCorrected(false)
 #endif
 {
 }
@@ -225,7 +225,7 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    VMClassLoader* vmdata,
                                    Jnjvm* VM) : allocator(Alloc)
 #if RESET_STALE_REFERENCES
-	,staleRefCorrected(false), zombie(false)
+	,staleRefCorrected(false)
 #endif
 {
   llvm_gcroot(loader, 0);
@@ -324,11 +324,9 @@ UserClass* JnjvmBootstrapLoader::internalLoad(const UTF8* name,
     if (slash) {
       int packagelen = slash - cname;
       const UTF8 * package = name->extract(hashUTF8, 0, packagelen);
-      //classes->lock.lock();
       lock.lock();
       packages.insert(package);
       lock.unlock();
-      //classes->lock.unlock();
     }
   }
 
@@ -624,7 +622,7 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
   JavaObject* excp = NULL;
   llvm_gcroot(excp, 0);
   UserClass* res = NULL;
-  lock2.lock();
+  lock.lock();
   classes->lock.lock();
   res = (UserClass*) classes->map.lookup(name);
   classes->lock.unlock();
@@ -647,7 +645,7 @@ UserClass* JnjvmClassLoader::constructClass(const UTF8* name,
       JavaThread::get()->clearException();    
     } END_CATCH;
   }
-  lock2.unlock();
+  lock.unlock();
   if (excp != NULL) {
     JavaThread::get()->throwException(excp);
   }
@@ -1144,6 +1142,21 @@ void JnjvmClassLoader::setAssociatedBundleID(int64_t newID)
 	}
 
 	vm->setBundleClassLoader(newID, this);
+}
+
+void JnjvmClassLoader::markZombie(bool becomeZombie)
+{
+	classes->lock.lock();
+
+	for (ClassMap::iterator i = classes->map.begin(), e = classes->map.end(); i != e; ++i) {
+		CommonClass* ccl = i->second;
+		if (ccl->classLoader != this) continue;
+		if (!ccl->isClass() && !ccl->isInterface()) continue;
+
+		ccl->asClass()->markZombie(becomeZombie);
+	}
+
+	classes->lock.unlock();
 }
 
 #endif

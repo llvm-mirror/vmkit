@@ -115,14 +115,9 @@ protected:
   ///
   SignMap* javaSignatures;
 
-  /// lock - Lock when adding packages and Strings.
+  /// lock - Lock when loading classes.
   ///
   vmkit::LockRecursive lock;
-
-  /// lock2 - Lock when loading classes.
-  ///
-  vmkit::LockRecursive lock2;
-
 
   /// registeredNatives - Stores the native function pointers corresponding
   /// to methods that were defined through JNI's RegisterNatives mechanism.
@@ -338,11 +333,9 @@ public:
 
 protected:
   bool staleRefCorrected;
-  bool zombie;
 
 public:
-  bool isZombie() const {return zombie;}
-  void markZombie(bool becomeZombie = true) {zombie = becomeZombie;}
+  void markZombie(bool becomeZombie = true);
   bool isStaleReferencesCorrectionEnabled() {return staleRefCorrected;}
   void setStaleReferencesCorrectionEnabled(bool enable) {staleRefCorrected = enable;}
 

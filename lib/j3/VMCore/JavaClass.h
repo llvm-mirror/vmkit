@@ -532,6 +532,11 @@ public:
 
   uint16_t minJDKVersionMajor, minJDKVersionMinor, minJDKVersionBuild;
 
+  // A class becomes zombie when strong references to it exist in memory while:
+  // - Its defining bundle is uninstalled;
+  // - or it is an interface for an unregistered service.
+  bool zombie;
+
   /// getVirtualSize - Get the virtual size of instances of this class.
   ///
   uint32 getVirtualSize() const { return virtualSize; }
@@ -826,6 +831,9 @@ public:
 
   static void getMinimalJDKVersion(uint16_t major, uint16_t minor, uint16_t& JDKMajor, uint16_t& JDKMinor, uint16_t& JDKBuild);
   bool isClassVersionSupported(uint16_t major, uint16_t minor);
+
+  bool isZombie() const {return zombie;}
+  void markZombie(bool becomeZombie = true) {zombie = becomeZombie;}
 };
 
 /// ClassArray - This class represents Java array classes.

@@ -1,21 +1,16 @@
 
 #include <algorithm>
 #include <iostream>
-#include <sstream>
 
 #include "VmkitGC.h"
 #include "Jnjvm.h"
 #include "ClasspathReflect.h"
-#include "JavaUpcalls.h"
 #include "j3/jni.h"
-#include "JavaArray.h"
 
 
 using namespace std;
 
 #if RESET_STALE_REFERENCES
-
-#define DEBUG_VERBOSE_STALE_REF		1
 
 namespace j3 {
 
@@ -24,14 +19,6 @@ void Jnjvm::setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected)
 	JnjvmClassLoader* loader = this->getBundleClassLoader(bundleID);
 	if (!loader) {
 		this->illegalArgumentException("Invalid bundle ID"); return;}
-
-#if DEBUG_VERBOSE_STALE_REF
-	cerr << "Stale references to bundleID=" << bundleID << " are ";
-	if (corrected)
-		cerr << "corrected." << endl;
-	else
-		cerr << "no more corrected." << endl;
-#endif
 
 	loader->setStaleReferencesCorrectionEnabled(corrected);
 }
@@ -56,12 +43,28 @@ void Jnjvm::notifyBundleUninstalled(int64_t bundleID)
 	// Strong references to all its loaded classes will be reset in the next garbage collection.
 	loader->markZombie(true);
 
-#if DEBUG_VERBOSE_STALE_REF
-	cerr << "Bundle uninstalled: bundleID=" << bundleID << endl;
-#endif
-
 	scanStaleReferences = true;		// Enable stale references scanning
 	vmkit::Collector::collect();	// Start a garbage collection now
+}
+
+void Jnjvm::notifyServiceUnregistered(int64_t bundleID, JavaObjectClass* classObject)
+{
+	llvm_gcroot(classObject, 0);
+
+	JnjvmClassLoader* loader = this->getBundleClassLoader(bundleID);
+	if (!loader) return;
+
+	if (!loader->isStaleReferencesCorrectionEnabled()) return;
+
+	CommonClass* ccl = JavaObjectClass::getClass(classObject);
+	if (!ccl->isClass() && !ccl->isInterface()) {
+		this->illegalArgumentException("Service class is not a class or an interface"); return;}
+
+	ccl->dump();
+	ccl->asClass()->markZombie(true);
+
+	scanStaleReferences = true;		// Enable stale references scanning
+//	vmkit::Collector::collect();	// Start a garbage collection now
 }
 
 void Jnjvm::dumpClassLoaderBundles()
@@ -69,25 +72,6 @@ void Jnjvm::dumpClassLoaderBundles()
 	for (bundleClassLoadersType::const_iterator i = bundleClassLoaders.begin(), e = bundleClassLoaders.end(); i != e; ++i) {
 		cerr << "classLoader=" << i->second << "\tbundleID=" << i->first << endl;
 	}
-}
-
-ArrayLong* Jnjvm::getReferencesToObject(const JavaObject* obj)
-{
-	if (!obj) return NULL;
-
-	findReferencesToObject = obj;
-	vmkit::Collector::collect();
-
-	size_t count = foundReferencerObjects.size();
-	ArrayLong* r = static_cast<ArrayLong*>(upcalls->ArrayOfLong->doNew(count, this));
-	if (!r) {this->outOfMemoryError(); return r;}
-
-	ArrayLong::ElementType* elements = ArrayLong::getElements(r);
-	for (size_t i=0; i < count; ++i) {
-		elements[i] = reinterpret_cast<ArrayLong::ElementType>(foundReferencerObjects[i]);
-	}
-
-	return r;
 }
 
 JnjvmClassLoader* Jnjvm::getBundleClassLoader(int64_t bundleID)
@@ -163,6 +147,18 @@ extern "C" void Java_j3_vm_OSGi_notifyBundleUninstalled(jlong bundleID)
 #endif
 }
 
+extern "C" void Java_j3_vm_OSGi_notifyServiceUnregistered(jlong bundleID, JavaObjectClass* classObject)
+{
+	llvm_gcroot(classObject, 0);
+
+#if RESET_STALE_REFERENCES
+
+	Jnjvm* vm = JavaThread::get()->getJVM();
+	vm->notifyServiceUnregistered(bundleID, classObject);
+
+#endif
+}
+
 extern "C" void Java_j3_vm_OSGi_setBundleStaleReferenceCorrected(jlong bundleID, jboolean corrected)
 {
 #if RESET_STALE_REFERENCES
@@ -191,31 +187,6 @@ extern "C" void Java_j3_vm_OSGi_dumpClassLoaderBundles()
 
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	vm->dumpClassLoaderBundles();
-
-#endif
-}
-
-extern "C" ArrayLong* Java_j3_vm_OSGi_getReferencesToObject(jlong objectPointer)
-{
-#if RESET_STALE_REFERENCES
-
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	return vm->getReferencesToObject(reinterpret_cast<const JavaObject*>((intptr_t)objectPointer));
-
-#endif
-}
-
-extern "C" JavaString* Java_j3_vm_OSGi_dumpObject(jlong objectPointer)
-{
-#if RESET_STALE_REFERENCES
-
-	if (!objectPointer) return NULL;
-	const JavaObject& obj = *reinterpret_cast<const JavaObject*>((intptr_t)objectPointer);
-	std::ostringstream ss;
-	ss << obj;
-
-	Jnjvm* vm = JavaThread::get()->getJVM();
-	return vm->asciizToStr(ss.str().c_str());
 
 #endif
 }
