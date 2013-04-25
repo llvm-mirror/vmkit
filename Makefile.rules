@@ -32,14 +32,18 @@ endif
 ifeq ($(OPTIMIZED),1)
   OPT_MSG="Optimizing"
   OPT_ID=-opt
+#  LLC_FLAGS+=
+#  OPT_FLAGS+=
+#  COMMON_CFLAGS+=
 else
   OPT_MSG="Performing GC pass on"
   OPT_ID=-gc
+#  LLC_FLAGS+=-O0
+#  OPT_FLAGS+=-inline -disable-opt
+#  COMMON_CFLAGS+=-O0
 endif
 
-ENABLE_OPTIMIZED=1
-
-LLC_OPT+=-relocation-model=pic -disable-cfi -disable-fp-elim
+LLC_FLAGS+=-relocation-model=pic -disable-cfi -disable-fp-elim
 
 OPT_MMTK_FLAGS=-std-compile-opts -strip-debug
 
@@ -47,11 +51,11 @@ INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vm
 					-I$(shell $(LLVM_CONFIG) --includedir)
 
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
-COMMON_CFLAGS+= -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer -ansi -pedantic $(WARN_CFLAGS) -fPIC \
-								-O3 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
+COMMON_CFLAGS+= -O3 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer -ansi -pedantic $(WARN_CFLAGS) -fPIC \
+								-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 
-CFLAGS+=$(COMMON_CFLAGS)
-CXXFLAGS+=$(COMMON_CFLAGS) -fvisibility-inlines-hidden -fno-exceptions -fno-rtti -Woverloaded-virtual -Wcast-qual
+CFLAGS+=$(COMMON_CFLAGS) 
+CXXFLAGS+=$(COMMON_CFLAGS) -fno-exceptions -fno-rtti -Woverloaded-virtual -Wcast-qual -fvisibility-inlines-hidden 
 LDFLAGS+=$(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
 LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
 
@@ -186,8 +190,8 @@ CLANG_FILES=$(patsubst %.c,$(BUILD_DIR)/%,$(call all-suffixes,.c)) \
 BC_FILES=$(addsuffix .bc,$(CLANG_FILES)) $(addprefix $(BUILD_DIR)/,$(filter %.bc, $(GEN)))
 
 ifdef NEED_GC
-LLC_OPT+=-load=$(PREPARE_CODE_LIB)
-LOPT_OPT+=-load=$(PREPARE_CODE_LIB) -StaticGCPass
+LLC_FLAGS+=-load=$(PREPARE_CODE_LIB)
+OPT_FLAGS+=-load=$(PREPARE_CODE_LIB) -StaticGCPass
 endif
 
 ifdef NEED_BC
@@ -218,11 +222,11 @@ $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 
 %.o: %.bc
 	$(Echo) "Assembling '$(notdir $<)'"
-	$(Verb) $(LLC) $(LLC_OPT) -filetype=obj $< -o $@
+	$(Verb) $(LLC) $(LLC_FLAGS) -filetype=obj $< -o $@
 
 %$(OPT_ID).bc: %.bc
 	$(Echo) "$(OPT_MSG) '$(notdir $<)'"
-	$(Verb) $(LOPT) $< $(LOPT_OPT) -o $@
+	$(Verb) $(LOPT) $< $(OPT_FLAGS) -o $@
 
 endif
 
@@ -256,7 +260,7 @@ DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
 
 $(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables$(OPT_ID).o $(SELF) $(BIN_DIR)/.dir
 	$(Echo) "Linking executable '$(notdir $@)'"
-	$(Verb) $(CLANGXX) -o $@ $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables$(OPT_ID).o $(DEP_LIBS) $(LIBS) $(LDFLAGS) 
+	$(Verb) $(CLANGXX) -o $@  $(LDFLAGS) $(MODULE_A) $(BUILD_DIR)/frametables$(OPT_ID).o $(DEP_LIBS) $(DEP_LIBS) $(LIBS)
 
 $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
 	$(Echo) "Linking shared library '$(notdir $@)'"
@@ -288,7 +292,7 @@ BUILT_INC+=$(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
 
 $(BUILD_DIR)/$(VMKIT_RUNTIME_OUT): $(VMKIT_RUNTIME_IN) $(SELF) $(BUILD_DIR)/.dir
 	$(Echo) "Generating '$(notdir $@)'"
-	$(Verb) cat $(VMKIT_RUNTIME_IN) | $(LLVMAS) -o - | $(LLC) -march=cpp -cppgen=contents -o $@
+	$(Verb) cat $(VMKIT_RUNTIME_IN) | $(LLVMAS) -o - | $(LLC) $(LLC_FLAGS) -march=cpp -cppgen=contents -o $@
 
 endif
 

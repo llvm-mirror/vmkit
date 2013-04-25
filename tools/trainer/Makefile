@@ -12,7 +12,7 @@ MODULE=Precompiled
 GEN=Precompiled.bc BootstrapClasses.bc
 NEED_GC=1
 
-LLC_OPT+= -disable-branch-fold 
+LLC_FLAGS+= -disable-branch-fold 
 #-disable-debug-info-print
 
 include $(LEVEL)/Makefile.common
