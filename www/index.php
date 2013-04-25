@@ -17,7 +17,7 @@ fork of the <a href="http://vmkit.llvm.org">VMKit project</a>.
 <p>
 VMKit2 relies on <a href="http://llvm.org">LLVM</a> for compilation and 
 <a href="http://jikesrvm.org/MMTk">MMTk</a> to manage memory. 
-Currently, a full Java virtual machine
+Currently, a full Java virtual machine called J3 is distributed with VMKit2.
 
 <p>
 For the end user, VMKit2 provides:

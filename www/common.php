@@ -23,9 +23,9 @@
   <HEAD>
 			 <link rel="stylesheet" type="text/css" href="<?=$dir?>stylesheet.css">
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
-		<meta name="description" content="Gaël Thomas - Home Page">
+		<meta name="description" content="VMKit2 - Home Page">
     <meta name="author" content="Gaël Thomas">
-	  <TITLE>Gaël Thomas - Home Page</TITLE>
+	  <TITLE>VMKit2 - Home Page</TITLE>
 	</HEAD>
 
 <body>
