@@ -53,8 +53,6 @@ ln -sf ../native/jni/java-util/.libs/libjavautil.so
 LLVM:
 =====
 
-* Notice that installing clang is not mandatory on a recent MACOS
-
 * Get it (git):
 
 git clone http://llvm.org/git/llvm.git
