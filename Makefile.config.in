@@ -31,3 +31,5 @@ else
 $(error Unsupported classpath implementation "$(CLASSPATH_IMPL)")
 	endif
 endif
+
+LLVM_CONFIG=@LLVM_CONFIG@

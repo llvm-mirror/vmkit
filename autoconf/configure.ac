@@ -162,7 +162,15 @@ case $target_cpu in
     AC_SUBST([WITH_64], [1]);;
 esac
 
-
+dnl **************************************************************************                                                             
+dnl llvm                                                                                                                                   
+dnl **************************************************************************                                                             
+AC_ARG_WITH(llvm-config-path,
+       [AS_HELP_STRING(--with-llvm-config-path=path,
+           [llvm-config path (use default path)])],
+       [[LLVM_CONFIG_PATH=$withval]],
+       [[LLVM_CONFIG_PATH="llvm-config"]]
+)
 
 dnl **************************************************************************
 dnl GC type 
@@ -304,6 +312,14 @@ AC_PATH_PROG(LLC, [llc],  [llc])
 AC_PATH_PROG(ANT, [ant])
 AC_PATH_PROG(JAVAC, [javac], [javac])
 AC_PATH_PROG(ZIP, [zip], [zip])
+
+AC_PATH_PROG(LLVM_CONFIG, [llvm-config],,[`AS_DIRNAME(["$LLVM_CONFIG_PATH"])`:$PATH])
+
+if test -z ${LLVM_CONFIG}; then
+    AC_MSG_ERROR([Unable to find llvm-config, please specify its path])
+fi
+
+AC_SUBST([LLVM_CONFIG])
 
 dnl Find the install program
 AC_PROG_INSTALL
