@@ -1750,10 +1750,8 @@ void AnnotationReader::readElementValue() {
   }
 }
 
-JavaObject* AnnotationReader::createElementValue(uint8* outTag) {
+JavaObject* AnnotationReader::createElementValue() {
   uint8 tag = reader.readU1();
-  if (outTag)
-	  *outTag = tag;
   JavaObject* res = 0;
   JavaObject* tmp = 0;
   JavaString* str = 0;
@@ -1766,7 +1764,7 @@ JavaObject* AnnotationReader::createElementValue(uint8* outTag) {
   ddprintf("value:");
 
   if (tag == 'B') {
-    uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
+    sint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
     ddprintf("B=%d", val);
     res = upcalls->byteClass->doNew(vm);
     upcalls->byteValue->setInstanceInt8Field(res, val);
@@ -1802,7 +1800,7 @@ JavaObject* AnnotationReader::createElementValue(uint8* outTag) {
     upcalls->shortValue->setInstanceInt16Field(res, val);
     
   } else if (tag == 'I') {
-    uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
+    sint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
     ddprintf("I=%d", val);
     res = upcalls->intClass->doNew(vm);
     upcalls->intValue->setInstanceInt32Field(res, val);
@@ -1852,16 +1850,8 @@ JavaObject* AnnotationReader::createElementValue(uint8* outTag) {
   } else if (tag == '[') {
     uint16 numValues = reader.readU2();
 
-    uint8 arrayTag = 0;
-    if (numValues > 0) {
-    	tmp = createElementValue(&arrayTag);
-    	res = createArrayByTag(arrayTag, numValues);
-    	ArrayObject::setElement((ArrayObject *)res, tmp, 0);
-    	for (uint32 i = 1; i < numValues; ++i) {
-    		tmp = createElementValue();
-    	    ArrayObject::setElement((ArrayObject *)res, tmp, i);
-    	}
-    }
+    if (numValues > 0)
+    	res = createArrayByTag(numValues);
     else {
     	fprintf(stderr, "Empty array not implemented %c type\n", tag);
     	abort();
@@ -1877,67 +1867,162 @@ JavaObject* AnnotationReader::createElementValue(uint8* outTag) {
   return res;
 }
 
-JavaObject* AnnotationReader::createArrayByTag(uint8 tag, uint16 numValues) {
+JavaObject* AnnotationReader::createArrayByTag(uint16 numValues) {
 	JavaObject* res = 0;
+	JavaObject* str = 0;
 	llvm_gcroot(res, 0);
+	llvm_gcroot(str, 0);
+
+	sint32 valS;
+	uint32 valU;
+	sint64 val64S;
+	double valD;
+	float valF;
+	const UTF8* s = 0;
+
 	UserClassArray* array = 0;
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	Classpath* upcalls = vm->upcalls;
-	ddprintf("value:");
-
-	if (tag == 'B') {
+	uint8 tag = reader.readU1();
+	switch (tag) {
+	case 'B':
 		array = upcalls->ArrayOfByte;
 		res = array->doNew(numValues, vm);
-	} else if (tag == 'C') {
+		valS = cl->ctpInfo->IntegerAt(reader.readU2());
+		ArraySInt8::setElement((ArraySInt8*)res, valS, 0);
+		break;
+	case 'C':
 		array = upcalls->ArrayOfChar;
 		res = array->doNew(numValues, vm);
-
-	} else if (tag == 'D') {
+		valS = cl->ctpInfo->IntegerAt(reader.readU2());
+		ArraySInt16::setElement((ArraySInt16*)res, valS, 0);
+		break;
+	case 'D':
 		array = upcalls->ArrayOfDouble;
 		res = array->doNew(numValues, vm);
-
-	} else if (tag == 'F') {
+		valD = cl->ctpInfo->DoubleAt(reader.readU2());
+		ArrayDouble::setElement((ArrayDouble*)res, valD, 0);
+		break;
+	case 'F':
 		array = upcalls->ArrayOfFloat;
 		res = array->doNew(numValues, vm);
-
-	} else if (tag == 'J') {
+		valF = cl->ctpInfo->FloatAt(reader.readU2());
+		ArrayFloat::setElement((ArrayFloat*)res, valF, 0);
+		break;
+	case 'J':
 		array = upcalls->ArrayOfLong;
 		res = array->doNew(numValues, vm);
-
-	} else if (tag == 'S') {
+		val64S = cl->ctpInfo->LongAt(reader.readU2());
+		ArrayLong::setElement((ArrayLong*)res, val64S, 0);
+		break;
+	case 'S':
 		array = upcalls->ArrayOfShort;
 		res = array->doNew(numValues, vm);
-
-	} else if (tag == 'I') {
+		valS = cl->ctpInfo->IntegerAt(reader.readU2());
+		ArraySInt16::setElement((ArraySInt16*)res, valS, 0);
+		break;
+	case 'I':
 		array = upcalls->ArrayOfInt;
 		res = array->doNew(numValues, vm);
-
-	} else if (tag == 'Z') {
+		valS = cl->ctpInfo->IntegerAt(reader.readU2());
+		ArraySInt32::setElement((ArraySInt32*)res, valS,0);
+		break;
+	case 'Z':
 		array = upcalls->ArrayOfBool;
 		res = array->doNew(numValues, vm);
-
-	} else if (tag == 's') {
+		valU = cl->ctpInfo->IntegerAt(reader.readU2());
+		ArrayUInt8::setElement((ArrayUInt8*)res, valU, 0);
+		break;
+	case 's':
 		array = upcalls->ArrayOfString;
 		res = array->doNew(numValues, vm);
-
-	} else if (tag == 'e') {
+		s = cl->ctpInfo->UTF8At(reader.readU2());
+		str = JavaString::internalToJava(s, JavaThread::get()->getJVM());
+		ArrayObject::setElement((ArrayObject *)res, str, 0);
+		break;
+	case 'e':
 		fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
 		abort();
-
-	} else if (tag == 'c') {
-		//array = upcalls->constructorArrayClass;
-		//res = array->doNew(numValues, vm);
-		fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
+		break;
+	case 'c':
+		fprintf(stderr, "Annotation not supported for %c (classes) type\n", tag);
 		abort();
-
-	} else if (tag == '[') {
-		fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
+		break;
+	case '[':
+		fprintf(stderr, "Only arrays of one dimensions are supported in annotations\n");
 		abort();
-
-	} else {
-		// Element_value Annotation not implemented
-		fprintf(stderr, "Annotation not supported for %c type\n", tag);
+		break;
+	case '@':
+		fprintf(stderr, "Annotation not supported for %c (nested annotations) type\n", tag);
 		abort();
+		break;
+	default:
+		fprintf(stderr, "Wrong class file\n");
+		abort();
+		break;
+	}
+
+	for (int i = 1 ; i < numValues ; i++) {
+		uint8 tmptag = reader.readU1();
+		switch (tag) {
+			case 'B':
+				valS = cl->ctpInfo->IntegerAt(reader.readU2());
+				ArraySInt8::setElement((ArraySInt8*)res, valS, i);
+				break;
+			case 'C':
+				valS = cl->ctpInfo->IntegerAt(reader.readU2());
+				ArraySInt16::setElement((ArraySInt16*)res, valS, i);
+				break;
+			case 'D':
+				valD = cl->ctpInfo->DoubleAt(reader.readU2());
+				ArrayDouble::setElement((ArrayDouble*)res, valD, i);
+				break;
+			case 'F':
+				valF = cl->ctpInfo->FloatAt(reader.readU2());
+				ArrayFloat::setElement((ArrayFloat*)res, valF, i);
+				break;
+			case 'J':
+				val64S = cl->ctpInfo->LongAt(reader.readU2());
+				ArrayLong::setElement((ArrayLong*)res, val64S, i);
+				break;
+			case 'S':
+				valS = cl->ctpInfo->IntegerAt(reader.readU2());
+				ArraySInt16::setElement((ArraySInt16*)res, valS, i);
+				break;
+			case 'I':
+				valS = cl->ctpInfo->IntegerAt(reader.readU2());
+				ArraySInt32::setElement((ArraySInt32*)res, valS,i);
+				break;
+			case 'Z':
+				valU = cl->ctpInfo->IntegerAt(reader.readU2());
+				ArrayUInt8::setElement((ArrayUInt8*)res, valU, i);
+				break;
+			case 's':
+				s = cl->ctpInfo->UTF8At(reader.readU2());
+				str = JavaString::internalToJava(s, JavaThread::get()->getJVM());
+				ArrayObject::setElement((ArrayObject *)res, str, i);
+				break;
+			case 'e':
+				fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
+				abort();
+				break;
+			case 'c':
+				fprintf(stderr, "Annotation not supported for %c (classes) type\n", tag);
+				abort();
+				break;
+			case '[':
+				fprintf(stderr, "Only arrays of one dimensions are supported in annotations\n");
+				abort();
+				break;
+			case '@':
+				fprintf(stderr, "Annotation not supported for %c (nested annotations) type\n", tag);
+				abort();
+				break;
+			default:
+				fprintf(stderr, "Wrong class file\n");
+				abort();
+				break;
+			}
 	}
 
 	return res;

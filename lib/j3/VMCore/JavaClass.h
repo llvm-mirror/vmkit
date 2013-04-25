@@ -80,12 +80,12 @@ public:
   //
   JavaObject* createAnnotationMapValues(JavaObject* type);
   
-  // createElementValue - create the Java type associated withe the value 
+  // createElementValue - create the Java type associated with the value
   // of the current annotation key.
   //
-  JavaObject* createElementValue(uint8* outTag = 0);
+  JavaObject* createElementValue();
 
-  JavaObject* createArrayByTag(uint8 tag, uint16 numValues);
+  JavaObject* createArrayByTag(uint16 numValues);
 };
 
 /// Attribute - This class represents JVM attributes to Java class, methods and
