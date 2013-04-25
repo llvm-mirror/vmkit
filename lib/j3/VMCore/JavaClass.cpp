@@ -557,6 +557,9 @@ bool JavaVirtualTable::isSubtypeOf(JavaVirtualTable* otherVT) {
         return true;
       }
     }
+    if (cl->isArray() && otherVT->cl->isArray()) {
+    	return baseClassVT->isSubtypeOf(otherVT->baseClassVT);
+    }
   }
   return false;
 }
@@ -1640,7 +1643,7 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
           // Finally, we must add the list of array of secondary classes from base
           nbSecondaryTypes = base->nbInterfaces + superVT->nbSecondaryTypes +
                                 addSuper
-                                + base->virtualVT->nbSecondaryTypes
+//                                + base->virtualVT->nbSecondaryTypes
                                 ;
           secondaryTypes = (JavaVirtualTable**)
             allocator.Allocate(sizeof(JavaVirtualTable*) * nbSecondaryTypes,
@@ -1663,18 +1666,18 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
             secondaryTypes[i + superVT->nbSecondaryTypes + addSuper] = CurVT;
           }
 
-          int index = superVT->nbSecondaryTypes + addSuper + base->nbInterfaces;
-          for (uint32 i = 0; i < base->virtualVT->nbSecondaryTypes; ++i) {
-        	  if (base->virtualVT == base->virtualVT->secondaryTypes[i]) continue;
-
-			  const UTF8* name =
-				JCL->constructArrayName(dim, base->virtualVT->secondaryTypes[i]->cl->name);
-			  ClassArray* interface = JCL->constructArray(name);
-			  JavaVirtualTable* CurVT = interface->virtualVT;
-			  secondaryTypes[index++] = CurVT;
-           }
-
-          nbSecondaryTypes = index;
+//          int index = superVT->nbSecondaryTypes + addSuper + base->nbInterfaces;
+//          for (uint32 i = 0; i < base->virtualVT->nbSecondaryTypes; ++i) {
+//        	  if (base->virtualVT == base->virtualVT->secondaryTypes[i]) continue;
+//
+//			  const UTF8* name =
+//				JCL->constructArrayName(dim, base->virtualVT->secondaryTypes[i]->cl->name);
+//			  ClassArray* interface = JCL->constructArray(name);
+//			  JavaVirtualTable* CurVT = interface->virtualVT;
+//			  secondaryTypes[index++] = CurVT;
+//           }
+//
+//          nbSecondaryTypes = index;
         } else {
           // If the super is not a secondary type and the base class does not
           // implement any interface, we can reuse the list of secondary types
