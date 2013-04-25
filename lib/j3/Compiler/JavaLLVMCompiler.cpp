@@ -61,7 +61,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor)
   // We are jitting. Take the lock.
   vmkit::VmkitModule::protectIR();
   if (func->getLinkage() == GlobalValue::ExternalWeakLinkage) {
-    JavaJIT jit(this, meth, func, LMI->isCustomizable? customizeFor : NULL);
+    JavaJIT jit(this, meth, func, LMI->isCustomizable ? customizeFor : NULL);
     if (isNative(meth->access)) {
       jit.nativeCompile();
       vmkit::VmkitModule::runPasses(func, JavaNativeFunctionPasses);
@@ -75,7 +75,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor)
     if (!LMI->isCustomizable && jit.isCustomizable) {
       // It's the first time we parsed the method and we just found
       // out it can be customized.
-    	// TODO(geoffray): return a customized version to this caller.
+      // TODO(geoffray): return a customized version to this caller.
       meth->isCustomizable = true;
       LMI->isCustomizable = true;
     }
