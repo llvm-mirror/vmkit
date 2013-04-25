@@ -139,7 +139,7 @@ void JavaJIT::findUnreachableCode(Reader& reader, uint32 codeLen) {
 	queue.push(0);
 	opcodeInfos[0].isReachable = true;
 
-	for (int i = 0; i < codeLen; ++i) {
+	for (unsigned i = 0; i < codeLen; ++i) {
 		if (opcodeInfos[i].isReachable)
 			queue.push(i);
 	}
@@ -367,14 +367,14 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
   // However, it looks as this only occur when exception handlers are presented
   // I assume this is true, so I only check unreachable code if the method has exception handlers
   // nbHandlers
-  if (nbHandlers && !opcodeInfos[0].isReachable) {
+  if (!opcodeInfos[0].isReachable) {
 	  findUnreachableCode(reader, codeLength);
 	  reader.cursor = start;
   }
 
   vmkit::ThreadAllocator allocator;
   for(uint32 i = 0; i < codeLength; ++i) {
-	if (nbHandlers && !opcodeInfos[i].isReachable && !opcodeInfos[i].handler) {
+	if (!opcodeInfos[i].isReachable && !opcodeInfos[i].handler) {
 		continue;
 	}
 	reader.cursor = start + i;

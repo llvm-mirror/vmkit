@@ -64,14 +64,11 @@ private:
 	vmkit::Cond cond;
 	int permit;
 
-
-	void calculateTime(timeval* t, uint64_t time);
-
 public:
 	ParkLock();
 	~ParkLock();
 
-	void park(bool isAbsolute, uint64_t time);
+	void park(bool isAbsolute, int64_t time);
 	void unpark();
 	void interrupt();
 };

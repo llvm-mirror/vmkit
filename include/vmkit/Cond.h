@@ -26,6 +26,7 @@ public:
   void broadcast(void) __attribute__ ((noinline));
   void wait(Lock *l) __attribute__ ((noinline));
   int timedWait(Lock *l, timeval *tv) __attribute__ ((noinline));
+  int myTimeWait(Lock* l, bool isAbsolute, int64_t nsec) __attribute__ ((noinline));
   void signal(void) __attribute__ ((noinline));
 };
 

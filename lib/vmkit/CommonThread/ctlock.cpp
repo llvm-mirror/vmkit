@@ -163,6 +163,9 @@ void Cond::signal() {
 }
 
 #define BILLION 1000000000
+#define NANOSECS_PER_SEC 1000000000
+#define NANOSECS_PER_MILLISEC 1000000
+#define MAX_SECS 100000000
 int Cond::timedWait(Lock* l, struct timeval *ref) { 
   struct timespec timeout; 
   struct timeval now;
@@ -172,6 +175,10 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
   if (timeout.tv_nsec > BILLION) {
     timeout.tv_sec++;
     timeout.tv_nsec -= BILLION;
+  }
+  if (timeout.tv_sec <= now.tv_sec) {
+	  timeout.tv_sec = now.tv_sec;
+	  timeout.tv_nsec = NANOSECS_PER_SEC >> 1;
   }
   
   assert(l->selfOwner());
@@ -184,10 +191,72 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
                                    &timeout);
   th->leaveUncooperativeCode();
   
-  //assert((!res || res == ETIMEDOUT) && "Error on timed wait");
+//  if (res != 0) {
+//  		pthread_cond_destroy (&internalCond) ;
+//  		pthread_cond_init    (&internalCond, NULL);
+//  }
+
+  assert((!res || res == ETIMEDOUT) && "Error on timed wait");
   l->unsafeLock(n);
 
   return res;
+}
+
+
+
+int Cond::myTimeWait(Lock* l, bool isAbsolute, int64_t nsec) {
+	struct timeval now;
+	struct timespec absTime;
+	int status = gettimeofday(&now, NULL);
+	assert(status == 0 && "gettimeofday");
+
+	time_t max_secs = now.tv_sec + MAX_SECS;
+
+	 if (isAbsolute) {
+	    sint64 secs = nsec / 1000;
+	    if (secs > max_secs) {
+	      absTime.tv_sec = max_secs;
+	    }
+	    else {
+	      absTime.tv_sec = secs;
+	    }
+	    absTime.tv_nsec = (nsec % 1000) * NANOSECS_PER_MILLISEC;
+	}
+	 else {
+		sint64 secs = nsec / NANOSECS_PER_SEC;
+		if (secs >= MAX_SECS) {
+		  absTime.tv_sec = max_secs;
+		  absTime.tv_nsec = 0;
+		}
+		else {
+		  absTime.tv_sec = now.tv_sec + secs + 850;
+		  absTime.tv_nsec = (nsec % NANOSECS_PER_SEC) + now.tv_usec*1000;
+		  if (absTime.tv_nsec >= NANOSECS_PER_SEC) {
+			absTime.tv_nsec -= NANOSECS_PER_SEC;
+			++absTime.tv_sec; // note: this must be <= max_secs
+		  }
+		}
+	 }
+
+	assert(l->selfOwner());
+	int n = l->unsafeUnlock();
+
+	Thread* th = Thread::get();
+	th->enterUncooperativeCode();
+	int res = pthread_cond_timedwait((pthread_cond_t*)&internalCond,
+								   (pthread_mutex_t*)&(l->internalLock),
+								   &absTime);
+	th->leaveUncooperativeCode();
+
+	//if (res != 0) {
+	//	pthread_cond_destroy (&internalCond) ;
+	//	pthread_cond_init    (&internalCond, NULL);
+	//}
+
+	assert((!res || res == ETIMEDOUT) && "Error on timed wait");
+	l->unsafeLock(n);
+
+	return res;
 }
 
 }
