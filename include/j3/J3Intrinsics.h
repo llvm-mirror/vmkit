@@ -73,7 +73,10 @@ public:
 
   llvm::Function* VirtualLookupFunction;
   llvm::Function* IsSubclassOfFunction;
+  llvm::Function* IsSubclassOfFunctionInner;
+  llvm::Function* CheckIfAssignable;
   llvm::Function* IsSecondaryClassFunction;
+  llvm::Function* IsSecondaryClassFunctionInner;
   llvm::Function* GetDepthFunction;
   llvm::Function* GetDisplayFunction;
   llvm::Function* GetVTInDisplayFunction;

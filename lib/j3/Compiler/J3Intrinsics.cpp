@@ -192,7 +192,10 @@ void J3Intrinsics::init(llvm::Module* module) {
   GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
   RuntimeDelegateeFunction = module->getFunction("j3RuntimeDelegatee");
   IsSubclassOfFunction = module->getFunction("isSubclassOf");
+  IsSubclassOfFunctionInner = module->getFunction("isSubclassOf_Inner");
+  CheckIfAssignable = module->getFunction("checkIfObjectIsAssignableToArrayPosition");
   IsSecondaryClassFunction = module->getFunction("isSecondaryClass");
+  IsSecondaryClassFunctionInner = module->getFunction("isSecondaryClass_Inner");
   GetDepthFunction = module->getFunction("getDepth");
   GetStaticInstanceFunction = module->getFunction("getStaticInstance");
   GetDisplayFunction = module->getFunction("getDisplay");

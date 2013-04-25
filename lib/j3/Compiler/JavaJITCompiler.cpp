@@ -186,6 +186,10 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
       JavaIntrinsics.FieldWriteBarrierFunction, (void*)(word_t)fieldWriteBarrier);
   executionEngine->updateGlobalMapping(
       JavaIntrinsics.NonHeapWriteBarrierFunction, (void*)(word_t)nonHeapWriteBarrier);
+
+  executionEngine->updateGlobalMapping(JavaIntrinsics.IsSecondaryClassFunctionInner, (void*)(word_t) IsSubtypeIntrinsic);
+  executionEngine->updateGlobalMapping(JavaIntrinsics.IsSubclassOfFunctionInner, (void*)(word_t) IsSubtypeIntrinsic);
+  executionEngine->updateGlobalMapping(JavaIntrinsics.CheckIfAssignable, (void*)(word_t) CheckIfObjectIsAssignableToArrayPosition);
 }
 
 JavaJITCompiler::~JavaJITCompiler() {

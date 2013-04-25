@@ -29,6 +29,7 @@
 #include "Reader.h"
 
 #include <cstring>
+#include <cstdlib>
 
 #if 0
 using namespace vmkit;
@@ -61,6 +62,35 @@ extern "C" void JavaObjectTracer(JavaObject*);
 extern "C" void ArrayObjectTracer(JavaObject*);
 extern "C" void RegularObjectTracer(JavaObject*);
 extern "C" void ReferenceObjectTracer(JavaObject*);
+
+
+extern "C" bool CheckIfObjectIsAssignableToArrayPosition(JavaObject * obj, JavaObject* array) {
+	llvm_gcroot(obj, 0);
+	llvm_gcroot(array, 0);
+	if (obj == 0)
+		return true;
+	bool b = obj->getVirtualTable()->isSubtypeOf(array->getVirtualTable()->baseClassVT);
+	if (!b) {
+		BEGIN_NATIVE_EXCEPTION(0)
+		Jnjvm* vm = JavaThread::get()->getJVM();
+		vm->CreateArrayStoreException(obj->getVirtualTable());
+		END_NATIVE_EXCEPTION
+	}
+	return b;
+}
+
+extern "C" bool IsSubtypeIntrinsic(JavaVirtualTable* obj, JavaVirtualTable* clazz){
+	 //printf("2 + 1 \n");
+	 return obj->isSubtypeOf(clazz);
+}
+
+static int compJavaVirtualTable (const void * elem1, const void * elem2) {
+	void * f = *((void**)elem1);
+	void * s = *((void**)elem2);
+    if (f > s) return  1;
+    if (f < s) return -1;
+    return 0;
+}
 
 JavaAttribute::JavaAttribute(const UTF8* name, uint32 length,
                    uint32 offset) {
@@ -525,7 +555,6 @@ bool JavaVirtualTable::isSubtypeOf(JavaVirtualTable* otherVT) {
       if (secondaryTypes[i] == otherVT) {
         cache = otherVT;
         return true;
-      }
     }
   }
   return false;
@@ -1493,6 +1522,20 @@ JavaVirtualTable::JavaVirtualTable(Class* C) {
       lastIndex += cur->nbSecondaryTypes;
     }
 
+    if (nbSecondaryTypes) {
+    	qsort(secondaryTypes, nbSecondaryTypes, sizeof(JavaVirtualTable*), compJavaVirtualTable);
+    	lastIndex = 1;
+    	JavaVirtualTable* temp = secondaryTypes[0];
+    	for (uint32 i = 1 ; i < nbSecondaryTypes ; i++ )
+    		if (secondaryTypes[i] != temp) {
+    			secondaryTypes[lastIndex++] = secondaryTypes[i];
+    			temp = secondaryTypes[i];
+    		}
+    	nbSecondaryTypes = lastIndex;
+    	//isSortedSecondaryTypes = true;
+    }
+
+
   } else {
     // Set the tracer, destructor and delete.
     tracer = (word_t)JavaObjectTracer;
@@ -1725,6 +1768,18 @@ JavaVirtualTable::JavaVirtualTable(ClassArray* C) {
     // The list of secondary types has not been allocated yet by
     // java.lang.Object[]. The initialiseVT function will update the current
     // array to point to java.lang.Object[]'s secondary list.
+  }
+  if (offset == getCacheIndex() && nbSecondaryTypes) {
+	qsort(secondaryTypes, nbSecondaryTypes, sizeof(JavaVirtualTable*), compJavaVirtualTable);
+	uint32 lastIndex = 1;
+	JavaVirtualTable* temp = secondaryTypes[0];
+	for (uint32 i = 1 ; i < nbSecondaryTypes ; ++i )
+		if (secondaryTypes[i] != temp) {
+			secondaryTypes[lastIndex++] = secondaryTypes[i];
+			temp = secondaryTypes[i];
+		}
+	nbSecondaryTypes = lastIndex;
+	//isSortedSecondaryTypes = true;
   }
 }
 

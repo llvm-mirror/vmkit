@@ -2571,9 +2571,13 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
 
     if (depth >= JavaVirtualTable::getDisplayLength()) {
       Value* classArgs[2] = { objVT, VTVar };
-          
-      cmp = CallInst::Create(intrinsics->IsSecondaryClassFunction,
+
+      if (TheCompiler->isStaticCompiling())
+    	  cmp = CallInst::Create(intrinsics->IsSecondaryClassFunction,
                              classArgs, "isSecondaryClass", currentBlock);
+      else
+    	  cmp = CallInst::Create(intrinsics->IsSecondaryClassFunctionInner,
+    	                               classArgs, "isSecondaryClass", currentBlock);
 
     } else {
      

@@ -62,6 +62,9 @@ typedef TJavaArray<JavaObject*> ArrayObject;
 #define erroneous 6    /// The class is in an erroneous state.
 
 
+extern "C" bool IsSubtypeIntrinsic(JavaVirtualTable* obj, JavaVirtualTable* clazz);
+extern "C" bool CheckIfObjectIsAssignableToArrayPosition(JavaObject * obj, JavaObject* array);
+
 class AnnotationReader {
 public:
   Reader& reader;

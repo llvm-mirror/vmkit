@@ -981,35 +981,49 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
                                     false,
                                     currentBlock);
           JITVerifyNull(obj);
-          Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
+
+
+
+          Value* res = 0;
+          if (TheCompiler->isStaticCompiling()) {
+        	  BasicBlock* endBlock = createBasicBlock("end array store check");
+        	  BasicBlock* checkBlock = createBasicBlock("array store check");
+        	  BasicBlock* exceptionBlock =
+        	          		  createBasicBlock("array store exception");
+        	  Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, val,
                                     intrinsics->JavaObjectNullConstant, "");
 
-          BasicBlock* endBlock = createBasicBlock("end array store check");
-          BasicBlock* checkBlock = createBasicBlock("array store check");
-          BasicBlock* exceptionBlock = 
-            createBasicBlock("array store exception");
-          BranchInst::Create(endBlock, checkBlock, cmp, currentBlock);
-          currentBlock = checkBlock;
+
+          	  BranchInst::Create(endBlock, checkBlock, cmp, currentBlock);
+          	  	  	  currentBlock = checkBlock;
         
-          Value* valVT = CallInst::Create(intrinsics->GetVTFunction, val, "",
+          	  Value* valVT = CallInst::Create(intrinsics->GetVTFunction, val, "",
                                           currentBlock);
          
-          Value* objVT = CallInst::Create(intrinsics->GetVTFunction, obj, "",
+          	  Value* objVT = CallInst::Create(intrinsics->GetVTFunction, obj, "",
                                           currentBlock);
-          objVT = CallInst::Create(intrinsics->GetBaseClassVTFromVTFunction, objVT,
+          	  objVT = CallInst::Create(intrinsics->GetBaseClassVTFromVTFunction, objVT,
                                    "", currentBlock);
           
-          Value* VTArgs[2] = { valVT, objVT };
+          	  Value* VTArgs[2] = { valVT, objVT };
           
-          Value* res = CallInst::Create(intrinsics->IsSubclassOfFunction,
+          	  res = CallInst::Create(
+        		  (TheCompiler->isStaticCompiling())?
+        				  intrinsics->IsSubclassOfFunction:
+        				  intrinsics->IsSubclassOfFunctionInner,
                                         VTArgs, "", currentBlock);
+          	BranchInst::Create(endBlock, exceptionBlock, res, currentBlock);
 
-          BranchInst::Create(endBlock, exceptionBlock, res, currentBlock);
+          	currentBlock = exceptionBlock;
+          	throwRuntimeException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 2);
+          	currentBlock = endBlock;
+          }
+          else {
+        	  Value* objects[2] = {val, obj};
+        	  res = CallInst::Create(intrinsics->CheckIfAssignable, objects, "", currentBlock);
+          }
+
           
-          currentBlock = exceptionBlock;
-          throwRuntimeException(intrinsics->ArrayStoreExceptionFunction, VTArgs, 2);
-
-          currentBlock = endBlock;
         }
         Value* val = pop();
         Value* index = pop();
@@ -1179,7 +1193,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         Value* val2 = popAsInt();
         Value* val1 = popAsInt();
         push(BinaryOperator::CreateAdd(val1, val2, "", currentBlock),
-             false);
+        			false);
         break;
       }
 
@@ -2543,8 +2557,12 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
         Value* res = 0;
         if (cl) {
           if (cl->isSecondaryClass()) {
-            res = CallInst::Create(intrinsics->IsSecondaryClassFunction,
+        	  if (TheCompiler->isStaticCompiling())
+        		  res = CallInst::Create(intrinsics->IsSecondaryClassFunction,
                                    classArgs, "", currentBlock);
+        	  else
+        		  res = CallInst::Create(intrinsics->IsSecondaryClassFunctionInner,
+        		                                     classArgs, "", currentBlock);
           } else {
             Value* inDisplay = CallInst::Create(intrinsics->GetDisplayFunction,
                                                 objVT, "", currentBlock);
@@ -2560,8 +2578,12 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
                                TheVT, "");
           }
         } else {
-          res = CallInst::Create(intrinsics->IsSubclassOfFunction,
+        	if (TheCompiler->isStaticCompiling())
+        		res = CallInst::Create(intrinsics->IsSubclassOfFunction,
                                  classArgs, "", currentBlock);
+        	else
+        		res = CallInst::Create(intrinsics->IsSubclassOfFunctionInner,
+        		                                 classArgs, "", currentBlock);
         }
 
         node->addIncoming(res, currentBlock);

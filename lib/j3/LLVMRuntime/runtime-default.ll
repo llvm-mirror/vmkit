@@ -211,9 +211,19 @@ declare void @j3JavaObjectRelease(%JavaObject*)
 ;;; isSubclassOf - Returns if a type is a subtype of another type.
 declare i1 @isSubclassOf(%VT*, %VT*) readnone
 
+;;; isSubclassOf - Returns if a type is a subtype of another type.
+declare i1 @isSubclassOf_Inner(%VT*, %VT*) readnone
+
+;;; isSubclassOf - Returns if a type is a subtype of another type.
+declare i1 @checkIfObjectIsAssignableToArrayPosition(%JavaObject*, %JavaObject*) readnone
+
 ;;; isSecondaryClass - Returns if a type is a secondary super type of
 ;;; another type.
 declare i1 @isSecondaryClass(%VT*, %VT*) readnone
+
+;;; isSecondaryClass_Inner - Returns if a type is a secondary super type of
+;;; another type.
+declare i1 @isSecondaryClass_Inner(%VT*, %VT*) readnone
 
 ;;; getClassDelegatee - Returns the java/lang/Class representation of the
 ;;; class. This method is lowered to the GEP to the class delegatee in
