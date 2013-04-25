@@ -41,18 +41,18 @@ void CollectionRV::waitRV() {
   // Add myself.
   nbJoined++;
 
-  fprintf(stderr, "waitRV: %d from %d\n", nbJoined, self->MyVM->numberOfThreads);
+  //fprintf(stderr, "waitRV: %d from %d\n", nbJoined, self->MyVM->numberOfThreads);
 
   while (nbJoined != self->MyVM->numberOfThreads) {
 	  vmkit::Thread* cur = self;
-	  fprintf(stderr, "Wasting time : ");
+	  //fprintf(stderr, "Wasting time : ");
 	    for (cur = (vmkit::Thread*)self->next(); cur != self;
 	         cur = (vmkit::Thread*)cur->next()) {
-	      if (!cur->getLastSP() && cur != self) {
-	        fprintf(stderr, "%p,", cur);
-	      }
+//	      if (!cur->getLastSP() && cur != self) {
+//	        fprintf(stderr, "%p,", cur);
+//	      }
 	    }
-	    fprintf(stderr, "\n");
+//	    fprintf(stderr, "\n");
     condInitiator.wait(&_lockRV);
   } 
 }
@@ -85,7 +85,7 @@ void CooperativeCollectionRV::synchronize() {
     }
   }
   
-  fprintf(stderr, "synchronize: %d from %d\n", nbJoined, self->MyVM->numberOfThreads);
+//  fprintf(stderr, "synchronize: %d from %d\n", nbJoined, self->MyVM->numberOfThreads);
 
   // And wait for other threads to finish.
   waitRV();

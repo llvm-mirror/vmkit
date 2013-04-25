@@ -161,10 +161,13 @@ StackWalker::StackWalker(vmkit::Thread* th) {
   } else {
     addr = th->waitOnSP();
     if (frame) {
-    	if (frame->currentFP < addr) {
-    		fprintf(stderr, "Error in thread with pointer %p because %x < %x\n", th, frame->currentFP, addr);
-    	}
-      assert(frame->currentFP >= addr);
+//    	if (frame->currentFP < addr) {
+//    		fprintf(stderr, "Error in thread with pointer %p because %x < %x\n", th, frame->currentFP, addr);
+//    		addr = frame->currentFP;
+//    	}
+
+
+    	assert(frame->currentFP >= addr);
     }
     if (frame && (addr == frame->currentFP)) {
       frame = frame->previousFrame;
@@ -195,7 +198,8 @@ void Thread::enterUncooperativeCode(uint16_t level) {
       word_t temp = System::GetCallerAddress();
       // Make sure to at least get the caller of the caller.
       ++level;
-      while (level--) temp = System::GetCallerOfAddress(temp);
+      while (level--)
+    	  temp = System::GetCallerOfAddress(temp);
       // The cas is not necessary, but it does a memory barrier.
       __sync_bool_compare_and_swap(&lastSP, 0, temp);
       if (doYield) joinRVBeforeEnter();
@@ -366,7 +370,7 @@ void Thread::internalThreadStart(vmkit::Thread* th) {
   //sigaction(SIGTERM, &sa, NULL);
 
   assert(th->MyVM && "VM not set in a thread");
-  fprintf(stderr, "Thread %p has TID %ld\n", th,syscall(SYS_gettid) );
+//  fprintf(stderr, "Thread %p has TID %ld\n", th,syscall(SYS_gettid) );
   th->MyVM->rendezvous.addThread(th);
   th->routine(th);
   th->MyVM->removeThread(th);
