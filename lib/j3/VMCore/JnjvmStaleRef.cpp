@@ -92,6 +92,8 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 
 	if (!ccl->classLoader->isZombie()) return;
 
+	return;
+
 #if DEBUG_VERBOSE_STALE_REF
 
 	cerr << "Resetting ref=" << ref << " obj=" << **ref;
@@ -99,6 +101,8 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 	cerr << endl;
 
 #endif
+
+//	return;
 
 	Jnjvm* vm = JavaThread::get()->getJVM();
 	if (JavaThread* ownerThread = (JavaThread*)vmkit::ThinLock::getOwner(*ref, vm->lockSystem)) {
