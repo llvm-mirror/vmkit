@@ -394,6 +394,8 @@ public:
   //
   static UserCommonClass* resolvedImplClass(Jnjvm* vm, JavaObject* delegatee,
                                             bool doClinit);
+
+  void dump() const __attribute__((noinline));
 };
 
 /// ClassPrimitive - This class represents internal classes for primitive

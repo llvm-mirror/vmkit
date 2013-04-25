@@ -1530,3 +1530,9 @@ void Jnjvm::printMethod(vmkit::FrameInfo* FI, word_t ip, word_t addr) {
 
   fprintf(stderr, "\n");
 }
+
+void Jnjvm::printBacktrace()
+{
+	std::cerr << "Back trace:" << std::endl;
+	JavaThread::get()->printJavaBacktrace();
+}

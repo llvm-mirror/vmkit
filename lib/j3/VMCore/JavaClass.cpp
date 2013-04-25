@@ -2030,3 +2030,14 @@ void JavaField::setStaticField(JavaObject* val)
 	llvm_gcroot(val, 0);
 	FieldSetter<JavaObject*>::setStaticField(this, val);
 }
+
+void CommonClass::dump() const
+{
+	cerr << *name;
+	if (!super)
+		cerr << ';' << endl;
+	else {
+		cerr << ':';
+		super->dump();
+	}
+}

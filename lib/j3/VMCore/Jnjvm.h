@@ -362,6 +362,8 @@ public:
   ///
   void loadBootstrap();
 
+  static void printBacktrace() __attribute__((noinline));
+
 #if RESET_STALE_REFERENCES
 
 public:

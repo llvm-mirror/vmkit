@@ -430,3 +430,8 @@ void JavaObject::dump() const
 {
 	cerr << *this << endl;
 }
+
+void JavaObject::dumpClass() const
+{
+	JavaObject::getClass(this)->dump();
+}
