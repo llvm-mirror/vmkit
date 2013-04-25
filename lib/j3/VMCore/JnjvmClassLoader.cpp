@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_VERBOSE_CLASS_LOADER_UNLOADING		1
+#define DEBUG_VERBOSE_CASS_LOADER_UNLOADING		1
 
 #include <iostream>
 #include <climits>
@@ -213,21 +213,14 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
 }
 
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
-	allocator(Alloc)
-#if RESET_STALE_REFERENCES
-	,zombie(false)
-#endif
+	allocator(Alloc), zombie(false)
 {
 }
 
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    JnjvmClassLoader& JCL, JavaObject* loader,
                                    VMClassLoader* vmdata,
-                                   Jnjvm* VM) : allocator(Alloc)
-#if RESET_STALE_REFERENCES
-	, zombie(false)
-#endif
-{
+                                   Jnjvm* VM) : allocator(Alloc), zombie(false) {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
   bootstrapLoader = JCL.bootstrapLoader;
@@ -249,6 +242,24 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
     JavaObject::getClass(loader)->asClass()->lookupMethodDontThrow(
         meth->name, meth->type, false, true, &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
+}
+
+int64_t JnjvmClassLoader::getAssociatedBundleID()
+{
+	return vm->getClassLoaderBundleID(this);
+}
+
+void JnjvmClassLoader::setAssociatedBundleID(int64_t newID)
+{
+	int64_t oldBundleID = vm->getClassLoaderBundleID(this);
+	if (oldBundleID != -1) {
+		if (oldBundleID == newID) return;	// Nothing to do
+
+		// Remove old bundle ID
+		vm->setBundleClassLoader(oldBundleID, NULL);
+	}
+
+	vm->setBundleClassLoader(newID, this);
 }
 
 void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
@@ -853,14 +864,8 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 
 JnjvmClassLoader::~JnjvmClassLoader() {
 
-#if RESET_STALE_REFERENCES
-
-#if DEBUG_VERBOSE_CLASS_LOADER_UNLOADING
-  cerr << "Bundle class loader unloaded, bundleID=" << this->getAssociatedBundleID() << endl;
-#endif
-
-  this->setAssociatedBundleID(-1);
-
+#if DEBUG_VERBOSE_CASS_LOADER_UNLOADING
+	cerr << "Bundle class loader unloaded, bundleID=" << this->getAssociatedBundleID() << endl;
 #endif
 
   if (vm) {
@@ -1114,25 +1119,3 @@ ArrayObject* JnjvmBootstrapLoader::getBootPackages(Jnjvm * vm) {
 
   return res;
 }
-
-#if RESET_STALE_REFERENCES
-
-int64_t JnjvmClassLoader::getAssociatedBundleID()
-{
-	return vm->getClassLoaderBundleID(this);
-}
-
-void JnjvmClassLoader::setAssociatedBundleID(int64_t newID)
-{
-	int64_t oldBundleID = vm->getClassLoaderBundleID(this);
-	if (oldBundleID != -1) {
-		if (oldBundleID == newID) return;	// Nothing to do
-
-		// Remove old bundle ID
-		vm->setBundleClassLoader(oldBundleID, NULL);
-	}
-
-	vm->setBundleClassLoader(newID, this);
-}
-
-#endif
