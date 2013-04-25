@@ -649,6 +649,9 @@ classpathlibs
 classpathglibj
 MMTK_PLAN
 GC_FLAGS
+ASSERT
+DEBUG
+OPTIMIZED
 WITH_64
 EXEEXT
 SHLIBEXT
@@ -713,6 +716,9 @@ ac_user_opts='
 enable_option_checking
 with_llvmsrc
 with_llvmobj
+enable_optimized
+enable_debug
+enable_assert
 with_llvm_config_path
 with_mmtk_plan
 with_gnu_classpath_libs
@@ -1349,6 +1355,10 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-optimized      Build with all optimization flag enable (default is
+                          yes)
+  --enable-debug          Build with debug flags (default is no)
+  --enable-assert         Build with assert flags (default is yes)
   --enable-incinerator    Use incinerator to kill stale references in OSGi
                           (default is NO)
 
@@ -2537,6 +2547,52 @@ $as_echo "#define WITH_64 1" >>confdefs.h
 
     WITH_64=1
 ;;
+esac
+
+# Check whether --enable-optimized was given.
+if test "${enable_optimized+set}" = set; then :
+  enableval=$enable_optimized;
+else
+  enableval=yes
+fi
+
+case "$enableval" in
+  yes) OPTIMIZED=1
+ ;;
+  no)  OPTIMIZED=0
+ ;;
+  *) as_fn_error $? "Invalid setting for --enable-optimized. Use \"yes\" or \"no\"" "$LINENO" 5 ;;
+esac
+
+# Check whether --enable-debug was given.
+if test "${enable_debug+set}" = set; then :
+  enableval=$enable_debug;
+else
+  enableval=no
+fi
+
+case "$enableval" in
+  yes) DEBUG=1
+ ;;
+  no)  DEBUG=0
+ ;;
+  *) as_fn_error $? "Invalid setting for --enable-debug. Use \"yes\" or \"no\"" "$LINENO" 5 ;;
+esac
+
+# Check whether --enable-assert was given.
+if test "${enable_assert+set}" = set; then :
+  enableval=$enable_assert;
+else
+  enableval=yes
+fi
+
+
+case "$enableval" in
+  yes) ASSERT=1
+ ;;
+  no)  ASSERT=0
+ ;;
+  *) as_fn_error $? "Invalid setting for --enable-assert. Use \"yes\" or \"no\"" "$LINENO" 5 ;;
 esac
 
 

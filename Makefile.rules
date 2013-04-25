@@ -1,15 +1,56 @@
+ifdef NO
+ifeq ($(OPTIMIZED),1)
+  BUILD_NAME:=Release
+  ifeq ($(DEBUG),1)
+    BUILD_NAME:=$(BUILD_NAME)+Debug
+  endif
+  ifeq ($(ASSERT),1)
+    BUILD_NAME:=$(BUILD_NAME)+Assert
+  endif
+else
+  ifeq ($(DEBUG),1)
+    BUILD_NAME:=Debug
+		ifeq ($(ASSERT),1)
+	   	BUILD_NAME:=$(BUILD_NAME)+Assert
+		endif
+  else
+		ifeq ($(ASSERT),1)
+	   	BUILD_NAME:=Assert
+		else
+	   	BUILD_NAME:=Unoptimized
+		endif
+  endif
+endif
+else
+BUILD_NAME=Release+Asserts
+endif
+
+###############################################################################
+#   Build directories
+###############################################################################
+BINDIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
+LIBDIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
+INCDIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/include
+BUILD_DIR=$(BUILD_NAME)
+
+%/.dir:
+	mkdir -p $(dir $@) && touch $@
+
+clean::
+	$(Echo) "Cleaning compilation files"
+	$(Verb) rm -Rf $(BUILD_DIR)
+
+distclean::
+	$(Echo) "Cleaning build files"
+	$(Verb) rm -Rf $(BINDIR) $(LIBDIR) $(INCDIR)
+
+ifeq ($(DEBUG),1)
+  COMMON_CFLAGS+=-g
+endif
 
 LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
 
-#LLVMAS
-#LLC
-#LOPT
-#LLVMLINK
-#MV
-#LLVMCC
-#Archive
-#Ranlib
-#RM
+CLANG=$(LLVM_BIN)/clang
 CLANGXX=$(LLVM_BIN)/clang++
 LLVMAS=$(LLVM_BIN)/llvm-as
 LLC=$(LLVM_BIN)/llc
@@ -21,7 +62,13 @@ Archive=ar cru
 Ranlib=ranlib
 RM=rm
 NM=nm
+LD=ld
 LArchive=$(LLVM_BIN)/llvm-ar rcsf
+
+###############################################################################
+#   Linking options
+###############################################################################
+USEDLIBS:=$(addprefix $(LibDir)/lib,$(patsubst %.a,%.a,$(USEDLIBS)))
 
 #
 #
@@ -43,8 +90,8 @@ ifdef VMKIT_RUNTIME
 .PRECIOUS: LLVMRuntime.inc
 
 LLVMRuntime.inc : $(LLVMAS) $(LLC) $(VMKIT_RUNTIME)
-	$(Echo) "**[7] Building LLVM runtime"
-	$(Verb) cat $(VMKIT_RUNTIME) | $(LLVMAS) -o - | $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=contents -o $@
+	$(Echo) "**[7] Building LLVM runtime $(LLC_CPP_FLAGS)"
+	$(Verb) cat $(VMKIT_RUNTIME) | $(LLVMAS) -o - | $(LLC) -march=cpp -cppgen=contents -o $@
 
 all-local:: LLVMRuntime.inc
 
@@ -66,9 +113,9 @@ ifeq ($(shell [ ! -e $(MMTkLib) ] && echo "1"), 1)
 endif
 
 ifeq ($(COMPILE_MMTK), 1)
-  all::
+all::
 	$(Verb) $(ANT) -buildfile $(PROJ_OBJ_ROOT)/mmtk/java/build.xml
-	$(Echo) "**[12] Building $(BuildMode) $(JARNAME).jar $(notdir $@)"
+	$(Echo) "**[12] Building $(BuildMode) $(JARNAME).jar $(notdir $@) $(OPT_MMTK_FLAGS)"
 	$(Verb) $(LOPT) -load=$(LibDir)/JITGCPass$(SHLIBEXT) $(OPT_MMTK_FLAGS) -JITGCPass -f $(LibDir)/MMTKAlloc.bc -o $(LibDir)/MMTKAlloc.bc
 	$(Verb) $(VMJC) $(VMJC_MMTK_FLAGS) -load=$(LibDir)/MMTKRuntime$(SHLIBEXT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic $(PROJ_OBJ_ROOT)/mmtk/java/$(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=$(PROJ_SRC_ROOT)/mmtk/java/vmkit.properties -disable-stubs -assume-compiled
 	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) $(OPT_MMTK_FLAGS) -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
@@ -101,6 +148,7 @@ ifdef MODULE_WITH_GC
 ObjectsBCWithGC   := $(BaseNameSources:%=$(ObjDir)/%_gc.bc)
 ObjectsWithGC     := $(BaseNameSources:%=$(ObjDir)/%_gc.o)
 AModule           := $(LibDir)/lib$(MODULE_WITH_GC).a
+OModule           := $(LibDir)/$(MODULE_WITH_GC).o
 
 $(ObjectsBCWithGC): $(ObjDir)/%_gc.bc: $(ObjDir)/%.bc $(LOPT)
 	$(Echo) "**[4] Compiling $*.bc to $*.bc (gc) for $(BuildMode) build (bytecode)" # $(OPT_BC_WITH_GC_FLAGS)
@@ -116,7 +164,11 @@ $(AModule): $(ObjectsWithGC) $(LibDir)/.dir
 	$(Verb) $(Archive) $@ $(ObjectsWithGC)
 	$(Verb) $(Ranlib) $@
 
-all-local:: $(AModule) $(OModule)
+$(OModule): $(ObjectsWithGC) $(LibDir)/.dir
+	$(Echo) "**[80] Linking native module $(notdir $@)"
+	$(Verb) $(LD) -r $(ObjectsWithGC) -o $@
+
+all-local:: $(OModule) $(AModule)
 
 clean-local::
 	-$(Verb) $(RM) -f $(AModule) $(ObjectsBCWithGC) $(ObjectsSWithGC) $(ObjectsWithGC)
@@ -173,11 +225,7 @@ endif
 #   NEW BUILD SYSTEM
 #
 #
-
-CLANGXX=$(LLVM_BIN)/clang++
-LOPT=$(LLVM_BIN)/opt
-
-#-I$(BUILDDIR) 
+#-I$(BUILD_DIR) 
 INCLUDES+=-I. -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk \
 	-I$(PROJ_SRC_ROOT)/include/j3 \
 	-I$(PROJ_SRC_ROOT)/lib/j3/ClassLib/$(CLASSPATH_DIR) \
@@ -193,12 +241,12 @@ COMMON_CFLAGS+=  -O0 $(INCLUDES) -fno-strict-aliasing -fno-omit-frame-pointer  -
 CFLAGS+=$(COMMON_CFLAGS) `$(LLVM_CONFIG) --cflgas`
 CXXFLAGS+=$(COMMON_CFLAGS) `$(LLVM_CONFIG) --cxxflags`
 MY_LDFLAGS+=`$(LLVM_CONFIG) --ldflags` $(LDOPT)
-MY_LIBS+=`$(LLVM_CONFIG) --libs`
+MY_LIBS+=`$(LLVM_CONFIG) --libs` -lz
 
-$(ToolBuildPath): $(ObjectsO) $(ProjLibsPaths) $(LLVMLibsPaths)
+$(ToolBuildPath): $(ObjectsO) $(USEDLIBS)
 	$(Echo) '**[30] Linking $(BuildMode) executable $(TOOLNAME) $(StripWarnMsg)'
-#	$(Verb) $(CLANGXX) $(LDFLAGS) -O0 -o $@ $^ $(LIBS)
-	$(Verb) $(Link) -o $@ $(TOOLLINKOPTS) $(ObjectsO) $(ProjLibsOptions) $(LLVMLibsOptions) $(ExtraLibs) $(TOOLLINKOPTSB) $(LIBS)
+	$(Verb) $(CLANGXX) -o $@ $(ObjectsO) $(USEDLIBS) $(MY_LIBS) $(MY_LDFLAGS) 
+#	$(Verb) $(Link) -o $@ $(TOOLLINKOPTS) $(ObjectsO) $(USEDLIBS) $(TOOLLINKOPTSB) $(MY_LIBS) $(MY_LDFLAGS)
 
 $(LibName.SO): $(ObjectsO) $(ProjLibsPaths) $(LLVMLibsPaths) $(SharedLibDir)/.dir
 	$(Echo) "**[20] Linking $(BuildMode) $(SharedLibKindMessage) $(notdir $@)"

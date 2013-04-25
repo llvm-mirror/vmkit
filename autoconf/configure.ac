@@ -171,6 +171,40 @@ case $target_cpu in
 esac
 
 dnl **************************************************************************                                                             
+dnl optimization and debug                                                                                                                 
+dnl **************************************************************************                                                             
+AC_ARG_ENABLE(optimized,
+              AS_HELP_STRING([--enable-optimized],
+                             [Build with all optimization flag enable (default is yes)]),,
+                             enableval=yes)
+case "$enableval" in
+  yes) AC_SUBST(OPTIMIZED,[1]) ;;
+  no)  AC_SUBST(OPTIMIZED,[0]) ;;
+  *) AC_MSG_ERROR([Invalid setting for --enable-optimized. Use "yes" or "no"]) ;;
+esac
+
+AC_ARG_ENABLE(debug,
+              AS_HELP_STRING([--enable-debug],
+                             [Build with debug flags (default is no)]),,
+                             enableval=no)
+case "$enableval" in
+  yes) AC_SUBST(DEBUG,[1]) ;;
+  no)  AC_SUBST(DEBUG,[0]) ;;
+  *) AC_MSG_ERROR([Invalid setting for --enable-debug. Use "yes" or "no"]) ;;
+esac
+
+AC_ARG_ENABLE(assert,
+              AS_HELP_STRING([--enable-assert],
+                             [Build with assert flags (default is yes)]),,
+                             enableval=yes)
+
+case "$enableval" in
+  yes) AC_SUBST(ASSERT,[1]) ;;
+  no)  AC_SUBST(ASSERT,[0]) ;;
+  *) AC_MSG_ERROR([Invalid setting for --enable-assert. Use "yes" or "no"]) ;;
+esac
+
+dnl **************************************************************************                                                             
 dnl llvm                                                                                                                                   
 dnl **************************************************************************                                                             
 AC_ARG_WITH(llvm-config-path,
