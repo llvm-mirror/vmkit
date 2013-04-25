@@ -62,6 +62,7 @@ class Class;
 class ClassArray;
 class JnjvmClassLoader;
 
+
 class Classpath : public vmkit::PermanentObject {
 public: 
   ISOLATE_STATIC UserClass*  newClassLoader;
@@ -78,16 +79,22 @@ public:
   ISOLATE_STATIC JavaMethod* initString;
   ISOLATE_STATIC JavaMethod* getCallingClassLoader;
   ISOLATE_STATIC JavaMethod* initConstructor;
+  ISOLATE_STATIC JavaMethod* initVMConstructor;
   ISOLATE_STATIC UserClassArray* constructorArrayClass;
   ISOLATE_STATIC UserClassArray* constructorArrayAnnotation;
   ISOLATE_STATIC UserClass*      newConstructor;
+  ISOLATE_STATIC UserClass*      newVMConstructor;
   ISOLATE_STATIC JavaField*  constructorSlot;
   ISOLATE_STATIC JavaMethod* initMethod;
+  ISOLATE_STATIC JavaMethod* initVMMethod;
   ISOLATE_STATIC JavaMethod* initField;
+  ISOLATE_STATIC JavaMethod* initVMField;
   ISOLATE_STATIC UserClassArray* methodArrayClass;
   ISOLATE_STATIC UserClassArray* fieldArrayClass;
   ISOLATE_STATIC UserClass*      newMethod;
+  ISOLATE_STATIC UserClass*      newVMMethod;
   ISOLATE_STATIC UserClass*      newField;
+  ISOLATE_STATIC UserClass*      newVMField;
   ISOLATE_STATIC JavaField*  methodSlot;
   ISOLATE_STATIC JavaField*  fieldSlot;
   ISOLATE_STATIC UserClassArray* classArrayClass;

@@ -4,7 +4,13 @@ public class ThreadTest extends Thread {
   }
 
   public static void main(String[] args) throws InterruptedException {
-    for(int i = 0; i < 10000; ++i) {
+    int count = 10000;
+    try {
+    	count = Integer.parseInt(args[0]);
+    }
+    catch (Exception e) {
+    }
+    for(int i = 0; i < count ; ++i) {
       Thread t1 = new ThreadTest();
       Thread t2 = new ThreadTest();
       t1.start();

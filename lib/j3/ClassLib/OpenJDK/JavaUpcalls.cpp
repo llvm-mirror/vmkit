@@ -902,6 +902,18 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
       (word_t)nativeJavaObjectFieldTracer,
       "nativeJavaObjectFieldTracer");
 
+   newVMConstructor->getVirtualVT()->setNativeTracer(
+         (word_t)nativeJavaObjectVMConstructorTracer,
+         "nativeJavaObjectVMConstructorTracer");
+
+      newVMMethod->getVirtualVT()->setNativeTracer(
+         (word_t)nativeJavaObjectVMMethodTracer,
+         "nativeJavaObjectVMMethodTracer");
+
+      newVMField->getVirtualVT()->setNativeTracer(
+         (word_t)nativeJavaObjectVMFieldTracer,
+         "nativeJavaObjectVMFieldTracer");
+
    //TODO: Fix native tracer for java.lang.Thread to not trace through
    // the eetop field to our internal JavaThread.
    //newVMThread->getVirtualVT()->setNativeTracer(

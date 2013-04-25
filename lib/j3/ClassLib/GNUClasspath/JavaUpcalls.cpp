@@ -68,13 +68,19 @@ JavaMethod* Classpath::initString;
 JavaMethod* Classpath::getCallingClassLoader;
 JavaMethod* Classpath::initConstructor;
 Class*      Classpath::newConstructor;
+JavaMethod* Classpath::initVMConstructor;
+Class*      Classpath::newVMConstructor;
 ClassArray* Classpath::constructorArrayClass;
 ClassArray* Classpath::constructorArrayAnnotation;
 JavaField*  Classpath::constructorSlot;
 JavaMethod* Classpath::initMethod;
+JavaMethod* Classpath::initVMMethod;
 JavaMethod* Classpath::initField;
+JavaMethod* Classpath::initVMField;
 Class*      Classpath::newField;
+Class*      Classpath::newVMField;
 Class*      Classpath::newMethod;
+Class*      Classpath::newVMMethod;
 ClassArray* Classpath::methodArrayClass;
 ClassArray* Classpath::fieldArrayClass;
 JavaField*  Classpath::methodSlot;
@@ -495,6 +501,21 @@ extern "C" void nativeJavaObjectConstructorTracer(
   JavaObjectConstructor::staticTracer(obj, closure);
 }
 
+extern "C" void nativeJavaObjectVMFieldTracer(
+    JavaObjectVMField* obj, word_t closure) {
+  JavaObjectVMField::staticTracer(obj, closure);
+}
+
+extern "C" void nativeJavaObjectVMMethodTracer(
+    JavaObjectVMMethod* obj, word_t closure) {
+  JavaObjectVMMethod::staticTracer(obj, closure);
+}
+
+extern "C" void nativeJavaObjectVMConstructorTracer(
+    JavaObjectVMConstructor* obj, word_t closure) {
+  JavaObjectVMConstructor::staticTracer(obj, closure);
+}
+
 extern "C" void nativeJavaObjectVMThreadTracer(
     JavaObjectVMThread* obj, word_t closure) {
   JavaObjectVMThread::staticTracer(obj, closure);
@@ -581,11 +602,18 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
     UPCALL_METHOD(loader, "java/lang/String", "<init>", "([CIIZ)V", ACC_VIRTUAL);
   
   initConstructor =
-    UPCALL_METHOD(loader, "java/lang/reflect/Constructor", "<init>",
+      UPCALL_METHOD(loader, "java/lang/reflect/Constructor", "<init>",
+                    "(Ljava/lang/reflect/VMConstructor;)V", ACC_VIRTUAL);
+
+  initVMConstructor =
+    UPCALL_METHOD(loader, "java/lang/reflect/VMConstructor", "<init>",
                   "(Ljava/lang/Class;I)V", ACC_VIRTUAL);
 
   newConstructor =
     UPCALL_CLASS(loader, "java/lang/reflect/Constructor");
+
+  newVMConstructor =
+		  UPCALL_CLASS(loader, "java/lang/reflect/VMConstructor");
 
   constructorArrayClass =
     UPCALL_ARRAY_CLASS(loader, "java/lang/reflect/Constructor", 1);
@@ -598,10 +626,17 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   
   initMethod =
     UPCALL_METHOD(loader, "java/lang/reflect/Method", "<init>",
-                  "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
+                  "(Ljava/lang/reflect/VMMethod;)V", ACC_VIRTUAL);
+
+  initVMMethod =
+      UPCALL_METHOD(loader, "java/lang/reflect/VMMethod", "<init>",
+                    "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
 
   newMethod =
     UPCALL_CLASS(loader, "java/lang/reflect/Method");
+
+  newVMMethod =
+      UPCALL_CLASS(loader, "java/lang/reflect/VMMethod");
 
   methodArrayClass =
     UPCALL_ARRAY_CLASS(loader, "java/lang/reflect/Method", 1);
@@ -611,10 +646,17 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   
   initField =
     UPCALL_METHOD(loader, "java/lang/reflect/Field", "<init>",
-                  "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
+                  "(Ljava/lang/reflect/VMField;)V", ACC_VIRTUAL);
+
+  initVMField =
+      UPCALL_METHOD(loader, "java/lang/reflect/VMField", "<init>",
+                    "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
 
   newField =
     UPCALL_CLASS(loader, "java/lang/reflect/Field");
+
+  newVMField =
+      UPCALL_CLASS(loader, "java/lang/reflect/VMField");
 
   fieldArrayClass =
     UPCALL_ARRAY_CLASS(loader, "java/lang/reflect/Field", 1);

@@ -25,75 +25,109 @@ using namespace j3;
 
 extern "C" {
 
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_getParameterTypes(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-#endif
-JavaObjectConstructor* cons) {
-
-  JavaObject* res = 0;
-
-  llvm_gcroot(cons, 0);
-  llvm_gcroot(res, 0);
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  verifyNull(cons);
-  UserClass* cl = JavaObjectConstructor::getClass(cons);
-  JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
-  JnjvmClassLoader* loader = cl->classLoader;
-
-  res = meth->getParameterTypes(loader);
-  END_NATIVE_EXCEPTION
-
-  return (jobject)res;
-}
-
-JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiersInternal(
-#ifdef NATIVE_JNI
-JNIEnv *env,
-#endif
-JavaObjectConstructor* cons) {
-
-  llvm_gcroot(cons, 0);
-  jint res = 0;
-
-  BEGIN_NATIVE_EXCEPTION(0)
-
-  verifyNull(cons);
-  JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
-  res = meth->access;
-
-  END_NATIVE_EXCEPTION
-
-  return res;
-}
-
-JavaObject* proceedConstructor(JavaObjectConstructor* cons,
-                               ArrayObject* args,
-                               JavaObject* Clazz, jint index)
+bool getClassAndMethodPointerByVMConstructor(JavaObject* vmCons, UserCommonClass** cls, JavaMethod** m)
   __attribute__ ((noinline));
 
-JavaObject* proceedConstructor(JavaObjectConstructor* cons,
-                               ArrayObject* args,
-                               JavaObject* Clazz, jint index) {
+bool getClassAndMethodPointerByVMConstructor(JavaObject* vmCons, UserCommonClass** cls, JavaMethod** m) {
+	JavaObject* res = 0;
+	JavaField* field = 0;
+	JavaField* fieldSlot = 0;
+	UserCommonClass* cl = 0;
+	// Local object references
+	llvm_gcroot(vmCons, 0);
+	llvm_gcroot(res, 0);
+
+	BEGIN_NATIVE_EXCEPTION(0)
+	// Store local reference
+	cl = JavaObject::getClass(vmCons);
+	if (cl->isClass()) {
+		const UTF8* name = cl->classLoader->hashUTF8->lookupAsciiz("clazz");
+		const UTF8* type = cl->classLoader->hashUTF8->lookupAsciiz("Ljava/lang/Class;");
+		const UTF8* nameSlot = cl->classLoader->hashUTF8->lookupAsciiz("slot");
+		const UTF8* typeSlot = cl->classLoader->hashUTF8->lookupAsciiz("I");
+		if (name && nameSlot && type && typeSlot) {
+			field = cl->asClass()->lookupField(name, type, false, true,0);
+			fieldSlot = cl->asClass()->lookupField(nameSlot, typeSlot, false, true,0);
+			res = field->getInstanceObjectField(vmCons);
+			int slot = fieldSlot->getInstanceInt32Field(vmCons);
+			*cls = JavaObjectClass::getClass((JavaObjectClass*)res);
+			*m = &((*cls)->asClass()->virtualMethods[slot]);
+			return true;
+		}
+	}
+	END_NATIVE_EXCEPTION
+	return false;
+}
+
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_VMConstructor_getParameterTypes(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+#endif
+JavaObject* cons) {
+
+	JavaObject* res = 0;
+	UserCommonClass* cls = 0;
+	JavaMethod* method = 0;
+	// Local object references
+	llvm_gcroot(cons, 0);
+	llvm_gcroot(res, 0);
+
+	BEGIN_NATIVE_EXCEPTION(0)
+    // Store local reference
+
+	if (getClassAndMethodPointerByVMConstructor(cons, &cls,&method)) {
+		res = method->getParameterTypes(cls->classLoader);
+	} // FIXME (INTI) : Throw an exception here
+
+    END_NATIVE_EXCEPTION
+
+    return (jobject)res;
+}
+
+JNIEXPORT jint JNICALL Java_java_lang_reflect_VMConstructor_getModifiersInternal(
+#ifdef NATIVE_JNI
+JNIEnv *env,
+#endif
+JavaObject* cons) {
+
+	jint res = 0;
+
+	UserCommonClass* cls = 0;
+	JavaMethod* method = 0;
+	// Local object references
+	llvm_gcroot(cons, 0);
+
+	BEGIN_NATIVE_EXCEPTION(0)
+	// Store local reference
+
+	if (getClassAndMethodPointerByVMConstructor(cons, &cls,&method)) {
+		res = method->access;
+	} // FIXME (INTI) : Throw an exception here
+
+	END_NATIVE_EXCEPTION
+
+	return res;
+}
+
+JavaObject* proceedRealConstructor(ArrayObject* args,
+										UserCommonClass* clazz, JavaMethod* method)
+  __attribute__ ((noinline));
+
+JavaObject* proceedRealConstructor(ArrayObject* args,
+                               UserCommonClass* clazz, JavaMethod* method) {
   JavaObject* res = 0;
   JavaObject* excp = 0;
 
-  llvm_gcroot(cons, 0);
   llvm_gcroot(args, 0);
-  llvm_gcroot(Clazz, 0);
   llvm_gcroot(res, 0);
   llvm_gcroot(excp, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
-  JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
-  UserClass* cl = JavaObjectConstructor::getClass(cons);
   sint32 nbArgs = args ? ArrayObject::getSize(args) : 0;
-  Signdef* sign = meth->getSignature();
+  Signdef* sign = method->getSignature();
   sint32 size = sign->nbArguments;
 
-  if (isAbstract(cl->access)) vm->instantiationException(cl);
+  if (isAbstract(clazz->access)) vm->instantiationException(clazz);
 
   vmkit::ThreadAllocator allocator;
   // Allocate a buffer to store the arguments.
@@ -101,8 +135,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
       (jvalue*)allocator.Allocate(size * sizeof(jvalue)) : NULL;
 
   if (nbArgs == size) {
-    UserCommonClass* _cl = UserCommonClass::resolvedImplClass(vm, Clazz, false);
-    UserClass* cl = _cl->asClass();
+    UserClass* cl = clazz->asClass();
     if (cl) {
       cl->initialiseClass(vm);
       res = cl->doNew(vm);
@@ -119,7 +152,7 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
 
       JavaThread* th = JavaThread::get();
       TRY {
-        meth->invokeIntSpecialBuf(vm, cl, res, buf);
+        method->invokeIntSpecialBuf(vm, cl, res, buf);
       } CATCH {
         excp = th->getJavaException();
       } END_CATCH;
@@ -147,73 +180,76 @@ JavaObject* proceedConstructor(JavaObjectConstructor* cons,
   return res;
 }
 
-JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Constructor_constructNative(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMConstructor_construct(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectConstructor* cons, ArrayObject* args, JavaObject* Clazz, jint index) {
+JavaObject* cons, ArrayObject* args) {
 
   JavaObject* res = 0;
+  JavaMethod* m = 0;
+  UserCommonClass* cls = 0;
 
   llvm_gcroot(res, 0);
   llvm_gcroot(cons, 0);
   llvm_gcroot(args, 0);
-  llvm_gcroot(Clazz, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-
-  res = proceedConstructor(cons, args, Clazz, index);
-
+  if (getClassAndMethodPointerByVMConstructor(cons,&cls, &m)){
+	  res = proceedRealConstructor(args, cls, m);
+  } // FIXME (INTI) : Throw an exception here
   END_NATIVE_EXCEPTION
-
   return res;
 }
 
 JNIEXPORT
-ArrayObject* JNICALL Java_java_lang_reflect_Constructor_getExceptionTypes(
+ArrayObject* JNICALL Java_java_lang_reflect_VMConstructor_getExceptionTypes(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectConstructor* cons) {
+JavaObject* cons) {
 
   ArrayObject* res = 0;
-
+  JavaMethod* m = 0;
+  UserCommonClass* cls = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(cons, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  verifyNull(cons);
-  UserClass* cl = JavaObjectConstructor::getClass(cons);
-  JavaMethod* meth = JavaObjectConstructor::getInternalMethod(cons);
-  JnjvmClassLoader* loader = cl->classLoader;
-
-  res = (ArrayObject*)meth->getExceptionTypes(loader);
+    verifyNull(cons);
+    if (getClassAndMethodPointerByVMConstructor(cons, &cls, & m)) {
+    	JnjvmClassLoader* loader = cls->classLoader;
+    	res = (ArrayObject*)m->getExceptionTypes(loader);
+    } // FIXME (INTI) : Throw an exception here
 
   END_NATIVE_EXCEPTION
+
 
   return res;
 }
 
-JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_Constructor_getSignature(
+JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMConstructor_getSignature(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectConstructor* Meth) {
+JavaObject* Meth) {
 
   JavaObject* result = 0;
-
+  JavaMethod* m = 0;
+  UserCommonClass* cls = 0;
   llvm_gcroot(result, 0);
   llvm_gcroot(Meth, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-  verifyNull(Meth);
-  JavaMethod* meth = JavaObjectConstructor::getInternalMethod(Meth);
-  Jnjvm* vm = JavaThread::get()->getJVM();
-  result = vm->internalUTF8ToStr(meth->type);
+    verifyNull(Meth);
+    if (getClassAndMethodPointerByVMConstructor(Meth, &cls, & m)) {
+		Jnjvm* vm = JavaThread::get()->getJVM();
+		result = vm->internalUTF8ToStr(m->type);
+    } // FIXME (INTI) : Throw an exception here
 
-  END_NATIVE_EXCEPTION
+    END_NATIVE_EXCEPTION
 
   return result;
 }
