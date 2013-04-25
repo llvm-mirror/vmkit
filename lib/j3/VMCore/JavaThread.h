@@ -62,7 +62,7 @@ class ParkLock {
 private:
 	vmkit::LockNormal lock;
 	vmkit::Cond cond;
-	int permit;
+	bool permit;
 
 public:
 	ParkLock();
@@ -70,7 +70,7 @@ public:
 
 	void park(bool isAbsolute, int64_t time, JavaThread* thread);
 	void unpark();
-//	void interrupt();
+	void interrupt();
 };
 
 /// JavaThread - This class is the internal representation of a Java thread.

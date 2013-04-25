@@ -205,45 +205,11 @@ inline void _OrderAccess_fence() {
 // Implementation of method park, see LockSupport.java
 // time is in nanoseconds if !isAboslute, otherwise it is in milliseconds
 void ParkLock::park(bool isAbsolute, int64_t time, JavaThread* thread) {
-//	lock.lock();
-//		if (permit == 0){
-//			permit = 1;
-//			__sync_synchronize();
-//			lock.unlock(thread);
-//			return;
-//		}
-//		if (isAbsolute && time == 0) {
-//			lock.unlock(thread);
-//			return;
-//		}
-//		if (thread->lockingThread.interruptFlag) {
-//			lock.unlock(thread);
-//			return;
-//		}
-//		if (time == 0) {
-//			thread->setState(vmkit::LockingThread::StateWaiting);
-//			//permit = 2;
-//			__sync_synchronize();
-//			cond.wait(&lock);
-//			//if (permit == 2) permit = 1;
-//			//permit = 1;
-//		}
-//		else {
-//			thread->setState(vmkit::LockingThread::StateTimeWaiting);
-//			//permit = 2;
-//			__sync_synchronize();
-//			cond.myTimeWait(&lock, isAbsolute, time);
-//			//if (permit == 2) permit = 1;
-//			//permit = 1;
-//		}
-//		thread->setState(vmkit::LockingThread::StateRunning);
-//		__sync_synchronize();
-//	lock.unlock(thread);
 	 // Optional fast-path check:
 	  // Return immediately if a permit is available.
-	  if (permit > 0) {
-		  permit = 0 ;
-		  _OrderAccess_fence();//__sync_synchronize();//OrderAccess::fence();
+	  if (permit) {
+		  permit = false ;
+		  //_OrderAccess_fence();//__sync_synchronize();//OrderAccess::fence();
 	      return ;
 	  }
 
@@ -256,7 +222,6 @@ void ParkLock::park(bool isAbsolute, int64_t time, JavaThread* thread) {
 	  if (time < 0 || (isAbsolute && time == 0) ) { // don't wait at all
 	    return;
 	  }
-
 
 	  // Enter safepoint region
 	  // Beware of deadlocks such as 6317397.
@@ -272,14 +237,12 @@ void ParkLock::park(bool isAbsolute, int64_t time, JavaThread* thread) {
 	    return;
 	  }
 
-	  //fprintf(stderr, "Starting method %lld\n", thread->getThreadID());
 
 	  int status ;
-	  if (permit > 0)  { // no wait needed
-		permit = 0;
+	  if (permit)  { // no wait needed
+		permit = false;
 		lock.unlock(thread);
-		_OrderAccess_fence();//__sync_synchronize();//OrderAccess::fence();
-		//fprintf(stderr, "Finishing method 0 %lld\n", thread->getThreadID());
+		//_OrderAccess_fence();
 		return;
 	  }
 
@@ -289,66 +252,43 @@ void ParkLock::park(bool isAbsolute, int64_t time, JavaThread* thread) {
 
 	  if (time == 0) {
 		  //thread->setState(vmkit::LockingThread::StateWaiting);
+		  thread->setState(vmkit::LockingThread::StateWaiting);
+		  //_OrderAccess_fence();
+		  //thread->doYield = true;
 		  cond.wait(&lock);
+		  //thread->doYield = false;
+		  //cond.myTimeWait(&lock, false, 1000000000);
 	  } else {
-		  //thread->setState(vmkit::LockingThread::StateTimeWaiting);
+		  thread->setState(vmkit::LockingThread::StateTimeWaiting);
 		  cond.myTimeWait(&lock, isAbsolute, time);
 	  }
+	  thread->setState(vmkit::LockingThread::StateRunning);
 	  //thread->setState(vmkit::LockingThread::StateRunning);
-	  permit = 0 ;
+	  permit = false ;
+	  //_OrderAccess_fence();
 	  lock.unlock(thread);
 	  // If externally suspended while waiting, re-suspend
 	  //if (jt->handle_special_suspend_equivalent_condition()) {
 	  //  jt->java_suspend_self();
 	  //}
-
-	  __sync_synchronize();//OrderAccess::fence();
-	  //fprintf(stderr, "Finishing method 1 %lld\n", thread->getThreadID());
 }
 
 void ParkLock::unpark() {
-
 	JavaThread* thread = (JavaThread*)vmkit::Thread::get();
-	//bool flag = false;
-//	lock.lock();
-//		if (permit == 0) {
-//			lock.unlock(thread);
-//			return;
-//		}
-//		//if (permit != 0)
-//		//	flag = !__sync_bool_compare_and_swap(&permit, 1, 0);
-//		permit = 0;
-//		__sync_synchronize();
-//		//flag = true;
-//		cond.signal();
-//	lock.unlock(thread);
-	//if (flag)
-	//	cond.signal();
-	int s ;
 	lock.lock();
-	s = permit;
-	permit = 1;
-	_OrderAccess_fence();
-	if (s < 1) {
-		if (false) {
-			cond.signal();
-			lock.unlock(thread);
-		} else {
-			lock.unlock(thread);
-			cond.signal();
-		}
-	} else {
-		lock.unlock(thread);
-	}
+	permit = true;
+	//_OrderAccess_fence();
+	cond.signal();
+	lock.unlock(thread);
 }
 
-//void ParkLock::interrupt() {
-//	//
-//	if (lock.tryLock() == 0) {
-//		JavaThread* thread = (JavaThread*)vmkit::Thread::get();
-//		cond.signal();
-//
-//		lock.unlock(thread);
-//	}
-//	_OrderAccess_fence();
-//}
+void ParkLock::interrupt() {
+	//
+	if (lock.tryLock() == 0) {
+		JavaThread* thread = (JavaThread*)vmkit::Thread::get();
+		cond.signal();
+
+		lock.unlock(thread);
+	}
+	//_OrderAccess_fence();
+}

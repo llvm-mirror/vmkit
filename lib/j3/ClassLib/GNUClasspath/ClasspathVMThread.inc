@@ -126,10 +126,8 @@ JavaObject* vmthread) {
   
   JavaThread* th = (JavaThread*)field->getInstanceObjectField(vmthread);
   th->lockingThread.interruptFlag = 1;
-  //th->parkLock.interrupt();
-  //fprintf(stderr, "Interrupting started%lld\n", th->getThreadID());
-  th->parkLock.unpark();
-  //fprintf(stderr, "Interrupting done%lld\n", th->getThreadID());
+  th->parkLock.interrupt();
+  //th->parkLock.unpark();
   vmkit::FatLock* lock = th->lockingThread.waitsOn;
 
   // If the thread is blocked on a wait. We also verify nextWaiting in case
