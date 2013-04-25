@@ -5,8 +5,8 @@
 ;;; A virtual table is an array of function pointers.
 %VT = type [0 x i32 (...)*]
 
-;;; The root of all Java Objects: a VT and a lock.
-%JavaObject = type { %VT*, i8* }
+;;; The root of all Java Objects: a VT (and a lock moved into GC header).
+%JavaObject = type { %VT* }
 
 ;;; Types for Java arrays. A size of 0 means an undefined size.
 %JavaArray = type { %JavaObject, i8* }
@@ -113,7 +113,7 @@ declare %VT* @getIMT(%VT*) readnone
 declare %JavaCommonClass* @getClass(%JavaObject*) readnone 
 
 ;;; getLock - Get the lock of an object.
-declare i8* @getLock(%JavaObject*)
+;;;declare i8* @getLock(%JavaObject*)
 
 ;;; getVTFromCommonClass - Get the VT of a class from its runtime
 ;;; representation.

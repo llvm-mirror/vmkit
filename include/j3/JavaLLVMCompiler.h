@@ -51,7 +51,7 @@ protected:
   llvm::Module* TheModule;
   llvm::DIBuilder* DebugFactory;  
   J3Intrinsics JavaIntrinsics;
-  const llvm::TargetData* TheTargetData;
+  const llvm::DataLayout* TheDataLayout;
 
 private:  
   bool enabledException;
