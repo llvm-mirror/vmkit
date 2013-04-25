@@ -29,6 +29,10 @@ class LockNormal;
 class LockRecursive;
 class Thread;
 
+extern LockNormal lockForCtrl_C;
+extern Cond condForCtrl_C;
+extern bool finishForCtrl_C;
+
 /// Lock - This class is an abstract class for declaring recursive and normal
 /// locks.
 ///
@@ -93,6 +97,7 @@ public:
 
   virtual void lock() __attribute__ ((noinline));
   virtual void unlock(vmkit::Thread* ownerThread = NULL);
+  int tryLock();
 
 };
 

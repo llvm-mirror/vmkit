@@ -21,6 +21,15 @@
 
 namespace vmkit {
 
+/**
+ * These variables are used to implement some behavior
+ * when the user presses Ctrl_C.
+ */
+LockNormal lockForCtrl_C;
+Cond condForCtrl_C;
+bool finishForCtrl_C = false;
+
+
 Lock::Lock() {
   pthread_mutexattr_t attr;
 
@@ -70,6 +79,17 @@ void LockNormal::lock() {
   pthread_mutex_lock((pthread_mutex_t*)&internalLock);
   th->leaveUncooperativeCode();
   owner = th;
+}
+
+int LockNormal::tryLock() {
+  Thread* th = Thread::get();
+  th->enterUncooperativeCode();
+  //pthread_mutex_lock((pthread_mutex_t*)&internalLock);
+  int r = pthread_mutex_trylock((pthread_mutex_t*)&internalLock);
+  th->leaveUncooperativeCode();
+  if (r == 0)
+	  owner = th;
+  return r;
 }
 
 void LockNormal::unlock(vmkit::Thread* ownerThread) {
@@ -191,10 +211,10 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
                                    &timeout);
   th->leaveUncooperativeCode();
   
-//  if (res != 0) {
-//  		pthread_cond_destroy (&internalCond) ;
-//  		pthread_cond_init    (&internalCond, NULL);
-//  }
+  if (res != 0) {
+  		pthread_cond_destroy (&internalCond) ;
+  		pthread_cond_init    (&internalCond, NULL);
+  }
 
   assert((!res || res == ETIMEDOUT) && "Error on timed wait");
   l->unsafeLock(n);
@@ -229,7 +249,7 @@ int Cond::myTimeWait(Lock* l, bool isAbsolute, int64_t nsec) {
 		  absTime.tv_nsec = 0;
 		}
 		else {
-		  absTime.tv_sec = now.tv_sec + secs + 1100; // 150 / 850 / 1000
+		  absTime.tv_sec = now.tv_sec + secs + 0; // 150 / 850 / 1000
 		  absTime.tv_nsec = (nsec % NANOSECS_PER_SEC) + now.tv_usec*1000;
 		  if (absTime.tv_nsec >= NANOSECS_PER_SEC) {
 			absTime.tv_nsec -= NANOSECS_PER_SEC;
@@ -248,10 +268,10 @@ int Cond::myTimeWait(Lock* l, bool isAbsolute, int64_t nsec) {
 								   &absTime);
 	th->leaveUncooperativeCode();
 
-	//if (res != 0) {
-	//	pthread_cond_destroy (&internalCond) ;
-	//	pthread_cond_init    (&internalCond, NULL);
-	//}
+	if (res != 0) {
+		pthread_cond_destroy (&internalCond) ;
+		pthread_cond_init    (&internalCond, NULL);
+	}
 
 	assert((!res || res == ETIMEDOUT) && "Error on timed wait");
 	l->unsafeLock(n);
