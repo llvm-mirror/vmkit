@@ -630,8 +630,8 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   initVMMethod =
       UPCALL_METHOD(loader, "java/lang/reflect/VMMethod", "<init>",
-                    "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
-
+                    "()V", ACC_VIRTUAL);
+   // Ljava/lang/Class;Ljava/lang/String;I
   newMethod =
     UPCALL_CLASS(loader, "java/lang/reflect/Method");
 

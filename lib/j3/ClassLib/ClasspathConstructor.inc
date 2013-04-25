@@ -25,21 +25,7 @@ using namespace j3;
 
 extern "C" {
 
-bool getClassAndMethodPointerByVMConstructor(JavaObjectVMConstructor* vmCons, UserCommonClass** cls, JavaMethod** m)
-  __attribute__ ((noinline));
 
-bool getClassAndMethodPointerByVMConstructor(JavaObjectVMConstructor* vmCons, UserCommonClass** cls, JavaMethod** m) {
-	JavaObject* res = 0;
-	// Local object references
-	llvm_gcroot(vmCons, 0);
-	llvm_gcroot(res, 0);
-
-	BEGIN_NATIVE_EXCEPTION(0)
-		*cls = (UserCommonClass*)JavaObjectVMConstructor::getClass(vmCons);
-		*m = JavaObjectVMConstructor::getInternalMethod(vmCons);
-	END_NATIVE_EXCEPTION
-	return true;
-}
 
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_VMConstructor_getParameterTypes(
 #ifdef NATIVE_JNI
@@ -56,10 +42,10 @@ JavaObjectVMConstructor* cons) {
 
 	BEGIN_NATIVE_EXCEPTION(0)
     // Store local reference
-
-	if (getClassAndMethodPointerByVMConstructor(cons, &cls,&method)) {
-		res = method->getParameterTypes(cls->classLoader);
-	} // FIXME (INTI) : Throw an exception here
+	verifyNull(cons);
+	cls = (UserCommonClass*)JavaObjectVMConstructor::getClass(cons);
+	method = JavaObjectVMConstructor::getInternalMethod(cons);
+	res = method->getParameterTypes(cls->classLoader);
 
     END_NATIVE_EXCEPTION
 
@@ -74,17 +60,15 @@ JavaObjectVMConstructor* cons) {
 
 	jint res = 0;
 
-	UserCommonClass* cls = 0;
 	JavaMethod* method = 0;
 	// Local object references
 	llvm_gcroot(cons, 0);
 
 	BEGIN_NATIVE_EXCEPTION(0)
 	// Store local reference
-
-	if (getClassAndMethodPointerByVMConstructor(cons, &cls,&method)) {
-		res = method->access;
-	} // FIXME (INTI) : Throw an exception here
+	verifyNull(cons);
+	method = JavaObjectVMConstructor::getInternalMethod(cons);
+	res = method->access;
 
 	END_NATIVE_EXCEPTION
 
@@ -177,9 +161,12 @@ JavaObjectVMConstructor* cons, ArrayObject* args) {
   llvm_gcroot(args, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
-  if (getClassAndMethodPointerByVMConstructor(cons,&cls, &m)){
-	  res = proceedRealConstructor(args, cls, m);
-  } // FIXME (INTI) : Throw an exception here
+  verifyNull(cons);
+
+  cls = (UserCommonClass*)JavaObjectVMConstructor::getClass(cons);
+  m = JavaObjectVMConstructor::getInternalMethod(cons);
+  res = proceedRealConstructor(args, cls, m);
+
   END_NATIVE_EXCEPTION
   return res;
 }
@@ -199,11 +186,11 @@ JavaObjectVMConstructor* cons) {
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-    verifyNull(cons);
-    if (getClassAndMethodPointerByVMConstructor(cons, &cls, & m)) {
-    	JnjvmClassLoader* loader = cls->classLoader;
-    	res = (ArrayObject*)m->getExceptionTypes(loader);
-    } // FIXME (INTI) : Throw an exception here
+  verifyNull(cons);
+  cls = (UserCommonClass*)JavaObjectVMConstructor::getClass(cons);
+  m = JavaObjectVMConstructor::getInternalMethod(cons);
+  JnjvmClassLoader* loader = cls->classLoader;
+  res = (ArrayObject*)m->getExceptionTypes(loader);
 
   END_NATIVE_EXCEPTION
 
@@ -215,23 +202,21 @@ JNIEXPORT JavaObject* JNICALL Java_java_lang_reflect_VMConstructor_getSignature(
 #ifdef NATIVE_JNI
 JNIEnv *env,
 #endif
-JavaObjectVMConstructor* Meth) {
+JavaObjectVMConstructor* cons) {
 
   JavaObject* result = 0;
   JavaMethod* m = 0;
-  UserCommonClass* cls = 0;
   llvm_gcroot(result, 0);
-  llvm_gcroot(Meth, 0);
+  llvm_gcroot(cons, 0);
 
   BEGIN_NATIVE_EXCEPTION(0)
 
-    verifyNull(Meth);
-    if (getClassAndMethodPointerByVMConstructor(Meth, &cls, & m)) {
-		Jnjvm* vm = JavaThread::get()->getJVM();
-		result = vm->internalUTF8ToStr(m->type);
-    } // FIXME (INTI) : Throw an exception here
+  verifyNull(cons);
+  m = JavaObjectVMConstructor::getInternalMethod(cons);
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  result = vm->internalUTF8ToStr(m->type);
 
-    END_NATIVE_EXCEPTION
+  END_NATIVE_EXCEPTION
 
   return result;
 }

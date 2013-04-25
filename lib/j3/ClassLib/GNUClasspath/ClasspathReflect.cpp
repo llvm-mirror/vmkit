@@ -74,13 +74,12 @@ JavaObjectMethod* JavaObjectMethod::createFromInternalMethod(JavaMethod* meth, i
 
 
   str = vm->internalUTF8ToStr(meth->name);
-  JavaObject* const* Cl = meth->classDef->getDelegateePtr();
+  JavaObject* Cl = meth->classDef->getDelegatee();
 
-  vm->upcalls->initVMMethod->invokeIntSpecial(vm, VMMeth, vmMeth, Cl, &str, i);
-
-  //vmMeth->name = str;
-  //vmMeth->declaringClass = (JavaObject*)Cl; // I don't like this
-  //vmMeth->slot = i;
+  vm->upcalls->initVMMethod->invokeIntSpecial(vm, VMMeth, vmMeth);
+  vmMeth->name = str;
+  vmMeth->declaringClass = (JavaObjectClass*)Cl; // I don't like this
+  vmMeth->slot = i;
 
   UserClass* Meth = vm->upcalls->newMethod;
   ret = (JavaObjectMethod*)Meth->doNew(vm);

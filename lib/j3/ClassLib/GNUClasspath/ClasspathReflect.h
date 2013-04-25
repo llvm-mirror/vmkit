@@ -123,7 +123,7 @@ public:
 };
 
 class JavaObjectVMMethod : public JavaObject {
-private:
+public:
 	JavaObjectClass* declaringClass;
 	JavaString* name;
 	uint32 slot;
