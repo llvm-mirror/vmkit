@@ -131,6 +131,7 @@ private:
   virtual void scanFinalizationQueue(word_t closure);
   virtual void addFinalizationCandidate(gc* obj);
   virtual void traceObject(gc* obj, word_t closure);
+  virtual void setType(gcHeader* header, void* type);
   virtual size_t getObjectSize(gc* obj);
   virtual const char* getObjectTypeName(gc* obj);
   virtual void printMethod(vmkit::FrameInfo* FI, word_t ip, word_t addr);
@@ -353,9 +354,12 @@ public:
   ///
   void loadBootstrap();
 
+#if RESET_STALE_REFERENCES
+
 public:
   void resetReferencesToBundle(int64_t bundleID);
   virtual void resetReferenceIfStale(const void* source, void** ref);
+  void dumpClassLoaderBundles();
 
   int64_t getClassLoaderBundleID(JnjvmClassLoader* loader);
   JnjvmClassLoader* getBundleClassLoader(int64_t bundleID);
@@ -368,8 +372,11 @@ protected:
   void resetReferenceIfStale(const JavaObject *source, class VMStaticInstance** ref);
   void resetReferenceIfStale(const JavaObject *source, class JavaObject** ref);
 
+  // Link between OSGi (bundle ID) and Java (class loaders).
   vmkit::LockRecursive bundleClassLoadersLock;
   bundleClassLoadersType bundleClassLoaders;
+
+#endif
 };
 
 } // end namespace j3

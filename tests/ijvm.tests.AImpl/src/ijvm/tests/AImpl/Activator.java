@@ -33,13 +33,14 @@ public class Activator
 		cST.open();
 		
 		C service = (C)cST.getService();
-		if (service != null)
+		if (service != null) {
+			System.out.println("AImpl got C @ startup");
+			
 			c.add(service);
+			this.registerMyself();
+		}
 		
 		context.addServiceListener(this, "(objectclass=" + C.class.getName() + ")");
-
-		if (c != null)
-			System.out.println("AImpl got C @ startup");
 		
 		a = new AImpl();
 		context.registerService(A.class.getName(), a, null);	
@@ -69,6 +70,8 @@ public class Activator
 			if (C.class.isInstance(service)) {
 				System.out.println("AImpl got C");
 				c.add((C)service);
+				
+				this.registerMyself();
 			}
 			break;
 			
@@ -78,5 +81,12 @@ public class Activator
 			}
 			break;
 		}
+	}
+	
+	private void registerMyself()
+	{
+		C oneC = c.get(c.size() - 1);
+		
+		oneC.registerObject(this);
 	}
 }

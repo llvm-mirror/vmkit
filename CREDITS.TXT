@@ -38,3 +38,6 @@ D: Primary architect of JnJVM
 
 N: Koutheir Attouchi
 E: koutheir@gmail.com
+W: http://koutheir.blogspot.com/
+D: Debug support for VMKit.
+D: Correction of stale references for J3.

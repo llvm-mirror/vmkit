@@ -9,5 +9,6 @@ public interface J3Mgr
 	// THE FOLLOWING METHODS ARE DEBUGGING HELPERS
 	// THEY SHOULD BE REMOVED IN PRODUCTION
 	
+	public void dumpClassLoaderBundles();
 	public void resetReferencesToBundle(String bundleName) throws Exception;
 }

@@ -1,5 +1,7 @@
 package j3mgr;
 
+import java.util.LinkedList;
+
 import j3.J3Mgr;
 
 import org.osgi.framework.Bundle;
@@ -13,16 +15,13 @@ public class J3MgrImpl
 	implements J3Mgr, FrameworkListener
 {
 	BundleContext context;
-	long bundleToKill;
-
-	public J3MgrImpl()
-	{
-		bundleToKill = -1;
-	}
+	LinkedList<Long> bundlesToKill;
 	
 	public void open(BundleContext bundleContext)
 	{
 		context = bundleContext;
+		
+		bundlesToKill = new LinkedList<Long>();
 		
 		// We need to know when packages are refreshed
 		context.addFrameworkListener(this);
@@ -32,19 +31,21 @@ public class J3MgrImpl
 	{
 		context.removeFrameworkListener(this);
 		context = null;
+		
+		bundlesToKill = null;
 	}
 
 	public void resetReferencesToBundle(Bundle bundle) throws Exception
 	{
 		System.out.println("resetReferencesToBundle: #" + bundle.getBundleId() + " " + bundle.getSymbolicName());
 		
-		bundleToKill = bundle.getBundleId();
-		
 		System.out.println("Stopping bundle: " + bundle.getSymbolicName());
 		bundle.stop();
 		System.out.println("Uninstalling bundle: " + bundle.getSymbolicName());
 		bundle.uninstall();
 
+		bundlesToKill.addFirst(new Long(bundle.getBundleId()));
+		
 		System.out.println("Refreshing framework...");
 		refreshFramework(bundle);
 	}
@@ -54,19 +55,17 @@ public class J3MgrImpl
 		ServiceReference<?> pkgAdminRef = (ServiceReference<?>)context.getServiceReference(
 			"org.osgi.service.packageadmin.PackageAdmin");
 		PackageAdmin pkgAdmin = (PackageAdmin)context.getService(pkgAdminRef);
-		pkgAdmin.refreshPackages(new Bundle[] {bundle});		
+		pkgAdmin.refreshPackages(null);
 	}
 
 	public void frameworkEvent(FrameworkEvent event)
 	{
 		if (event.getType() != FrameworkEvent.PACKAGES_REFRESHED) return;
 
-		if (bundleToKill == -1) return;
+		long bundleID = bundlesToKill.removeLast().longValue();
 		
-		System.out.println("Resetting stale references to bundle #" + bundleToKill);
-		j3.vm.OSGi.resetReferencesToBundle(bundleToKill);
-		
-		bundleToKill = -1;
+		System.out.println("Resetting stale references to bundle #" + bundleID);
+		j3.vm.OSGi.resetReferencesToBundle(bundleID);
 	}
 	
 	// THE FOLLOWING METHODS ARE DEBUGGING HELPERS
@@ -85,5 +84,10 @@ public class J3MgrImpl
 				return bundles[i];
 		}
 		return null;
+	}
+
+	public void dumpClassLoaderBundles()
+	{
+		j3.vm.OSGi.dumpClassLoaderBundles();
 	}
 }

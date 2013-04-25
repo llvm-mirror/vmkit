@@ -38,8 +38,8 @@ public class Activator
 		runnerThread1.start();
 		runnerThread2.start();
 		
-		cancellerThread = new Thread(this, "Runner Canceller");
-		cancellerThread.start();
+//		cancellerThread = new Thread(this, "Runner Canceller");
+//		cancellerThread.start();
 	}
 
 	public void stop(BundleContext bundleContext) throws Exception
@@ -53,7 +53,10 @@ public class Activator
 		aST = null;
 		// a = null;
 		
-//		runner.join();
+//		runner1.cancel();
+//		runner2.cancel();
+//		runnerThread1.join();
+//		runnerThread2.join();
 	}
 
 	public void run()

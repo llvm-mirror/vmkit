@@ -34,14 +34,14 @@ public class Activator
 		cST.open();
 		
 		C service = (C)cST.getService();
-		if (service != null)
+		if (service != null) {
+			System.out.println("DImpl got C @ startup");
+			
 			c.add(service);
+		}
 		
 		context.addServiceListener(this, "(objectclass=" + C.class.getName() + ")");
 
-		if (c != null)
-			System.out.println("DImpl got C @ startup");
-		
 		d = new DImpl();
 		context.registerService(D.class.getName(), d, null);
 	}

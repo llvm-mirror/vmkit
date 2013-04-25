@@ -813,6 +813,8 @@ public:
   ///
   void makeVT();
 
+  static void getMinimalJDKVersion(uint16 major, uint16 minor, unsigned int& JDKMajor, unsigned int& JDKMinor, unsigned int& JDKBuild);
+  bool isClassVersionSupported(uint16 major, uint16 minor);
 };
 
 /// ClassArray - This class represents Java array classes.

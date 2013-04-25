@@ -2,7 +2,7 @@ diff --git a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp b/lib/CodeGen/AsmPrinter/AsmP
 index d74a703..1831bb6 100644
 --- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp
 +++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp
-@@ -177,7 +177,7 @@ bool AsmPrinter::doInitialization(Module &M) {
+@@ -173,7 +173,7 @@ bool AsmPrinter::doInitialization(Module &M) {
    for (GCModuleInfo::iterator I = MI->begin(), E = MI->end(); I != E; ++I)
      if (GCMetadataPrinter *MP = GetOrCreateGCPrinter(*I))
        MP->beginAssembly(*this);
@@ -11,7 +11,7 @@ index d74a703..1831bb6 100644
    // Emit module-level inline asm if it exists.
    if (!M.getModuleInlineAsm().empty()) {
      OutStreamer.AddComment("Start of file scope inline assembly");
-@@ -186,7 +186,7 @@ bool AsmPrinter::doInitialization(Module &M) {
+@@ -182,7 +182,7 @@ bool AsmPrinter::doInitialization(Module &M) {
      OutStreamer.AddComment("End of file scope inline assembly");
      OutStreamer.AddBlankLine();
    }
@@ -20,7 +20,7 @@ index d74a703..1831bb6 100644
    if (MAI->doesSupportDebugInformation())
      DD = new DwarfDebug(this, &M);
  
-@@ -928,6 +928,15 @@ bool AsmPrinter::doFinalization(Module &M) {
+@@ -929,6 +929,15 @@ bool AsmPrinter::doFinalization(Module &M) {
      if (GCMetadataPrinter *MP = GetOrCreateGCPrinter(*--I))
        MP->finishAssembly(*this);
  
@@ -62,7 +62,7 @@ index 0f3efd8..d96a258 100644
        nl(Out);
      }
 +    if (const Function* F = dyn_cast<Function>(call->getCalledValue())) {
-+    	if (F->getName().compare("llvm.dbg.value") == 0)
++    	if ((F->getName().compare("llvm.dbg.value") == 0) || (F->getName().compare("llvm.dbg.declare") == 0))
 +    		break;	//Generate nothing
 +    }
      if (call->getNumArgOperands() > 1) {

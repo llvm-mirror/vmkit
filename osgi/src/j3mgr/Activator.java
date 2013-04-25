@@ -12,8 +12,6 @@ public class Activator
 
 	public void start(BundleContext bundleContext) throws Exception
 	{
-		System.out.println("J3MgrImpl exports and provides J3Mgr");
-
 		mgr = new J3MgrImpl();
 		mgr.open(bundleContext);
 		
@@ -22,8 +20,6 @@ public class Activator
 
 	public void stop(BundleContext bundleContext) throws Exception
 	{
-		System.out.println("J3MgrImpl no more provides J3Mgr");
-
 		if (mgr != null) {
 			mgr.close();
 			mgr = null;

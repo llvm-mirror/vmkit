@@ -10,6 +10,8 @@
 #ifndef VMKIT_VIRTUALMACHINE_H
 #define VMKIT_VIRTUALMACHINE_H
 
+#define RESET_STALE_REFERENCES	1
+
 #include "llvm/ADT/DenseMap.h"
 
 #include "vmkit/Allocator.h"
@@ -194,6 +196,11 @@ public:
   ///
   virtual void traceObject(gc* object, word_t closure) = 0;
 
+  /// setType - Method called when allocating an object. The VirtualMachine has to
+  /// set the identity of the object (identity is determined by user).
+  ///
+  virtual void setType(gcHeader* header, void* type) = 0;
+
   /// getObjectSize - Get the size of this object. Used by copying collectors.
   ///
   virtual size_t getObjectSize(gc* object) = 0;
@@ -207,7 +214,9 @@ public:
   ///
   CooperativeCollectionRV rendezvous;
 
+#if RESET_STALE_REFERENCES
   virtual void resetReferenceIfStale(const void* source, void** ref) {}
+#endif
 
 //===----------------------------------------------------------------------===//
 // (3) Backtrace-related methods.

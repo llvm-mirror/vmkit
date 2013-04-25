@@ -115,11 +115,9 @@ JavaObjectField* JavaObjectField::createFromInternalField(JavaField* field, int 
   return ret;
 }
 
-UserClass* JavaObjectConstructor::getClass(JavaObjectConstructor* self)
-{
+UserClass* JavaObjectConstructor::getClass(JavaObjectConstructor* self) {
   llvm_gcroot(self, 0);
-  UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
-  return cls->asClass();
+  return JavaObjectVMConstructor::getClass(self->vmCons);
 }
 
 }

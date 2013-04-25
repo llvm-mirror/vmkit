@@ -326,20 +326,9 @@ bool FatLock::acquire(gc* obj, LockSystem& table) {
 
   if (this->associatedObjectIsDead()) {
     internalLock.unlock();
-/*
-    vmkit::Thread* ownerThread = this->getOwner();
 
-    // Notify all threads waiting on this object
-    ownerThread->lockingThread.notifyAll(*ref, vm->lockSystem, ownerThread);
-
-    // Release this object
-    while (vmkit::ThinLock::getOwner(*ref, vm->lockSystem) == ownerThread)
-      vmkit::ThinLock::release(*ref, vm->lockSystem, ownerThread);
-*/
-
-	if (lockingThreads == 0) {
-      table.deallocate(this);
-    }
+//	if (lockingThreads == 0)
+//      table.deallocate(this);
 
 	word_t methodIP = System::GetCallerAddress();
 	methodIP = System::GetIPFromCallerAddress(methodIP);

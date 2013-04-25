@@ -3,6 +3,7 @@ package ijvm.tests.BImpl;
 import java.util.ArrayList;
 
 import ijvm.tests.A.A;
+import ijvm.tests.A.Token;
 import ijvm.tests.B.B;
 
 import org.osgi.framework.BundleActivator;
@@ -18,11 +19,13 @@ public class Activator
 
 	private ServiceTracker aST;
 	private ArrayList<A> a;
+	private ArrayList<Token> tokens;
 	private BImpl b;
 	
 	public Activator()
 	{
 		a = new ArrayList<A>();
+		tokens = new ArrayList<Token>();
 	}
 
 	public void start(BundleContext bundleContext) throws Exception
@@ -34,13 +37,14 @@ public class Activator
 		aST.open();
 		
 		A service = (A)aST.getService();
-		if (service != null)
+		if (service != null) {
+			System.out.println("BImpl got A @ startup");
+			
 			a.add(service);
+			this.useA();
+		}
 		
 		context.addServiceListener(this, "(objectclass=" + A.class.getName() + ")");
-
-		if (a != null)
-			System.out.println("BImpl got A @ startup");
 		
 		b = new BImpl();
 		context.registerService(B.class.getName(), b, null);
@@ -70,6 +74,8 @@ public class Activator
 			if (A.class.isInstance(service)) {
 				System.out.println("BImpl got A");
 				a.add((A)service);
+				
+				this.useA();
 			}
 			break;
 			
@@ -79,5 +85,16 @@ public class Activator
 			}
 			break;
 		}
+	}
+	
+	private void useA()
+	{
+		A oneA = a.get(a.size() - 1);
+		Token token = oneA.getToken();
+		token.getValue();
+		
+		tokens.add(token);
+		
+		System.out.println("BImpl got Token from A");
 	}
 }

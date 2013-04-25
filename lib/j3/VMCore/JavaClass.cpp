@@ -343,6 +343,8 @@ JavaMethod* Class::lookupSpecialMethodDontThrow(const UTF8* name,
 JavaMethod* Class::lookupMethodDontThrow(const UTF8* name, const UTF8* type,
                                          bool isStatic, bool recurse,
                                          Class** methodCl) {
+  // This is a dirty hack because of a dirty usage pattern. See UPCALL_METHOD macro...
+  if (this == NULL) return NULL;
   
   JavaMethod* methods = 0;
   uint32 nb = 0;
@@ -897,8 +899,10 @@ void Class::readClass() {
   magic = reader.readU4();
   assert(magic == Jnjvm::Magic && "I've created a class but magic is no good!");
 
-  /* uint16 minor = */ reader.readU2();
-  /* uint16 major = */ reader.readU2();
+  uint16 minor = reader.readU2();
+  uint16 major = reader.readU2();
+  this->isClassVersionSupported(major, minor);
+
   uint32 ctpSize = reader.readU2();
   ctpInfo = new(classLoader->allocator, ctpSize) JavaConstantPool(this, reader,
                                                                   ctpSize);
@@ -917,6 +921,36 @@ void Class::readClass() {
   readFields(reader);
   readMethods(reader);
   attributes = readAttributes(reader, nbAttributes);
+}
+
+void Class::getMinimalJDKVersion(uint16 major, uint16 minor, unsigned int& JDKMajor, unsigned int& JDKMinor, unsigned int& JDKBuild)
+{
+	JDKMajor = 1;
+	JDKBuild = 0;
+	if (major == 45 && minor <= 3) {			// Supported by Java 1.0.2
+		JDKMinor = 0;
+		JDKBuild = 2;
+	} else if (major == 45 && minor <= 65535) {	// Supported by Java 1.1
+		JDKMinor = 1;
+	} else {									// Supported by Java 1.x (x >= 2)
+		JDKMinor = major - 43;
+		if (minor == 0) --JDKMinor;
+	}
+}
+
+bool Class::isClassVersionSupported(uint16 major, uint16 minor)
+{
+	const int supportedJavaMinorVersion = 5;	// Java 1.5
+
+	unsigned int JDKMajor, JDKMinor, JDKBuild;
+	Class::getMinimalJDKVersion(major, minor, JDKMajor, JDKMinor, JDKBuild);
+
+	bool res = (JDKMajor <= 1) && (JDKMinor <= supportedJavaMinorVersion);
+	if (!res) {
+		cerr << "WARNING: Class file '" << *name << "' requires Java version " << JDKMajor << '.' << JDKMinor <<
+			". This JVM only supports Java versions up to 1." << supportedJavaMinorVersion << '.' << endl;
+	}
+	return res;
 }
 
 void UserClass::resolveParents() {
@@ -1917,7 +1951,7 @@ std::string& CommonClass::getName(std::string& nameBuffer, bool linkageName) con
 {
 	name->toString(nameBuffer);
 
-	for (size_t i=0; i < name->size; ++i) {
+	for (int32_t i=0; i < name->size; ++i) {
 		if (name->elements[i] == '/')
 			nameBuffer[i] = linkageName ? '_' : '.';
 	}

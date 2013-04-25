@@ -46,8 +46,8 @@ JavaObjectVMMethod* VMMeth) {
   if (cl->inheritName(name->elements, name->size)) {
     // Find "default attribute"
     JavaMethod* method = JavaObjectVMMethod::getInternalMethod(VMMeth);
-    Attribut* annotationsAtt =
-      method->lookupAttribut(Attribut::annotationDefaultAttribut);
+    JavaAttribute* annotationsAtt =
+      method->lookupAttribute(JavaAttribute::annotationDefaultAttribute);
     dprintf("JavaMethod:%s\n", UTF8Buffer(method->name).cString());
 
     if (annotationsAtt) {
@@ -89,8 +89,8 @@ JavaObjectVMMethod* VMMeth, JavaObjectClass* annotationClass) {
     /* Retrieving VMMethod.class attributes list */
     UserClass* compilingClass = JavaObjectVMMethod::getClass(VMMeth);
     JavaMethod* method = JavaObjectVMMethod::getInternalMethod(VMMeth);
-    Attribut* annotationsAtt =
-      method->lookupAttribut(Attribut::annotationsAttribut);
+    JavaAttribute* annotationsAtt =
+      method->lookupAttribute(JavaAttribute::annotationsAttribute);
     dprintf("JavaMethod:%s\n", UTF8Buffer(method->name).cString());
 
     if (annotationsAtt) {

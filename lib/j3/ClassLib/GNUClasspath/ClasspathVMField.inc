@@ -65,8 +65,8 @@ JavaObjectVMField* VMField, JavaObjectClass* annotationClass) {
     /* Retrieving VMField.class attributes list */
     UserClass* compilingClass = JavaObjectVMField::getClass(VMField);
     JavaField* field = JavaObjectVMField::getInternalField(VMField);
-    Attribut* annotationsAtt =
-      field->lookupAttribut(Attribut::annotationsAttribut);
+    JavaAttribute* annotationsAtt =
+      field->lookupAttribute(JavaAttribute::annotationsAttribute);
     dprintf("JavaField : %s\n", UTF8Buffer(field->name).cString());
 
     if (annotationsAtt) {

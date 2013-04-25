@@ -19,7 +19,8 @@ public class Runner
 	
 	public void cancel()
 	{
-		cancelRunning = false;
+		System.out.println("Cancelling runner thread: " + Thread.currentThread().getName());
+		cancelRunning = true;
 	}
 	
 	public void run()
@@ -30,7 +31,18 @@ public class Runner
 			while (!cancelRunning) {
 				long delay = 2000 + (long)(Math.random() * 1000.0);
 				
-				ijvm_tests_Runner_loop(delay);
+				synchronized(obj) {
+					while (sleeping)
+						obj.wait();
+					sleeping = true;
+					
+					System.out.println(Thread.currentThread().getName() + ": sleeping for " + delay);
+					Thread.sleep(delay);
+					System.out.println(Thread.currentThread().getName() + ": woke up");
+					
+					sleeping = false;
+					obj.notifyAll();
+				}
 				
 				Thread.sleep(200);
 			}
@@ -39,26 +51,5 @@ public class Runner
 		}
 		
 		System.out.println("Stopped runner thread: " + Thread.currentThread().getName());
-	}
-	
-	void ijvm_tests_Runner_loop(long delay) throws InterruptedException
-	{
-		synchronized(obj) {
-			iteration(delay);
-		}
-	}
-	
-	void iteration(long delay) throws InterruptedException
-	{
-		while (sleeping)
-			obj.wait();
-		sleeping = true;
-		
-		System.out.println(Thread.currentThread().getName() + ": sleeping for " + delay);
-		Thread.sleep(delay);
-		System.out.println(Thread.currentThread().getName() + ": woke up");
-		
-		sleeping = false;
-		obj.notifyAll();
 	}
 }
