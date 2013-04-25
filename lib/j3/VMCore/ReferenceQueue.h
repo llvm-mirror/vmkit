@@ -40,12 +40,7 @@ public:
 
 
   ReferenceQueue(uint8_t s) {
-  	printf("Allocating ReferenceQueue !\n");
     References = new gc*[INITIAL_QUEUE_SIZE];
-    if(*((gc**)0x5000B030)){
-    	printf("HEADER OF EXCEPTION OBJ : %08llX\n", ((gc*)(0x5000B030))->header());
-    }
-    printf("ReferenceQueue (initial size = %d\trange : start @%p - end @%p\n", INITIAL_QUEUE_SIZE, References, References + INITIAL_QUEUE_SIZE);
     memset(References, 0, INITIAL_QUEUE_SIZE * sizeof(gc*));
     QueueLength = INITIAL_QUEUE_SIZE;
     CurrentIndex = 0;

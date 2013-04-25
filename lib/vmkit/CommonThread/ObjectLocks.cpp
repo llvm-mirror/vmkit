@@ -192,7 +192,6 @@ void ThinLock::acquire(gc* object, LockSystem& table) {
   }
 
   assert(owner(object, table) && "Not owner after quitting acquire!");
-  printf("LOCK ACQUIRED curThread = %08llX, OWNER of object @%p on ThreadIDMask = %08llX\n", id, object, object->header() & System::GetThreadIDMask());
 }
 
 /// release - Release the lock.
@@ -224,8 +223,6 @@ void ThinLock::release(gc* object, LockSystem& table) {
     } while ((object->header() & ThinCountMask) == count);
   }
 
-  printf("LOCK RELEASED curThread = %08llX, OWNER of object @%p on ThreadIDMask = %08llX\n", id, object, object->header() & System::GetThreadIDMask());
-
 }
 
 /// owner - Returns true if the curren thread is the owner of this object's
@@ -233,19 +230,13 @@ void ThinLock::release(gc* object, LockSystem& table) {
 bool ThinLock::owner(gc* object, LockSystem& table) {
   llvm_gcroot(object, 0);
   if (object->header() & FatMask) {
-  	printf("OWNER on FatMask\n");
     FatLock* obj = table.getFatLockFromID(object->header());
     if (obj != NULL) return obj->owner();
   } else {
   	bool res = false;
     uint64 id = vmkit::Thread::get()->getThreadID();
     res = ((object->header() & System::GetThreadIDMask()) == id);
-    printf("CHECK OWNER curThread = %08llX, OWNER of object @%p (header @%p) on ThreadIDMask = %08llX\n", id, object, &object->header(), object->header() & System::GetThreadIDMask());
-    fflush(NULL);
-    if (res)
-    	return true;
-    else
-    	printf("THREAD IS NOT THE OWNER OF OBJECT %p OF TYPE %s\n", object, j3::UTF8Buffer(((j3::JavaVirtualTable*)(object->getVirtualTable()))->cl->getName()).cString());
+    if (res) return true;
   }
   return false;
 }

@@ -160,8 +160,6 @@ JavaConstantPool::operator new(size_t sz, vmkit::BumpPtrAllocator& allocator,
   // NOTICE: 'size' is not the final size of the object, as it does more allocations in the constructor
   uint32 size = sz + ctpSize * (sizeof(void*) + sizeof(sint32) + sizeof(uint8));
   void* res = allocator.Allocate(size, "Constant pool");
-  printf("JavaConstantPool operator new @%p\n", res);
-  fflush(NULL);
   return res;
 }
 
