@@ -33,21 +33,6 @@ LIBDIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
 INCDIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/include
 BUILD_DIR=$(BUILD_NAME)
 
-%/.dir:
-	mkdir -p $(dir $@) && touch $@
-
-clean::
-	$(Echo) "Cleaning compilation files"
-	$(Verb) rm -Rf $(BUILD_DIR)
-
-distclean::
-	$(Echo) "Cleaning build files"
-	$(Verb) rm -Rf $(BINDIR) $(LIBDIR) $(INCDIR)
-
-ifeq ($(DEBUG),1)
-  COMMON_CFLAGS+=-g
-endif
-
 LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
 
 CLANG=$(LLVM_BIN)/clang
@@ -64,11 +49,42 @@ RM=rm
 NM=nm
 LD=ld
 LArchive=$(LLVM_BIN)/llvm-ar rcsf
+MKDIR=mkdir -p
+TOUCH=touch
+
+%/.dir:
+	$(Verb) $(MKDIR) $(dir $@) && $(TOUCH) $@
+
+clean::
+	$(Echo) "Cleaning compilation files"
+	$(Verb) $(RM) -Rf $(BUILD_DIR)
+
+distclean::
+	$(Echo) "Cleaning build files"
+	$(Verb) $(RM) -Rf $(BINDIR) $(LIBDIR) $(INCDIR)
+
+ifeq ($(DEBUG),1)
+  COMMON_CFLAGS+=-g
+endif
 
 ###############################################################################
-#   Linking options
+#   Autodependencies
+###############################################################################
+#SELF=$(PROJ_SRC_ROOT)/Makefile.rules Makefile $(PROJ_SRC_ROOT)/Makefile.common
+
+###############################################################################
+#   Linking
 ###############################################################################
 USEDLIBS:=$(patsubst %,$(LibDir)/lib%,$(USEDLIBS))
+
+ifdef TOOLNAME
+all:: $(BINDIR)/$(TOOLNAME)$(EXEEXT)
+
+$(BINDIR)/$(TOOLNAME)$(EXEEXT): $(ObjectsO) $(USEDLIBS) $(SELF) $(BINDIR)/.dir
+	$(Echo) '**[30] Linking executable $(TOOLNAME)'
+	$(Verb) $(CLANGXX) -o $@ $(ObjectsO) $(USEDLIBS) $(MY_LIBS) $(MY_LDFLAGS) 
+
+endif
 
 #
 #

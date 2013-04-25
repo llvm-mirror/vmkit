@@ -10,7 +10,6 @@ LEVEL = ../..
 
 include $(LEVEL)/Makefile.config
 
-DIRS = trainer
 TOOLNAME = precompiler
 USEDLIBS = Classpath.a J3.a J3Compiler.a Vmkit.a VmkitCompiler.a CommonThread.a FinalMMTk.a Classpath.a J3.a J3Compiler.a Vmkit.a VmkitCompiler.a CommonThread.a FinalMMTk.a
 BUILD_FRAMETABLE = 1

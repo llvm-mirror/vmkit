@@ -6,7 +6,7 @@
 # License. See LICENSE.TXT for details.
 # 
 ##===----------------------------------------------------------------------===##
-LEVEL = ../../..
+LEVEL = ../..
 
 EXTRA_DIST = HelloWorld.java
 
