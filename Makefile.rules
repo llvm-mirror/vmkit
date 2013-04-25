@@ -1,7 +1,7 @@
 
 .PHONY: all tidy clean distclean confclean
 .SECONDARY:
-.SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll $(SHLIBEXT) $(SUFFIXES)
+.SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll .jar $(SHLIBEXT) $(SUFFIXES)
 
 ifeq ($(OPTIMIZED),1)
   BUILD_NAME:=Release
@@ -88,7 +88,7 @@ $(LEVEL)/Makefile.common: $(PROJ_OBJ_ROOT)/Makefile.common
 
 define define_config_rule
 $$(PROJ_OBJ_ROOT)/$1: $$(PROJ_SRC_ROOT)/$1.in $$(PROJ_SRC_ROOT)/configure
-	$(Echo) "Regenerating project files $$@"
+	$(Echo) "Regenerating project files $$1"
 	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status -q --$2=$1
 	$(Verb) touch $$@
 endef
@@ -97,7 +97,7 @@ $(foreach cur,$(CONFIG_FILES),$(eval $(call define_config_rule,$(cur),file)))
 $(foreach cur,$(CONFIG_HEADERS),$(eval $(call define_config_rule,$(cur),header)))
 
 $(PROJ_OBJ_ROOT)/configure: $(PROJ_SRC_ROOT)/autoconf/configure.ac $(PROJ_SRC_ROOT)/autoconf/AutoRegen.sh 
-	$(Echo) Rebootstraping project
+	$(Echo) "Rebootstraping project"
 	$(Verb) cd $(PROJ_SRC_ROOT)/autoconf && ./AutoRegen.sh
 	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status --recheck
 
@@ -128,7 +128,7 @@ endif
 
 ifdef MODULE_WITH_GC
 MODULE=$(MODULE_WITH_GC)
-WITH_GC=-gc
+NEED_GC=1
 endif
 
 ###############################################################################
@@ -137,54 +137,73 @@ endif
 ifdef MODULE
 
 MODULE_A=$(LIB_DIR)/lib$(MODULE).a
-MODULE_BC=$(LIB_DIR)/$(MODULE).bc
-
-BASE_FILES+=$(patsubst %.c,$(BUILD_DIR)/%,$(wildcard *.c)) \
-            $(patsubst %.cc,$(BUILD_DIR)/%,$(wildcard *.cc)) \
-            $(patsubst %.cpp,$(BUILD_DIR)/%,$(wildcard *.cpp)) \
-            $(patsubst %,$(BUILD_DIR)/%,$(GEN))
-
-BC_FILES=$(addsuffix $(WITH_GC).bc,$(BASE_FILES))
-OBJ_FILES=$(addsuffix $(WITH_GC).o,$(BASE_FILES))
 
 all:: $(MODULE_A)
 
+CLANG_FILES+=$(patsubst %.c,$(BUILD_DIR)/%,$(wildcard *.c)) \
+             $(patsubst %.cc,$(BUILD_DIR)/%,$(wildcard *.cc)) \
+             $(patsubst %.cpp,$(BUILD_DIR)/%,$(wildcard *.cpp))
+
+BC_FILES+=$(addsuffix .bc,$(CLANG_FILES) $(patsubst %,$(BUILD_DIR)/%,$(GEN)))
+
+ifdef NEED_GC
+LLC_GC=-load=$(PREPARE_CODE)
+OPT_GC=-load=$(PREPARE_CODE) -StaticGCPass
+endif
+
+$(MODULE_A):: $(LIB_DIR)/.dir
+
 ifdef NEED_BC
-all:: $(MODULE_BC)
+all:: $(LIB_DIR)/$(MODULE).bc
+
+$(LIB_DIR)/$(MODULE).bc: $(BUILD_DIR)/$(MODULE)-opt.bc $(LIB_DIR)/.dir
+	$(Verb) $(CP) $< $@
+
+$(BUILD_DIR)/$(MODULE).bc: $(BC_FILES) $(patsubst %, $(LIB_DIR)/%.bc,$(MODULE_USE))
+	$(Echo) "Linking module '$(notdir $@)'"
+	$(Verb) $(LLVMLINK) $^ -o $@
+endif
+
+ifdef NEED_BC
+$(MODULE_A):: $(BUILD_DIR)/$(MODULE)-opt.o
+else
+$(MODULE_A):: $(patsubst %.bc,%-opt.o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
+endif
+	$(Echo) "Building archive '$(notdir $@)'"
+	-$(Verb) $(RM) -f $@
+	$(Verb) $(Archive) $@ $^
+	$(Verb) $(Ranlib) $@
+
+%.o: %.bc
+	$(Echo) "Assembling '$(notdir $<)'"
+	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $(LLC_GC) $< -o $@
+
+%-opt.bc: %.bc
+	$(Echo) "Optimizing '$(notdir $<)'"
+	$(Verb) $(LOPT) $< $(OPT_GC) -o $@
+
 endif
 
 ifdef BUILD_FRAMETABLE
 
 ## have to remove this symbol (used elsewere)
 BUILT_INC+=$(patsubst %,$(BUILD_DIR)/%,FrametablesExterns.inc FrametablesSymbols.inc)
-DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(USE))
+DEP_FRAMETABLES=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
 
 $(BUILD_DIR)/FrametablesExterns.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
 	$(Echo) "Generating $(notdir $@)"
-	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
+	$(Verb) $(NM) $(DEP_FRAMETABLES) | $(GREP) __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
 
 $(BUILD_DIR)/FrametablesSymbols.inc: $(DEP_FRAMETABLES) $(SELF) $(BUILD_DIR)/.dir
 	$(Echo) "Generating $(notdir $@)"
-	$(Verb) $(NM) $(DEP_FRAMETABLES) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
-
-endif
-
-$(MODULE_A): $(OBJ_FILES) $(SELF) $(LIB_DIR)/.dir
-	$(Echo) "Building archive '$(notdir $@)'"
-	-$(Verb) $(RM) -f $@
-	$(Verb) $(Archive) $@ $(OBJ_FILES)
-	$(Verb) $(Ranlib) $@
-
-$(MODULE_BC): $(BC_FILES) $(SELF) $(LIB_DIR)/.dir
-	$(Echo) "Building module '$(notdir $@)'"
-	$(Verb) $(LLVMLINK) $(BC_FILES) -o $(MODULE_BC)
+	$(Verb) $(NM) $(DEP_FRAMETABLES) | $(GREP) __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
 
 endif
 
 ###############################################################################
 #   Linking
 ###############################################################################
-DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(USE) $(USE))
+DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE) $(LINK_USE))
 
 $(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(BIN_DIR)/.dir
 	$(Echo) "Linking executable '$(notdir $@)'"
@@ -203,7 +222,7 @@ all:: $(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
 BUILT_INC+=$(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
 
 $(BUILD_DIR)/$(VMKIT_RUNTIME_OUT): $(VMKIT_RUNTIME_IN) $(SELF) $(BUILD_DIR)/.dir
-	$(Echo) "Generating '$@'"
+	$(Echo) "Generating '$(notdir $@)'"
 	$(Verb) cat $(VMKIT_RUNTIME_IN) | $(LLVMAS) -o - | $(LLC) -march=cpp -cppgen=contents -o $@
 
 endif
@@ -225,18 +244,6 @@ MY_LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
 DEPEND_OPTIONS=-MMD -MP -MF "$(BUILD_DIR)/$$*.d.tmp" -MT "$(BUILD_DIR)/$$*.bc" -MT "$(BUILD_DIR)/$$*.d"
 DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUILD_DIR)/$$*.d.tmp"; exit 1; fi
 
-$(BUILD_DIR)/%-gc.o: $(BUILD_DIR)/%-gc.bc $(LLC) $(SELF)
-	$(Echo) "Assembling '$(notdir $<)'"
-	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim -load=$(PREPARE_CODE) $< -o $@
-
-$(BUILD_DIR)/%.o: $(BUILD_DIR)/%.bc $(LLC) $(SELF)
-	$(Echo) "Assembling '$(notdir $<)'"
-	$(Verb) $(LLC) -relocation-model=pic -filetype=obj -disable-cfi -disable-fp-elim $< -o $@
-
-$(BUILD_DIR)/%-gc.bc: $(BUILD_DIR)/%.bc $(LOPT) $(PREPARE_CODE) $(SELF)
-	$(Echo) "Preparing for gc '$(notdir $<)'"
-	$(Verb) $(LOPT) $< -load=$(PREPARE_CODE) -StaticGCPass -o $@
-
 define define_compile_rule
 $(BUILD_DIR)/%.bc: %$1 $(SELF) $(BUILT_INC) $(BUILD_DIR)/.dir
 	$(Echo) "Compiling '$(notdir $$<)'"
@@ -254,7 +261,7 @@ $(eval $(call define_compile_rule,.c,$(CLANG),$(CFLAGS)))
 ifneq ($(MAKECMDGOALS),tidy)
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),distclean)
--include $(addsuffix .d,$(BASE_FILES))
+-include $(addsuffix .d,$(CLANG_FILES))
 endif
 endif
 endif

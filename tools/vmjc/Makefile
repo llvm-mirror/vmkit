@@ -9,6 +9,6 @@
 LEVEL = ../..
 
 TOOL=vmjc
-USE=J3 Classpath J3Compiler Vmkit VmkitCompiler MMTk CommonThread
+LINK_USE=J3 Classpath J3Compiler Vmkit VmkitCompiler MMTk CommonThread
 
 include $(LEVEL)/Makefile.common

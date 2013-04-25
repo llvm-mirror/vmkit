@@ -9,7 +9,7 @@
 LEVEL = ../..
 
 TOOL=precompiler
-USE=Classpath J3 J3Compiler Vmkit VmkitCompiler CommonThread FinalMMTk
+LINK_USE=Classpath J3 J3Compiler Vmkit VmkitCompiler CommonThread FinalMMTk
 BUILD_FRAMETABLE=1
 
 include $(LEVEL)/Makefile.common
