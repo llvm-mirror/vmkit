@@ -85,6 +85,15 @@ extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_Objec
   memcpy(res, src, size);
 }
 
+extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2I(
+    void* res, void* src, int size) ALWAYS_INLINE;
+
+extern "C" void Java_org_j3_bindings_Bindings_memcpy__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_Address_2I(
+    void* res, void* src, int size) {
+  memcpy(res, src, size);
+}
+
+
 extern "C" word_t JnJVM_org_j3_bindings_Bindings_copy__Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_ObjectReference_2II(
     gc* obj, VirtualTable* VT, int size, int allocator);
 
