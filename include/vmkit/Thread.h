@@ -19,11 +19,114 @@
 
 #include "vmkit/System.h"
 
+typedef uint32_t				isolate_id_t;
+#define CURRENT_ISOLATE			((isolate_id_t)(-1))
+#define IsValidIsolateID(iid)	((iid) != CURRENT_ISOLATE)
 
 namespace vmkit {
 
 class FrameInfo;
 class VirtualMachine;
+class Thread;
+
+
+class KnownFrame {
+public:
+  void* currentFP;
+  void* currentIP;
+  KnownFrame* previousFrame;
+};
+
+
+enum StackWalkerState {
+	StackWalkerInvalid = 0,
+	StackWalkerValid,
+	StackWalkerValidMetadata
+};
+
+/// StackWalker - This class walks the stack of threads, returning a FrameInfo
+/// object at each iteration.
+///
+class StackWalker
+{
+protected:
+  void* callFrame;
+  KnownFrame* frame;
+  vmkit::Thread* thread;
+  bool onlyReportMetadataEnabledFrames;
+
+public:
+  StackWalker(vmkit::Thread* th, bool only_report_metadata_enabled_frames = false);
+  StackWalker(const StackWalker& obj, bool reset = false);
+
+  StackWalker& operator = (const StackWalker& obj);
+  bool operator == (const StackWalker& obj) const {return (thread == obj.thread) && (callFrame == obj.callFrame);}
+  bool operator != (const StackWalker& obj) const {return !((*this) == obj);}
+  void operator++();
+  void operator--();
+  void* operator*();
+  FrameInfo* get();
+  const FrameInfo* get() const {return const_cast<StackWalker*>(this)->get();}
+  void reset() __attribute__ ((noinline));
+
+  void* getCallFrame() const				{return callFrame;}
+  void* getCallerCallFrame() const;
+  void* getReturnAddress() const			{return getReturnAddressFromCallFrame(callFrame);}
+  KnownFrame* getKnownFrame()				{return frame;}
+  vmkit::Thread* getScannedThread() const	{return thread;}
+  StackWalkerState getState() const;
+  bool isValid() const						{return getState() >= StackWalkerValid;}
+  bool hasMetaData() const					{return getState() == StackWalkerValidMetadata;}
+
+  void* updateReturnAddress(void* newAddr);
+  void* updateCallerFrameAddress(void* newAddr);
+
+  bool isReportingOnlyMetadataEnabledFrames() const {return onlyReportMetadataEnabledFrames;}
+  void reportOnlyMetadataEnabledFrames(bool only_report_metadata_enabled_frames) {onlyReportMetadataEnabledFrames = only_report_metadata_enabled_frames;}
+
+  void dump() const;
+
+  static void* getCallerCallFrameAddress(void* callFrame);
+  static void** getReturnAddressPtrFromCallFrame(void* callFrame);
+  static void* getReturnAddressFromCallFrame(void* callFrame);
+
+#if defined(ARCH_X86) || defined(ARCH_X64)
+#define StackWalker_getCallFrameAddress()	((void*)(__builtin_frame_address(0)))
+#else
+#define StackWalker_getCallFrameAddress()	(*(void**)__builtin_frame_address(0))
+#endif
+
+};
+
+
+class ExceptionBuffer {
+protected:
+	/*
+		WARNING:
+		- Do not change the fields order or type, unless you update LLVM data types.
+		- Do not declare anything as virtual (to avoid generating a Virtual Table).
+	*/
+	void* handlerMethod;
+	uint32_t handlerIsolateID;
+	ExceptionBuffer* previousBuffer;
+	jmp_buf buffer;
+
+public:
+  ExceptionBuffer();
+  ~ExceptionBuffer() {removeFromThreadExceptionList();}
+
+  void addToThreadExceptionList(void* returnAddr);
+  void removeFromThreadExceptionList();
+
+  void* getHandlerMethod() const {return handlerMethod;}
+  isolate_id_t getHandlerIsolateID() const {return handlerIsolateID;}
+
+  ExceptionBuffer* getPrevious() {return previousBuffer;}
+  void setPrevious(ExceptionBuffer* newValue) {previousBuffer = newValue;}
+
+  jmp_buf& getSetJmpBuffer() {return buffer;}
+};
+
 
 /// CircularBase - This class represents a circular list. Classes that extend
 /// this class automatically place their instances in a circular list.
@@ -99,14 +202,6 @@ public:
 };
 
 
-class KnownFrame {
-public:
-  word_t currentFP;
-  word_t currentIP;
-  KnownFrame* previousFrame;
-};
-
-
 class ExceptionBuffer;
 
 /// Thread - This class is the base of custom virtual machines' Thread classes.
@@ -117,6 +212,7 @@ public:
   Thread() {
     lastExceptionBuffer = 0;
     lastKnownFrame = 0;
+    runningDeadIsolate = false;
   }
 
   /// yield - Yield the processor to another thread.
@@ -143,17 +239,18 @@ public:
     return (uint64_t)this;
   }
  
-public:
+protected:
 
   /// IsolateID - The Isolate ID of the thread's VM.
-  size_t IsolateID;
+  isolate_id_t isolateID;
 
+public:
   /// MyVM - The VM attached to this Thread.
   VirtualMachine* MyVM;
 
   /// baseSP - The base stack pointer.
   ///
-  word_t baseSP;
+  void* baseSP;
  
   /// doYield - Flag to tell the thread to yield for GC reasons.
   ///
@@ -170,7 +267,7 @@ public:
   /// get - Get the thread specific data of the current thread.
   ///
   static Thread* get() {
-    return (Thread*)(System::GetCallerAddress() & System::GetThreadIDMask());
+    return (Thread*)((word_t)StackWalker_getCallFrameAddress() & System::GetThreadIDMask());
   }
   
 private:
@@ -179,13 +276,13 @@ private:
   /// interrupted, lastSP is not null and contains the value of the
   /// stack pointer before entering native.
   ///
-  word_t lastSP;
+  void* lastSP;
  
   /// internalThreadID - The implementation specific thread id.
   ///
   void* internalThreadID;
   
-  /// internalThreadStart - The implementation sepcific thread starter
+  /// internalThreadStart - The implementation specific thread starter
   /// function.
   ///
   static void internalThreadStart(vmkit::Thread* th);
@@ -196,22 +293,32 @@ private:
 
 public:
  
+  isolate_id_t getIsolateID() const;
+  void setIsolateID(isolate_id_t newIsolateID);
+  static isolate_id_t getValidIsolateID(isolate_id_t isolateID);
+
+  bool runsDeadIsolate() const;
+  void markRunningDeadIsolate();
+  void setDeadIsolateID();
+
+  bool isCurrentThread();
+
   /// tracer - Does nothing. Used for child classes which may defined
   /// a tracer.
   ///
   virtual void tracer(word_t closure) {}
   void scanStack(word_t closure);
   
-  word_t getLastSP() { return lastSP; }
-  void  setLastSP(word_t V) { lastSP = V; }
+  void* getLastSP() { return lastSP; }
+  void  setLastSP(void* V) { lastSP = V; }
   
   void joinRVBeforeEnter();
-  void joinRVAfterLeave(word_t savedSP);
+  void joinRVAfterLeave(void* savedSP);
 
   void enterUncooperativeCode(uint16_t level = 0) __attribute__ ((noinline));
-  void enterUncooperativeCode(word_t SP);
+  void enterUncooperativeCode(void* SP);
   void leaveUncooperativeCode();
-  word_t waitOnSP();
+  void* waitOnSP();
 
 
   /// clearException - Clear any pending exception of the current thread.
@@ -219,7 +326,7 @@ public:
     internalClearException();
   }
 
-  bool isVmkitThread() {
+  bool isVmkitThread() const {
     if (!baseAddr) return false;
     else return (((word_t)this) & System::GetVmkitThreadMask()) == baseAddr;
   }
@@ -236,7 +343,7 @@ public:
   /// stackOverflow - Returns if there is a stack overflow in Java land.
   ///
   bool stackOverflow() {
-    return (System::GetCallerAddress() & StackOverflowMask) == 0;
+    return ((word_t)StackWalker_getCallFrameAddress() & StackOverflowMask) == 0;
   }
 
   /// operator new - Allocate the Thread object as well as the stack for this
@@ -259,7 +366,7 @@ public:
  
   /// getFrameContext - Fill the buffer with frames currently on the stack.
   ///
-  void getFrameContext(word_t* buffer);
+  void getFrameContext(void** buffer);
   
   /// getFrameContextLength - Get the length of the frame context.
   ///
@@ -280,62 +387,27 @@ public:
   void startUnknownFrame(KnownFrame& F) __attribute__ ((noinline));
   void endUnknownFrame();
 
-  word_t GetAlternativeStackEnd() {
-    return (word_t)this + System::GetPageSize();
+  void* GetAlternativeStackEnd() {
+    return (void*)((intptr_t)this + System::GetPageSize());
   }
 
-  word_t GetAlternativeStackStart() {
-    return GetAlternativeStackEnd() + System::GetAlternativeStackSize();
+  void* GetAlternativeStackStart() {
+    return (void*)((intptr_t)GetAlternativeStackEnd() + System::GetAlternativeStackSize());
   }
 
-  bool IsStackOverflowAddr(word_t addr) {
-    word_t stackOverflowCheck = GetAlternativeStackStart();
-    return addr > stackOverflowCheck &&
-      addr <= stackOverflowCheck + System::GetPageSize();
-  }
-};
-
-class ExceptionBuffer {
-public:
-  ExceptionBuffer() {
-    init();
+  bool IsStackOverflowAddr(void* addr) {
+    void* stackOverflowCheck = GetAlternativeStackStart();
+    return (addr > stackOverflowCheck) &&
+      addr <= (void*)((intptr_t)stackOverflowCheck + System::GetPageSize());
   }
 
-  void init() {
-    Thread* th = Thread::get();
-    previousBuffer = th->lastExceptionBuffer;
-    th->lastExceptionBuffer = this;
-  }
+  virtual void throwNullPointerException(void* methodIP) const;
+  virtual void throwDeadIsolateException() const {}
 
-  ~ExceptionBuffer() {
-    remove();
-  }
+  virtual void runAfterLeavingGarbageCollectorRendezVous() {}
 
-  void remove() {
-    Thread* th = Thread::get();
-    assert(th->lastExceptionBuffer == this && "Wrong exception buffer");
-    th->lastExceptionBuffer = previousBuffer;
-  }
-
-  jmp_buf buffer;
-  ExceptionBuffer* previousBuffer;
-};
-
-/// StackWalker - This class walks the stack of threads, returning a FrameInfo
-/// object at each iteration.
-///
-class StackWalker {
-public:
-  word_t addr;
-  word_t ip;
-  KnownFrame* frame;
-  vmkit::Thread* thread;
-
-  StackWalker(vmkit::Thread* th) __attribute__ ((noinline));
-  void operator++();
-  word_t operator*();
-  FrameInfo* get();
-
+protected:
+  bool runningDeadIsolate;
 };
 
 

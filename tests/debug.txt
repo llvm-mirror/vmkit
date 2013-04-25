@@ -1,0 +1,30 @@
+install file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.StaticExposer_1.0.0.jar
+install file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.StaticClient_1.0.0.jar
+install file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.StaticClient_1.0.1.jar
+start 10 11 12
+
+
+stop 10 11 12
+
+install file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.StaticExposer_1.0.0.jar
+start 10
+stop 10
+framework uninstall 10
+framework meminfo -gc
+framework meminfo -gc
+
+install file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.looper_1.0.0.jar
+install file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.tier_1.0.0.jar
+install file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.loopClient_1.0.0.jar
+install file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.isolateKiller_1.0.0.jar
+start 10 11 12
+
+framework call ijvm.isolate.isolatemanager.IsolateManager killBundles ijvm.tests.tier ijvm.tests.looper
+
+framework call ijvm.isolate.isolatemanager.IsolateManager killBundle ijvm.tests.looper
+
+framework call ijvm.isolate.isolatemanager.IsolateManager killBundle ijvm.tests.tierImpl
+
+framework call ijvm.tests.looper.LoopController cancelLoop
+
+framework meminfo -gc

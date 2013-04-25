@@ -154,6 +154,7 @@ public:
   llvm::Constant* constantFloatMinusZero;
   llvm::Constant* constantDoubleMinusZero;
   llvm::Constant* constantPtrNull;
+  llvm::Constant* constantPtr32Null;
   llvm::Constant* constantPtrLogSize;
   llvm::Constant* constantThreadIDMask;
   llvm::Constant* constantStackOverflowMask;

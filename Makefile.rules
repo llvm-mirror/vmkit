@@ -15,7 +15,7 @@ ifdef VMKIT_RUNTIME
 
 LLVMRuntime.inc : $(LLVMAS) $(LLC) $(VMKIT_RUNTIME)
 	$(Echo) "Building LLVM runtime with $(VMKIT_RUNTIME)"
-	$(Verb) cat $(VMKIT_RUNTIME) | $(LLVMAS) -o - | $(LLC) -march=cpp -cppgen=contents -o $@
+	$(Verb) cat $(VMKIT_RUNTIME) | $(LLVMAS) -o - | $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=contents -o $@
 
 all-local:: LLVMRuntime.inc
 
@@ -37,18 +37,18 @@ glibj.zip.s : $(LOPT) $(LLC) $(VMJC)
 glibj.zip.bc :
 	$(Echo) "Compiling glibj.zip to llvm"
 	$(Verb) if test -d $(GLIBJ); then \
-	  $(VMJC) -f -std-compile-opts $(GLIBJ)/glibj.zip -o glibj.zip.bc; \
+	  $(VMJC) -f $(VMJC_GLIBJ_FLAGS) $(GLIBJ)/glibj.zip -o glibj.zip.bc; \
 	else \
-	  $(VMJC) -f -std-compile-opts $(GLIBJ) -o glibj.zip.bc; \
+	  $(VMJC) -f $(VMJC_GLIBJ_FLAGS) $(GLIBJ) -o glibj.zip.bc; \
 	fi
 	
 glibj-optimized.zip.bc : glibj.zip.bc
 	$(Echo) "Optimizing glibj.zip"
-	$(Verb) $(LOPT) -std-compile-opts -f glibj.zip.bc -o glibj-optimized.zip.bc
+	$(Verb) $(LOPT) $(OPT_VMJC_FLAGS) -f glibj.zip.bc -o glibj-optimized.zip.bc
 
 glibj.zip.s : glibj-optimized.zip.bc
 	$(Echo) "Compiling glibj.zip.bc to native"
-	$(Verb) $(LLC) -disable-cfi -relocation-model=pic -disable-fp-elim glibj-optimized.zip.bc -o glibj.zip.s
+	$(Verb) $(LLC) $(LLC_GLIBJ_FLAGS) -disable-cfi -relocation-model=pic -disable-fp-elim glibj-optimized.zip.bc -o glibj.zip.s
 
 $(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
@@ -74,20 +74,22 @@ ifeq ($(COMPILE_MMTK), 1)
   all::
 	$(Verb) $(ANT) -buildfile $(PROJ_OBJ_ROOT)/mmtk/java/build.xml
 	$(Echo) Building $(BuildMode) $(JARNAME).jar $(notdir $@)
-	$(Verb) $(LOPT) -load=$(LibDir)/JITGCPass$(SHLIBEXT) -std-compile-opts -JITGCPass -f $(LibDir)/MMTKAlloc.bc -o $(LibDir)/MMTKAlloc.bc
-	$(Verb) $(VMJC) -std-compile-opts -load=$(LibDir)/MMTKRuntime$(SHLIBEXT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic $(PROJ_OBJ_ROOT)/mmtk/java/$(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=$(PROJ_SRC_ROOT)/mmtk/java/vmkit.properties -disable-stubs -assume-compiled
-	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -std-compile-opts -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
+	$(Verb) $(LOPT) -load=$(LibDir)/JITGCPass$(SHLIBEXT) $(OPT_MMTK_FLAGS) -JITGCPass -f $(LibDir)/MMTKAlloc.bc -o $(LibDir)/MMTKAlloc.bc
+	$(Verb) $(VMJC) $(VMJC_MMTK_FLAGS) -load=$(LibDir)/MMTKRuntime$(SHLIBEXT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic $(PROJ_OBJ_ROOT)/mmtk/java/$(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=$(PROJ_SRC_ROOT)/mmtk/java/vmkit.properties -disable-stubs -assume-compiled
+	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) $(OPT_MMTK_FLAGS) -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
 	$(Verb) $(LLVMLINK) -o $(LibDir)/FinalMMTk.bc $(LibDir)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LibDir)/MMTKRuntime.bc
-	$(Verb) $(LOPT) $(LibDir)/FinalMMTk.bc -load=$(LibDir)/StaticGCPass$(SHLIBEXT) -std-compile-opts -StaticGCPass -o $(LibDir)/FinalMMTk.bc
+	$(Verb) $(LOPT) $(LibDir)/FinalMMTk.bc -load=$(LibDir)/StaticGCPass$(SHLIBEXT) $(OPT_MMTK_FLAGS) -StaticGCPass -o $(LibDir)/FinalMMTk.bc
 	$(Verb) $(MKDIR) $(ObjDir)
-	$(Verb) $(LLC) -disable-fp-elim -disable-cfi -disable-debug-info-print -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) $(LibDir)/FinalMMTk.bc -o $(ObjDir)/FinalMMTk.s
+	$(Verb) $(LLC) $(LLC_ASM_FLAGS) -disable-fp-elim -disable-cfi -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) $(LibDir)/FinalMMTk.bc -o $(ObjDir)/FinalMMTk.s
+	$(Verb) $(GREP) -v '\.loc[^0-9]\+[0-9]\+ 0' $(ObjDir)/FinalMMTk.s > $(ObjDir)/FinalMMTk.s.remove_invalid_dot_loc
+	$(Verb) $(MV) -f $(ObjDir)/FinalMMTk.s.remove_invalid_dot_loc $(ObjDir)/FinalMMTk.s
 	$(Verb) $(LLVMCC) -c $(ObjDir)/FinalMMTk.s -o $(ObjDir)/FinalMMTk.o
 	$(Verb) $(Archive) $(LibDir)/libFinalMMTk.a $(ObjDir)/FinalMMTk.o
 	$(Verb) $(Ranlib) $(LibDir)/libFinalMMTk.a
-	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=gcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkMallocInline.inc
-	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=fieldWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkFieldWriteInline.inc
-	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=arrayWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkArrayWriteInline.inc
-	$(Verb) $(LLC) -march=cpp -cppgen=function -cppfor=nonHeapWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkNonHeapWriteInline.inc
+	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=gcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkMallocInline.inc
+	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=fieldWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkFieldWriteInline.inc
+	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=arrayWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkArrayWriteInline.inc
+	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=nonHeapWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkNonHeapWriteInline.inc
 endif
 
 clean-local::
@@ -108,11 +110,11 @@ AModule           := $(LibDir)/lib$(MODULE_WITH_GC).a
 
 $(ObjectsBCWithGC): $(ObjDir)/%_gc.bc: $(ObjDir)/%.ll $(LOPT)
 	$(Echo) "Compiling $*.ll to $*.bc for $(BuildMode) build (bytecode)"
-	$(Verb) $(LOPT) $< -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPass$(SHLIBEXT) -std-compile-opts -StaticGCPass -o $@
+	$(Verb) $(LOPT) $< -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPass$(SHLIBEXT) $(OPT_BC_WITH_GC_FLAGS) -StaticGCPass -o $@
 
 $(ObjectsSWithGC): $(ObjDir)/%_gc.s: $(ObjDir)/%_gc.bc $(LLC)
 	$(Echo) "Compiling $*.bc to $*.s for $(BuildMode) build"
-	$(Verb) $(LLC) -disable-cfi -disable-fp-elim -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPrinter$(SHLIBEXT) $< -o $@
+	$(Verb) $(LLC) $(LLC_ASM_FLAGS) -disable-cfi -disable-fp-elim -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPrinter$(SHLIBEXT) $< -o $@
 
 $(ObjectsWithGC): $(ObjDir)/%_gc.o: $(ObjDir)/%_gc.s $(ObjDir)/.dir
 	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)

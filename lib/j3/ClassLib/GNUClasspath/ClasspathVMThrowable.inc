@@ -50,7 +50,7 @@ JavaObject* internalFillInStackTrace(JavaObject* throwable) {
   vmkit::StackWalker Walker(th);
   uint32_t i = 0;
 
-  while (intptr_t ip = *Walker) {
+  while (void* ip = *Walker) {
     ArrayPtr::setElement(result, ip, i);
     ++i;
     ++Walker;
@@ -83,7 +83,7 @@ JavaObject* throwable) {
 }
 
 
-JavaObject* consStackElement(vmkit::FrameInfo* FI, intptr_t ip) {
+JavaObject* consStackElement(vmkit::FrameInfo* FI, void* ip) {
 
   JavaString* methodName = 0;
   JavaString* className = 0;
@@ -100,7 +100,7 @@ JavaObject* consStackElement(vmkit::FrameInfo* FI, intptr_t ip) {
   Class* cl = meth->classDef;
   className = JavaString::internalToJava(cl->name, vm);
   
-  Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
+  JavaAttribute* sourceAtt = cl->lookupAttribute(JavaAttribute::sourceFileAttribute);
   
   // We don't have the bytes if the class was vmjc'ed.
   if (sourceAtt && cl->getBytes()) {

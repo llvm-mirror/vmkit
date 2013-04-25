@@ -138,11 +138,7 @@ public:
   
   static JavaMethod* getInternalMethod(JavaObjectConstructor* self);
   
-  static UserClass* getClass(JavaObjectConstructor* self) {
-    llvm_gcroot(self, 0);
-    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
-    return cls->asClass();
-  }
+  static UserClass* getClass(JavaObjectConstructor* self);
 
   static JavaObjectConstructor* createFromInternalConstructor(JavaMethod* cons, int i);
 };
@@ -161,9 +157,18 @@ public:
   static void setVmdata(JavaObjectVMThread* vmthread,
                         JavaThread* internal_thread) {
     llvm_gcroot(vmthread, 0);
+    assert(internal_thread && "Invalid internal thread");
     vmthread->vmdata = internal_thread;
   }
 
+  friend std::ostream& operator << (std::ostream& os, JavaObjectVMThread& threadObj)
+  {
+	  for (int retries = 10; (!threadObj.vmdata) && (retries >= 0); --retries)
+		  usleep(100);
+	  if (!threadObj.vmdata)
+		  return os;
+	  return os << *threadObj.vmdata;
+  }
 };
 
 

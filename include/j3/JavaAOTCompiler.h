@@ -17,7 +17,7 @@
 namespace j3 {
 
 class ArrayObject;
-class Attribut;
+class JavaAttribute;
 class ClassBytes;
 class JnjvmBootstrapLoader;
 
@@ -26,7 +26,7 @@ using vmkit::UTF8;
 class JavaAOTCompiler : public JavaLLVMCompiler {
 
 public:
-  JavaAOTCompiler(const std::string &ModuleID);
+  JavaAOTCompiler(const std::string &ModuleID, bool compilingMMTk=false);
   
   virtual bool isStaticCompiling() {
     return true;
@@ -36,8 +36,8 @@ public:
     return true;
   }
   
-  virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaAOTCompiler(ModuleID);
+  virtual JavaCompiler* Create(const std::string& ModuleID, bool compilingMMTk=false) {
+    return new JavaAOTCompiler(ModuleID, compilingMMTk);
   }
   
   virtual void* materializeFunction(JavaMethod* meth, Class* customizeFor) {
@@ -64,7 +64,7 @@ public:
   virtual llvm::Constant* getClassBytes(const UTF8* name, ClassBytes* bytes);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClassPtr(CommonClass* cl);
-  virtual llvm::Constant* getStaticInstance(Class* cl);
+  virtual llvm::Constant* getStaticInstance(Class* cl, isolate_id_t isolateID = CURRENT_ISOLATE);
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*);
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
   
@@ -83,16 +83,17 @@ public:
 private:
 
   //--------------- Static compiler specific functions -----------------------//
+  llvm::Constant* CreateConstantFromTaskClassMirrorArray(Class* cl);
   llvm::Constant* CreateConstantFromVT(JavaVirtualTable* VT);
   llvm::Constant* CreateConstantFromUTF8(const UTF8* val);
   llvm::Constant* CreateConstantFromCommonClass(CommonClass* cl);
   llvm::Constant* CreateConstantFromClass(Class* cl);
   llvm::Constant* CreateConstantFromClassPrimitive(ClassPrimitive* cl);
   llvm::Constant* CreateConstantFromClassArray(ClassArray* cl);
-  llvm::Constant* CreateConstantFromAttribut(Attribut& attribut);
+  llvm::Constant* CreateConstantFromAttribute(JavaAttribute& attribute);
   llvm::Constant* CreateConstantFromJavaField(JavaField& field);
   llvm::Constant* CreateConstantFromJavaMethod(JavaMethod& method);
-  llvm::Constant* CreateConstantFromStaticInstance(Class* cl);
+  llvm::Constant* CreateConstantFromStaticInstance(Class* cl, isolate_id_t isolateID = CURRENT_ISOLATE);
   llvm::Constant* CreateConstantFromJavaString(JavaString* str);
   llvm::Constant* CreateConstantForBaseObject(CommonClass* cl);
   llvm::Constant* CreateConstantFromJavaObject(JavaObject* obj);
@@ -116,7 +117,7 @@ private:
   std::map<const ClassArray*, llvm::GlobalVariable*> arrayClasses;
   std::map<const CommonClass*, llvm::Constant*> javaClasses;
   std::map<const JavaVirtualTable*, llvm::Constant*> virtualTables;
-  std::map<const Class*, llvm::Constant*> staticInstances;
+  std::map<const Class*, llvm::Constant*> taskClassMirrors;
   std::map<const JavaConstantPool*, llvm::Constant*> resolvedConstantPools;
   std::map<const JavaString*, llvm::Constant*> strings;
   std::map<const JavaMethod*, llvm::Constant*> nativeFunctions;
@@ -151,7 +152,7 @@ private:
     virtual_table_iterator;
   
   typedef std::map<const Class*, llvm::Constant*>::iterator
-    static_instance_iterator;
+    task_class_mirror_iterator;
   
   typedef std::map<const JavaConstantPool*, llvm::Constant*>::iterator
     resolved_constant_pool_iterator;

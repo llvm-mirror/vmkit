@@ -175,8 +175,8 @@ void CommonClass::tracer(word_t closure) {
   }
 
   for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-    if (delegatee[i] != NULL) {
-      vmkit::Collector::markAndTraceRoot(delegatee + i, closure);
+    if (getDelegatee(i) != NULL) {
+      vmkit::Collector::markAndTraceRoot(getDelegateePtr(i), closure);
     }
   }
 }
@@ -184,13 +184,12 @@ void CommonClass::tracer(word_t closure) {
 void Class::tracer(word_t closure) {
   CommonClass::tracer(closure);
   
-  for (uint32 i = 0; i < NR_ISOLATES; ++i) {
-    TaskClassMirror &M = IsolateInfo[i];
-    if (M.staticInstance != NULL) {
+  for (uint32 isolateID = 0; isolateID < NR_ISOLATES; ++isolateID) {
+    if (getStaticInstance(isolateID) != NULL) {
       for (uint32 i = 0; i < nbStaticFields; ++i) {
         JavaField& field = staticFields[i];
         if (field.isReference()) {
-          JavaObject** ptr = field.getStaticObjectFieldPtr();
+          JavaObject** ptr = field.getStaticObjectFieldPtr(isolateID);
           vmkit::Collector::markAndTraceRoot(ptr, closure);
         }
       }

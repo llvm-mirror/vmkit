@@ -41,7 +41,7 @@ public:
   llvm::ExecutionEngine* executionEngine;
   llvm::GCModuleInfo* GCInfo;
 
-  JavaJITCompiler(const std::string &ModuleID);
+  JavaJITCompiler(const std::string &ModuleID, bool compilingMMTk=false);
   ~JavaJITCompiler();
   
   virtual bool isStaticCompiling() {
@@ -64,7 +64,7 @@ public:
   virtual llvm::Constant* getNativeClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClass(CommonClass* cl);
   virtual llvm::Constant* getJavaClassPtr(CommonClass* cl);
-  virtual llvm::Constant* getStaticInstance(Class* cl);
+  virtual llvm::Constant* getStaticInstance(Class* cl, isolate_id_t isolateID = CURRENT_ISOLATE);
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*);
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth);
   
@@ -79,7 +79,7 @@ public:
                                    bool stat, llvm::BasicBlock* insert) = 0;
   virtual word_t getPointerOrStub(JavaMethod& meth, int type) = 0;
 
-  static JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
+  static JavaJITCompiler* CreateCompiler(const std::string& ModuleID, bool compilingMMTk=false);
 };
 
 class JavaJ3LazyJITCompiler : public JavaJITCompiler {
@@ -89,11 +89,11 @@ public:
                                    bool stat, llvm::BasicBlock* insert);
   virtual word_t getPointerOrStub(JavaMethod& meth, int side);
   
-  virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaJ3LazyJITCompiler(ModuleID);
+  virtual JavaCompiler* Create(const std::string& ModuleID, bool compilingMMTk=false) {
+    return new JavaJ3LazyJITCompiler(ModuleID, compilingMMTk);
   }
 
-  JavaJ3LazyJITCompiler(const std::string& ModuleID);
+  JavaJ3LazyJITCompiler(const std::string& ModuleID, bool compilingMMTk=false);
 };
 
 } // end namespace j3

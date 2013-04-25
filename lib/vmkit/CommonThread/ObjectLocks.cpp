@@ -387,7 +387,7 @@ FatLock* LockSystem::getFatLockFromID(word_t ID) {
 
 
 bool LockingThread::wait(
-    gc* self, LockSystem& table, struct timeval* info, bool timed) {
+    gc* self, LockSystem& table, struct timeval* info, bool& timed) {
   llvm_gcroot(self, 0);
   assert(vmkit::ThinLock::owner(self, table));
 
@@ -443,6 +443,7 @@ bool LockingThread::wait(
          l->firstThread->nextWaiting)) && "Inconsistent list");
  
   bool interrupted = (this->interruptFlag != 0);
+  timed = timeout;
 
   if (interrupted || timeout) {
     if (this->nextWaiting) {

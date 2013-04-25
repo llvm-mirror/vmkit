@@ -124,7 +124,11 @@ int main(int argc, char **argv) {
   vmkit::VmkitModule::initialise(argc, argv);
   vmkit::Collector::initialise(argc, argv);
 
-  JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT");
+  // WARNING: This is a silly method to discover that we are compiling MMTk.
+  // Please change to anything more deterministic.
+  bool compilingMMTk = (DisableExceptions && DisableCooperativeGC && DisableStubs && AssumeCompiled);
+
+  JavaAOTCompiler* Comp = new JavaAOTCompiler("AOT", compilingMMTk);
 
   vmkit::BumpPtrAllocator allocator;
   JnjvmBootstrapLoader* loader = new(allocator, "Bootstrap loader")

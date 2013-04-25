@@ -44,7 +44,7 @@ public:
   uint32 cursor;
   uint32 max;
 
-  Reader(Attribut* attr, ClassBytes* bytes) {
+  Reader(JavaAttribute* attr, ClassBytes* bytes) {
     this->bytes = bytes;
     this->cursor = attr->start;
     this->min = attr->start;

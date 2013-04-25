@@ -8,7 +8,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <sstream>
 
+#include "Classpath.h"
 #include "ClasspathReflect.h"
 #include "JavaArray.h"
 #include "JavaClass.h"
@@ -25,13 +27,30 @@
 
 using namespace j3;
 
+extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass*);
+
+extern "C" UserClass* j3InitialisationCheck(UserClass* cl)
+{
+	if (!cl->isClass()) return cl;
+	if (!cl->isInitializing())
+		cl = j3RuntimeInitialiseClass(cl)->asClass();
+	return cl;
+}
+
+extern "C" UserClass* j3InitialisationCheckForJavaObject(JavaObject* obj)
+{
+	CommonClass* ccl = JavaObject::getClass(obj);
+	if (!ccl->isClass()) return NULL;
+	return j3InitialisationCheck(ccl->asClass());
+}
+
 extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
 
   void* res = 0;
 
   UserConstantPool* ctpInfo = caller->getConstantPool();
-  if (ctpInfo->ctpRes[index]) {
-    res = ctpInfo->ctpRes[index];
+  if (ctpInfo->getCachedValue(index)) {
+    res = ctpInfo->getCachedValue(index);
   } else {
     UserCommonClass* cl = 0;
     const UTF8* utf8 = 0;
@@ -41,7 +60,7 @@ extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index) {
     assert(cl->isClass() && isInterface(cl->access) && "Wrong type of method");
     res = cl->asClass()->lookupInterfaceMethod(utf8, sign->keyName);
     
-    ctpInfo->ctpRes[index] = (void*)res;
+    ctpInfo->updateCachedValue(index, res);
   }
   return res;
 }
@@ -52,8 +71,8 @@ extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index) {
   void* res = 0;
 
   UserConstantPool* ctpInfo = caller->getConstantPool();
-  if (ctpInfo->ctpRes[index]) {
-    res = ctpInfo->ctpRes[index];
+  if (ctpInfo->getCachedValue(index)) {
+    res = ctpInfo->getCachedValue(index);
   } else {
   
     UserCommonClass* cl = 0;
@@ -65,7 +84,7 @@ extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index) {
     UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
     JavaField* field = lookup->lookupField(utf8, sign->keyName, false, true, 0);
   
-    ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
+    ctpInfo->updateCachedValue(index, (void*)field->ptrOffset);
   
     res = (void*)field->ptrOffset;
   }
@@ -80,8 +99,8 @@ extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
   
   UserConstantPool* ctpInfo = caller->getConstantPool();
   
-  if (ctpInfo->ctpRes[index]) {
-    res = ctpInfo->ctpRes[index];
+  if (ctpInfo->getCachedValue(index)) {
+    res = ctpInfo->getCachedValue(index);
   } else {
   
     UserCommonClass* cl = 0;
@@ -101,7 +120,7 @@ extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
     assert(obj && "No static instance in static field lookup");
   
     void* ptr = (void*)((uint64)obj + field->ptrOffset);
-    ctpInfo->ctpRes[index] = ptr;
+    ctpInfo->updateCachedValue(index, ptr);
    
     res = ptr;
   }
@@ -173,14 +192,19 @@ extern "C" void* j3ClassLookup(UserClass* caller, uint32 index) {
 // Calls Java code.
 // Throws if initializing the class throws an exception.
 extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass* cl) {
+  Jnjvm* vm = JavaThread::get()->getJVM();
   cl->resolveClass();
-  cl->initialiseClass(JavaThread::get()->getJVM());
+  cl->initialiseClass(vm);
   return cl;
 }
 
 // Calls Java code.
 extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl) {
   return cl->getClassDelegatee(JavaThread::get()->getJVM());
+}
+
+extern "C" JavaObject** j3RuntimeDelegateePtr(UserCommonClass* cl) {
+  return const_cast<JavaObject**>(cl->getClassDelegateePtr(JavaThread::get()->getJVM()));
 }
 
 // Throws if one of the dimension is negative.
@@ -266,13 +290,13 @@ extern "C" void j3EndJNI(uint32** oldLRN) {
   th->currentAddedReferences = *oldLRN;
 }
 
-extern "C" word_t j3StartJNI(uint32* localReferencesNumber,
+extern "C" void* j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
                                vmkit::KnownFrame* Frame) 
   __attribute__((noinline));
 
 // Never throws. Does not call Java code. Can not yield a GC. May join a GC.
-extern "C" word_t j3StartJNI(uint32* localReferencesNumber,
+extern "C" void* j3StartJNI(uint32* localReferencesNumber,
                                uint32** oldLocalReferencesNumber,
                                vmkit::KnownFrame* Frame) {
   
@@ -359,7 +383,7 @@ extern "C" void* j3StringLookup(UserClass* cl, uint32 index) {
   UserConstantPool* ctpInfo = cl->getConstantPool();
   const UTF8* utf8 = ctpInfo->UTF8At(ctpInfo->ctpDef[index]);
   str = cl->classLoader->UTF8ToStr(utf8);
-  ctpInfo->ctpRes[index] = str;
+  ctpInfo->updateCachedValue(index, str);
   return (void*)str;
 }
 
@@ -453,7 +477,7 @@ extern "C" void* j3ResolveStaticStub() {
   result = callee->compiledPtr();
     
   // Update the entry in the constant pool.
-  ctpInfo->ctpRes[ctpIndex] = result;
+  ctpInfo->updateCachedValue(ctpIndex, result);
 
   return result;
 }
@@ -494,7 +518,7 @@ extern "C" void* j3ResolveSpecialStub() {
   result = callee->compiledPtr();
     
   // Update the entry in the constant pool.
-  ctpInfo->ctpRes[ctpIndex] = result;
+  ctpInfo->updateCachedValue(ctpIndex, result);
 
   return result;
 }
@@ -502,7 +526,10 @@ extern "C" void* j3ResolveSpecialStub() {
 // Does not throw an exception.
 extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t index) {
   word_t result = 0;
-  InterfaceMethodTable* IMT = JavaObject::getClass(obj)->virtualVT->IMT;
+  UserClass* cl = j3InitialisationCheckForJavaObject(obj);
+  assert(cl && "Invalid class of JavaObject");
+
+  InterfaceMethodTable* IMT = cl->virtualVT->IMT;
   if ((IMT->contents[index] & 1) == 0) {
     result = IMT->contents[index];
   } else {
@@ -525,15 +552,42 @@ extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t 
 }
 
 extern "C" void j3PrintMethodStart(JavaMethod* meth) {
-  fprintf(stderr, "[%p] executing %s.%s\n", (void*)vmkit::Thread::get(),
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
+#if JNJVM_EXECUTE > 0
+	JavaThread *thread = JavaThread::get();
+	char tab_level[10240];
+
+	assert((thread->call_level < sizeof(tab_level)/sizeof(tab_level[0])) && "Too deep call level to be logged!");
+
+	memset(tab_level, ' ', thread->call_level);
+	tab_level[thread->call_level++] = '\0';
+
+//	uint16_t c = meth->classDef->name->elements[0];
+//	if (c != 'i') return;
+
+	std::ostringstream log;
+	log << '[' << *thread << ']' << tab_level << " call " <<
+		*meth->classDef->name << '.' << *meth->name << std::endl;
+	std::cerr << log.str();
+#endif
 }
 
 extern "C" void j3PrintMethodEnd(JavaMethod* meth) {
-  fprintf(stderr, "[%p] return from %s.%s\n", (void*)vmkit::Thread::get(),
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
+#if JNJVM_EXECUTE > 0
+	JavaThread *thread = JavaThread::get();
+	char tab_level[10240];
+
+	thread->call_level--;
+	memset(tab_level, ' ', thread->call_level);
+	tab_level[thread->call_level] = '\0';
+
+//	uint16_t c = meth->classDef->name->elements[0];
+//	if (c != 'i') return;
+
+	std::ostringstream log;
+	log << '[' << *thread << ']' << tab_level << " ret " <<
+		*meth->classDef->name << '.' << *meth->name << std::endl;
+	std::cerr << log.str();
+#endif
 }
 
 extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
@@ -542,4 +596,51 @@ extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
          UTF8Buffer(meth->classDef->name).cString(),
          UTF8Buffer(meth->name).cString(),
          OpcodeNames[opcode], index);
+}
+
+extern "C" void* j3GetCachedValue(UserClass* cl, uint32 index, isolate_id_t isolateID)
+{
+	return cl->ctpInfo->getCachedValue(index, isolateID);
+}
+
+extern "C" uint32_t j3SetIsolate(uint32_t isolateID, uint32_t* currentIsolateID)
+{
+	vmkit::Thread* thread = vmkit::Thread::get();
+	isolate_id_t oldIsolateID = thread->getIsolateID();
+	isolate_id_t curIsolateID = oldIsolateID;
+
+	if ((isolateID != CURRENT_ISOLATE) && (isolateID != oldIsolateID)) {
+		thread->setIsolateID(isolateID);
+		curIsolateID = isolateID;
+	}
+
+	if (currentIsolateID != NULL) *currentIsolateID = curIsolateID;
+	return oldIsolateID;
+}
+
+extern "C" JavaObject** j3GetClassDelegateePtr(UserCommonClass* commonCl)
+{
+	JavaObject **obj = commonCl->getDelegateePtr();
+	if (!obj || !(*obj)) {
+		Jnjvm* vm = JavaThread::get()->getJVM();
+		commonCl->getClassDelegatee(vm, NULL);
+		obj = commonCl->getDelegateePtr();
+
+		assert(obj && (*obj) && "Invalid class delegatee");
+	}
+	return obj;
+}
+
+extern "C" JavaObject* j3GetClassDelegatee(UserCommonClass* commonClass)
+{
+	JavaObject *obj = commonClass->getDelegatee();
+	if (!obj) obj = j3RuntimeDelegatee(commonClass);
+	return obj;
+}
+
+extern "C" void* j3GetStaticInstance(UserClass* caller)
+{
+	TaskClassMirror& tcm = caller->getCurrentTaskClassMirror();
+	assert(caller->isInitializing() && (tcm.staticInstance != NULL) && "Isolate static instance not initialized.");
+	return tcm.staticInstance;
 }

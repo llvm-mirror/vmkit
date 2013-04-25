@@ -1,0 +1,28 @@
+-Dorg.knopflerfish.framework.main.verbosity=0
+-Dorg.knopflerfish.gosg.jars=file:jars/
+-Forg.knopflerfish.framework.debug.errors=true
+-Forg.knopflerfish.framework.debug.packages=false
+-Forg.knopflerfish.framework.debug.classloader=false
+-Forg.osgi.framework.system.packages.extra=
+
+-Forg.knopflerfish.startlevel.use=true
+
+-init
+
+-install log/log_api-3.1.2.jar
+-install console/console_api-3.0.3.jar
+-istart  cm/cm_api-3.0.4.jar
+-istart  log/log-3.1.2.jar
+-istart  console/console-3.0.3.jar
+-istart  consoletty/consoletty-3.0.1.jar
+-istart  frameworkcommands/frameworkcommands-3.0.4.jar
+-istart  logcommands/logcommands-3.1.1.jar
+-istart  useradmin/useradmin_api-3.0.2.jar
+
+-istart  file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.isolate.IsolateManager_1.0.0.jar
+-istart  file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.looper_1.0.0.jar
+-istart  file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.tier_1.0.0.jar
+-istart  file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.tierImpl_1.0.0.jar
+-istart  file:///home/koutheir/PhD/VMKit/ijvm/tests/plugins/ijvm.tests.loopClient_1.0.0.jar
+
+-launch

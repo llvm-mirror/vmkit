@@ -10,6 +10,8 @@
 #ifndef JNJVM_JAVA_THREAD_H
 #define JNJVM_JAVA_THREAD_H
 
+#include <ostream>
+
 #include "vmkit/Cond.h"
 #include "vmkit/Locks.h"
 #include "vmkit/ObjectLocks.h"
@@ -33,7 +35,7 @@ class Jnjvm;
 
 #define BEGIN_JNI_EXCEPTION \
   JavaThread* th = JavaThread::get(); \
-  word_t SP = th->getLastSP(); \
+  void* SP = th->getLastSP(); \
   th->leaveUncooperativeCode(); \
   vmkit::KnownFrame Frame; \
   th->startKnownFrame(Frame); \
@@ -92,6 +94,9 @@ public:
   ///
   JNILocalReferences* localJNIRefs;
 
+#if JNJVM_EXECUTE > 0
+  unsigned int call_level;
+#endif
 
   JavaObject** pushJNIRef(JavaObject* obj) {
     llvm_gcroot(obj, 0);
@@ -109,6 +114,9 @@ public:
   /// JavaThread - Empty constructor, used to get the VT.
   ///
   JavaThread() {
+#if JNJVM_EXECUTE > 0
+	  call_level = 0;
+#endif
   }
 
   /// ~JavaThread - Delete any potential malloc'ed objects used by this thread.
@@ -141,7 +149,7 @@ public:
  
   /// throwException - Throw the given exception in the current thread.
   ///
-  void throwException(JavaObject* obj);
+  void throwException(JavaObject* obj, bool immediate = true);
 
   /// throwPendingException - Throw a pending exception.
   ///
@@ -155,7 +163,7 @@ public:
 
   /// throwFromJNI - Throw an exception after executing JNI code.
   ///
-  void throwFromJNI(word_t SP) {
+  void throwFromJNI(void* SP) {
     endKnownFrame();
     enterUncooperativeCode(SP);
   }
@@ -202,6 +210,17 @@ public:
   /// the Java methods on the stack.
   ///
   void printJavaBacktrace();
+
+  static void printStackTrace(int skip = 3, int level_deep = 1) __attribute__((noinline));
+
+  friend std::ostream& operator << (std::ostream&, JavaThread&);
+
+  void cleanUpOnDeadIsolateBeforeException(void** methodIP = NULL, JavaMethod** method = NULL) const;
+
+  virtual void throwNullPointerException(void* methodIP) const;
+  virtual void throwDeadIsolateException() const;
+
+  virtual void runAfterLeavingGarbageCollectorRendezVous();
 
   /// getJavaFrameContext - Fill the buffer with Java methods currently on
   /// the stack.

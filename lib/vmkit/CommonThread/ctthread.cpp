@@ -16,6 +16,7 @@
 #include "vmkit/Locks.h"
 #include "vmkit/Thread.h"
 
+#include <iostream>
 #include <cassert>
 #include <cstdio>
 #include <errno.h>
@@ -26,6 +27,27 @@
 #include <unistd.h>
 
 using namespace vmkit;
+
+ExceptionBuffer::ExceptionBuffer()
+{
+	addToThreadExceptionList(0);
+	handlerIsolateID = Thread::get()->getIsolateID();
+}
+
+void ExceptionBuffer::addToThreadExceptionList(void* returnAddr)
+{
+  Thread* th = Thread::get();
+  handlerMethod = returnAddr;
+  previousBuffer = th->lastExceptionBuffer;
+  th->lastExceptionBuffer = this;
+}
+
+void ExceptionBuffer::removeFromThreadExceptionList()
+{
+  Thread* th = Thread::get();
+  assert(th->lastExceptionBuffer == this && "Wrong exception buffer");
+  th->lastExceptionBuffer = previousBuffer;
+}
 
 int Thread::kill(void* tid, int signo) {
   return pthread_kill((pthread_t)tid, signo);
@@ -53,13 +75,13 @@ void Thread::joinRVBeforeEnter() {
   MyVM->rendezvous.joinBeforeUncooperative(); 
 }
 
-void Thread::joinRVAfterLeave(word_t savedSP) {
+void Thread::joinRVAfterLeave(void* savedSP) {
   MyVM->rendezvous.joinAfterUncooperative(savedSP); 
 }
 
 void Thread::startKnownFrame(KnownFrame& F) {
   // Get the caller of this function
-  word_t cur = System::GetCallerAddress();
+  void* cur = StackWalker_getCallFrameAddress();
   F.previousFrame = lastKnownFrame;
   F.currentFP = cur;
   // This is used as a marker.
@@ -74,12 +96,12 @@ void Thread::endKnownFrame() {
 
 void Thread::startUnknownFrame(KnownFrame& F) {
   // Get the caller of this function
-  word_t cur = System::GetCallerAddress();
+  void* cur = StackWalker_getCallFrameAddress();
   // Get the caller of the caller.
-  cur = System::GetCallerOfAddress(cur);
+  cur = StackWalker::getCallerCallFrameAddress(cur);
   F.previousFrame = lastKnownFrame;
   F.currentFP = cur;
-  F.currentIP = System::GetIPFromCallerAddress(cur);
+  F.currentIP = StackWalker::getReturnAddressFromCallFrame(cur);
   lastKnownFrame = &F;
 }
 
@@ -89,23 +111,23 @@ void Thread::endUnknownFrame() {
 }
 
 void Thread::internalThrowException() {
-  LONGJMP(lastExceptionBuffer->buffer, 1);
+  LONGJMP(lastExceptionBuffer->getSetJmpBuffer(), 1);
 }
 
 void Thread::printBacktrace() {
   StackWalker Walker(this);
 
   while (FrameInfo* FI = Walker.get()) {
-    MyVM->printMethod(FI, Walker.ip, Walker.addr);
+    MyVM->printMethod(FI, Walker.getReturnAddress(), Walker.getCallFrame());
     ++Walker;
   }
 }
 
-void Thread::getFrameContext(word_t* buffer) {
+void Thread::getFrameContext(void** buffer) {
   vmkit::StackWalker Walker(this);
   uint32_t i = 0;
 
-  while (word_t ip = *Walker) {
+  while (void* ip = *Walker) {
     buffer[i++] = ip;
     ++Walker;
   }
@@ -122,63 +144,185 @@ uint32_t Thread::getFrameContextLength() {
   return i;
 }
 
-FrameInfo* StackWalker::get() {
-  if (addr == thread->baseSP) return 0;
-  ip = System::GetIPFromCallerAddress(addr);
-  return thread->MyVM->IPToFrameInfo(ip);
+void* StackWalker::getCallerCallFrameAddress(void* callFrame)
+{
+	void **oldBasePtr = (void**)callFrame;
+	return *oldBasePtr;
 }
 
-word_t StackWalker::operator*() {
-  if (addr == thread->baseSP) return 0;
-  ip = System::GetIPFromCallerAddress(addr);
-  return ip;
+void** StackWalker::getReturnAddressPtrFromCallFrame(void* callFrame)
+{
+	void **oldBasePtr = (void**)callFrame;
+
+#if defined(MACOS_OS) && defined(ARCH_PPC)
+    return oldBasePtr + 2;
+#else
+    return oldBasePtr + 1;
+#endif
+}
+
+void* StackWalker::getReturnAddressFromCallFrame(void* callFrame)
+{
+	return *getReturnAddressPtrFromCallFrame(callFrame);
+}
+
+FrameInfo* StackWalker::get() {
+  if (callFrame == thread->baseSP) return 0;
+  return thread->MyVM->IPToFrameInfo(getReturnAddress());
+}
+
+StackWalkerState StackWalker::getState() const
+{
+    const FrameInfo *fi = this->get();
+    if (!fi) return				StackWalkerInvalid;
+    if (!fi->Metadata) return	StackWalkerValid;
+    return						StackWalkerValidMetadata;
+}
+
+void* StackWalker::operator*() {
+  if (callFrame == thread->baseSP) return 0;
+  return getReturnAddress();
+}
+
+void* StackWalker::getCallerCallFrame() const
+{
+	StackWalker walker(*this);
+	++walker;
+	return walker.getCallFrame();
 }
 
 void StackWalker::operator++() {
-  if (addr != thread->baseSP) {
-    assert((addr < thread->baseSP) && "Corrupted stack");
-    assert((addr < System::GetCallerOfAddress(addr)) && "Corrupted stack");
-    if ((frame != NULL) && (addr == frame->currentFP)) {
-      assert(frame->currentIP == 0);
-      frame = frame->previousFrame;
-      assert(frame != NULL);
-      assert(frame->currentIP != 0);
-      addr = frame->currentFP;
-      frame = frame->previousFrame;
-    } else {
-      addr = System::GetCallerOfAddress(addr);
-    }
-  }
-}
-
-StackWalker::StackWalker(vmkit::Thread* th) {
-  thread = th;
-  frame = th->lastKnownFrame;
-  if (vmkit::Thread::get() == th) {
-    addr = System::GetCallerAddress();
-    addr = System::GetCallerOfAddress(addr);
-  } else {
-    addr = th->waitOnSP();
-    if (frame) {
-      assert(frame->currentFP >= addr);
-    }
-    if (frame && (addr == frame->currentFP)) {
-      frame = frame->previousFrame;
-      // Let this be called from JNI, as in
-      // OpenJDK's JVM_FillInStackTrace:
-      if (frame && frame->currentIP != 0)
+  for (;;) {
+    if (callFrame != thread->baseSP) {
+      assert((callFrame < thread->baseSP) && "Corrupted stack");
+      assert((callFrame < StackWalker::getCallerCallFrameAddress(callFrame)) && "Corrupted stack");
+      if ((frame != NULL) && (callFrame == frame->currentFP)) {
+        assert(frame->currentIP == 0);
         frame = frame->previousFrame;
-      assert((frame == NULL) || (frame->currentIP == 0));
+        assert(frame != NULL);
+        assert(frame->currentIP != 0);
+        callFrame = frame->currentFP;
+        frame = frame->previousFrame;
+      } else {
+        callFrame = StackWalker::getCallerCallFrameAddress(callFrame);
+      }
     }
+
+    if (!onlyReportMetadataEnabledFrames) break;
+    StackWalkerState state = getState();
+    if (state == StackWalkerInvalid || state == StackWalkerValidMetadata) break;
   }
-  assert(addr && "No address to start with");
 }
 
+void StackWalker::operator--()
+{
+	// The call stack is a singly-linked list of call frames whose head is the last
+	// called method frame. This means that implementing this feature (getting the
+	// called frame of the current frame) requires rescanning the whole stack from the
+	// beginning (the last called frame), which can be slow in some cases.
+
+	StackWalker caller(*this, true);
+	StackWalker called(caller);
+	++caller;
+
+	for (void* currentAddr = this->getCallFrame();
+		(caller.get() != NULL) && (caller.getCallFrame() != currentAddr);
+		called = caller, ++caller);
+
+	assert((caller.get() != NULL) && "Caller of the current frame not found!");
+	*this = called;
+}
+
+// This code must be a macro because it must be directly called
+//from its caller, with not additional function frames in between.
+#define StackWalker_reset()										\
+{																\
+	if (vmkit::Thread::get() == thread) {						\
+		callFrame = StackWalker_getCallFrameAddress();			\
+		callFrame = StackWalker::getCallerCallFrameAddress(callFrame);	\
+	} else {													\
+		callFrame = thread->waitOnSP();							\
+		if (frame) assert(frame->currentFP >= callFrame);		\
+		if (frame && (callFrame == frame->currentFP)) {			\
+			frame = frame->previousFrame;						\
+			if (frame && frame->currentIP != 0)					\
+				frame = frame->previousFrame;					\
+			assert((frame == NULL) || (frame->currentIP == 0));	\
+		}														\
+	}															\
+	assert(callFrame && "No address to start with");			\
+	if (onlyReportMetadataEnabledFrames) {						\
+		FrameInfo *fi = this->get();							\
+		if ((fi != NULL) && !fi->Metadata) ++(*(this));			\
+	}															\
+}
+
+StackWalker::StackWalker(vmkit::Thread* th, bool only_report_metadata_enabled_frames) :
+	callFrame(0), frame(th->lastKnownFrame), thread(th),
+	onlyReportMetadataEnabledFrames(only_report_metadata_enabled_frames)
+{
+	StackWalker_reset();
+}
+
+StackWalker::StackWalker(const StackWalker& obj, bool reset) :
+	callFrame(obj.callFrame), frame(obj.frame), thread(obj.thread),
+	onlyReportMetadataEnabledFrames(obj.onlyReportMetadataEnabledFrames)
+{
+	if (!reset) return;
+	StackWalker_reset();
+}
+
+void StackWalker::reset()
+{
+	StackWalker_reset();
+}
+
+StackWalker& StackWalker::operator = (const StackWalker& obj)
+{
+	callFrame = obj.callFrame;
+	frame = obj.frame;
+	thread = obj.thread;
+	onlyReportMetadataEnabledFrames = obj.onlyReportMetadataEnabledFrames;
+	return *this;
+}
+
+void* StackWalker::updateReturnAddress(void* newAddr)
+{
+	void** retAddrPtr = StackWalker::getReturnAddressPtrFromCallFrame(callFrame);
+	void* oldRetAddr = *retAddrPtr;
+	*retAddrPtr = newAddr;
+	return oldRetAddr;
+}
+
+void* StackWalker::updateCallerFrameAddress(void* newAddr)
+{
+	void **oldBasePtr = (void**)callFrame;
+	void* oldOldBasePtr = *oldBasePtr;
+
+	for (void* framePtr = callFrame; framePtr != newAddr; framePtr = StackWalker::getCallerCallFrameAddress(framePtr)) {
+		for (KnownFrame *kf = thread->lastKnownFrame, *pkf = NULL; kf != NULL; pkf = kf, kf = kf->previousFrame) {
+			if (kf->currentFP != framePtr) continue;
+
+			if (!pkf)
+				thread->lastKnownFrame = kf->previousFrame;
+			else
+				pkf->previousFrame = kf->previousFrame;
+		}
+	}
+
+	*oldBasePtr = newAddr;
+	return oldOldBasePtr;
+}
+
+void StackWalker::dump() const
+{
+	thread->MyVM->printCallStack(*this);
+}
 
 void Thread::scanStack(word_t closure) {
   StackWalker Walker(this);
   while (FrameInfo* MI = Walker.get()) {
-    MethodInfoHelper::scan(closure, MI, Walker.ip, Walker.addr);
+    MethodInfoHelper::scan(closure, MI, Walker.getReturnAddress(), Walker.getCallFrame());
     ++Walker;
   }
 }
@@ -188,10 +332,10 @@ void Thread::enterUncooperativeCode(uint16_t level) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
       // Get the caller.
-      word_t temp = System::GetCallerAddress();
+      void* temp = StackWalker_getCallFrameAddress();
       // Make sure to at least get the caller of the caller.
       ++level;
-      while (level--) temp = System::GetCallerOfAddress(temp);
+      while (level--) temp = StackWalker::getCallerCallFrameAddress(temp);
       // The cas is not necessary, but it does a memory barrier.
       __sync_bool_compare_and_swap(&lastSP, 0, temp);
       if (doYield) joinRVBeforeEnter();
@@ -200,7 +344,7 @@ void Thread::enterUncooperativeCode(uint16_t level) {
   }
 }
 
-void Thread::enterUncooperativeCode(word_t SP) {
+void Thread::enterUncooperativeCode(void* SP) {
   if (isVmkitThread()) {
     if (!inRV) {
       assert(!lastSP && "SP already set when entering uncooperative code");
@@ -216,7 +360,7 @@ void Thread::leaveUncooperativeCode() {
   if (isVmkitThread()) {
     if (!inRV) {
       assert(lastSP && "No last SP when leaving uncooperative code");
-      word_t savedSP = lastSP;
+      void* savedSP = lastSP;
       // The cas is not necessary, but it does a memory barrier.
       __sync_bool_compare_and_swap(&lastSP, lastSP, 0);
       // A rendezvous has just been initiated, join it.
@@ -226,9 +370,9 @@ void Thread::leaveUncooperativeCode() {
   }
 }
 
-word_t Thread::waitOnSP() {
+void* Thread::waitOnSP() {
   // First see if we can get lastSP directly.
-  word_t sp = lastSP;
+  void* sp = lastSP;
   if (sp) return sp;
   
   // Then loop a fixed number of iterations to get lastSP.
@@ -322,13 +466,14 @@ public:
 StackThreadManager TheStackManager;
 
 extern void sigsegvHandler(int, siginfo_t*, void*);
+//extern void interruptSignalHandler(int signal_number, siginfo_t *info, void *context);
 
 /// internalThreadStart - The initial function called by a thread. Sets some
 /// thread specific data, registers the thread to the GC and calls the
 /// given routine of th.
 ///
 void Thread::internalThreadStart(vmkit::Thread* th) {
-  th->baseSP  = System::GetCallerAddress();
+  th->baseSP  = StackWalker_getCallFrameAddress();
 
   // Set the alternate stack as the second page of the thread's
   // stack.
@@ -339,11 +484,11 @@ void Thread::internalThreadStart(vmkit::Thread* th) {
   sigaltstack(&st, NULL);
 
   // Set the SIGSEGV handler to diagnose errors.
-  struct sigaction sa;
-  sigset_t mask;
-  sigfillset(&mask);
+  struct sigaction sa = {};
+//  sigset_t mask;
+//  sigfillset(&mask);
   sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
-  sa.sa_mask = mask;
+//  sa.sa_mask = mask;
   sa.sa_sigaction = sigsegvHandler;
   sigaction(SIGSEGV, &sa, NULL);
   sigaction(SIGBUS, &sa, NULL);
@@ -397,4 +542,48 @@ void Thread::releaseThread(vmkit::Thread* th) {
   word_t index = ((word_t)th & System::GetThreadIDMask());
   index = (index & ~TheStackManager.baseAddr) >> 20;
   TheStackManager.used[index] = 0;
+}
+
+isolate_id_t Thread::getValidIsolateID(isolate_id_t isolateID)
+{
+	if (isolateID != CURRENT_ISOLATE) return isolateID;
+	return Thread::get()->getIsolateID();
+}
+
+bool Thread::runsDeadIsolate() const
+{
+	return runningDeadIsolate;
+}
+
+void Thread::markRunningDeadIsolate()
+{
+	runningDeadIsolate = true;
+}
+
+void Thread::setIsolateID(isolate_id_t newIsolateID)
+{
+	isolateID = newIsolateID;
+}
+
+isolate_id_t Thread::getIsolateID() const
+{
+	return isolateID;
+}
+
+bool Thread::isCurrentThread()
+{
+	return (pthread_t)internalThreadID == pthread_self();
+}
+
+void Thread::throwNullPointerException(void* methodIP) const
+{
+	vmkit::FrameInfo* FI = MyVM->IPToFrameInfo(methodIP);
+	if (FI->Metadata == NULL) {
+		fprintf(stderr, "Thread %p received a SIGSEGV: either the VM code or an external\n"
+					"native method is bogus. Aborting...\n", (void*)this);
+		abort();
+	}
+
+	MyVM->nullPointerException();
+	UNREACHABLE();
 }

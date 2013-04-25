@@ -86,7 +86,7 @@ JavaObject* consStackElement(vmkit::FrameInfo* FI, intptr_t ip) {
   Class* cl = meth->classDef;
   className = JavaString::internalToJava(cl->name, vm);
 
-  Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
+  Attribute* sourceAtt = cl->lookupAttribut(Attribute::sourceFileAttribut);
 
   if (sourceAtt) {
     Reader reader(sourceAtt, cl->bytes);
@@ -2910,7 +2910,7 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass) {
   // Primitives arrays, interfaces...
   if (!cl) RETURN_FROM_JNI(0);
 
-  Attribut* emAtt = cl->lookupAttribut(Attribut::enclosingMethodAttribut);
+  Attribute* emAtt = cl->lookupAttribut(Attribute::enclosingMethodAttribut);
 
   if (emAtt) {
     Reader reader(emAtt, cl->bytes);

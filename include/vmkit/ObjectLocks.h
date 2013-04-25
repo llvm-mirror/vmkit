@@ -59,7 +59,7 @@ public:
     state = StateRunning;
   }
 
-  bool wait(gc* object, LockSystem& table, struct timeval* info, bool timed);
+  bool wait(gc* object, LockSystem& table, struct timeval* info, bool& timed);
   void notify(gc* object, LockSystem& table);
   void notifyAll(gc* object, LockSystem& table);
 };

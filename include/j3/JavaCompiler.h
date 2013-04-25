@@ -36,7 +36,7 @@ public:
   
   vmkit::BumpPtrAllocator allocator;
 
-  virtual JavaCompiler* Create(const std::string&) {
+  virtual JavaCompiler* Create(const std::string&, bool compilingMMTk=false) {
     return this;
   }
   

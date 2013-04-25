@@ -39,11 +39,13 @@ extern "C" void EmptyDestructor() {
 }
 
 extern "C" void registerSetjmp(ExceptionBuffer* buffer) {
-  buffer->init();
+	void* callFrame = StackWalker_getCallFrameAddress();
+	void* retAddr = StackWalker::getReturnAddressFromCallFrame(callFrame);
+	buffer->addToThreadExceptionList(retAddr);
 }
 
 extern "C" void unregisterSetjmp(ExceptionBuffer* buffer) {
-  buffer->remove();
+  buffer->removeFromThreadExceptionList();
 }
 
 void VirtualMachine::waitForExit() {   

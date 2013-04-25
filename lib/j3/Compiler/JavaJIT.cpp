@@ -60,6 +60,7 @@ void JavaJIT::updateStackInfo(Opinfo& info) {
 }
 
 bool JavaJIT::needsInitialisationCheck(Class* cl) {
+/*
   if (cl->isReadyForCompilation() || 
       (!cl->isInterface() && compilingClass->isSubclassOf(cl))) {
     return false;
@@ -73,6 +74,13 @@ bool JavaJIT::needsInitialisationCheck(Class* cl) {
   }
 
   return true;
+*/
+	bool needs_check = cl->needsInitialisationCheck();
+
+	if (needs_check && TheCompiler->isCompilingMMTk() && cl->isReadyForCompilation(0))
+		needs_check = false;
+
+	return needs_check;
 }
 
 void JavaJIT::checkYieldPoint() {
@@ -97,7 +105,7 @@ bool JavaJIT::canBeInlined(JavaMethod* meth, bool customizing) {
   if (isSynchro(meth->access)) return false;
   if (isNative(meth->access)) return false;
 
-  Attribut* codeAtt = meth->lookupAttribut(Attribut::codeAttribut);
+  JavaAttribute* codeAtt = meth->lookupAttribute(JavaAttribute::codeAttribute);
   if (codeAtt == NULL) return false;
 
   Reader reader(codeAtt, meth->classDef->bytes);
@@ -110,7 +118,7 @@ bool JavaJIT::canBeInlined(JavaMethod* meth, bool customizing) {
   if (handlers != 0) return false;
   reader.cursor = start;
 
-  JavaJIT jit(TheCompiler, meth, llvmFunction, customizing ? customizeFor : NULL);
+  JavaJIT jit(TheCompiler, meth, llvmFunction, customizing ? customizeFor : NULL, compilingMMTk);
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
   if (!jit.analyzeForInlining(reader, codeLen)) return false;
@@ -209,14 +217,18 @@ void JavaJIT::invokeVirtual(uint16 index) {
     PHINode* node = 0;
     Value* indexes2[2];
     indexes2[0] = intrinsics->constantZero;
-    bool nullChecked = false;
+
+    Value* targetObject = getTarget(signature);
+    targetObject = new LoadInst(targetObject, "", false, currentBlock);
+    if (!thisReference) JITVerifyNull(targetObject);
+    if (!TheCompiler->isCompilingMMTk())
+    	CallInst::Create(intrinsics->InitialisationCheckForJavaObjectFunction, targetObject, "", currentBlock);
 
     if (meth) {
       LLVMMethodInfo* LMI = TheCompiler->getMethodInfo(meth);
       Constant* Offset = LMI->getOffset();
       indexes2[1] = Offset;
     } else {
-      nullChecked = true;
       GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),
                                               Type::getInt32Ty(*llvmContext),
                                               false,
@@ -238,9 +250,6 @@ void JavaJIT::invokeVirtual(uint16 index) {
       Args.push_back(TheCompiler->getNativeClass(compilingClass));
       Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
       Args.push_back(GV);
-      Value* targetObject = getTarget(signature);
-      targetObject = new LoadInst(targetObject, "", false, currentBlock);
-      if (!thisReference) JITVerifyNull(targetObject);
       Args.push_back(targetObject);
       load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
       node->addIncoming(load, currentBlock);
@@ -251,7 +260,7 @@ void JavaJIT::invokeVirtual(uint16 index) {
     }
 
     makeArgs(it, index, args, signature->nbArguments + 1);
-    if (!nullChecked && !thisReference) JITVerifyNull(args[0]);
+
     Value* VT = CallInst::Create(intrinsics->GetVTFunction, args[0], "",
                                  currentBlock);
  
@@ -299,14 +308,6 @@ llvm::Value* JavaJIT::getMutatorThreadPtr() {
 
 llvm::Value* JavaJIT::getJavaThreadPtr(llvm::Value* mutatorThreadPtr) {
   return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "", currentBlock);
-}
-
-llvm::Value* JavaJIT::getIsolateIDPtr(llvm::Value* mutatorThreadPtr) { 
-	Value* GEP[3] = { intrinsics->constantZero,
-										intrinsics->OffsetThreadInMutatorThreadConstant,
-										intrinsics->OffsetIsolateIDInThreadConstant };
-    
-	return GetElementPtrInst::Create(mutatorThreadPtr, GEP, "", currentBlock);
 }
 
 llvm::Value* JavaJIT::getVMPtr(llvm::Value* mutatorThreadPtr) { 
@@ -368,6 +369,80 @@ static llvm::Function* GetNativeCallee(JavaLLVMCompiler* TheCompiler,
 
   TheCompiler->GenerateStub(callee);
   return callee;
+}
+
+/*
+Value* JavaJIT::getCommonClass(Value* ClassOrObject)
+{
+	Type *Ty = ClassOrObject->getType();
+
+	if (Ty == intrinsics->JavaObjectType) {
+		// This is equivalent to "JavaObject::getClass(targetObject)"
+
+		ClassOrObject = new BitCastInst(ClassOrObject, intrinsics->ptrPtrType, "", currentBlock);
+		ClassOrObject = new LoadInst(ClassOrObject, "", currentBlock);
+		ClassOrObject = new BitCastInst(ClassOrObject, intrinsics->JavaVTType, "objectVT", currentBlock);
+
+		Value* GEP[] = {intrinsics->constantZero, intrinsics->OffsetCommonClassInJavaVirtualTableConstant};
+		ClassOrObject = GetElementPtrInst::Create(ClassOrObject, GEP, "", currentBlock);
+		ClassOrObject = new LoadInst(ClassOrObject, "commonClass", currentBlock);
+	} else if (Ty == intrinsics->JavaClassType) {
+		Value* GEP[] = {intrinsics->constantZero, intrinsics->OffsetCommonClassInClassConstant};
+		ClassOrObject = GetElementPtrInst::Create(ClassOrObject, GEP, "targetCommonClass", currentBlock);
+	}
+
+	assert((ClassOrObject->getType() == intrinsics->JavaCommonClassType) && "Invalid target class or object.");
+	return ClassOrObject;
+}
+*/
+
+Value* JavaJIT::getClassDelegateePtr(CommonClass* cl)
+{
+	Value* obj = TheCompiler->getNativeClass(cl);
+	obj = new BitCastInst(obj, intrinsics->JavaCommonClassType, "", currentBlock);
+	return CallInst::Create(intrinsics->GetClassDelegateePtrFunction, obj, "", currentBlock);
+}
+
+bool JavaJIT::shouldMethodChangeCurrentIsolate()
+{
+	JnjvmClassLoader* loader = compilingClass->classLoader;
+
+	// We are compiling the Java runtime:
+	// This code must run in the isolate ID of its caller, so as to account consumed resources
+	// to the caller.
+	if (loader == loader->bootstrapLoader) return false;
+
+	// We are compiling the <clinit> method:
+	// This code must run in the isolate ID of its caller, so as to enable initializing
+	// the class (not the object) in any desired isolate ID.
+	if (compilingMethod->name->equals(loader->bootstrapLoader->clinitName)) return false;
+
+	return true;
+}
+
+Value* JavaJIT::setCurrentIsolateForCompilingMethod(Value* currentIsolateID, bool alwaysSet)
+{
+	Constant *isolateID;
+	if (this->shouldMethodChangeCurrentIsolate())
+		isolateID = ConstantInt::get(Type::getInt32Ty(TheCompiler->getLLVMContext()), compilingClass->classLoader->getIsolateID());
+	else if (alwaysSet)
+		isolateID = intrinsics->CurrentIsolateID;
+	else
+		return NULL;
+
+	if (!currentIsolateID) currentIsolateID = intrinsics->constantPtr32Null;
+
+	Value *Args[] = {isolateID, currentIsolateID};
+	// Return the old isolate value, whether it was set or not
+	return CallInst::Create(intrinsics->SetIsolateFunction, Args, "oldIsolateID", currentBlock);
+}
+
+void JavaJIT::restoreCurrentIsolateForCompilingMethod(Value* oldIsolateID, bool alwaysRestore)
+{
+	if (!oldIsolateID || (!alwaysRestore && !this->shouldMethodChangeCurrentIsolate())) return;
+
+	Value *Args[] = {oldIsolateID, intrinsics->constantPtr32Null};
+	CallInst::Create(intrinsics->SetIsolateFunction, Args, "", currentBlock);
 }
 
 llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
@@ -472,7 +547,7 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
 
   uint32 index = 0;
   if (stat) {
-    Value* cl = TheCompiler->getJavaClassPtr(compilingClass);
+    Value* cl = getClassDelegateePtr(compilingClass);
     nativeArgs.push_back(cl);
     index = 2;
   } else {
@@ -573,6 +648,8 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
   }
   nativeArgs[0] = nativeFunc;
 
+  Value *oldIsolateID = this->setCurrentIsolateForCompilingMethod(NULL, false);
+
   // Synchronize before saying we're entering native
   if (isSynchro(compilingMethod->access)) {
     nbHandlers = 1;
@@ -617,6 +694,8 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
   // Synchronize after leaving native.
   if (isSynchro(compilingMethod->access))
     endSynchronize();
+
+  this->restoreCurrentIsolateForCompilingMethod(oldIsolateID, false);
 
   BasicBlock* ifNormal = createBasicBlock("");
   BasicBlock* ifException = createBasicBlock("");
@@ -743,7 +822,7 @@ void JavaJIT::beginSynchronize() {
     obj = new LoadInst(
         thisObject, "", false, currentBlock);
   } else {
-    obj = TheCompiler->getJavaClassPtr(compilingClass);
+    obj = getClassDelegateePtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
   }
   monitorEnter(obj);
@@ -756,7 +835,7 @@ void JavaJIT::endSynchronize() {
     obj = new LoadInst(
         thisObject, "", false, currentBlock);
   } else {
-    obj = TheCompiler->getJavaClassPtr(compilingClass);
+    obj = getClassDelegateePtr(compilingClass);
     obj = new LoadInst(obj, "", false, currentBlock);
   }
   monitorExit(obj);
@@ -803,7 +882,7 @@ static void removeUnusedObjects(std::vector<AllocaInst*>& objects,
 Instruction* JavaJIT::inlineCompile(BasicBlock*& curBB,
                                     BasicBlock* endExBlock,
                                     std::vector<Value*>& args) {
-  Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
+  JavaAttribute* codeAtt = compilingMethod->lookupAttribute(JavaAttribute::codeAttribute);
   Reader reader(codeAtt, compilingClass->bytes);
   uint16 maxStack = reader.readU2();
   uint16 maxLocals = reader.readU2();
@@ -977,7 +1056,7 @@ llvm::Function* JavaJIT::javaCompile() {
   DbgSubprogram = TheCompiler->getDebugFactory()->createFunction(
       DIDescriptor(), "", "", DIFile(), 0, DIType(), false, false, 0);
 
-  Attribut* codeAtt = compilingMethod->lookupAttribut(Attribut::codeAttribut);
+  JavaAttribute* codeAtt = compilingMethod->lookupAttribute(JavaAttribute::codeAttribute);
   
   if (!codeAtt) {
     fprintf(stderr, "I haven't verified your class file and it's malformed:"
@@ -1095,20 +1174,26 @@ llvm::Function* JavaJIT::javaCompile() {
 
   // Now that arguments have been setup, we can proceed with runtime calls.
 #if JNJVM_EXECUTE > 0
-    {
-    Value* arg = TheCompiler->getMethodInClass(compilingMethod);
+    if (!TheCompiler->isCompilingMMTk() && compilingClass->name->elements[0] == 'i') {
+      Value* arg = TheCompiler->getMethodInClass(compilingMethod);
 
-    llvm::CallInst::Create(intrinsics->PrintMethodStartFunction, arg, "",
+      llvm::CallInst::Create(intrinsics->PrintMethodStartFunction, arg, "",
                            currentBlock);
     }
 #endif
 
+  Value *currentIsolateID = NULL;
   nbHandlers = readExceptionTable(reader, codeLen);
   if (nbHandlers != 0) {
-    jmpBuffer = new AllocaInst(ArrayType::get(Type::getInt8Ty(*llvmContext), sizeof(vmkit::ExceptionBuffer)), "", currentBlock);
-    jmpBuffer = new BitCastInst(jmpBuffer, intrinsics->ptrType, "", currentBlock);
+    jmpBuffer = new AllocaInst(ArrayType::get(Type::getInt8Ty(*llvmContext), sizeof(vmkit::ExceptionBuffer)), "ExceptionBufferBytes", currentBlock);
+    jmpBuffer = new BitCastInst(jmpBuffer, intrinsics->ExceptionBufferType, "ExceptionBuffer", currentBlock);
+
+    Value *GEP[] = {intrinsics->constantZero, intrinsics->OffsetHandlerIsolateIDInExceptionBufferConstant};
+    currentIsolateID = GetElementPtrInst::Create(jmpBuffer, GEP, "handlerIsolateID", currentBlock);
   }
   
+  Value *oldIsolateID = this->setCurrentIsolateForCompilingMethod(currentIsolateID, nbHandlers != 0);
+
   reader.cursor = start;
   exploreOpcodes(reader, codeLen);
  
@@ -1186,11 +1271,13 @@ llvm::Function* JavaJIT::javaCompile() {
     endSynchronize();
   }
 
+  this->restoreCurrentIsolateForCompilingMethod(oldIsolateID, false);
+
 #if JNJVM_EXECUTE > 0
-    {
+  if (!TheCompiler->isCompilingMMTk() && compilingClass->name->elements[0] == 'i') {
     Value* arg = TheCompiler->getMethodInClass(compilingMethod); 
     CallInst::Create(intrinsics->PrintMethodEndFunction, arg, "", currentBlock);
-    }
+  }
 #endif
 
   finishExceptions();
@@ -1249,8 +1336,8 @@ llvm::Function* JavaJIT::javaCompile() {
               UTF8Buffer(compilingClass->name).cString(),
               UTF8Buffer(compilingMethod->name).cString());
    
-  Attribut* annotationsAtt =
-    compilingMethod->lookupAttribut(Attribut::annotationsAttribut);
+  JavaAttribute* annotationsAtt =
+    compilingMethod->lookupAttribute(JavaAttribute::annotationsAttribute);
   
   if (annotationsAtt) {
     Reader reader(annotationsAtt, compilingClass->bytes);
@@ -1261,10 +1348,10 @@ llvm::Function* JavaJIT::javaCompile() {
       const UTF8* name =
         compilingClass->ctpInfo->UTF8At(AR.AnnotationNameIndex);
       if (name->equals(TheCompiler->InlinePragma)) {
-        llvmFunction->removeFnAttr(Attribute::NoInline);
-        llvmFunction->addFnAttr(Attribute::AlwaysInline);
+        llvmFunction->removeFnAttr(llvm::Attribute::NoInline);
+        llvmFunction->addFnAttr(llvm::Attribute::AlwaysInline);
       } else if (name->equals(TheCompiler->NoInlinePragma)) {
-        llvmFunction->addFnAttr(Attribute::NoInline);
+        llvmFunction->addFnAttr(llvm::Attribute::NoInline);
       }
     }
   }
@@ -1299,7 +1386,7 @@ void JavaJIT::loadConstant(uint16 index) {
       Value* val = TheCompiler->getString(str);
       push(val, false, upcalls->newString);
     } else {
-      JavaString** str = (JavaString**)ctpInfo->ctpRes[index];
+      JavaString** str = (JavaString**)ctpInfo->getCachedValue(index);
       if ((str != NULL) && !TheCompiler->isStaticCompiling()) {
         Value* val = TheCompiler->getStringPtr(str);
         val = new LoadInst(val, "", currentBlock);
@@ -1574,7 +1661,7 @@ Instruction* JavaJIT::lowerDoubleOps(const UTF8* name,
 Instruction* JavaJIT::invokeInline(JavaMethod* meth, 
                                    std::vector<Value*>& args,
                                    bool customized) {
-  JavaJIT jit(TheCompiler, meth, llvmFunction, customized ? customizeFor : NULL);
+  JavaJIT jit(TheCompiler, meth, llvmFunction, customized ? customizeFor : NULL, compilingMMTk);
   jit.unifiedUnreachable = unifiedUnreachable;
   jit.inlineMethods = inlineMethods;
   jit.inlineMethods[meth] = true;
@@ -1739,13 +1826,11 @@ Value* JavaJIT::getConstantPoolAt(uint32 index, Function* resolver,
 
 // This makes unswitch loop very unhappy time-wise, but makes GVN happy
 // number-wise. IMO, it's better to have this than Unswitch.
-  JavaConstantPool* ctp = compilingClass->ctpInfo;
-  Value* CTP = TheCompiler->getResolvedConstantPool(ctp);
   Value* Cl = TheCompiler->getNativeClass(compilingClass);
 
   std::vector<Value*> Args;
   Args.push_back(resolver);
-  Args.push_back(CTP);
+  Args.push_back(compilingMMTk ? intrinsics->constantZero : intrinsics->CurrentIsolateID);
   Args.push_back(Cl);
   Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
   if (additionalArg) Args.push_back(additionalArg);
@@ -1889,6 +1974,8 @@ Value* JavaJIT::ldResolved(uint16 index, bool stat, Value* object,
       }
 
       object = TheCompiler->getStaticInstance(field->classDef);
+      if (!object)
+        object = CallInst::Create(intrinsics->GetStaticInstanceFunction, Cl, "", currentBlock);
     } else {
       object = new LoadInst(
           object, "", false, currentBlock);
@@ -2321,7 +2408,11 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   if (jmpBuffer != NULL) {
     BasicBlock* doCall = createBasicBlock("");
     ifException = createBasicBlock("");
-    Instruction* check = CallInst::Create(intrinsics->SetjmpFunction, jmpBuffer, "", currentBlock);
+
+    Value* GEP[] = {intrinsics->constantZero, intrinsics->OffsetSetJmpBufferInExceptionBufferConstant, intrinsics->constantZero};
+    Value *setjmpBuffer = GetElementPtrInst::Create(jmpBuffer, GEP, "setjmpBuffer", currentBlock);
+    Instruction* check = CallInst::Create(intrinsics->SetjmpFunction, setjmpBuffer, "", currentBlock);
+
     check = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, check, intrinsics->constantZero, "");
     BranchInst::Create(doCall, ifException, check, currentBlock);
     currentBlock = doCall;
@@ -2338,6 +2429,14 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
     BranchInst::Create(ifNormal, currentBlock);
 
     currentBlock = ifException;
+
+    // Restore the isolate ID of the current method.
+    // The called method had an exception and might not have restored the isolate ID as necessary.
+    Value* GEP[] = {intrinsics->constantZero, intrinsics->OffsetHandlerIsolateIDInExceptionBufferConstant};
+    Value *handlerIsolateID = GetElementPtrInst::Create(jmpBuffer, GEP, "", currentBlock);
+    handlerIsolateID = new LoadInst(handlerIsolateID, "handlerIsolateID", currentBlock);
+    this->restoreCurrentIsolateForCompilingMethod(handlerIsolateID, true);
+
     CallInst::Create(intrinsics->UnregisterSetjmpFunction, jmpBuffer, "", currentBlock);
     BranchInst::Create(currentExceptionBlock, currentBlock);
     currentBlock = ifNormal; 

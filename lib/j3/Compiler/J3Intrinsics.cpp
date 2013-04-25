@@ -40,6 +40,10 @@ void J3Intrinsics::init(llvm::Module* module) {
   VTType = PointerType::getUnqual(ArrayType::get(
         PointerType::getUnqual(FunctionType::get(Type::getInt32Ty(Context), true)), 0));
 
+  JavaVTType = PointerType::getUnqual(module->getTypeByName("JavaVT"));
+
+  ExceptionBufferType = PointerType::getUnqual(module->getTypeByName("ExceptionBuffer"));
+
   ResolvedConstantPoolType = ptrPtrType;
  
   JavaObjectType = 
@@ -88,8 +92,8 @@ void J3Intrinsics::init(llvm::Module* module) {
     PointerType::getUnqual(module->getTypeByName("JavaMethod"));
   UTF8Type =
     PointerType::getUnqual(module->getTypeByName("UTF8"));
-  AttributType =
-    PointerType::getUnqual(module->getTypeByName("Attribut"));
+  AttributeType =
+    PointerType::getUnqual(module->getTypeByName("Attribute"));
   JavaThreadType =
     PointerType::getUnqual(module->getTypeByName("JavaThread"));
   MutatorThreadType =
@@ -141,9 +145,11 @@ void J3Intrinsics::init(llvm::Module* module) {
   OffsetObjectSizeInClassConstant = constantOne;
   OffsetVTInClassConstant = ConstantInt::get(Type::getInt32Ty(Context), 7);
   OffsetTaskClassMirrorInClassConstant = constantThree;
-  OffsetStaticInstanceInTaskClassMirrorConstant = constantThree;
+  OffsetStaticInstanceInTaskClassMirrorConstant = constantTwo;
   OffsetStatusInTaskClassMirrorConstant = constantZero;
   OffsetInitializedInTaskClassMirrorConstant = constantOne;
+  OffsetCommonClassInClassConstant = constantZero;
+  OffsetCommonClassInJavaVirtualTableConstant = constantFour;
   
   OffsetIsolateIDInThreadConstant =         ConstantInt::get(Type::getInt32Ty(Context), 1);
   OffsetVMInThreadConstant =                ConstantInt::get(Type::getInt32Ty(Context), 2);
@@ -157,7 +163,8 @@ void J3Intrinsics::init(llvm::Module* module) {
   InterfaceLookupFunction = module->getFunction("j3InterfaceLookup");
   MultiCallNewFunction = module->getFunction("j3MultiCallNew");
   ForceLoadedCheckFunction = module->getFunction("forceLoadedCheck");
-  InitialisationCheckFunction = module->getFunction("initialisationCheck");
+  InitialisationCheckFunction = module->getFunction("j3InitialisationCheck");
+  InitialisationCheckForJavaObjectFunction = module->getFunction("j3InitialisationCheckForJavaObject");
   ForceInitialisationCheckFunction = 
     module->getFunction("forceInitialisationCheck");
   InitialiseClassFunction = module->getFunction("j3RuntimeInitialiseClass");
@@ -175,12 +182,15 @@ void J3Intrinsics::init(llvm::Module* module) {
   GetObjectSizeFromClassFunction = 
     module->getFunction("getObjectSizeFromClass");
  
-  GetClassDelegateeFunction = module->getFunction("getClassDelegatee");
+  SetIsolateFunction = module->getFunction("j3SetIsolate");
+  GetCachedValueFunction = module->getFunction("j3GetCachedValue");
+  GetClassDelegateePtrFunction = module->getFunction("j3GetClassDelegateePtr");
+  GetClassDelegateeFunction = module->getFunction("j3GetClassDelegatee");
   RuntimeDelegateeFunction = module->getFunction("j3RuntimeDelegatee");
   IsSubclassOfFunction = module->getFunction("isSubclassOf");
   IsSecondaryClassFunction = module->getFunction("isSecondaryClass");
   GetDepthFunction = module->getFunction("getDepth");
-  GetStaticInstanceFunction = module->getFunction("getStaticInstance");
+  GetStaticInstanceFunction = module->getFunction("j3GetStaticInstance");
   GetDisplayFunction = module->getFunction("getDisplay");
   GetVTInDisplayFunction = module->getFunction("getVTInDisplay");
   AquireObjectFunction = module->getFunction("j3JavaObjectAquire");
@@ -229,4 +239,10 @@ void J3Intrinsics::init(llvm::Module* module) {
   GetLockFunction = module->getFunction("getLock");
   ThrowExceptionFromJITFunction =
     module->getFunction("j3ThrowExceptionFromJIT"); 
+
+  CurrentIsolateID = ConstantInt::get(Type::getInt32Ty(Context), CURRENT_ISOLATE);
+
+  OffsetHandlerMethodInExceptionBufferConstant = constantZero;
+  OffsetHandlerIsolateIDInExceptionBufferConstant = constantOne;
+  OffsetSetJmpBufferInExceptionBufferConstant = constantThree;
 }

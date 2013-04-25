@@ -19,25 +19,25 @@
 
 namespace vmkit {
 
-void MethodInfoHelper::scan(word_t closure, FrameInfo* FI, word_t ip, word_t addr) {
-  //word_t spaddr = (word_t)addr + FI->FrameSize + sizeof(void*);
-  word_t spaddr = System::GetCallerOfAddress(addr);
+void MethodInfoHelper::scan(word_t closure, FrameInfo* FI, void* ip, void* callFrame) {
+  //void* spaddr = (void*)((intptr_t)callFrame + FI->FrameSize + sizeof(void*));
+  void* spaddr = StackWalker::getCallerCallFrameAddress(callFrame);
   for (uint16 i = 0; i < FI->NumLiveOffsets; ++i) {
-    word_t obj = *(word_t*)(spaddr + FI->LiveOffsets[i]);    
+	  void* obj = *(void**)((intptr_t)spaddr + FI->LiveOffsets[i]);
     // Verify that obj does not come from a JSR bytecode.
-    if (!(obj & 1)) {
-      Collector::scanObject((void**)(spaddr + FI->LiveOffsets[i]), closure);
+    if (!((uintptr_t)obj & 1)) {
+      Collector::scanObject((void**)((intptr_t)spaddr + FI->LiveOffsets[i]), closure);
     }
   }
 }
 
-void MethodInfoHelper::print(word_t ip, word_t addr) {
+void MethodInfoHelper::print(void* ip, void* callFrame) {
   Dl_info info;
-  int res = dladdr((void*)ip, &info);
+  int res = dladdr(ip, &info);
   if (res != 0 && info.dli_sname != NULL) {
-    fprintf(stderr, "; %p (%p) in %s\n",  (void*)ip, (void*)addr, info.dli_sname);
+    fprintf(stderr, "; %p (%p) in %s\n",  ip, callFrame, info.dli_sname);
   } else {
-    fprintf(stderr, "; %p in Unknown method\n", (void*)ip);
+    fprintf(stderr, "; %p in Unknown method\n", ip);
   }
 }
 
@@ -71,9 +71,9 @@ FunctionMap::FunctionMap(BumpPtrAllocator& allocator, CompiledFrames** allFrames
 // Create a dummy FrameInfo, so that methods don't have to null check.
 static FrameInfo emptyInfo;
 
-FrameInfo* FunctionMap::IPToFrameInfo(word_t ip) {
+FrameInfo* FunctionMap::IPToFrameInfo(void* ip) {
   FunctionMapLock.acquire();
-  llvm::DenseMap<word_t, FrameInfo*>::iterator I = Functions.find(ip);
+  llvm::DenseMap<void*, FrameInfo*>::iterator I = Functions.find(ip);
   FrameInfo* res = NULL;
   if (I != Functions.end()) {
     res = I->second;
@@ -87,7 +87,7 @@ FrameInfo* FunctionMap::IPToFrameInfo(word_t ip) {
 }
 
 
-void FunctionMap::addFrameInfo(word_t ip, FrameInfo* meth) {
+void FunctionMap::addFrameInfo(void* ip, FrameInfo* meth) {
   FunctionMapLock.acquire();
   addFrameInfoNoLock(ip, meth);
   FunctionMapLock.release();

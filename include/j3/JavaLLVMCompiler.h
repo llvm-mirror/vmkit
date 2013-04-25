@@ -52,6 +52,7 @@ protected:
   llvm::DIBuilder* DebugFactory;  
   J3Intrinsics JavaIntrinsics;
   const llvm::TargetData* TheTargetData;
+  bool compilingMMTk;
 
 private:  
   bool enabledException;
@@ -84,8 +85,9 @@ private:
   llvm::DenseMap<llvm::FunctionType*, llvm::Function*> staticAPs;
 
 public:
-  JavaLLVMCompiler(const std::string &ModuleID);
-  
+  JavaLLVMCompiler(const std::string &ModuleID, bool compilingMMTk=false);
+
+  bool isCompilingMMTk() {return compilingMMTk;}
   virtual bool isStaticCompiling() = 0;
   virtual bool emitFunctionName() = 0;
   virtual void* GenerateStub(llvm::Function* F) = 0;
@@ -123,7 +125,7 @@ public:
     cooperativeGC = false;
   }
  
-  virtual JavaCompiler* Create(const std::string& ModuleID) = 0;
+  virtual JavaCompiler* Create(const std::string& ModuleID, bool compilingMMTk=false) = 0;
   
   virtual ~JavaLLVMCompiler();
 
@@ -194,7 +196,7 @@ public:
   virtual llvm::Constant* getNativeClass(CommonClass* cl) = 0;
   virtual llvm::Constant* getJavaClass(CommonClass* cl) = 0;
   virtual llvm::Constant* getJavaClassPtr(CommonClass* cl) = 0;
-  virtual llvm::Constant* getStaticInstance(Class* cl) = 0;
+  virtual llvm::Constant* getStaticInstance(Class* cl, isolate_id_t isolateID = CURRENT_ISOLATE) = 0;
   virtual llvm::Constant* getVirtualTable(JavaVirtualTable*) = 0;
   virtual llvm::Constant* getMethodInClass(JavaMethod* meth) = 0;
   

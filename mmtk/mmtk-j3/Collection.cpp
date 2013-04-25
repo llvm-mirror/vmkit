@@ -41,6 +41,7 @@ extern "C" void Java_org_j3_mmtk_Collection_triggerCollection__I (MMTkObject* C,
 
     JnJVM_org_j3_bindings_Bindings_collect__I(why);
 
+    th->MyVM->endCollectionBeforeUnblockingThreads();
     th->MyVM->rendezvous.finishRV();
     th->MyVM->endCollection();
   }

@@ -24,6 +24,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetData.h"
 #include <../lib/ExecutionEngine/JIT/JIT.h>
+#include <../lib/ExecutionEngine/RuntimeDyld/JITRegistrar.h>
 
 #include "VmkitGC.h"
 #include "vmkit/VirtualMachine.h"
@@ -62,7 +63,9 @@ Constant* JavaJITCompiler::getNativeClass(CommonClass* classDef) {
 }
 
 Constant* JavaJITCompiler::getResolvedConstantPool(JavaConstantPool* ctp) {
-  void* ptr = ctp->ctpRes;
+  assert(false && "Must not be here.");
+
+  void* ptr = NULL;	// = ctp->ctpRes;
   assert(ptr && "No constant pool found");
   ConstantInt* CI = ConstantInt::get(Type::getInt64Ty(getLLVMContext()),
                                      uint64_t(ptr));
@@ -114,11 +117,17 @@ Constant* JavaJITCompiler::getFinalObject(JavaObject* obj, CommonClass* cl) {
   return NULL;
 }
 
-Constant* JavaJITCompiler::getStaticInstance(Class* classDef) {
-  void* obj = classDef->getStaticInstance();
+Constant* JavaJITCompiler::getStaticInstance(Class* classDef, isolate_id_t isolateID) {
+  if (!compilingMMTk) {
+    // Thanks for calling me, but you should call j3GetStaticInstance() to get the static instance
+    // pointer at runtime.
+    return NULL;
+  }
+
+  void* obj = classDef->getStaticInstance(isolateID);
   if (!obj) {
     classDef->acquire();
-    obj = classDef->getStaticInstance();
+    obj = classDef->getStaticInstance(isolateID);
     if (!obj) {
       // Allocate now so that compiled code can reference it.
       obj = classDef->allocateStaticInstance(JavaThread::get()->getJVM());
@@ -152,8 +161,8 @@ Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
   return ConstantExpr::getIntToPtr(CI, valPtrType);
 }
 
-JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
-  JavaLLVMCompiler(ModuleID), listener(this) {
+JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID, bool compilingMMTk) :
+  JavaLLVMCompiler(ModuleID, compilingMMTk), listener(this) {
 
   EmitFunctionName = false;
   GCInfo = NULL;
@@ -161,6 +170,8 @@ JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
   EngineBuilder engine(TheModule);
   TargetOptions options;
   options.NoFramePointerElim = true;
+  options.JITEmitDebugInfo = true;
+//  engine.setUseMCJIT(true);
   engine.setTargetOptions(options);
   engine.setEngineKind(EngineKind::JIT);
   executionEngine = engine.create();
@@ -400,11 +411,11 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
   // Set the stub in the constant pool.
   JavaConstantPool* ctpInfo = cl->ctpInfo;
   word_t stub = stat ? sign->getStaticCallStub() : sign->getSpecialCallStub();
-  if (!ctpInfo->ctpRes[index]) {
-    // Do a compare and swap, so that we do not overwrtie what a stub might
+  if (!ctpInfo->getCachedValue(index)) {
+    // Do a compare and swap, so that we do not overwrite what a stub might
     // have just updated.
     word_t val = (word_t)
-      __sync_val_compare_and_swap(&(ctpInfo->ctpRes[index]), NULL, (void*)stub);
+      ctpInfo->updateCachedValueSynchronized(index, (void*)stub, NULL);
     // If there is something in the the constant pool that is not NULL nor
     // the stub, then it's the method.
     if (val != 0 && val != stub) {
@@ -414,11 +425,12 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
     }
   }
   // Load the constant pool.
-  Value* CTP = getResolvedConstantPool(ctpInfo);
-  Value* Index = ConstantInt::get(Type::getInt32Ty(insert->getContext()),
-                                  index);
-  Value* func = GetElementPtrInst::Create(CTP, Index, "", insert);
-  func = new LoadInst(func, "", false, insert);
+  Value* Args[] = {
+    getNativeClass(cl),
+    ConstantInt::get(Type::getInt32Ty(insert->getContext()), index),
+    compilingMMTk ? JavaIntrinsics.constantZero : JavaIntrinsics.CurrentIsolateID
+  };
+  Value* func = CallInst::Create(JavaIntrinsics.GetCachedValueFunction, Args, "", insert);
   // Bitcast it to the LLVM function.
   func = new BitCastInst(func, stat ? LSI->getStaticPtrType() :
                                       LSI->getVirtualPtrType(),
@@ -434,10 +446,10 @@ bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth,
           getMethod(meth, customizeFor)->hasExternalWeakLinkage());
 }
 
-JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)
-    : JavaJITCompiler(ModuleID) {}
+JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID, bool compilingMMTk)
+    : JavaJITCompiler(ModuleID, compilingMMTk) {}
 
 
-JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID) {
-  return new JavaJ3LazyJITCompiler(ModuleID);
+JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID, bool compilingMMTk) {
+  return new JavaJ3LazyJITCompiler(ModuleID, compilingMMTk);
 }

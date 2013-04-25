@@ -90,7 +90,7 @@ void CooperativeCollectionRV::join() {
   th->inRV = true;
   
   lockRV();
-  th->setLastSP(System::GetCallerAddress());
+  th->setLastSP(StackWalker_getCallFrameAddress());
   th->joinedRV = true;
   another_mark();
   waitEndOfRV();
@@ -98,6 +98,8 @@ void CooperativeCollectionRV::join() {
   unlockRV();
   
   th->inRV = false;
+
+  th->runAfterLeavingGarbageCollectorRendezVous();
 }
 
 void CooperativeCollectionRV::joinBeforeUncooperative() {
@@ -108,6 +110,7 @@ void CooperativeCollectionRV::joinBeforeUncooperative() {
   th->inRV = true;
   
   lockRV();
+  bool wasInRV = th->doYield;
   if (th->doYield) {
     if (!th->joinedRV) {
       th->joinedRV = true;
@@ -118,9 +121,11 @@ void CooperativeCollectionRV::joinBeforeUncooperative() {
   unlockRV();
 
   th->inRV = false;
+
+  if (wasInRV) th->runAfterLeavingGarbageCollectorRendezVous();
 }
 
-void CooperativeCollectionRV::joinAfterUncooperative(word_t SP) {
+void CooperativeCollectionRV::joinAfterUncooperative(void* SP) {
   vmkit::Thread* th = vmkit::Thread::get();
   assert((th->getLastSP() == 0) &&
          "SP set after entering uncooperative code");
@@ -128,6 +133,7 @@ void CooperativeCollectionRV::joinAfterUncooperative(word_t SP) {
   th->inRV = true;
 
   lockRV();
+  bool wasInRV = th->doYield;
   if (th->doYield) {
     th->setLastSP(SP);
     if (!th->joinedRV) {
@@ -140,6 +146,8 @@ void CooperativeCollectionRV::joinAfterUncooperative(word_t SP) {
   unlockRV();
 
   th->inRV = false;
+
+  if (wasInRV) th->runAfterLeavingGarbageCollectorRendezVous();
 }
 
 extern "C" void conditionalSafePoint() {

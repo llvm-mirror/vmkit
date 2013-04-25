@@ -32,7 +32,7 @@ public:
   /// used when walking the stack so that VMKit knows which applicative method
   /// is executing on the stack.
   ///
-  llvm::DenseMap<word_t, FrameInfo*> Functions;
+  llvm::DenseMap<void*, FrameInfo*> Functions;
 
   /// FunctionMapLock - Spin lock to protect the Functions map.
   ///
@@ -40,12 +40,12 @@ public:
 
   /// IPToFrameInfo - Map a code start instruction instruction to the FrameInfo.
   ///
-  FrameInfo* IPToFrameInfo(word_t ip);
+  FrameInfo* IPToFrameInfo(void* ip);
 
   /// addFrameInfo - A new instruction pointer in the function map.
   ///
-  void addFrameInfo(word_t ip, FrameInfo* meth);
-  void addFrameInfoNoLock(word_t ip, FrameInfo* meth) {
+  void addFrameInfo(void* ip, FrameInfo* meth);
+  void addFrameInfoNoLock(void* ip, FrameInfo* meth) {
     Functions[ip] = meth;
   }
   /// removeFrameInfos - Remove all FrameInfo owned by the given owner.
@@ -160,6 +160,7 @@ public:
   /// endCollection - Code after running a GC.
   ///
   virtual void endCollection() {}
+  virtual void endCollectionBeforeUnblockingThreads() {}
   
   /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
   /// before scanning the finalization queue.
@@ -199,6 +200,8 @@ public:
   ///
   virtual const char* getObjectTypeName(gc* object) { return "An object"; }
 
+  virtual bool resetDeadIsolateReference(void* source, void** objectRef) {return false;}
+
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
   CooperativeCollectionRV rendezvous;
@@ -208,14 +211,15 @@ public:
 //===----------------------------------------------------------------------===//
 
   FunctionMap FunctionsCache;
-  FrameInfo* IPToFrameInfo(word_t ip) {
+  FrameInfo* IPToFrameInfo(void* ip) {
     return FunctionsCache.IPToFrameInfo(ip);
   }
   void removeFrameInfos(void* owner) {
     FunctionsCache.removeFrameInfos(owner);
   }
 
-  virtual void printMethod(FrameInfo* FI, word_t ip, word_t addr) = 0;
+  virtual void printMethod(FrameInfo* FI, void* ip, void* callFrame) = 0;
+  virtual void printCallStack(const StackWalker& walker) = 0;
   
 //===----------------------------------------------------------------------===//
 // (4) Launch-related methods.
@@ -231,6 +235,7 @@ public:
 
   virtual void nullPointerException() = 0;
   virtual void stackOverflowError() = 0;
+  virtual void deadIsolateException(void* methodIP, bool immediate = true) = 0;
 };
 
 } // end namespace vmkit

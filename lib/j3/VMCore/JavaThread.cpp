@@ -7,12 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <sstream>
+
 #include "vmkit/Locks.h"
 #include "vmkit/Thread.h"
 
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaString.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
@@ -21,6 +24,9 @@ using namespace j3;
 
 JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() { 
   MyVM = isolate;
+  JavaThread* th = JavaThread::get();
+  if (th->isVmkitThread())
+	  isolateID = th->getIsolateID();
   pendingException = NULL;
   jniEnv = isolate->jniEnv;
   localJNIRefs = new JNILocalReferences();
@@ -40,12 +46,13 @@ JavaThread::~JavaThread() {
   delete localJNIRefs;
 }
 
-void JavaThread::throwException(JavaObject* obj) {
+void JavaThread::throwException(JavaObject* obj, bool immediate) {
   llvm_gcroot(obj, 0);
   JavaThread* th = JavaThread::get();
   assert(th->pendingException == 0 && "pending exception already there?");
   vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)&(th->pendingException), (gc*)obj);
-  th->internalThrowException();
+  if (immediate)
+    th->internalThrowException();
 }
 
 void JavaThread::throwPendingException() {
@@ -127,7 +134,7 @@ void JavaThread::printJavaBacktrace() {
 
   while (vmkit::FrameInfo* FI = Walker.get()) {
     if (FI->Metadata != NULL) {
-      MyVM->printMethod(FI, Walker.ip, Walker.addr);
+      MyVM->printMethod(FI, Walker.getReturnAddress(), Walker.getCallFrame());
     }
     ++Walker;
   }
@@ -162,4 +169,93 @@ void JNILocalReferences::removeJNIReferences(JavaThread* th, uint32_t num) {
   } else {
     length -= num;
   }
+}
+
+std::ostream& j3::operator << (std::ostream& os, JavaThread& thread)
+{
+	os << (void*)(&thread);
+
+	Jnjvm* vm = thread.getJVM();
+	JavaObject* jThread = thread.currentThread();
+	if (vm && jThread) {
+		JavaString* threadNameObj = static_cast<JavaString*>(
+			vm->upcalls->threadName->getInstanceObjectField(jThread));
+		char *threadName = JavaString::strToAsciiz(threadNameObj);
+		os << '(' << threadName << ')';
+		delete [] threadName;
+	}
+
+	return os << ',' << thread.getIsolateID();
+}
+
+void JavaThread::printStackTrace(int skip, int level_deep)
+{
+	JavaThread *thread = JavaThread::get();
+	std::cerr << '[' << *thread << "] Call stack trace:" << std::endl;
+
+	j3::Jnjvm *vm = thread->getJVM();
+	vmkit::StackWalker Walker(thread);
+	for (vmkit::FrameInfo* FI = NULL; (level_deep > 0) && ((FI = Walker.get()) != NULL); ++Walker) {
+		if (!FI->Metadata) continue;
+		if (skip > 0) {--skip; continue;}
+
+		vm->printMethod(FI, Walker.getReturnAddress(), Walker.getCallFrame());
+		--level_deep;
+	}
+}
+
+void JavaThread::throwNullPointerException(void* methodIP) const
+{
+	if (!this->isVmkitThread())
+		return vmkit::Thread::throwNullPointerException(methodIP);
+
+	this->cleanUpOnDeadIsolateBeforeException(&methodIP);
+
+	MyVM->nullPointerException();
+	UNREACHABLE();
+}
+
+void JavaThread::throwDeadIsolateException() const
+{
+	if (this->runsDeadIsolate())
+		const_cast<JavaThread*>(this)->setIsolateID(0);
+
+	if (!this->isVmkitThread())
+		return vmkit::Thread::throwDeadIsolateException();
+
+	void *methodIP = StackWalker_getCallFrameAddress();
+	methodIP = vmkit::StackWalker::getReturnAddressFromCallFrame(methodIP);
+
+	MyVM->deadIsolateException(methodIP, true);
+	UNREACHABLE();
+}
+
+extern "C" uint32_t j3SetIsolate(uint32_t isolateID, uint32_t* currentIsolateID);
+
+void JavaThread::cleanUpOnDeadIsolateBeforeException(void** methodIP, JavaMethod** method) const
+{
+	vmkit::StackWalker walker(const_cast<JavaThread*>(this), true);
+	vmkit::FrameInfo *FI = walker.get();
+
+	if (!FI) {
+		if (methodIP != NULL) *methodIP = NULL;
+		if (method != NULL) *method = NULL;
+		return;
+	}
+
+	JavaMethod* meth = (JavaMethod*)FI->Metadata;
+
+	// Restore the current isolate ID to that of the caller
+	isolate_id_t callerIsolateID = meth->classDef->classLoader->getIsolateID();
+	j3SetIsolate(callerIsolateID, NULL);
+
+	if (methodIP != NULL) *methodIP = FI->ReturnAddress;
+	if (method != NULL) *method = meth;
+}
+
+void JavaThread::runAfterLeavingGarbageCollectorRendezVous()
+{
+	// Be sure to throw an exception if I am running in a dead isolate
+	if (this->runsDeadIsolate())
+		throwDeadIsolateException();
 }

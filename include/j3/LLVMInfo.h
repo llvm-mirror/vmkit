@@ -86,7 +86,7 @@ private:
   llvm::Constant* offsetConstant;
   llvm::FunctionType* functionType;
   std::map<Class*, llvm::Function*> customizedVersions;
-  
+
 public:
   llvm::Function* getMethod(Class* customizeFor);
   llvm::Constant* getOffset();
@@ -106,6 +106,10 @@ public:
   }
 
   void setCustomizedVersion(Class* customizeFor, llvm::Function* F);
+
+  typedef std::map<Class*, llvm::Function*>	customizedVersionsType;
+  typedef customizedVersionsType::iterator	customizedVersionsIterator;
+  customizedVersionsType* getCustomizedVersions() {return &customizedVersions;}
 
   friend class JavaAOTCompiler;
 };

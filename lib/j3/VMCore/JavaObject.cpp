@@ -68,7 +68,7 @@ uint32_t JavaObject::hashCode(JavaObject* self) {
 
 
 void JavaObject::waitIntern(
-    JavaObject* self, struct timeval* info, bool timed) {
+    JavaObject* self, struct timeval* info, bool& timed) {
   llvm_gcroot(self, 0);
   JavaThread* thread = JavaThread::get();
   vmkit::LockSystem& table = thread->getJVM()->lockSystem;
@@ -88,15 +88,18 @@ void JavaObject::waitIntern(
 
 void JavaObject::wait(JavaObject* self) {
   llvm_gcroot(self, 0);
-  waitIntern(self, NULL, false);
+  bool timeout = false;
+  waitIntern(self, NULL, timeout);
 }
 
-void JavaObject::timedWait(JavaObject* self, struct timeval& info) {
+bool JavaObject::timedWait(JavaObject* self, struct timeval& info) {
   llvm_gcroot(self, 0);
-  waitIntern(self, &info, true);
+  bool timeout = true;
+  waitIntern(self, &info, timeout);
+  return !timeout;	//Return false if timed out
 }
 
-void JavaObject::wait(JavaObject* self, int64_t ms, int32_t ns) {
+bool JavaObject::wait(JavaObject* self, int64_t ms, int32_t ns) {
   llvm_gcroot(self, 0);
 
   Jnjvm* vm = JavaThread::get()->getJVM();
@@ -112,9 +115,10 @@ void JavaObject::wait(JavaObject* self, int64_t ms, int32_t ns) {
     struct timeval t;
     t.tv_sec = sec;
     t.tv_usec = usec;
-    JavaObject::timedWait(self, t);
+    return JavaObject::timedWait(self, t);
   } else {
     JavaObject::wait(self);
+    return true;
   }
 }
 
