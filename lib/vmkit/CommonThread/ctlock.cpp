@@ -100,22 +100,36 @@ void LockNormal::unlock(vmkit::Thread* ownerThread) {
 
 void LockRecursive::lock() {
   if (!selfOwner()) {
+
+
     Thread* th = Thread::get();
     th->enterUncooperativeCode();
     pthread_mutex_lock((pthread_mutex_t*)&internalLock);
+    assert((n == 0) && "Inconsistent state of recursive lock");
     th->leaveUncooperativeCode();
     owner = th;
+  }
+  else {
+	  assert((n != 0) && "Inconsistent state of recursive lock");
   }
   ++n;
 }
 
 int LockRecursive::tryLock() {
-  int res = 0;
+  int res = -1;
   if (!selfOwner()) {
+	  Thread* th = Thread::get();
+	  th->enterUncooperativeCode();
     res = pthread_mutex_trylock((pthread_mutex_t*)&internalLock);
-    owner = vmkit::Thread::get();
+    if (!res) {
+    	  ++n;
+    	  owner = vmkit::Thread::get();
+    }
+    th->leaveUncooperativeCode();
   }
-  ++n;
+  else
+	  n++;
+
   return res;
 }
 
@@ -209,12 +223,13 @@ int Cond::timedWait(Lock* l, struct timeval *ref) {
   int res = pthread_cond_timedwait((pthread_cond_t*)&internalCond, 
                                    (pthread_mutex_t*)&(l->internalLock),
                                    &timeout);
-  th->leaveUncooperativeCode();
   
+
   if (res != 0) {
   		pthread_cond_destroy (&internalCond) ;
   		pthread_cond_init    (&internalCond, NULL);
   }
+  th->leaveUncooperativeCode();
 
   assert((!res || res == ETIMEDOUT) && "Error on timed wait");
   l->unsafeLock(n);
@@ -249,7 +264,7 @@ int Cond::myTimeWait(Lock* l, bool isAbsolute, int64_t nsec) {
 		  absTime.tv_nsec = 0;
 		}
 		else {
-		  absTime.tv_sec = now.tv_sec + secs + 0; // 150 / 850 / 1000
+		  absTime.tv_sec = now.tv_sec + secs + 1100; // 150 / 850 / 1000
 		  absTime.tv_nsec = (nsec % NANOSECS_PER_SEC) + now.tv_usec*1000;
 		  if (absTime.tv_nsec >= NANOSECS_PER_SEC) {
 			absTime.tv_nsec -= NANOSECS_PER_SEC;
@@ -266,12 +281,13 @@ int Cond::myTimeWait(Lock* l, bool isAbsolute, int64_t nsec) {
 	int res = pthread_cond_timedwait((pthread_cond_t*)&internalCond,
 								   (pthread_mutex_t*)&(l->internalLock),
 								   &absTime);
-	th->leaveUncooperativeCode();
+
 
 	if (res != 0) {
 		pthread_cond_destroy (&internalCond) ;
 		pthread_cond_init    (&internalCond, NULL);
 	}
+	th->leaveUncooperativeCode();
 
 	assert((!res || res == ETIMEDOUT) && "Error on timed wait");
 	l->unsafeLock(n);

@@ -97,7 +97,7 @@ void sigsegvHandler(int n, siginfo_t *info, void *context) {
 }
 
 void sigsTermHandler(int n, siginfo_t *info, void *context) {
-	fprintf(stderr, "\nJVM termination because user request\n");
+	//fprintf(stderr, "\nJVM termination because user request\n");
 	finishForCtrl_C = true;
 	condForCtrl_C.signal();
 	//lockForCtrl_C.Lock();

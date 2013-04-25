@@ -5,6 +5,7 @@ extern "C" {
 
 JNIEXPORT void JNICALL Java_sun_misc_Unsafe_unpark(
 JavaObject* unsafe, JavaObject* thread) {
+//return;
   llvm_gcroot(unsafe, 0);
   llvm_gcroot(thread, 0);
   JavaObject* vmthread;
