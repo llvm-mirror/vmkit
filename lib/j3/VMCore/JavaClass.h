@@ -66,7 +66,6 @@ public:
   Reader& reader;
   Class* cl;
   uint16 AnnotationNameIndex;
-  const UTF8* lastKey;
 
   AnnotationReader(Reader& R, Class* C) : reader(R), cl(C),
     AnnotationNameIndex(0) {}
@@ -84,9 +83,9 @@ public:
   // createElementValue - create the Java type associated with the value
   // of the current annotation key.
   //
-  JavaObject* createElementValue(bool nextParameterIsTypeOfMethod,JavaObject* type);
+  JavaObject* createElementValue(bool nextParameterIsTypeOfMethod,JavaObject* type, const UTF8* lastKey);
 
-  void fillArray(JavaObject* res, int numValues);
+  void fillArray(JavaObject* res, int numValues, UserClassArray* classArray);
 };
 
 /// Attribute - This class represents JVM attributes to Java class, methods and

@@ -57,7 +57,7 @@ JavaObjectVMMethod* VMMeth) {
       Reader reader(annotationsAtt, cl->bytes);
       AnnotationReader AR(reader, cl);
 	  methodType = method->getReturnType(cl->classLoader);
-      res = AR.createElementValue(true, methodType);
+      res = AR.createElementValue(true, methodType, method->name);
     }
   }
 

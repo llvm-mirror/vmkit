@@ -1750,13 +1750,15 @@ void AnnotationReader::readElementValue() {
   }
 }
 
-JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMethod, JavaObject* type) {
+JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMethod, JavaObject* type, const UTF8* lastKey) {
   JavaObject* res = 0;
   JavaObject* tmp = 0;
   JavaString* str = 0;
   JavaObject* field = 0;
   JavaObject* clazzLoaded = 0;
   JavaObject* classOfCurrentAnnotationProperty = 0;
+  JavaObject* newHashMap = 0;
+  JavaObject* annotationClass = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(tmp, 0);
   llvm_gcroot(str, 0);
@@ -1764,6 +1766,8 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
   llvm_gcroot(field, 0);
   llvm_gcroot(type, 0);
   llvm_gcroot(classOfCurrentAnnotationProperty, 0);
+  llvm_gcroot(newHashMap, 0);
+  llvm_gcroot(annotationClass, 0);
 
   uint8 tag = reader.readU1();
 	
@@ -1780,8 +1784,8 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
   } else if (tag == 'C') {
     uint32 val = cl->ctpInfo->IntegerAt(reader.readU2());
     ddprintf("C=%c", val);
-    res = upcalls->intClass->doNew(vm);
-    upcalls->intValue->setInstanceInt32Field(res, val);
+    res = upcalls->charClass->doNew(vm);
+    upcalls->charValue->setInstanceInt16Field(res, val);
 
   } else if (tag == 'D') {
     double val = cl->ctpInfo->DoubleAt(reader.readU2());
@@ -1866,6 +1870,7 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
 
   } else if (tag == '[') {
     uint16 numValues = reader.readU2();
+    classOfCurrentAnnotationProperty = type;
     if (!nextParameterIsTypeOfMethod) {
 		UserCommonClass* uss =  UserCommonClass::resolvedImplClass(vm, type, false);
 		//printf("Class name : %s\n", UTF8Buffer(uss->name).cString());
@@ -1875,16 +1880,31 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
 		assert((i < clazzOfAnnotation->nbVirtualMethods) && "Incorrect property for annotation");
 		classOfCurrentAnnotationProperty = clazzOfAnnotation->virtualMethods[i].getReturnType(this->cl->classLoader);
     }
-	UserClassArray* clazzOfProperty = UserCommonClass::resolvedImplClass(vm, nextParameterIsTypeOfMethod? type : classOfCurrentAnnotationProperty, false)->asArrayClass();
-
+	UserClassArray* clazzOfProperty = UserCommonClass::resolvedImplClass(vm, classOfCurrentAnnotationProperty, false)->asArrayClass();
 	//printf("Class name is : %s\n", UTF8Buffer(clazzOfProperty->name).cString());
 	res = clazzOfProperty->doNew(numValues, vm);
 	assert(res && "Error creating array of that type");
-    fillArray(res, numValues);
+    fillArray(res, numValues, clazzOfProperty);
 
-  } else {
+  } else if (tag == '@') {
+	  uint16 typeIndex = reader.readU2();
+	  annotationClass = type;
+	  if (!nextParameterIsTypeOfMethod) {
+	  		UserCommonClass* uss =  UserCommonClass::resolvedImplClass(vm, type, false);
+	  		//printf("Class name : %s\n", UTF8Buffer(uss->name).cString());
+	  		UserClass* clazzOfAnnotation = uss->asClass();
+	  		uint16 i = 0;
+	  		while ( i < clazzOfAnnotation->nbVirtualMethods && !(lastKey->equals(clazzOfAnnotation->virtualMethods[i].name))) i++;
+	  		assert((i < clazzOfAnnotation->nbVirtualMethods) && "Incorrect property for annotation");
+	  		annotationClass = clazzOfAnnotation->virtualMethods[i].getReturnType(this->cl->classLoader);
+	 }
+
+	  newHashMap = createAnnotationMapValues(annotationClass);
+	  res = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
+  }
+  else {
     // Element_value Annotation not implemented
-    fprintf(stderr, "Annotation not supported for %c type\n", tag);
+    fprintf(stderr, "Wrong classfile format\n");
     abort();
   }
   ddprintf("\n");
@@ -1892,18 +1912,22 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
   return res;
 }
 
-void AnnotationReader::fillArray(JavaObject* res, int numValues) {
+void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray* classArray) {
 	JavaString* str = 0;
 	JavaObject* clazzObject = 0;
 	JavaObject* field = 0;
 	JavaObject* clazzLoaded = 0;
 	JavaObject* myEnum = 0;
+	JavaObject* annotationClass = 0;
+	JavaObject* newHashMap = 0;
 	llvm_gcroot(res, 0);
 	llvm_gcroot(str, 0);
 	llvm_gcroot(clazzObject, 0);
 	llvm_gcroot(clazzLoaded, 0);
 	llvm_gcroot(field, 0);
 	llvm_gcroot(myEnum, 0);
+	llvm_gcroot(annotationClass, 0);
+	llvm_gcroot(newHashMap, 0);
 
 	// FIXME : Do something with all casts
 
@@ -1915,6 +1939,9 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues) {
 	const UTF8* s = 0, *n = 0, * m = 0;
 	JnjvmClassLoader* JCL;
 	UserCommonClass* clLoaded;
+	UserCommonClass* uss;
+	UserClassArray* arrayClass;
+	UserCommonClass* aaa;
 
 	UserClassArray* array = 0;
 	Jnjvm* vm = JavaThread::get()->getJVM();
@@ -1998,8 +2025,13 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues) {
 				ArrayObject::setElement((ArrayObject *)res, clazzObject, i);
 				break;
 			case '@':
-				fprintf(stderr, "Annotation not supported for %c (nested annotations) type\n", tag);
-				abort();
+				reader.readU2();
+				aaa = classArray->_baseClass;
+				annotationClass = aaa->getDelegatee();
+				newHashMap = createAnnotationMapValues(annotationClass);
+				clazzObject = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
+
+				ArrayObject::setElement((ArrayObject *)res, clazzObject, i);
 				break;
 			default:
 				fprintf(stderr, "Wrong class file\n");
@@ -2034,10 +2066,9 @@ JavaObject* AnnotationReader::createAnnotationMapValues(JavaObject* type) {
   for (uint16 j = 0; j < numPairs; ++j) {
     uint16 nameIndex = reader.readU2();
     key = cl->ctpInfo->UTF8At(nameIndex);
-    lastKey = key;
     dprintf("keyAn:%s|", PrintBuffer(key).cString());
 
-    tmp = createElementValue(false, type);
+    tmp = createElementValue(false, type, key);
     str = JavaString::internalToJava(key, vm);
     upcalls->putHashMap->invokeJavaObjectVirtual(vm, HashMap, newHashMap, &str, &tmp);
   }
