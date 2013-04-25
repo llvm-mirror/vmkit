@@ -44,6 +44,27 @@ const char* Jnjvm::dirSeparator = "/";
 const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
+/**
+ * In JVM specification, the virtual machine should execute some code.
+ * See Runtime.addShutdownHook
+ * In GNUClasspath the default behavior when the program call System.exit
+ * is to execute such a code.
+ * Hence, the only mission of this thread is to call System.exit when
+ * the user press Ctrl_C
+ */
+void threadToDetectCtrl_C(vmkit::Thread* th) {
+	while (!vmkit::finishForCtrl_C) {
+		vmkit::lockForCtrl_C.lock();
+		vmkit::condForCtrl_C.wait(&vmkit::lockForCtrl_C);
+		vmkit::lockForCtrl_C.unlock(th);
+	}
+	fprintf(stderr, "Crazy stuff\n");
+	JavaThread* kk = (JavaThread*)th;
+	UserClass* cl = kk->getJVM()->upcalls->SystemClass;
+	kk->getJVM() -> upcalls->SystemExit->invokeIntStatic(kk->getJVM(), cl, 0);
+}
+
+
 /// initialiseClass - Java class initialization. Java specification §2.17.5.
 
 void UserClass::initialiseClass(Jnjvm* vm) {
@@ -1320,6 +1341,9 @@ void Jnjvm::runApplication(int argc, char** argv) {
   argumentsInfo.argv = argv;
   mainThread = new JavaThread(this);
   mainThread->start((void (*)(vmkit::Thread*))mainJavaStart);
+
+  JavaThread* th = new JavaThread(this);
+  th->start((void (*)(vmkit::Thread*))threadToDetectCtrl_C);
 }
 
 Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,

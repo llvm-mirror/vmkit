@@ -68,9 +68,9 @@ public:
 	ParkLock();
 	~ParkLock();
 
-	void park(bool isAbsolute, int64_t time);
+	void park(bool isAbsolute, int64_t time, JavaThread* thread);
 	void unpark();
-	void interrupt();
+//	void interrupt();
 };
 
 /// JavaThread - This class is the internal representation of a Java thread.
