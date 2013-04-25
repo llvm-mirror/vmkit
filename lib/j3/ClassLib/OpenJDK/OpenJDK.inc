@@ -187,6 +187,7 @@ JVM_InternString(JNIEnv *env, jstring _str) {
   BEGIN_JNI_EXCEPTION
 
   Jnjvm* vm = JavaThread::get()->getJVM();
+  //vmkit::Collector::collect();
   array = JavaString::strToArray(str, vm);
   res = vm->constructString(array);
 
@@ -2588,16 +2589,14 @@ JNIEXPORT jint JNICALL
 JVM_Read(jint fd, char *buf, jint nbytes) {
   BEGIN_JNI_EXCEPTION
   vmkit::Thread* th = vmkit::Thread::get();
-  assert(th && "Thread was not found");
-  //void* ptr = __builtin_frame_address(0);
   jint res = 0;
-  if (fd)
+  //if (fd)
+  //	res = read(fd, buf, nbytes);
+  //else {
+  	th->enterUncooperativeCode();
   	res = read(fd, buf, nbytes);
-  else {
-  	//th->enterUncooperativeCode((uint16_t)2);
-  	res = read(fd, buf, nbytes);
-  	//th->leaveUncooperativeCode();
-  }
+  	th->leaveUncooperativeCode();
+  //}
   RETURN_FROM_JNI(res);
   END_JNI_EXCEPTION
   return -1;
@@ -2764,13 +2763,27 @@ JVM_Bind(jint fd, struct sockaddr *him, jint len) {
 
 JNIEXPORT jint JNICALL
 JVM_Accept(jint fd, struct sockaddr *him, jint *len) {
-  return accept(fd, him, (socklen_t*)len);
+	BEGIN_JNI_EXCEPTION
+	vmkit::Thread* th = vmkit::Thread::get();
+  	th->enterUncooperativeCode();
+  	jint res = accept(fd, him, (socklen_t*)len);
+  	th->leaveUncooperativeCode();
+	RETURN_FROM_JNI(res);
+	END_JNI_EXCEPTION
+	return -1;
 }
 
 JNIEXPORT jint JNICALL
 JVM_RecvFrom(jint fd, char *buf, int nBytes,
                   int flags, struct sockaddr *from, int *fromlen) {
-  return recvfrom(fd, buf, nBytes, flags, from, (socklen_t*)fromlen);
+    BEGIN_JNI_EXCEPTION
+	vmkit::Thread* th = vmkit::Thread::get();
+  	th->enterUncooperativeCode();
+  	jint res = recvfrom(fd, buf, nBytes, flags, from, (socklen_t*)fromlen);
+  	th->leaveUncooperativeCode();
+	RETURN_FROM_JNI(res);
+	END_JNI_EXCEPTION
+	return -1;
 }
 
 JNIEXPORT jint JNICALL
@@ -2985,7 +2998,59 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass) {
  */
 JNIEXPORT jintArray JNICALL
 JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) {
-  NYI();
+	ArraySInt32* res = 0;
+	jintArray result = 0;
+	llvm_gcroot(res, 0);
+	llvm_gcroot(result, 0);
+	
+	BEGIN_JNI_EXCEPTION
+  	/* If new thread states are added in future JDK and VM versions,
+	   this should check if the JDK version is compatible with thread
+	   states supported by the VM.  Return NULL if not compatible.
+	
+	   This function must map the VM java_lang_Thread::ThreadStatus
+	   to the Java thread state that the JDK supports. */
+	Jnjvm* vm = JavaThread::get()->getJVM();
+	Classpath* upcalls = vm->upcalls;
+	UserClassArray* array = upcalls->ArrayOfInt;
+
+	switch (javaThreadState) {
+    case vmkit::LockingThread::StateNew:
+    case vmkit::LockingThread::StateRunning:
+    case vmkit::LockingThread::StateBlocked:
+    case vmkit::LockingThread::StateTerminated:
+	{
+		res = (ArraySInt32*)array->doNew(1, vm);
+		result = (jintArray)res;
+		ArraySInt32::setElement(res, javaThreadState , 0);
+		break;
+	}
+
+    case vmkit::LockingThread::StateWaiting:
+	{
+		res = (ArraySInt32*)array->doNew(2, vm);
+		result = (jintArray)res;
+		ArraySInt32::setElement(res, vmkit::LockingThread::StateWaiting , 0);
+		ArraySInt32::setElement(res, vmkit::LockingThread::StateParked , 1);
+		break;
+	}
+
+    case vmkit::LockingThread::StateTimeWaiting:
+	{
+		res = (ArraySInt32*)array->doNew(2, vm);
+		result = (jintArray)res;
+		ArraySInt32::setElement(res, vmkit::LockingThread::StateTimeWaiting , 0);
+		ArraySInt32::setElement(res, vmkit::LockingThread::StateTimeParked , 1);
+		break;
+	}
+
+    default:
+		/* Unknown state - probably incompatible JDK version */
+		break;
+	}
+	RETURN_FROM_JNI(result);
+	END_JNI_EXCEPTION
+	return NULL;
 }
 
 /*
@@ -2998,7 +3063,94 @@ JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) {
  */
 JNIEXPORT jobjectArray JNICALL
 JVM_GetThreadStateNames(JNIEnv* env, jint javaThreadState, jintArray values) {
-  NYI();
+	BEGIN_JNI_EXCEPTION
+	vmkit::Thread* th = vmkit::Thread::get();
+  	//th->enterUncooperativeCode();
+  	
+
+  ArrayObject* res = 0;
+jobjectArray result = 0;
+JavaObject* str = 0;
+llvm_gcroot(res, 0);
+llvm_gcroot(result, 0);
+llvm_gcroot(str, 0);
+llvm_gcroot(values, 0);
+
+Jnjvm* vm = JavaThread::get()->getJVM();
+Classpath* upcalls = vm->upcalls;
+UserClassArray* array = upcalls->ArrayOfString;
+
+JnjvmClassLoader* loader;
+
+  switch (javaThreadState) {
+    case vmkit::LockingThread::StateNew:
+		{
+			//assert(ia.get_length() == 1 && ia.get_element(0) == THREAD_STATE_NEW);
+
+			res = (ArrayObject*)array->doNew(1, vm);
+			result = (jobjectArray)res;
+			str = (vm->asciizToStr("NEW"));
+			ArrayObject::setElement(res, str, 0);
+			break;
+		}
+
+    case vmkit::LockingThread::StateRunning:
+		{
+			res = (ArrayObject*)array->doNew(1, vm);
+			result = (jobjectArray)res;
+			str = (vm->asciizToStr("RUNNABLE"));
+			ArrayObject::setElement(res, str, 0);
+			break;
+		}
+
+    case vmkit::LockingThread::StateBlocked:
+		{
+			res = (ArrayObject*)array->doNew(1, vm);
+			result = (jobjectArray)res;
+			str = (vm->asciizToStr("BLOCKED"));
+			ArrayObject::setElement(res, str, 0);
+			break;
+		}
+
+    case vmkit::LockingThread::StateWaiting:
+		{
+			res = (ArrayObject*)array->doNew(2, vm);
+			result = (jobjectArray)res;
+			str = (vm->asciizToStr("WAITING.OBJECT_WAIT"));
+			ArrayObject::setElement(res, str, 0);
+			str = (vm->asciizToStr("WAITING.PARKED"));
+			ArrayObject::setElement(res, str, 1);
+			break;
+		}
+
+    case vmkit::LockingThread::StateTimeWaiting:
+		{	
+			res = (ArrayObject*)array->doNew(2, vm);
+			result = (jobjectArray)res;
+			str = (vm->asciizToStr("TIMED_WAITING.OBJECT_WAIT"));
+			ArrayObject::setElement(res, str, 0);
+			str = (vm->asciizToStr("TIMED_WAITING.PARKED"));
+			ArrayObject::setElement(res, str, 1);
+			break;
+		}
+
+    case vmkit::LockingThread::StateTerminated:
+		{
+			res = (ArrayObject*)array->doNew(1, vm);
+			result = (jobjectArray)res;
+			str = (vm->asciizToStr("TERMINATED"));
+			ArrayObject::setElement(res, str, 0);
+			break;
+		}
+
+	default:
+		/* Unknown state - probably incompatible JDK version */
+		break;
+	}
+	//th->leaveUncooperativeCode();
+	RETURN_FROM_JNI(result);
+	END_JNI_EXCEPTION
+	return NULL;
 }
 
 JNIEXPORT void JNICALL
