@@ -1,3 +1,6 @@
+###############################################################################
+#   build system data
+###############################################################################
 PROJECT_NAME := @PACKAGE_NAME@
 PROJ_VERSION := @PACKAGE_VERSION@
 
@@ -8,12 +11,13 @@ PROJ_OBJ_ROOT := $(subst //,/,@abs_top_builddir@)
 PROJ_OBJ_CWD:= $(call realpath, .)
 PROJ_SRC_CWD:= $(call realpath, $(patsubst $(PROJ_OBJ_ROOT)%,$(PROJ_SRC_ROOT)%,$(PROJ_OBJ_CWD)))
 
+CONFIG_FILES=@ac_config_files@
+CONFIG_HEADERS=@ac_config_headers@
+
+###############################################################################
+#   options
+###############################################################################
 MMTK_PLAN = @MMTK_PLAN@
-MMTK_PLAN_HEADER = @MMTK_PLAN_HEADER@
-WITH_64 = @WITH_64@
-ANT = @ANT@
-JAVAC= @JAVAC@
-ZIP =@ZIP@
 
 CLASSPATH_IMPL = @classpathimpl@
 
@@ -27,31 +31,57 @@ $(error Unsupported classpath implementation "$(CLASSPATH_IMPL)")
 	endif
 endif
 
-LLVM_CONFIG=@LLVM_CONFIG@
-
-SHOPT=@SHOPT@
-LDOPT=@LDOPT@
-EXEEXT=@EXEEXT@
-SHLIBEXT=@SHLIBEXT@
-
 OPTIMIZED=@OPTIMIZED@
 DEBUG=@DEBUG@
 ASSERT=@ASSERT@
 
 JAVAC_TARGET		:= 1.5
 
-ENABLE_OPTIMIZED=1
-
 GLIBJ = @classpathglibj@
+
+###############################################################################
+#   host dependent configurations
+###############################################################################
+SHOPT=@SHOPT@
+LDOPT=@LDOPT@
+EXEEXT=@EXEEXT@
+SHLIBEXT=@SHLIBEXT@
+
+WITH_64 = @WITH_64@
+
+###############################################################################
+#   binaries
+###############################################################################
+LLVM_CONFIG=@LLVM_CONFIG@
+LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
+CLANG=$(LLVM_BIN)/clang
+CLANGXX=$(LLVM_BIN)/clang++
+LLVMAS=$(LLVM_BIN)/llvm-as
+LLC=$(LLVM_BIN)/llc
+LOPT=$(LLVM_BIN)/opt
+LLVMLINK=$(LLVM_BIN)/llvm-link
+
+ANT=@ANT@
+JAVAC=@JAVAC@
+ZIP=@ZIP@
+MV=@MV@
+RM=@RM@
+CP=@CP@
+Archive=@AR@ cru
+Ranlib=@RANLIB@
+NM=@NM@
+LD=@LD@
+MKDIR=mkdir -p @MKDIR@
+TOUCH=@TOUCH@
+GREP=@GREP@
+
+ENABLE_OPTIMIZED=1
 
 # Using conditional compilation for now, until a proper interface/architecture
 # is figured out and implemented.
 ifeq (@classpathimpl@,openjdk)
 COMMON_CFLAGS+=-DUSE_OPENJDK
 endif
-
-CONFIG_FILES=@ac_config_files@
-CONFIG_HEADERS=@ac_config_headers@
 
 ifeq ($(ENABLE_OPTIMIZED),1)
 	LLC_CPP_FLAGS		:=

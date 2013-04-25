@@ -326,31 +326,21 @@ dnl===
 dnl===-----------------------------------------------------------------------===
 
 dnl Check for compilation tools
-AC_PROG_CPP
-AC_PROG_CC(gcc)
-AC_PROG_CXX(g++)
 
 AC_PROG_NM
 AC_SUBST(NM)
 
 dnl Check for the tools that the makefiles require
-AC_PROG_LN_S
-AC_PATH_PROG(CMP, [cmp], [cmp])
-AC_PATH_PROG(CP, [cp], [cp])
-AC_PATH_PROG(DATE, [date], [date])
-AC_PATH_PROG(FIND, [find], [find])
-AC_PATH_PROG(GREP, [grep], [grep])
-AC_PATH_PROG(MKDIR,[mkdir],[mkdir])
-AC_PATH_PROG(MV,   [mv],   [mv])
+AC_PATH_PROG(LD,    [ld],    [ld])
+AC_PATH_PROG(AR,    [ar],    [ar])
+AC_PROG_GREP
+AC_PROG_MKDIR_P
+AC_PATH_PROG(MV,    [mv],    [mv])
+AC_PATH_PROG(RM,    [rm],    [rm])
+AC_PATH_PROG(CP,    [cp],    [cp])
+AC_PATH_PROG(TOUCH, [touch], [touch])
 AC_PROG_RANLIB
-AC_PATH_PROG(RM,   [rm],   [rm])
-AC_PATH_PROG(SED,  [sed],  [sed])
-AC_PATH_PROG(TAR,  [tar],  [gtar])
-AC_PATH_PROG(BINPWD,[pwd],  [pwd])
-AC_PATH_PROG(CAT,[cat],  [cat])
 
-AC_PATH_PROG(LLVMAS, [llvm-as],  [llvm-as])
-AC_PATH_PROG(LLC, [llc],  [llc])
 AC_PATH_PROG(ANT, [ant])
 AC_PATH_PROG(JAVAC, [javac], [javac])
 AC_PATH_PROG(ZIP, [zip], [zip])

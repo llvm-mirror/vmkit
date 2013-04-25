@@ -30,6 +30,10 @@ else
 BUILD_NAME=Release+Asserts
 endif
 
+ifeq ($(DEBUG),1)
+  COMMON_CFLAGS+=-g
+endif
+
 ###############################################################################
 #   Nice printing
 ###############################################################################
@@ -98,39 +102,14 @@ $(PROJ_OBJ_ROOT)/configure: $(PROJ_SRC_ROOT)/autoconf/configure.ac $(PROJ_SRC_RO
 	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status --recheck
 
 ###############################################################################
-#   Build directories
+#   Build directories and generated binaries
 ###############################################################################
 BIN_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
 LIB_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
 BUILD_DIR=$(PROJ_OBJ_CWD)/$(BUILD_NAME)
 
-LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
-
-CLANG=$(LLVM_BIN)/clang
-CLANGXX=$(LLVM_BIN)/clang++
-LLVMAS=$(LLVM_BIN)/llvm-as
-LLC=$(LLVM_BIN)/llc
-LOPT=$(LLVM_BIN)/opt
-LLVMLINK=$(LLVM_BIN)/llvm-link
-MV=mv
-LLVMCC=$(LLVM_BIN)/clang
-Archive=ar cru
-Ranlib=ranlib
-RM=rm
-CP=cp
-NM=nm
-LD=ld
-LArchive=$(LLVM_BIN)/llvm-ar rcsf
-MKDIR=mkdir -p
-TOUCH=touch
-GREP=grep
-
 PREPARE_CODE=$(LIB_DIR)/prepare-code$(SHLIBEXT)
 VMJC=$(BIN_DIR)/vmjc$(EXEEXT)
-
-ifeq ($(DEBUG),1)
-  COMMON_CFLAGS+=-g
-endif
 
 ###############################################################################
 #   Main targets
@@ -263,7 +242,7 @@ all::
 	$(Verb) $(LLC) $(LLC_ASM_FLAGS) -disable-fp-elim -disable-cfi -load=$(PREPARE_CODE) $(LIB_DIR)/FinalMMTk.bc -o $(BUILD_DIR)/FinalMMTk.s
 	$(Verb) $(GREP) -v '\.loc[^0-9]\+[0-9]\+ 0' $(BUILD_DIR)/FinalMMTk.s > $(BUILD_DIR)/FinalMMTk.s.remove_invalid_dot_loc
 	$(Verb) $(MV) -f $(BUILD_DIR)/FinalMMTk.s.remove_invalid_dot_loc $(BUILD_DIR)/FinalMMTk.s
-	$(Verb) $(LLVMCC) -c $(BUILD_DIR)/FinalMMTk.s -o $(BUILD_DIR)/FinalMMTk.o
+	$(Verb) $(CLANG) -c $(BUILD_DIR)/FinalMMTk.s -o $(BUILD_DIR)/FinalMMTk.o
 	$(Verb) $(Archive) $(LIB_DIR)/libFinalMMTk.a $(BUILD_DIR)/FinalMMTk.o
 	$(Verb) $(Ranlib) $(LIB_DIR)/libFinalMMTk.a
 	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=VTgcmalloc $(LIB_DIR)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkMallocInline.inc
