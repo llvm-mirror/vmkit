@@ -1325,7 +1325,7 @@ void Jnjvm::runApplication(int argc, char** argv) {
 Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,
              vmkit::CompiledFrames** frames,
              JnjvmBootstrapLoader* loader) : 
-  VirtualMachine(Alloc, frames), lockSystem(Alloc) {
+  VirtualMachine(Alloc, frames), lockSystem(Alloc), scanStaleReferences(false) {
 
   classpath = getenv("CLASSPATH");
   if (classpath == NULL) classpath = ".";
@@ -1370,6 +1370,12 @@ void Jnjvm::startCollection() {
   referenceThread->PhantomReferencesQueue.acquire();
 }
   
+void Jnjvm::endCollectionBeforeUnlockingWorld()
+{
+	// Stale references can no more exist, until a bundle is uninstalled later.
+	scanStaleReferences = false;
+}
+
 void Jnjvm::endCollection() {
   finalizerThread->FinalizationQueueLock.release();
   referenceThread->ToEnqueueLock.release();

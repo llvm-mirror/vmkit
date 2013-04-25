@@ -161,6 +161,7 @@ public:
   
   /// endCollection - Code after running a GC.
   ///
+  virtual void endCollectionBeforeUnlockingWorld() {}
   virtual void endCollection() {}
   
   /// scanWeakReferencesQueue - Scan all weak references. Called by the GC

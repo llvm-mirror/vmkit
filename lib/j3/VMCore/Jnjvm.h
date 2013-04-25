@@ -126,6 +126,7 @@ private:
   JavaReferenceThread* referenceThread;
 
   virtual void startCollection();
+  virtual void endCollectionBeforeUnlockingWorld();
   virtual void endCollection();
   virtual void scanWeakReferencesQueue(word_t closure);
   virtual void scanSoftReferencesQueue(word_t closure);
@@ -371,6 +372,8 @@ public:
   virtual void resetReferenceIfStale(const void* source, void** ref);
   void dumpClassLoaderBundles();
 
+  void notifyBundleUninstalled(int64_t bundleID);
+
   int64_t getClassLoaderBundleID(JnjvmClassLoader* loader);
   JnjvmClassLoader* getBundleClassLoader(int64_t bundleID);
   void setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader);
@@ -385,6 +388,7 @@ protected:
   // Link between OSGi (bundle ID) and Java (class loaders).
   vmkit::LockRecursive bundleClassLoadersLock;
   bundleClassLoadersType bundleClassLoaders;
+  volatile bool scanStaleReferences;
 
 #endif
 };
