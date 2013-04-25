@@ -3,6 +3,8 @@
 #include "Jnjvm.h"
 #include "VMStaticInstance.h"
 
+#include <sstream>
+
 #if RESET_STALE_REFERENCES
 
 #define DEBUG_VERBOSE_STALE_REF		1
@@ -26,23 +28,17 @@ void Jnjvm::resetReferencesToBundle(int64_t bundleID)
 void Jnjvm::resetReferenceIfStale(const void* source, void** ref)
 {
 	if (!ref || !(*ref)) return;	// Invalid or null reference
+	const JavaObject* src = reinterpret_cast<const JavaObject*>(source);
 	JavaObject** objRef = reinterpret_cast<JavaObject**>(ref);
 
 	// Check the type of Java object. Some Java objects are not real object, but
 	// are bridges between Java and the VM objects.
-	if (VMClassLoader::isVMClassLoader(*objRef)) {
-		return resetReferenceIfStale(
-			reinterpret_cast<const JavaObject*>(source),
-			reinterpret_cast<VMClassLoader**>(ref));
-	} else if (VMStaticInstance::isVMStaticInstance(*objRef)) {
-		return resetReferenceIfStale(
-			reinterpret_cast<const JavaObject*>(source),
-			reinterpret_cast<VMStaticInstance**>(ref));
-	} else {
-		return resetReferenceIfStale(
-			reinterpret_cast<const JavaObject*>(source),
-			objRef);
-	}
+	if (VMClassLoader::isVMClassLoader(*objRef))
+		resetReferenceIfStale(src, reinterpret_cast<VMClassLoader**>(ref));
+	else if (VMStaticInstance::isVMStaticInstance(*objRef))
+		resetReferenceIfStale(src, reinterpret_cast<VMStaticInstance**>(ref));
+	else
+		resetReferenceIfStale(src, objRef);
 }
 
 void Jnjvm::resetReferenceIfStale(const JavaObject *source, VMClassLoader** ref)
@@ -92,6 +88,8 @@ void Jnjvm::resetReferenceIfStale(const JavaObject *source, JavaObject** ref)
 #endif
 
 	CommonClass* ccl = JavaObject::getClass(*ref);
+	assert (ccl && "Object Class is not null.");
+
 	if (!ccl->classLoader->isZombie()) return;
 
 #if DEBUG_VERBOSE_STALE_REF
