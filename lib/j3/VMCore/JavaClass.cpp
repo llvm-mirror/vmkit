@@ -1753,11 +1753,15 @@ void AnnotationReader::readElementValue() {
 JavaObject* AnnotationReader::createElementValue() {
   uint8 tag = reader.readU1();
   JavaObject* res = 0;
+  JavaObject* clazzLoaded = 0;
   JavaObject* tmp = 0;
   JavaString* str = 0;
+  JavaObject* field = 0;
   llvm_gcroot(res, 0);
   llvm_gcroot(tmp, 0);
   llvm_gcroot(str, 0);
+  llvm_gcroot(clazzLoaded, 0);
+  llvm_gcroot(field, 0);
 	
   Jnjvm* vm = JavaThread::get()->getJVM();
   Classpath* upcalls = vm->upcalls;
@@ -1819,11 +1823,35 @@ JavaObject* AnnotationReader::createElementValue() {
   } else if (tag == 'e') {
     // Element_value Enumeration not implemented
     const UTF8* n = cl->ctpInfo->UTF8At(reader.readU2());
-    ddprintf("%s", PrintBuffer(n).cString());
     const UTF8* m = cl->ctpInfo->UTF8At(reader.readU2());
-    ddprintf("%s", PrintBuffer(m).cString());
-    fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
-    abort();
+    printf("I am here looking for enum %s and value %s\n", UTF8Buffer(n).cString(), UTF8Buffer(m).cString());
+    JnjvmClassLoader* JCL = this->cl->classLoader;
+    n = n->extract(JCL->hashUTF8, 1,n->size-1);
+    UserCommonClass* cl = JCL->loadClassFromUserUTF8(n,true,false, NULL);
+    if (cl != NULL && !cl->isPrimitive()) {
+    	printf("Ok, I found the class\n");
+    	if (cl->asClass())
+    		cl->asClass()->initialiseClass(vm);
+    	clazzLoaded = cl->getClassDelegatee(vm);
+    	str = JavaString::internalToJava(m, vm);
+    	assert(clazzLoaded && "Class not found");
+    	assert(str && "Null string");
+    	printf("Ok1\n");
+    	field = upcalls->getFieldInClass->invokeJavaObjectVirtual(vm, upcalls->newClass, clazzLoaded, &str);
+    	printf("Ok2\n");
+    	assert(field && "Field not found");
+    	JavaObject* obj = 0;
+    	printf("Ok3\n");
+    	res = upcalls->getInField->invokeJavaObjectVirtual(vm, upcalls->newField, field, &obj);
+    	printf("Ok4\n");
+    	assert(res && "Field value not found");
+    } else {
+    	str = JavaString::internalToJava(n, vm);
+    	vm->classNotFoundException(str);
+    }
+
+    //fprintf(stderr, "Annotation not supported for %c (enumerations) type\n", tag);
+    //abort();
 
   } else if (tag == 'c') {
     ddprintf("class=");
@@ -1836,9 +1864,8 @@ JavaObject* AnnotationReader::createElementValue() {
     UserCommonClass* cl = JCL->loadClassFromUserUTF8(m,true,false, NULL);
 
 	if (cl != NULL && !cl->isPrimitive()) {
-		if (cl->asClass()) {
+		if (cl->asClass())
 		  cl->asClass()->initialiseClass(vm);
-		}
 		res = cl->getClassDelegatee(vm);
 	} else {
 	  str = JavaString::internalToJava(m, vm);

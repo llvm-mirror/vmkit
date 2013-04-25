@@ -84,6 +84,8 @@ JavaMethod* Classpath::initMethod;
 JavaMethod* Classpath::initVMMethod;
 JavaMethod* Classpath::initField;
 JavaMethod* Classpath::initVMField;
+JavaMethod* Classpath::getInField;
+JavaMethod* Classpath::getFieldInClass;
 Class*      Classpath::newField;
 Class*      Classpath::newVMField;
 Class*      Classpath::newMethod;
@@ -673,6 +675,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   initVMMethod =
       UPCALL_METHOD(loader, "java/lang/reflect/VMMethod", "<init>",
                     "()V", ACC_VIRTUAL);
+
    // Ljava/lang/Class;Ljava/lang/String;I
   newMethod =
     UPCALL_CLASS(loader, "java/lang/reflect/Method");
@@ -693,6 +696,12 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   initVMField =
       UPCALL_METHOD(loader, "java/lang/reflect/VMField", "<init>",
                     "(Ljava/lang/Class;Ljava/lang/String;I)V", ACC_VIRTUAL);
+
+  getFieldInClass = UPCALL_METHOD(loader, "java/lang/Class", "getField",
+            "(Ljava/lang/String;)Ljava/lang/reflect/Field;", ACC_VIRTUAL);
+
+  getInField = UPCALL_METHOD(loader, "java/lang/reflect/Field", "get",
+          "(Ljava/lang/Object;)Ljava/lang/Object;", ACC_VIRTUAL);
 
   newField =
     UPCALL_CLASS(loader, "java/lang/reflect/Field");

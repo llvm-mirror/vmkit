@@ -96,6 +96,8 @@ public:
   ISOLATE_STATIC JavaMethod* initVMMethod;
   ISOLATE_STATIC JavaMethod* initField;
   ISOLATE_STATIC JavaMethod* initVMField;
+  ISOLATE_STATIC JavaMethod* getInField;
+  ISOLATE_STATIC JavaMethod* getFieldInClass;
   ISOLATE_STATIC UserClassArray* methodArrayClass;
   ISOLATE_STATIC UserClassArray* fieldArrayClass;
   ISOLATE_STATIC UserClass*      newMethod;
