@@ -71,138 +71,74 @@ public:
   static int getModifiers(JavaObjectClass* Cl);
 };
 
-class JavaObjectVMField : public JavaObject {
-private:
-	JavaObjectClass* declaringClass;
-	JavaObject* name;
-	uint32 slot;
-	// others
-public:
-	static void staticTracer(JavaObjectVMField* obj, word_t closure) {
-		vmkit::Collector::markAndTrace(obj, &obj->name, closure);
-		vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
-	}
-
-	static JavaField* getInternalField(JavaObjectVMField* self) {
-		llvm_gcroot(self, 0);
-		UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
-		return &(cls->asClass()->virtualFields[self->slot]);
-	}
-
-	static UserClass* getClass(JavaObjectVMField* self) {
-		llvm_gcroot(self, 0);
-		UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
-		return cls->asClass();
-	}
-};
-
 class JavaObjectField : public JavaObject {
 private:
   uint8 flag;
-  JavaObject* p;
-  JavaObjectVMField* vmField;
+  JavaObjectClass* declaringClass;
+  JavaObject* name;
+  uint32 slot;
 
 public:
 
   static void staticTracer(JavaObjectField* obj, word_t closure) {
-    vmkit::Collector::markAndTrace(obj, &obj->p, closure);
-    vmkit::Collector::markAndTrace(obj, &obj->vmField, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->name, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
 
   static JavaField* getInternalField(JavaObjectField* self) {
     llvm_gcroot(self, 0);
-    return JavaObjectVMField::getInternalField(self->vmField);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return &(cls->asClass()->virtualFields[self->slot]);
   }
 
   static UserClass* getClass(JavaObjectField* self) {
     llvm_gcroot(self, 0);
-    return JavaObjectVMField::getClass(self->vmField);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return cls->asClass();
   }
 
   static JavaObjectField* createFromInternalField(JavaField* field, int i);
 };
 
-class JavaObjectVMMethod : public JavaObject {
-public:
-	JavaObjectClass* declaringClass;
-	JavaString* name;
-	uint32 slot;
-public:
-  	static void staticTracer(JavaObjectVMMethod* obj, word_t closure) {
-  		vmkit::Collector::markAndTrace(obj, &obj->name, closure);
-  		vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
-	}
-
-	static JavaMethod* getInternalMethod(JavaObjectVMMethod* self);
-
-	static UserClass* getClass(JavaObjectVMMethod* self) {
-		llvm_gcroot(self, 0);
-		UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
-		return cls->asClass();
-	}
-};
-
 class JavaObjectMethod : public JavaObject {
 private:
   uint8 flag;
-  JavaObject* p;
-  JavaObjectVMMethod* vmMethod;
+  JavaObjectClass* declaringClass;
+  JavaObject* name;
+  uint32 slot;
 
 public:
   
   static void staticTracer(JavaObjectMethod* obj, word_t closure) {
-    vmkit::Collector::markAndTrace(obj, &obj->p, closure);
-    vmkit::Collector::markAndTrace(obj, &obj->vmMethod, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->name, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
   
   static JavaMethod* getInternalMethod(JavaObjectMethod* self);
   
   static UserClass* getClass(JavaObjectMethod* self) {
     llvm_gcroot(self, 0);
-    return JavaObjectVMMethod::getClass(self->vmMethod);
+    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass); 
+    return cls->asClass();
   }
 
   static JavaObjectMethod* createFromInternalMethod(JavaMethod* meth, int i);
 };
 
-
-class JavaObjectVMConstructor : public JavaObject {
+class JavaObjectConstructor : public JavaObject {
 private:
+  uint8 flag;
   JavaObjectClass* declaringClass;
   uint32 slot;
 
 public:
-  static void staticTracer(JavaObjectVMConstructor* obj, word_t closure) {
-    vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
-  }
-
-  static JavaMethod* getInternalMethod(JavaObjectVMConstructor* self);
-
-  static UserClass* getClass(JavaObjectVMConstructor* self) {
-    llvm_gcroot(self, 0);
-    UserCommonClass* cls = JavaObjectClass::getClass(self->declaringClass);
-    return cls->asClass();
-  }
-};
-
-class JavaObjectConstructor : public JavaObject {
-private:
-  uint8 flag;
-  JavaObject* p;
-  JavaObjectVMConstructor* vmCons;
-
-public:
   static void staticTracer(JavaObjectConstructor* obj, word_t closure) {
-    vmkit::Collector::markAndTrace(obj, &obj->p, closure);
-    vmkit::Collector::markAndTrace(obj, &obj->vmCons, closure);
+    vmkit::Collector::markAndTrace(obj, &obj->declaringClass, closure);
   }
   
   static JavaMethod* getInternalMethod(JavaObjectConstructor* self);
   
-  static UserClass* getClass(JavaObjectConstructor* self) {
-    llvm_gcroot(self, 0);
-    return JavaObjectVMConstructor::getClass(self->vmCons);
-  }
+  static UserClass* getClass(JavaObjectConstructor* self);
 
   static JavaObjectConstructor* createFromInternalConstructor(JavaMethod* cons, int i);
 };
@@ -221,9 +157,13 @@ public:
   static void setVmdata(JavaObjectVMThread* vmthread,
                         JavaThread* internal_thread) {
     llvm_gcroot(vmthread, 0);
+    assert(internal_thread && "Invalid internal thread");
     vmthread->vmdata = internal_thread;
   }
 
+  static JavaThread* getVmdata(JavaObjectVMThread* vmthread) {return vmthread->vmdata;}
+
+  friend std::ostream& operator << (std::ostream&, JavaObjectVMThread&);
 };
 
 

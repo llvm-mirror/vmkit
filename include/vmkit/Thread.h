@@ -219,7 +219,7 @@ public:
     internalClearException();
   }
 
-  bool isVmkitThread() {
+  bool isVmkitThread() const {
     if (!baseAddr) return false;
     else return (((word_t)this) & System::GetVmkitThreadMask()) == baseAddr;
   }

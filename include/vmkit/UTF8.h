@@ -2,6 +2,8 @@
 #define _UTF8_INTERNAL_H_
 
 #include <map>
+#include <iostream>
+#include <string>
 #include "vmkit/Allocator.h"
 #include "vmkit/VmkitDenseMap.h"
 #include "vmkit/VmkitDenseSet.h"
@@ -22,7 +24,7 @@ private:
   
 public:
   /// size - The (constant) size of the UTF8.
-  ssize_t size;
+  int32_t size;
 
   /// elements - Elements of this UTF8.
   /// The size should be set to zero, but this is invalid C99.
@@ -61,6 +63,10 @@ public:
   UTF8(sint32 n) {
     size = n;
   }
+
+  friend std::ostream& operator << (std::ostream&, const UTF8&);
+  void dump() const __attribute__((noinline));
+  int compare(const char *) const;
 };
 
 extern "C" const UTF8 TombstoneKey;

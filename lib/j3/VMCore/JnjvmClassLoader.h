@@ -57,7 +57,7 @@ private:
 
   /// isolate - Which isolate defined me? Null for the bootstrap class loader.
   ///
-  Jnjvm* isolate;
+  Jnjvm* vm;
 
   /// javaLoder - The Java representation of the class loader. Null for the
   /// bootstrap class loader.
@@ -78,7 +78,7 @@ private:
   /// first use of a Java class loader.
   ///
   JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
-                   JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate);
+                   JavaObject* loader, VMClassLoader* vmdata, Jnjvm* VM);
 
   /// lookupComponentName - Try to find the component name of the given array
   /// name. If the component name is not in the table of UTF8s and holder
@@ -132,7 +132,7 @@ public:
  
   /// getIsolate - Returns the isolate that created this class loader.
   ///
-  Jnjvm* getIsolate() const { return isolate; }
+  Jnjvm* getIsolate() const { return vm; }
 
   /// getClasses - Returns the classes this class loader has loaded.
   ///
@@ -490,7 +490,7 @@ public:
 
   /// Is the object a VMClassLoader object?
   ///
-  static bool isVMClassLoader(JavaObject* obj) {
+  static bool isVMClassLoader(const JavaObject* obj) {
     llvm_gcroot(obj, 0);
     return obj->getVirtualTable() == &VT;
   }
@@ -514,7 +514,7 @@ public:
 
   /// getClassLoader - Get the internal class loader.
   ///
-  JnjvmClassLoader* getClassLoader() {
+  JnjvmClassLoader* getClassLoader() const {
     return JCL;
   }
 

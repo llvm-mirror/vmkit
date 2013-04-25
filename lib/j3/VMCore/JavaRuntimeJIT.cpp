@@ -65,9 +65,9 @@ extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index) {
     UserClass* lookup = cl->isArray() ? cl->super : cl->asClass();
     JavaField* field = lookup->lookupField(utf8, sign->keyName, false, true, 0);
   
-    ctpInfo->ctpRes[index] = (void*)field->ptrOffset;
+    ctpInfo->ctpRes[index] = (void*)(intptr_t)field->ptrOffset;
   
-    res = (void*)field->ptrOffset;
+    res = (void*)(intptr_t)field->ptrOffset;
   }
 
   return res;

@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <sstream>
+
 #include "vmkit/Locks.h"
 
 #include "JavaArray.h"
@@ -16,11 +18,13 @@
 #include "JavaTypes.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
+#include "VMStaticInstance.h"
 
 #include <jni.h>
 #include "debug.h"
 
 using namespace j3;
+using namespace std;
 
 static const int hashCodeIncrement = vmkit::GCBitMask + 1;
 uint16_t JavaObject::hashCodeGenerator = hashCodeIncrement;
@@ -366,4 +370,50 @@ bool JavaObject::instanceOf(JavaObject* self, UserCommonClass* cl) {
   llvm_gcroot(self, 0);
   if (self == NULL) return false;
   else return getClass(self)->isSubclassOf(cl);
+}
+
+std::ostream& j3::operator << (std::ostream& os, JavaObjectVMThread& threadObj)
+{
+	for (int retries = 10; (!threadObj.vmdata) && (retries >= 0); --retries)
+		usleep(100);
+
+	if (threadObj.vmdata != NULL)
+		os << *threadObj.vmdata;
+
+	return os;
+}
+
+std::ostream& j3::operator << (std::ostream& os, const JavaObject& obj)
+{
+	if (VMClassLoader::isVMClassLoader(&obj)) {
+		JnjvmClassLoader* loader = ((const VMClassLoader&)obj).getClassLoader();
+		JavaObject* javaLoader = loader->getJavaClassLoader();
+		CommonClass* javaCl = JavaObject::getClass(javaLoader);
+		os << &obj <<
+			"(class=j3::VMClassLoader" <<
+			",loader=" << loader <<
+			",javaLoader=" << javaLoader <<
+			",javaClass=" << *javaCl->name <<
+			')';
+	} else if (VMStaticInstance::isVMStaticInstance(&obj)) {
+		Class* ownerClass = ((const VMStaticInstance&)obj).getOwningClass();
+		void* staticInst = ((const VMStaticInstance&)obj).getStaticInstance();
+		os << &obj <<
+			"(class=j3::VMStaticInstance" <<
+			",ownerClass=" << *ownerClass->name <<
+			",staticInst=" << staticInst <<
+			')';
+	} else {
+		CommonClass* ccl = JavaObject::getClass(&obj);
+		os << &obj <<
+			"(class=" << *ccl->name <<
+			')';
+	}
+
+	return os;
+}
+
+void JavaObject::dump() const
+{
+	cerr << *this << endl;
 }

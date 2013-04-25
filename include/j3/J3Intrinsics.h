@@ -43,7 +43,7 @@ public:
   llvm::Type* UTF8Type;
   llvm::Type* JavaMethodType;
   llvm::Type* JavaFieldType;
-  llvm::Type* AttributType;
+  llvm::Type* AttributeType;
   llvm::Type* JavaThreadType;
   llvm::Type* MutatorThreadType;
   llvm::Type* J3DenseMapType;

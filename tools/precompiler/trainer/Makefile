@@ -19,7 +19,7 @@ include $(LEVEL)/Makefile.common
 PRECOMPILER := $(ToolDir)/precompiler$(EXEEXT)
 
 ifndef VERBOSE
-  J3.Flags := > /dev/null
+#  J3.Flags := > /dev/null
 endif
 
 HelloWorld.class: HelloWorld.java
@@ -33,7 +33,7 @@ generated.bc: $(PRECOMPILER) HelloWorld.class
 Precompiled.bc: HelloWorld.class $(LibDir)/StaticGCPass$(SHLIBEXT) $(LibDir)/StaticGCPrinter$(SHLIBEXT) generated.bc
 	$(Echo) "Building precompiled bootstrap code"
 	$(Verb) $(MKDIR) $(ObjDir)
-	$(Verb) $(LLC) -disable-branch-fold -disable-cfi -disable-debug-info-print -disable-fp-elim -O3 -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) generated.bc -o $(ObjDir)/Precompiled.s
+	$(Verb) $(LLC) -disable-branch-fold -disable-cfi -disable-debug-info-print -disable-fp-elim $(PRECOMPILER_FLAGS) -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) generated.bc -o $(ObjDir)/Precompiled.s
 	$(Verb) $(CC) -c $(ObjDir)/Precompiled.s -o $(ObjDir)/Precompiled.o
 	$(Verb) $(Archive) $(LibDir)/libPrecompiled.a $(ObjDir)/Precompiled.o
 	$(Verb) $(Ranlib) $(LibDir)/libPrecompiled.a

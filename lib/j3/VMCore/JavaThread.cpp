@@ -7,17 +7,21 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <sstream>
+
 #include "vmkit/Locks.h"
 #include "vmkit/Thread.h"
 
 #include "JavaClass.h"
 #include "JavaObject.h"
 #include "JavaThread.h"
+#include "JavaString.h"
 #include "JavaUpcalls.h"
 #include "Jnjvm.h"
 
 
 using namespace j3;
+using namespace std;
 
 JavaThread::JavaThread(Jnjvm* isolate) : MutatorThread() { 
   MyVM = isolate;
@@ -162,4 +166,26 @@ void JNILocalReferences::removeJNIReferences(JavaThread* th, uint32_t num) {
   } else {
     length -= num;
   }
+}
+
+std::ostream& j3::operator << (std::ostream& os, const JavaThread& thread)
+{
+	os << '[' << (void*)(&thread);
+
+	Jnjvm* vm = thread.getJVM();
+	JavaObject* jThread = thread.currentThread();
+	if (vm && jThread) {
+		JavaString* threadNameObj = static_cast<JavaString*>(
+			vm->upcalls->threadName->getInstanceObjectField(jThread));
+		char *threadName = JavaString::strToAsciiz(threadNameObj);
+		os << '(' << threadName << ')';
+		delete [] threadName;
+	}
+
+	return os << ']';
+}
+
+void JavaThread::dump() const
+{
+	cerr << *this << endl;
 }

@@ -100,7 +100,7 @@ JavaObject* consStackElement(vmkit::FrameInfo* FI, intptr_t ip) {
   Class* cl = meth->classDef;
   className = JavaString::internalToJava(cl->name, vm);
   
-  Attribut* sourceAtt = cl->lookupAttribut(Attribut::sourceFileAttribut);
+  JavaAttribute* sourceAtt = cl->lookupAttribute(JavaAttribute::sourceFileAttribute);
   
   // We don't have the bytes if the class was vmjc'ed.
   if (sourceAtt && cl->getBytes()) {

@@ -10,6 +10,8 @@
 #ifndef JNJVM_JAVA_THREAD_H
 #define JNJVM_JAVA_THREAD_H
 
+#include <ostream>
+
 #include "vmkit/Cond.h"
 #include "vmkit/Locks.h"
 #include "vmkit/ObjectLocks.h"
@@ -129,13 +131,13 @@ public:
 
   /// getJVM - Get the Java VM in which this thread executes.
   ///
-  Jnjvm* getJVM() {
+  Jnjvm* getJVM() const {
     return (Jnjvm*)MyVM;
   }
 
   /// currentThread - Return the current thread as a Java object.
   ///
-  JavaObject* currentThread() {
+  JavaObject* currentThread() const {
     return javaThread;
   }
  
@@ -215,6 +217,10 @@ private:
   virtual void internalClearException() {
     pendingException = NULL;
   }
+
+public:
+  friend std::ostream& operator << (std::ostream&, const JavaThread&);
+  void dump() const __attribute__((noinline));
 };
 
 } // end namespace j3

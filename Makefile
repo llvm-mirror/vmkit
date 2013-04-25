@@ -27,4 +27,3 @@ FilesToConfig := \
   include/llvm/Config/config.h \
   lib/j3/Classpath/Classpath.h \
 FilesToConfigPATH  := $(addprefix $(LLVM_OBJ_ROOT)/,$(FilesToConfig))
-

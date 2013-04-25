@@ -17,7 +17,7 @@
 namespace j3 {
 
 class ArrayObject;
-class Attribut;
+class JavaAttribute;
 class ClassBytes;
 class JnjvmBootstrapLoader;
 
@@ -89,7 +89,7 @@ private:
   llvm::Constant* CreateConstantFromClass(Class* cl);
   llvm::Constant* CreateConstantFromClassPrimitive(ClassPrimitive* cl);
   llvm::Constant* CreateConstantFromClassArray(ClassArray* cl);
-  llvm::Constant* CreateConstantFromAttribut(Attribut& attribut);
+  llvm::Constant* CreateConstantFromAttribute(JavaAttribute& attribute);
   llvm::Constant* CreateConstantFromJavaField(JavaField& field);
   llvm::Constant* CreateConstantFromJavaMethod(JavaMethod& method);
   llvm::Constant* CreateConstantFromStaticInstance(Class* cl);

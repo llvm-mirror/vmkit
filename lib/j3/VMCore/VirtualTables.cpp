@@ -254,7 +254,7 @@ void JnjvmBootstrapLoader::tracer(word_t closure) {
 // Support for scanning the roots of a program: JVM and threads. The JVM
 // must trace:
 // (1) The bootstrap class loader: where core classes live.
-// (2) The applicative class loader: the JVM may be the ony one referencing it.
+// (2) The applicative class loader: the JVM may be the only one referencing it.
 // (3) Global references from JNI.
 //
 // The threads must trace:
@@ -265,7 +265,7 @@ void JnjvmBootstrapLoader::tracer(word_t closure) {
 
 
 void Jnjvm::tracer(word_t closure) {
-  // (1) Trace the bootrap loader.
+  // (1) Trace the bootstrap loader.
   bootstrapLoader->tracer(closure);
   
   // (2) Trace the application class loader.

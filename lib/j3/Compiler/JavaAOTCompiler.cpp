@@ -458,9 +458,9 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
     LLVMAssessorInfo& LAI = getTypedefInfo(type);
     Type* Ty = LAI.llvmType;
 
-    Attribut* attribut = field.lookupAttribut(Attribut::constantAttribut);
+    JavaAttribute* attribute = field.lookupAttribute(JavaAttribute::constantAttribute);
 
-    if (attribut == NULL) {
+    if (attribute == NULL) {
       if ((cl->getStaticInstance() != NULL) && !useCooperativeGC()) {
         if (type->isPrimitive()) {
           const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
@@ -512,7 +512,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
         Elts.push_back(Constant::getNullValue(Ty));
       }
     } else {
-      Reader reader(attribut, cl->bytes);
+      Reader reader(attribute, cl->bytes);
       JavaConstantPool * ctpInfo = cl->ctpInfo;
       uint16 idx = reader.readU2();
       if (type->isPrimitive()) {
@@ -809,21 +809,21 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 }
 
 
-Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
+Constant* JavaAOTCompiler::CreateConstantFromAttribute(JavaAttribute& attribute) {
   StructType* STy = 
-    dyn_cast<StructType>(JavaIntrinsics.AttributType->getContainedType(0));
+    dyn_cast<StructType>(JavaIntrinsics.AttributeType->getContainedType(0));
 
 
   std::vector<Constant*> Elmts;
 
   // name
-  Elmts.push_back(getUTF8(attribut.name));
+  Elmts.push_back(getUTF8(attribute.name));
 
   // start
-  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), attribut.start));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), attribute.start));
 
   // nbb
-  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), attribut.nbb));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), attribute.nbb));
   
   return ConstantStruct::get(STy, Elmts);
 }
@@ -913,29 +913,29 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   // type
   FieldElts.push_back(getUTF8(field.type));
   
-  // attributs 
-  if (field.nbAttributs) {
-    llvm::Type* AttrTy = JavaIntrinsics.AttributType->getContainedType(0);
-    ArrayType* ATy = ArrayType::get(AttrTy, field.nbAttributs);
-    for (uint32 i = 0; i < field.nbAttributs; ++i) {
-      TempElts.push_back(CreateConstantFromAttribut(field.attributs[i]));
+  // attributes
+  if (field.nbAttributes) {
+    llvm::Type* AttrTy = JavaIntrinsics.AttributeType->getContainedType(0);
+    ArrayType* ATy = ArrayType::get(AttrTy, field.nbAttributes);
+    for (uint32 i = 0; i < field.nbAttributes; ++i) {
+      TempElts.push_back(CreateConstantFromAttribute(field.attributes[i]));
     }
 
-    Constant* attributs = ConstantArray::get(ATy, TempElts);
+    Constant* attributes = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    attributs = new GlobalVariable(*getLLVMModule(), ATy, true,
+    attributes = new GlobalVariable(*getLLVMModule(), ATy, true,
                                    GlobalValue::InternalLinkage,
-                                   attributs, "");
-    attributs = ConstantExpr::getCast(Instruction::BitCast, attributs,
-                                      JavaIntrinsics.AttributType);
+                                   attributes, "");
+    attributes = ConstantExpr::getCast(Instruction::BitCast, attributes,
+                                      JavaIntrinsics.AttributeType);
   
-    FieldElts.push_back(attributs);
+    FieldElts.push_back(attributes);
   } else {
-    FieldElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributType));
+    FieldElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributeType));
   }
   
-  // nbAttributs
-  FieldElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), field.nbAttributs));
+  // nbAttributes
+  FieldElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), field.nbAttributes));
 
   // classDef
   FieldElts.push_back(getNativeClass(field.classDef));
@@ -963,29 +963,29 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   // access
   MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), method.access));
  
-  // attributs
-  if (method.nbAttributs) {
-    llvm::Type* AttrTy = JavaIntrinsics.AttributType->getContainedType(0);
-    ArrayType* ATy = ArrayType::get(AttrTy, method.nbAttributs);
-    for (uint32 i = 0; i < method.nbAttributs; ++i) {
-      TempElts.push_back(CreateConstantFromAttribut(method.attributs[i]));
+  // attributes
+  if (method.nbAttributes) {
+    llvm::Type* AttrTy = JavaIntrinsics.AttributeType->getContainedType(0);
+    ArrayType* ATy = ArrayType::get(AttrTy, method.nbAttributes);
+    for (uint32 i = 0; i < method.nbAttributes; ++i) {
+      TempElts.push_back(CreateConstantFromAttribute(method.attributes[i]));
     }
 
-    Constant* attributs = ConstantArray::get(ATy, TempElts);
+    Constant* attributes = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    attributs = new GlobalVariable(Mod, ATy, true,
+    attributes = new GlobalVariable(Mod, ATy, true,
                                    GlobalValue::InternalLinkage,
-                                   attributs, "");
-    attributs = ConstantExpr::getCast(Instruction::BitCast, attributs,
-                                      JavaIntrinsics.AttributType);
+                                   attributes, "");
+    attributes = ConstantExpr::getCast(Instruction::BitCast, attributes,
+                                      JavaIntrinsics.AttributeType);
 
-    MethodElts.push_back(attributs);
+    MethodElts.push_back(attributes);
   } else {
-    MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributType));
+    MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributeType));
   }
   
-  // nbAttributs
-  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), method.nbAttributs));
+  // nbAttributes
+  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), method.nbAttributes));
   
   // classDef
   MethodElts.push_back(getNativeClass(method.classDef));
@@ -1293,29 +1293,29 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
                                        ctpInfo, "");
   ClassElts.push_back(varGV);
 
-  // attributs
-  if (cl->nbAttributs) {
-    ATy = ArrayType::get(JavaIntrinsics.AttributType->getContainedType(0),
-                         cl->nbAttributs);
+  // attributes
+  if (cl->nbAttributes) {
+    ATy = ArrayType::get(JavaIntrinsics.AttributeType->getContainedType(0),
+                         cl->nbAttributes);
 
-    for (uint32 i = 0; i < cl->nbAttributs; ++i) {
-      TempElts.push_back(CreateConstantFromAttribut(cl->attributs[i]));
+    for (uint32 i = 0; i < cl->nbAttributes; ++i) {
+      TempElts.push_back(CreateConstantFromAttribute(cl->attributes[i]));
     }
 
-    Constant* attributs = ConstantArray::get(ATy, TempElts);
+    Constant* attributes = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    attributs = new GlobalVariable(*getLLVMModule(), ATy, true,
+    attributes = new GlobalVariable(*getLLVMModule(), ATy, true,
                                    GlobalValue::InternalLinkage,
-                                   attributs, "");
-    attributs = ConstantExpr::getCast(Instruction::BitCast, attributs,
-                                      JavaIntrinsics.AttributType);
-    ClassElts.push_back(attributs);
+                                   attributes, "");
+    attributes = ConstantExpr::getCast(Instruction::BitCast, attributes,
+                                      JavaIntrinsics.AttributeType);
+    ClassElts.push_back(attributes);
   } else {
-    ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributType));
+    ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributeType));
   }
   
-  // nbAttributs
-  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->nbAttributs));
+  // nbAttributes
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->nbAttributes));
   
   // innerClasses
   if (cl->nbInnerClasses) {

@@ -45,7 +45,7 @@ bool InlineMalloc::runOnFunction(Function& F) {
   Function* ArrayWriteBarrier = F.getParent()->getFunction("arrayWriteBarrier");
   Function* NonHeapWriteBarrier = F.getParent()->getFunction("nonHeapWriteBarrier");
   bool Changed = false;
-  const DataLayout *TD = getAnalysisIfAvailable<DataLayout>();
+  const DataLayout *DL = getAnalysisIfAvailable<DataLayout>();
   for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; BI++) { 
     BasicBlock *Cur = BI; 
     for (BasicBlock::iterator II = Cur->begin(), IE = Cur->end(); II != IE;) {
@@ -59,14 +59,14 @@ bool InlineMalloc::runOnFunction(Function& F) {
       Function* Temp = Call.getCalledFunction();
       if (Temp == Malloc) {
         if (dyn_cast<Constant>(Call.getArgument(0))) {
-          InlineFunctionInfo IFI(NULL, TD);
+          InlineFunctionInfo IFI(NULL, DL);
           Changed |= InlineFunction(Call, IFI);
           break;
         }
       } else if (Temp == FieldWriteBarrier ||
                  Temp == NonHeapWriteBarrier ||
                  Temp == ArrayWriteBarrier) {
-        InlineFunctionInfo IFI(NULL, TD);
+        InlineFunctionInfo IFI(NULL, DL);
         Changed |= InlineFunction(Call, IFI);
         break;
       }

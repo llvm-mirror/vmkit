@@ -306,6 +306,9 @@ public:
 
   /// hashCode - Return the hash code of this object.
   static uint32_t hashCode(JavaObject* self);
+
+  void dump() const __attribute__((noinline));
+  friend std::ostream& operator << (std::ostream&, const JavaObject&);
 };
 
 

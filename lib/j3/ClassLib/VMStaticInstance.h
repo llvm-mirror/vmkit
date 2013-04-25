@@ -47,7 +47,7 @@ public:
 
   /// Is the object a VMStaticInstance object?
   ///
-  static bool isVMStaticInstance(JavaObject* obj) {
+  static bool isVMStaticInstance(const JavaObject* obj) {
     llvm_gcroot(obj, 0);
     return obj->getVirtualTable() == &VT;
   }
@@ -70,11 +70,12 @@ public:
 
   /// getStaticInstance - Get the static instance contained in this object
   ///
-  void * getStaticInstance() {
+  void * getStaticInstance() const {
     assert(OwningClass);
     return OwningClass->getStaticInstance();
   }
 
+  Class* getOwningClass() const {return OwningClass;}
 };
 
 }

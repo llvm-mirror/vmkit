@@ -94,7 +94,7 @@ public:
   char* jarFile;
   std::vector< std::pair<char*, char*> > agents;
 
-  void readArgs(Jnjvm *vm);
+  void readArgs(class Jnjvm *vm);
   void extractClassFromJar(Jnjvm* vm, int argc, char** argv, int i);
   void javaAgent(char* cur);
 

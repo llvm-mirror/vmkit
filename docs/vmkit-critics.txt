@@ -1,0 +1,12 @@
+VMKit implementation critics:
+=============================
+* strictfp Java keyword not implemented.
+* No verification of Java class bytecode. This is a requirement for any JVM, except CLDC and Card profiles.
+* POSIX-dependent. Could use BoostC++ for OS portability.
+* Manipulation of C++ object virtual table, which is compiler-specific and architecture-specific and is not standard.
+  VMKit implementation supposes vtable pointer is placed in offset zero of the object, which is not true among all
+  versions of G++ (sometimes it is placed last).
+  Moreover, multiple inheritence produces multiple vtable pointers in one derived object. VMKit supposes the existence
+  of a single vtable.
+* Reinventing the wheel in some situations. Use BoostC++. e.g. Lock classes.
+

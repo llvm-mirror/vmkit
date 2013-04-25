@@ -22,6 +22,9 @@
 #include "JavaObject.h"
 #include "JnjvmClassLoader.h"
 #include "JnjvmConfig.h"
+#include "Jnjvm.h"
+#include "JavaTypes.h"
+#include "JavaThread.h"
 
 #include <cassert>
 #include <set>
@@ -70,84 +73,84 @@ public:
   void readElementValue();
 };
 
-/// Attribut - This class represents JVM attributes to Java class, methods and
+/// Attribute - This class represents JVM attributes to Java class, methods and
 /// fields located in the .class file.
 ///
-class Attribut : public vmkit::PermanentObject {
+class JavaAttribute : public vmkit::PermanentObject {
 public:
   
-  /// name - The name of the attribut. These are specified in the JVM book.
+  /// name - The name of the attribute. These are specified in the JVM book.
   /// Experimental attributes exist, but the JnJVM does nor parse them.
   ///
   const UTF8* name;
 
-  /// start - The offset in the class of this attribut.
+  /// start - The offset in the class of this attribute.
   ///
   uint32 start;
 
-  /// nbb - The size of the attribut.
+  /// nbb - The size of the attribute.
   ///
   uint32 nbb;
 
-  /// Attribut - Create an attribut at the given length and offset.
+  /// Attribute - Create an attribute at the given length and offset.
   ///
-  Attribut(const UTF8* name, uint32 length, uint32 offset);
-  Attribut() {}
+  JavaAttribute(const UTF8* name, uint32 length, uint32 offset);
+  JavaAttribute() {}
 
-  /// codeAttribut - The "Code" JVM attribut. This is a method attribut for
+  /// codeAttribute - The "Code" JVM attribute. This is a method attribute for
   /// finding the bytecode of a method in the .class file.
   //
-  static const UTF8* codeAttribut;
+  static const UTF8* codeAttribute;
   
-  /// annotationsAttribut - The "RuntimeVisibleAnnotations" JVM attribut.
-  /// This is a method attribut for getting the runtime annotations.
+  /// annotationsAttribute - The "RuntimeVisibleAnnotations" JVM attribute.
+  /// This is a method attribute for getting the runtime annotations.
   //
-  static const UTF8* annotationsAttribut;
+  static const UTF8* annotationsAttribute;
 
-  /// exceptionsAttribut - The "Exceptions" attribut. This is a method
-  /// attribut for finding the exception table of a method in the .class
+  /// exceptionsAttribute - The "Exceptions" attribute. This is a method
+  /// attribute for finding the exception table of a method in the .class
   /// file.
   ///
-  static const UTF8* exceptionsAttribut;
+  static const UTF8* exceptionsAttribute;
 
-  /// constantAttribut - The "ConstantValue" attribut. This is a field attribut
+  /// constantAttribute - The "ConstantValue" attribute. This is a field attribute
   /// when the field has a static constant value.
   ///
-  static const UTF8* constantAttribut;
+  static const UTF8* constantAttribute;
 
-  /// lineNumberTableAttribut - The "LineNumberTable" attribut. This is used
+  /// lineNumberTableAttribute - The "LineNumberTable" attribute. This is used
   /// for corresponding JVM bytecode to source line in the .java file.
   ///
-  static const UTF8* lineNumberTableAttribut;
+  static const UTF8* lineNumberTableAttribute;
 
-  /// innerClassAttribut - The "InnerClasses" attribut. This is a class attribut
+  /// innerClassAttribute - The "InnerClasses" attribute. This is a class attribute
   /// for knowing the inner/outer informations of a Java class.
   ///
-  static const UTF8* innerClassesAttribut;
+  static const UTF8* innerClassesAttribute;
 
-  /// sourceFileAttribut - The "SourceFile" attribut. This is a class attribut
-  /// and gives the correspondance between a class and the name of its Java
+  /// sourceFileAttribute - The "SourceFile" attribute. This is a class attribute
+  /// and gives the correspondence between a class and the name of its Java
   /// file.
   ///
-  static const UTF8* sourceFileAttribut;
+  static const UTF8* sourceFileAttribute;
 
-  /// signatureAttribut - The "Signature" attribut.  This is used to record
+  /// signatureAttribute - The "Signature" attribute.  This is used to record
   /// generics information about a class or method.
   ///
-  static const UTF8* signatureAttribut;
+  static const UTF8* signatureAttribute;
 
-  /// enclosingMEthodAttribut - The "EnclosingMethod" attribut.  This is a class
-  /// attribut that identifies the method definining a local or anonymous class
+  /// enclosingMEthodAttribute - The "EnclosingMethod" attribute.  This is a class
+  /// attribute that identifies the method defining a local or anonymous class
   ///
-  static const UTF8* enclosingMethodAttribut;
+  static const UTF8* enclosingMethodAttribute;
 
-  /// paramAnnotationsAttribut - Annotations for parameters attribut
+  /// paramAnnotationsAttribute - Annotations for parameters attribute
   ///
-  static const UTF8* paramAnnotationsAttribut;
+  static const UTF8* paramAnnotationsAttribute;
 
-  /// annotationDefaultAttribut - The "AnnotationDefault" attribut
+  /// annotationDefaultAttribute - The "AnnotationDefault" attribute
   ///
-  static const UTF8* annotationDefaultAttribut;
+  static const UTF8* annotationDefaultAttribute;
 };
 
 /// TaskClassMirror - The isolate specific class information: the initialization
@@ -463,13 +466,13 @@ public:
   ///
   JavaConstantPool* ctpInfo;
 
-  /// attributs - JVM attributes of this class.
+  /// attributes - JVM attributes of this class.
   ///
-  Attribut* attributs;
+  JavaAttribute* attributes;
 
-  /// nbAttributs - The number of attributes.
+  /// nbAttributes - The number of attributes.
   ///
-  uint16 nbAttributs;
+  uint16 nbAttributes;
   
   /// innerClasses - The inner classes of this class.
   ///
@@ -609,9 +612,9 @@ public:
   ~Class();
   Class();
   
-  /// lookupAttribut - Look up a JVM attribut of this class.
+  /// lookupAttribute - Look up a JVM attribute of this class.
   ///
-  Attribut* lookupAttribut(const UTF8* key);
+  JavaAttribute* lookupAttribute(const UTF8* key);
   
   /// allocateStaticInstance - Allocate the static instance of this class.
   ///
@@ -630,9 +633,9 @@ public:
   ///
   void loadExceptions();
 
-  /// readAttributs - Reads the attributs of the class.
+  /// readAttributes - Reads the attributes of the class.
   ///
-  Attribut* readAttributs(Reader& reader, uint16& size);
+  JavaAttribute* readAttributes(Reader& reader, uint16& size);
 
   /// readFields - Reads the fields of the class.
   ///
@@ -877,13 +880,13 @@ public:
   ///
   uint16 access;
 
-  /// attributs - List of Java attributs of this method.
+  /// attributes - List of Java attributes of this method.
   ///
-  Attribut* attributs;
+  JavaAttribute* attributes;
   
-  /// nbAttributs - The number of attributes.
+  /// nbAttributes - The number of attributes.
   ///
-  uint16 nbAttributs;
+  uint16 nbAttributes;
 
   /// classDef - The Java class where the method is defined.
   ///
@@ -909,10 +912,10 @@ public:
   ///
   uint32 offset;
 
-  /// lookupAttribut - Look up an attribut in the method's attributs. Returns
-  /// null if the attribut is not found.
+  /// lookupAttribute - Look up an attribute in the method's attributes. Returns
+  /// null if the attribute is not found.
   ///
-  Attribut* lookupAttribut(const UTF8* key);
+  JavaAttribute* lookupAttribute(const UTF8* key);
 
   /// lookupLineNumber - Find the line number based on the given frame info.
   ///
@@ -923,7 +926,7 @@ public:
   ///
   uint16 lookupCtpIndex(vmkit::FrameInfo* FI);
   
-  /// getSignature - Get the signature of thes method, resolving it if
+  /// getSignature - Get the signature of the method, resolving it if
   /// necessary.
   ///
   Signdef* getSignature() {
@@ -986,108 +989,126 @@ public:
 //
 //===----------------------------------------------------------------------===//
   
-  /// This class of methods takes a variable argument list.
-  uint32 invokeIntSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
-    __attribute__ ((noinline));
-  float invokeFloatSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
-    __attribute__ ((noinline));
-  double invokeDoubleSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                               va_list ap) __attribute__ ((noinline));
-  sint64 invokeLongSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                        va_list ap) __attribute__ ((noinline));
-  
-  uint32 invokeIntVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
-    __attribute__ ((noinline));
-  float invokeFloatVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
-    __attribute__ ((noinline));
-  double invokeDoubleVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                               va_list ap) __attribute__ ((noinline));
-  sint64 invokeLongVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                        va_list ap) __attribute__ ((noinline));
-  
-  uint32 invokeIntStaticAP(Jnjvm* vm, UserClass*, va_list ap)
-    __attribute__ ((noinline));
-  float invokeFloatStaticAP(Jnjvm* vm, UserClass*, va_list ap)
-    __attribute__ ((noinline));
-  double invokeDoubleStaticAP(Jnjvm* vm, UserClass*, va_list ap)
-    __attribute__ ((noinline));
-  sint64 invokeLongStaticAP(Jnjvm* vm, UserClass*, va_list ap)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, UserClass*, va_list ap)
-    __attribute__ ((noinline));
+#define DO_TRY
+#define DO_CATCH if (th->pendingException) { th->throwFromJava(); }
 
-  /// This class of methods takes a buffer which contain the arguments of the
-  /// call.
-  uint32 invokeIntSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
-  float invokeFloatSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
-  double invokeDoubleSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                void* buf) __attribute__ ((noinline));
-  sint64 invokeLongSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                         void* buf) __attribute__ ((noinline));
-  
-  uint32 invokeIntVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
-  float invokeFloatVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
-  double invokeDoubleVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                void* buf) __attribute__ ((noinline));
-  sint64 invokeLongVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                         void* buf) __attribute__ ((noinline));
-  
-  uint32 invokeIntStaticBuf(Jnjvm* vm, UserClass*, void* buf)
-    __attribute__ ((noinline));
-  float invokeFloatStaticBuf(Jnjvm* vm, UserClass*, void* buf)
-    __attribute__ ((noinline));
-  double invokeDoubleStaticBuf(Jnjvm* vm, UserClass*, void* buf)
-    __attribute__ ((noinline));
-  sint64 invokeLongStaticBuf(Jnjvm* vm, UserClass*, void* buf)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectStaticBuf(Jnjvm* vm, UserClass*, void* buf)
-    __attribute__ ((noinline));
+private:
+	jvalue* marshalArguments(vmkit::ThreadAllocator& allocator, va_list ap);
 
-  /// This class of methods is variadic.
-  uint32 invokeIntSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
-  float invokeFloatSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
-  double invokeDoubleSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
-  sint64 invokeLongSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                      ...) __attribute__ ((noinline));
-  
-  uint32 invokeIntVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
-  float invokeFloatVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
-  double invokeDoubleVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
-  sint64 invokeLongVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, UserClass*, JavaObject* obj,
-                                      ...) __attribute__ ((noinline));
-  
-  uint32 invokeIntStatic(Jnjvm* vm, UserClass*, ...)
-    __attribute__ ((noinline));
-  float invokeFloatStatic(Jnjvm* vm, UserClass*, ...)
-    __attribute__ ((noinline));
-  double invokeDoubleStatic(Jnjvm* vm, UserClass*, ...)
-    __attribute__ ((noinline));
-  sint64 invokeLongStatic(Jnjvm* vm, UserClass*, ...)
-    __attribute__ ((noinline));
-  JavaObject* invokeJavaObjectStatic(Jnjvm* vm, UserClass*, ...)
-    __attribute__ ((noinline));
+	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
+	TYPE invokeSpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {
+		llvm_gcroot(obj, 0);
+		verifyNull(obj);
+
+		void* func = this->compiledPtr();
+		FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)getSignature()->getVirtualCallBuf();
+
+		JavaThread* th = JavaThread::get();
+		th->startJava();
+		TYPE res;
+
+		DO_TRY
+			res = call(cl->getConstantPool(), func, obj, buf);
+		DO_CATCH
+
+		th->endJava();
+		return res;
+	}
+
+	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
+	TYPE invokeVirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {
+		UserCommonClass* theClass = JavaObject::getClass(obj);
+		UserClass* objCl = theClass->isArray() ? theClass->super : theClass->asClass();
+
+		JavaMethod* meth = this;
+		if ((objCl != classDef) && !isFinal(access)) {
+			meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl);
+			assert(meth && "No method found");
+		}
+
+		assert(objCl->isSubclassOf(meth->classDef) && "Wrong type");
+
+		return meth->invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buf);
+	}
+
+	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
+	TYPE invokeStaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {
+		if (!cl->isReady()) {
+			cl->resolveClass();
+			cl->initialiseClass(vm);
+		}
+
+		void* func = this->compiledPtr();
+		FUNC_TYPE_STATIC_BUF call = (FUNC_TYPE_STATIC_BUF)getSignature()->getStaticCallBuf();
+
+		JavaThread* th = JavaThread::get();
+		th->startJava();
+		TYPE res;
+
+		DO_TRY
+			res = call(cl->getConstantPool(), func, buf);
+		DO_CATCH
+
+		th->endJava();
+		return res;
+	}
+
+	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
+	TYPE invokeVirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {
+		llvm_gcroot(obj, 0);
+		verifyNull(obj);
+
+		vmkit::ThreadAllocator allocator;
+		jvalue* buffer = marshalArguments(allocator, ap);
+		return invokeVirtualBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
+	}
+
+	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
+	TYPE invokeSpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) {
+		llvm_gcroot(obj, 0);
+		verifyNull(obj);
+
+		vmkit::ThreadAllocator allocator;
+		jvalue* buffer = marshalArguments(allocator, ap);
+		return invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
+	}
+
+	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
+	TYPE invokeStaticAP(Jnjvm* vm, UserClass* cl, va_list ap) {
+		vmkit::ThreadAllocator allocator;
+		jvalue* buffer = marshalArguments(allocator, ap);
+		return invokeStaticBuf<TYPE, FUNC_TYPE_STATIC_BUF>(vm, cl, buffer);
+	}
+
+#define JavaMethod_DECL_INVOKE_VA(TYPE, TYPE_NAME) \
+	TYPE invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) __attribute__ ((noinline));	\
+	TYPE invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) __attribute__ ((noinline));	\
+	TYPE invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) __attribute__ ((noinline));
+
+#define JavaMethod_DECL_INVOKE_AP(TYPE, TYPE_NAME)	\
+	TYPE invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) __attribute__ ((noinline));	\
+	TYPE invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) __attribute__ ((noinline));	\
+	TYPE invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list ap) __attribute__ ((noinline));
+
+#define JavaMethod_DECL_INVOKE_BUF(TYPE, TYPE_NAME)	\
+	TYPE invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__ ((noinline));	\
+	TYPE invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__ ((noinline));	\
+ 	TYPE invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* buf) __attribute__ ((noinline));
+
+#define JavaMethod_DECL_INVOKE(TYPE, TYPE_NAME) \
+	JavaMethod_DECL_INVOKE_BUF(TYPE, TYPE_NAME)	\
+	JavaMethod_DECL_INVOKE_AP(TYPE, TYPE_NAME)	\
+	JavaMethod_DECL_INVOKE_VA(TYPE, TYPE_NAME)
+
+public:
+	JavaMethod_DECL_INVOKE(uint32_t, Int)
+	JavaMethod_DECL_INVOKE(int64_t, Long)
+	JavaMethod_DECL_INVOKE(float,  Float)
+	JavaMethod_DECL_INVOKE(double, Double)
+	JavaMethod_DECL_INVOKE(JavaObject*, JavaObject)
+
+	friend std::ostream& operator << (std::ostream&, const JavaMethod&);
+	void dump() const __attribute__((noinline));
   
   #define JNI_NAME_PRE "Java_"
   #define JNI_NAME_PRE_LEN 5
@@ -1132,13 +1153,13 @@ public:
   ///
   const UTF8* type;
 
-  /// attributs - List of Java attributs for this field.
+  /// attributes - List of Java attributes for this field.
   ///
-  Attribut* attributs;
+  JavaAttribute* attributes;
   
-  /// nbAttributs - The number of attributes.
+  /// nbAttributes - The number of attributes.
   ///
-  uint16 nbAttributs;
+  uint16 nbAttributes;
 
   /// classDef - The class where the field is defined.
   ///
@@ -1167,9 +1188,9 @@ public:
   ///
   void InitStaticField(Jnjvm* vm);
 
-  /// lookupAttribut - Look up the attribut in the field's list of attributs.
+  /// lookupAttribute - Look up the attribute in the field's list of attributes.
   ///
-  Attribut* lookupAttribut(const UTF8* key);
+  JavaAttribute* lookupAttribute(const UTF8* key);
 
   JavaObject** getStaticObjectFieldPtr() {
     assert(classDef->getStaticInstance());
@@ -1181,74 +1202,89 @@ public:
     return (JavaObject**)((uint64)obj + ptrOffset);
   }
 
+private:
   /// getStatic*Field - Get a static field.
   ///
-  #define GETSTATICFIELD(TYPE, TYPE_NAME)                                   \
-  TYPE getStatic##TYPE_NAME##Field() {                                      \
-    assert(classDef->isResolved());                                         \
-    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset); \
-    return ((TYPE*)ptr)[0];                                                 \
+  template <class TYPE>
+  TYPE getStaticField() {
+    assert(classDef->isResolved());
+    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset);
+    return *static_cast<TYPE *>(ptr);
   }
+
+  /*
+    The struct FieldSetter is a workaround in C++ to enable
+    template-based method specialization in a non-template
+    class. See specialization below the class declaration.
+  */
+  template<class TYPE>
+  struct FieldSetter {
+	  /// setStatic*Field - Set a field of an object.
+	  ///
+	  static void setStaticField(const JavaField* field, TYPE val) {
+	    assert(field->classDef->isResolved());
+	    void* ptr = (void*)((uint64)field->classDef->getStaticInstance() + field->ptrOffset);
+	    *static_cast<TYPE *>(ptr) = val;
+	  }
+      
+	  /// setInstance*Field - Set an instance field.
+	  ///
+	  static void setInstanceField(const JavaField* field, JavaObject* obj, TYPE val) {
+	    llvm_gcroot(obj, 0);
+	    assert(field->classDef->isResolved());
+	    void* ptr = (void*)((uint64)obj + field->ptrOffset);
+	    *static_cast<TYPE *>(ptr) = val;
+	  }
+  };
 
   /// setStatic*Field - Set a field of an object.
   ///
-  #define SETSTATICFIELD(TYPE, TYPE_NAME)                                   \
-  void setStatic##TYPE_NAME##Field(TYPE val) {                              \
-    assert(classDef->isResolved());                                         \
-    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset); \
-    ((TYPE*)ptr)[0] = val;                                                  \
+  template <class TYPE>
+  void setStaticField(TYPE val) {
+    FieldSetter<TYPE>::setStaticField(this, val);
   }
 
   /// getInstance*Field - Get an instance field.
   ///
-  #define GETINSTANCEFIELD(TYPE, TYPE_NAME)                                 \
-  TYPE getInstance##TYPE_NAME##Field(JavaObject* obj) {                     \
-    llvm_gcroot(obj, 0);                                                    \
-    assert(classDef->isResolved());                                         \
-    void* ptr = (void*)((uint64)obj + ptrOffset);                           \
-    return ((TYPE*)ptr)[0];                                                 \
-  }                                                                         \
-
-  /// setInstance*Field - Set an instance field.
-  ///
-  #define SETINSTANCEFIELD(TYPE, TYPE_NAME)                                 \
-  void setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val) {           \
-    llvm_gcroot(obj, 0);                                                    \
-    assert(classDef->isResolved());                                         \
-    void* ptr = (void*)((uint64)obj + ptrOffset);                           \
-    ((TYPE*)ptr)[0] = val;                                                  \
-  }
-
-  #define MK_ASSESSORS(TYPE, TYPE_NAME)                                     \
-    GETSTATICFIELD(TYPE, TYPE_NAME)                                         \
-    SETSTATICFIELD(TYPE, TYPE_NAME)                                         \
-    GETINSTANCEFIELD(TYPE, TYPE_NAME)                                       \
-    SETINSTANCEFIELD(TYPE, TYPE_NAME)                                       \
-
-  MK_ASSESSORS(float, Float)
-  MK_ASSESSORS(double, Double)
-  MK_ASSESSORS(uint8, Int8)
-  MK_ASSESSORS(uint16, Int16)
-  MK_ASSESSORS(uint32, Int32)
-  MK_ASSESSORS(sint64, Long)
-
-  JavaObject* getStaticObjectField() {
-    assert(classDef->isResolved());
-    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset);
-    return ((JavaObject**)ptr)[0];
-  }
-
-  void setStaticObjectField(JavaObject* val);
-
-  JavaObject* getInstanceObjectField(JavaObject* obj) {
+  template<class TYPE>
+  TYPE getInstanceField(JavaObject* obj) {
     llvm_gcroot(obj, 0);
     assert(classDef->isResolved());
     void* ptr = (void*)((uint64)obj + ptrOffset);
-    return ((JavaObject**)ptr)[0];
+    return *static_cast<TYPE *>(ptr);
   }
 
-  // This can't be inlined because of a linker bug.
-  void setInstanceObjectField(JavaObject* obj, JavaObject* val);
+  /// setInstance*Field - Set an instance field.
+  ///
+  template<class TYPE>
+  void setInstanceField(JavaObject* obj, TYPE val) {
+    FieldSetter<TYPE>::setInstanceField(this, obj, val);
+  }
+
+#define JavaField_DECL_ASSESSORS(TYPE, TYPE_NAME)			\
+	TYPE getStatic##TYPE_NAME##Field();						\
+	void setStatic##TYPE_NAME##Field(TYPE val);				\
+	TYPE getInstance##TYPE_NAME##Field(JavaObject* obj);	\
+	void setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val);
+
+#define JavaField_IMPL_ASSESSORS(TYPE, TYPE_NAME)																			\
+	TYPE JavaField::getStatic##TYPE_NAME##Field() {									\
+  		return getStaticField<TYPE>();}												\
+	void JavaField::setStatic##TYPE_NAME##Field(TYPE val) {							\
+		return setStaticField<TYPE>(val);}											\
+	TYPE JavaField::getInstance##TYPE_NAME##Field(JavaObject* obj) {				\
+		return this->getInstanceField<TYPE>(obj);}									\
+	void JavaField::setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val) {		\
+		return this->setInstanceField<TYPE>(obj, val);}
+
+public:
+  JavaField_DECL_ASSESSORS(float, Float)
+  JavaField_DECL_ASSESSORS(double, Double)
+  JavaField_DECL_ASSESSORS(uint8, Int8)
+  JavaField_DECL_ASSESSORS(uint16, Int16)
+  JavaField_DECL_ASSESSORS(uint32, Int32)
+  JavaField_DECL_ASSESSORS(sint64, Long)
+  JavaField_DECL_ASSESSORS(JavaObject*, Object)
   
   bool isReference() {
     uint16 val = type->elements[0];
@@ -1287,6 +1323,28 @@ public:
     return (type->elements[0] == 'Z');
   }
 
+};
+
+// Specialization for TYPE=JavaObject*
+template<>
+struct JavaField::FieldSetter<JavaObject*> {
+
+  static void setStaticField(const JavaField* field, JavaObject* val) {
+	llvm_gcroot(val, 0);
+	if (val != NULL) assert(val->getVirtualTable());
+	assert(field->classDef->isResolved());
+	JavaObject** ptr = (JavaObject**)((uint64)field->classDef->getStaticInstance() + field->ptrOffset);
+	vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
+  }
+
+  static void setInstanceField(const JavaField* field, JavaObject* obj, JavaObject* val) {
+	llvm_gcroot(obj, 0);
+	llvm_gcroot(val, 0);
+	if (val != NULL) assert(val->getVirtualTable());
+	assert(field->classDef->isResolved());
+	JavaObject** ptr = (JavaObject**)((uint64)obj + field->ptrOffset);
+	vmkit::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)val);
+  }
 };
 
 

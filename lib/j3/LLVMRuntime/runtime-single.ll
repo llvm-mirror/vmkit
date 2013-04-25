@@ -9,5 +9,5 @@
 
 %JavaClass = type { %JavaCommonClass, i32, i32, [1 x %TaskClassMirror],
                     %JavaField*, i16, %JavaField*, i16, %JavaMethod*, i16,
-                    %JavaMethod*, i16, i8*, %ClassBytes*, %JavaConstantPool*, %Attribut*,
+                    %JavaMethod*, i16, i8*, %ClassBytes*, %JavaConstantPool*, %Attribute*,
                     i16, %JavaClass**, i16, %JavaClass*, i16, i8, i8, i32, i32 }

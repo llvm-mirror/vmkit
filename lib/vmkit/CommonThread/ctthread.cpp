@@ -36,7 +36,7 @@ int Thread::kill(int signo) {
 }
 
 void Thread::exit(int value) {
-  pthread_exit((void*)value);
+  pthread_exit((void*)(intptr_t)value);
 }
 
 void Thread::yield(void) {

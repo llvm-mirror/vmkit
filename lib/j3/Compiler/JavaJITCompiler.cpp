@@ -401,7 +401,7 @@ Value* JavaJ3LazyJITCompiler::addCallback(Class* cl, uint16 index,
   JavaConstantPool* ctpInfo = cl->ctpInfo;
   word_t stub = stat ? sign->getStaticCallStub() : sign->getSpecialCallStub();
   if (!ctpInfo->ctpRes[index]) {
-    // Do a compare and swap, so that we do not overwrtie what a stub might
+    // Do a compare and swap, so that we do not overwrite what a stub might
     // have just updated.
     word_t val = (word_t)
       __sync_val_compare_and_swap(&(ctpInfo->ctpRes[index]), NULL, (void*)stub);

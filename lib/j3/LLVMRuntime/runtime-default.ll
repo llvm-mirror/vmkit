@@ -22,9 +22,9 @@
 %ArrayUInt8 = type { %JavaObject, i8*, [0 x i8] }
 
 ;;; The task class mirror.
-;;; Field 1: The class state
-;;; Field 2: The initialization state
-;;; Field 3: The static instance
+;;; Field 0: The class state
+;;; Field 1: The initialization state
+;;; Field 2: The static instance
 %TaskClassMirror = type { i8, i1, i8* }
 
 %CircularBase = type { %VT*, %CircularBase*, %CircularBase* }
@@ -41,21 +41,21 @@
 ;;; field 9:  void*  routine
 ;;; field 10: void*  lastKnownFrame
 ;;; field 11: void*  lastExceptionBuffer
-%Thread = type { %CircularBase, i8*, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8* }
+%Thread = type { %CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8* }
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 
 %JavaConstantPool = type { %JavaClass*, i32, i8*, i32*, i8** }
 
-%Attribut = type { %UTF8*, i32, i32 }
+%Attribute = type { %UTF8*, i32, i32 }
 
-%UTF8 = type { i8*, [0 x i16] }
+%UTF8 = type { i32, [0 x i16] }
 
 
-%JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribut*, i16, %JavaClass*, i32,
+%JavaField = type { i8*, i16, %UTF8*, %UTF8*, %Attribute*, i16, %JavaClass*, i32,
                     i16 }
 
-%JavaMethod = type { i8*, i16, %Attribut*, i16, %JavaClass*,
+%JavaMethod = type { i8*, i16, %Attribute*, i16, %JavaClass*,
                      %UTF8*, %UTF8*, i8, i8*, i32 }
 
 %JavaClassPrimitive = type { %JavaCommonClass, i32 }
@@ -88,7 +88,7 @@ declare void @listAllTypes(%JavaObject,
                            %JavaField,
                            %JavaMethod,
                            %UTF8,
-                           %Attribut,
+                           %Attribute,
                            %JavaThread,
                            %MutatorThread,
                            %J3DenseMap);
