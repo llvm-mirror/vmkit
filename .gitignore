@@ -3,6 +3,8 @@
 *.class
 *.jar
 
+.cproject
+.project
 .settings
 .metadata
 .fuse*
@@ -10,6 +12,7 @@
 bin
 Debug+Asserts
 Release+Asserts
+scratch
 
 Makefile.common
 Makefile.config
@@ -21,6 +24,7 @@ configure.out
 
 mmtk/java/src/org/j3/config/Selected.java
 mmtk/java/build.xml
+mmtk/java/.classpath
 mmtk/inline/*.inc
 
 tools/j3/*.inc
