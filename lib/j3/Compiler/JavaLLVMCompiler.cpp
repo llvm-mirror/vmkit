@@ -10,7 +10,7 @@
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
-#include "llvm/Analysis/DIBuilder.h"
+#include "llvm/DIBuilder.h"
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/DataLayout.h"
 
@@ -25,9 +25,9 @@ using namespace llvm;
 
 namespace j3 {
 
-JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str, bool CompilingMMTk) :
+JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
   TheModule(new llvm::Module(str, *(new LLVMContext()))),
-  DebugFactory(new DIBuilder(*TheModule)), compilingMMTk(CompilingMMTk) {
+  DebugFactory(new DIBuilder(*TheModule)) {
 
   enabledException = true;
   cooperativeGC = true;
@@ -61,7 +61,7 @@ Function* JavaLLVMCompiler::parseFunction(JavaMethod* meth, Class* customizeFor)
   // We are jitting. Take the lock.
   vmkit::VmkitModule::protectIR();
   if (func->getLinkage() == GlobalValue::ExternalWeakLinkage) {
-    JavaJIT jit(this, meth, func, customizeFor, compilingMMTk);
+    JavaJIT jit(this, meth, func, customizeFor);
     if (isNative(meth->access)) {
       jit.nativeCompile();
       vmkit::VmkitModule::runPasses(func, JavaNativeFunctionPasses);

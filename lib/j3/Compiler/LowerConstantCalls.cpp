@@ -38,6 +38,30 @@ private:
 };
 char LowerConstantCalls::ID = 0;
 
+static Value* getTCM(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { intrinsics->constantZero,
+                    intrinsics->OffsetTaskClassMirrorInClassConstant };
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, "", CI);
+  
+  Value* GEP2[2] = { intrinsics->constantZero, intrinsics->constantZero };
+
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, "", CI);
+  return TCM;
+
+}
+
+static Value* getDelegatee(J3Intrinsics* intrinsics, Value* Arg, Instruction* CI) {
+  Value* GEP[2] = { intrinsics->constantZero,
+                    intrinsics->constantZero };
+  Value* TCMArray = GetElementPtrInst::Create(Arg, GEP, "", CI);
+  
+  Value* GEP2[2] = { intrinsics->constantZero, intrinsics->constantZero };
+
+  Value* TCM = GetElementPtrInst::Create(TCMArray, GEP2, "", CI);
+  return new LoadInst(TCM, "", CI);
+
+}
+
 bool LowerConstantCalls::runOnFunction(Function& F) {
   LLVMContext* Context = &F.getContext();
   bool Changed = false;
@@ -255,12 +279,107 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* Class = new LoadInst(ClassPtr, "", CI);
           CI->replaceAllUsesWith(Class);
           CI->eraseFromParent();
+        } else if (V == intrinsics->GetClassDelegateeFunction) {
+          Changed = true;
+          BasicBlock* NBB = II->getParent()->splitBasicBlock(II);
+          I->getParent()->getTerminator()->eraseFromParent();
+          Value* Del = getDelegatee(intrinsics, Call.getArgument(0), CI);
+          Value* cmp = new ICmpInst(CI, ICmpInst::ICMP_EQ, Del, 
+                                    intrinsics->JavaObjectNullConstant, "");
+          
+          BasicBlock* NoDelegatee = BasicBlock::Create(*Context, "No delegatee", &F);
+          BasicBlock* DelegateeOK = BasicBlock::Create(*Context, "Delegatee OK", &F);
+          BranchInst::Create(NoDelegatee, DelegateeOK, cmp, CI);
+          PHINode* phi = PHINode::Create(intrinsics->JavaObjectType, 2, "", DelegateeOK);
+          phi->addIncoming(Del, CI->getParent());
+          
+          Instruction* Res = CallInst::Create(intrinsics->RuntimeDelegateeFunction,
+                                              Call.getArgument(0), "", NoDelegatee);
+          Res->setDebugLoc(CI->getDebugLoc());
+          BranchInst::Create(DelegateeOK, NoDelegatee);
+          phi->addIncoming(Res, NoDelegatee);
+
+          CI->replaceAllUsesWith(phi);
+          CI->eraseFromParent();
+          BranchInst::Create(NBB, DelegateeOK);
+          break;
+         
+        } else if (V == intrinsics->InitialisationCheckFunction) {
+          Changed = true;
+          
+          BasicBlock* NBB = 0;
+          if (CI->getParent()->getTerminator() != CI) {
+            NBB = II->getParent()->splitBasicBlock(II);
+            CI->getParent()->getTerminator()->eraseFromParent();
+          } else {
+            InvokeInst* Invoke = dyn_cast<InvokeInst>(CI);
+            assert(Invoke && "Last instruction is not an invoke");
+            NBB = Invoke->getNormalDest();
+          }
+         
+          Value* Cl = Call.getArgument(0); 
+          Value* TCM = getTCM(intrinsics, Call.getArgument(0), CI);
+          Value* GEP[2] = 
+            { intrinsics->constantZero,
+              intrinsics->OffsetInitializedInTaskClassMirrorConstant };
+          Value* StatusPtr = GetElementPtrInst::Create(TCM, GEP, "", CI);
+          
+          Value* test = new LoadInst(StatusPtr, "", CI);
+          
+          BasicBlock* trueCl = BasicBlock::Create(*Context, "Initialized", &F);
+          BasicBlock* falseCl = BasicBlock::Create(*Context, "Uninitialized", &F);
+          PHINode* node = llvm::PHINode::Create(intrinsics->JavaClassType, 2, "", trueCl);
+          node->addIncoming(Cl, CI->getParent());
+          BranchInst::Create(trueCl, falseCl, test, CI);
+  
+          
+          Instruction* res = 0;
+          if (InvokeInst* Invoke = dyn_cast<InvokeInst>(CI)) {
+            Value* Args[1] = { Cl };
+            BasicBlock* UI = Invoke->getUnwindDest();
+
+            res = InvokeInst::Create(intrinsics->InitialiseClassFunction,
+                                     trueCl, UI, Args, "", falseCl);
+
+            // For some reason, an LLVM pass may add PHI nodes to the
+            // exception destination.
+            BasicBlock::iterator Temp = UI->getInstList().begin();
+            while (PHINode* PHI = dyn_cast<PHINode>(Temp)) {
+              Value* Val = PHI->getIncomingValueForBlock(CI->getParent());
+              PHI->removeIncomingValue(CI->getParent(), false);
+              PHI->addIncoming(Val, falseCl);
+              Temp++;
+            }
+            
+            // And here we set the phi nodes of the normal dest of the Invoke
+            // instruction. The phi nodes have now the trueCl as basic block.
+            Temp = NBB->getInstList().begin();
+            while (PHINode* PHI = dyn_cast<PHINode>(Temp)) {
+              Value* Val = PHI->getIncomingValueForBlock(CI->getParent());
+              PHI->removeIncomingValue(CI->getParent(), false);
+              PHI->addIncoming(Val, trueCl);
+              Temp++;
+            }
+
+          } else {
+            res = CallInst::Create(intrinsics->InitialiseClassFunction,
+                                   Cl, "", falseCl);
+            BranchInst::Create(trueCl, falseCl);
+          }
+          res->setDebugLoc(CI->getDebugLoc());
+          
+          node->addIncoming(res, falseCl);
+
+
+          CI->replaceAllUsesWith(node);
+          CI->eraseFromParent();
+          BranchInst::Create(NBB, trueCl);
+          break;
         } else if (V == intrinsics->GetConstantPoolAtFunction) {
           Function* resolver = dyn_cast<Function>(Call.getArgument(0));
           assert(resolver && "Wrong use of GetConstantPoolAt");
           Type* returnType = resolver->getReturnType();
-          Value* isolateID = Call.getArgument(1);
-          Value* cl = Call.getArgument(2);
+          Value* CTP = Call.getArgument(1);
           Value* Index = Call.getArgument(3);
           Changed = true;
           BasicBlock* NBB = 0;
@@ -273,8 +392,9 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             NBB = Invoke->getNormalDest();
           }
           
-          Value* GCVArgs[] = {cl, Index, isolateID};
-          Value* arg1 = CallInst::Create(intrinsics->GetCachedValueFunction, GCVArgs, "", CI);
+          Value* indexes = Index;
+          Value* arg1 = GetElementPtrInst::Create(CTP, indexes, "", CI);
+          arg1 = new LoadInst(arg1, "", false, CI);
           Value* test = new ICmpInst(CI, ICmpInst::ICMP_EQ, arg1,
                                      intrinsics->constantPtrNull, "");
  

@@ -36,8 +36,6 @@
 #include "Zip.h"
 
 #include <cstdio>
-#include <string>
-#include <sstream>
 
 using namespace j3;
 using namespace llvm;
@@ -183,41 +181,24 @@ Constant* JavaAOTCompiler::getResolvedConstantPool(JavaConstantPool* ctp) {
   if (I == End) {
     Module& Mod = *getLLVMModule();
 
-    std::string pool_name(UTF8Buffer(ctp->classDef->name).toCompileName("_ResolvedConstantPool_")->cString());
-
     ArrayType* ATy = ArrayType::get(JavaIntrinsics.ptrType, ctp->ctpSize);
-    ArrayType* AStringTy = ArrayType::get(JavaIntrinsics.ptrType, NR_ISOLATES);
-    std::vector<Constant*> Vals(ctp->ctpSize, JavaIntrinsics.constantPtrNull);
+    std::vector<Constant*> Vals;
     for (uint32 i = 0; i < ctp->ctpSize; ++i) {
       if (ctp->typeAt(i) == JavaConstantPool::ConstantUTF8) {
-        Vals[i] = ConstantExpr::getBitCast(getUTF8(ctp->UTF8At(i)), JavaIntrinsics.ptrType);
+        Vals.push_back(ConstantExpr::getBitCast(getUTF8(ctp->UTF8At(i)), JavaIntrinsics.ptrType));
       } else if (ctp->typeAt(i) == JavaConstantPool::ConstantClass
                   && (ctp->isClassLoaded(i) != NULL)) {
-        Vals[i] = ConstantExpr::getBitCast(
-            getNativeClass(ctp->isClassLoaded(i)), JavaIntrinsics.ptrType);
-      } else if (ctp->typeAt(i) == JavaConstantPool::ConstantString) {
-        std::stringstream array_name;
-        array_name << pool_name << "String_" << i << '_';
-
-        std::vector<Constant*> Strings(NR_ISOLATES, JavaIntrinsics.constantPtrNull);
-        /*
-        for (isolate_id_t isolateID = 0; isolateID < NR_ISOLATES; ++isolateID)
-          if (void *p = ctp->getCachedValue(i, isolateID))
-            Strings[isolateID] = CreateConstantFromJavaString(*reinterpret_cast<JavaString **>(p));
-        */
-
-        GlobalVariable* stringArray = new GlobalVariable(
-          Mod, AStringTy, false, GlobalValue::InternalLinkage,
-          ConstantArray::get(AStringTy, Strings), array_name.str());
-
-        Vals[i] = ConstantExpr::getBitCast(stringArray, JavaIntrinsics.ptrType);
+        Vals.push_back(ConstantExpr::getBitCast(
+            getNativeClass(ctp->isClassLoaded(i)), JavaIntrinsics.ptrType));
+      } else {
+        Vals.push_back(Constant::getNullValue(JavaIntrinsics.ptrType));
       }
     }
 
     Constant* Array = ConstantArray::get(ATy, Vals);
     GlobalVariable* varGV = new GlobalVariable(Mod, Array->getType(), false,
                                                GlobalValue::InternalLinkage,
-                                               Array, pool_name);
+                                               Array, "");
  
     Array = ConstantExpr::getBitCast(varGV, JavaIntrinsics.ResolvedConstantPoolType);
     
@@ -464,7 +445,7 @@ Constant* JavaAOTCompiler::getFinalObject(JavaObject* obj, CommonClass* objCl) {
   }
 }
 
-Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl, isolate_id_t isolateID) {
+Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl) {
   LLVMClassInfo* LCI = getClassInfo(cl);
   Type* Ty = LCI->getStaticType();
   StructType* STy = dyn_cast<StructType>(Ty->getContainedType(0));
@@ -477,47 +458,47 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl, isolate_i
     LLVMAssessorInfo& LAI = getTypedefInfo(type);
     Type* Ty = LAI.llvmType;
 
-    JavaAttribute* attribute = field.lookupAttribute(JavaAttribute::constantAttribute);
+    Attribut* attribut = field.lookupAttribut(Attribut::constantAttribut);
 
-    if (attribute == NULL) {
-      if ((cl->getStaticInstance(isolateID) != NULL) && !useCooperativeGC()) {
+    if (attribut == NULL) {
+      if ((cl->getStaticInstance() != NULL) && !useCooperativeGC()) {
         if (type->isPrimitive()) {
           const PrimitiveTypedef* prim = (const PrimitiveTypedef*)type;
           if (prim->isBool() || prim->isByte()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt8Ty(getLLVMContext()),
-                field.getStaticInt8Field(isolateID));
+                field.getStaticInt8Field());
             Elts.push_back(CI);
           } else if (prim->isShort() || prim->isChar()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt16Ty(getLLVMContext()),
-                field.getStaticInt16Field(isolateID));
+                field.getStaticInt16Field());
             Elts.push_back(CI);
           } else if (prim->isInt()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt32Ty(getLLVMContext()),
-                field.getStaticInt32Field(isolateID));
+                field.getStaticInt32Field());
             Elts.push_back(CI);
           } else if (prim->isLong()) {
             ConstantInt* CI = ConstantInt::get(
                 Type::getInt64Ty(getLLVMContext()),
-                field.getStaticLongField(isolateID));
+                field.getStaticLongField());
             Elts.push_back(CI);
           } else if (prim->isFloat()) {
             Constant* CF = ConstantFP::get(
                 Type::getFloatTy(getLLVMContext()),
-                field.getStaticFloatField(isolateID));
+                field.getStaticFloatField());
             Elts.push_back(CF);
           } else if (prim->isDouble()) {
             Constant* CF = ConstantFP::get(
                 Type::getDoubleTy(getLLVMContext()),
-                field.getStaticDoubleField(isolateID));
+                field.getStaticDoubleField());
             Elts.push_back(CF);
           } else {
             abort();
           }
         } else {
-          JavaObject* val = field.getStaticObjectField(isolateID);
+          JavaObject* val = field.getStaticObjectField();
           if (val) {
             JnjvmClassLoader* JCL = cl->classLoader;
             CommonClass* FieldCl = field.getSignature()->assocClass(JCL);
@@ -531,7 +512,7 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl, isolate_i
         Elts.push_back(Constant::getNullValue(Ty));
       }
     } else {
-      Reader reader(attribute, cl->bytes);
+      Reader reader(attribut, cl->bytes);
       JavaConstantPool * ctpInfo = cl->ctpInfo;
       uint16 idx = reader.readU2();
       if (type->isPrimitive()) {
@@ -564,20 +545,34 @@ Constant* JavaAOTCompiler::CreateConstantFromStaticInstance(Class* cl, isolate_i
   return ConstantStruct::get(STy, Elts);
 }
 
-Constant* JavaAOTCompiler::getStaticInstance(Class* classDef, isolate_id_t isolateID) {
-	ConstantArray *TCMArray = dyn_cast<ConstantArray>(CreateConstantFromTaskClassMirrorArray(classDef));
-	if (!compilingMMTk) {
-		// Thanks for calling me, but you should call j3GetStaticInstance() to get the static instance
-		// pointer at runtime.
-		return NULL;
-	}
+Constant* JavaAOTCompiler::getStaticInstance(Class* classDef) {
+  static_instance_iterator End = staticInstances.end();
+  static_instance_iterator I = staticInstances.find(classDef);
+  if (I == End) {
+    
+    LLVMClassInfo* LCI = getClassInfo(classDef);
+    Type* Ty = LCI->getStaticType();
+    Ty = Ty->getContainedType(0);
+    std::string name(UTF8Buffer(classDef->name).toCompileName()->cString());
+    name += "_static";
+    Module& Mod = *getLLVMModule();
+    GlobalVariable* varGV = 
+      new GlobalVariable(Mod, Ty, false, GlobalValue::ExternalLinkage,
+                         0, name);
 
-	isolateID = JavaThread::getValidIsolateID(isolateID);
-	ConstantStruct *TCM = dyn_cast<ConstantStruct>(TCMArray->getAggregateElement(isolateID));
+    Constant* res = ConstantExpr::getCast(Instruction::BitCast, varGV,
+                                          JavaIntrinsics.ptrType);
+    staticInstances.insert(std::make_pair(classDef, res));
+    
+    if (isCompiling(classDef)) { 
+      Constant* C = CreateConstantFromStaticInstance(classDef);
+      varGV->setInitializer(C);
+    }
 
-	Constant *isolateStaticInstance = TCM->getAggregateElement(
-		JavaIntrinsics.OffsetStaticInstanceInTaskClassMirrorConstant);
-	return isolateStaticInstance;
+    return res;
+  } else {
+    return I->second;
+  }
 }
 
 Constant* JavaAOTCompiler::getVirtualTable(JavaVirtualTable* VT) {
@@ -814,21 +809,21 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaString(JavaString* str) {
 }
 
 
-Constant* JavaAOTCompiler::CreateConstantFromAttribute(JavaAttribute& attribute) {
+Constant* JavaAOTCompiler::CreateConstantFromAttribut(Attribut& attribut) {
   StructType* STy = 
-    dyn_cast<StructType>(JavaIntrinsics.AttributeType->getContainedType(0));
+    dyn_cast<StructType>(JavaIntrinsics.AttributType->getContainedType(0));
 
 
   std::vector<Constant*> Elmts;
 
   // name
-  Elmts.push_back(getUTF8(attribute.name));
+  Elmts.push_back(getUTF8(attribut.name));
 
   // start
-  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), attribute.start));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), attribut.start));
 
   // nbb
-  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), attribute.nbb));
+  Elmts.push_back(ConstantInt::get(Type::getInt32Ty(getLLVMContext()), attribut.nbb));
   
   return ConstantStruct::get(STy, Elmts);
 }
@@ -918,29 +913,29 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaField(JavaField& field) {
   // type
   FieldElts.push_back(getUTF8(field.type));
   
-  // attributes
-  if (field.nbAttributes) {
-    llvm::Type* AttrTy = JavaIntrinsics.AttributeType->getContainedType(0);
-    ArrayType* ATy = ArrayType::get(AttrTy, field.nbAttributes);
-    for (uint32 i = 0; i < field.nbAttributes; ++i) {
-      TempElts.push_back(CreateConstantFromAttribute(field.attributes[i]));
+  // attributs 
+  if (field.nbAttributs) {
+    llvm::Type* AttrTy = JavaIntrinsics.AttributType->getContainedType(0);
+    ArrayType* ATy = ArrayType::get(AttrTy, field.nbAttributs);
+    for (uint32 i = 0; i < field.nbAttributs; ++i) {
+      TempElts.push_back(CreateConstantFromAttribut(field.attributs[i]));
     }
 
-    Constant* attributes = ConstantArray::get(ATy, TempElts);
+    Constant* attributs = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    attributes = new GlobalVariable(*getLLVMModule(), ATy, true,
+    attributs = new GlobalVariable(*getLLVMModule(), ATy, true,
                                    GlobalValue::InternalLinkage,
-                                   attributes, "");
-    attributes = ConstantExpr::getCast(Instruction::BitCast, attributes,
-                                      JavaIntrinsics.AttributeType);
+                                   attributs, "");
+    attributs = ConstantExpr::getCast(Instruction::BitCast, attributs,
+                                      JavaIntrinsics.AttributType);
   
-    FieldElts.push_back(attributes);
+    FieldElts.push_back(attributs);
   } else {
-    FieldElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributeType));
+    FieldElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributType));
   }
   
-  // nbAttributes
-  FieldElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), field.nbAttributes));
+  // nbAttributs
+  FieldElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), field.nbAttributs));
 
   // classDef
   FieldElts.push_back(getNativeClass(field.classDef));
@@ -968,29 +963,29 @@ Constant* JavaAOTCompiler::CreateConstantFromJavaMethod(JavaMethod& method) {
   // access
   MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), method.access));
  
-  // attributes
-  if (method.nbAttributes) {
-    llvm::Type* AttrTy = JavaIntrinsics.AttributeType->getContainedType(0);
-    ArrayType* ATy = ArrayType::get(AttrTy, method.nbAttributes);
-    for (uint32 i = 0; i < method.nbAttributes; ++i) {
-      TempElts.push_back(CreateConstantFromAttribute(method.attributes[i]));
+  // attributs
+  if (method.nbAttributs) {
+    llvm::Type* AttrTy = JavaIntrinsics.AttributType->getContainedType(0);
+    ArrayType* ATy = ArrayType::get(AttrTy, method.nbAttributs);
+    for (uint32 i = 0; i < method.nbAttributs; ++i) {
+      TempElts.push_back(CreateConstantFromAttribut(method.attributs[i]));
     }
 
-    Constant* attributes = ConstantArray::get(ATy, TempElts);
+    Constant* attributs = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    attributes = new GlobalVariable(Mod, ATy, true,
+    attributs = new GlobalVariable(Mod, ATy, true,
                                    GlobalValue::InternalLinkage,
-                                   attributes, "");
-    attributes = ConstantExpr::getCast(Instruction::BitCast, attributes,
-                                      JavaIntrinsics.AttributeType);
+                                   attributs, "");
+    attributs = ConstantExpr::getCast(Instruction::BitCast, attributs,
+                                      JavaIntrinsics.AttributType);
 
-    MethodElts.push_back(attributes);
+    MethodElts.push_back(attributs);
   } else {
-    MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributeType));
+    MethodElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributType));
   }
   
-  // nbAttributes
-  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), method.nbAttributes));
+  // nbAttributs
+  MethodElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), method.nbAttributs));
   
   // classDef
   MethodElts.push_back(getNativeClass(method.classDef));
@@ -1144,61 +1139,13 @@ Constant* JavaAOTCompiler::CreateConstantFromUTF8Map(const vmkit::VmkitDenseSet<
                             ConstantStruct::get(STy, elements), "UTF8Map");
 }
 
-Constant* JavaAOTCompiler::CreateConstantFromTaskClassMirrorArray(Class* cl)
-{
-	task_class_mirror_iterator I = taskClassMirrors.find(cl);
-	if (I != taskClassMirrors.end())
-		return I->second;	// TCM Constant already created
-
-	StructType* STy = dyn_cast<StructType>(JavaIntrinsics.JavaClassType->getContainedType(0));
-	ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(3));
-	StructType* TCMTy = dyn_cast<StructType>(ATy->getContainedType(0));
-	assert(TCMTy && "Malformed type");
-
-	Module& Mod = *getLLVMModule();
-	LLVMClassInfo* LCI = getClassInfo(cl);
-	StructType* StaticInstanceTy = dyn_cast<StructType>(LCI->getStaticType()->getContainedType(0));
-	assert(StaticInstanceTy && "Malformed type");
-
-	std::string var_name(UTF8Buffer(cl->name).toCompileName("_StaticInstance_")->cString());
-	size_t var_name_len = var_name.size();
-	char var_name_ext[32];
-
-	Constant** TCMEntries = new Constant*[NR_ISOLATES];
-	memset(TCMEntries, 0, NR_ISOLATES * sizeof(Constant*));
-
-	for (isolate_id_t isolateID = 0; isolateID < NR_ISOLATES; ++isolateID) {
-		var_name.resize(var_name_len);
-		snprintf(var_name_ext, sizeof(var_name_ext)/sizeof(*var_name_ext), "%d", isolateID);
-		var_name += var_name_ext;
-
-		GlobalVariable* staticInstance = new GlobalVariable(Mod, StaticInstanceTy, false, GlobalValue::ExternalLinkage, 0, var_name);
-		if (isCompiling(cl)) {
-			Constant* staticInstanceInit = CreateConstantFromStaticInstance(cl, isolateID);
-			staticInstance->setInitializer(staticInstanceInit);
-		}
-
-		Constant *TCMEntry[] = {
-			ConstantInt::get(Type::getInt8Ty(getLLVMContext()), cl->getInitializationState(isolateID)),
-			ConstantInt::get(Type::getInt1Ty(getLLVMContext()), cl->isReady(isolateID) ? 1 : 0),
-			ConstantExpr::getBitCast(staticInstance, JavaIntrinsics.ptrType)
-		};
-		TCMEntries[isolateID] = ConstantStruct::get(TCMTy, TCMEntry);
-	}
-
-	Constant* tcm = ConstantArray::get(ATy, ArrayRef<Constant*>(TCMEntries, NR_ISOLATES));
-	taskClassMirrors.insert(std::make_pair(cl, tcm));
-
-	delete [] TCMEntries;
-	return tcm;
-}
-
 Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
   StructType* STy = 
     dyn_cast<StructType>(JavaIntrinsics.JavaClassType->getContainedType(0));
   Module& Mod = *getLLVMModule();
   
-  std::vector<Constant*> ClassElts, TempElts;
+  std::vector<Constant*> ClassElts;
+  std::vector<Constant*> TempElts;
 
   // common class
   ClassElts.push_back(CreateConstantFromCommonClass(cl));
@@ -1212,11 +1159,21 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
                                        cl->alignment));
 
   // IsolateInfo
-  ClassElts.push_back(CreateConstantFromTaskClassMirrorArray(cl));
-
   ArrayType* ATy = dyn_cast<ArrayType>(STy->getContainedType(3));
   assert(ATy && "Malformed type");
   
+  StructType* TCMTy = dyn_cast<StructType>(ATy->getContainedType(0));
+  assert(TCMTy && "Malformed type");
+
+  TempElts.push_back(ConstantInt::get(Type::getInt8Ty(getLLVMContext()),
+                                      cl->getInitializationState()));
+  TempElts.push_back(ConstantInt::get(Type::getInt1Ty(getLLVMContext()),
+                                      cl->isReady() ? 1 : 0));
+  TempElts.push_back(getStaticInstance(cl));
+  Constant* CStr[1] = { ConstantStruct::get(TCMTy, TempElts) };
+  TempElts.clear();
+  ClassElts.push_back(ConstantArray::get(ATy, CStr));
+
   if (cl->nbVirtualFields + cl->nbStaticFields) {
     ATy = ArrayType::get(JavaIntrinsics.JavaFieldType->getContainedType(0),
                          cl->nbVirtualFields + cl->nbStaticFields);
@@ -1336,29 +1293,29 @@ Constant* JavaAOTCompiler::CreateConstantFromClass(Class* cl) {
                                        ctpInfo, "");
   ClassElts.push_back(varGV);
 
-  // attributes
-  if (cl->nbAttributes) {
-    ATy = ArrayType::get(JavaIntrinsics.AttributeType->getContainedType(0),
-                         cl->nbAttributes);
+  // attributs
+  if (cl->nbAttributs) {
+    ATy = ArrayType::get(JavaIntrinsics.AttributType->getContainedType(0),
+                         cl->nbAttributs);
 
-    for (uint32 i = 0; i < cl->nbAttributes; ++i) {
-      TempElts.push_back(CreateConstantFromAttribute(cl->attributes[i]));
+    for (uint32 i = 0; i < cl->nbAttributs; ++i) {
+      TempElts.push_back(CreateConstantFromAttribut(cl->attributs[i]));
     }
 
-    Constant* attributes = ConstantArray::get(ATy, TempElts);
+    Constant* attributs = ConstantArray::get(ATy, TempElts);
     TempElts.clear();
-    attributes = new GlobalVariable(*getLLVMModule(), ATy, true,
+    attributs = new GlobalVariable(*getLLVMModule(), ATy, true,
                                    GlobalValue::InternalLinkage,
-                                   attributes, "");
-    attributes = ConstantExpr::getCast(Instruction::BitCast, attributes,
-                                      JavaIntrinsics.AttributeType);
-    ClassElts.push_back(attributes);
+                                   attributs, "");
+    attributs = ConstantExpr::getCast(Instruction::BitCast, attributs,
+                                      JavaIntrinsics.AttributType);
+    ClassElts.push_back(attributs);
   } else {
-    ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributeType));
+    ClassElts.push_back(Constant::getNullValue(JavaIntrinsics.AttributType));
   }
   
-  // nbAttributes
-  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->nbAttributes));
+  // nbAttributs
+  ClassElts.push_back(ConstantInt::get(Type::getInt16Ty(getLLVMContext()), cl->nbAttributs));
   
   // innerClasses
   if (cl->nbInnerClasses) {
@@ -1841,8 +1798,8 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   return Array;
 }
 
-JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID, bool compilingMMTk) :
-  JavaLLVMCompiler(ModuleID, compilingMMTk) {
+JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
+  JavaLLVMCompiler(ModuleID) {
 
   std::string Error;
   const Target* TheTarget(TargetRegistry::lookupTarget(
@@ -1926,8 +1883,8 @@ void JavaAOTCompiler::printStats() {
           (unsigned long long int) arrayClasses.size());
   fprintf(stdout, "Number of virtual tables            : %llu\n", 
           (unsigned long long int) virtualTables.size());
-  fprintf(stdout, "Number of Task Class Mirrors        : %llu\n",
-          (unsigned long long int) taskClassMirrors.size());
+  fprintf(stdout, "Number of static instances          : %llu\n", 
+          (unsigned long long int) staticInstances.size());
   fprintf(stdout, "Number of constant pools            : %llu\n", 
           (unsigned long long int) resolvedConstantPools.size());
   fprintf(stdout, "Number of strings                   : %llu\n", 
@@ -2151,7 +2108,7 @@ void mainCompilerStart(JavaThread* th) {
 
   JavaJITCompiler* Comp = NULL;
   if (!M->clinits->empty()) {
-    Comp = JavaJITCompiler::CreateCompiler("JIT", M->isCompilingMMTk());
+    Comp = JavaJITCompiler::CreateCompiler("JIT");
     Comp->EmitFunctionName = true;
     if (!M->useCooperativeGC()) {
       Comp->disableCooperativeGC();

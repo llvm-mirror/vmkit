@@ -95,7 +95,7 @@ const word_t kVmkitThreadMask = 0xF0000000;
 
 const word_t kGCMemorySize = 0x30000000;  
 
-#define TRY { vmkit::ExceptionBuffer __buffer__; if (!SETJMP(__buffer__.getSetJmpBuffer()))
+#define TRY { vmkit::ExceptionBuffer __buffer__; if (!SETJMP(__buffer__.buffer))
 #define CATCH else
 #define IGNORE else { vmkit::Thread::get()->clearException(); }}
 #define END_CATCH }
@@ -124,8 +124,8 @@ public:
     return ptr;
   }
 
-  static size_t GetAlternativeStackSize() {
-    static size_t size = PageAlignUp(SIGSTKSZ);
+  static word_t GetAlternativeStackSize() {
+    static word_t size = PageAlignUp(SIGSTKSZ);
     return size;
   }
 
@@ -144,9 +144,29 @@ public:
     return kThreadStart;
   }
 
-  static size_t GetPageSize() {
-    static size_t pagesize = getpagesize();
+  static uint32_t GetPageSize() {
+    static uint32_t pagesize = getpagesize();
     return pagesize;
+  }
+
+  static word_t GetCallerAddress() {
+#if defined(ARCH_X86) || defined(ARCH_X64)
+    return (word_t)__builtin_frame_address(0);
+#else
+    return ((word_t*)__builtin_frame_address(0))[0];
+#endif
+  }
+
+  static word_t GetCallerOfAddress(word_t addr) {
+    return ((word_t*)addr)[0];
+  }
+
+  static word_t GetIPFromCallerAddress(word_t addr) {
+#if defined(MACOS_OS) && defined(ARCH_PPC)
+    return ((word_t*)addr)[2];
+#else
+    return ((word_t*)addr)[1];
+#endif
   }
 
   static int SetJmp(jmp_buf buffer) {

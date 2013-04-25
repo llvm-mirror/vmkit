@@ -29,14 +29,6 @@ namespace vmkit {
 
 using namespace j3;
 
-extern "C" uint32_t j3SetIsolate(uint32_t isolateID, uint32_t* currentIsolateID);
-extern "C" void* j3GetStaticInstance(UserClass* cl);
-extern "C" void* j3GetCachedValue(UserClass* cl, uint32 index, isolate_id_t isolateID);
-extern "C" JavaObject** j3GetClassDelegateePtr(UserCommonClass* commonCl);
-extern "C" JavaObject* j3GetClassDelegatee(UserCommonClass* commonCl);
-extern "C" UserClass* j3InitialisationCheck(UserClass* cl);
-extern "C" UserClass* j3InitialisationCheckForJavaObject(JavaObject* obj);
-
 extern "C" void* j3InterfaceLookup(UserClass* caller, uint32 index);
 extern "C" void* j3VirtualFieldLookup(UserClass* caller, uint32 index);
 extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index);
@@ -44,7 +36,6 @@ extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index, ...);
 extern "C" void* j3StringLookup(UserClass* cl, uint32 index);
 extern "C" void* j3ClassLookup(UserClass* caller, uint32 index);
 extern "C" UserCommonClass* j3RuntimeInitialiseClass(UserClass* cl);
-extern "C" JavaObject** j3RuntimeDelegateePtr(UserCommonClass* cl);
 extern "C" JavaObject* j3RuntimeDelegatee(UserCommonClass* cl);
 extern "C" JavaArray* j3MultiCallNew(UserClassArray* cl, uint32 len, ...);
 extern "C" UserClassArray* j3GetArrayClass(UserCommonClass*,

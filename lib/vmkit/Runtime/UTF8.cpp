@@ -39,32 +39,6 @@ uint32 UTF8::readerHasher(const uint16* buf, sint32 size) {
   return (r1 & 255) + ((r0 & 255) << 8);
 }
 
-std::string UTF8::toString() const
-{
-	std::string contents;
-	contents.resize(size);
-
-	for (ssize_t i = 0; i < size; ++i)
-		contents[i] = (std::string::value_type)(elements[i]);
-
-	return contents;
-}
-
-int UTF8::compare(const char *s) const
-{
-	int len = strlen(s);
-	int diff = size - len;
-	if (diff != 0) return diff;
-
-	for (int i = 0; (i < size) && (diff == 0); ++i)
-		diff = (char)(elements[i]) - s[i];
-	return diff;
-}
-
-void UTF8::dump() const
-{
-	std::cout << (const void *)this << ": " << toString() << std::endl;
-}
 
 const UTF8* UTF8Map::lookupOrCreateAsciiz(const char* asciiz) {
   sint32 size = strlen(asciiz);

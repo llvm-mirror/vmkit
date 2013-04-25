@@ -175,19 +175,6 @@ public:
   void unlock() { release(); }
 };
 
-class LockGuard
-{
-protected:
-	Lock& lock;
-
-private:	//Disable these consructors
-	LockGuard();
-	LockGuard(const LockGuard&);
-
-public:
-	inline LockGuard(Lock& l) : lock(l) {lock.lock();}
-	virtual ~LockGuard() {lock.unlock();}
-};
 
 } // end namespace vmkit
 

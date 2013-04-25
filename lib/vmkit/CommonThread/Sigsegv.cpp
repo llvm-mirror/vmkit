@@ -52,7 +52,7 @@ bool System::SupportsHardwareStackOverflow() {
 }
 #endif
 
-extern "C" void ThrowStackOverflowError(void* ip) {
+extern "C" void ThrowStackOverflowError(word_t ip) {
   vmkit::Thread* th = vmkit::Thread::get();
   vmkit::FrameInfo* FI = th->MyVM->IPToFrameInfo(ip);
   if (FI->Metadata == NULL) {
@@ -65,15 +65,23 @@ extern "C" void ThrowStackOverflowError(void* ip) {
   UNREACHABLE();
 }
 
-extern "C" void ThrowNullPointerException(void* methodIP)
-{
-	vmkit::Thread::get()->throwNullPointerException(methodIP);
+extern "C" void ThrowNullPointerException(word_t ip) {
+  vmkit::Thread* th = vmkit::Thread::get();
+  vmkit::FrameInfo* FI = th->MyVM->IPToFrameInfo(ip);
+  if (FI->Metadata == NULL) {
+    fprintf(stderr, "Thread %p received a SIGSEGV: either the VM code or an external\n"
+                    "native method is bogus. Aborting...\n", (void*)th);
+    abort();
+  } else {
+    vmkit::Thread::get()->MyVM->nullPointerException();
+  }
+  UNREACHABLE();
 }
 
 void sigsegvHandler(int n, siginfo_t *info, void *context) {
   Handler handler(context);
   vmkit::Thread* th = vmkit::Thread::get();
-  void* addr = (void*)info->si_addr;
+  word_t addr = (word_t)info->si_addr;
   if (th->IsStackOverflowAddr(addr)) {
     if (vmkit::System::SupportsHardwareStackOverflow()) {
       handler.UpdateRegistersForStackOverflow();

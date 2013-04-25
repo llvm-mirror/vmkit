@@ -49,7 +49,6 @@ typedef void (*static_init_t)(JnjvmClassLoader*);
 const UTF8* JavaCompiler::InlinePragma = 0;
 const UTF8* JavaCompiler::NoInlinePragma = 0;
 
-extern "C" uint32_t j3SetIsolate(uint32_t isolateID, uint32_t* currentIsolateID);
 
 JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
                                            JavaCompiler* Comp, 
@@ -143,18 +142,18 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
   arrayTable[JavaArray::T_LONG - 4] = upcalls->ArrayOfLong;
   arrayTable[JavaArray::T_DOUBLE - 4] = upcalls->ArrayOfDouble;
   
-  JavaAttribute::annotationsAttribute =
+  Attribut::annotationsAttribut =
     asciizConstructUTF8("RuntimeVisibleAnnotations");
-  JavaAttribute::codeAttribute = asciizConstructUTF8("Code");
-  JavaAttribute::exceptionsAttribute = asciizConstructUTF8("Exceptions");
-  JavaAttribute::constantAttribute = asciizConstructUTF8("ConstantValue");
-  JavaAttribute::lineNumberTableAttribute = asciizConstructUTF8("LineNumberTable");
-  JavaAttribute::innerClassesAttribute = asciizConstructUTF8("InnerClasses");
-  JavaAttribute::sourceFileAttribute = asciizConstructUTF8("SourceFile");
-  JavaAttribute::signatureAttribute = asciizConstructUTF8("Signature");
-  JavaAttribute::enclosingMethodAttribute = asciizConstructUTF8("EnclosingMethod");
-  JavaAttribute::paramAnnotationsAttribute = asciizConstructUTF8("RuntimeVisibleParameterAnnotations");
-  JavaAttribute::annotationDefaultAttribute = asciizConstructUTF8("AnnotationDefault");
+  Attribut::codeAttribut = asciizConstructUTF8("Code");
+  Attribut::exceptionsAttribut = asciizConstructUTF8("Exceptions");
+  Attribut::constantAttribut = asciizConstructUTF8("ConstantValue");
+  Attribut::lineNumberTableAttribut = asciizConstructUTF8("LineNumberTable");
+  Attribut::innerClassesAttribut = asciizConstructUTF8("InnerClasses");
+  Attribut::sourceFileAttribut = asciizConstructUTF8("SourceFile");
+  Attribut::signatureAttribut = asciizConstructUTF8("Signature");
+  Attribut::enclosingMethodAttribut = asciizConstructUTF8("EnclosingMethod");
+  Attribut::paramAnnotationsAttribut = asciizConstructUTF8("RuntimeVisibleParameterAnnotations");
+  Attribut::annotationDefaultAttribut = asciizConstructUTF8("AnnotationDefault");
  
   JavaCompiler::InlinePragma =
     asciizConstructUTF8("Lorg/vmmagic/pragma/Inline;");
@@ -173,7 +172,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
   VMDoubleName = asciizConstructUTF8("java/lang/VMDouble");
   stackWalkerName = asciizConstructUTF8("gnu/classpath/VMStackWalker");
   NoClassDefFoundError = asciizConstructUTF8("java/lang/NoClassDefFoundError");
-  org_osgi_framework_BundleContext = asciizConstructUTF8("Lorg/osgi/framework/BundleContext;");
 
 #define DEF_UTF8(var) \
   var = asciizConstructUTF8(#var)
@@ -206,20 +204,14 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
   DEF_UTF8(doubleToRawLongBits);
   DEF_UTF8(intBitsToFloat);
   DEF_UTF8(longBitsToDouble);
-  DEF_UTF8(stop);
 
 #undef DEF_UTF8 
-}
-
-JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
-	isolateID(0), allocator(Alloc)
-{
 }
 
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    JnjvmClassLoader& JCL, JavaObject* loader,
                                    VMClassLoader* vmdata,
-                                   Jnjvm* VM) : isolateID(0), allocator(Alloc) {
+                                   Jnjvm* I) : allocator(Alloc) {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
   bootstrapLoader = JCL.bootstrapLoader;
@@ -234,22 +226,13 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
   vmdata->JCL = this;
   vmkit::Collector::objectReferenceNonHeapWriteBarrier(
       (gc**)&javaLoader, (gc*)loader);
-  vm = VM;
+  isolate = I;
 
   JavaMethod* meth = bootstrapLoader->upcalls->loadInClassLoader;
   loadClassMethod = 
     JavaObject::getClass(loader)->asClass()->lookupMethodDontThrow(
         meth->name, meth->type, false, true, &loadClass);
   assert(loadClass && "Loader does not have a loadClass function");
-
-  if (VM->appClassLoader != NULL) {	// Is the system class loader already set up?
-    isolate_id_t oldIsolateID = 0;
-    VM->allocateNextFreeIsolateID(this, &isolateID);
-
-    oldIsolateID = j3SetIsolate(isolateID, NULL);
-    VM->loadIsolate(this);
-    j3SetIsolate(oldIsolateID, NULL);
-  }
 }
 
 void JnjvmClassLoader::setCompiler(JavaCompiler* Comp) {
@@ -347,9 +330,9 @@ UserClass* JnjvmClassLoader::internalLoad(const UTF8* name, bool doResolve,
   if (!cl) {
     UserClass* forCtp = loadClass;
     if (strName == NULL) {
-      strName = JavaString::internalToJava(name, vm);
+      strName = JavaString::internalToJava(name, isolate);
     }
-    obj = loadClassMethod->invokeJavaObjectVirtual(vm, forCtp, javaLoader,
+    obj = loadClassMethod->invokeJavaObjectVirtual(isolate, forCtp, javaLoader,
                                                    &strName);
     cl = JavaObjectClass::getClass(((JavaObjectClass*)obj));
   }
@@ -854,9 +837,8 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 
 JnjvmClassLoader::~JnjvmClassLoader() {
 
-  if (vm) {
-    vm->removeFrameInfos(TheCompiler);
-    vm->freeIsolateID(isolateID);
+  if (isolate) {
+    isolate->removeFrameInfos(TheCompiler);
   }
 
   if (classes) {
@@ -897,7 +879,7 @@ JnjvmBootstrapLoader::~JnjvmBootstrapLoader() {
 JavaString** JnjvmClassLoader::UTF8ToStr(const UTF8* val) {
   JavaString* res = NULL;
   llvm_gcroot(res, 0);
-  res = vm->internalUTF8ToStr(val);
+  res = isolate->internalUTF8ToStr(val);
   return strings->addString(this, res);
 }
 

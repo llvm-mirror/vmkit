@@ -20,8 +20,9 @@
 #include "llvm/Metadata.h"
 #include "llvm/Type.h"
 #include "llvm/Value.h"
+#include "llvm/DIBuilder.h"
+#include "llvm/DebugInfo.h"
 #include "llvm/Support/DebugLoc.h"
-#include "llvm/Analysis/DebugInfo.h"
 
 #include "types.h"
 
@@ -79,8 +80,7 @@ public:
   JavaJIT(JavaLLVMCompiler* C,
           JavaMethod* meth,
           llvm::Function* func,
-          Class* customized,
-          bool CompilingMMTk = false) {
+          Class* customized) {
     compilingMethod = meth;
     compilingClass = meth->classDef;
     upcalls = compilingClass->classLoader->bootstrapLoader->upcalls;
@@ -100,7 +100,6 @@ public:
     overridesThis = false;
     nbHandlers = 0;
     jmpBuffer = NULL;
-    compilingMMTk = CompilingMMTk;
   }
 
   /// javaCompile - Compile the Java method.
@@ -116,8 +115,6 @@ public:
   uint32_t nbHandlers;
 
 private:
-  bool compilingMMTk;
-
   /// Whether the method overrides 'this'.
   bool overridesThis;
   
@@ -179,6 +176,9 @@ private:
  
   /// getMutatorThreadPtr - Emit code to get a pointer to the current MutatorThread.
 	llvm::Value* getMutatorThreadPtr();
+
+  /// getIsolateIDPtr - Emit code to get a pointer to IsolateID.
+	llvm::Value* getIsolateIDPtr(llvm::Value* mutatorThreadPtr);
 
   /// getVMPtr - Emit code to get a pointer to MyVM.
 	llvm::Value* getVMPtr(llvm::Value* mutatorThreadPtr);
@@ -551,11 +551,6 @@ private:
   llvm::Instruction* invoke(llvm::Value *F, const char* Name,
                             llvm::BasicBlock *InsertAtEnd);
   
-  llvm::Value* getClassDelegateePtr(CommonClass* cl);
-  llvm::Value* setCurrentIsolateForCompilingMethod(llvm::Value* currentIsolateID, bool alwaysSet);
-  void restoreCurrentIsolateForCompilingMethod(llvm::Value* oldIsolateID, bool alwaysRestore);
-  bool shouldMethodChangeCurrentIsolate();
-
 //===--------------------- Yield point support  ---------------------------===//
 
   void checkYieldPoint();

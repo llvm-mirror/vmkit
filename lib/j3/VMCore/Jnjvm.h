@@ -24,7 +24,6 @@
 #include "JnjvmConfig.h"
 #include "JNIReferences.h"
 #include "LockedMap.h"
-#include "JavaArray.h"
 
 namespace j3 {
 
@@ -46,21 +45,6 @@ class UserClass;
 class UserClassArray;
 class UserClassPrimitive;
 class UserCommonClass;
-
-enum IsolateState {	// These are bits that can be set independently
-	IsolateFree				= 0x0,
-	IsolateRunning			= 0x1,
-
-	IsolateDenyExecution	= 0x2,
-	IsolateResetReferences	= 0x4
-};
-typedef uint8_t		isolate_state_t;
-
-struct IsolateDescriptor {
-	isolate_state_t		state;
-	JnjvmClassLoader	*loader;
-};
-
 
 /// ThreadSystem - Thread management of a JVM. Each JVM has one thread
 /// management system to count the number of non-daemon threads it owns.
@@ -110,7 +94,7 @@ public:
   char* jarFile;
   std::vector< std::pair<char*, char*> > agents;
 
-  void readArgs(class Jnjvm *vm);
+  void readArgs(Jnjvm *vm);
   void extractClassFromJar(Jnjvm* vm, int argc, char** argv, int i);
   void javaAgent(char* cur);
 
@@ -139,7 +123,6 @@ private:
   ReferenceThread* referenceThread;
 
   virtual void startCollection();
-  virtual void endCollectionBeforeUnblockingThreads();
   virtual void endCollection();
   virtual void scanWeakReferencesQueue(word_t closure);
   virtual void scanSoftReferencesQueue(word_t closure);
@@ -148,11 +131,9 @@ private:
   virtual void addFinalizationCandidate(gc* obj);
   virtual size_t getObjectSize(gc* obj);
   virtual const char* getObjectTypeName(gc* obj);
+  virtual void printMethod(vmkit::FrameInfo* FI, word_t ip, word_t addr);
 
-public:
-  virtual void printMethod(vmkit::FrameInfo* FI, void* ip, void* callFrame);
 
-private:
   /// CreateError - Creates a Java object of the specified exception class
   /// and calling its <init> function.
   ///
@@ -163,8 +144,7 @@ private:
   /// that calls this functions. This is used internally by Jnjvm to control
   /// which pair class/method are used.
   ///
-  void error(UserClass* cl, JavaMethod* meth, JavaString*, bool immediate = true);
-  void error(UserClass* cl, JavaMethod* meth, const char*, bool immediate = true);
+  void error(UserClass* cl, JavaMethod* meth, JavaString*);
   
   /// errorWithExcp - Throws an exception whose cause is the Java object excp.
   ///
@@ -370,34 +350,6 @@ public:
   /// mapping the initial thread.
   ///
   void loadBootstrap();
-  void loadIsolate(JnjvmClassLoader *loader);
-
-  IsolateDescriptor RunningIsolates[NR_ISOLATES];
-  vmkit::LockNormal IsolateLock;
-
-  int allocateNextFreeIsolateID(JnjvmClassLoader* loader, isolate_id_t *isolateID);
-  void freeIsolateID(isolate_id_t isolateID);
-
-  void disableIsolates(isolate_id_t* isolateID, size_t isolateCount, bool denyIsolateExecution, bool resetIsolateReferences);
-
-  void collectIsolates();
-  void collectIsolate(isolate_id_t isolateID);
-  void denyIsolateExecutionInThread(isolate_id_t isolateID, JavaThread& thread);
-  void denyIsolateExecutionInMethodFrame(const vmkit::StackWalker& CallerWalker, vmkit::StackWalker& CalledWalker);
-  void removeExceptionHandlersInThread(isolate_id_t isolateID, JavaThread& thread);
-  void denyMethodExecution(const vmkit::StackWalker& CallerWalker, vmkit::StackWalker& CalledWalker);
-  void denyMethodExecution(JavaMethod& method);
-  bool isActivatorStopMethod(JavaMethod& method) const;
-  isolate_id_t getFrameIsolateID(const vmkit::FrameInfo& frame) const;
-  isolate_id_t getFrameIsolateID(const JavaMethod& method) const;
-  void redirectMethodProlog(void* methodAddress, void* redirectCode, size_t codeSize);
-  void denyClassExecution(isolate_id_t isolateID, CommonClass& cl);
-  void invalidateAllClassesInIsolate(isolate_id_t isolateID);
-
-  virtual bool resetDeadIsolateReference(void* source, void** objectRef);
-  virtual void deadIsolateException(void* methodIP, bool immediate = true);
-
-  virtual void printCallStack(const vmkit::StackWalker& walker);
 };
 
 } // end namespace j3

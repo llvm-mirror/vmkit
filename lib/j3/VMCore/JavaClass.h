@@ -22,9 +22,6 @@
 #include "JavaObject.h"
 #include "JnjvmClassLoader.h"
 #include "JnjvmConfig.h"
-#include "Jnjvm.h"
-#include "JavaTypes.h"
-#include "JavaThread.h"
 
 #include <cassert>
 #include <set>
@@ -73,84 +70,84 @@ public:
   void readElementValue();
 };
 
-/// Attribute - This class represents JVM attributes to Java class, methods and
+/// Attribut - This class represents JVM attributes to Java class, methods and
 /// fields located in the .class file.
 ///
-class JavaAttribute : public vmkit::PermanentObject {
+class Attribut : public vmkit::PermanentObject {
 public:
   
-  /// name - The name of the attribute. These are specified in the JVM book.
+  /// name - The name of the attribut. These are specified in the JVM book.
   /// Experimental attributes exist, but the JnJVM does nor parse them.
   ///
   const UTF8* name;
 
-  /// start - The offset in the class of this attribute.
+  /// start - The offset in the class of this attribut.
   ///
   uint32 start;
 
-  /// nbb - The size of the attribute.
+  /// nbb - The size of the attribut.
   ///
   uint32 nbb;
 
-  /// Attribute - Create an attribute at the given length and offset.
+  /// Attribut - Create an attribut at the given length and offset.
   ///
-  JavaAttribute(const UTF8* name, uint32 length, uint32 offset);
-  JavaAttribute() {}
+  Attribut(const UTF8* name, uint32 length, uint32 offset);
+  Attribut() {}
 
-  /// codeAttribute - The "Code" JVM attribute. This is a method attribute for
+  /// codeAttribut - The "Code" JVM attribut. This is a method attribut for
   /// finding the bytecode of a method in the .class file.
   //
-  static const UTF8* codeAttribute;
+  static const UTF8* codeAttribut;
   
-  /// annotationsAttribute - The "RuntimeVisibleAnnotations" JVM attribute.
-  /// This is a method attribute for getting the runtime annotations.
+  /// annotationsAttribut - The "RuntimeVisibleAnnotations" JVM attribut.
+  /// This is a method attribut for getting the runtime annotations.
   //
-  static const UTF8* annotationsAttribute;
+  static const UTF8* annotationsAttribut;
 
-  /// exceptionsAttribute - The "Exceptions" attribute. This is a method
-  /// attribute for finding the exception table of a method in the .class
+  /// exceptionsAttribut - The "Exceptions" attribut. This is a method
+  /// attribut for finding the exception table of a method in the .class
   /// file.
   ///
-  static const UTF8* exceptionsAttribute;
+  static const UTF8* exceptionsAttribut;
 
-  /// constantAttribute - The "ConstantValue" attribute. This is a field attribute
+  /// constantAttribut - The "ConstantValue" attribut. This is a field attribut
   /// when the field has a static constant value.
   ///
-  static const UTF8* constantAttribute;
+  static const UTF8* constantAttribut;
 
-  /// lineNumberTableAttribute - The "LineNumberTable" attribute. This is used
+  /// lineNumberTableAttribut - The "LineNumberTable" attribut. This is used
   /// for corresponding JVM bytecode to source line in the .java file.
   ///
-  static const UTF8* lineNumberTableAttribute;
+  static const UTF8* lineNumberTableAttribut;
 
-  /// innerClassAttribute - The "InnerClasses" attribute. This is a class attribute
+  /// innerClassAttribut - The "InnerClasses" attribut. This is a class attribut
   /// for knowing the inner/outer informations of a Java class.
   ///
-  static const UTF8* innerClassesAttribute;
+  static const UTF8* innerClassesAttribut;
 
-  /// sourceFileAttribute - The "SourceFile" attribute. This is a class attribute
-  /// and gives the correspondence between a class and the name of its Java
+  /// sourceFileAttribut - The "SourceFile" attribut. This is a class attribut
+  /// and gives the correspondance between a class and the name of its Java
   /// file.
   ///
-  static const UTF8* sourceFileAttribute;
+  static const UTF8* sourceFileAttribut;
 
-  /// signatureAttribute - The "Signature" attribute.  This is used to record
+  /// signatureAttribut - The "Signature" attribut.  This is used to record
   /// generics information about a class or method.
   ///
-  static const UTF8* signatureAttribute;
+  static const UTF8* signatureAttribut;
 
-  /// enclosingMEthodAttribute - The "EnclosingMethod" attribute.  This is a class
-  /// attribute that identifies the method defining a local or anonymous class
+  /// enclosingMEthodAttribut - The "EnclosingMethod" attribut.  This is a class
+  /// attribut that identifies the method definining a local or anonymous class
   ///
-  static const UTF8* enclosingMethodAttribute;
+  static const UTF8* enclosingMethodAttribut;
 
-  /// paramAnnotationsAttribute - Annotations for parameters attribute
+  /// paramAnnotationsAttribut - Annotations for parameters attribut
   ///
-  static const UTF8* paramAnnotationsAttribute;
+  static const UTF8* paramAnnotationsAttribut;
 
-  /// annotationDefaultAttribute - The "AnnotationDefault" attribute
+  /// annotationDefaultAttribut - The "AnnotationDefault" attribut
   ///
-  static const UTF8* annotationDefaultAttribute;
+  static const UTF8* annotationDefaultAttribut;
 };
 
 /// TaskClassMirror - The isolate specific class information: the initialization
@@ -178,7 +175,7 @@ public:
 ///
 class CommonClass : public vmkit::PermanentObject {
 
-private:
+public:
   
 //===----------------------------------------------------------------------===//
 //
@@ -192,7 +189,6 @@ private:
   ///
   JavaObject* delegatee[NR_ISOLATES];
 
-public:
   /// access - {public, private, protected}.
   ///
   uint32 access;
@@ -322,7 +318,7 @@ public:
   /// getClassDelegatee - Return the java/lang/Class representation of this
   /// class.
   ///
-  JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = NULL, isolate_id_t isolateID = CURRENT_ISOLATE);
+  JavaObject* getClassDelegatee(Jnjvm* vm, JavaObject* pd = NULL);
   
   /// getClassDelegateePtr - Return a pointer on the java/lang/Class
   /// representation of this class. Used for JNI.
@@ -357,22 +353,19 @@ public:
  
   /// setDelegatee - Set the java/lang/Class object of this class.
   ///
-  JavaObject* setDelegatee(JavaObject* val, isolate_id_t isolateID = CURRENT_ISOLATE);
+  JavaObject* setDelegatee(JavaObject* val);
 
   /// getDelegatee - Get the java/lang/Class object representing this class.
   ///
-  JavaObject* getDelegatee(isolate_id_t isolateID = CURRENT_ISOLATE) const {
-    return *getDelegateePtr(isolateID);
+  JavaObject* getDelegatee() const {
+    return delegatee[0];
   }
   
   /// getDelegatee - Get a pointer on the java/lang/Class object
   /// representing this class.
   ///
-  JavaObject* const* getDelegateePtr(isolate_id_t isolateID = CURRENT_ISOLATE) const {
-    return const_cast<CommonClass *>(this)->getDelegateePtr(isolateID);
-  }
-  JavaObject** getDelegateePtr(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    return delegatee + JavaThread::getValidIsolateID(isolateID);
+  JavaObject* const* getDelegateePtr() const {
+    return delegatee;
   }
 
   /// resolvedImplClass - Return the internal representation of the
@@ -470,13 +463,13 @@ public:
   ///
   JavaConstantPool* ctpInfo;
 
-  /// attributes - JVM attributes of this class.
+  /// attributs - JVM attributes of this class.
   ///
-  JavaAttribute* attributes;
+  Attribut* attributs;
 
-  /// nbAttributes - The number of attributes.
+  /// nbAttributs - The number of attributes.
   ///
-  uint16 nbAttributes;
+  uint16 nbAttributs;
   
   /// innerClasses - The inner classes of this class.
   ///
@@ -607,7 +600,7 @@ public:
   
   /// doNew - Allocates a Java object whose class is this class.
   ///
-  JavaObject* doNew(Jnjvm* vm, isolate_id_t isolateID = CURRENT_ISOLATE);
+  JavaObject* doNew(Jnjvm* vm);
   
   /// tracer - Tracer function of instances of Class.
   ///
@@ -616,9 +609,9 @@ public:
   ~Class();
   Class();
   
-  /// lookupAttribute - Look up a JVM attribute of this class.
+  /// lookupAttribut - Look up a JVM attribut of this class.
   ///
-  JavaAttribute* lookupAttribute(const UTF8* key);
+  Attribut* lookupAttribut(const UTF8* key);
   
   /// allocateStaticInstance - Allocate the static instance of this class.
   ///
@@ -637,9 +630,9 @@ public:
   ///
   void loadExceptions();
 
-  /// readAttributes - Reads the attributes of the class.
+  /// readAttributs - Reads the attributs of the class.
   ///
-  JavaAttribute* readAttributes(Reader& reader, uint16& size);
+  Attribut* readAttributs(Reader& reader, uint16& size);
 
   /// readFields - Reads the fields of the class.
   ///
@@ -700,85 +693,89 @@ public:
   /// isolate.
   ///
   TaskClassMirror& getCurrentTaskClassMirror() {
-    return getTaskClassMirror();
+    return IsolateInfo[0];
   }
-
-  TaskClassMirror& getTaskClassMirror(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    return IsolateInfo[JavaThread::getValidIsolateID(isolateID)];
-  }
-
+  
   /// isReadyForCompilation - Can this class be inlined when JITing?
   ///
-  bool isReadyForCompilation(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    return isReady(isolateID);
+  bool isReadyForCompilation() {
+    return isReady();
   }
   
   /// setResolved - Set the status of the class as resolved.
-  /// Resolved state is common to all isolates
+  ///
   void setResolved() {
-    getTaskClassMirror(0).status = resolved;
+    getCurrentTaskClassMirror().status = resolved;
   }
   
-  void setResolvedSynchronized(uint8 oldStatus, isolate_id_t isolateID = CURRENT_ISOLATE) {
-    TaskClassMirror& TCM = getTaskClassMirror(0);
-    __sync_val_compare_and_swap(&TCM.status, oldStatus, resolved);
-  }
-
   /// setErroneous - Set the class as erroneous.
   ///
   void setErroneous() {
     getCurrentTaskClassMirror().status = erroneous;
   }
   
+  /// setIsResolving - The class file is being resolved.
+  ///
+  void setIsResolving() {
+    getCurrentTaskClassMirror().status = resolving;
+  }
+  
   /// getStaticInstance - Get the memory that holds static variables.
   ///
-  void* getStaticInstance(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    return getTaskClassMirror(isolateID).staticInstance;
+  void* getStaticInstance() {
+    return getCurrentTaskClassMirror().staticInstance;
   }
   
   /// setStaticInstance - Set the memory that holds static variables.
   ///
-  void setStaticInstance(void* val, isolate_id_t isolateID = CURRENT_ISOLATE) {
-    TaskClassMirror& TCM = getTaskClassMirror(isolateID);
-    assert((val != NULL) && (TCM.staticInstance == NULL));
-    TCM.staticInstance = val;
+  void setStaticInstance(void* val) {
+    assert(getCurrentTaskClassMirror().staticInstance == NULL);
+    getCurrentTaskClassMirror().staticInstance = val;
   }
   
   /// getInitializationState - Get the state of the class.
   ///
-  uint8 getInitializationState(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    return getTaskClassMirror(isolateID).status;
+  uint8 getInitializationState() {
+    return getCurrentTaskClassMirror().status;
   }
 
   /// setInitializationState - Set the state of the class.
   ///
-  void setInitializationState(uint8 st, isolate_id_t isolateID = CURRENT_ISOLATE) {
-    TaskClassMirror& TCM = getTaskClassMirror(isolateID);
+  void setInitializationState(uint8 st) {
+    TaskClassMirror& TCM = getCurrentTaskClassMirror();
     TCM.status = st;
     if (st == ready) TCM.initialized = true;
   }
   
   /// isReady - Has this class been initialized?
   ///
-  bool isReady(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    return getTaskClassMirror(isolateID).status == ready;
+  bool isReady() {
+    return getCurrentTaskClassMirror().status == ready;
   }
   
   /// isInitializing - Is the class currently being initialized?
   ///
-  bool isInitializing(isolate_id_t isolateID = CURRENT_ISOLATE);
+  bool isInitializing() {
+    return getCurrentTaskClassMirror().status >= inClinit;
+  }
   
   /// isResolved - Has this class been resolved?
   ///
-  bool isResolved(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    return (getTaskClassMirror(0).status >= resolved &&
-    		getTaskClassMirror(isolateID).status != erroneous);
+  bool isResolved() {
+    uint8 stat = getCurrentTaskClassMirror().status;
+    return (stat >= resolved && stat != erroneous);
   }
   
   /// isErroneous - Is the class in an erroneous state.
   ///
-  bool isErroneous(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    return getTaskClassMirror(isolateID).status == erroneous;
+  bool isErroneous() {
+    return getCurrentTaskClassMirror().status == erroneous;
+  }
+
+  /// isResolving - Is the class currently being resolved?
+  ///
+  bool isResolving() {
+    return getCurrentTaskClassMirror().status == resolving;
   }
 
   /// isNativeOverloaded - Is the method overloaded with a native function?
@@ -787,7 +784,7 @@ public:
 
   /// needsInitialisationCheck - Does the method need an initialisation check?
   ///
-  bool needsInitialisationCheck(isolate_id_t isolateID = CURRENT_ISOLATE);
+  bool needsInitialisationCheck();
 
   /// fillIMT - Fill the vector with vectors of methods with the same IMT
   /// index.
@@ -880,13 +877,13 @@ public:
   ///
   uint16 access;
 
-  /// attributes - List of Java attributes of this method.
+  /// attributs - List of Java attributs of this method.
   ///
-  JavaAttribute* attributes;
+  Attribut* attributs;
   
-  /// nbAttributes - The number of attributes.
+  /// nbAttributs - The number of attributes.
   ///
-  uint16 nbAttributes;
+  uint16 nbAttributs;
 
   /// classDef - The Java class where the method is defined.
   ///
@@ -912,10 +909,10 @@ public:
   ///
   uint32 offset;
 
-  /// lookupAttribute - Look up an attribute in the method's attributes. Returns
-  /// null if the attribute is not found.
+  /// lookupAttribut - Look up an attribut in the method's attributs. Returns
+  /// null if the attribut is not found.
   ///
-  JavaAttribute* lookupAttribute(const UTF8* key);
+  Attribut* lookupAttribut(const UTF8* key);
 
   /// lookupLineNumber - Find the line number based on the given frame info.
   ///
@@ -926,7 +923,7 @@ public:
   ///
   uint16 lookupCtpIndex(vmkit::FrameInfo* FI);
   
-  /// getSignature - Get the signature of the method, resolving it if
+  /// getSignature - Get the signature of thes method, resolving it if
   /// necessary.
   ///
   Signdef* getSignature() {
@@ -989,123 +986,108 @@ public:
 //
 //===----------------------------------------------------------------------===//
   
-#define DO_TRY
-#define DO_CATCH if (th->pendingException) { th->throwFromJava(); }
+  /// This class of methods takes a variable argument list.
+  uint32 invokeIntSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  float invokeFloatSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  double invokeDoubleSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
+                               va_list ap) __attribute__ ((noinline));
+  sint64 invokeLongSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectSpecialAP(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                        va_list ap) __attribute__ ((noinline));
+  
+  uint32 invokeIntVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  float invokeFloatVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  double invokeDoubleVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj,
+                               va_list ap) __attribute__ ((noinline));
+  sint64 invokeLongVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj, va_list ap)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtualAP(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                        va_list ap) __attribute__ ((noinline));
+  
+  uint32 invokeIntStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
+  float invokeFloatStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
+  double invokeDoubleStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
+  sint64 invokeLongStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectStaticAP(Jnjvm* vm, UserClass*, va_list ap)
+    __attribute__ ((noinline));
 
-private:
-	jvalue* marshalArguments(vmkit::ThreadAllocator& allocator, va_list& ap);
+  /// This class of methods takes a buffer which contain the arguments of the
+  /// call.
+  uint32 invokeIntSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  float invokeFloatSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  double invokeDoubleSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                void* buf) __attribute__ ((noinline));
+  sint64 invokeLongSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectSpecialBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                         void* buf) __attribute__ ((noinline));
+  
+  uint32 invokeIntVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  float invokeFloatVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  double invokeDoubleVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                void* buf) __attribute__ ((noinline));
+  sint64 invokeLongVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj, void* buf)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtualBuf(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                         void* buf) __attribute__ ((noinline));
+  
+  uint32 invokeIntStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
+  float invokeFloatStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
+  double invokeDoubleStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
+  sint64 invokeLongStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectStaticBuf(Jnjvm* vm, UserClass*, void* buf)
+    __attribute__ ((noinline));
 
-	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeSpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {
-		llvm_gcroot(obj, 0);
-		verifyNull(obj);
-
-		void* func = this->compiledPtr();
-		FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)getSignature()->getVirtualCallBuf();
-
-		JavaThread* th = JavaThread::get();
-		th->startJava();
-		TYPE res;
-
-		DO_TRY
-			res = call(cl->getConstantPool(), func, obj, buf);
-		DO_CATCH
-
-		th->endJava();
-		return res;
-	}
-
-	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeVirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {
-		UserCommonClass* theClass = JavaObject::getClass(obj);
-		UserClass* objCl = theClass->isArray() ? theClass->super : theClass->asClass();
-
-		JavaMethod* meth = this;
-		if ((objCl != classDef) && !isFinal(access)) {
-			meth = objCl->lookupMethodDontThrow(name, type, false, true, &cl);
-			assert(meth && "No method found");
-		}
-
-		assert(objCl->isSubclassOf(meth->classDef) && "Wrong type");
-
-		return meth->invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buf);
-	}
-
-	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
-	TYPE invokeStaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {
-		if (!cl->isReady()) {
-			cl->resolveClass();
-			cl->initialiseClass(vm);
-		}
-
-		void* func = this->compiledPtr();
-		FUNC_TYPE_STATIC_BUF call = (FUNC_TYPE_STATIC_BUF)getSignature()->getStaticCallBuf();
-
-		JavaThread* th = JavaThread::get();
-		th->startJava();
-		TYPE res;
-
-		DO_TRY
-			res = call(cl->getConstantPool(), func, buf);
-		DO_CATCH
-
-		th->endJava();
-		return res;
-	}
-
-	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeVirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list& ap) {
-		llvm_gcroot(obj, 0);
-		verifyNull(obj);
-
-		vmkit::ThreadAllocator allocator;
-		jvalue* buffer = marshalArguments(allocator, ap);
-		return invokeVirtualBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
-	}
-
-	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeSpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list& ap) {
-		llvm_gcroot(obj, 0);
-		verifyNull(obj);
-
-		vmkit::ThreadAllocator allocator;
-		jvalue* buffer = marshalArguments(allocator, ap);
-		return invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
-	}
-
-	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
-	TYPE invokeStaticAP(Jnjvm* vm, UserClass* cl, va_list& ap) {
-		vmkit::ThreadAllocator allocator;
-		jvalue* buffer = marshalArguments(allocator, ap);
-		return invokeStaticBuf<TYPE, FUNC_TYPE_STATIC_BUF>(vm, cl, buffer);
-	}
-
-#define JavaMethod_DECL_INVOKE_VA(TYPE, TYPE_NAME) \
-	TYPE invoke##TYPE_NAME##Virtual(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) __attribute__ ((noinline));	\
-	TYPE invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) __attribute__ ((noinline));	\
-	TYPE invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) __attribute__ ((noinline));
-
-#define JavaMethod_DECL_INVOKE_AP(TYPE, TYPE_NAME)	\
-	TYPE invoke##TYPE_NAME##VirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list& ap) __attribute__ ((noinline));	\
-	TYPE invoke##TYPE_NAME##SpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list& ap) __attribute__ ((noinline));	\
-	TYPE invoke##TYPE_NAME##StaticAP(Jnjvm* vm, UserClass* cl, va_list& ap) __attribute__ ((noinline));
-
-#define JavaMethod_DECL_INVOKE_BUF(TYPE, TYPE_NAME)	\
-	TYPE invoke##TYPE_NAME##VirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__ ((noinline));	\
-	TYPE invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__ ((noinline));	\
- 	TYPE invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* buf) __attribute__ ((noinline));
-
-#define JavaMethod_DECL_INVOKE(TYPE, TYPE_NAME) \
-	JavaMethod_DECL_INVOKE_BUF(TYPE, TYPE_NAME)	\
-	JavaMethod_DECL_INVOKE_AP(TYPE, TYPE_NAME)	\
-	JavaMethod_DECL_INVOKE_VA(TYPE, TYPE_NAME)
-
-public:
-	JavaMethod_DECL_INVOKE(uint32_t, Int)
-	JavaMethod_DECL_INVOKE(int64_t, Long)
-	JavaMethod_DECL_INVOKE(float,  Float)
-	JavaMethod_DECL_INVOKE(double, Double)
-	JavaMethod_DECL_INVOKE(JavaObject*, JavaObject)
+  /// This class of methods is variadic.
+  uint32 invokeIntSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  float invokeFloatSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  double invokeDoubleSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  sint64 invokeLongSpecial(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectSpecial(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                      ...) __attribute__ ((noinline));
+  
+  uint32 invokeIntVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  float invokeFloatVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  double invokeDoubleVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  sint64 invokeLongVirtual(Jnjvm* vm, UserClass*, JavaObject* obj, ...)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectVirtual(Jnjvm* vm, UserClass*, JavaObject* obj,
+                                      ...) __attribute__ ((noinline));
+  
+  uint32 invokeIntStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
+  float invokeFloatStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
+  double invokeDoubleStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
+  sint64 invokeLongStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
+  JavaObject* invokeJavaObjectStatic(Jnjvm* vm, UserClass*, ...)
+    __attribute__ ((noinline));
   
   #define JNI_NAME_PRE "Java_"
   #define JNI_NAME_PRE_LEN 5
@@ -1122,11 +1104,11 @@ private:
   
   /// InitField - Set an initial value to the field.
   ///
-  void InitStaticField(uint64 val, isolate_id_t isolateID = CURRENT_ISOLATE);
-  void InitStaticField(JavaObject* val, isolate_id_t isolateID = CURRENT_ISOLATE);
-  void InitStaticField(double val, isolate_id_t isolateID = CURRENT_ISOLATE);
-  void InitStaticField(float val, isolate_id_t isolateID = CURRENT_ISOLATE);
-  void InitNullStaticField(isolate_id_t isolateID = CURRENT_ISOLATE);
+  void InitStaticField(uint64 val);
+  void InitStaticField(JavaObject* val);
+  void InitStaticField(double val);
+  void InitStaticField(float val);
+  void InitNullStaticField();
 
 public:
   
@@ -1150,13 +1132,13 @@ public:
   ///
   const UTF8* type;
 
-  /// attributes - List of Java attributes for this field.
+  /// attributs - List of Java attributs for this field.
   ///
-  JavaAttribute* attributes;
+  Attribut* attributs;
   
-  /// nbAttributes - The number of attributes.
+  /// nbAttributs - The number of attributes.
   ///
-  uint16 nbAttributes;
+  uint16 nbAttributs;
 
   /// classDef - The class where the field is defined.
   ///
@@ -1185,13 +1167,13 @@ public:
   ///
   void InitStaticField(Jnjvm* vm);
 
-  /// lookupAttribute - Look up the attribute in the field's list of attributes.
+  /// lookupAttribut - Look up the attribut in the field's list of attributs.
   ///
-  JavaAttribute* lookupAttribute(const UTF8* key);
+  Attribut* lookupAttribut(const UTF8* key);
 
-  JavaObject** getStaticObjectFieldPtr(isolate_id_t isolateID = CURRENT_ISOLATE) {
-    assert(classDef->getStaticInstance(isolateID));
-    return (JavaObject**)((uint64)classDef->getStaticInstance(isolateID) + ptrOffset);
+  JavaObject** getStaticObjectFieldPtr() {
+    assert(classDef->getStaticInstance());
+    return (JavaObject**)((uint64)classDef->getStaticInstance() + ptrOffset);
   }
 
   JavaObject** getInstanceObjectFieldPtr(JavaObject* obj) {
@@ -1199,89 +1181,74 @@ public:
     return (JavaObject**)((uint64)obj + ptrOffset);
   }
 
-private:
   /// getStatic*Field - Get a static field.
   ///
-  template <class TYPE>
-  TYPE getStaticField(isolate_id_t isolateID) {
-    assert(classDef->isResolved(isolateID));
-    void* ptr = (void*)((uint64)classDef->getStaticInstance(isolateID) + ptrOffset);
-    return *static_cast<TYPE *>(ptr);
+  #define GETSTATICFIELD(TYPE, TYPE_NAME)                                   \
+  TYPE getStatic##TYPE_NAME##Field() {                                      \
+    assert(classDef->isResolved());                                         \
+    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset); \
+    return ((TYPE*)ptr)[0];                                                 \
   }
-
-  /*
-    The struct FieldSetter is a workaround in C++ to enable
-    template-based method specialization in a non-template
-    class. See specialization below the class declaration.
-  */
-  template<class TYPE>
-  struct FieldSetter {
-	  /// setStatic*Field - Set a field of an object.
-	  ///
-	  static void setStaticField(const JavaField* field, TYPE val, isolate_id_t isolateID) {
-	    assert(field->classDef->isResolved(isolateID));
-	    void* ptr = (void*)((uint64)field->classDef->getStaticInstance(isolateID) + field->ptrOffset);
-	    *static_cast<TYPE *>(ptr) = val;
-	  }
-      
-	  /// setInstance*Field - Set an instance field.
-	  ///
-	  static void setInstanceField(const JavaField* field, JavaObject* obj, TYPE val) {
-	    llvm_gcroot(obj, 0);
-	    assert(field->classDef->isResolved());
-	    void* ptr = (void*)((uint64)obj + field->ptrOffset);
-	    *static_cast<TYPE *>(ptr) = val;
-	  }
-  };
 
   /// setStatic*Field - Set a field of an object.
   ///
-  template <class TYPE>
-  void setStaticField(TYPE val, isolate_id_t isolateID) {
-    FieldSetter<TYPE>::setStaticField(this, val, isolateID);
+  #define SETSTATICFIELD(TYPE, TYPE_NAME)                                   \
+  void setStatic##TYPE_NAME##Field(TYPE val) {                              \
+    assert(classDef->isResolved());                                         \
+    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset); \
+    ((TYPE*)ptr)[0] = val;                                                  \
   }
 
   /// getInstance*Field - Get an instance field.
   ///
-  template<class TYPE>
-  TYPE getInstanceField(JavaObject* obj) {
-    llvm_gcroot(obj, 0);
-    assert(classDef->isResolved());
-    void* ptr = (void*)((uint64)obj + ptrOffset);
-    return *static_cast<TYPE *>(ptr);
-  }
+  #define GETINSTANCEFIELD(TYPE, TYPE_NAME)                                 \
+  TYPE getInstance##TYPE_NAME##Field(JavaObject* obj) {                     \
+    llvm_gcroot(obj, 0);                                                    \
+    assert(classDef->isResolved());                                         \
+    void* ptr = (void*)((uint64)obj + ptrOffset);                           \
+    return ((TYPE*)ptr)[0];                                                 \
+  }                                                                         \
 
   /// setInstance*Field - Set an instance field.
   ///
-  template<class TYPE>
-  void setInstanceField(JavaObject* obj, TYPE val) {
-    FieldSetter<TYPE>::setInstanceField(this, obj, val);
+  #define SETINSTANCEFIELD(TYPE, TYPE_NAME)                                 \
+  void setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val) {           \
+    llvm_gcroot(obj, 0);                                                    \
+    assert(classDef->isResolved());                                         \
+    void* ptr = (void*)((uint64)obj + ptrOffset);                           \
+    ((TYPE*)ptr)[0] = val;                                                  \
   }
 
-#define JavaField_DECL_ASSESSORS(TYPE, TYPE_NAME)			\
-	TYPE getStatic##TYPE_NAME##Field(isolate_id_t isolateID = CURRENT_ISOLATE);						\
-	void setStatic##TYPE_NAME##Field(TYPE val, isolate_id_t isolateID = CURRENT_ISOLATE);				\
-	TYPE getInstance##TYPE_NAME##Field(JavaObject* obj);	\
-	void setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val);
+  #define MK_ASSESSORS(TYPE, TYPE_NAME)                                     \
+    GETSTATICFIELD(TYPE, TYPE_NAME)                                         \
+    SETSTATICFIELD(TYPE, TYPE_NAME)                                         \
+    GETINSTANCEFIELD(TYPE, TYPE_NAME)                                       \
+    SETINSTANCEFIELD(TYPE, TYPE_NAME)                                       \
 
-#define JavaField_IMPL_ASSESSORS(TYPE, TYPE_NAME)																			\
-	TYPE JavaField::getStatic##TYPE_NAME##Field(isolate_id_t isolateID) {			\
-  		return getStaticField<TYPE>(isolateID);}									\
-	void JavaField::setStatic##TYPE_NAME##Field(TYPE val, isolate_id_t isolateID) {	\
-		return setStaticField<TYPE>(val, isolateID);}								\
-	TYPE JavaField::getInstance##TYPE_NAME##Field(JavaObject* obj) {				\
-		return this->getInstanceField<TYPE>(obj);}									\
-	void JavaField::setInstance##TYPE_NAME##Field(JavaObject* obj, TYPE val) {		\
-		return this->setInstanceField<TYPE>(obj, val);}
+  MK_ASSESSORS(float, Float)
+  MK_ASSESSORS(double, Double)
+  MK_ASSESSORS(uint8, Int8)
+  MK_ASSESSORS(uint16, Int16)
+  MK_ASSESSORS(uint32, Int32)
+  MK_ASSESSORS(sint64, Long)
 
-public:
-  JavaField_DECL_ASSESSORS(float, Float)
-  JavaField_DECL_ASSESSORS(double, Double)
-  JavaField_DECL_ASSESSORS(uint8, Int8)
-  JavaField_DECL_ASSESSORS(uint16, Int16)
-  JavaField_DECL_ASSESSORS(uint32, Int32)
-  JavaField_DECL_ASSESSORS(sint64, Long)
-  JavaField_DECL_ASSESSORS(JavaObject*, Object)
+  JavaObject* getStaticObjectField() {
+    assert(classDef->isResolved());
+    void* ptr = (void*)((uint64)classDef->getStaticInstance() + ptrOffset);
+    return ((JavaObject**)ptr)[0];
+  }
+
+  void setStaticObjectField(JavaObject* val);
+
+  JavaObject* getInstanceObjectField(JavaObject* obj) {
+    llvm_gcroot(obj, 0);
+    assert(classDef->isResolved());
+    void* ptr = (void*)((uint64)obj + ptrOffset);
+    return ((JavaObject**)ptr)[0];
+  }
+
+  // This can't be inlined because of a linker bug.
+  void setInstanceObjectField(JavaObject* obj, JavaObject* val);
   
   bool isReference() {
     uint16 val = type->elements[0];
@@ -1320,28 +1287,6 @@ public:
     return (type->elements[0] == 'Z');
   }
 
-};
-
-// Specialization for TYPE=JavaObject*
-template<>
-struct JavaField::FieldSetter<JavaObject*> {
-
-  static void setStaticField(const JavaField* field, JavaObject* val, isolate_id_t isolateID = CURRENT_ISOLATE) {
-	llvm_gcroot(val, 0);
-	if (val != NULL) assert(val->getVirtualTable());
-	assert(field->classDef->isResolved(isolateID));
-	JavaObject** ptr = (JavaObject**)((uint64)field->classDef->getStaticInstance(isolateID) + field->ptrOffset);
-	vmkit::Collector::objectReferenceNonHeapWriteBarrier((gc**)ptr, (gc*)val);
-  }
-
-  static void setInstanceField(const JavaField* field, JavaObject* obj, JavaObject* val) {
-	llvm_gcroot(obj, 0);
-	llvm_gcroot(val, 0);
-	if (val != NULL) assert(val->getVirtualTable());
-	assert(field->classDef->isResolved());
-	JavaObject** ptr = (JavaObject**)((uint64)obj + field->ptrOffset);
-	vmkit::Collector::objectReferenceWriteBarrier((gc*)obj, (gc**)ptr, (gc*)val);
-  }
 };
 
 

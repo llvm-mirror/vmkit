@@ -17,7 +17,6 @@
 #include <llvm/Module.h>
 #include <llvm/PassManager.h>
 #include <llvm/Type.h>
-#include <llvm/Analysis/DebugInfo.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/Assembly/Parser.h>
@@ -316,7 +315,6 @@ void BaseIntrinsics::init(llvm::Module* module) {
   constantPtrZero = ConstantInt::get(pointerSizeType, 0);
 
   constantPtrNull = Constant::getNullValue(ptrType); 
-  constantPtr32Null = Constant::getNullValue(ptr32Type);
   constantPtrLogSize = 
     ConstantInt::get(Type::getInt32Ty(Context), kWordSizeLog2);
   arrayPtrType = PointerType::getUnqual(ArrayType::get(Type::getInt8Ty(Context), 0));
@@ -407,10 +405,10 @@ Frames* VmkitModule::addToVM(VirtualMachine* VM, GCFunctionInfo* FI, JIT* jit, B
     frame->FrameSize = FI->getFrameSize();
     frame->Metadata = meta;
     frame->SourceIndex = I->Loc.getLine();
-    frame->ReturnAddress = (void*)JCE->getLabelAddress(I->Label);
-    // If the safe point is from an NPE, increment the return address to
+    frame->ReturnAddress = JCE->getLabelAddress(I->Label);
+    // If the safe point is fro an NPE, increment the return address to
     // not clash with post calls.
-    if (I->Loc.getCol() == 1) frame->ReturnAddress = (void*)((uintptr_t)frame->ReturnAddress + 1);
+    if (I->Loc.getCol() == 1) frame->ReturnAddress += 1;
     int i = 0;
     for (llvm::GCFunctionInfo::live_iterator KI = FI->live_begin(I),
          KE = FI->live_end(I); KI != KE; ++KI) {

@@ -70,9 +70,7 @@ declare void @fieldWriteBarrier(i8*, i8**, i8*)
 declare void @nonHeapWriteBarrier(i8**, i8*)
 
 
-; ExceptionBuffer. A size of 0 means an undefined size.
-%ExceptionBuffer = type {i8*, i32, %ExceptionBuffer*, [0 x i8]}
 
 declare i32 @_setjmp(i8*) nounwind
-declare void @registerSetjmp(%ExceptionBuffer*) nounwind
-declare void @unregisterSetjmp(%ExceptionBuffer*) nounwind
+declare void @registerSetjmp(i8*) nounwind
+declare void @unregisterSetjmp(i8*) nounwind

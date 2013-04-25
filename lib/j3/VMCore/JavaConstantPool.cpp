@@ -157,7 +157,6 @@ uint32 JavaConstantPool::CtpReaderDouble(JavaConstantPool* ctp, Reader& reader,
 void*
 JavaConstantPool::operator new(size_t sz, vmkit::BumpPtrAllocator& allocator,
                                uint32 ctpSize) {
-  // NOTICE: 'size' is not the final size of the object, as it does more allocations in the constructor
   uint32 size = sz + ctpSize * (sizeof(void*) + sizeof(sint32) + sizeof(uint8));
   void* res = allocator.Allocate(size, "Constant pool");
   return res;
@@ -178,14 +177,6 @@ JavaConstantPool::JavaConstantPool(Class* cl, Reader& reader, uint32 size) {
   while (cur < ctpSize) {
     uint8 curType = reader.readU1();
     ctpType[cur] = curType;
-
-    // 'ctpRes' entries corresponding to 'ConstantString' types are pointers to arrays of values
-    // corresponding to different isolates.
-    if (ctpType[cur] == ConstantString) {
-    	ctpRes[cur] = classDef->classLoader->allocator.Allocate(sizeof(void *) * NR_ISOLATES, NULL);
-    	memset(ctpRes[cur], 0, sizeof(void *) * NR_ISOLATES);
-    }
-
     cur += ((funcsReader[curType])(this, reader, cur));
   }
 }
@@ -197,7 +188,7 @@ const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
     abort();
   }
   
-  if (!getCachedValue(entry)) {
+  if (!ctpRes[entry]) {
     vmkit::ThreadAllocator allocator;
     Reader reader(classDef->bytes, ctpDef[entry]);
     uint32 len = reader.readU2();
@@ -229,13 +220,13 @@ const UTF8* JavaConstantPool::UTF8At(uint32 entry) {
   
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* utf8 = loader->hashUTF8->lookupOrCreateReader(buf, n);
-    updateCachedValue(entry, const_cast<UTF8*>(utf8));
+    ctpRes[entry] = const_cast<UTF8*>(utf8);
   
     PRINT_DEBUG(JNJVM_LOAD, 3, COLOR_NORMAL, "; [%5d] <utf8>\t\t\"%s\"\n",
                 entry, UTF8Buffer(utf8)->cString());
 
   }
-  return (const UTF8*)getCachedValue(entry);
+  return (const UTF8*)ctpRes[entry];
 }
 
 float JavaConstantPool::FloatAt(uint32 entry) {
@@ -281,12 +272,12 @@ CommonClass* JavaConstantPool::isClassLoaded(uint32 entry) {
     abort();
   }
 
-  CommonClass* res = (CommonClass*)getCachedValue(entry);
+  CommonClass* res = (CommonClass*)ctpRes[entry];
   if (res == NULL) {
     JnjvmClassLoader* loader = classDef->classLoader;
     const UTF8* name = UTF8At(ctpDef[entry]);
     res = loader->lookupClassOrArray(name);
-    updateCachedValue(entry, res);
+    ctpRes[entry] = res;
   }
   return res;
 }
@@ -307,7 +298,7 @@ CommonClass* JavaConstantPool::loadClass(uint32 index, bool resolve) {
     } else {
       temp = loader->loadName(name, resolve, false, NULL);
     }
-    updateCachedValue(index, temp);
+    ctpRes[index] = temp;
   } else if (resolve && temp->isClass()) {
     temp->asClass()->resolveClass();
   }
@@ -329,7 +320,7 @@ CommonClass* JavaConstantPool::getMethodClassIfLoaded(uint32 index) {
 }
 
 Typedef* JavaConstantPool::resolveNameAndType(uint32 index) {
-  void* res = getCachedValue(index);
+  void* res = ctpRes[index];
   if (!res) {
     if (typeAt(index) != ConstantNameAndType) {
       fprintf(stderr, "Malformed class %s\n",
@@ -339,14 +330,14 @@ Typedef* JavaConstantPool::resolveNameAndType(uint32 index) {
     sint32 entry = ctpDef[index];
     const UTF8* type = UTF8At(entry & 0xFFFF);
     Typedef* sign = classDef->classLoader->constructType(type);
-    updateCachedValue(index, sign);
+    ctpRes[index] = sign;
     return sign;
   }
   return (Typedef*)res;
 }
 
 Signdef* JavaConstantPool::resolveNameAndSign(uint32 index) {
-  void* res = getCachedValue(index);
+  void* res = ctpRes[index];
   if (!res) {
     if (typeAt(index) != ConstantNameAndType) {
       fprintf(stderr, "Malformed class %s\n",
@@ -356,7 +347,7 @@ Signdef* JavaConstantPool::resolveNameAndSign(uint32 index) {
     sint32 entry = ctpDef[index];
     const UTF8* type = UTF8At(entry & 0xFFFF);
     Signdef* sign = classDef->classLoader->constructSign(type);
-    updateCachedValue(index, sign);
+    ctpRes[index] = sign;
     return sign;
   }
   return (Signdef*)res;
@@ -481,7 +472,7 @@ void JavaConstantPool::resolveMethod(uint32 index, CommonClass*& cl,
                                      const UTF8*& utf8, Signdef*& sign) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
-  sign = (Signdef*)getCachedValue(ntIndex);
+  sign = (Signdef*)ctpRes[ntIndex];
   assert(sign && "No cached signature after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
@@ -494,7 +485,7 @@ void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
                                     const UTF8*& utf8, Typedef*& sign) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
-  sign = (Typedef*)getCachedValue(ntIndex);
+  sign = (Typedef*)ctpRes[ntIndex];
   assert(sign && "No cached Typedef after JITting");
   utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   cl = loadClass(entry >> 16);
@@ -506,7 +497,7 @@ void JavaConstantPool::resolveField(uint32 index, CommonClass*& cl,
 JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
   sint32 entry = ctpDef[index];
   sint32 ntIndex = entry & 0xFFFF;
-  Typedef* sign = (Typedef*)getCachedValue(ntIndex);
+  Typedef* sign = (Typedef*)ctpRes[ntIndex];
   const UTF8* utf8 = UTF8At(ctpDef[ntIndex] >> 16);
   CommonClass* cl = getMethodClassIfLoaded(entry >> 16);
   if (cl) {
@@ -517,10 +508,10 @@ JavaField* JavaConstantPool::lookupField(uint32 index, bool stat) {
       // don't throw if no field, the exception will be thrown just in time  
       if (field) {
         if (!stat) {
-          updateCachedValue(index, (void*)field->ptrOffset);
+          ctpRes[index] = (void*)field->ptrOffset;
         } else if (lookup->isReady()) {
           void* S = field->classDef->getStaticInstance();
-          updateCachedValue(index, (void*)((uint64)S + field->ptrOffset));
+          ctpRes[index] = (void*)((uint64)S + field->ptrOffset);
         }
       }
       return field;
@@ -535,24 +526,6 @@ JavaString* JavaConstantPool::resolveString(const UTF8* utf8, uint16 index) {
   Jnjvm* vm = JavaThread::get()->getJVM();
   str = vm->internalUTF8ToStr(utf8);
   return str;
-}
-
-void** JavaConstantPool::getCachedValuePtr(uint32_t index, isolate_id_t isolateID)
-{
-    assert(index < ctpSize && "Invalid constant index");
-	void **entry = ctpRes + index;
-	if (ctpType[index] != ConstantString) return entry;
-
-	isolateID = JavaThread::getValidIsolateID(isolateID);
-	void ** stringArray = reinterpret_cast<void **>(*entry);
-	return stringArray + isolateID;
-}
-
-void* JavaConstantPool::updateCachedValue(uint32_t index, void* newValue, isolate_id_t isolateID) {
-	void** valuePtr = getCachedValuePtr(index, isolateID);
-	void* oldValue = *valuePtr;
-	*valuePtr = newValue;
-	return oldValue;
 }
 
 JavaConstantPool::ctpReader JavaConstantPool::funcsReader[16] = {

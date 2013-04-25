@@ -49,13 +49,11 @@ public:
   ///
   sint32* ctpDef;
   
-private:
   /// ctpRes - Objects resolved dynamically, e.g. UTF8s, classes, methods,
   /// fields, string pointers.
   ///
   void**  ctpRes;
   
-public:
   /// operator new - Redefine the operator to allocate the arrays of a
   /// constant pool inline.
   void* operator new(size_t sz, vmkit::BumpPtrAllocator& allocator,
@@ -259,23 +257,6 @@ public:
   /// ~JavaConstantPool - Delete the constant pool.
   ///
   ~JavaConstantPool() {}
-
-protected:
-  void** getCachedValuePtr(uint32_t index, isolate_id_t isolateID = CURRENT_ISOLATE);
-
-public:
-  void* getCachedValue(uint32_t index, isolate_id_t isolateID = CURRENT_ISOLATE) {
-	  return *getCachedValuePtr(index, isolateID);
-  }
-
-  /// This returns the old contents before updating
-  void* updateCachedValueSynchronized(uint32_t index, void* newValue, void* oldValue, isolate_id_t isolateID = CURRENT_ISOLATE) {
-	  void** valuePtr = getCachedValuePtr(index, isolateID);
-	  return __sync_val_compare_and_swap(valuePtr, oldValue, newValue);
-  }
-
-  /// This returns the old contents before updating
-  void* updateCachedValue(uint32_t index, void* newValue, isolate_id_t isolateID = CURRENT_ISOLATE);
 };
 
 } // end namespace j3

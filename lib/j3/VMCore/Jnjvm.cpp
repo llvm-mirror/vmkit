@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #define JNJVM_LOAD 0
-#define JNJVM_CLINIT 0
 
 #include <cfloat>
 #include <climits>
@@ -16,7 +15,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
 #include <string>
 #include "debug.h"
 
@@ -121,6 +119,9 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     setInitializationState(inClinit);
     UserClass* cl = (UserClass*)this;
     
+    // Single environment allocates the static instance during resolution, so
+    // that compiled code can access it directly (with an initialization
+    // check just before the access)
     if (!cl->getStaticInstance()) cl->allocateStaticInstance(vm);
 
     release();
@@ -169,25 +170,8 @@ void UserClass::initialiseClass(Jnjvm* vm) {
     JavaMethod* meth = lookupMethodDontThrow(vm->bootstrapLoader->clinitName,
                                              vm->bootstrapLoader->clinitType,
                                              true, false, 0);
-#if JNJVM_CLINIT
-	uint16_t c = this->name->elements[0];
-	bool logInit = !(c == 'j' || c == 'g');
-
-	static char init_buffer[10240];
-    static int init_level;
-    if (logInit) std::cout << '[' << *self << ']' << init_buffer;
-#endif
 
     if (meth) {
-
-#if JNJVM_CLINIT
-      if (logInit) {
-    	  std::cout << " clinit " << *name << " ..." << std::endl;
-          init_buffer[init_level] = ' ';
-          init_buffer[++init_level] = '\0';
-      }
-#endif
-
       TRY {
         meth->invokeIntStatic(vm, cl);
       } CATCH {
@@ -195,31 +179,12 @@ void UserClass::initialiseClass(Jnjvm* vm) {
         assert(exc && "no exception?");
         self->clearException();
       } END_CATCH;
-
-#if JNJVM_CLINIT
-      if (logInit) {
-    	  init_buffer[--init_level] = '\0';
-    	  std::cout << '[' << *self << ']' << init_buffer;
-      }
-#endif
-
     }
-
-#if JNJVM_CLINIT
-    else {
-      if (logInit) std::cout << " init " << *name << " ... ";
-    }
-#endif
 
     // 9. If the execution of the initializers completes normally, then lock
     //    this Class object, label it fully initialized, notify all waiting 
     //    threads, release the lock, and complete this procedure normally.
     if (!exc) {
-
-#if JNJVM_CLINIT
-      if (logInit) std::cout << " done" << std::endl;
-#endif
-
       acquire();
       setInitializationState(ready);
       setOwnerClass(0);
@@ -227,10 +192,6 @@ void UserClass::initialiseClass(Jnjvm* vm) {
       release();
       return;
     }
-    
-#if JNJVM_CLINIT
-    if (logInit) std::cout << " failed" << std::endl;
-#endif
     
     // 10. Otherwise, the initializers must have completed abruptly by
     //     throwing some exception E. If the class of E is not Error or one
@@ -302,19 +263,12 @@ JavaObject* Jnjvm::CreateError(UserClass* cl, JavaMethod* init,
   return obj;
 }
 
-void Jnjvm::error(UserClass* cl, JavaMethod* init, JavaString* str, bool immediate) {
+void Jnjvm::error(UserClass* cl, JavaMethod* init, JavaString* str) {
   JavaObject* obj = 0;
   llvm_gcroot(obj, 0);
   llvm_gcroot(str, 0);
   obj = CreateError(cl, init, str);
-  JavaThread::get()->throwException(obj, immediate);
-}
-
-void Jnjvm::error(UserClass* cl, JavaMethod* init, const char* str, bool immediate) {
-  JavaObject* obj = 0;
-  llvm_gcroot(obj, 0);
-  obj = CreateError(cl, init, str);
-  JavaThread::get()->throwException(obj, immediate);
+  JavaThread::get()->throwException(obj);
 }
 
 void Jnjvm::arrayStoreException() {
@@ -809,28 +763,28 @@ void Jnjvm::addProperty(char* key, char* value) {
 }
 
 // Mimic what's happening in Classpath when creating a java.lang.Class object.
-JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd, isolate_id_t isolateID) {
+JavaObject* UserCommonClass::getClassDelegatee(Jnjvm* vm, JavaObject* pd) {
   JavaObjectClass* delegatee = 0;
   JavaObjectClass* base = 0;
   llvm_gcroot(pd, 0);
   llvm_gcroot(delegatee, 0);
   llvm_gcroot(base, 0);
 
-  if (getDelegatee(isolateID) == NULL) {
+  if (getDelegatee() == NULL) {
     UserClass* cl = vm->upcalls->newClass;
-    delegatee = (JavaObjectClass*)cl->doNew(vm, isolateID);
+    delegatee = (JavaObjectClass*)cl->doNew(vm);
     JavaObjectClass::setClass(delegatee, this);
     if (pd == NULL && isArray()) {
       base = (JavaObjectClass*)
-        asArrayClass()->baseClass()->getClassDelegatee(vm, pd, isolateID);
+        asArrayClass()->baseClass()->getClassDelegatee(vm, pd);
       JavaObjectClass::setProtectionDomain(
         delegatee, JavaObjectClass::getProtectionDomain(base));
     } else {
       JavaObjectClass::setProtectionDomain(delegatee, pd);
     }
-    setDelegatee(delegatee, isolateID);
+    setDelegatee(delegatee);
   }
-  return getDelegatee(isolateID);
+  return getDelegatee();
 }
 
 JavaObject* const* UserCommonClass::getClassDelegateePtr(Jnjvm* vm, JavaObject* pd) {
@@ -1371,9 +1325,6 @@ Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,
   bootstrapLoader = loader;
   upcalls = bootstrapLoader->upcalls;
   throwable = upcalls->newThrowable;
-
-  RunningIsolates[0].state = IsolateRunning;
-  RunningIsolates[0].loader = loader;
 }
 
 Jnjvm::~Jnjvm() {
@@ -1399,12 +1350,7 @@ void Jnjvm::startCollection() {
   referenceThread->WeakReferencesQueue.acquire();
   referenceThread->PhantomReferencesQueue.acquire();
 }
-
-void Jnjvm::endCollectionBeforeUnblockingThreads()
-{
-	collectIsolates();
-}
-
+  
 void Jnjvm::endCollection() {
   finalizerThread->FinalizationQueueLock.release();
   referenceThread->ToEnqueueLock.release();
@@ -1500,16 +1446,16 @@ extern "C" int StartJnjvmWithoutJIT(int argc, char** argv, char* mainClass) {
   return 0; 
 }
 
-void Jnjvm::printMethod(vmkit::FrameInfo* FI, void* ip, void* callFrame) {
+void Jnjvm::printMethod(vmkit::FrameInfo* FI, word_t ip, word_t addr) {
   if (FI->Metadata == NULL) {
-    vmkit::MethodInfoHelper::print(ip, callFrame);
+    vmkit::MethodInfoHelper::print(ip, addr);
     return;
   }
   JavaMethod* meth = (JavaMethod*)FI->Metadata;
 
   fprintf(stderr, "; %p (%p) in %s.%s (line %d, bytecode %d, code start %p)",
-          ip,
-          callFrame,
+          (void*)ip,
+          (void*)addr,
           UTF8Buffer(meth->classDef->name).cString(),
           UTF8Buffer(meth->name).cString(),
           meth->lookupLineNumber(FI),

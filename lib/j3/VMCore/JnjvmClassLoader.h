@@ -57,14 +57,12 @@ private:
 
   /// isolate - Which isolate defined me? Null for the bootstrap class loader.
   ///
-  Jnjvm* vm;
-  isolate_id_t isolateID;
+  Jnjvm* isolate;
 
   /// javaLoder - The Java representation of the class loader. Null for the
   /// bootstrap class loader.
   ///
   JavaObject* javaLoader;
-//  JavaObject* javaLoader[NR_ISOLATES];
 
   /// internalLoad - Load the class with the given name.
   ///
@@ -80,7 +78,7 @@ private:
   /// first use of a Java class loader.
   ///
   JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL,
-                   JavaObject* loader, VMClassLoader* vmdata, Jnjvm* VM);
+                   JavaObject* loader, VMClassLoader* vmdata, Jnjvm* isolate);
 
   /// lookupComponentName - Try to find the component name of the given array
   /// name. If the component name is not in the table of UTF8s and holder
@@ -94,7 +92,7 @@ private:
   void ensureCached(UserCommonClass* cl);
 protected:
   
-  JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc);
+  JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) : allocator(Alloc) {}
   
   /// TheCompiler - The Java compiler for this class loader.
   ///
@@ -132,7 +130,9 @@ public:
   ///
   vmkit::BumpPtrAllocator& allocator;
  
-  isolate_id_t getIsolateID() const {return isolateID;}
+  /// getIsolate - Returns the isolate that created this class loader.
+  ///
+  Jnjvm* getIsolate() const { return isolate; }
 
   /// getClasses - Returns the classes this class loader has loaded.
   ///
@@ -387,7 +387,6 @@ public:
   Classpath* upcalls;
   
   /// Lists of UTF8s used internaly in VMKit.
-  const UTF8* org_osgi_framework_BundleContext;
   const UTF8* NoClassDefFoundError;
   const UTF8* initName;
   const UTF8* clinitName;
@@ -428,7 +427,6 @@ public:
   const UTF8* doubleToRawLongBits;
   const UTF8* intBitsToFloat;
   const UTF8* longBitsToDouble;
-  const UTF8* stop;
 
   /// primitiveMap - Map of primitive classes, hashed by id.
   std::map<const char, UserClassPrimitive*> primitiveMap;

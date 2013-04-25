@@ -95,9 +95,9 @@ JavaObject* vmThread, sint64 stackSize) {
  
   JavaThread* th = new JavaThread(vm);
   if (!th) vm->outOfMemoryError();
+  th->start((void (*)(vmkit::Thread*))start);
   // Now that the thread has been created, initialise its object fields.
   th->initialise(javaThread, vmThread);
-  th->start((void (*)(vmkit::Thread*))start);
 
   END_NATIVE_EXCEPTION
 }

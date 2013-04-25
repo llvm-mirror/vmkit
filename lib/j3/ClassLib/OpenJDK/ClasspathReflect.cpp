@@ -219,7 +219,7 @@ JavaObjectField* JavaObjectField::createFromInternalField(JavaField* field, int 
   return ret;
 }
 
-static inline JavaString** getSignatureString(JavaAttribute* sigAtt, Class* cl) {
+static inline JavaString** getSignatureString(Attribut* sigAtt, Class* cl) {
   if (!sigAtt) return 0;
 
   Reader reader(sigAtt, cl->bytes);
@@ -230,26 +230,26 @@ static inline JavaString** getSignatureString(JavaAttribute* sigAtt, Class* cl) 
 }
 
 JavaString** JavaObjectClass::getSignature(Class *cl) {
-  JavaAttribute* sigAtt = cl->lookupAttribute(JavaAttribute::signatureAttribute);
+  Attribut* sigAtt = cl->lookupAttribut(Attribut::signatureAttribut);
   return getSignatureString(sigAtt, cl);
 }
 
 JavaString** JavaObjectField::getSignature(JavaField* field) {
-  JavaAttribute* sigAtt = field->lookupAttribute(JavaAttribute::signatureAttribute);
+  Attribut* sigAtt = field->lookupAttribut(Attribut::signatureAttribut);
   return getSignatureString(sigAtt, field->classDef);
 }
 
 JavaString** JavaObjectMethod::getSignature(JavaMethod* meth) {
-  JavaAttribute* sigAtt = meth->lookupAttribute(JavaAttribute::signatureAttribute);
+  Attribut* sigAtt = meth->lookupAttribut(Attribut::signatureAttribut);
   return getSignatureString(sigAtt, meth->classDef);
 }
 
 JavaString** JavaObjectConstructor::getSignature(JavaMethod* cons) {
-  JavaAttribute* sigAtt = cons->lookupAttribute(JavaAttribute::signatureAttribute);
+  Attribut* sigAtt = cons->lookupAttribut(Attribut::signatureAttribut);
   return getSignatureString(sigAtt, cons->classDef);
 }
 
-static inline ArraySInt8* getAttrBytes(JavaAttribute* annotationsAtt, Class* cl) {
+static inline ArraySInt8* getAttrBytes(Attribut* annotationsAtt, Class* cl) {
   ArraySInt8* ret = 0;
   llvm_gcroot(ret, 0);
 
@@ -270,47 +270,47 @@ static inline ArraySInt8* getAttrBytes(JavaAttribute* annotationsAtt, Class* cl)
 }
 
 ArraySInt8* JavaObjectClass::getAnnotations(Class *cl) {
-  JavaAttribute* attr =
-    cl->lookupAttribute(JavaAttribute::annotationsAttribute);
+  Attribut* attr =
+    cl->lookupAttribut(Attribut::annotationsAttribut);
 
   return getAttrBytes(attr, cl);
 }
 
 ArraySInt8* JavaObjectField::getAnnotations(JavaField *field) {
-  JavaAttribute* attr =
-    field->lookupAttribute(JavaAttribute::annotationsAttribute);
+  Attribut* attr =
+    field->lookupAttribut(Attribut::annotationsAttribut);
 
   return getAttrBytes(attr, field->classDef);
 }
 
 ArraySInt8* JavaObjectMethod::getAnnotations(JavaMethod *meth) {
-  JavaAttribute* attr =
-    meth->lookupAttribute(JavaAttribute::annotationsAttribute);
+  Attribut* attr =
+    meth->lookupAttribut(Attribut::annotationsAttribut);
 
   return getAttrBytes(attr, meth->classDef);
 }
 ArraySInt8* JavaObjectMethod::getParamAnnotations(JavaMethod *meth) {
-  JavaAttribute* attr =
-    meth->lookupAttribute(JavaAttribute::paramAnnotationsAttribute);
+  Attribut* attr =
+    meth->lookupAttribut(Attribut::paramAnnotationsAttribut);
 
   return getAttrBytes(attr, meth->classDef);
 }
 ArraySInt8* JavaObjectMethod::getAnnotationDefault(JavaMethod *meth) {
-  JavaAttribute* attr =
-    meth->lookupAttribute(JavaAttribute::annotationDefaultAttribute);
+  Attribut* attr =
+    meth->lookupAttribut(Attribut::annotationDefaultAttribut);
 
   return getAttrBytes(attr, meth->classDef);
 }
 
 ArraySInt8* JavaObjectConstructor::getAnnotations(JavaMethod *cons) {
-  JavaAttribute* attr =
-    cons->lookupAttribute(JavaAttribute::annotationsAttribute);
+  Attribut* attr =
+    cons->lookupAttribut(Attribut::annotationsAttribut);
 
   return getAttrBytes(attr, cons->classDef);
 }
 ArraySInt8* JavaObjectConstructor::getParamAnnotations(JavaMethod *cons) {
-  JavaAttribute* attr =
-    cons->lookupAttribute(JavaAttribute::paramAnnotationsAttribute);
+  Attribut* attr =
+    cons->lookupAttribut(Attribut::paramAnnotationsAttribut);
 
   return getAttrBytes(attr, cons->classDef);
 }

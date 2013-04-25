@@ -233,7 +233,7 @@ private:
   
   /// waitIntern - internal wait on a monitor
   ///
-  static void waitIntern(JavaObject* self, struct timeval *info, bool& timed);
+  static void waitIntern(JavaObject* self, struct timeval *info, bool timed);
   
 public:
 
@@ -255,11 +255,11 @@ public:
   /// timedWait - Java timed wait. Makes the current thread waiting on a
   /// monitor for the given amount of time.
   ///
-  static bool timedWait(JavaObject* self, struct timeval &info);
+  static void timedWait(JavaObject* self, struct timeval &info);
   
   /// wait - Wait for specified ms and ns.  Wrapper for either wait() or
   /// timedWait, depending on duration specified.
-  static bool wait(JavaObject* self, int64_t ms, int32_t ns);
+  static void wait(JavaObject* self, int64_t ms, int32_t ns);
 
   /// notify - Java notify. Notifies a thread from the availability of the
   /// monitor.

@@ -19,7 +19,7 @@ namespace vmkit {
 class FrameInfo {
 public:
   void* Metadata;
-  void* ReturnAddress;
+  word_t ReturnAddress;
   uint16_t SourceIndex;
   uint16_t FrameSize;
   uint16_t NumLiveOffsets;
@@ -28,9 +28,9 @@ public:
  
 class MethodInfoHelper {
 public:
-  static void print(void* ip, void* callFrame);
+  static void print(word_t ip, word_t addr);
 
-  static void scan(word_t closure, FrameInfo* FI, void* ip, void* callFrame);
+  static void scan(word_t closure, FrameInfo* FI, word_t ip, word_t addr);
   
   static uint32_t FrameInfoSize(uint32_t NumOffsets) {
     uint32_t FrameInfoSize = sizeof(FrameInfo) + (NumOffsets - 1) * sizeof(int16_t);
