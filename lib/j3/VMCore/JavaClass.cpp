@@ -940,6 +940,7 @@ void Class::getMinimalJDKVersion(uint16 major, uint16 minor, unsigned int& JDKMa
 
 bool Class::isClassVersionSupported(uint16 major, uint16 minor)
 {
+#if 0
 	const int supportedJavaMinorVersion = 5;	// Java 1.5
 
 	unsigned int JDKMajor, JDKMinor, JDKBuild;
@@ -951,6 +952,9 @@ bool Class::isClassVersionSupported(uint16 major, uint16 minor)
 			". This JVM only supports Java versions up to 1." << supportedJavaMinorVersion << '.' << endl;
 	}
 	return res;
+#else
+	return 1;
+#endif
 }
 
 void UserClass::resolveParents() {
