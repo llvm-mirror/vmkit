@@ -1913,6 +1913,7 @@ JavaObject* AnnotationReader::createElementValue(bool nextParameterIsTypeOfMetho
 }
 
 void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray* classArray) {
+	llvm_gcroot(res, 0);
 	JavaString* str = 0;
 	JavaObject* clazzObject = 0;
 	JavaObject* field = 0;
@@ -1920,7 +1921,17 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray*
 	JavaObject* myEnum = 0;
 	JavaObject* annotationClass = 0;
 	JavaObject* newHashMap = 0;
-	llvm_gcroot(res, 0);
+
+	// for cast
+	ArraySInt8* aSInt8 = 0;
+	ArrayUInt8* aUInt8 = 0;
+	ArraySInt16* aSInt16 = 0;
+	ArraySInt32* aSInt32 = 0;
+	ArrayLong* aSLong = 0;
+	ArrayDouble* aDouble = 0;
+	ArrayFloat* aFloat = 0;
+	ArrayObject* aObject = 0;
+
 	llvm_gcroot(str, 0);
 	llvm_gcroot(clazzObject, 0);
 	llvm_gcroot(clazzLoaded, 0);
@@ -1928,8 +1939,14 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray*
 	llvm_gcroot(myEnum, 0);
 	llvm_gcroot(annotationClass, 0);
 	llvm_gcroot(newHashMap, 0);
-
-	// FIXME : Do something with all casts
+	llvm_gcroot(aSInt8, 0);
+	llvm_gcroot(aUInt8, 0);
+	llvm_gcroot(aSInt16, 0);
+	llvm_gcroot(aSInt32, 0);
+	llvm_gcroot(aSLong, 0);
+	llvm_gcroot(aDouble, 0);
+	llvm_gcroot(aFloat, 0);
+	llvm_gcroot(aObject, 0);
 
 	sint32 valS;
 	uint32 valU;
@@ -1939,8 +1956,6 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray*
 	const UTF8* s = 0, *n = 0, * m = 0;
 	JnjvmClassLoader* JCL;
 	UserCommonClass* clLoaded;
-	UserCommonClass* uss;
-	UserClassArray* arrayClass;
 	UserCommonClass* aaa;
 
 	UserClassArray* array = 0;
@@ -1951,40 +1966,49 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray*
 		switch (tag) {
 			case 'B':
 				valS = cl->ctpInfo->IntegerAt(reader.readU2());
-				ArraySInt8::setElement((ArraySInt8*)res, valS, i);
+				aSInt8 = (ArraySInt8*)res;
+				ArraySInt8::setElement(aSInt8, valS, i);
 				break;
 			case 'C':
 				valS = cl->ctpInfo->IntegerAt(reader.readU2());
-				ArraySInt16::setElement((ArraySInt16*)res, valS, i);
+				aSInt16 = (ArraySInt16*)res;
+				ArraySInt16::setElement(aSInt16, valS, i);
 				break;
 			case 'D':
 				valD = cl->ctpInfo->DoubleAt(reader.readU2());
-				ArrayDouble::setElement((ArrayDouble*)res, valD, i);
+				aDouble = (ArrayDouble*)res;
+				ArrayDouble::setElement(aDouble, valD, i);
 				break;
 			case 'F':
 				valF = cl->ctpInfo->FloatAt(reader.readU2());
-				ArrayFloat::setElement((ArrayFloat*)res, valF, i);
+				aFloat = (ArrayFloat*)res;
+				ArrayFloat::setElement(aFloat, valF, i);
 				break;
 			case 'J':
 				val64S = cl->ctpInfo->LongAt(reader.readU2());
-				ArrayLong::setElement((ArrayLong*)res, val64S, i);
+				aSLong = (ArrayLong*)res;
+				ArrayLong::setElement(aSLong, val64S, i);
 				break;
 			case 'S':
 				valS = cl->ctpInfo->IntegerAt(reader.readU2());
-				ArraySInt16::setElement((ArraySInt16*)res, valS, i);
+				aSInt16 = (ArraySInt16*)res;
+				ArraySInt16::setElement(aSInt16, valS, i);
 				break;
 			case 'I':
 				valS = cl->ctpInfo->IntegerAt(reader.readU2());
-				ArraySInt32::setElement((ArraySInt32*)res, valS,i);
+				aSInt32 = (ArraySInt32*)res;
+				ArraySInt32::setElement(aSInt32, valS,i);
 				break;
 			case 'Z':
 				valU = cl->ctpInfo->IntegerAt(reader.readU2());
-				ArrayUInt8::setElement((ArrayUInt8*)res, valU, i);
+				aUInt8 = (ArrayUInt8*)res;
+				ArrayUInt8::setElement(aUInt8, valU, i);
 				break;
 			case 's':
 				s = cl->ctpInfo->UTF8At(reader.readU2());
 				str = JavaString::internalToJava(s, JavaThread::get()->getJVM());
-				ArrayObject::setElement((ArrayObject *)res, str, i);
+				aObject = (ArrayObject *)res;
+				ArrayObject::setElement(aObject, str, i);
 				break;
 			case 'e':
 				n = cl->ctpInfo->UTF8At(reader.readU2());
@@ -2003,7 +2027,8 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray*
 					assert(field && "Field not found");
 					JavaObject* obj = 0;
 					myEnum = upcalls->getInField->invokeJavaObjectVirtual(vm, upcalls->newField, field, &obj);
-					ArrayObject::setElement((ArrayObject *)res, str, i);
+					aObject = (ArrayObject *)res;
+					ArrayObject::setElement(aObject, str, i);
 				} else {
 					str = JavaString::internalToJava(n, vm);
 					vm->classNotFoundException(str);
@@ -2022,7 +2047,8 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray*
 				  str = JavaString::internalToJava(s, vm);
 				  vm->classNotFoundException(str);
 				}
-				ArrayObject::setElement((ArrayObject *)res, clazzObject, i);
+				aObject = (ArrayObject *)res;
+				ArrayObject::setElement(aObject, clazzObject, i);
 				break;
 			case '@':
 				reader.readU2();
@@ -2030,8 +2056,8 @@ void AnnotationReader::fillArray(JavaObject* res, int numValues, UserClassArray*
 				annotationClass = aaa->getDelegatee();
 				newHashMap = createAnnotationMapValues(annotationClass);
 				clazzObject = upcalls->createAnnotation->invokeJavaObjectStatic(vm, upcalls->newAnnotationHandler, &annotationClass, &newHashMap);
-
-				ArrayObject::setElement((ArrayObject *)res, clazzObject, i);
+				aObject = (ArrayObject *)res;
+				ArrayObject::setElement(aObject, clazzObject, i);
 				break;
 			default:
 				fprintf(stderr, "Wrong class file\n");
