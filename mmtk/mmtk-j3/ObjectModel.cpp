@@ -35,8 +35,8 @@ extern "C" gcHeader* Java_org_j3_mmtk_ObjectModel_objectStartRef__Lorg_vmmagic_u
 	return obj ? obj->toHeader() : 0;
 }
 
-extern "C" gc* Java_org_j3_mmtk_ObjectModel_refToAddress__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
-	return obj;
+extern "C" gcHeader* Java_org_j3_mmtk_ObjectModel_refToAddress__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
+	return obj ? obj->toHeader() : 0;
 }
 
 extern "C" uint8_t Java_org_j3_mmtk_ObjectModel_readAvailableByte__Lorg_vmmagic_unboxed_ObjectReference_2 (MMTkObject* OM, gc* obj) {
@@ -70,9 +70,9 @@ extern "C" void Java_org_j3_bindings_Bindings_setVT__Lorg_vmmagic_unboxed_Addres
  	header->toReference()->setVirtualTable(VT);
 }
 
-extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2() ALWAYS_INLINE;
+extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__() ALWAYS_INLINE;
 
-extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__Lorg_vmmagic_unboxed_Address_2Lorg_vmmagic_unboxed_ObjectReference_2() {
+extern "C" int Java_org_j3_bindings_Bindings_hiddenHeaderSize__() {
 	return gcHeader::hiddenHeaderSize();
 }
 
