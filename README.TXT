@@ -53,29 +53,30 @@ ln -sf ../native/jni/java-util/.libs/libjavautil.so
 LLVM:
 =====
 
-* Get it (git):
+* Get the compatible release LLVM 3.2:
 
-git clone http://llvm.org/git/llvm.git
-cd llvm/tools
-git clone http://llvm.org/git/clang.git
-cd clang
-git config branch.master.rebase true
-cd ../..
-git config branch.master.rebase true
-
-* You can also get it via svn:
-
-svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm
-cd llvm/tools
-svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
+wget http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz
+tar zxf llvm-3.2.src.tar.gz
+cd llvm-3.2.src/tools
+wget http://llvm.org/releases/3.2/clang-3.2.src.tar.gz
+tar zxf clang-3.2.src.tar.gz
+mv clang-3.2.src clang
 cd ../projects
-svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
-cd ..
+wget http://llvm.org/releases/3.2/compiler-rt-3.2.src.tar.gz
+tar zxf compiler-rt-3.2.src.tar.gz
+mv compiler-rt-3.2.src compiler-rt
+cd ../..
 
-* Patch it if you want to have a better debug support:
+* Patch LLVM if you want to have a better debug support for VMKit:
+  You will have to get VMKit (see the next section) to find the patch.
 
-cd llvm
+cd llvm-3.2.src
 patch -p1 < ../vmkit2/patches/llvm.patch
+
+NOTICE:
+* VMKit does not support building LLVM out of source because of a bug
+  in "llvm-config", so please build in the source, and keep different source
+  trees for different configurations/architectures of builds.
 
 * Make it (release mode):
 
@@ -86,24 +87,34 @@ make -j12 BUILD_EXAMPLES=0 ENABLE_DOCS=0
 
 ./configure --disable-optimized --enable-assertions --enable-debug-runtime --enable-debug-symbols --enable-keep-symbols --enable-jit --enable-threads --enable-pthreads --enable-pic --enable-targets=x86,cpp --disable-docs --disable-doxygen
 
+* Build it:
+
 make -j12 BUILD_EXAMPLES=0 ENABLE_DOCS=0
 
 ======
 VMKit:
 ======
 
-* Get it (git):
+* Get it anonymously (git):
 
 git clone git://scm.gforge.inria.fr/vmkit2/vmkit2.git
 
-* or
+* or get as an official developer (Git):
 
 git clone git+ssh://YOUR_USER_NAME@gforge.inria.fr//gitroot/vmkit2/vmkit2.git
 
-* Make it (debug mode):
+* Make it (release mode):
 
-./configure --with-llvmsrc=@PATH_TO_LLVM@ --with-llvmobj=@PATH_TO_LLVM@ --with-gnu-classpath-libs=@PATH_TO_GNUCLASSPATH@ --with-gnu-classpath-glibj=@PATH_TO_GNUCLASSPATH@/lib/glibj.zip
+./configure --with-llvm-config-path=@PATH_TO_LLVM@/Release+Asserts/bin/llvm-config --with-gnu-classpath-libs=@PATH_TO_GNUCLASSPATH@/lib --with-gnu-classpath-glibj=@PATH_TO_GNUCLASSPATH@/lib/glibj.zip
 
-* Buil it:
+* Or you can make it in debug mode:
+
+./configure --with-llvm-config-path=@PATH_TO_LLVM@/Release+Asserts/bin/llvm-config --with-gnu-classpath-libs=@PATH_TO_GNUCLASSPATH@/lib --with-gnu-classpath-glibj=@PATH_TO_GNUCLASSPATH@/lib/glibj.zip --enable-assert=yes --disable-optimized --enable-debug=yes
+
+* Or you can enable OSGi Incinerator build:
+
+./configure --with-llvm-config-path=@PATH_TO_LLVM@/Release+Asserts/bin/llvm-config --with-gnu-classpath-libs=@PATH_TO_GNUCLASSPATH@/lib --with-gnu-classpath-glibj=@PATH_TO_GNUCLASSPATH@/lib/glibj.zip --enable-incinerator=yes
+
+* Build it:
+
 make -j12
-

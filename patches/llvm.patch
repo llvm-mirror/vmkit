@@ -1,8 +1,9 @@
-diff --git a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp
-index d74a703..1831bb6 100644
---- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp
-+++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp
-@@ -173,7 +173,7 @@ bool AsmPrinter::doInitialization(Module &M) {
+--- a/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	2012-11-01 10:14:31.000000000 +0100
++++ b/lib/CodeGen/AsmPrinter/AsmPrinter.cpp	2013-03-28 17:37:24.297848000 +0100
+@@ -174,22 +174,22 @@ bool AsmPrinter::doInitialization(Module
+ 
+   GCModuleInfo *MI = getAnalysisIfAvailable<GCModuleInfo>();
+   assert(MI && "AsmPrinter didn't require GCModuleInfo?");
    for (GCModuleInfo::iterator I = MI->begin(), E = MI->end(); I != E; ++I)
      if (GCMetadataPrinter *MP = GetOrCreateGCPrinter(*I))
        MP->beginAssembly(*this);
@@ -11,7 +12,8 @@ index d74a703..1831bb6 100644
    // Emit module-level inline asm if it exists.
    if (!M.getModuleInlineAsm().empty()) {
      OutStreamer.AddComment("Start of file scope inline assembly");
-@@ -182,7 +182,7 @@ bool AsmPrinter::doInitialization(Module &M) {
+     OutStreamer.AddBlankLine();
+     EmitInlineAsm(M.getModuleInlineAsm()+"\n");
      OutStreamer.AddComment("End of file scope inline assembly");
      OutStreamer.AddBlankLine();
    }
@@ -20,7 +22,13 @@ index d74a703..1831bb6 100644
    if (MAI->doesSupportDebugInformation())
      DD = new DwarfDebug(this, &M);
  
-@@ -929,6 +929,15 @@ bool AsmPrinter::doFinalization(Module &M) {
+   switch (MAI->getExceptionHandlingType()) {
+   case ExceptionHandling::None:
+     return false;
+@@ -925,12 +925,21 @@ bool AsmPrinter::doFinalization(Module &
+   GCModuleInfo *MI = getAnalysisIfAvailable<GCModuleInfo>();
+   assert(MI && "AsmPrinter didn't require GCModuleInfo?");
+   for (GCModuleInfo::iterator I = MI->end(), E = MI->begin(); I != E; )
      if (GCMetadataPrinter *MP = GetOrCreateGCPrinter(*--I))
        MP->finishAssembly(*this);
  
@@ -36,11 +44,15 @@ index d74a703..1831bb6 100644
    // If we don't have any trampolines, then we don't require stack memory
    // to be executable. Some targets have a directive to declare this.
    Function *InitTrampolineIntrinsic = M.getFunction("llvm.init.trampoline");
-diff --git a/lib/Target/CppBackend/CPPBackend.cpp b/lib/Target/CppBackend/CPPBackend.cpp
-index 0f3efd8..d96a258 100644
---- a/lib/Target/CppBackend/CPPBackend.cpp
-+++ b/lib/Target/CppBackend/CPPBackend.cpp
-@@ -375,6 +375,7 @@ std::string CppWriter::getCppName(Type* Ty) {
+   if (!InitTrampolineIntrinsic || InitTrampolineIntrinsic->use_empty())
+     if (const MCSection *S = MAI->getNonexecutableStackSection(OutContext))
+       OutStreamer.SwitchSection(S);
+--- a/lib/Target/CppBackend/CPPBackend.cpp	2012-11-23 20:56:57.000000000 +0100
++++ b/lib/Target/CppBackend/CPPBackend.cpp	2013-03-28 17:37:24.302140000 +0100
+@@ -372,12 +372,13 @@ std::string CppWriter::getCppName(Type*
+     }
+     case Type::X86_FP80TyID: return "Type::getX86_FP80Ty(mod->getContext())";
+     case Type::FloatTyID:    return "Type::getFloatTy(mod->getContext())";
      case Type::DoubleTyID:   return "Type::getDoubleTy(mod->getContext())";
      case Type::LabelTyID:    return "Type::getLabelTy(mod->getContext())";
      case Type::X86_MMXTyID:  return "Type::getX86_MMXTy(mod->getContext())";
@@ -48,7 +60,13 @@ index 0f3efd8..d96a258 100644
      default:
        error("Invalid primitive type");
        break;
-@@ -445,6 +446,8 @@ std::string CppWriter::getCppName(const Value* val) {
+     }
+     // shouldn't be returned, but make it sensible
+     return "Type::getVoidTy(mod->getContext())";
+@@ -442,12 +443,14 @@ std::string CppWriter::getCppName(const
+         name += std::string("_") + utostr(uniqueNum++);
+       UsedNames.insert(name);
+       return ValueNames[val] = name;
      } else {
        name = getTypePrefix(val->getType());
      }
@@ -57,7 +75,13 @@ index 0f3efd8..d96a258 100644
    } else {
      name = getTypePrefix(val->getType());
    }
-@@ -1411,6 +1414,10 @@ void CppWriter::printInstruction(const Instruction *I,
+   if (val->hasName())
+     name += val->getName();
+   else
+@@ -1408,12 +1411,16 @@ void CppWriter::printInstruction(const I
+           << getCppName(ila->getFunctionType()) << ", \""
+           << ila->getAsmString() << "\", \""
+           << ila->getConstraintString() << "\","
            << (ila->hasSideEffects() ? "true" : "false") << ");";
        nl(Out);
      }
@@ -68,3 +92,67 @@ index 0f3efd8..d96a258 100644
      if (call->getNumArgOperands() > 1) {
        Out << "std::vector<Value*> " << iName << "_params;";
        nl(Out);
+       for (unsigned i = 0; i < call->getNumArgOperands(); ++i) {
+         Out << iName << "_params.push_back(" << opNames[i] << ");";
+         nl(Out);
+--- a/lib/CodeGen/AsmPrinter/DwarfDebug.cpp	2012-11-07 06:19:04.000000000 +0100
++++ b/lib/CodeGen/AsmPrinter/DwarfDebug.cpp	2013-03-30 01:20:19.820477000 +0100
+@@ -1149,21 +1149,22 @@ const MCSymbol *DwarfDebug::getLabelAfte
+ /// beginInstruction - Process beginning of an instruction.
+ void DwarfDebug::beginInstruction(const MachineInstr *MI) {
+   // Check if source location changes, but ignore DBG_VALUE locations.
+   if (!MI->isDebugValue()) {
+     DebugLoc DL = MI->getDebugLoc();
+     if (DL != PrevInstLoc && (!DL.isUnknown() || UnknownLocations)) {
+-      unsigned Flags = 0;
++      unsigned Flags = DWARF2_FLAG_IS_STMT;
+       PrevInstLoc = DL;
+       if (DL == PrologEndLoc) {
+         Flags |= DWARF2_FLAG_PROLOGUE_END;
+         PrologEndLoc = DebugLoc();
+       }
++/*
+       if (PrologEndLoc.isUnknown())
+         Flags |= DWARF2_FLAG_IS_STMT;
+-
++*/
+       if (!DL.isUnknown()) {
+         const MDNode *Scope = DL.getScope(Asm->MF->getFunction()->getContext());
+         recordSourceLine(DL.getLine(), DL.getCol(), Scope, Flags);
+       } else
+         recordSourceLine(0, 0, 0, 0);
+     }
+@@ -1439,13 +1440,13 @@ void DwarfDebug::beginFunction(const Mac
+   // Record beginning of function.
+   if (!PrologEndLoc.isUnknown()) {
+     DebugLoc FnStartDL = getFnDebugLoc(PrologEndLoc,
+                                        MF->getFunction()->getContext());
+     recordSourceLine(FnStartDL.getLine(), FnStartDL.getCol(),
+                      FnStartDL.getScope(MF->getFunction()->getContext()),
+-                     0);
++                     DWARF2_FLAG_IS_STMT);
+   }
+ }
+ 
+ void DwarfDebug::addScopeVariable(LexicalScope *LS, DbgVariable *Var) {
+ //  SmallVector<DbgVariable *, 8> &Vars = ScopeVariables.lookup(LS);
+   ScopeVariables[LS].push_back(Var);
+--- a/test/DebugInfo/X86/ending-run.ll	2012-04-05 22:39:05.000000000 +0200
++++ b/test/DebugInfo/X86/ending-run.ll	2013-03-30 01:25:51.458268000 +0100
+@@ -1,14 +1,12 @@
+ ; RUN: llc -mtriple=x86_64-apple-darwin %s -o %t -filetype=obj
+ ; RUN: llvm-dwarfdump %t | FileCheck %s
+ 
+-; Check that the line table starts at 7, not 4, but that the first
+-; statement isn't until line 8.
++; Check that the line table starts at 7, not 4.
+ 
+-; CHECK-NOT: 0x0000000000000000      7      0      1   0  is_stmt
+-; CHECK: 0x0000000000000000      7      0      1   0
++; CHECK: 0x0000000000000000      7      0      1   0  is_stmt
+ ; CHECK: 0x0000000000000004      8     18      1   0  is_stmt prologue_end
+ 
+ define i32 @callee(i32 %x) nounwind uwtable ssp {
+ entry:
+   %x.addr = alloca i32, align 4
+   %y = alloca i32, align 4

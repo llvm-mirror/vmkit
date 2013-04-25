@@ -1,177 +1,339 @@
-VMJC      := $(ToolDir)/vmjc$(EXEEXT)
 
+.PHONY: all tidy clean distclean confclean
+.SECONDARY:
+.SUFFIXES:
+#.SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll .jar $(SHLIBEXT) $(EXEEXT)
 
-# Set the LLVM build file location 
-LLVMBuildTool   := $(LLVM_SRC_ROOT)/utils/llvm-build/llvm-build
+all::
 
 ###############################################################################
-# VMKIT_RUNTIME: Provide rules to build a .cpp file with LLVM instructions
-#                generating code matching the .ll files.
+#   Main options
 ###############################################################################
+ifeq ($(OPTIMIZED),1)
+  BUILD_NAME:=Release
+  ifeq ($(DEBUG),1)
+    BUILD_NAME:=$(BUILD_NAME)+Debug
+  endif
+else
+  ifeq ($(DEBUG),1)
+    BUILD_NAME:=Debug
+  else
+    BUILD_NAME:=Unoptimized
+  endif
+endif
 
-ifdef VMKIT_RUNTIME
+ifeq ($(ASSERT),1)
+  BUILD_NAME:=$(BUILD_NAME)+Asserts
+else
+  COMMON_CFLAGS+=-DNDEBUG
+endif
 
-.PRECIOUS: LLVMRuntime.inc
+ifeq ($(DEBUG),1)
+  COMMON_CFLAGS+=-g3 -fno-limit-debug-info
+endif
 
-LLVMRuntime.inc : $(LLVMAS) $(LLC) $(VMKIT_RUNTIME)
-	$(Echo) "Building LLVM runtime with $(VMKIT_RUNTIME)"
-	$(Verb) cat $(VMKIT_RUNTIME) | $(LLVMAS) -o - | $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=contents -o $@
+ifeq ($(OPTIMIZED),1)
+  LLC_FLAGS+= -O=3
+  OPT_FLAGS+= -disable-opt
+  COMMON_CFLAGS+= -O3
+else
+  LLC_FLAGS+=-O=0 -asm-verbose
+  OPT_FLAGS+=-disable-opt
+  COMMON_CFLAGS+=-O0
+  PRECOMPILER_OPT+=-disable-opt
+endif
 
-all-local:: LLVMRuntime.inc
+LLC_FLAGS+=-disable-cfi -disable-fp-elim -relocation-model=pic 
+OPT_FLAGS+=-disable-cfi -disable-fp-elim 
 
-clean-local::
-	$(Verb) $(RM) -f LLVMRuntime.inc
+INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR) \
+					-I$(shell $(LLVM_CONFIG) --includedir)
 
+WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
+COMMON_CFLAGS+= $(INCLUDES) -ansi -pedantic $(WARN_CFLAGS) -fPIC \
+								-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS \
+								-fno-strict-aliasing -fno-omit-frame-pointer -fvisibility-inlines-hidden 
+
+CFLAGS+=$(COMMON_CFLAGS) 
+CXXFLAGS+=$(COMMON_CFLAGS) -Woverloaded-virtual -Wcast-qual -fno-rtti -fno-exceptions
+LDFLAGS+=$(COMMON_CFLAGS) $(shell $(LLVM_CONFIG) --ldflags) $(LDOPT)
+SHOPT+=$(COMMON_CFLAGS)
+LIBS+=$(shell $(LLVM_CONFIG) --libs) -lz
+
+DEPEND_OPTIONS=-MMD -MP -MF "$(BUILD_DIR)/$$*.d.tmp" -MT "$(BUILD_DIR)/$$*.bc" -MT "$(BUILD_DIR)/$$*.d"
+DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUILD_DIR)/$$*.d.tmp"; exit 1; fi
+
+###############################################################################
+#   Nice printing
+###############################################################################
+ifndef PROF
+PROF=.
+all::
+	$(Echo) "Entering compilation process"
+endif
+
+EchoMsg="[$(PROJECT_NAME) $(PROF)]:"
+Echo=@echo $(EchoMsg)
+
+ifndef VERBOSE
+	SUB_OPT=--no-print-directory
+  Verb:=@
 endif
 
 ###############################################################################
-# VMJC_ASSEMBLY: Provide rules to build glibj.zip.s.
+#   Recursive target managment
 ###############################################################################
+RECURSIVE_TARGETS=all clean distclean
 
-ifdef VMJC_ASSEMBLY
+$(RECURSIVE_TARGETS)::
+	$(Verb) for f in $(DIRS); do \
+		$(MAKE) $(SUB_OPT) -C $$f $@ PROF=$(PROF)/$$f; \
+		if [ $$? != 0 ]; then echo "$(EchoMsg) abort with error in $(PROF)/$$f"; exit 1; fi \
+	done; exit 0;
 
-.PRECIOUS: glibj.zip.s
+tidy:
+	$(Echo) Cleaning temporary files
+	$(Verb) find $(PROJ_OBJ_ROOT) -iname "*~" -exec rm -f {} \;
 
-glibj.zip.s : $(LOPT) $(LLC) $(VMJC)
+clean::
+	$(Echo) "Cleaning compilation files"
+	$(Verb) rm -Rf $(BUILD_NAME)
 
-glibj.zip.bc :
-	$(Echo) "Compiling glibj.zip to llvm"
-	$(Verb) if test -d $(GLIBJ); then \
-	  $(VMJC) -f $(VMJC_GLIBJ_FLAGS) $(GLIBJ)/glibj.zip -o glibj.zip.bc; \
-	else \
-	  $(VMJC) -f $(VMJC_GLIBJ_FLAGS) $(GLIBJ) -o glibj.zip.bc; \
-	fi
-	
-glibj-optimized.zip.bc : glibj.zip.bc
-	$(Echo) "Optimizing glibj.zip"
-	$(Verb) $(LOPT) $(OPT_VMJC_FLAGS) -f glibj.zip.bc -o glibj-optimized.zip.bc
+distclean::
+	$(Echo) "Cleaning all compilation files"
+	$(Verb) rm -Rf Release* Debug* Unoptimized*
 
-glibj.zip.s : glibj-optimized.zip.bc
-	$(Echo) "Compiling glibj.zip.bc to native"
-	$(Verb) $(LLC) $(LLC_GLIBJ_FLAGS) -disable-cfi -relocation-model=pic -disable-fp-elim glibj-optimized.zip.bc -o glibj.zip.s
+confclean: clean
+	$(Echo) Cleaning configuration
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/Makefile.common
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/config.status $(PROJ_OBJ_ROOT)/config.log
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/autoconf/autom4te.cache $(PROJ_OBJ_ROOT)/autoconf/configure.bak
 
-$(ObjDir)/%.o: %.s $(ObjDir)/.dir $(BUILT_SOURCES)
-	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
-	$(Verb) $(Compile.C) $< -o $(ObjDir)/$*.o
+%/.dir:
+	$(Verb) $(MKDIR) $(dir $@) && $(TOUCH) $@
 
-clean-local::
-	$(Verb) $(RM) -f glibj.zip.s glibj.zip.bc glibj-optimized.zip.bc
+###############################################################################
+#   Build system managment
+###############################################################################
+#SELF=$(PROJ_SRC_ROOT)/Makefile.rules $(PROJ_OBJ_ROOT)/Makefile.common Makefile
+
+$(LEVEL)/Makefile.common: $(PROJ_OBJ_ROOT)/Makefile.common
+
+define define_config_rule
+$$(PROJ_OBJ_ROOT)/$1: $$(PROJ_SRC_ROOT)/$1.in $$(PROJ_SRC_ROOT)/configure
+	$(Echo) "Regenerating project files $$1"
+	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status -q --$2=$1
+	$(Verb) touch $$@
+endef
+
+$(foreach cur,$(CONFIG_FILES),$(eval $(call define_config_rule,$(cur),file)))
+$(foreach cur,$(CONFIG_HEADERS),$(eval $(call define_config_rule,$(cur),header)))
+
+$(PROJ_OBJ_ROOT)/configure: $(PROJ_SRC_ROOT)/autoconf/configure.ac $(PROJ_SRC_ROOT)/autoconf/AutoRegen.sh 
+	$(Echo) "Rebootstraping project"
+	$(Verb) cd $(PROJ_SRC_ROOT)/autoconf && ./AutoRegen.sh
+	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status --recheck
+
+###############################################################################
+#   Build directories and generated binaries
+###############################################################################
+BIN_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
+LIB_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
+BUILD_DIR=$(PROJ_OBJ_CWD)/$(BUILD_NAME)
+
+STATIC_GC_PASS_LIB=$(LIB_DIR)/static-gc-pass$(SHLIBEXT)
+STATIC_GC_PRINTER_LIB=$(LIB_DIR)/static-gc-printer$(SHLIBEXT)
+VMJC=$(BIN_DIR)/vmjc$(EXEEXT)
+PRECOMPILER=$(BIN_DIR)/precompiler
+
+###############################################################################
+#   Main targets
+###############################################################################
+ifdef TOOL
+MODULE=$(TOOL)
+
+all:: $(BIN_DIR)/$(TOOL)$(EXEEXT)
 endif
 
-###############################################################################
-# RUN_ANT: Provide rules to build MMTk into a .o file and inlining facilities.
-###############################################################################
+ifdef LIBRARY
+MODULE=$(LIBRARY)
 
-ifdef RUN_ANT
-
-MMTkLib = $(LibDir)/libFinalMMTk.a
-
-ifeq ($(shell [ ! -e $(MMTkLib) ] && echo "1"), 1)
-  COMPILE_MMTK = 1
+all:: $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT)
 endif
-
-ifeq ($(COMPILE_MMTK), 1)
-  all::
-	$(Verb) $(ANT) -buildfile $(PROJ_OBJ_ROOT)/mmtk/java/build.xml
-	$(Echo) Building $(BuildMode) $(JARNAME).jar $(notdir $@)
-	$(Verb) $(LOPT) -load=$(LibDir)/JITGCPass$(SHLIBEXT) $(OPT_MMTK_FLAGS) -JITGCPass -f $(LibDir)/MMTKAlloc.bc -o $(LibDir)/MMTKAlloc.bc
-	$(Verb) $(VMJC) $(VMJC_MMTK_FLAGS) -load=$(LibDir)/MMTKRuntime$(SHLIBEXT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) -LowerMagic $(PROJ_OBJ_ROOT)/mmtk/java/$(JARNAME).jar -disable-exceptions -disable-cooperativegc -with-clinit=org/mmtk/vm/VM,org/mmtk/utility/*,org/mmtk/policy/*,org/j3/config/* -Dmmtk.hostjvm=org.j3.mmtk.Factory -o $(JARNAME).bc -Dmmtk.properties=$(PROJ_SRC_ROOT)/mmtk/java/vmkit.properties -disable-stubs -assume-compiled
-	$(Verb) $(LOPT) -load=$(LibDir)/MMTKMagic$(SHLIBEXT) $(OPT_MMTK_FLAGS) -LowerJavaRT -f $(JARNAME).bc -o $(JARNAME)-optimized.bc
-	$(Verb) $(LLVMLINK) -o $(LibDir)/FinalMMTk.bc $(LibDir)/MMTKAlloc.bc $(JARNAME)-optimized.bc $(LibDir)/MMTKRuntime.bc
-	$(Verb) $(LOPT) $(LibDir)/FinalMMTk.bc -load=$(LibDir)/StaticGCPass$(SHLIBEXT) $(OPT_MMTK_FLAGS) -StaticGCPass -o $(LibDir)/FinalMMTk.bc
-	$(Verb) $(MKDIR) $(ObjDir)
-	$(Verb) $(LLC) $(LLC_ASM_FLAGS) -disable-fp-elim -disable-cfi -load=$(LibDir)/StaticGCPrinter$(SHLIBEXT) $(LibDir)/FinalMMTk.bc -o $(ObjDir)/FinalMMTk.s
-	$(Verb) $(GREP) -v '\.loc[^0-9]\+[0-9]\+ 0' $(ObjDir)/FinalMMTk.s > $(ObjDir)/FinalMMTk.s.remove_invalid_dot_loc
-	$(Verb) $(MV) -f $(ObjDir)/FinalMMTk.s.remove_invalid_dot_loc $(ObjDir)/FinalMMTk.s
-	$(Verb) $(LLVMCC) -c $(ObjDir)/FinalMMTk.s -o $(ObjDir)/FinalMMTk.o
-	$(Verb) $(Archive) $(LibDir)/libFinalMMTk.a $(ObjDir)/FinalMMTk.o
-	$(Verb) $(Ranlib) $(LibDir)/libFinalMMTk.a
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=VTgcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkVTMallocInline.inc
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=vmkitgcmalloc $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkVMKitMallocInline.inc
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=fieldWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkFieldWriteInline.inc
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=arrayWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkArrayWriteInline.inc
-	$(Verb) $(LLC) $(LLC_CPP_FLAGS) -march=cpp -cppgen=function -cppfor=nonHeapWriteBarrier $(LibDir)/FinalMMTk.bc -o $(PROJ_SRC_ROOT)/mmtk/inline/MMTkNonHeapWriteInline.inc
-endif
-
-clean-local::
-	$(Verb) $(RM) -rf classes $(JARNAME).jar $(JARNAME).bc $(JARNAME)-optimized.bc $(ObjDir)
-endif
-
-###############################################################################
-# MODULE_WITH_GC: Provide rules for building .cpp files into an archive with
-#                 GC symbol information.
-###############################################################################
 
 ifdef MODULE_WITH_GC
+MODULE=$(MODULE_WITH_GC)
+NEED_GC=1
+endif
 
-ObjectsBCWithGC   := $(BaseNameSources:%=$(ObjDir)/%_gc.bc)
-ObjectsSWithGC    := $(BaseNameSources:%=$(ObjDir)/%_gc.s)
-ObjectsWithGC     := $(BaseNameSources:%=$(ObjDir)/%_gc.o)
-AModule           := $(LibDir)/lib$(MODULE_WITH_GC).a
+###############################################################################
+#   GC passes
+###############################################################################
+ifdef NEED_GC
+LLC_GC_FLAGS+=-load=$(STATIC_GC_PRINTER_LIB)
+GC_ID=-gc
 
-$(ObjectsBCWithGC): $(ObjDir)/%_gc.bc: $(ObjDir)/%.ll $(LOPT)
-	$(Echo) "Compiling $*.ll to $*.bc for $(BuildMode) build (bytecode)"
-	$(Verb) $(LOPT) $< -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPass$(SHLIBEXT) $(OPT_BC_WITH_GC_FLAGS) -StaticGCPass -o $@
+%$(GC_ID).bc: %.bc
+	$(Echo) "Preparing GC '$(notdir $<)'"
+	$(Verb) $(LOPT) -load=$(STATIC_GC_PASS_LIB) $(OPT_FLAGS) -inline -StaticGCPass $< -o $@
 
-$(ObjectsSWithGC): $(ObjDir)/%_gc.s: $(ObjDir)/%_gc.bc $(LLC)
-	$(Echo) "Compiling $*.bc to $*.s for $(BuildMode) build"
-	$(Verb) $(LLC) $(LLC_ASM_FLAGS) -disable-cfi -disable-fp-elim -load=$(VMKIT_OBJ_ROOT)/$(BuildMode)/lib/StaticGCPrinter$(SHLIBEXT) $< -o $@
+endif
 
-$(ObjectsWithGC): $(ObjDir)/%_gc.o: $(ObjDir)/%_gc.s $(ObjDir)/.dir
-	$(Echo) "Compiling $*.s for $(BuildMode) build" $(PIC_FLAG)
-	$(Verb) $(Compile.C) $< -o $@
+###############################################################################
+#   Module
+###############################################################################
+ifdef MODULE
 
-$(AModule): $(ObjectsWithGC) $(LibDir)/.dir
-	$(Echo) Building $(BuildMode) Archive Library $(notdir $@)
+MODULE_A=$(LIB_DIR)/lib$(MODULE).a
+
+all:: $(MODULE_A)
+
+ifdef EXTRACT_FUNCTIONS
+all:: $(LIB_DIR)/$(MODULE)-inliner.o
+MODULE_A_DEP=$(LIB_DIR)/$(MODULE)-inliner.o
+NEED_BC=1
+endif
+
+define all-suffixes
+	$(wildcard *$1) $(filter %$1, $(GEN))
+endef
+
+CLANG_FILES=$(patsubst %.c,$(BUILD_DIR)/%,$(call all-suffixes,.c)) \
+            $(patsubst %.cc,$(BUILD_DIR)/%,$(call all-suffixes,.cc)) \
+            $(patsubst %.cpp,$(BUILD_DIR)/%,$(call all-suffixes,.cpp))
+
+BC_FILES=$(addsuffix .bc,$(CLANG_FILES)) $(addprefix $(BUILD_DIR)/,$(filter %.bc, $(GEN)))
+
+ifdef NEED_BC
+# if we need bytecode, we link a module with all the bc in the build_dir directory, optimize this module
+# assemble this module and finally create the archive
+all:: $(LIB_DIR)/$(MODULE).bc
+
+$(LIB_DIR)/$(MODULE).bc $(LIB_DIR)/$(MODULE)-inliner.bc: $(LIB_DIR)/%.bc: $(BUILD_DIR)/%$(GC_ID).bc $(LIB_DIR)/.dir
+	$(Verb) $(CP) $< $@
+
+$(BUILD_DIR)/$(MODULE).bc: $(BC_FILES) $(patsubst %, $(LIB_DIR)/%.bc,$(MODULE_USE))
+	$(Echo) "Linking module '$(notdir $@)'"
+	$(Verb) $(LLVMLINK) $^ -o $@
+
+MODULE_A_DEP+=$(BUILD_DIR)/$(MODULE)$(GC_ID).o
+else
+# for most of the module, we avoid a full module creation, mainly because I have bugs in llc
+# in this case, we build a set of .o files and archive them together
+# each .o is optimized and assembled
+MODULE_A_DEP=$(patsubst %.bc,%$(GC_ID).o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
+endif
+
+###############################################################################
+#   OpenJDK definitions
+###############################################################################
+ifeq ($(MODULE), Classpath)
+ifeq ($(CLASSPATH_IMPL), openjdk)
+	VMKIT_OPENJDK_ZIP=$(BUILD_DIR)/vmkit-openjdk.zip
+	CLASSES_DIR=$(PROJ_SRC_CWD)/classes
+	MODULE_A_DEP+=$(VMKIT_OPENJDK_ZIP)
+	OPENJDK_JAVA_SOURCES=$(PROJ_SRC_CWD)/java/lang/VMString.java
+endif
+endif
+
+$(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
+	$(Echo) "Building archive '$(notdir $@)'"
 	-$(Verb) $(RM) -f $@
-	$(Verb) $(Archive) $@ $(ObjectsWithGC)
+	$(Verb) $(Archive) $@ $(MODULE_A_DEP)
 	$(Verb) $(Ranlib) $@
 
-all-local:: $(AModule)
+endif
 
-clean-local::
-	-$(Verb) $(RM) -f $(AModule) $(ObjectsBCWithGC) $(ObjectsSWithGC) $(ObjectsWithGC)
+###############################################################################
+#   Inliner
+###############################################################################
+$(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)$(GC_ID).bc $(SELF)
+	$(Echo) "Generating inliner $(notdir $@)"
+	$(Verb) doit() { \
+						echo '#include "vmkit/InlineCommon.h"'; \
+			    	echo 'using namespace llvm;'; \
+						echo 'namespace vmkit {'; \
+						for F in $(EXTRACT_FUNCTIONS); do \
+							$(LOPT) $(OPT_FLAGS) $< -o - | $(LLC) $(LLC_FLAGS) -march=cpp -cppgen=function -cppfor=$$F -o - \
+									| sed -e "s/makeLLVMFunction/makeLLVMFunction_$(MODULE)_$$F/"; [ $$? -ne 0 ] && exit 1; \
+						done; \
+						echo "void makeLLVMFunctions_$(MODULE)(Module *mod) {"; \
+						for F in $(EXTRACT_FUNCTIONS); do \
+							echo "  vmkit::makeLLVMFunction_$(MODULE)_$$F(mod);"; \
+						done; \
+						echo "}"; \
+						echo "}"; \
+						exit 0; \
+				 }; doit > $@
+
+###############################################################################
+#   Linking
+###############################################################################
+DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
+
+$(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables.o $(SELF) $(BIN_DIR)/.dir
+	$(Echo) "Linking executable '$(notdir $@)'"
+	$(Verb) $(CLANGXX) -o $@  $(LDFLAGS) $(MODULE_A) $(BUILD_DIR)/frametables.o $(DEP_LIBS) $(DEP_LIBS) $(LIBS)
+
+$(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
+	$(Echo) "Linking shared library '$(notdir $@)'"
+	$(Verb) $(CLANGXX) -o $@ $(SHOPT) -shared -Wl,--whole-archive $(MODULE_A) -Wl,--no-whole-archive $(DEP_LIBS)
+
+###############################################################################
+#   Frametables
+###############################################################################
+$(BUILD_DIR)/frametables.cc: $(MODULE_A) $(DEP_LIBS) $(SELF) $(BUILD_DIR)/.dir 
+	$(Echo) "Generating frametables of $(notdir $(TOOL))" #$(notdir $(DEP_LIBS))"
+	$(Verb) doit() { \
+						F="$(MODULE_A) $(DEP_LIBS)"; \
+	          echo '#include "vmkit/MethodInfo.h"'; \
+						echo 'using namespace vmkit;'; \
+						$(NM) $$F | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/'; \
+						echo 'CompiledFrames* vmkit::initialFrametables[] = {'; \
+						$(NM) $$F | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/'; \
+						echo "0"; \
+						echo "};"; \
+					}; doit > $@
+
+###############################################################################
+# vmkit runtime generated files
+###############################################################################
+ifdef VMKIT_RUNTIME_OUT
+all:: $(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
+
+BUILT_INC+=$(BUILD_DIR)/$(VMKIT_RUNTIME_OUT)
+
+$(BUILD_DIR)/$(VMKIT_RUNTIME_OUT): $(VMKIT_RUNTIME_IN) $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Generating '$(notdir $@)'"
+	$(Verb) cat $(VMKIT_RUNTIME_IN) | $(LLVMAS) -o - | $(LLC) $(LLC_FLAGS) -march=cpp -cppgen=contents -o $@
 
 endif
 
 ###############################################################################
-# BUILD_FRAMETABLE: Generate files for easy access of frametables at runtime.
+# object rules
 ###############################################################################
+%.o: %.bc
+	$(Echo) "Assembling '$(notdir $<)'"
+	$(Verb) $(LLC) $(LLC_FLAGS) $(LLC_GC_FLAGS) -filetype=obj $< -o $@
 
-ifdef BUILD_FRAMETABLE
+define define_compile_rule
+$(BUILD_DIR)/%.bc: %$1 $(BUILT_INC) $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Compiling '$$(notdir $$<)'"
+	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 
-FrametablesExterns.inc: $(ProjLibsPaths)
-	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/extern "C" CompiledFrames \3;/' > $@
+$(BUILD_DIR)/%.bc: $(BUILD_DIR)/%$1 $(BUILT_INC) $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Compiling '$$(notdir $$<)'"
+	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
+endef
 
-FrametablesSymbols.inc: $(ProjLibsPaths)
-	$(Verb) nm $(ProjLibsPaths) | grep __frametable | sed 's/\([a-f0-9]*\) \([a-zA-Z]*\) _*\([a-zA-Z0-9_]*\)/\&\3,/' > $@
+$(eval $(call define_compile_rule,.cpp,$(CLANGXX),$(CXXFLAGS)))
+$(eval $(call define_compile_rule,.cc,$(CLANGXX),$(CXXFLAGS)))
+$(eval $(call define_compile_rule,.c,$(CLANG),$(CFLAGS)))
 
-all-local:: FrametablesExterns.inc FrametablesSymbols.inc
-
-clean-local::
-	-$(Verb) $(RM) -f FrametablesExterns.inc FrametablesSymbols.inc
-	
+ifneq ($(MAKECMDGOALS),tidy)
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),distclean)
+-include $(addsuffix .d,$(CLANG_FILES))
 endif
-
-###############################################################################
-# COMPILE_OPENJDK_ZIP: Build the specified java sources and zip them up
-###############################################################################
-ifeq ($(COMPILE_OPENJDK_ZIP), 1)
-
-# Some variables
-VMKIT_OPENJDK_ZIP=$(PROJ_OBJ_DIR)/vmkit-openjdk.zip
-CLASSES_DIR=$(PROJ_OBJ_DIR)/classes
-
-all-local:: $(VMKIT_OPENJDK_ZIP)
-clean-local::
-	-$(Verb) $(RM) -f $(CLASSES_DIR) $(VMKIT_OPENJDK_ZIP)
-
-
-$(VMKIT_OPENJDK_ZIP): $(addprefix $(PROJ_SRC_DIR)/,$(OPENJDK_JAVA_SOURCES))
-	$(Echo) "Building OpenJDK java sources into zip"
-	-$(Verb) $(RM) -rf $@ $(CLASSES_DIR)
-	$(Verb) $(MKDIR) $(CLASSES_DIR)
-	$(Verb) $(JAVAC) $^ -d $(CLASSES_DIR)
-	cd $(CLASSES_DIR) && $(ZIP) -qr $(VMKIT_OPENJDK_ZIP) .
-
+endif
 endif
