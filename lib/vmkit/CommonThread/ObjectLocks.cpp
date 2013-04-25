@@ -306,8 +306,8 @@ bool FatLock::acquire(gc* obj) {
     internalLock.unlock();
     return false;
   }
-  assert(obj->header & ThinLock::FatMask);
-  assert((obj->header & ~ThinLock::NonLockBitsMask) == getID());
+  assert(obj->header() & ThinLock::FatMask);
+  assert((obj->header() & ~ThinLock::NonLockBitsMask) == getID());
   return true;
 }
 
