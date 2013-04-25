@@ -1178,9 +1178,6 @@ llvm::Function* JavaJIT::javaCompile() {
   }
 
   reader.cursor = start;
-  findUnreachableCode(reader, codeLen);
-
-  reader.cursor = start;
   compileOpcodes(reader, codeLen);
 
   // This isn't a real requirement, although javac-produced bytcode does
