@@ -8,12 +8,7 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../..
 
-include $(LEVEL)/Makefile.config
-
-EXTRA_DIST = libvmjc
-
 TOOL=vmjc
 USE=J3 Classpath J3Compiler Vmkit VmkitCompiler MMTk CommonThread
-LINK_COMPONENTS = jit nativecodegen scalaropts instrumentation ipa ipo bitwriter
 
 include $(LEVEL)/Makefile.common

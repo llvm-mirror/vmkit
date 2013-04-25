@@ -8,8 +8,6 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-include $(LEVEL)/Makefile.config
-
 VMKIT_RUNTIME_IN=runtime-default.ll runtime-mmtk-thread.ll runtime-single.ll
 VMKIT_RUNTIME_OUT=LLVMRuntime.inc
 

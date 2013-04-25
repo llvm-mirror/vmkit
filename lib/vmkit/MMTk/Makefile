@@ -8,8 +8,6 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../../..
 
-include $(LEVEL)/Makefile.config
-
 MODULE_WITH_GC = MMTk
 
 include $(LEVEL)/Makefile.common

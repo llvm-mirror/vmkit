@@ -8,8 +8,6 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ../..
 
-include $(LEVEL)/Makefile.config
-
 DIRS = CommonThread MMTk Runtime Compiler JITGCPass
 
 include $(LEVEL)/Makefile.common

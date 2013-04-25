@@ -8,8 +8,6 @@
 ##===----------------------------------------------------------------------===##
 LEVEL = ..
 
-include $(LEVEL)/Makefile.config
-
 DIRS=j3 vmjc llcj
 
 include $(LEVEL)/Makefile.common

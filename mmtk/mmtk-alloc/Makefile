@@ -9,12 +9,8 @@
 
 LEVEL = ../..
 
-include $(LEVEL)/Makefile.config
-
 MODULE=MMTKAlloc
 NEED_BC=1
-
-CXX.Flags += -I$(PROJ_SRC_DIR)/../../lib/j3/VMCore
 
 include $(LEVEL)/Makefile.common
 

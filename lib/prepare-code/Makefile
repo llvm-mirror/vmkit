@@ -9,8 +9,6 @@
 
 LEVEL = ../..
 
-include $(LEVEL)/Makefile.config
-
 LIBRARY=prepare-code
 LOADABLE_MODULE = 1
 

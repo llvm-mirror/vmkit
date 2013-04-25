@@ -5962,8 +5962,6 @@ ac_config_headers="$ac_config_headers include/vmkit/config.h"
 
 ac_config_files="$ac_config_files Makefile.common"
 
-ac_config_files="$ac_config_files Makefile.config"
-
 ac_config_files="$ac_config_files lib/j3/ClassLib/Classpath.h"
 
 ac_config_files="$ac_config_files tools/llcj/LinkPaths.h"
@@ -6694,7 +6692,6 @@ do
     "setup") CONFIG_COMMANDS="$CONFIG_COMMANDS setup" ;;
     "include/vmkit/config.h") CONFIG_HEADERS="$CONFIG_HEADERS include/vmkit/config.h" ;;
     "Makefile.common") CONFIG_FILES="$CONFIG_FILES Makefile.common" ;;
-    "Makefile.config") CONFIG_FILES="$CONFIG_FILES Makefile.config" ;;
     "lib/j3/ClassLib/Classpath.h") CONFIG_FILES="$CONFIG_FILES lib/j3/ClassLib/Classpath.h" ;;
     "tools/llcj/LinkPaths.h") CONFIG_FILES="$CONFIG_FILES tools/llcj/LinkPaths.h" ;;
     "mmtk/java/src/org/j3/config/Selected.java") CONFIG_FILES="$CONFIG_FILES mmtk/java/src/org/j3/config/Selected.java" ;;

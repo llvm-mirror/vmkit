@@ -10,7 +10,5 @@ LEVEL = ..
 
 DIRS=vmkit j3
 
-include $(LEVEL)/Makefile.config
-
 include $(LEVEL)/Makefile.common
 

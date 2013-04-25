@@ -10,7 +10,5 @@ LEVEL = ..
 
 DIRS = magic mmtk-j3 mmtk-alloc java inline
 
-include $(LEVEL)/Makefile.config
-
 include $(LEVEL)/Makefile.common
 

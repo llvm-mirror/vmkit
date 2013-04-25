@@ -10,6 +10,5 @@ LEVEL = ../..
 
 DIRS = LLVMRuntime VMCore ClassLib Compiler
 
-include $(LEVEL)/Makefile.config
 include $(LEVEL)/Makefile.common
 
