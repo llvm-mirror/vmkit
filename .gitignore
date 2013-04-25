@@ -15,6 +15,10 @@ Debug+Asserts
 Release+Asserts
 scratch
 
+Release*
+Debug*
+Unoptimized*
+
 Makefile.common
 Makefile.config
 Makefile.llvmbuild

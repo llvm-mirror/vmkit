@@ -3,6 +3,8 @@
 .SECONDARY:
 .SUFFIXES: .c .cpp .cxx .cc .h .hpp .o .a .bc .ll .jar $(SHLIBEXT) $(EXEEXT)
 
+all::
+
 ###############################################################################
 #   Main options
 ###############################################################################
@@ -11,22 +13,16 @@ ifeq ($(OPTIMIZED),1)
   ifeq ($(DEBUG),1)
     BUILD_NAME:=$(BUILD_NAME)+Debug
   endif
-  ifeq ($(ASSERT),1)
-    BUILD_NAME:=$(BUILD_NAME)+Asserts
-  endif
 else
   ifeq ($(DEBUG),1)
     BUILD_NAME:=Debug
-		ifeq ($(ASSERT),1)
-	   	BUILD_NAME:=$(BUILD_NAME)+Asserts
-		endif
   else
-		ifeq ($(ASSERT),1)
-	   	BUILD_NAME:=Asserts
-		else
-	   	BUILD_NAME:=Unoptimized
-		endif
+    BUILD_NAME:=Unoptimized
   endif
+endif
+
+ifeq ($(ASSERT),1)
+  BUILD_NAME:=$(BUILD_NAME)+Asserts
 endif
 
 ifeq ($(DEBUG),1)
@@ -34,11 +30,12 @@ ifeq ($(DEBUG),1)
 endif
 
 ifeq ($(OPTIMIZED),1)
-	OPT_MSG="Optimizing"
+  OPT_MSG="Optimizing"
+  OPT_ID=-opt
 else
-	OPT_MSG="Performing GC pass on"
+  OPT_MSG="Performing GC pass on"
+  OPT_ID=-gc
 endif
-
 
 ENABLE_OPTIMIZED=1
 
@@ -97,7 +94,7 @@ clean::
 
 distclean::
 	$(Echo) "Cleaning all compilation files"
-	$(Verb) rm -Rf Release* Debug* Asserts* Unoptimized
+	$(Verb) rm -Rf Release* Debug* Unoptimized*
 
 confclean: clean
 	$(Echo) Cleaning configuration
@@ -196,19 +193,19 @@ ifdef NEED_BC
 # assemble this module and finally create the archive
 all:: $(LIB_DIR)/$(MODULE).bc
 
-$(LIB_DIR)/$(MODULE).bc $(LIB_DIR)/$(MODULE)-inliner.bc: $(LIB_DIR)/%.bc: $(BUILD_DIR)/%-opt.bc $(LIB_DIR)/.dir
+$(LIB_DIR)/$(MODULE).bc $(LIB_DIR)/$(MODULE)-inliner.bc: $(LIB_DIR)/%.bc: $(BUILD_DIR)/%$(OPT_ID).bc $(LIB_DIR)/.dir
 	$(Verb) $(CP) $< $@
 
 $(BUILD_DIR)/$(MODULE).bc: $(BC_FILES) $(patsubst %, $(LIB_DIR)/%.bc,$(MODULE_USE))
 	$(Echo) "Linking module '$(notdir $@)'"
 	$(Verb) $(LLVMLINK) $^ -o $@
 
-MODULE_A_DEP+=$(BUILD_DIR)/$(MODULE)-opt.o
+MODULE_A_DEP+=$(BUILD_DIR)/$(MODULE)$(OPT_ID).o
 else
 # for most of the module, we avoid a full module creation, mainly because I have bugs in llc
 # in this case, we build a set of .o files and archive them together
 # each .o is optimized and assembled
-MODULE_A_DEP=$(patsubst %.bc,%-opt.o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
+MODULE_A_DEP=$(patsubst %.bc,%$(OPT_ID).o,$(BC_FILES)) $(patsubst %, $(LIB_DIR)/lib%.a,$(MODULE_USE))
 endif
 
 $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
@@ -221,7 +218,7 @@ $(MODULE_A): $(MODULE_A_DEP) $(LIB_DIR)/.dir
 	$(Echo) "Assembling '$(notdir $<)'"
 	$(Verb) $(LLC) $(LLC_OPT) -filetype=obj $< -o $@
 
-%-opt.bc: %.bc
+%$(OPT_ID).bc: %.bc
 	$(Echo) "$(OPT_MSG) '$(notdir $<)'"
 	$(Verb) $(LOPT) $< $(LOPT_OPT) -o $@
 
@@ -230,7 +227,7 @@ endif
 ###############################################################################
 #   Inliner
 ###############################################################################
-$(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)-opt.bc $(SELF)
+$(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)$(OPT_ID).bc $(SELF)
   # cppgen doesn't like debug info
 	$(Echo) "Generating inliner $(notdir $@)"
 	$(Verb) doit() { \
@@ -255,9 +252,9 @@ $(BUILD_DIR)/$(MODULE)-inliner.cc: $(BUILD_DIR)/$(MODULE)-opt.bc $(SELF)
 ###############################################################################
 DEP_LIBS=$(patsubst %,$(LIB_DIR)/lib%.a,$(LINK_USE))
 
-$(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables-opt.o $(SELF) $(BIN_DIR)/.dir
+$(BIN_DIR)/$(TOOL)$(EXEEXT): $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables$(OPT_ID).o $(SELF) $(BIN_DIR)/.dir
 	$(Echo) "Linking executable '$(notdir $@)'"
-	$(Verb) $(CLANGXX) -o $@ $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables-opt.o $(DEP_LIBS) $(LIBS) $(LDFLAGS) 
+	$(Verb) $(CLANGXX) -o $@ $(MODULE_A) $(DEP_LIBS) $(BUILD_DIR)/frametables$(OPT_ID).o $(DEP_LIBS) $(LIBS) $(LDFLAGS) 
 
 $(LIB_DIR)/$(LIBRARY)$(SHLIBEXT): $(MODULE_A) $(DEP_LIBS) $(SELF) $(LIB_DIR)/.dir
 	$(Echo) "Linking shared library '$(notdir $@)'"
