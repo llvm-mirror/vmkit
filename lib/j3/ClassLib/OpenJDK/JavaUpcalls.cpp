@@ -201,6 +201,7 @@ JavaMethod* Classpath::IntToString;
 
 JavaMethod* Classpath::SystemArraycopy;
 Class*      Classpath::SystemClass;
+JavaMethod* Classpath::SystemExit;
 JavaMethod* Classpath::initSystem;
 Class*      Classpath::EnumClass;
 Class*      Classpath::assertionStatusDirectivesClass;
@@ -794,6 +795,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
                                   ACC_STATIC);
 
   SystemClass = UPCALL_CLASS(loader, "java/lang/System");
+
+  SystemExit = UPCALL_METHOD(loader, "java/lang/System", "exit",
+            "(I)V", ACC_STATIC);
 
   initSystem =
     UPCALL_METHOD(loader, "java/lang/System", "initializeSystemClass", "()V",

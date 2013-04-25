@@ -233,6 +233,7 @@ public:
 
   ISOLATE_STATIC JavaMethod* SystemArraycopy;
   ISOLATE_STATIC Class*      SystemClass;
+  ISOLATE_STATIC JavaMethod* SystemExit;
   ISOLATE_STATIC JavaMethod* initSystem;
 
   ISOLATE_STATIC JavaMethod* IntToString;

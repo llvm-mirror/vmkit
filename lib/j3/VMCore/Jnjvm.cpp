@@ -45,7 +45,8 @@ const char* Jnjvm::envSeparator = ":";
 const unsigned int Jnjvm::Magic = 0xcafebabe;
 
 /**
- * In JVM specification, the virtual machine should execute some code.
+ * In JVM specification, the virtual machine should execute some code when
+ *  the application finish.
  * See Runtime.addShutdownHook
  * In GNUClasspath the default behavior when the program call System.exit
  * is to execute such a code.
@@ -58,7 +59,6 @@ void threadToDetectCtrl_C(vmkit::Thread* th) {
 		vmkit::condForCtrl_C.wait(&vmkit::lockForCtrl_C);
 		vmkit::lockForCtrl_C.unlock(th);
 	}
-	fprintf(stderr, "Crazy stuff\n");
 	JavaThread* kk = (JavaThread*)th;
 	UserClass* cl = kk->getJVM()->upcalls->SystemClass;
 	kk->getJVM() -> upcalls->SystemExit->invokeIntStatic(kk->getJVM(), cl, 0);
