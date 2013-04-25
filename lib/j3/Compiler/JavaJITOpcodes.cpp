@@ -2177,7 +2177,7 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
           BinaryOperator::CreateAdd(intrinsics->JavaArraySizeConstant, mult,
                                     "", currentBlock);
         TheVT = new BitCastInst(TheVT, intrinsics->ptrType, "", currentBlock);
-        Instruction* res = invoke(intrinsics->AllocateFunction, size, TheVT, "",
+        Instruction* res = invoke(intrinsics->VTAllocateFunction, size, TheVT, "",
                                   currentBlock);
         Value* cast = new BitCastInst(res, intrinsics->JavaArrayType, "",
                                       currentBlock);

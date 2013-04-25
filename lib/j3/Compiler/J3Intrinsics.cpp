@@ -35,9 +35,9 @@ void J3Intrinsics::init(llvm::Module* module) {
   BaseIntrinsics::init(module);
 
   // Overloading allocation function to use VTgcmalloc
-  AllocateUnresolvedFunction = module->getFunction("VTgcmallocUnresolved");
-  assert(AllocateUnresolvedFunction && "No allocateUnresolved function");
-  AllocateFunction = module->getFunction("VTgcmalloc");
+  VTAllocateUnresolvedFunction = module->getFunction("VTgcmallocUnresolved");
+  assert(VTAllocateUnresolvedFunction && "No allocateUnresolved function");
+  VTAllocateFunction = module->getFunction("VTgcmalloc");
 
   j3::llvm_runtime::makeLLVMModuleContents(module);
   

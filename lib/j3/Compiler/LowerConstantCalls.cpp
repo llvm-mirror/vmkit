@@ -89,7 +89,7 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
               (InsArg->getOpcode() == Instruction::Call ||
                InsArg->getOpcode() == Instruction::Invoke)) { 
             CallSite Ca(Arg);
-            if (Ca.getCalledValue() == intrinsics->AllocateFunction) {
+            if (Ca.getCalledValue() == intrinsics->VTAllocateFunction) {
               Changed = true;
               Cmp->replaceAllUsesWith(ConstantInt::getFalse(*Context));
               Cmp->eraseFromParent();

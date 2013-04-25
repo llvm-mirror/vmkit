@@ -48,6 +48,9 @@ public:
   llvm::Type* MutatorThreadType;
   llvm::Type* J3DenseMapType;
   
+  llvm::Function* VTAllocateFunction;
+  llvm::Function* VTAllocateUnresolvedFunction;
+
   llvm::Function* StartJNIFunction;
   llvm::Function* EndJNIFunction;
   llvm::Function* InterfaceLookupFunction;

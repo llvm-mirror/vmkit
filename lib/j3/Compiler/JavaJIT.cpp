@@ -1884,8 +1884,8 @@ void JavaJIT::invokeNew(uint16 index) {
   }
  
   VT = new BitCastInst(VT, intrinsics->ptrType, "", currentBlock);
-  Instruction* val = invoke(cl ? intrinsics->AllocateFunction :
-                           intrinsics->AllocateUnresolvedFunction,
+  Instruction* val = invoke(cl ? intrinsics->VTAllocateFunction :
+                           intrinsics->VTAllocateUnresolvedFunction,
                            Size, VT, "", currentBlock);
 
   addHighLevelType(val, cl ? cl : upcalls->OfObject);
