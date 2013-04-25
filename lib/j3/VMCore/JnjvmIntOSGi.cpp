@@ -90,6 +90,11 @@ extern "C" void Java_j3_vm_OSGi_associateBundleClass(jlong bundleID, JavaObjectC
 #endif
 }
 
+/*
+	This Java native method must be called by the framework whenever a bundle
+	is uninstalled or updated. It activates the logic used to scan for stale
+	references to be performed in the next GC collection.
+*/
 extern "C" void Java_j3_vm_OSGi_notifyBundleUninstalled(jlong bundleID)
 {
 #if RESET_STALE_REFERENCES
