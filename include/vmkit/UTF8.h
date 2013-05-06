@@ -95,8 +95,8 @@ struct VmkitDenseMapInfo<const UTF8*> {
   static unsigned getHashValue(const UTF8* PtrVal) {
     return PtrVal->hash();
   }
-  static bool isEqual(const UTF8* LHS, const UTF8* RHS) { return LHS->equals(RHS); }
-  static bool isEqualKey(const UTF8* LHS, const UTF8MapKey& Key) {
+  static bool vmkIsEqual(const UTF8* LHS, const UTF8* RHS) { return LHS->equals(RHS); }
+  static bool vmkIsEqualKey(const UTF8* LHS, const UTF8MapKey& Key) {
     return LHS->equals(Key.data, Key.length);
   }
   static UTF8MapKey toKey(const UTF8* utf8) {
@@ -119,7 +119,7 @@ struct VmkitDenseMapInfo<UTF8MapKey> {
   static unsigned getHashValue(const UTF8MapKey& key) {
     return UTF8::readerHasher(key.data, key.length);
   }
-  static bool isEqual(const UTF8MapKey& LHS, const UTF8MapKey& RHS) {
+  static bool vmkIsEqual(const UTF8MapKey& LHS, const UTF8MapKey& RHS) {
     if (LHS.data == RHS.data) return true;
     if (LHS.length != RHS.length) return false;
     return !memcmp(LHS.data, RHS.data, RHS.length * sizeof(uint16));

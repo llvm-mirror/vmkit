@@ -59,8 +59,8 @@ public:
   ~VmkitDenseSet() {
     const ValueT EmptyValue = getEmptyValue(), TombstoneValue = getTombstoneValue();
     for (BucketT *P = Buckets, *E = Buckets+NumBuckets; P != E; ++P) {
-      if (!ValueInfoT::isEqual(*P, EmptyValue) &&
-          !ValueInfoT::isEqual(*P, TombstoneValue))
+      if (!ValueInfoT::vmkIsEqual(*P, EmptyValue) &&
+          !ValueInfoT::vmkIsEqual(*P, TombstoneValue))
         (*P).~ValueT();
     }
 #ifndef NDEBUG
@@ -109,8 +109,8 @@ public:
 
     const ValueT EmptyValue = getEmptyValue(), TombstoneValue = getTombstoneValue();
     for (BucketT *P = Buckets, *E = Buckets+NumBuckets; P != E; ++P) {
-      if (!ValueInfoT::isEqual(*P, EmptyValue)) {
-        if (!ValueInfoT::isEqual(*P, TombstoneValue)) {
+      if (!ValueInfoT::vmkIsEqual(*P, EmptyValue)) {
+        if (!ValueInfoT::vmkIsEqual(*P, TombstoneValue)) {
           P->~ValueT();
           --NumEntries;
         }
@@ -244,7 +244,7 @@ private:
     }
 
     // If we are writing over a tombstone, remember this.
-    if (!ValueInfoT::isEqual(*TheBucket, getEmptyValue()))
+    if (!ValueInfoT::vmkIsEqual(*TheBucket, getEmptyValue()))
       --NumTombstones;
 
     new (TheBucket) ValueT(Value);
@@ -283,14 +283,14 @@ private:
     while (1) {
       BucketT *ThisBucket = BucketsPtr + (BucketNo & (NumBuckets-1));
       // Found Val's bucket?  If so, return it.
-      if (ValueInfoT::isEqualKey(*ThisBucket, Key)) {
+      if (ValueInfoT::vmkIsEqualKey(*ThisBucket, Key)) {
         FoundBucket = ThisBucket;
         return true;
       }
 
       // If we found an empty bucket, the key doesn't exist in the set.
       // Insert it and return the default value.
-      if (ValueInfoT::isEqual(*ThisBucket, EmptyValue)) {
+      if (ValueInfoT::vmkIsEqual(*ThisBucket, EmptyValue)) {
         // If we've already seen a tombstone while probing, fill it in instead
         // of the empty bucket we eventually probed to.
         if (FoundTombstone) ThisBucket = FoundTombstone;
@@ -300,7 +300,7 @@ private:
 
       // If this is a tombstone, remember it.  If Val ends up not in the map, we
       // prefer to return it than something that would require more probing.
-      if (ValueInfoT::isEqual(*ThisBucket, TombstoneValue) && !FoundTombstone)
+      if (ValueInfoT::vmkIsEqual(*ThisBucket, TombstoneValue) && !FoundTombstone)
         FoundTombstone = ThisBucket;  // Remember the first tombstone found.
 
       // Otherwise, it's a hash collision or a tombstone, continue quadratic
@@ -349,8 +349,8 @@ private:
     // Insert all the old elements.
     const ValueT TombstoneValue = getTombstoneValue();
     for (BucketT *B = OldBuckets, *E = OldBuckets+OldNumBuckets; B != E; ++B) {
-      if (!ValueInfoT::isEqual(*B, EmptyValue) &&
-          !ValueInfoT::isEqual(*B, TombstoneValue)) {
+      if (!ValueInfoT::vmkIsEqual(*B, EmptyValue) &&
+          !ValueInfoT::vmkIsEqual(*B, TombstoneValue)) {
         // Insert the value into the new table.
         BucketT *DestBucket;
         KeyT key = ValueInfoT::toKey(*B);
@@ -394,8 +394,8 @@ private:
     // Free the old buckets.
     const ValueT TombstoneValue = getTombstoneValue();
     for (BucketT *B = OldBuckets, *E = OldBuckets+OldNumBuckets; B != E; ++B) {
-      if (!ValueInfoT::isEqual(*B, EmptyValue) &&
-          !ValueInfoT::isEqual(*B, TombstoneValue)) {
+      if (!ValueInfoT::vmkIsEqual(*B, EmptyValue) &&
+          !ValueInfoT::vmkIsEqual(*B, TombstoneValue)) {
         // Free the value.
         (*B).~ValueT();
       }
@@ -480,8 +480,8 @@ private:
     const ValueT Tombstone = ValueInfoT::getTombstoneKey();
 
     while (Ptr != End &&
-           (ValueInfoT::isEqual(*Ptr, Empty) ||
-            ValueInfoT::isEqual(*Ptr, Tombstone)))
+           (ValueInfoT::vmkIsEqual(*Ptr, Empty) ||
+            ValueInfoT::vmkIsEqual(*Ptr, Tombstone)))
       ++Ptr;
   }
 };

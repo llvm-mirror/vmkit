@@ -33,7 +33,7 @@ struct VmkitDenseMapInfo {
   //static inline T getEmptyKey();
   //static inline T getTombstoneKey();
   //static unsigned getHashValue(const T &Val);
-  //static bool isEqual(const T &LHS, const T &RHS);
+  //static bool vmkIsEqual(const T &LHS, const T &RHS);
 };
 
 template<typename KeyT, typename ValueT,
@@ -71,8 +71,8 @@ public:
   ~VmkitDenseMap() {
     const KeyT EmptyKey = getEmptyKey(), TombstoneKey = getTombstoneKey();
     for (BucketT *P = Buckets, *E = Buckets+NumBuckets; P != E; ++P) {
-      if (!KeyInfoT::isEqual(P->first, EmptyKey) &&
-          !KeyInfoT::isEqual(P->first, TombstoneKey))
+      if (!KeyInfoT::vmkIsEqual(P->first, EmptyKey) &&
+          !KeyInfoT::vmkIsEqual(P->first, TombstoneKey))
         P->second.~ValueT();
       P->first.~KeyT();
     }
@@ -122,8 +122,8 @@ public:
 
     const KeyT EmptyKey = getEmptyKey(), TombstoneKey = getTombstoneKey();
     for (BucketT *P = Buckets, *E = Buckets+NumBuckets; P != E; ++P) {
-      if (!KeyInfoT::isEqual(P->first, EmptyKey)) {
-        if (!KeyInfoT::isEqual(P->first, TombstoneKey)) {
+      if (!KeyInfoT::vmkIsEqual(P->first, EmptyKey)) {
+        if (!KeyInfoT::vmkIsEqual(P->first, TombstoneKey)) {
           P->second.~ValueT();
           --NumEntries;
         }
@@ -258,7 +258,7 @@ private:
     }
 
     // If we are writing over a tombstone, remember this.
-    if (!KeyInfoT::isEqual(TheBucket->first, getEmptyKey()))
+    if (!KeyInfoT::vmkIsEqual(TheBucket->first, getEmptyKey()))
       --NumTombstones;
 
     TheBucket->first = Key;
@@ -294,21 +294,21 @@ private:
     BucketT *FoundTombstone = 0;
     const KeyT EmptyKey = getEmptyKey();
     const KeyT TombstoneKey = getTombstoneKey();
-    assert(!KeyInfoT::isEqual(Val, EmptyKey) &&
-           !KeyInfoT::isEqual(Val, TombstoneKey) &&
+    assert(!KeyInfoT::vmkIsEqual(Val, EmptyKey) &&
+           !KeyInfoT::vmkIsEqual(Val, TombstoneKey) &&
            "Empty/Tombstone value shouldn't be inserted into map!");
 
     while (1) {
       BucketT *ThisBucket = BucketsPtr + (BucketNo & (NumBuckets-1));
       // Found Val's bucket?  If so, return it.
-      if (KeyInfoT::isEqual(ThisBucket->first, Val)) {
+      if (KeyInfoT::vmkIsEqual(ThisBucket->first, Val)) {
         FoundBucket = ThisBucket;
         return true;
       }
 
       // If we found an empty bucket, the key doesn't exist in the set.
       // Insert it and return the default value.
-      if (KeyInfoT::isEqual(ThisBucket->first, EmptyKey)) {
+      if (KeyInfoT::vmkIsEqual(ThisBucket->first, EmptyKey)) {
         // If we've already seen a tombstone while probing, fill it in instead
         // of the empty bucket we eventually probed to.
         if (FoundTombstone) ThisBucket = FoundTombstone;
@@ -318,7 +318,7 @@ private:
 
       // If this is a tombstone, remember it.  If Val ends up not in the map, we
       // prefer to return it than something that would require more probing.
-      if (KeyInfoT::isEqual(ThisBucket->first, TombstoneKey) && !FoundTombstone)
+      if (KeyInfoT::vmkIsEqual(ThisBucket->first, TombstoneKey) && !FoundTombstone)
         FoundTombstone = ThisBucket;  // Remember the first tombstone found.
 
       // Otherwise, it's a hash collision or a tombstone, continue quadratic
@@ -367,8 +367,8 @@ private:
     // Insert all the old elements.
     const KeyT TombstoneKey = getTombstoneKey();
     for (BucketT *B = OldBuckets, *E = OldBuckets+OldNumBuckets; B != E; ++B) {
-      if (!KeyInfoT::isEqual(B->first, EmptyKey) &&
-          !KeyInfoT::isEqual(B->first, TombstoneKey)) {
+      if (!KeyInfoT::vmkIsEqual(B->first, EmptyKey) &&
+          !KeyInfoT::vmkIsEqual(B->first, TombstoneKey)) {
         // Insert the key/value into the new table.
         BucketT *DestBucket;
         bool FoundVal = LookupBucketFor(B->first, DestBucket);
@@ -413,8 +413,8 @@ private:
     // Free the old buckets.
     const KeyT TombstoneKey = getTombstoneKey();
     for (BucketT *B = OldBuckets, *E = OldBuckets+OldNumBuckets; B != E; ++B) {
-      if (!KeyInfoT::isEqual(B->first, EmptyKey) &&
-          !KeyInfoT::isEqual(B->first, TombstoneKey)) {
+      if (!KeyInfoT::vmkIsEqual(B->first, EmptyKey) &&
+          !KeyInfoT::vmkIsEqual(B->first, TombstoneKey)) {
         // Free the value.
         B->second.~ValueT();
       }
@@ -501,8 +501,8 @@ private:
     const KeyT Tombstone = KeyInfoT::getTombstoneKey();
 
     while (Ptr != End &&
-           (KeyInfoT::isEqual(Ptr->first, Empty) ||
-            KeyInfoT::isEqual(Ptr->first, Tombstone)))
+           (KeyInfoT::vmkIsEqual(Ptr->first, Empty) ||
+            KeyInfoT::vmkIsEqual(Ptr->first, Tombstone)))
       ++Ptr;
   }
 };
