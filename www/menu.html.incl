@@ -19,10 +19,4 @@
     <a href="http://llvm.org/bugs/">Bug Reports</a>
     <a href="http://llvm.org/viewvc/llvm-project/vmkit/trunk/">Browse Source</a>
   </div>
-  
-  <div class="submenu">
-    <label>Events</label>
-    <a href="http://llvm.org/devmtg/">LLVM/Clang Developer Meetings</a>
-  </div>
-
 </div>
