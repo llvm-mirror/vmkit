@@ -21,52 +21,48 @@ options.  This should get you up and running with the minimum of muss and fuss.
 If you like what you see, please consider <a href="get_involved.html">getting
 involved</a> with the vmkit community.</p>
 
-
-<h2>A word of warning</h2>
-
-<p>While this work aims to provide a fully functional JVM, it
-is <em>still early work</em> and is under heavy development. 
-<p>Some of the common missing pieces in vmkit/llvm are:</p>
-
-<ol>
-  <li> Mixed interpretation/compilation.</li>
-  <li> Adaptive optimization.</li>
-</ol>
-
 <h2 id="build">Building vmkit / working with the code</h2>
 
 <p>If you would like to check out and build the project, the current scheme
 is:</p>
 
+<p><b>Prerequisites</b><br/>
+You will have to install a C++ compiler and Java 1.5 or more in order to
+compile vmkit2</p>
+
 <ol>
-  <li>Checkout <a href="http://www.llvm.org/docs/GettingStarted.html#checkout">
-    LLVM</a> and 
-    <a href="http://clang.llvm.org/get_started.html">Clang</a> from SVN head.
+  <li>Download <a href="http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz">
+    LLVM 3.2</a> and 
+    <a href="http://llvm.org/releases/3.2/clang-3.2.src.tar.gz">Clang 3.2</a>
+    source code.
   </li>
 
   <ul>
-    <li><tt>svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm</tt></li>
-    <li><tt>cd llvm/tools</li></tt>
-    <li><tt>svn co http://llvm.org/svn/llvm-project/cfe/trunk clang</tt></li>
-    <li><tt>cd ..</tt></li>
-    <li><tt>./configure; make ENABLE_OPTIMIZED=1</tt></li>
+    <li><tt>tar zxvf llvm-3.2.src.tar.gz</tt></li>
+    <li><tt>cd llvm-3.2.src/tools</li></tt>
+    <li><tt>tar zxvf ../../clang-3.2.src.tar.gz</tt></li>
+    <li><tt>mv clang-3.2.src clang</li></tt>
+    <li><tt>cd ..</li></tt>
+    <li><tt>./configure --enable-optimized; make</tt></li>
   </ul>
 
-  
-  <li><a href="ftp://ftp.gnu.org/gnu/classpath/classpath-0.97.2.tar.gz">Download
-   GNU Classpath 0.97.2</a>:</li>
+  <p><b>Skip the Classpath steps if you plan to use OpenJDK instead.</b><br/>
+  <li><a href="ftp://ftp.gnu.org/gnu/classpath/classpath-0.99.tar.gz">Download
+   GNU Classpath 0.99</a>:</li>
 
   <ul>
-    <li><tt>tar zxvf classpath-0.97.2.tar.gz</tt></li>
-    <li><tt>cd classpath-0.97.2</tt></li>
-    <li><tt>./configure --disable-plugin --disable-examples --disable-Werror; make</tt></li>
+    <li><tt>tar zxvf classpath-0.99.tar.gz</tt></li>
+    <li><tt>cd classpath-0.99</tt></li>
+    <li><tt>./configure --disable-plugin --disable-examples --disable-Werror;
+    make</tt></li>
     <li><tt>cd lib</li></tt>
     <li><tt>If you are running on Linux:</li></tt>
     <ul>
       <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.so;</li></tt>
       <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.so;</li></tt>
       <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.so;</li></tt>
-      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.so;</li></tt>
+      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.so;</li>
+      </tt>
       <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.so;</li></tt>
       <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.so;</li></tt>
       <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.so;</li></tt>
@@ -77,7 +73,8 @@ is:</p>
       <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.dylib;</li></tt>
       <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.dylib;</li></tt>
       <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.dylib;</li></tt>
-      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.dylib;</li></tt>
+      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.dylib;
+      </li></tt>
       <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.dylib;</li></tt>
       <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.dylib;</li></tt>
       <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.dylib;</li></tt>
@@ -87,41 +84,59 @@ is:</p>
   
   <li>Checkout vmkit:</li>
   <ul>
-     <li><tt>svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit</tt></li>
-
+    <li><tt>svn co http://llvm.org/svn/llvm-project/vmkit/trunk vmkit</tt></li>
   </ul>
+
   <li>Configure vmkit:</li>
   <ul>
-  <li><tt>./configure </tt></li>
-  <dl>
-    <dt><tt>--with-llvmsrc=&lt;directory&gt;</tt></dt>
-    <dd>Tell vmkit where the LLVM source tree is located.</dd>
-    <dt><br/><tt>--with-llvmobj=&lt;directory&gt;</tt></dt>
-    <dd>Tell vmkit where the LLVM object tree is located.</dd>
-    <dt><br/><tt>--with-gnu-classpath-glibj=&lt;file or directory&gt;</tt></dt>
-    <dd>Tell vmkit where GNU Classpath glibj.zip is located.</dd>
-    <dt><br/><tt>--with-gnu-classpath-libs=&lt;directory&gt;</tt></dt>
-    <dd>Tell vmkit where GNU Classpath libs are located.</dd>
-    <dt><br/><tt>--with-mmtk-plan=</tt> </dt>
+    <li><tt>./configure </tt></li>
+    <dl>
+      <dt><tt>--with-llvm-config-path=&lt;path/to/llvm-config&gt;</tt></dt>
+      <dd>Tell vmkit where the llvm-config binary is located.</dd>
+      <dt><br/><tt>--with-mmtk-plan=</tt> </dt>
       <dd>
-      <ul>
-      <li><tt>org.mmtk.plan.marksweep.MS (default)</tt></li>
-      <li><tt>org.mmtk.plan.copyms.CopyMS</tt></li>
-      <li><tt>org.mmtk.plan.semispace.SS</tt></li>
-      <li><tt>org.mmtk.plan.immix.Immix</tt></li>
-      <li><tt>org.mmtk.plan.generational.marksweep.GenMS</tt></li>
-      <li><tt>org.mmtk.plan.generational.copying.GenCopy</tt></li>
-      <li><tt>org.mmtk.plan.generational.immix.GenImmix</tt></li>
-      </ul>
+        <ul>
+          <li><tt>org.mmtk.plan.marksweep.MS (default)</tt></li>
+          <li><tt>org.mmtk.plan.copyms.CopyMS</tt></li>
+          <li><tt>org.mmtk.plan.semispace.SS</tt></li>
+          <li><tt>org.mmtk.plan.immix.Immix</tt></li>
+          <li><tt>org.mmtk.plan.generational.marksweep.GenMS</tt></li>
+          <li><tt>org.mmtk.plan.generational.copying.GenCopy</tt></li>
+          <li><tt>org.mmtk.plan.generational.immix.GenImmix</tt></li>
+        </ul>
       </dd>
-  </dl>
-
+      <ul>
+        <li>
+          <p>you can use GNU Classpath by configuring the following :</p>
+          <dt>
+            <tt>--with-gnu-classpath-glibj=&lt;path/to/file/glibj.zip&gt;</tt>
+          </dt>
+          <dd>Tell vmkit where GNU Classpath glibj.zip is located.</dd>
+          <br/>
+          <dt>
+            <tt>--with-gnu-classpath-libs=&lt;path/to/libs/directory&gt;</tt>
+          </dt>
+          <dd>Tell vmkit where GNU Classpath libs are located.</dd>
+        </li>
+        <li>
+          <p>or OpenJDK by configuring :</p>
+          <dt>
+            <tt>--with-classpath-impl=openjdk</tt>
+          </dt>
+          <dd>Tell vmkit to use OpenJDK classpath implementation.</dd>
+          <br/>
+          <dt>
+            <tt>--with-openjdk-path=&lt;directory&gt;</tt>
+          </dt>
+          <dd>Tell vmkit where OpenJDK is located.</dd>
+        </li>
+      </ul>
+    </dl>
   </ul>
 
   <li>Build vmkit:</li>
   <ul>
-    <li><tt>cd vmkit</tt></li>
-    <li><tt>make ENABLE_OPTIMIZED=1</tt> (this will give you a release build)</li>
+    <li><tt>make</tt> (this will give you a release build)</li>
   </ul>
 
   <li>Try it out: (assuming vmkit/Release+Asserts/bin is in your path)</li>
@@ -130,7 +145,6 @@ is:</p>
     <li><tt>j3 HelloWorld</tt></li>
   </ul>
 </ol>
-
 </div>
 </body>
 </html>

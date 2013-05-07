@@ -14,36 +14,52 @@
   <!--*********************************************************************-->
   <h1>VMKit: a substrate for virtual machines</h1>
   <!--*********************************************************************-->
-  
-  <p>The VMKit project is a framework for building virtual machines. It uses
-  <a href="http://llvm.org">LLVM</a> for compiling and optimizing high-level
-  languages to machine code, and <a href="http://jikesrvm.org/MMTk">MMTk</a>
-  to manage memory. J3 is an implementation of a JVM with VMKit.
-  You can <a href="get_started.html">get and build</a> the source of J3
-  today.</p>
-  
+
+  <p>Current MREs are monolithic. Extending them to propose new features or
+  reusing them to execute new languages is difficult. VMKit is a library
+  that eases the development of new MREs and the process of experimenting
+  with new mechanisms inside MREs. VMKit provides the basic components of
+  MREs: a JIT compiler, a GC, and a thread manager.</p>
+
+  <p>VMKit relies on <a href="http://llvm.org">LLVM</a> for compilation and 
+  <a href="http://jikesrvm.org/MMTk">MMTk</a> to manage memory. 
+  Currently, a full Java virtual machine called J3 is distributed with VMKit.
+
   <!--=====================================================================-->
   <h2 id="goals">Features</h2>
   <!--=====================================================================-->
-  
-  <p>VMKit provides the following features:</p>
-  
-  <p><b>End-User Features</a></b>:</p>
-  
+  <p>For the end user, VMKit provides:
   <ul>
-  <li>Precise garbage collection.</li>
-  <li>Just-in-Time and Ahead-of-Time compilation.</li>
-  <li>Portable on many architectures (x86, x64, ppc32, ppc64, arm).</li>
-  </ul>
+  <li>Precise garbage collection.
+  <li>Just-in-Time and Ahead-of-Time compilation.
+  <li>Portable on many architectures (x86, x64, ppc32, ppc64, arm).
+  </ul></p>
 
-  <p><b>Developer Features</a></b>:</p>
-
+  <p>For the MRE developer, VMKit provides:
   <ul>
-    <li>Relatively small code base (~ 20k loc per VM)</li>
-    <li>Infrastructure for running multiple VM/applications in a single
-        process</li>
-    <li>Infrastructure for virtual machine research and development</li>
-  </ul>
+  <li>Relatively small code base (~ 20k loc per VM)
+  <li>Infrastructure for virtual machine research and development
+  </ul></p>
+
+  <!--=====================================================================-->
+  <h2 id="goals">Current Status</h2>
+  <!--=====================================================================-->
+  <p>VMKit currently has a decent implementation of a JVM called J3. It
+  executes large projects (e.g. OSGi Felix, Tomcat, Eclipse) and the DaCapo
+  benchmarks. A R virtual machine is currently under heavy development.</p>
+
+  <p>J3 has been tested on Linux/x64, Linux/x86, Linux/ppc32, MacOSX/x64,
+  MacOSX/x86, MacOSX/ppc32. The JVM may work on ppc64. Support for Windows has
+  not been investigated.</p>
+
+  <p>While this work aims to provide a fully functional JVM, it is still early
+  work and is under heavy development. Some of the common missing pieces in
+  vmkit/llvm are:
+  <ul>
+    <li>Mixed interpretation/compilation.
+    <li>Adaptive optimization.
+  </ul></p>
+
 
   <!--=====================================================================-->
   <h2>Why?</h2>
@@ -106,6 +122,23 @@
      involved in the VMKit community</a>. Currently, VMKit is tightly
      integrated into the LLVM community. You can sign up for the LLVM mailing
      list to ask and learn about how the project works.</p>
+
+  <p>The project VMKit2, sponsored by Inria and LIP6, was a fork of VMKit
+  project that was recently integrated back into mainstream VMKit.</p>
+
+  <table cellpadding="0" cellspacing="0" width="100%">
+    <tbody><tr>
+      <td valign="middle" align="center" width="25%">
+        <a href="http://www.inria.fr">
+          <img border="0" src="http://www.inria.fr/var/inria/storage/images/medias/inria/images-corps/logo-inria-institutionnel-couleur/410230-1-fre-FR/logo-inria-institutionnel-couleur.jpg" height="80" alt="INRIA"></a>
+      </td>
+      <td valign="middle" align="center" width="50%"></td>
+      <td valign="middle" align="center" width="25%">
+        <a href="http://www.lip6.fr">
+        <img border="0" src="lip6.png" height="70" alt="Laboratoire d'Informatique de Paris6"></a>
+      </td>
+    </tr></tbody>
+  </table>
 </div>
 </body>
 </html>
