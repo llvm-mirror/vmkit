@@ -2494,10 +2494,10 @@ esac
 if test "${enable_optimized+set}" = set; then :
   enableval=$enable_optimized;
 else
-  enableval=yes
+  enable_optimized=yes
 fi
 
-case "$enableval" in
+case "$enable_optimized" in
   yes) OPTIMIZED=1
  ;;
   no)  OPTIMIZED=0
@@ -2509,10 +2509,10 @@ esac
 if test "${enable_debug+set}" = set; then :
   enableval=$enable_debug;
 else
-  enableval=no
+  enable_debug=no
 fi
 
-case "$enableval" in
+case "$enable_debug" in
   yes) DEBUG=1
  ;;
   no)  DEBUG=0
@@ -2524,11 +2524,11 @@ esac
 if test "${enable_assert+set}" = set; then :
   enableval=$enable_assert;
 else
-  enableval=yes
+  enable_assert=yes
 fi
 
 
-case "$enableval" in
+case "$enable_assert" in
   yes) ASSERT=1
  ;;
   no)  ASSERT=0
@@ -2539,7 +2539,7 @@ esac
 
 # Check whether --with-llvm-config-path was given.
 if test "${with_llvm_config_path+set}" = set; then :
-  withval=$with_llvm_config_path; LLVM_CONFIG=$withval
+  withval=$with_llvm_config_path; LLVM_CONFIG=$with_llvm_config_path
 else
   LLVM_CONFIG="llvm-config"
 
@@ -2549,7 +2549,7 @@ fi
 
 # Check whether --with-clang-path was given.
 if test "${with_clang_path+set}" = set; then :
-  withval=$with_clang_path; CLANG_PATH=$withval
+  withval=$with_clang_path; CLANG_PATH=$with_clang_path
 else
   CLANG_PATH="$(LLVM_CONFIG) --bindir"
 
@@ -2560,7 +2560,7 @@ fi
 
 # Check whether --with-mmtk-plan was given.
 if test "${with_mmtk_plan+set}" = set; then :
-  withval=$with_mmtk_plan; MMTK_PLAN=$withval
+  withval=$with_mmtk_plan; MMTK_PLAN=$with_mmtk_plan
 else
   MMTK_PLAN=org.mmtk.plan.marksweep.MS
 
@@ -2578,7 +2578,7 @@ classpathversion=0.97.2;
 
 # Check whether --with-gnu-classpath-libs was given.
 if test "${with_gnu_classpath_libs+set}" = set; then :
-  withval=$with_gnu_classpath_libs; classpathlibs=$withval
+  withval=$with_gnu_classpath_libs; classpathlibs=$with_gnu_classpath_libs
 else
   classpathlibs=/usr/lib/classpath
 
@@ -2588,7 +2588,7 @@ fi
 
 # Check whether --with-gnu-classpath-glibj was given.
 if test "${with_gnu_classpath_glibj+set}" = set; then :
-  withval=$with_gnu_classpath_glibj; classpathglibj=$withval
+  withval=$with_gnu_classpath_glibj; classpathglibj=$with_gnu_classpath_glibj
 else
   classpathglibj=/usr/share/classpath/glibj.zip
 
@@ -2603,7 +2603,7 @@ fi
 
 # Check whether --with-openjdk-path was given.
 if test "${with_openjdk_path+set}" = set; then :
-  withval=$with_openjdk_path; openjdkpath=$withval
+  withval=$with_openjdk_path; openjdkpath=$with_openjdk_path
 else
   openjdkpath=/usr/lib/java/
 
@@ -2617,7 +2617,7 @@ fi
 
 # Check whether --with-classpath-impl was given.
 if test "${with_classpath_impl+set}" = set; then :
-  withval=$with_classpath_impl; classpathimpl=$withval
+  withval=$with_classpath_impl; classpathimpl=$with_classpath_impl
 else
   classpathimpl=gnuclasspath
 
@@ -2903,10 +2903,10 @@ esac
 if test "${enable_incinerator+set}" = set; then :
   enableval=$enable_incinerator;
 else
-  enableval=no
+  enable_incinerator=no
 fi
 
-case "$enableval" in
+case "$enable_incinerator" in
   yes) $as_echo "#define RESET_STALE_REFERENCES 1" >>confdefs.h
  ;;
   no)  ;; #AC_DEFINE(RESET_STALE_REFERENCES,[0]) ;;

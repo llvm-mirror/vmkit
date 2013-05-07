@@ -172,8 +172,8 @@ dnl **************************************************************************
 AC_ARG_ENABLE(optimized,
               AS_HELP_STRING([--enable-optimized],
                              [Build with all optimization flag enable (default is yes)]),,
-                             enableval=yes)
-case "$enableval" in
+                             enable_optimized=yes)
+case "$enable_optimized" in
   yes) AC_SUBST(OPTIMIZED,[1]) ;;
   no)  AC_SUBST(OPTIMIZED,[0]) ;;
   *) AC_MSG_ERROR([Invalid setting for --enable-optimized. Use "yes" or "no"]) ;;
@@ -182,8 +182,8 @@ esac
 AC_ARG_ENABLE(debug,
               AS_HELP_STRING([--enable-debug],
                              [Build with debug flags (default is no)]),,
-                             enableval=no)
-case "$enableval" in
+                             enable_debug=no)
+case "$enable_debug" in
   yes) AC_SUBST(DEBUG,[1]) ;;
   no)  AC_SUBST(DEBUG,[0]) ;;
   *) AC_MSG_ERROR([Invalid setting for --enable-debug. Use "yes" or "no"]) ;;
@@ -192,9 +192,9 @@ esac
 AC_ARG_ENABLE(assert,
               AS_HELP_STRING([--enable-assert],
                              [Build with assert flags (default is yes)]),,
-                             enableval=yes)
+                             enable_assert=yes)
 
-case "$enableval" in
+case "$enable_assert" in
   yes) AC_SUBST(ASSERT,[1]) ;;
   no)  AC_SUBST(ASSERT,[0]) ;;
   *) AC_MSG_ERROR([Invalid setting for --enable-assert. Use "yes" or "no"]) ;;
@@ -206,7 +206,7 @@ dnl **************************************************************************
 AC_ARG_WITH(llvm-config-path,
        [AS_HELP_STRING(--with-llvm-config-path=path,
            [llvm-config path (use default path)])],
-       [[LLVM_CONFIG=$withval]],
+       [[LLVM_CONFIG=$with_llvm_config_path]],
        [[LLVM_CONFIG="llvm-config"]]
 )
 
@@ -216,7 +216,7 @@ dnl **************************************************************************
 AC_ARG_WITH(clang-path,
        [AS_HELP_STRING(--with-clang-path=path,
            [clang path (use default path)])],
-       [[CLANG_PATH=$withval]],
+       [[CLANG_PATH=$with_clang_path]],
        [[CLANG_PATH="$(LLVM_CONFIG) --bindir"]]
 )
 AC_SUBST([CLANG_PATH])
@@ -227,7 +227,7 @@ dnl **************************************************************************
 AC_ARG_WITH(mmtk-plan,
        [AS_HELP_STRING(--with-mmtk-plan=something,
            [MMTk plan type ('org.mmtk.plan.marksweep.MS')])],
-       [[MMTK_PLAN=$withval]],
+       [[MMTK_PLAN=$with_mmtk_plan]],
        [[MMTK_PLAN=org.mmtk.plan.marksweep.MS]]
 )
 
@@ -245,14 +245,14 @@ classpathversion=0.97.2;
 AC_ARG_WITH(gnu-classpath-libs,
        [AS_HELP_STRING(--with-gnu-classpath-libs=something,
            [GNU CLASSPATH libraries (default is /usr/lib/classpath)])],
-       [[classpathlibs=$withval]],
+       [[classpathlibs=$with_gnu_classpath_libs]],
        [[classpathlibs=/usr/lib/classpath]]
 )
 
 AC_ARG_WITH(gnu-classpath-glibj,
        [AS_HELP_STRING(--with-gnu-classpath-glibj,
            [Build J3 with GNU Classpath install (default is '/usr/share/classpath/glibj.zip')])],
-       [[classpathglibj=$withval]],
+       [[classpathglibj=$with_gnu_classpath_glibj]],
        [[classpathglibj=/usr/share/classpath/glibj.zip]]
 )
 
@@ -267,7 +267,7 @@ dnl **************************************************************************
 AC_ARG_WITH(openjdk-path,
        [AS_HELP_STRING(--with-openjdk-path,
            [Build J3 with OpenJDK JRE install (default is '/usr/lib/java/')])],
-       [[openjdkpath=$withval]],
+       [[openjdkpath=$with_openjdk_path]],
        [[openjdkpath=/usr/lib/java/]]
 )
 
@@ -281,7 +281,7 @@ dnl **************************************************************************
 AC_ARG_WITH(classpath-impl,
        [AS_HELP_STRING(--with-classpath-impl,
            [Build J3 with the specified classpath implementation (default is gnuclasspath)])],
-       [[classpathimpl=$withval]],
+       [[classpathimpl=$with_classpath_impl]],
        [[classpathimpl=gnuclasspath]]
 )
 
@@ -318,8 +318,8 @@ dnl **************************************************************************
 AC_ARG_ENABLE(incinerator,
               AS_HELP_STRING([--enable-incinerator],
                              [Use incinerator to kill stale references in OSGi (default is NO)]),,
-                             enableval=no)
-case "$enableval" in
+                             enable_incinerator=no)
+case "$enable_incinerator" in
   yes) AC_DEFINE(RESET_STALE_REFERENCES,[1]) ;;
   no)  ;; #AC_DEFINE(RESET_STALE_REFERENCES,[0]) ;;
   *) AC_MSG_ERROR([Invalid setting for --enable-incinerator. Use "yes" or "no"]) ;;
