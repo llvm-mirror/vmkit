@@ -662,6 +662,7 @@ classpathlibs
 classpathglibj
 MMTK_PLAN
 GC_FLAGS
+CLANG_PATH
 ASSERT
 DEBUG
 OPTIMIZED
@@ -729,6 +730,7 @@ enable_optimized
 enable_debug
 enable_assert
 with_llvm_config_path
+with_clang_path
 with_mmtk_plan
 with_gnu_classpath_libs
 with_gnu_classpath_glibj
@@ -1371,6 +1373,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-llvm-config-path=path
                           llvm-config path (use default path)
+  --with-clang-path=path  clang path (use default path)
   --with-mmtk-plan=something
                           MMTk plan type ('org.mmtk.plan.marksweep.MS')
   --with-gnu-classpath-libs=something
@@ -2541,6 +2544,17 @@ else
   LLVM_CONFIG_PATH="llvm-config"
 
 fi
+
+
+
+# Check whether --with-clang-path was given.
+if test "${with_clang_path+set}" = set; then :
+  withval=$with_clang_path; CLANG_PATH=$withval
+else
+  CLANG_PATH="$(LLVM_CONFIG) --bindir"
+
+fi
+
 
 
 

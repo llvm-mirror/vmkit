@@ -211,6 +211,17 @@ AC_ARG_WITH(llvm-config-path,
 )
 
 dnl **************************************************************************
+dnl clang
+dnl **************************************************************************
+AC_ARG_WITH(clang-path,
+       [AS_HELP_STRING(--with-clang-path=path,
+           [clang path (use default path)])],
+       [[CLANG_PATH=$withval]],
+       [[CLANG_PATH="$(LLVM_CONFIG) --bindir"]]
+)
+AC_SUBST([CLANG_PATH])
+
+dnl **************************************************************************
 dnl GC type 
 dnl **************************************************************************
 AC_ARG_WITH(mmtk-plan,
