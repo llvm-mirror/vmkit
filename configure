@@ -2539,9 +2539,9 @@ esac
 
 # Check whether --with-llvm-config-path was given.
 if test "${with_llvm_config_path+set}" = set; then :
-  withval=$with_llvm_config_path; LLVM_CONFIG_PATH=$withval
+  withval=$with_llvm_config_path; LLVM_CONFIG=$withval
 else
-  LLVM_CONFIG_PATH="llvm-config"
+  LLVM_CONFIG="llvm-config"
 
 fi
 

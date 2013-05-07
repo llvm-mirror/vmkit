@@ -206,8 +206,8 @@ dnl **************************************************************************
 AC_ARG_WITH(llvm-config-path,
        [AS_HELP_STRING(--with-llvm-config-path=path,
            [llvm-config path (use default path)])],
-       [[LLVM_CONFIG_PATH=$withval]],
-       [[LLVM_CONFIG_PATH="llvm-config"]]
+       [[LLVM_CONFIG=$withval]],
+       [[LLVM_CONFIG="llvm-config"]]
 )
 
 dnl **************************************************************************
