@@ -210,6 +210,10 @@ AC_ARG_WITH(llvm-config-path,
        [[LLVM_CONFIG="llvm-config"]]
 )
 
+if test ! -x "$LLVM_CONFIG"; then
+     AC_MSG_ERROR([Cannot find $LLVM_CONFIG (or not executable)])
+fi
+
 dnl **************************************************************************
 dnl clang
 dnl **************************************************************************
@@ -219,10 +223,15 @@ AC_ARG_WITH(clang-path,
        [[CLANG_PATH=$with_clang_path]],
        [[CLANG_PATH="$(LLVM_CONFIG) --bindir"]]
 )
+
+if test ! -x "$CLANG_PATH"; then
+     AC_MSG_ERROR([Cannot find $CLANG_PATH (or not executable)])
+fi
+
 AC_SUBST([CLANG_PATH])
 
 dnl **************************************************************************
-dnl GC type 
+dnl GC type
 dnl **************************************************************************
 AC_ARG_WITH(mmtk-plan,
        [AS_HELP_STRING(--with-mmtk-plan=something,

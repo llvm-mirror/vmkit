@@ -2546,6 +2546,10 @@ else
 fi
 
 
+if test ! -x "$LLVM_CONFIG"; then
+     as_fn_error $? "Cannot find $LLVM_CONFIG (or not executable)" "$LINENO" 5
+fi
+
 
 # Check whether --with-clang-path was given.
 if test "${with_clang_path+set}" = set; then :
@@ -2553,6 +2557,11 @@ if test "${with_clang_path+set}" = set; then :
 else
   CLANG_PATH="$(LLVM_CONFIG) --bindir"
 
+fi
+
+
+if test ! -x "$CLANG_PATH"; then
+     as_fn_error $? "Cannot find $CLANG_PATH (or not executable)" "$LINENO" 5
 fi
 
 
