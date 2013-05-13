@@ -2555,7 +2555,7 @@ fi
 if test "${with_clang_path+set}" = set; then :
   withval=$with_clang_path; CLANG_PATH=$with_clang_path
 else
-  CLANG_PATH="$(LLVM_CONFIG) --bindir"
+  CLANG_PATH="`$LLVM_CONFIG --bindir`"
 
 fi
 
