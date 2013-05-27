@@ -1,20 +1,4 @@
 ###############################################################################
-#   build system data
-###############################################################################
-PROJECT_NAME := @PACKAGE_NAME@
-PROJ_VERSION := @PACKAGE_VERSION@
-
-realpath=$(shell cd $(1); $(PWD))
-
-PROJ_SRC_ROOT := $(subst //,/,@abs_top_srcdir@)
-PROJ_OBJ_ROOT := $(subst //,/,@abs_top_builddir@)
-PROJ_OBJ_CWD:= $(call realpath, .)
-PROJ_SRC_CWD:= $(call realpath, $(patsubst $(PROJ_OBJ_ROOT)%,$(PROJ_SRC_ROOT)%,$(PROJ_OBJ_CWD)))
-
-CONFIG_FILES=@ac_config_files@
-CONFIG_HEADERS=@ac_config_headers@
-
-###############################################################################
 #   options
 ###############################################################################
 MMTK_PLAN = @MMTK_PLAN@
@@ -62,8 +46,8 @@ WITH_64 = @WITH_64@
 ###############################################################################
 LLVM_CONFIG=@LLVM_CONFIG@
 LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
-CLANG=@CLANG_PATH@/clang
-CLANGXX=@CLANG_PATH@/clang++
+CLANG=$(LLVM_BIN)/clang
+CLANGXX=$(LLVM_BIN)/clang++
 LLVMAS=$(LLVM_BIN)/llvm-as
 LLC=$(LLVM_BIN)/llc
 LOPT=$(LLVM_BIN)/opt
@@ -83,4 +67,43 @@ MKDIR=@MKDIR_P@
 TOUCH=@TOUCH@
 GREP=@GREP@
 
+
+###############################################################################
+#   Common build system data
+###############################################################################
+ifeq ($(OPTIMIZED),1)
+  VMKIT_BUILD_NAME:=Release
+  ifeq ($(DEBUG),1)
+    VMKIT_BUILD_NAME:=$(VMKIT_BUILD_NAME)+Debug
+  endif
+else
+  ifeq ($(DEBUG),1)
+    VMKIT_BUILD_NAME:=Debug
+  else
+    VMKIT_BUILD_NAME:=Unoptimized
+  endif
+endif
+
+ifeq ($(ASSERT),1)
+  VMKIT_BUILD_NAME:=$(VMKIT_BUILD_NAME)+Asserts
+endif
+
+ifndef VMKIT_OPTIONS_ONLY
+###############################################################################
+#   VMKit build system data
+###############################################################################
+PROJECT_NAME := @PACKAGE_NAME@
+PROJ_VERSION := @PACKAGE_VERSION@
+
+realpath=$(shell cd $(1); $(PWD))
+
+PROJ_SRC_ROOT := $(subst //,/,@abs_top_srcdir@)
+PROJ_OBJ_ROOT := $(subst //,/,@abs_top_builddir@)
+PROJ_OBJ_CWD:= $(call realpath, .)
+PROJ_SRC_CWD:= $(call realpath, $(patsubst $(PROJ_OBJ_ROOT)%,$(PROJ_SRC_ROOT)%,$(PROJ_OBJ_CWD)))
+
+CONFIG_FILES=@ac_config_files@
+CONFIG_HEADERS=@ac_config_headers@
+
 include $(PROJ_SRC_ROOT)/Makefile.rules
+endif

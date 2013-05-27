@@ -9,22 +9,9 @@ all::
 ###############################################################################
 #   Main options
 ###############################################################################
-ifeq ($(OPTIMIZED),1)
-  BUILD_NAME:=Release
-  ifeq ($(DEBUG),1)
-    BUILD_NAME:=$(BUILD_NAME)+Debug
-  endif
-else
-  ifeq ($(DEBUG),1)
-    BUILD_NAME:=Debug
-  else
-    BUILD_NAME:=Unoptimized
-  endif
-endif
+BUILD_NAME=$(VMKIT_BUILD_NAME)
 
-ifeq ($(ASSERT),1)
-  BUILD_NAME:=$(BUILD_NAME)+Asserts
-else
+ifneq ($(ASSERT),1)
   COMMON_CFLAGS+=-DNDEBUG
 endif
 
