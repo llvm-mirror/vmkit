@@ -40,6 +40,7 @@ EXEEXT=@EXEEXT@
 SHLIBEXT=@SHLIBEXT@
 
 WITH_64 = @WITH_64@
+VMKIT_BUILD_NAME=@VMKIT_BUILD_NAME@
 
 ###############################################################################
 #   binaries
@@ -72,20 +73,20 @@ GREP=@GREP@
 #   Common build system data
 ###############################################################################
 ifeq ($(OPTIMIZED),1)
-  VMKIT_BUILD_NAME:=Release
+  BUILD_NAME:=Release
   ifeq ($(DEBUG),1)
-    VMKIT_BUILD_NAME:=$(VMKIT_BUILD_NAME)+Debug
+    BUILD_NAME:=$(BUILD_NAME)+Debug
   endif
 else
   ifeq ($(DEBUG),1)
-    VMKIT_BUILD_NAME:=Debug
+    BUILD_NAME:=Debug
   else
-    VMKIT_BUILD_NAME:=Unoptimized
+    BUILD_NAME:=Unoptimized
   endif
 endif
 
 ifeq ($(ASSERT),1)
-  VMKIT_BUILD_NAME:=$(VMKIT_BUILD_NAME)+Asserts
+  BUILD_NAME:=$(BUILD_NAME)+Asserts
 endif
 
 ifndef VMKIT_OPTIONS_ONLY

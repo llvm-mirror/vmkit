@@ -200,6 +200,25 @@ case "$enable_assert" in
   *) AC_MSG_ERROR([Invalid setting for --enable-assert. Use "yes" or "no"]) ;;
 esac
 
+if test "$enable_optimized" = "yes"; then
+   VMKIT_BUILD_NAME=Release
+   if test "$enable_debug" = "yes"; then
+      VMKIT_BUILD_NAME="$VMKIT_BUILD_NAME"+Debug
+   fi 
+else
+   if test "$enable_debug" = "yes"; then
+      VMKIT_BUILD_NAME=Debug
+   else
+      VMKIT_BUILD_NAME=Unoptimized
+   fi
+fi
+
+if test "$enable_assert" = "yes"; then
+   VMKIT_BUILD_NAME="$VMKIT_BUILD_NAME"+Asserts
+fi
+
+AC_SUBST([VMKIT_BUILD_NAME], ["$VMKIT_BUILD_NAME"])
+
 dnl **************************************************************************
 dnl llvm
 dnl **************************************************************************
@@ -221,7 +240,7 @@ AC_ARG_WITH(clang-path,
        [AS_HELP_STRING(--with-clang-path=path,
            [clang path (use default path)])],
        [[CLANG_PATH=$with_clang_path]],
-       [[CLANG_PATH="$(LLVM_CONFIG) --bindir"]]
+       [[CLANG_PATH="`$LLVM_CONFIG --bindir`"]]
 )
 
 if test ! -x "$CLANG_PATH"; then
@@ -362,6 +381,10 @@ AC_PATH_PROG(JAVAC, [javac], [javac])
 AC_PATH_PROG(ZIP, [zip], [zip])
 
 AC_PATH_PROG(LLVM_CONFIG, [llvm-config],,[`AS_DIRNAME(["$LLVM_CONFIG_PATH"])`:$PATH])
+
+if test -z ${ANT}; then
+    AC_MSG_ERROR([Unable to find ant, please put ant tool in your path])
+fi
 
 if test -z ${LLVM_CONFIG}; then
     AC_MSG_ERROR([Unable to find llvm-config, please specify its path])
