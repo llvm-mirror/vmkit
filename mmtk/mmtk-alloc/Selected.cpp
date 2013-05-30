@@ -298,7 +298,8 @@ extern "C" void* MMTkMutatorAllocate(uint32_t size, void* type) {
   size = llvm::RoundUpToAlignment(size, sizeof(void*));
   head = (gcHeader*)MutatorThread::get()->Allocator.Allocate(size);
   void* val = head->toReference();
-  vmkit::Thread::get()->MyVM->setType(val, type);
+  VirtualTable::setVirtualTable((gc*)val, (VirtualTable*)type);
+//  vmkit::Thread::get()->MyVM->setType(val, type);
   return val;
 }
 

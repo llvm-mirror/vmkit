@@ -137,7 +137,7 @@ private:
   virtual void finalizeObject(gc* res);
   virtual void traceObject(gc* obj, word_t closure);
   virtual void setType(gc* header, void* type);
-  virtual void setType(void* header, void* type);
+//  virtual void setType(void* header, void* type);
   virtual void* getType(gc* obj);
   virtual size_t getObjectSize(gc* obj);
   virtual const char* getObjectTypeName(gc* obj);
