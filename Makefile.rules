@@ -9,6 +9,8 @@ all::
 ###############################################################################
 #   Main options
 ###############################################################################
+BUILD_NAME=$(VMKIT_BUILD_NAME)
+
 ifneq ($(ASSERT),1)
   COMMON_CFLAGS+=-DNDEBUG
 endif
@@ -84,7 +86,7 @@ tidy:
 
 clean::
 	$(Echo) "Cleaning compilation files"
-	$(Verb) rm -Rf $(BUILD_NAME) $(VMKIT_BUILD_NAME)
+	$(Verb) rm -Rf $(BUILD_NAME)
 
 distclean::
 	$(Echo) "Cleaning all compilation files"
