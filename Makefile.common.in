@@ -46,8 +46,8 @@ WITH_64 = @WITH_64@
 ###############################################################################
 LLVM_CONFIG=@LLVM_CONFIG@
 LLVM_BIN=$(shell $(LLVM_CONFIG) --bindir)
-CLANG=$(LLVM_BIN)/clang
-CLANGXX=$(LLVM_BIN)/clang++
+CLANG=@CLANG_PATH@/clang
+CLANGXX=@CLANG_PATH@/clang++
 LLVMAS=$(LLVM_BIN)/llvm-as
 LLC=$(LLVM_BIN)/llc
 LOPT=$(LLVM_BIN)/opt
