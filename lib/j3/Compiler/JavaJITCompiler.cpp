@@ -23,7 +23,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/DataLayout.h"
-#include <../lib/ExecutionEngine/JIT/JIT.h>
+#include <lib/ExecutionEngine/JIT/JIT.h>
 
 #include "VmkitGC.h"
 #include "vmkit/VirtualMachine.h"

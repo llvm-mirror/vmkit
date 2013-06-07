@@ -35,7 +35,7 @@
 #include <llvm/DataLayout.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-#include <../lib/ExecutionEngine/JIT/JIT.h>
+#include <lib/ExecutionEngine/JIT/JIT.h>
 
 #include "vmkit/JIT.h"
 #include "vmkit/Locks.h"
