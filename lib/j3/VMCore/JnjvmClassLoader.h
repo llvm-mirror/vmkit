@@ -309,6 +309,10 @@ public:
   ///
   void* loadLib(const char* buf);
 
+  /// getErrorMessage - Returns the error message in case of failure
+  ///
+  char* getErrorMessage();
+
   /// nativeLookup - Lookup in the class loader a function pointer for the
   /// method. Also set in the j3 parameter is the function is defined in
   /// JnJVM.

@@ -1058,6 +1058,10 @@ void* JnjvmClassLoader::loadLib(const char* buf) {
   return handle;
 }
 
+char* JnjvmClassLoader::getErrorMessage() {
+  return dlerror();
+}
+
 word_t JnjvmClassLoader::loadInLib(const char* name, void* handle) {
   return (word_t)TheCompiler->loadMethod(handle, name);
 }
