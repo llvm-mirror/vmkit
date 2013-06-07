@@ -511,7 +511,7 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
   // Load OpenJDK's libjava.so
   void * handle = loader->loadLib(OpenJDKLibJava);
   if (handle == NULL) {
-    fprintf(stderr, "Failed to load %s, cannot proceed!\n", OpenJDKLibJava);
+      fprintf(stderr, "Failed to load %s, cannot proceed:\n%s\n", OpenJDKLibJava, loader->getErrorMessage());
     abort();
   }
 
