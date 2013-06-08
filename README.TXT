@@ -118,3 +118,4 @@ git clone git+ssh://YOUR_USER_NAME@scm.gforge.inria.fr//gitroot/vmkit2/vmkit2.gi
 * Build it:
 
 make -j12
+
