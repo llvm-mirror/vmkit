@@ -879,29 +879,38 @@ JnjvmClassLoader::~JnjvmClassLoader() {
   if (classes) {
     classes->~ClassMap();
     allocator.Deallocate(classes);
+    classes = NULL;
   }
 
   if (hashUTF8) {
     hashUTF8->~UTF8Map();
     allocator.Deallocate(hashUTF8);
+    hashUTF8 = NULL;
   }
 
   if (javaTypes) {
     javaTypes->~TypeMap();
     allocator.Deallocate(javaTypes);
+    javaTypes = NULL;
   }
 
   if (javaSignatures) {
     javaSignatures->~SignMap();
     allocator.Deallocate(javaSignatures);
+    javaSignatures = NULL;
   }
 
-  for (std::vector<void*>::iterator i = nativeLibs.begin(); 
-       i < nativeLibs.end(); ++i) {
+  for (std::vector<void*>::iterator
+    i = nativeLibs.begin(), e = nativeLibs.end(); i != e; ++i)
+  {
     dlclose(*i);
   }
+  nativeLibs.clear();
+
+  vm = NULL;
 
   delete TheCompiler;
+  TheCompiler = NULL;
 
   // Don't delete the allocator. The caller of this method must
   // delete it after the current object is deleted.
