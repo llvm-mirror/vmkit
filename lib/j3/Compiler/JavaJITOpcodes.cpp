@@ -2566,11 +2566,9 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       }
 
       case MONITOREXIT : {
-        // NOTE: monitorExit() should NOT throw an exception if object is null.
-        // See monitorExit() implementation.
-        //bool thisReference = isThisReference(currentStackIndex - 1);
+        bool thisReference = isThisReference(currentStackIndex - 1);
         Value* obj = pop();
-        // if (!thisReference) JITVerifyNull(obj);
+        if (!thisReference) JITVerifyNull(obj);
         monitorExit(obj);
         break;
       }

@@ -695,13 +695,7 @@ void JavaJIT::monitorEnter(Value* obj) {
 }
 
 void JavaJIT::monitorExit(Value* obj) {
-	/*
-		obj should not be null if we are here.
-		If obj was null when monitorEnter() was run, then monitorEnter() should have
-		thrown an exception. If it was not null then, and it is null now, it must have
-		been reset by the GC (it became a stale reference) between monitorEnter() and
-		monitorExit(). In this case, just get out of the synchronize block silently.
-	*/
+	// obj should not be null if we are here.
     BasicBlock* nonNullObjBlock = createBasicBlock("monitorExit_nonNullObj");
     BasicBlock* EndBlock = createBasicBlock("monitorExit_End");
 
