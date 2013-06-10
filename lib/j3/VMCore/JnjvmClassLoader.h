@@ -52,9 +52,6 @@ class ZipArchive;
 template <class T> class TJavaArray;
 typedef TJavaArray<JavaObject*> ArrayObject;
 
-#define CLASS_LOADER_STALE_REF_CORRECTED	0x1
-#define CLASS_LOADER_STALE_REF_STALE		0x2
-
 /// JnjvmClassLoader - Runtime representation of a class loader. It contains
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
@@ -345,19 +342,6 @@ public:
   /// getRegisteredNative - Return the native pointer, if exists.
   ///
   word_t getRegisteredNative(const JavaMethod * meth);
-
-#if RESET_STALE_REFERENCES
-
-protected:
-  uint8_t staleRefFlags;
-
-public:
-  bool isStale() const;
-  void markStale(bool stale = true);
-  bool isStaleReferencesCorrectionEnabled() const;
-  void setStaleReferencesCorrectionEnabled(bool enable);
-
-#endif
 
   friend class Class;
   friend class CommonClass;

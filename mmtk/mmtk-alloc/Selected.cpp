@@ -184,10 +184,6 @@ void Collector::scanObject(FrameInfo* FI, void** ptr, word_t closure) {
   if ((*ptr) != NULL) {
     assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr)));
   }
-#if RESET_STALE_REFERENCES
-  // Allow the VM to reset references if needed
-  vmkit::Thread::get()->MyVM->resetReferenceIfStale(NULL, ptr);
-#endif
   JnJVM_org_j3_bindings_Bindings_reportDelayedRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2(closure, ptr);
 }
  
@@ -198,10 +194,6 @@ void Collector::markAndTrace(void* source, void* ptr, word_t closure) {
 		assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr_)));
 	}
 	if ((*(void**)ptr) != NULL) assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*(void**)ptr)));
-#if RESET_STALE_REFERENCES
-	// Allow the VM to reset references if needed
-	vmkit::Thread::get()->MyVM->resetReferenceIfStale(source, ptr_);
-#endif
 	JnJVM_org_j3_bindings_Bindings_processEdge__Lorg_mmtk_plan_TransitiveClosure_2Lorg_vmmagic_unboxed_ObjectReference_2Lorg_vmmagic_unboxed_Address_2(closure, source, ptr);
 }
   
@@ -211,10 +203,6 @@ void Collector::markAndTraceRoot(void* source, void* ptr, word_t closure) {
   if ((*ptr_) != NULL) {
     assert(vmkit::Thread::get()->MyVM->isCorruptedType((gc*)(*ptr_)));
   }
-#if RESET_STALE_REFERENCES
-  // Allow the VM to reset references if needed
-  vmkit::Thread::get()->MyVM->resetReferenceIfStale(source, ptr_);
-#endif
   JnJVM_org_j3_bindings_Bindings_processRootEdge__Lorg_mmtk_plan_TraceLocal_2Lorg_vmmagic_unboxed_Address_2Z(closure, ptr, true);
 }
 

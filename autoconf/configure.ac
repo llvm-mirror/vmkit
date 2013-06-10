@@ -340,20 +340,6 @@ esac
 
 AC_SUBST(classpathimpl)
 
-dnl **************************************************************************
-dnl Kill stale references
-dnl **************************************************************************
-AC_ARG_ENABLE(incinerator,
-              AS_HELP_STRING([--enable-incinerator],
-                             [Use incinerator to kill stale references in OSGi (default is NO)]),,
-                             enable_incinerator=no)
-case "$enable_incinerator" in
-  yes) AC_DEFINE(RESET_STALE_REFERENCES,[1]) ;;
-  no)  ;; #AC_DEFINE(RESET_STALE_REFERENCES,[0]) ;;
-  *) AC_MSG_ERROR([Invalid setting for --enable-incinerator. Use "yes" or "no"]) ;;
-esac
-
-
 dnl===-----------------------------------------------------------------------===
 dnl===
 dnl=== SECTION 4: Check for programs we need and that they are the right version

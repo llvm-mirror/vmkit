@@ -161,7 +161,6 @@ public:
   
   /// endCollection - Code after running a GC.
   ///
-  virtual void endCollectionBeforeUnlockingWorld() {}
   virtual void endCollection() {}
   
   /// scanWeakReferencesQueue - Scan all weak references. Called by the GC
@@ -223,10 +222,6 @@ public:
   /// rendezvous - The rendezvous implementation for garbage collection.
   ///
   CooperativeCollectionRV rendezvous;
-
-#if RESET_STALE_REFERENCES
-  virtual void resetReferenceIfStale(const void* source, void** ref) {}
-#endif
 
 //===----------------------------------------------------------------------===//
 // (2.5) GC-DEBUG-related methods.

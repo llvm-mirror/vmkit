@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #define JNJVM_LOAD 1
-#define DEBUG_VERBOSE_STALE_REF		1
 
 #include <cfloat>
 #include <climits>
@@ -1351,9 +1350,6 @@ Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,
              vmkit::CompiledFrames** frames,
              JnjvmBootstrapLoader* loader) : 
   VirtualMachine(Alloc, frames), lockSystem(Alloc)
-#if RESET_STALE_REFERENCES
-	, scanStaleReferences(false) //, findReferencesToObject(NULL)
-#endif
 {
 
   classpath = getenv("CLASSPATH");
@@ -1392,42 +1388,11 @@ void Jnjvm::startCollection() {
 	fflush(stdout);
 #endif
 
-#if RESET_STALE_REFERENCES
-
-#if DEBUG_VERBOSE_STALE_REF
-
-	if (scanStaleReferences)
-		std::cerr << "Looking for stale references..." << std::endl;
-
-#endif
-
-//	if (findReferencesToObject != NULL)
-//		foundReferencerObjects.clear();
-
-#endif
-
   finalizerThread->FinalizationQueueLock.acquire();
   referenceThread->ToEnqueueLock.acquire();
   referenceThread->SoftReferencesQueue.acquire();
   referenceThread->WeakReferencesQueue.acquire();
   referenceThread->PhantomReferencesQueue.acquire();
-}
-  
-void Jnjvm::endCollectionBeforeUnlockingWorld()
-{
-#if RESET_STALE_REFERENCES
-#if DEBUG_VERBOSE_STALE_REF
-
-	if (scanStaleReferences)
-		std::cerr << "Looking for stale references done." << std::endl;
-
-#endif
-
-	// Stale references can no more exist, until a bundle is uninstalled later.
-	scanStaleReferences = false;
-//	findReferencesToObject = NULL;
-
-#endif
 }
 
 void Jnjvm::endCollection() {

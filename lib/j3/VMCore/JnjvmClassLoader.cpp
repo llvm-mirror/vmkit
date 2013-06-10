@@ -214,9 +214,6 @@ JnjvmBootstrapLoader::JnjvmBootstrapLoader(vmkit::BumpPtrAllocator& Alloc,
 
 JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
 	allocator(Alloc)
-#if RESET_STALE_REFERENCES
-	,staleRefFlags(CLASS_LOADER_STALE_REF_CORRECTED)
-#endif
 {
 }
 
@@ -224,9 +221,6 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
                                    JnjvmClassLoader& JCL, JavaObject* loader,
                                    VMClassLoader* vmdata,
                                    Jnjvm* VM) : allocator(Alloc)
-#if RESET_STALE_REFERENCES
-	,staleRefFlags(CLASS_LOADER_STALE_REF_CORRECTED)
-#endif
 {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
@@ -878,10 +872,6 @@ const UTF8* JnjvmClassLoader::readerConstructUTF8(const uint16* buf,
 
 JnjvmClassLoader::~JnjvmClassLoader() {
 
-#if RESET_STALE_REFERENCES
-  vm->classLoaderUnloaded(this);
-#endif
-
   if (vm) {
     vm->removeFrameInfos(TheCompiler);
   }
@@ -1141,33 +1131,3 @@ ArrayObject* JnjvmBootstrapLoader::getBootPackages(Jnjvm * vm) {
 
   return res;
 }
-
-#if RESET_STALE_REFERENCES
-
-bool JnjvmClassLoader::isStale() const
-{
-	return (staleRefFlags & CLASS_LOADER_STALE_REF_STALE) != 0;
-}
-
-void JnjvmClassLoader::markStale(bool stale)
-{
-	if (stale)
-		staleRefFlags |= CLASS_LOADER_STALE_REF_STALE;
-	else
-		staleRefFlags &= ~CLASS_LOADER_STALE_REF_STALE;
-}
-
-bool JnjvmClassLoader::isStaleReferencesCorrectionEnabled() const
-{
-	return (staleRefFlags & CLASS_LOADER_STALE_REF_CORRECTED) != 0;
-}
-
-void JnjvmClassLoader::setStaleReferencesCorrectionEnabled(bool enable)
-{
-	if (enable)
-		staleRefFlags |= CLASS_LOADER_STALE_REF_CORRECTED;
-	else
-		staleRefFlags &= ~CLASS_LOADER_STALE_REF_CORRECTED;
-}
-
-#endif

@@ -717,7 +717,6 @@ with_gnu_classpath_libs
 with_gnu_classpath_glibj
 with_openjdk_path
 with_classpath_impl
-enable_incinerator
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1348,8 +1347,6 @@ Optional Features:
                           yes)
   --enable-debug          Build with debug flags (default is no)
   --enable-assert         Build with assert flags (default is yes)
-  --enable-incinerator    Use incinerator to kill stale references in OSGi
-                          (default is NO)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2908,23 +2905,6 @@ fi
     as_fn_error $? "Invalid --with-classpath-impl \"${classpathimpl}\".  Must be one of \"gnuclasspath\" or \"openjdk\"" "$LINENO" 5
       ;;
 esac
-
-
-
-# Check whether --enable-incinerator was given.
-if test "${enable_incinerator+set}" = set; then :
-  enableval=$enable_incinerator;
-else
-  enable_incinerator=no
-fi
-
-case "$enable_incinerator" in
-  yes) $as_echo "#define RESET_STALE_REFERENCES 1" >>confdefs.h
- ;;
-  no)  ;; #AC_DEFINE(RESET_STALE_REFERENCES,[0]) ;;
-  *) as_fn_error $? "Invalid setting for --enable-incinerator. Use \"yes\" or \"no\"" "$LINENO" 5 ;;
-esac
-
 
 
 

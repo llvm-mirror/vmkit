@@ -127,7 +127,6 @@ private:
   JavaReferenceThread* referenceThread;
 
   virtual void startCollection();
-  virtual void endCollectionBeforeUnlockingWorld();
   virtual void endCollection();
   virtual void scanWeakReferencesQueue(word_t closure);
   virtual void scanSoftReferencesQueue(word_t closure);
@@ -366,36 +365,6 @@ public:
   void loadBootstrap();
 
   static void printBacktrace() __attribute__((noinline));
-
-#if RESET_STALE_REFERENCES
-
-public:
-  typedef std::map<int64_t, std::list<JnjvmClassLoader*> >	staleBundleClassLoadersType;
-  typedef std::map<int64_t, JnjvmClassLoader*>	bundleClassLoadersType;
-
-  void setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected);
-  bool isBundleStaleReferenceCorrected(int64_t bundleID);
-  void dumpClassLoaderBundles();
-
-  JnjvmClassLoader* getBundleClassLoader(int64_t bundleID);
-  int64_t getClassLoaderBundleID(JnjvmClassLoader* loader);
-  void setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader);
-  void classLoaderUnloaded(JnjvmClassLoader* loader);
-
-  virtual void resetReferenceIfStale(const void* source, void** ref);
-
-protected:
-  void resetReferenceIfStale(const JavaObject *source, class VMClassLoader** ref);
-  void resetReferenceIfStale(const JavaObject *source, class VMStaticInstance** ref);
-  void resetReferenceIfStale(const JavaObject *source, class JavaObject** ref);
-
-  // Link between OSGi (bundle ID) and Java (class loaders).
-  vmkit::LockRecursive bundleClassLoadersLock;
-  bundleClassLoadersType bundleClassLoaders;
-  staleBundleClassLoadersType staleBundleClassLoaders;
-  volatile bool scanStaleReferences;
-
-#endif
 };
 
 } // end namespace j3
