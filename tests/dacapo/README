@@ -1,0 +1,12 @@
+* Run benchmarks:
+	./run-all.sh 40 12 2006-10-MR2 'make ENABLE_IJVM=0'
+* The log files describing benchmarks results are in "logs" directory, rename it if desired to keep it for later.
+* Synthesize the logs, augment their statistical data and remove useless data:
+	./reduce-logs.sh logs > stats-logs.csv
+* Modify the file "dacapo-incinerator-off-on.plot" to reflect you new stats file name, then plot charts:
+	./dacapo-incinerator-off-on.plot
+
+* If you have another engine to compare to the first, do the same as above, then generate overhead data:
+	./synth-avg-overhead.sh stats-ref-engine.csv stats-new-engine.csv > dacapo-new-feature-avg-overhead.csv
+* Then plot the results after altering "dacapo-incinerator-off-on-overhead.plot":
+	./dacapo-incinerator-off-on-overhead.plot
