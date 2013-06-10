@@ -2566,11 +2566,15 @@ void JavaJIT::compileOpcodes(Reader& reader, uint32 codeLength) {
       }
 
       case MONITOREXIT : {
+#if RESET_STALE_REFERENCES
         // NOTE: monitorExit() should NOT throw an exception if object is null.
         // See monitorExit() implementation.
-        //bool thisReference = isThisReference(currentStackIndex - 1);
         Value* obj = pop();
-        // if (!thisReference) JITVerifyNull(obj);
+#else
+        bool thisReference = isThisReference(currentStackIndex - 1);
+        Value* obj = pop();
+        if (!thisReference) JITVerifyNull(obj);
+#endif
         monitorExit(obj);
         break;
       }

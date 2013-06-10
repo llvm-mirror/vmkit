@@ -27,6 +27,9 @@ extern "C" void
 Java_org_j3_mmtk_FinalizableProcessor_scan__Lorg_mmtk_plan_TraceLocal_2Z (MMTkObject* FP, MMTkObject* TL, uint8_t nursery) {
   vmkit::Thread* th = vmkit::Thread::get();
   th->MyVM->scanFinalizationQueue(reinterpret_cast<word_t>(TL));
+#if RESET_STALE_REFERENCES
+  th->MyVM->markingFinalizersDone();
+#endif
 }
 
 }

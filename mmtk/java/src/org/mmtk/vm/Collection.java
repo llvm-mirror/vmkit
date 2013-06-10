@@ -135,6 +135,7 @@ import org.vmmagic.pragma.*;
    * @param c the collector to prepare
    */
   public abstract void prepareCollector(CollectorContext c);
+  public abstract void collectorPhaseComplete(CollectorContext c);
 
   /**
    * Rendezvous with all other processors, returning the rank

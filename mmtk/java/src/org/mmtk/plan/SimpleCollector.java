@@ -143,7 +143,7 @@ public abstract class SimpleCollector extends CollectorContext {
     }
 
     if (phaseId == Simple.COMPLETE) {
-      // Nothing to do
+      VM.collection.collectorPhaseComplete(this);
       return;
     }
 

@@ -91,6 +91,7 @@ public final class Collection extends org.mmtk.vm.Collection {
    * @param c the collector to prepare
    */
   public native final void prepareCollector(CollectorContext c);
+  public native final void collectorPhaseComplete(CollectorContext c);
 
   /**
    * Rendezvous with all other processors, returning the rank

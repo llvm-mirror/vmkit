@@ -25,6 +25,7 @@
 #include "JavaArray.h"
 #include "JnjvmConfig.h"
 #include "UTF8.h"
+#include "Incinerator.h"
 
 namespace j3 {
 
@@ -56,7 +57,12 @@ typedef TJavaArray<JavaObject*> ArrayObject;
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
 ///
-class JnjvmClassLoader : public vmkit::PermanentObject {
+class JnjvmClassLoader :
+	public vmkit::PermanentObject
+#if RESET_STALE_REFERENCES
+	, public IncineratorManagedClassLoader
+#endif
+{
 private:
 
   /// isolate - Which isolate defined me? Null for the bootstrap class loader.

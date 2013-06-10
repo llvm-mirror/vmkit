@@ -223,6 +223,13 @@ public:
   ///
   CooperativeCollectionRV rendezvous;
 
+#if RESET_STALE_REFERENCES
+  virtual bool beforeMarkingReference(const void* source, void** ref) = 0;
+  virtual bool beforeMarkingStackReference(const void* frameInfo, void** ref) = 0;
+  virtual void collectorPhaseComplete() = 0;
+  virtual void markingFinalizersDone() = 0;
+#endif
+
 //===----------------------------------------------------------------------===//
 // (2.5) GC-DEBUG-related methods.
 //===----------------------------------------------------------------------===//

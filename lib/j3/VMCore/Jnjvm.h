@@ -10,10 +10,6 @@
 #ifndef JNJVM_JAVA_VM_H
 #define JNJVM_JAVA_VM_H
 
-#include <vector>
-#include <map>
-#include <list>
-
 #include "types.h"
 
 #include "vmkit/Allocator.h"
@@ -26,6 +22,7 @@
 #include "JnjvmConfig.h"
 #include "JNIReferences.h"
 #include "LockedMap.h"
+#include "Incinerator.h"
 
 namespace j3 {
 
@@ -365,6 +362,33 @@ public:
   void loadBootstrap();
 
   static void printBacktrace() __attribute__((noinline));
+
+#if RESET_STALE_REFERENCES
+public:
+  Incinerator incinerator;
+
+  virtual void markingFinalizersDone() {
+	  incinerator.markingFinalizersDone();
+  }
+
+  virtual void collectorPhaseComplete() {
+    return incinerator.collectorPhaseComplete();
+  }
+
+  virtual bool beforeMarkingStackReference(const void* frameInfo, void** ref) {
+    const JavaMethod* method = (!frameInfo) ? NULL :
+      reinterpret_cast<const JavaMethod*>(
+        reinterpret_cast<const vmkit::FrameInfo*>(frameInfo)->Metadata);
+
+    return incinerator.scanStackRef(incinerator, method,
+      reinterpret_cast<JavaObject**>(ref));
+  }
+  virtual bool beforeMarkingReference(const void* source, void** ref) {
+    return incinerator.scanRef(incinerator,
+      reinterpret_cast<const JavaObject*>(source),
+      reinterpret_cast<JavaObject**>(ref));
+  }
+#endif
 };
 
 } // end namespace j3

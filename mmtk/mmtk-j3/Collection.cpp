@@ -76,6 +76,14 @@ extern "C" void Java_org_j3_mmtk_Collection_prepareCollector__Lorg_mmtk_plan_Col
   // Nothing to do.
 }
 
+extern "C" void Java_org_j3_mmtk_Collection_collectorPhaseComplete__Lorg_mmtk_plan_CollectorContext_2 (MMTkObject* C, MMTkObject* CC)
+{
+#if RESET_STALE_REFERENCES
+	vmkit::MutatorThread* th = vmkit::MutatorThread::get();
+	th->MyVM->collectorPhaseComplete();
+#endif
+}
+
 extern "C" void Java_org_j3_mmtk_Collection_prepareMutator__Lorg_mmtk_plan_MutatorContext_2 (MMTkObject* C, MMTkObject* MC) {
 }
 

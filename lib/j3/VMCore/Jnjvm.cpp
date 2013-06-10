@@ -1350,6 +1350,9 @@ Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,
              vmkit::CompiledFrames** frames,
              JnjvmBootstrapLoader* loader) : 
   VirtualMachine(Alloc, frames), lockSystem(Alloc)
+#if RESET_STALE_REFERENCES
+, incinerator(this)
+#endif
 {
 
   classpath = getenv("CLASSPATH");
@@ -1388,6 +1391,10 @@ void Jnjvm::startCollection() {
 	fflush(stdout);
 #endif
 
+#if RESET_STALE_REFERENCES
+	incinerator.beforeCollection();
+#endif
+
   finalizerThread->FinalizationQueueLock.acquire();
   referenceThread->ToEnqueueLock.acquire();
   referenceThread->SoftReferencesQueue.acquire();
@@ -1403,6 +1410,10 @@ void Jnjvm::endCollection() {
   referenceThread->PhantomReferencesQueue.release();
   finalizerThread->FinalizationCond.broadcast();
   referenceThread->EnqueueCond.broadcast();
+
+#if RESET_STALE_REFERENCES
+	incinerator.afterCollection();
+#endif
 
 #if DEBUG > 0
   printf("End Collection\n");
