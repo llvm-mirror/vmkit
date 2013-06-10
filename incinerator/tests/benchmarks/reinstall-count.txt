@@ -1,5 +1,0 @@
-j3 bundle reinstallation count: 1120
-(1449024-99204)/1120=1205 bytes=1.18 Kilobytes
-
-Incinerator bundle reinstallation count: 875
-(109096-103240)/875=7 bytes
