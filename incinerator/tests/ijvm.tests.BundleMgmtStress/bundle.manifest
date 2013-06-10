@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-Version: 1.0.0
+Bundle-Name: BundleMgmtStress
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: ijvm.tests.BundleMgmtStress
+Bundle-Activator: ijvm.tests.BundleMgmtStress.Activator
+Import-Package: j3, org.osgi.framework, org.osgi.util.tracker
+

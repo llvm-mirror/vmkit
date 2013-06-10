@@ -1,0 +1,87 @@
+#-Dorg.knopflerfish.framework.bundlestorage=memory
+-Dorg.knopflerfish.framework.system.export.all_13=false
+-Dorg.knopflerfish.framework.verbosity=0
+
+-Forg.knopflerfish.framework.debug.errors=true
+-Forg.knopflerfish.framework.debug.packages=false
+-Forg.knopflerfish.framework.debug.classloader=false
+#-Forg.knopflerfish.framework.debug.permissions=false
+
+#-Forg.osgi.framework.system.packages.extra=
+
+-Forg.knopflerfish.http.dnslookup=true
+-Forg.osgi.service.http.port=8080
+
+#-Dhttp.proxyHost=proxy
+#-Dhttp.proxyPort=3128
+
+#-Forg.knopflerfish.framework.all_signed=false
+
+-Dorg.knopflerfish.gosg.jars=file:///home/koutheir/PhD/VMKit/knopflerfish/osgi/jars/;file:///home/koutheir/PhD/VMKit/incinerator/incinerator/tests/plugins/
+
+-Forg.knopflerfish.startlevel.use=true
+
+-init
+
+-install log/log_all-3.1.3.jar
+-install cm/cm_all-3.0.4.jar
+-install util/util-2.0.1.jar
+-istart console/console_all-3.0.4.jar
+-istart frameworkcommands/frameworkcommands-3.2.0.jar
+-istart logcommands/logcommands-3.1.1.jar
+-istart cm_cmd/cm_cmd-3.0.2.jar
+-istart consoletty/consoletty-3.0.1.jar
+-istart useradmin/useradmin_api-3.0.3.jar
+-istart util/util-2.0.1.jar
+
+-launch
+
+-istart  j3mgr-1.0.0.jar
+
+#-istart  ijvm.tests.A-1.0.0.jar
+#-istart  ijvm.tests.C-1.0.0.jar
+#-istart  ijvm.tests.AImpl-1.0.0.jar
+#-istart  ijvm.tests.BImpl-1.0.0.jar
+#-istart  ijvm.tests.CImpl-1.0.0.jar
+#-istart  ijvm.tests.DImpl-1.0.0.jar
+#-install ijvm.tests.Runner-1.0.0.jar
+-install BundleReloader-1.0.0.jar
+
+-install desktop/desktop_all-3.2.5.jar
+-install comm-linux/comm-linux_all-2.0.0.jar
+-install command/command_all-0.1.jar
+-install jsdk/jsdk_api-2.5.0.kf3-2.jar
+
+-istart kxml/kxml-2.3.0.kf3.jar
+-istart metatype/metatype-3.0.0.jar
+-istart kf_metatype/kf_metatype_all-3.0.2.jar
+-istart component/component_all-3.1.14.jar
+-istart event/event_all-3.0.8.jar
+-istart cm_desktop/cm_desktop_all-3.0.0.jar
+-istart threadio/threadio_all-0.1.0.jar
+-istart consoletcp/consoletcp_all-2.0.0.jar
+-istart soapobject/soapobject_all-0.0.2.jar
+-istart crimson/crimson-2.1.0.kf3.jar
+-istart measurement/measurement-3.0.1.jar
+-istart position/position-3.0.1.jar
+-istart sslj2sp/sslj2sp-2.0.0.jar
+-istart xerces/xerces-2.10.1.kf3.jar
+-istart xml/xml-3.0.1.jar
+-istart cm/cm_all-3.0.4.jar
+-istart commons-logging/commons-logging_all-2.0.0.kf3.jar
+-istart console/console_all-3.0.4.jar
+-istart prefs/prefs_all-3.0.1.jar
+-istart io/io_all-3.0.1.jar
+-istart device/device_all-3.0.0.jar
+-istart xalan/xalan-2.7.1.kf3_01.jar
+-istart basicdriverlocator/basicdriverlocator_all-3.0.0.jar
+-istart connectors/connectors_all-2.0.1.jar
+#-istart http/http_all-3.1.2.jar
+#-istart httpconsole/httpconsole_all-3.0.2.jar
+#-istart httproot/httproot-3.0.1.jar
+-istart useradmin/useradmin_all-3.0.3.jar
+-istart scrcommands/scrcommands-1.1.0.jar
+-istart serialportdevice/serialportdevice_all-2.0.1.jar
+-istart bundlerepository/bundlerepository_all-3.1.2.jar
+-istart commandtty/commandtty-2.0.0.jar
+-istart console2command/console2command-1.0.0.jar

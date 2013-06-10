@@ -1,0 +1,70 @@
+Framework launched
+AImpl provides A
+Started runner bundle.
+Runner bundle got A @ startup.
+Started runner thread: Runner 2
+Started runner thread: Runner 1
+Runner 2: sleeping for 2792
+Runner 2: woke up
+Runner 1: sleeping for 2580
+Runner 1: woke up
+Runner 2: sleeping for 2704
+...
+> bundles
+   id  level/state name
+   --------------------
+   11  1/active    A             13  1/active    A Implementation
+   17  1/active    Runner        10  1/active    J3 Virtual Machine Manager
+   ...
+> framework call j3.J3Mgr dumpClassLoaderBundles
+...
+classLoader=0xb16fdb8	bundleID=11
+...
+classLoader=0xc563de8	bundleID=13
+classLoader=0xc80f440	bundleID=17
+> framework call j3.J3Mgr resetReferencesToBundle ijvm.tests.AImpl
+resetReferencesToBundle: #13 ijvm.tests.AImpl
+Stopping bundle: ijvm.tests.AImpl
+AImpl no more provides A
+AImpl lost C but keeps a stale reference to it
+Uninstalling bundle: ijvm.tests.AImpl
+Refreshing framework...
+Result: null
+Resetting stale references to bundle #13
+Resetting ref=0x109fef04 obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x108febe4 obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x108fece8 obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x108fee00 obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x108fee14 obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x108fef04 obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x108fef00 obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x108feefc obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0xb6812160 obj=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x50016228 obj=0x50006184(class=ijvm/tests/AImpl/AImpl) source=0x5001621c(class=ijvm/tests/Runner/Activator)
+Resetting ref=0x50009518 obj=0x50006184(class=ijvm/tests/AImpl/AImpl) source=0x50009514(class=ijvm/tests/Runner/Runner)
+Resetting ref=0x50009478 obj=0x50006184(class=ijvm/tests/AImpl/AImpl) source=0x50009474(class=ijvm/tests/Runner/Runner)
+WARNING: Source object is stale source=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x515f420c obj=0x514a502c(class=ijvm/tests/AImpl/Activator) source=0x515f4204(class=org/knopflerfish/framework/ServiceListenerEntry)
+WARNING: Ignored stale reference ref=0x5158339c obj=0x503709d4(class=j3::VMClassLoader,loader=0xc563de8,javaLoader=0x51583384,javaClass=org/knopflerfish/framework/BundleClassLoader) source=0x51583384(class=org/knopflerfish/framework/BundleClassLoader)
+Runner 2: woke up
+Bundle class loader unloaded, bundleID=13
+Exception in thread "Runner 1" java.lang.NullPointerException
+   at ijvm.tests.Runner.Runner.run(Runner.java:44)
+   at java.lang.Thread.run(Thread.java:745)
+   at java.lang.VMThread.run(VMThread.java:120)
+Stopped runner thread: Runner 2
+java.lang.NullPointerException
+   at ijvm.tests.Runner.Runner.run(Runner.java:28)
+   at java.lang.Thread.run(Thread.java:745)
+   at java.lang.VMThread.run(VMThread.java:120)
+> bundles
+   id  level/state name
+   --------------------
+   11  1/active    A                       17  1/active    Runner
+   10  1/active    J3 Virtual Machine Manager
+   ...
+> framework call j3.J3Mgr dumpClassLoaderBundles
+...
+classLoader=0xb16fdb8	bundleID=11
+...
+classLoader=0xc80f440	bundleID=17

@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-Vendor: Koutheir Attouchi
+Bundle-Version: 1.0.0
+Bundle-Name: ijvm.tests.AlarmController
+Bundle-ManifestVersion: 2
+Bundle-Activator: ijvm.tests.AlarmController.Activator
+Import-Package: ijvm.tests.Alarm, org.osgi.util.tracker, org.osgi.fram
+ ework
+Bundle-SymbolicName: ijvm.tests.AlarmController
+

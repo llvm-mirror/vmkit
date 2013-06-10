@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-Version: 1.0.0
+Bundle-Name: CImpl
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: ijvm.tests.CImpl
+Bundle-Activator: ijvm.tests.CImpl.Activator
+Import-Package: ijvm.tests.B, ijvm.tests.C, org.osgi.framework, org.os
+ gi.util.tracker
+

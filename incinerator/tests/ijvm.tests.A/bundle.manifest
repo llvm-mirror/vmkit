@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Bundle-Version: 1.0.0
+Bundle-Name: A
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: ijvm.tests.A
+Export-Package: ijvm.tests.A
+

@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-Version: 1.0.0
+Bundle-Name: AImpl
+Bundle-Activator: ijvm.tests.AImpl.Activator
+Bundle-ManifestVersion: 2
+Import-Package: ijvm.tests.A, ijvm.tests.C, org.osgi.util.tracker, org
+ .osgi.framework
+Bundle-SymbolicName: ijvm.tests.AImpl
+

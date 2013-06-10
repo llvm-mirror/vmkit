@@ -1,0 +1,86 @@
+Framework launched
+AImpl provides A
+BImpl exports and provides B
+BImpl got A @ startup
+BImpl got Token from A
+CImpl exports and provides C
+CImpl got B @ startup
+AImpl got C
+DImpl exports and provides D
+DImpl got C @ startup
+> bundles
+   id  level/state name
+   --------------------
+   11  1/active    A                13  1/active    A Implementation
+   14  1/active    B Implementation 10  1/active    J3 Virtual Machine Manager
+   12  1/active    C                15  1/active    C Implementation
+   16  1/active    D Implementation
+   ...
+> framework call j3.J3Mgr dumpClassLoaderBundles
+...
+classLoader=0xb60cc280	bundleID=11
+classLoader=0xb6389478	bundleID=12
+classLoader=0xb63bd550	bundleID=13
+classLoader=0xb63709a0	bundleID=14
+classLoader=0xb61558d8	bundleID=15
+classLoader=0xb5e1c120	bundleID=16
+> framework call j3.J3Mgr resetReferencesToBundle ijvm.tests.AImpl
+resetReferencesToBundle: #13 ijvm.tests.AImpl
+Stopping bundle: ijvm.tests.AImpl
+AImpl no more provides A
+AImpl lost C but keeps a stale reference to it
+BImpl lost A but keeps a stale reference to it
+Uninstalling bundle: ijvm.tests.AImpl
+Refreshing framework...
+Result: null
+Resetting stale references to bundle #13
+Resetting ref=0x50bebfa4 obj=0x514a57f4(class=ijvm/tests/AImpl/Activator) source=0x50bebf9c(class=[Ljava/lang/Object;)
+Resetting ref=0x50beb888 obj=0x50370c74(class=ijvm/tests/AImpl/TokenImpl) source=0x50beb880(class=[Ljava/lang/Object;)
+Resetting ref=0x50beb854 obj=0x50006184(class=ijvm/tests/AImpl/AImpl) source=0x50beb84c(class=[Ljava/lang/Object;)
+WARNING: Source object is stale source=0x50370c74(class=ijvm/tests/AImpl/TokenImpl)
+WARNING: Source object is stale source=0x50006184(class=ijvm/tests/AImpl/AImpl)
+Resetting ref=0x515d2ef4 obj=0x514a57f4(class=ijvm/tests/AImpl/Activator) source=0x515d2eec(class=org/knopflerfish/framework/ServiceListenerEntry)
+WARNING: Ignored stale reference ref=0x5158139c obj=0x503709a4(class=j3::VMClassLoader,loader=0xb691d798,javaLoader=0x51581384,javaClass=org/knopflerfish/framework/BundleClassLoader) source=0x51581384(class=org/knopflerfish/framework/BundleClassLoader)
+Bundle class loader unloaded, bundleID=13
+> framework call j3.J3Mgr resetReferencesToBundle ijvm.tests.BImpl
+resetReferencesToBundle: #14 ijvm.tests.BImpl
+Stopping bundle: ijvm.tests.BImpl
+BImpl no more provides B
+BImpl lost A but keeps a stale reference to it
+CImpl lost B but keeps a stale reference to it
+Uninstalling bundle: ijvm.tests.BImpl
+Refreshing framework...
+Result: null
+CImpl no more provides C
+CImpl lost B but keeps a stale reference to it
+DImpl lost C but keeps a stale reference to it
+Resetting stale references to bundle #14
+WARNING: Ignored stale reference ref=0x5158145c obj=0x50370b6c(class=j3::VMClassLoader,loader=0xb6a79a30,javaLoader=0x51581444,javaClass=org/knopflerfish/framework/BundleClassLoader) source=0x51581444(class=org/knopflerfish/framework/BundleClassLoader)
+Resetting ref=0x50bebd34 obj=0x50006194(class=ijvm/tests/BImpl/BImpl) source=0x50bebd2c(class=[Ljava/lang/Object;)
+WARNING: Source object is stale source=0x50006194(class=ijvm/tests/BImpl/BImpl)
+Resetting ref=0x5160358c obj=0x5160331c(class=ijvm/tests/BImpl/Activator) source=0x51603584(class=org/knopflerfish/framework/ServiceListenerEntry)
+> framework call j3.J3Mgr resetReferencesToBundle ijvm.tests.CImpl
+resetReferencesToBundle: #15 ijvm.tests.CImpl
+Stopping bundle: ijvm.tests.CImpl
+Uninstalling bundle: ijvm.tests.CImpl
+Refreshing framework...
+Result: null
+Resetting stale references to bundle #15
+Resetting ref=0x50013f70 obj=0x50370e54(class=ijvm/tests/CImpl/CImpl) source=0x50013f68(class=[Ljava/lang/Object;)
+WARNING: Source object is stale source=0x50370e54(class=ijvm/tests/CImpl/CImpl)
+WARNING: Source object is stale source=0x50370e54(class=ijvm/tests/CImpl/CImpl)
+WARNING: Ignored stale reference ref=0x5158151c obj=0x50370d58(class=j3::VMClassLoader,loader=0xb61558d8,javaLoader=0x51581504,javaClass=org/knopflerfish/framework/BundleClassLoader) source=0x51581504(class=org/knopflerfish/framework/BundleClassLoader)
+WARNING: Ignored stale reference ref=0x5158145c obj=0x50370b6c(class=j3::VMClassLoader,loader=0xb63709a0,javaLoader=0x51581444,javaClass=org/knopflerfish/framework/BundleClassLoader) source=0x51581444(class=org/knopflerfish/framework/BundleClassLoader)
+Bundle class loader unloaded, bundleID=15
+Bundle class loader unloaded, bundleID=14
+> bundles
+   id  level/state name
+   --------------------
+   11  1/active    A            10  1/active    J3 Virtual Machine Manager
+   12  1/active    C            16  1/active    D Implementation
+   ...
+> framework call j3.J3Mgr dumpClassLoaderBundles
+...
+classLoader=0xb60cc280	bundleID=11
+classLoader=0xb6389478	bundleID=12
+classLoader=0xb5e1c120	bundleID=16
