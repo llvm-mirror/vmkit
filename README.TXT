@@ -53,24 +53,24 @@ ln -sf ../native/jni/java-util/.libs/libjavautil.so
 LLVM:
 =====
 
-* Get the compatible release LLVM 3.2:
+* Get the compatible release LLVM 3.3:
 
-wget http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz
-tar zxf llvm-3.2.src.tar.gz
-cd llvm-3.2.src/tools
-wget http://llvm.org/releases/3.2/clang-3.2.src.tar.gz
-tar zxf clang-3.2.src.tar.gz
-mv clang-3.2.src clang
+wget http://llvm.org/releases/3.3/llvm-3.3.src.tar.gz
+tar zxf llvm-3.3.src.tar.gz
+cd llvm-3.3.src/tools
+wget http://llvm.org/releases/3.3/cfe-3.3.src.tar.gz
+tar zxf cfe-3.3.src.tar.gz
+mv cfe-3.3.src clang
 cd ../projects
-wget http://llvm.org/releases/3.2/compiler-rt-3.2.src.tar.gz
-tar zxf compiler-rt-3.2.src.tar.gz
-mv compiler-rt-3.2.src compiler-rt
+wget http://llvm.org/releases/3.3/compiler-rt-3.3.src.tar.gz
+tar zxf compiler-rt-3.3.src.tar.gz
+mv compiler-rt-3.3.src compiler-rt
 cd ../..
 
 * Patch LLVM if you want to have a better debug support for VMKit:
   You will have to get VMKit (see the next section) to find the patch.
 
-cd llvm-3.2.src
+cd llvm-3.3.src
 patch -p1 < ../vmkit2/patches/llvm.patch
 
 NOTICE:
@@ -80,12 +80,12 @@ NOTICE:
 
 * Make it (release mode):
 
-./configure --enable-optimized --enable-assertions --enable-jit --enable-threads --enable-pthreads --enable-pic --enable-targets=x86,cpp --disable-docs --disable-doxygen
+./configure --enable-optimized --enable-assertions --enable-jit --enable-cxx11 --enable-threads --enable-pthreads --enable-pic --enable-targets=host,cpp --enable-zlib --disable-docs --disable-doxygen
 make -j12 BUILD_EXAMPLES=0 ENABLE_DOCS=0
 
 * You can also make it in debug mode, but this is is not necessary to debug compiled programs:
 
-./configure --disable-optimized --enable-assertions --enable-debug-runtime --enable-debug-symbols --enable-keep-symbols --enable-jit --enable-threads --enable-pthreads --enable-pic --enable-targets=x86,cpp --disable-docs --disable-doxygen
+./configure --disable-optimized --enable-debug-runtime --enable-debug-symbols --enable-keep-symbols --enable-assertions --enable-jit --enable-cxx11 --enable-threads --enable-pthreads --enable-pic --enable-targets=host,cpp --enable-zlib --disable-docs --disable-doxygen
 
 * Build it:
 
@@ -95,13 +95,13 @@ make -j12 BUILD_EXAMPLES=0 ENABLE_DOCS=0
 VMKit:
 ======
 
-* Get it anonymously (git):
+* Get it anonymously:
 
-git clone git://scm.gforge.inria.fr/vmkit2/vmkit2.git
+svn co http://llvm.org/svn/llvm-project/vmkit/trunk
 
-* or get as an official developer (Git):
+* or get as an official developer:
 
-git clone git+ssh://YOUR_USER_NAME@scm.gforge.inria.fr//gitroot/vmkit2/vmkit2.git
+svn co https://YOUR_USER_NAME@llvm.org/svn/llvm-project/vmkit/trunk
 
 * Make it (release mode):
 
@@ -118,4 +118,3 @@ git clone git+ssh://YOUR_USER_NAME@scm.gforge.inria.fr//gitroot/vmkit2/vmkit2.gi
 * Build it:
 
 make -j12
-
