@@ -8,12 +8,12 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "llvm/Constants.h"
-#include "llvm/Function.h"
-#include "llvm/GlobalVariable.h"
-#include "llvm/Module.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
-#include "llvm/Instructions.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Compiler.h"
@@ -127,7 +127,7 @@ static bool escapes(Value* Ins, std::map<Instruction*, bool>& visited) {
         CallSite::arg_iterator B = CS.arg_begin(), E = CS.arg_end();
         for (CallSite::arg_iterator A = B; A != E; ++A) {
           if (A->get() == Ins && 
-              !CS.paramHasAttr(A - B + 1, Attributes::NoCapture)) {
+              !CS.paramHasAttr(A - B + 1, Attribute::NoCapture)) {
             return true;
           }
         }

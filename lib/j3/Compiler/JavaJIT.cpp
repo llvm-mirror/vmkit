@@ -16,12 +16,12 @@
 #include <sstream>
 #include <cstring>
 
-#include <llvm/Constants.h>
-#include <llvm/DerivedTypes.h>
-#include <llvm/Function.h>
-#include <llvm/Instructions.h>
-#include <llvm/Module.h>
-#include <llvm/Type.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
 #include <llvm/Support/CFG.h>
 
 #include "vmkit/JIT.h"
@@ -997,7 +997,10 @@ llvm::Function* JavaJIT::javaCompile() {
 
   string methName, methNameLink;
   DbgSubprogram = TheCompiler->getDebugFactory()->createFunction(
-      DIDescriptor(), compilingMethod->getName(methName, false), compilingMethod->getName(methNameLink, true), DIFile(), 0, DIType(), false, false, 0);
+      DIDescriptor(), compilingMethod->getName(methName, false),
+      compilingMethod->getName(methNameLink, true), DIFile(), 0,
+      TheCompiler->getDebugFactory()->createSubroutineType(DIFile(), DIArray()),
+      false, false, 0);
 
   JavaAttribute* codeAtt = compilingMethod->lookupAttribute(JavaAttribute::codeAttribute);
   
@@ -1284,11 +1287,12 @@ llvm::Function* JavaJIT::javaCompile() {
       const UTF8* name =
         compilingClass->ctpInfo->UTF8At(AR.AnnotationNameIndex);
       if (name->equals(TheCompiler->InlinePragma)) {
-        llvmFunction->removeFnAttr(
-            Attributes::get(*llvmContext, llvm::Attributes::NoInline));
-        llvmFunction->addFnAttr(llvm::Attributes::AlwaysInline);
+        llvmFunction->removeAttributes(llvm::AttributeSet::FunctionIndex,
+          llvm::AttributeSet::get(*llvmContext,
+            llvm::AttributeSet::FunctionIndex, llvm::Attribute::NoInline));
+        llvmFunction->addFnAttr(llvm::Attribute::AlwaysInline);
       } else if (name->equals(TheCompiler->NoInlinePragma)) {
-        llvmFunction->addFnAttr(llvm::Attributes::NoInline);
+        llvmFunction->addFnAttr(llvm::Attribute::NoInline);
       }
     }
   }
