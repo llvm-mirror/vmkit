@@ -22,6 +22,7 @@
 #include "j3/OpcodeNames.def"
 
 #include <cstdarg>
+#include <map>
 
 using namespace j3;
 
@@ -530,16 +531,62 @@ extern "C" void* j3ResolveInterface(JavaObject* obj, JavaMethod* meth, uint32_t 
   return (void*)result;
 }
 
+#if JNJVM_EXECUTE > 0
+std::map<void*, int> debugTabulations;
+std::map<void*, int>::iterator last = debugTabulations.end();
+#endif
+
 extern "C" void j3PrintMethodStart(JavaMethod* meth) {
-  fprintf(stderr, "[%p] executing %s.%s\n", (void*)vmkit::Thread::get(),
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
+	vmkit::Thread* th = vmkit::Thread::get();
+
+#if JNJVM_EXECUTE > 0
+	if(last->first != th) {
+		last = debugTabulations.find(th);
+		if(last == debugTabulations.end()) {
+			last = debugTabulations.insert(std::make_pair(th, 2)).first;
+		}
+	}
+	int sizeTab = last->second;
+	last->second++;
+	char tabs [sizeTab];
+	for(int i = 0; i < sizeTab-1; i++)
+		tabs[i] = '-';
+	tabs[sizeTab-1] = '\0';
+
+	fprintf(stderr, "[%p] |%sexecuting %s.%s\n", (void*)th, tabs,
+			UTF8Buffer(meth->classDef->name).cString(),
+			UTF8Buffer(meth->name).cString());
+#else
+	fprintf(stderr, "[%p] executing %s.%s\n", (void*)th,
+			UTF8Buffer(meth->classDef->name).cString(),
+			UTF8Buffer(meth->name).cString());
+#endif
+
 }
 
 extern "C" void j3PrintMethodEnd(JavaMethod* meth) {
-  fprintf(stderr, "[%p] return from %s.%s\n", (void*)vmkit::Thread::get(),
-          UTF8Buffer(meth->classDef->name).cString(),
-          UTF8Buffer(meth->name).cString());
+	vmkit::Thread* th = vmkit::Thread::get();
+
+#if JNJVM_EXECUTE > 0
+	if(last->first != th) {
+		last = debugTabulations.find(th);
+	}
+	last->second--;
+	int sizeTab = last->second;
+	char tabs [sizeTab];
+	for(int i = 0; i < sizeTab-1; i++)
+		tabs[i] = '-';
+	tabs[sizeTab-1] = '\0';
+
+	fprintf(stderr, "[%p] |%sreturn from %s.%s\n", (void*)th, tabs,
+			UTF8Buffer(meth->classDef->name).cString(),
+			UTF8Buffer(meth->name).cString());
+#else
+	fprintf(stderr, "[%p] return from %s.%s\n", (void*)th,
+			UTF8Buffer(meth->classDef->name).cString(),
+			UTF8Buffer(meth->name).cString());
+#endif
+
 }
 
 extern "C" void j3PrintExecution(uint32 opcode, uint32 index,
