@@ -22,7 +22,6 @@
 #include "j3/OpcodeNames.def"
 
 #include <cstdarg>
-#include <map>
 
 using namespace j3;
 
