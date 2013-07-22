@@ -1383,13 +1383,6 @@ ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
 }
 
 void Jnjvm::startCollection() {
-
-#if DEBUG > 0
-	printf("Start Collection\n");
-	vmkit::Thread::get()->printBacktrace();
-	fflush(stdout);
-#endif
-
 #if RESET_STALE_REFERENCES
 	incinerator.beforeCollection();
 #endif
@@ -1412,12 +1405,6 @@ void Jnjvm::endCollection() {
 
 #if RESET_STALE_REFERENCES
 	incinerator.afterCollection();
-#endif
-
-#if DEBUG > 0
-  printf("End Collection\n");
-  vmkit::Thread::get()->printBacktrace();
-  fflush(stdout);
 #endif
 }
   

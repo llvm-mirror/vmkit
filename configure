@@ -3636,6 +3636,10 @@ if test -z ${ANT}; then
     as_fn_error $? "Unable to find ant, please put ant tool in your path" "$LINENO" 5
 fi
 
+if test -z ${ZIP}; then
+    as_fn_error $? "Unable to find zip, please put zip in your path" "$LINENO" 5
+fi
+
 if test -z ${LLVM_CONFIG}; then
     as_fn_error $? "Unable to find llvm-config, please specify its path" "$LINENO" 5
 fi

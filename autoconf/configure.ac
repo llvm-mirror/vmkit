@@ -386,6 +386,10 @@ if test -z ${ANT}; then
     AC_MSG_ERROR([Unable to find ant, please put ant tool in your path])
 fi
 
+if test -z ${ZIP}; then
+    AC_MSG_ERROR([Unable to find zip, please put zip in your path])
+fi
+
 if test -z ${LLVM_CONFIG}; then
     AC_MSG_ERROR([Unable to find llvm-config, please specify its path])
 fi

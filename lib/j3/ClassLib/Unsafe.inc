@@ -80,8 +80,10 @@ JavaObject* unsafe, JavaObjectField* _field) {
 ///
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_arrayBaseOffset(
 JavaObject* unsafe, JavaObject* clazz) {
-  // Array starts at beginning of object
-  return 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(unsafe, 0);
+  // See JavaArray.h for arrays layout
+  return sizeof(JavaObject) + sizeof(ssize_t);
 }
 
 /// arrayIndexScale - Indexing scale for the element type in
@@ -92,9 +94,23 @@ JavaObject* unsafe, JavaObject* clazz) {
 ///
 JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_arrayIndexScale(
 JavaObject* unsafe, JavaObject* clazz) {
-  // For now, just return '0', indicating we don't support this indexing.
-  // TODO: Implement this for the array types we /do/ support this way.
-  return 0;
+  JavaObjectClass* jcl = 0;
+  llvm_gcroot(clazz, 0);
+  llvm_gcroot(unsafe, 0);
+  llvm_gcroot(jcl, 0);
+  ClassArray* clArray = 0;
+  int size = 0;
+  
+  UserCommonClass* cl = JavaObjectClass::getClass(jcl = (JavaObjectClass*)clazz);
+  if (cl->isArray()) {
+    clArray = cl->asArrayClass();
+    if(clArray->_baseClass->isPrimitive()) {
+      size = 1 << clArray->_baseClass->asPrimitiveClass()->logSize;
+    } else {
+      size = sizeof(JavaObject*);
+    }
+  }
+  return size;
 }
 
 
