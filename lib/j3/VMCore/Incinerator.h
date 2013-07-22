@@ -2,11 +2,12 @@
 #ifndef INCINERATOR_H
 #define INCINERATOR_H
 
+#include "OSGiGateway.h"
 #include "vmkit/Locks.h"
+#include "j3/jni.h"
 
-#include <list>
 #include <map>
-#include <set>
+#include <list>
 #include <vector>
 #include <stdint.h>
 
@@ -26,15 +27,14 @@ public:
 	Incinerator(j3::Jnjvm* j3vm);
 	virtual ~Incinerator();
 
-	void setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected);
-	bool isBundleStaleReferenceCorrected(int64_t bundleID) const;
+	void setBundleStaleReferenceCorrected(OSGiGateway::bundle_id_t bundleID, bool corrected);
+	bool isBundleStaleReferenceCorrected(OSGiGateway::bundle_id_t bundleID) const;
 	void dumpClassLoaderBundles() const;
 	void dumpReferencesToObject(JavaObject* object) const;
 	void forceStaleReferenceScanning();
 
-	JnjvmClassLoader * getBundleClassLoader(int64_t bundleID) const;
-	int64_t getClassLoaderBundleID(JnjvmClassLoader  const * loader) const;
-	void setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader);
+	OSGiGateway::bundle_id_t getClassLoaderBundleID(JnjvmClassLoader const * loader) const;
+	void setBundleClassLoader(OSGiGateway::bundle_id_t bundleID, JnjvmClassLoader* loader);
 
 	void beforeCollection();
 	void   markingFinalizersDone();
@@ -53,9 +53,8 @@ public:
 	volatile scanStackRefFunc scanStackRef;
 
 protected:
-	typedef std::map<int64_t, std::list<JnjvmClassLoader const *> >
+	typedef std::map<OSGiGateway::bundle_id_t, std::list<JnjvmClassLoader const *> >
 		staleBundleClassLoadersType;
-	typedef std::map<int64_t, JnjvmClassLoader *> bundleClassLoadersType;
 	typedef std::map<JavaObject**, const JavaObject*>
 		StaleRefListType;	// (ref, source)
 
@@ -81,13 +80,6 @@ protected:
 	static bool scanStackRef_Exclusive(
 		Incinerator& incinerator, const JavaMethod* method, JavaObject** ref);
 
-	class InstalledBundles_finder {
-		JnjvmClassLoader const * loader;
-	public:
-		InstalledBundles_finder(JnjvmClassLoader const * l) : loader(l) {}
-		bool operator() (const bundleClassLoadersType::value_type& pair) const;
-	};
-
 	class UninstalledBundles_finder {
 		JnjvmClassLoader const * loader;
 	public:
@@ -98,8 +90,7 @@ protected:
 
 	j3::Jnjvm* vm;
 
-	mutable vmkit::LockRecursive bundleClassLoadersLock;
-	bundleClassLoadersType bundleClassLoaders;
+	mutable vmkit::LockRecursive lock;
 	staleBundleClassLoadersType staleBundleClassLoaders;
 
 	StaleRefListType staleRefList;
@@ -108,7 +99,6 @@ protected:
 	mutable JavaObject* findReferencesToObject;
 	std::vector<const JavaObject*> foundReferencerObjects;
 };
-
 
 class IncineratorManagedClassLoader
 {
@@ -141,5 +131,10 @@ public:
 };
 
 }
+
+extern "C" void Java_j3_vm_OSGi_setBundleStaleReferenceCorrected(jlong bundleID, jboolean corrected);
+extern "C" jboolean Java_j3_vm_OSGi_isBundleStaleReferenceCorrected(jlong bundleID);
+extern "C" void Java_j3_vm_OSGi_dumpReferencesToObject(jlong obj);
+extern "C" void Java_j3_vm_OSGi_forceStaleReferenceScanning();
 
 #endif

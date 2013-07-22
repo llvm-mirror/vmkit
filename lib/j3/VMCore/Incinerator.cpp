@@ -1,10 +1,13 @@
 
+#include "Incinerator.h"
+
 #include "VmkitGC.h"
 #include "Jnjvm.h"
+#include "JnjvmClassLoader.h"
+#include "JavaThread.h"
+#include "JavaClass.h"
 #include "VMStaticInstance.h"
-#include "JavaReferenceQueue.h"
 
-#include <sstream>
 #include <algorithm>
 
 #if RESET_STALE_REFERENCES
@@ -37,12 +40,9 @@ Incinerator* Incinerator::get()
 
 void Incinerator::dumpClassLoaderBundles() const
 {
-	vmkit::LockGuard lg(bundleClassLoadersLock);
-	bundleClassLoadersType::const_iterator
-		i = bundleClassLoaders.begin(), e = bundleClassLoaders.end();
+	vm->osgi_gateway.dumpClassLoaderBundles();
 
-	for (; i != e; ++i)
-		cerr << "bundleID=" << i->first << " classLoader=" << i->second << endl;
+	vmkit::LockGuard lg(lock);
 
 	staleBundleClassLoadersType::const_iterator
 		si = staleBundleClassLoaders.begin(), se = staleBundleClassLoaders.end();
@@ -56,9 +56,9 @@ void Incinerator::dumpClassLoaderBundles() const
 	}
 }
 
-void Incinerator::setBundleStaleReferenceCorrected(int64_t bundleID, bool corrected)
+void Incinerator::setBundleStaleReferenceCorrected(OSGiGateway::bundle_id_t bundleID, bool corrected)
 {
-	JnjvmClassLoader * loader = this->getBundleClassLoader(bundleID);
+	JnjvmClassLoader * loader = vm->osgi_gateway.getBundleClassLoader(bundleID);
 	if (!loader) {
 		vm->illegalArgumentException("Invalid bundle ID"); return;}
 
@@ -73,30 +73,13 @@ void Incinerator::setBundleStaleReferenceCorrected(int64_t bundleID, bool correc
 	loader->setStaleReferencesCorrectionEnabled(corrected);
 }
 
-bool Incinerator::isBundleStaleReferenceCorrected(int64_t bundleID) const
+bool Incinerator::isBundleStaleReferenceCorrected(OSGiGateway::bundle_id_t bundleID) const
 {
-	JnjvmClassLoader const* loader = this->getBundleClassLoader(bundleID);
+	JnjvmClassLoader const* loader = vm->osgi_gateway.getBundleClassLoader(bundleID);
 	if (!loader) {
 		vm->illegalArgumentException("Invalid bundle ID"); return false;}
 
 	return loader->isStaleReferencesCorrectionEnabled();
-}
-
-JnjvmClassLoader * Incinerator::getBundleClassLoader(int64_t bundleID) const
-{
-	if (bundleID == -1) return NULL;
-
-	vmkit::LockGuard lg(bundleClassLoadersLock);
-
-	bundleClassLoadersType::const_iterator
-		i = bundleClassLoaders.find(bundleID), e = bundleClassLoaders.end();
-	return (i == e) ? NULL : i->second;
-}
-
-bool Incinerator::InstalledBundles_finder::operator() (
-	const bundleClassLoadersType::value_type& pair) const
-{
-	return (loader == pair.second);
 }
 
 bool Incinerator::UninstalledBundles_finder::operator() (
@@ -109,18 +92,14 @@ bool Incinerator::UninstalledBundles_finder::operator() (
 	return (i != e);
 }
 
-int64_t Incinerator::getClassLoaderBundleID(JnjvmClassLoader const * loader) const
+OSGiGateway::bundle_id_t Incinerator::getClassLoaderBundleID(JnjvmClassLoader const * loader) const
 {
-	if (loader == NULL) return -1;
-	vmkit::LockGuard lg(bundleClassLoadersLock);
+	if (loader == NULL) return OSGiGateway::invalidBundleID;
 
-	bundleClassLoadersType::const_iterator
-		b = bundleClassLoaders.begin(),
-		e = bundleClassLoaders.end();
-	bundleClassLoadersType::const_iterator
-		i = find_if(b, e, InstalledBundles_finder(loader));
+	OSGiGateway::bundle_id_t r = vm->osgi_gateway.getClassLoaderBundleID(loader);
+	if (r != OSGiGateway::invalidBundleID) return r;
 
-	if (i != e) return i->first;
+	vmkit::LockGuard lg(lock);
 
 	// Look up in stale bundles list
 	staleBundleClassLoadersType::const_iterator
@@ -129,61 +108,41 @@ int64_t Incinerator::getClassLoaderBundleID(JnjvmClassLoader const * loader) con
 	staleBundleClassLoadersType::const_iterator
 		si = find_if(sb, se, UninstalledBundles_finder(loader));
 
-	return (si == se) ? -1 : si->first;
+	return (si == se) ? OSGiGateway::invalidBundleID : si->first;
 }
 
 // Link a bundle ID (OSGi world) to a class loader (Java world).
-void Incinerator::setBundleClassLoader(int64_t bundleID, JnjvmClassLoader* loader)
+void Incinerator::setBundleClassLoader(OSGiGateway::bundle_id_t bundleID, JnjvmClassLoader* loader)
 {
-	if (bundleID == -1) return;
-	vmkit::LockGuard lg(bundleClassLoadersLock);
+	if (bundleID == OSGiGateway::invalidBundleID) return;
 
-	JnjvmClassLoader * previous_loader = bundleClassLoaders[bundleID];
+	JnjvmClassLoader * previous_loader =
+		vm->osgi_gateway.getBundleClassLoader(bundleID);
 
-	if (!loader) {
-		// Unloaded bundle
-		bundleClassLoaders.erase(bundleID);
+	bool bundleUpdated =
+		(previous_loader != NULL) && (loader != NULL) &&
+		(previous_loader != loader);
 
-#if DEBUG_VERBOSE_STALE_REF
-	cerr << "Bundle uninstalled: bundleID=" << bundleID
-		<< " classLoader=" << previous_loader << endl;
-#endif
-	} else {
-		// Installed/Updated bundle
-		if (previous_loader == loader)
-			return;	// Same class loader already associated with the bundle, do nothing
+	vmkit::LockGuard lg(lock);
 
-		// Associate the class loader with the bundle
-		bundleClassLoaders[bundleID] = loader;
-
+	if (bundleUpdated) {
 		// Propagate the stale reference correction setting to the new
 		// class loader if a previous one exists.
-		if (previous_loader != NULL) {
-			loader->setStaleReferencesCorrectionEnabled(
-				previous_loader->isStaleReferencesCorrectionEnabled());
-		}
-
-#if DEBUG_VERBOSE_STALE_REF
-		if (!previous_loader) {
-			cerr << "Bundle installed: bundleID=" << bundleID
-				<< " classLoader=" << loader << endl;
-		} else {
-			cerr << "Bundle updated: bundleID=" << bundleID
-				<< " classLoader=" << loader
-				<< " previousClassLoader=" << previous_loader << endl;
-		}
-#endif
+		loader->setStaleReferencesCorrectionEnabled(
+			previous_loader->isStaleReferencesCorrectionEnabled());
 	}
 
-	if (!previous_loader)
-		return;	// No previous class loader, nothing to clean up
+	// Either bundle uninstalled, or bundle updated with a different class loader
+	if (bundleUpdated || ((previous_loader != NULL) && !loader)) {
+		// Mark the previous class loader as stale
+		staleBundleClassLoaders[bundleID].push_front(previous_loader);
+		previous_loader->markStale(true);
 
-	// Mark the previous class loader as stale
-	staleBundleClassLoaders[bundleID].push_front(previous_loader);
-	previous_loader->markStale(true);
+		// Enable stale references scanning
+		setScanningInclusive();
+	}
 
-	// Enable stale references scanning
-	setScanningInclusive();
+	vm->osgi_gateway.setBundleClassLoader(bundleID, loader);
 }
 
 IncineratorManagedClassLoader::~IncineratorManagedClassLoader()
@@ -194,8 +153,8 @@ IncineratorManagedClassLoader::~IncineratorManagedClassLoader()
 
 void Incinerator::classLoaderUnloaded(JnjvmClassLoader const * loader)
 {
-	int64_t bundleID = getClassLoaderBundleID(loader);
-	if (bundleID == -1) {
+	OSGiGateway::bundle_id_t bundleID = getClassLoaderBundleID(loader);
+	if (bundleID == OSGiGateway::invalidBundleID) {
 #if DEBUG_VERBOSE_STALE_REF
 		cerr << "Class loader unloaded: " << loader << endl;
 #endif
@@ -453,6 +412,36 @@ void Incinerator::eliminateStaleRef(const JavaObject *source, JavaObject** ref)
 	*ref = NULL;	// Reset the reference
 }
 
+}
+
+extern "C" void Java_j3_vm_OSGi_setBundleStaleReferenceCorrected(jlong bundleID, jboolean corrected)
+{
+#if RESET_STALE_REFERENCES
+	j3::Incinerator::get()->setBundleStaleReferenceCorrected(bundleID, corrected);
+#endif
+}
+
+extern "C" jboolean Java_j3_vm_OSGi_isBundleStaleReferenceCorrected(jlong bundleID)
+{
+#if RESET_STALE_REFERENCES
+	return j3::Incinerator::get()->isBundleStaleReferenceCorrected(bundleID);
+#else
+	return false;
+#endif
+}
+
+extern "C" void Java_j3_vm_OSGi_dumpReferencesToObject(jlong obj)
+{
+#if RESET_STALE_REFERENCES
+	j3::Incinerator::get()->dumpReferencesToObject(reinterpret_cast<j3::JavaObject*>(obj));
+#endif
+}
+
+extern "C" void Java_j3_vm_OSGi_forceStaleReferenceScanning()
+{
+#if RESET_STALE_REFERENCES
+	j3::Incinerator::get()->forceStaleReferenceScanning();
+#endif
 }
 
 #endif

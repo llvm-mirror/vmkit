@@ -28,7 +28,8 @@ using vmkit::UTF8;
 class JavaAOTCompiler : public JavaLLVMCompiler {
 
 public:
-  JavaAOTCompiler(const std::string &ModuleID);
+  JavaAOTCompiler(
+    const std::string &ModuleID, bool compiling_garbage_collector = false);
   
   virtual bool isStaticCompiling() {
     return true;
@@ -38,8 +39,10 @@ public:
     return true;
   }
   
-  virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaAOTCompiler(ModuleID);
+  virtual JavaCompiler* Create(
+	const std::string& ModuleID, bool compiling_garbage_collector = false)
+  {
+    return new JavaAOTCompiler(ModuleID, compiling_garbage_collector);
   }
   
   virtual void* materializeFunction(JavaMethod* meth, Class* customizeFor) {

@@ -41,7 +41,8 @@ public:
   llvm::ExecutionEngine* executionEngine;
   llvm::GCModuleInfo* GCInfo;
 
-  JavaJITCompiler(const std::string &ModuleID);
+  JavaJITCompiler(
+	const std::string &ModuleID, bool compiling_garbage_collector = false);
   ~JavaJITCompiler();
   
   virtual bool isStaticCompiling() {
@@ -79,7 +80,8 @@ public:
                                    bool stat, llvm::BasicBlock* insert) = 0;
   virtual word_t getPointerOrStub(JavaMethod& meth, int type) = 0;
 
-  static JavaJITCompiler* CreateCompiler(const std::string& ModuleID);
+  static JavaJITCompiler* CreateCompiler(
+	const std::string& ModuleID, bool compiling_garbage_collector = false);
 };
 
 class JavaJ3LazyJITCompiler : public JavaJITCompiler {
@@ -89,11 +91,14 @@ public:
                                    bool stat, llvm::BasicBlock* insert);
   virtual word_t getPointerOrStub(JavaMethod& meth, int side);
   
-  virtual JavaCompiler* Create(const std::string& ModuleID) {
-    return new JavaJ3LazyJITCompiler(ModuleID);
+  virtual JavaCompiler* Create(
+	const std::string& ModuleID, bool compiling_garbage_collector = false)
+  {
+    return new JavaJ3LazyJITCompiler(ModuleID, compiling_garbage_collector);
   }
 
-  JavaJ3LazyJITCompiler(const std::string& ModuleID);
+  JavaJ3LazyJITCompiler(
+	const std::string& ModuleID, bool compiling_garbage_collector = false);
 };
 
 } // end namespace j3

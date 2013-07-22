@@ -24,7 +24,6 @@ public:
 };
 
 class gcRoot {
-	private:
 public:
   word_t& header(){return toHeader()->_header; }
   inline gcHeader* toHeader() { return (gcHeader*)((uintptr_t)this - gcHeader::hiddenHeaderSize()); }

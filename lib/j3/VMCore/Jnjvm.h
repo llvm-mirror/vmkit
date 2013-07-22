@@ -23,6 +23,7 @@
 #include "JNIReferences.h"
 #include "LockedMap.h"
 #include "Incinerator.h"
+#include "OSGiGateway.h"
 
 namespace j3 {
 
@@ -362,6 +363,8 @@ public:
   void loadBootstrap();
 
   static void printBacktrace() __attribute__((noinline));
+
+  OSGiGateway osgi_gateway;
 
 #if RESET_STALE_REFERENCES
 public:

@@ -81,10 +81,10 @@ void JavaJIT::checkYieldPoint() {
   if (!TheCompiler->useCooperativeGC()) return;
   Value* YieldPtr = getDoYieldPtr(getMutatorThreadPtr());
 
-  Value* Yield = new LoadInst(YieldPtr, "", currentBlock);
+  Value* Yield = new LoadInst(YieldPtr, "yield", currentBlock);
 
-  BasicBlock* continueBlock = createBasicBlock("After safe point");
-  BasicBlock* yieldBlock = createBasicBlock("In safe point");
+  BasicBlock* continueBlock = createBasicBlock("afterSafePoint");
+  BasicBlock* yieldBlock = createBasicBlock("inSafePoint");
   BranchInst::Create(yieldBlock, continueBlock, Yield, currentBlock);
 
   currentBlock = yieldBlock;
@@ -1140,7 +1140,7 @@ llvm::Function* JavaJIT::javaCompile() {
     jmpBuffer = new AllocaInst(ArrayType::get(Type::getInt8Ty(*llvmContext), sizeof(vmkit::ExceptionBuffer)), "", currentBlock);
     jmpBuffer = new BitCastInst(jmpBuffer, intrinsics->ptrType, "exceptionSavePoint", currentBlock);
   }
-  
+
   reader.cursor = start;
   exploreOpcodes(reader, codeLen);
  
@@ -1213,7 +1213,7 @@ llvm::Function* JavaJIT::javaCompile() {
   if (returnValue != NULL) {
     new StoreInst(endNode, returnValue, currentBlock);
   }
-  
+
   if (isSynchro(compilingMethod->access)) {
     endSynchronize();
   }
@@ -1680,7 +1680,7 @@ void JavaJIT::invokeSpecial(uint16 index) {
   } else {
     val = invoke(func, args, "", currentBlock);
   }
-  
+
   Type* retType = virtualType->getReturnType();
   if (retType != Type::getVoidTy(*llvmContext)) {
     if (retType == intrinsics->JavaObjectType) {

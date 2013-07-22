@@ -1832,8 +1832,9 @@ Constant* JavaAOTCompiler::CreateConstantFromVT(JavaVirtualTable* VT) {
   return Array;
 }
 
-JavaAOTCompiler::JavaAOTCompiler(const std::string& ModuleID) :
-  JavaLLVMCompiler(ModuleID) {
+JavaAOTCompiler::JavaAOTCompiler(
+  const std::string& ModuleID, bool compiling_garbage_collector) :
+  JavaLLVMCompiler(ModuleID, compiling_garbage_collector) {
 
   std::string Error;
   const Target* TheTarget(TargetRegistry::lookupTarget(

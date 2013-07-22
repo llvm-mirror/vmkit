@@ -152,8 +152,9 @@ Constant* JavaJITCompiler::getNativeFunction(JavaMethod* meth, void* ptr) {
   return ConstantExpr::getIntToPtr(CI, valPtrType);
 }
 
-JavaJITCompiler::JavaJITCompiler(const std::string &ModuleID) :
-  JavaLLVMCompiler(ModuleID), listener(this) {
+JavaJITCompiler::JavaJITCompiler(
+  const std::string &ModuleID, bool compiling_garbage_collector) :
+  JavaLLVMCompiler(ModuleID, compiling_garbage_collector), listener(this) {
 
   EmitFunctionName = false;
   GCInfo = NULL;
@@ -440,10 +441,13 @@ bool JavaJ3LazyJITCompiler::needsCallback(JavaMethod* meth,
           getMethod(meth, customizeFor)->hasExternalWeakLinkage());
 }
 
-JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(const std::string& ModuleID)
-    : JavaJITCompiler(ModuleID) {}
+JavaJ3LazyJITCompiler::JavaJ3LazyJITCompiler(
+  const std::string& ModuleID, bool compiling_garbage_collector) :
+  JavaJITCompiler(ModuleID, compiling_garbage_collector) {}
 
 
-JavaJITCompiler* JavaJITCompiler::CreateCompiler(const std::string& ModuleID) {
-  return new JavaJ3LazyJITCompiler(ModuleID);
+JavaJITCompiler* JavaJITCompiler::CreateCompiler(
+  const std::string& ModuleID, bool compiling_garbage_collector)
+{
+  return new JavaJ3LazyJITCompiler(ModuleID, compiling_garbage_collector);
 }

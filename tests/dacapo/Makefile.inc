@@ -7,10 +7,10 @@ endif
 TEMP_LEVEL	:= ../..
 RUN_BENCH	:= $(PWD)/$(LEVEL)/run-bench.sh
 DACAPO		:= $(PWD)/$(LEVEL)/jars/dacapo-$(DACAPO_VERSION).jar
-TMP_DIR		:= $(LEVEL)/tmp
-LOG_DIR		:= $(LEVEL)/logs
-JVM1_PATH	:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/incinerator/$(BUILD_MODE)_NoIncinerator/bin/j3
-JVM2_PATH	:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/incinerator/$(BUILD_MODE)/bin/j3
+JVM1_PATH	:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/incinerator/$(BUILD_MODE)/bin/j3
+JVM2_PATH	:= $(PWD)/../$(TEMP_LEVEL)/$(LEVEL)/incinerator/$(BUILD_MODE)_NoIncinerator/bin/j3
+#WORK_DIR	:= $(LEVEL)
+WORK_DIR	:= $(HOME)/dacapo_benchmarks
 
 ifndef ENABLE_JVM1
 	ENABLE_JVM1 := 1
@@ -20,11 +20,18 @@ ifndef ENABLE_JVM2
 	ENABLE_JVM2 := 1
 endif
 
-all: $(VM) $(DECAPO_BENCHMARKS)
+ifndef VERBOSE
+	QUIET	:= @
+endif
+
+TMP_DIR	:= $(shell mktemp -d --suffix=.$(DACAPO_VERSION) --tmpdir=$(WORK_DIR))
+
+all: $(DECAPO_BENCHMARKS)
 
 $(DECAPO_BENCHMARKS): $(DACAPO)
-	@-$(RUN_BENCH) "$(ENABLE_JVM1)" "jvm1" "$(DACAPO_VERSION)" "$(JVM1_PATH)" "$(DACAPO)" "$(DACAPO_ARGS)" "$@"
-	@-$(RUN_BENCH) "$(ENABLE_JVM2)" "jvm2" "$(DACAPO_VERSION)" "$(JVM2_PATH)" "$(DACAPO)" "$(DACAPO_ARGS)" "$@"
+	$(QUIET) mkdir -p "$(TMP_DIR)/$@" 2>/dev/null
+	$(QUIET) if [ 1 -eq $(ENABLE_JVM1) ] ; then cd "$(TMP_DIR)/$@" && "$(JVM1_PATH)" -jar "$(DACAPO)" $(DACAPO_ARGS) "$@" > "$(TMP_DIR).$@.log" 2>&1 ; else true ; fi
+	$(QUIET) if [ 1 -eq $(ENABLE_JVM2) ] ; then cd "$(TMP_DIR)/$@" && "$(JVM2_PATH)" -jar "$(DACAPO)" $(DACAPO_ARGS) "$@" > "$(TMP_DIR).$@.log" 2>&1 ; else true ; fi
 
 clean:
-	@-rm -rf "$(TMP_DIR)" "$(LOG_DIR)" 2>/dev/null
+	@-rm -rf $(WORK_DIR)/tmp.* $(WORK_DIR)/*.log 2>/dev/null

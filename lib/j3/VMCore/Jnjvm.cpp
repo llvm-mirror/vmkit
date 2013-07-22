@@ -1354,7 +1354,6 @@ Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,
 , incinerator(this)
 #endif
 {
-
   classpath = getenv("CLASSPATH");
   if (classpath == NULL) classpath = ".";
   

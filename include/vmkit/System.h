@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <unistd.h>
 
-
 #if defined(__linux__) || defined(__FreeBSD__)
 #define LINUX_OS 1
 #elif defined(__APPLE__)
@@ -93,7 +92,7 @@ const word_t kVmkitThreadMask = 0xF0000000;
   const word_t kGCMemoryStart = 0x50000000;
 #endif
 
-const word_t kGCMemorySize = 0x30000000;  
+const word_t kGCMemorySize = 0x30000000;
 
 #define TRY { vmkit::ExceptionBuffer __buffer__; if (!SETJMP(__buffer__.buffer))
 #define CATCH else

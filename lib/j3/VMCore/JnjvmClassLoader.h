@@ -26,6 +26,7 @@
 #include "JnjvmConfig.h"
 #include "UTF8.h"
 #include "Incinerator.h"
+#include "OSGiGateway.h"
 
 namespace j3 {
 
@@ -179,6 +180,8 @@ public:
   /// of the given class loader.
   ///
   static JnjvmClassLoader* getJnjvmLoaderFromJavaObject(JavaObject*, Jnjvm *vm);
+  static JnjvmClassLoader* createForJavaObject(
+    Jnjvm* vm, JavaObject* loader, VMClassLoader**vmdata);
   
   /// getJavaClassLoader - Return the Java representation of this class loader.
   ///

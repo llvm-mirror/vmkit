@@ -26,7 +26,9 @@ log_file=$(mktemp --suffix=${suffix}.log --tmpdir=$log_dir)
 
 curdir=$(pwd)
 cd "$scratch_dir"
-"$jvm" -jar "$jar" $vmargs "$bench_name" > $log_file 2>&1
+echo "$jvm" -jar "$jar" $vmargs "$bench_name"
+"$jvm" -jar "$jar" $vmargs "$bench_name"
+# "$jvm" -jar "$jar" $vmargs "$bench_name" > $log_file 2>&1
 r=$?
 
 cd "$curdir"
