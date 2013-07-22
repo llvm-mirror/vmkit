@@ -84,7 +84,8 @@ private:
   llvm::DenseMap<llvm::FunctionType*, llvm::Function*> staticAPs;
 
 public:
-  JavaLLVMCompiler(const std::string &ModuleID);
+  JavaLLVMCompiler(
+    const std::string &ModuleID, bool compiling_garbage_collector = false);
   
   virtual bool isStaticCompiling() = 0;
   virtual bool emitFunctionName() = 0;
@@ -123,7 +124,7 @@ public:
     cooperativeGC = false;
   }
  
-  virtual JavaCompiler* Create(const std::string& ModuleID) = 0;
+  virtual JavaCompiler* Create(const std::string& ModuleID, bool compiling_garbage_collector = false) = 0;
   
   virtual ~JavaLLVMCompiler();
 

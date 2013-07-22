@@ -56,7 +56,9 @@ typedef TJavaArray<JavaObject*> ArrayObject;
 /// its own tables (signatures, UTF8, types) which are mapped to a single
 /// table for non-isolate environments.
 ///
-class JnjvmClassLoader : public vmkit::PermanentObject {
+class JnjvmClassLoader :
+	public vmkit::PermanentObject
+{
 private:
 
   /// isolate - Which isolate defined me? Null for the bootstrap class loader.
@@ -173,6 +175,8 @@ public:
   /// of the given class loader.
   ///
   static JnjvmClassLoader* getJnjvmLoaderFromJavaObject(JavaObject*, Jnjvm *vm);
+  static JnjvmClassLoader* createForJavaObject(
+    Jnjvm* vm, JavaObject* loader, VMClassLoader**vmdata);
   
   /// getJavaClassLoader - Return the Java representation of this class loader.
   ///

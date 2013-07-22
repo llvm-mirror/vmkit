@@ -282,7 +282,7 @@ public:
     word_t ptr = kThreadStart;
 
     uint32 flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED;
-    baseAddr = (word_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS, 
+    baseAddr = (word_t)mmap((void*)ptr, STACK_SIZE * NR_THREADS,
                                PROT_READ | PROT_WRITE, flags, -1, 0);
 
     if (baseAddr == (word_t) MAP_FAILED) {

@@ -217,15 +217,17 @@ JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc) :
 {
 }
 
-JnjvmClassLoader::JnjvmClassLoader(vmkit::BumpPtrAllocator& Alloc,
-                                   JnjvmClassLoader& JCL, JavaObject* loader,
-                                   VMClassLoader* vmdata,
-                                   Jnjvm* VM) : allocator(Alloc)
+JnjvmClassLoader::JnjvmClassLoader(
+	vmkit::BumpPtrAllocator& Alloc, JnjvmClassLoader& JCL, JavaObject* loader,
+	VMClassLoader* vmdata, Jnjvm* VM) :
+	allocator(Alloc)
 {
   llvm_gcroot(loader, 0);
   llvm_gcroot(vmdata, 0);
   bootstrapLoader = JCL.bootstrapLoader;
-  TheCompiler = bootstrapLoader->getCompiler()->Create("Applicative loader");
+  TheCompiler = bootstrapLoader->getCompiler()->Create(
+	"Applicative loader",
+	bootstrapLoader->getCompiler()->isCompilingGarbageCollector());
   
   hashUTF8 = new(allocator, "UTF8Map") UTF8Map(allocator);
   classes = new(allocator, "ClassMap") ClassMap();
@@ -809,6 +811,21 @@ Signdef* JnjvmClassLoader::constructSign(const UTF8* name) {
   return res;
 }
 
+JnjvmClassLoader* JnjvmClassLoader::createForJavaObject(
+  Jnjvm* vm, JavaObject* loader, VMClassLoader**vmdata)
+{
+	llvm_gcroot(loader, 0);
+
+    *vmdata = VMClassLoader::allocate();
+    vmkit::BumpPtrAllocator* A = new vmkit::BumpPtrAllocator();
+
+    JnjvmClassLoader* JCL = new(*A, "Class loader")
+    	JnjvmClassLoader(*A, *vm->bootstrapLoader, loader, *vmdata, vm);
+
+    Classpath* upcalls = vm->bootstrapLoader->upcalls;
+    upcalls->vmdataClassLoader->setInstanceObjectField(loader, *vmdata);
+    return JCL;
+}
 
 JnjvmClassLoader*
 JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
@@ -834,29 +851,23 @@ JnjvmClassLoader::getJnjvmLoaderFromJavaObject(JavaObject* loader, Jnjvm* vm) {
     vmdata = 
       (VMClassLoader*)(upcalls->vmdataClassLoader->getInstanceObjectField(loader));
     if (!vmdata || !VMClassLoader::isVMClassLoader(vmdata)) {
-      vmdata = VMClassLoader::allocate();
-      vmkit::BumpPtrAllocator* A = new vmkit::BumpPtrAllocator();
-      JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
-                                                     loader, vmdata, vm);
-      upcalls->vmdataClassLoader->setInstanceObjectField(loader, (JavaObject*)vmdata);
+      JCL = JnjvmClassLoader::createForJavaObject(vm, loader, &vmdata);
     }
     JavaObject::release(loader);
   }
   else if (!VMClassLoader::isVMClassLoader(vmdata)) {
 	JavaObject::acquire(loader);
-	vmdata = VMClassLoader::allocate();
-	vmkit::BumpPtrAllocator* A = new vmkit::BumpPtrAllocator();
-	JCL = new(*A, "Class loader") JnjvmClassLoader(*A, *vm->bootstrapLoader,
-												   loader, vmdata, vm);
-	upcalls->vmdataClassLoader->setInstanceObjectField(loader, (JavaObject*)vmdata);
+	JCL = JnjvmClassLoader::createForJavaObject(vm, loader, &vmdata);
 	JavaObject::release(loader);
   } else {
     JCL = vmdata->getClassLoader();
     assert(JCL->javaLoader == loader);
   }
+
   if (!JCL) {
 	  assert( vmdata->getClassLoader() == JCL && "Loader is not equal to stored value");
-	  fprintf(stderr, "Error in method %s, %d because condition 1: %d\n", __FILE__, __LINE__, (vmdata == NULL || !VMClassLoader::isVMClassLoader(vmdata)));
+	  fprintf(stderr, "Error in method %s, %d because condition 1: %d\n",
+		__FILE__, __LINE__, (vmdata == NULL || !VMClassLoader::isVMClassLoader(vmdata)));
   }
   return JCL;
 }

@@ -1351,7 +1351,6 @@ Jnjvm::Jnjvm(vmkit::BumpPtrAllocator& Alloc,
              JnjvmBootstrapLoader* loader) : 
   VirtualMachine(Alloc, frames), lockSystem(Alloc)
 {
-
   classpath = getenv("CLASSPATH");
   if (classpath == NULL) classpath = ".";
   
@@ -1381,13 +1380,6 @@ ArrayUInt16* Jnjvm::asciizToArray(const char* asciiz) {
 }
 
 void Jnjvm::startCollection() {
-
-#if DEBUG > 0
-	printf("Start Collection\n");
-	vmkit::Thread::get()->printBacktrace();
-	fflush(stdout);
-#endif
-
   finalizerThread->FinalizationQueueLock.acquire();
   referenceThread->ToEnqueueLock.acquire();
   referenceThread->SoftReferencesQueue.acquire();
@@ -1403,12 +1395,6 @@ void Jnjvm::endCollection() {
   referenceThread->PhantomReferencesQueue.release();
   finalizerThread->FinalizationCond.broadcast();
   referenceThread->EnqueueCond.broadcast();
-
-#if DEBUG > 0
-  printf("End Collection\n");
-  vmkit::Thread::get()->printBacktrace();
-  fflush(stdout);
-#endif
 }
   
 void Jnjvm::scanWeakReferencesQueue(word_t closure) {

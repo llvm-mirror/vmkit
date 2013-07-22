@@ -162,10 +162,10 @@ void J3Intrinsics::init(llvm::Module* module) {
   OffsetIsolateIDInThreadConstant =         ConstantInt::get(Type::getInt32Ty(Context), 1);
   OffsetVMInThreadConstant =                ConstantInt::get(Type::getInt32Ty(Context), 2);
   OffsetDoYieldInThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 4);
-	OffsetThreadInMutatorThreadConstant =     ConstantInt::get(Type::getInt32Ty(Context), 0);
+  OffsetThreadInMutatorThreadConstant =     ConstantInt::get(Type::getInt32Ty(Context), 0);
   OffsetJNIInJavaThreadConstant =           ConstantInt::get(Type::getInt32Ty(Context), 1);
   OffsetJavaExceptionInJavaThreadConstant = ConstantInt::get(Type::getInt32Ty(Context), 2);
-  
+
   ClassReadyConstant = ConstantInt::get(Type::getInt8Ty(Context), ready);
   
   InterfaceLookupFunction = module->getFunction("j3InterfaceLookup");

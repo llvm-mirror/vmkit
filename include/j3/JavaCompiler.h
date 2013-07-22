@@ -35,8 +35,14 @@ class JavaCompiler {
 public:
   
   vmkit::BumpPtrAllocator allocator;
+  bool compilingGarbageCollector;
 
-  virtual JavaCompiler* Create(const std::string&) {
+  JavaCompiler(bool compiling_garbage_collector = false) :
+    compilingGarbageCollector(compiling_garbage_collector) {}
+
+  virtual JavaCompiler* Create(
+	const std::string&, bool compiling_garbage_collector = false)
+  {
     return this;
   }
   
@@ -48,6 +54,10 @@ public:
 
   virtual bool isStaticCompiling() {
     return false;
+  }
+
+  virtual bool isCompilingGarbageCollector() {
+	  return compilingGarbageCollector;
   }
 
   virtual bool emitFunctionName() {

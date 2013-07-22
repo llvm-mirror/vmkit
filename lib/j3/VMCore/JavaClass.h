@@ -1009,7 +1009,6 @@ public:
   /// with the given class loader.
   ///
   JavaObject* getReturnType(JnjvmClassLoader* loader);
-  
 
 //===----------------------------------------------------------------------===//
 //
@@ -1046,7 +1045,6 @@ private:
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
 	TYPE invokeVirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__((noinline)) {
 		llvm_gcroot(obj, 0);
-		verifyNull(obj);
 
 		UserCommonClass* theClass = JavaObject::getClass(obj);
 		UserClass* objCl = theClass->isArray() ? theClass->super : theClass->asClass();

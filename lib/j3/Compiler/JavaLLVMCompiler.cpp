@@ -25,7 +25,9 @@ using namespace llvm;
 
 namespace j3 {
 
-JavaLLVMCompiler::JavaLLVMCompiler(const std::string& str) :
+JavaLLVMCompiler::JavaLLVMCompiler(
+  const std::string& str, bool compiling_garbage_collector) :
+  JavaCompiler(compiling_garbage_collector),
   TheModule(new llvm::Module(str, *(new LLVMContext()))),
   DebugFactory(new DIBuilder(*TheModule)) {
 
