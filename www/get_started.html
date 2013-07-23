@@ -39,14 +39,14 @@ compile vmkit2</p>
 
   <ul>
     <li><tt>tar zxvf llvm-3.3.src.tar.gz</tt></li>
-    <li><tt>cd llvm-3.2.src/tools</li></tt>
+    <li><tt>cd llvm-3.3.src/tools</li></tt>
     <li><tt>tar zxvf ../../cfe-3.3.src.tar.gz</tt></li>
     <li><tt>mv cfe-3.3.src clang</li></tt>
     <li><tt>cd ..</li></tt>
     <li><tt>./configure --enable-optimized; make</tt></li>
   </ul>
   <br>Note: To compile LLVM and VMKit with RTTI enabled, one can pass the parameter
-REQUIRES_RTTI=1 to make. Passing this argument removes the flag -fno-rtti from
+REQUIRES_RTTI=1 to llvm make. Passing this argument removes the flag -fno-rtti from
 the compiler options. Ex: $ make REQUIRES_RTTI=1
 
   <p><b>Skip the Classpath steps if you plan to use OpenJDK.</b><br/>
