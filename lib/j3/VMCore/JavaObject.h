@@ -334,6 +334,7 @@ public:
   void dumpClass() const __attribute__((noinline));
   void dump() const __attribute__((noinline));
   friend std::ostream& operator << (std::ostream&, const JavaObject&);
+  void dumpToString() const __attribute__((noinline));
 };
 
 

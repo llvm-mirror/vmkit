@@ -197,6 +197,7 @@ JavaMethod* Classpath::InitArithmeticException;
 JavaMethod* Classpath::InitCloneNotSupportedException;
 JavaMethod* Classpath::InitObject;
 JavaMethod* Classpath::FinalizeObject;
+JavaMethod* Classpath::toString;
 JavaMethod* Classpath::IntToString;
 
 JavaMethod* Classpath::SystemArraycopy;
@@ -786,6 +787,9 @@ void Classpath::initialiseClasspath(JnjvmClassLoader* loader) {
 
   FinalizeObject = UPCALL_METHOD(loader, "java/lang/Object", "finalize", "()V",
                                  ACC_VIRTUAL);
+
+  toString = UPCALL_METHOD(loader, "java/lang/Object", "toString",
+          "()Ljava/lang/String;", ACC_VIRTUAL);
 
   IntToString = UPCALL_METHOD(loader, "java/lang/Integer", "toString",
                               "(II)Ljava/lang/String;", ACC_STATIC);
