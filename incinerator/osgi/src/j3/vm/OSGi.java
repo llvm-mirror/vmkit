@@ -4,7 +4,7 @@ public class OSGi
 {
 	// OSGi hooks and information gathering
 	public static native void setBundleClassLoader(long bundleID, ClassLoader loaderObject);
-    public static native void notifyBundleUninstalled(long bundleID);
+	public static native void notifyBundleUninstalled(long bundleID);
 	
 	// Commands
     public static native void setBundleStaleReferenceCorrected(long bundleID, boolean corrected);

@@ -17,4 +17,5 @@ public interface J3Mgr
 	public void isBundleStaleReferenceCorrected(
 		String bundleNameOrID) throws Throwable;
 	public void forceStaleReferenceScanning() throws Throwable;
+	public void forceSoftReferencesCollection();
 }

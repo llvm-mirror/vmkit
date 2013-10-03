@@ -12,8 +12,6 @@
 
 #if RESET_STALE_REFERENCES
 
-#define DEBUG_VERBOSE_STALE_REF		0
-
 using namespace std;
 
 namespace j3 {
@@ -22,8 +20,12 @@ Incinerator::Incinerator(Jnjvm* j3vm) :
 	scanRef(Incinerator::scanRef_Disabled),
 	scanStackRef(Incinerator::scanStackRef_Disabled),
 	vm(j3vm),
-	needsStaleRefRescan(false),
-	findReferencesToObject(NULL) {}
+	needsStaleRefRescan(false)
+#if DEBUG_OBJECT_REF_DUMPING
+	, findReferencesToObject(NULL)
+#endif
+{
+}
 
 Incinerator::~Incinerator()
 {
@@ -171,11 +173,31 @@ void Incinerator::classLoaderUnloaded(JnjvmClassLoader const * loader)
 #endif
 }
 
-void Incinerator::dumpReferencesToObject(JavaObject* object) const
+#if DEBUG_OBJECT_REF_DUMPING
+
+void Incinerator::dumpReferencesToObject(const JavaObject* object)
 {
-	findReferencesToObject = object;
-	vmkit::Collector::collect();
+	pendingRefObject.clear();
+	pendingRefObject.push_back(object);
+	seenObjects.clear();
+
+	const JavaObject* obj = NULL;
+	do {
+		obj = pendingRefObject.back();
+		pendingRefObject.pop_back();
+		seenObjects.insert(obj);
+
+		cerr << "dumpReferencesToObject: " << *obj << ", toString=";
+		obj->dumpToString();
+
+		findReferencesToObject = obj;
+		foundReferencerObjects.clear();
+		setScanningInclusive();
+		vmkit::Collector::collect();
+	} while (!pendingRefObject.empty());
 }
+
+#endif
 
 void Incinerator::forceStaleReferenceScanning()
 {
@@ -194,7 +216,7 @@ void Incinerator::setScanningDisabled()
 	scanStackRef = Incinerator::scanStackRef_Disabled;
 
 #if DEBUG_VERBOSE_STALE_REF
-	cerr << "Looking for stale references done." << endl;
+	cerr << "References scan done." << endl;
 #endif
 }
 
@@ -204,34 +226,43 @@ void Incinerator::setScanningInclusive()
 	scanStackRef = Incinerator::scanStackRef_Inclusive;
 
 #if DEBUG_VERBOSE_STALE_REF
-	cerr << "Looking for stale references..." << endl;
+	cerr << "References scan enabled." << endl;
 #endif
 }
 
 void Incinerator::setScanningExclusive()
 {
+#if DEBUG_EXCLUDE_FINALIZABLE_STALE_OBJECTS
 	scanRef = Incinerator::scanRef_Exclusive;
 	scanStackRef = Incinerator::scanStackRef_Exclusive;
 
 #if DEBUG_VERBOSE_STALE_REF
 	cerr << "Excluding stale references..." << endl;
 #endif
+
+#endif
 }
 
 void Incinerator::beforeCollection()
 {
+#if DEBUG_OBJECT_REF_DUMPING
 	if (findReferencesToObject != NULL)
 		foundReferencerObjects.clear();
+#endif
 
 #if DEBUG_VERBOSE_STALE_REF
 	if (needsStaleRefRescan) {
 		cerr << "Some stale references were previously ignored due to"
-				" finalizable stale objects."
-				" Scanning for stale references enabled." << endl;
+				" finalizable stale objects." << endl;
 	}
 #endif
 
-	if (!needsStaleRefRescan && !isScanningEnabled()) return;
+	if (!needsStaleRefRescan && !isScanningEnabled()) {
+#if DEBUG_OBJECT_REF_DUMPING
+		if (!findReferencesToObject)
+#endif
+			return;
+	}
 
 	needsStaleRefRescan = false;
 	setScanningInclusive();
@@ -239,6 +270,10 @@ void Incinerator::beforeCollection()
 
 void Incinerator::markingFinalizersDone()
 {
+#if DEBUG_OBJECT_REF_DUMPING
+	if (findReferencesToObject != NULL) return;
+#endif
+
 	if (!isScanningEnabled()) return;
 	setScanningExclusive();
 }
@@ -256,7 +291,9 @@ void Incinerator::collectorPhaseComplete()
 
 void Incinerator::afterCollection()
 {
+#if DEBUG_OBJECT_REF_DUMPING
 	findReferencesToObject = NULL;
+#endif
 
 	if (!isScanningEnabled()) return;
 
@@ -273,12 +310,21 @@ void Incinerator::afterCollection()
 bool Incinerator::isStaleObject(const JavaObject* obj)
 {
 	llvm_gcroot(obj, 0);
-	if (!obj || isVMObject(obj)) return false;
 
-	CommonClass* ccl = JavaObject::getClass(obj);
-	assert (ccl && "Object Class is not null.");
+	if (!obj) return false;
 
-	JnjvmClassLoader* loader = ccl->classLoader;
+	const JnjvmClassLoader* loader = NULL;
+	if (VMClassLoader::isVMClassLoader(obj)) {
+		loader = ((const VMClassLoader*)obj)->getClassLoader();
+	} else if (VMStaticInstance::isVMStaticInstance(obj)) {
+		loader = ((const VMStaticInstance*)obj)->getOwningClass()->classLoader;
+	} else {
+		CommonClass* ccl = JavaObject::getClass(obj);
+		assert (ccl && "Object Class is not null.");
+
+		loader = ccl->classLoader;
+	}
+
 	return loader->isStale() && loader->isStaleReferencesCorrectionEnabled();
 }
 
@@ -319,11 +365,50 @@ bool Incinerator::scanRef_Inclusive(Incinerator& incinerator, const JavaObject* 
 {
 	llvm_gcroot(source, 0);
 
-	if (!ref || !isStaleObject(*ref)) return true;
+	if (!ref) return true;
+
+#if DEBUG_OBJECT_REF_DUMPING
+	if (incinerator.findReferencesToObject != NULL) {
+		if (incinerator.findReferencesToObject == *ref) {
+			if (!source) {
+				cout << *ref << " <-- (unknown)" << endl;
+			} else {
+				if (incinerator.foundReferencerObjects.insert(source).second) {
+					cout << *ref << " <-- " << *source << endl;
+
+					if (incinerator.seenObjects.find(source) == incinerator.seenObjects.end()) {
+						// The source ref was not scanned before
+						std::deque<const JavaObject*>::iterator
+							b = incinerator.pendingRefObject.begin(),
+							e = incinerator.pendingRefObject.end();
+
+						if (std::find(b, e, source) == e) {
+							// The source ref is not currently pending for scan
+							incinerator.pendingRefObject.push_front(source);
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+#endif
+
+	if (!isStaleObject(*ref)) return true;
 
 #if DEBUG_VERBOSE_STALE_REF
-	cerr << "Stale ref: " << ref << "==>" << **ref << endl;
+	if (isVMObject(*ref))
+		cerr << "Stale ref (VMObject): ";
+	else
+		cerr << "Stale ref: ";
+
+	cerr << ref << " ==> " << **ref;
+	if (source) cerr << " source=" << *source;
+	cerr << endl;
 #endif
+
+	if (isVMObject(*ref))
+		return true;
 
 	// Queue the stale reference to be eliminated.
 	incinerator.staleRefList[ref] = source;
@@ -334,6 +419,14 @@ bool Incinerator::scanRef_Inclusive(Incinerator& incinerator, const JavaObject* 
 
 bool Incinerator::scanStackRef_Inclusive(Incinerator& incinerator, const JavaMethod* method, JavaObject** ref)
 {
+#if DEBUG_OBJECT_REF_DUMPING
+	if (ref != NULL && incinerator.findReferencesToObject != NULL) {
+		if (incinerator.findReferencesToObject == *ref) {
+			cout << "On stack of method=" << *method->name << " ,class=" << *method->classDef << endl;
+		}
+	}
+#endif
+
 #if DEBUG_VERBOSE_STALE_REF
 	if (!ref || !(*ref)) return true;
 	if (method && method->classDef->name->elements[0] == 'i')
@@ -358,9 +451,12 @@ bool Incinerator::scanRef_Exclusive(Incinerator& incinerator, const JavaObject* 
 
 #if DEBUG_VERBOSE_STALE_REF
 		if (!removed)
-			cerr << "Stale ref (ignored): " << ref << "==>" << **ref << endl;
+			cerr << "Stale ref (ignored): " << ref << " ==> " << **ref;
 		else
-			cerr << "Excluded stale ref: " << ref << "==>" << **ref << endl;
+			cerr << "Excluded stale ref: " << ref << " ==> " << **ref;
+
+		if (source) cerr << " source=" << *source;
+		cerr << endl;
 #endif
 	}
 	return true;	// Trace this reference.
@@ -379,6 +475,9 @@ bool Incinerator::scanStackRef_Exclusive(Incinerator& incinerator, const JavaMet
 
 void Incinerator::eliminateStaleRef(const JavaObject *source, JavaObject** ref)
 {
+	if (isVMObject(*ref))
+		return;
+
 	CommonClass* ccl = JavaObject::getClass(*ref);
 	assert (ccl && "Object Class is not null.");
 
@@ -430,12 +529,16 @@ extern "C" jboolean Java_j3_vm_OSGi_isBundleStaleReferenceCorrected(jlong bundle
 #endif
 }
 
+#if DEBUG_OBJECT_REF_DUMPING
+
 extern "C" void Java_j3_vm_OSGi_dumpReferencesToObject(jlong obj)
 {
 #if RESET_STALE_REFERENCES
-	j3::Incinerator::get()->dumpReferencesToObject(reinterpret_cast<j3::JavaObject*>(obj));
+	j3::Incinerator::get()->dumpReferencesToObject(reinterpret_cast<const j3::JavaObject*>(obj));
 #endif
 }
+
+#endif
 
 extern "C" void Java_j3_vm_OSGi_forceStaleReferenceScanning()
 {

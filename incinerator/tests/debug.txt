@@ -1,3 +1,4 @@
+-X:gc:verbose=0 -jar framework.jar -xargs /home/koutheir/PhD/VMKit/incinerator/incinerator/tests/minimal.bug.xargs
 framework call j3.J3Mgr setBundleStaleReferenceCorrected ijvm.tests.AImpl yes
 framework call j3.J3Mgr setBundleStaleReferenceCorrected ijvm.tests.BImpl yes
 framework call j3.J3Mgr setBundleStaleReferenceCorrected ijvm.tests.CImpl yes
@@ -41,3 +42,11 @@ STALE = {http/http_all-3.1.2.jar, useradmin/useradmin_all-3.0.3.jar, device/devi
 call j3.J3Mgr forceStaleReferenceScanning
 
 fromupdate 15 file:/media/Data/Documents/PhD/VMKit/incinerator/incinerator/tests/ijvm.tests.Alarm_v2.0/out/ijvm.tests.Alarm_v2.0-2.0.0.jar
+
+enter framework
+start 13
+stop 13
+uninstall 13
+refresh
+meminfo -gc
+call j3.J3Mgr dumpReferencesToObject 

@@ -120,4 +120,12 @@ const UTF8* JavaString::javaToInternal(const JavaString* self, UTF8Map* map) {
   return res;
 }
 
+std::ostream& operator << (std::ostream& os, const JavaString& jstr)
+{
+	char *str = JavaString::strToAsciiz(&jstr);
+	os << '\"' << str << '\"';
+	delete [] str;
+	return os;
+}
+
 }

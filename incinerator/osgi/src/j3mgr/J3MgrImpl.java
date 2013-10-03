@@ -1,5 +1,7 @@
 package j3mgr;
 
+import java.util.ArrayList;
+
 import j3.J3Mgr;
 
 import org.osgi.framework.Bundle;
@@ -133,5 +135,22 @@ public class J3MgrImpl
 	public void forceStaleReferenceScanning() throws Throwable
 	{
 		j3.vm.OSGi.forceStaleReferenceScanning();
+	}
+
+	public void forceSoftReferencesCollection()
+	{
+		// In short, try to cause an OutOfMemory Exception
+		int maxmem = (int)Runtime.getRuntime().maxMemory();
+		ArrayList<Short[]> dummy = new ArrayList<Short[]>();
+		
+		try {
+			for (;;) {
+				dummy.add(new Short[maxmem]);
+			}
+		} catch (Throwable e) {
+		} finally {
+			dummy = null;
+			System.gc();
+		}
 	}
 }

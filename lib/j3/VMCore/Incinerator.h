@@ -9,7 +9,13 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <set>
+#include <deque>
 #include <stdint.h>
+
+#define DEBUG_VERBOSE_STALE_REF		1
+#define DEBUG_EXCLUDE_FINALIZABLE_STALE_OBJECTS		0
+#define DEBUG_OBJECT_REF_DUMPING	0
 
 namespace j3 {
 
@@ -30,8 +36,11 @@ public:
 	void setBundleStaleReferenceCorrected(OSGiGateway::bundle_id_t bundleID, bool corrected);
 	bool isBundleStaleReferenceCorrected(OSGiGateway::bundle_id_t bundleID) const;
 	void dumpClassLoaderBundles() const;
-	void dumpReferencesToObject(JavaObject* object) const;
 	void forceStaleReferenceScanning();
+
+#if DEBUG_OBJECT_REF_DUMPING
+	void dumpReferencesToObject(const JavaObject* object);
+#endif
 
 	OSGiGateway::bundle_id_t getClassLoaderBundleID(JnjvmClassLoader const * loader) const;
 	void setBundleClassLoader(OSGiGateway::bundle_id_t bundleID, JnjvmClassLoader* loader);
@@ -96,8 +105,15 @@ protected:
 	StaleRefListType staleRefList;
 	bool needsStaleRefRescan;
 
-	mutable JavaObject* findReferencesToObject;
-	std::vector<const JavaObject*> foundReferencerObjects;
+#if DEBUG_OBJECT_REF_DUMPING
+
+	mutable const JavaObject* findReferencesToObject;
+	std::set<const JavaObject*> foundReferencerObjects;
+
+	std::deque<const JavaObject*> pendingRefObject;
+	std::set<const JavaObject*> seenObjects;
+
+#endif
 };
 
 class IncineratorManagedClassLoader
@@ -134,7 +150,10 @@ public:
 
 extern "C" void Java_j3_vm_OSGi_setBundleStaleReferenceCorrected(jlong bundleID, jboolean corrected);
 extern "C" jboolean Java_j3_vm_OSGi_isBundleStaleReferenceCorrected(jlong bundleID);
-extern "C" void Java_j3_vm_OSGi_dumpReferencesToObject(jlong obj);
 extern "C" void Java_j3_vm_OSGi_forceStaleReferenceScanning();
+
+#if DEBUG_OBJECT_REF_DUMPING
+extern "C" void Java_j3_vm_OSGi_dumpReferencesToObject(jlong obj);
+#endif
 
 #endif

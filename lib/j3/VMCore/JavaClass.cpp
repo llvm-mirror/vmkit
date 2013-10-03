@@ -2349,8 +2349,8 @@ void JavaField::setStaticField(JavaObject* val)
 
 std::ostream& j3::operator << (std::ostream& os, const CommonClass& ccl)
 {
-	os << *ccl.name;
-	return (!ccl.super) ? (os << ';') : (os << ':' << *ccl.super);
+	return os << *ccl.name << ';';
+//	return (!ccl.super) ? (os << ';') : (os << ':' << *ccl.super);
 }
 
 void CommonClass::dump() const

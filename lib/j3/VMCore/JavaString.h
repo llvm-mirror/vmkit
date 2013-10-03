@@ -62,6 +62,8 @@ class JavaString : public JavaObject {
 
   /// javaToInternal - Replaces all '/' into '.'.
   static const UTF8* javaToInternal(const JavaString* self, UTF8Map* map);
+
+  friend std::ostream& operator << (std::ostream&, const JavaString&);
 };
 
 } // end namespace j3

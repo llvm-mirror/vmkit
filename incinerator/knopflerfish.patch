@@ -1,6 +1,6 @@
-diff -U 4 -H -d -p -r -N -- a/osgi/framework/src/j3/vm/OSGi.java b/osgi/framework/src/j3/vm/OSGi.java
+diff -U 4 -H -d -p -r -N -- knopflerfish.verbatim/osgi/framework/src/j3/vm/OSGi.java knopflerfish/osgi/framework/src/j3/vm/OSGi.java
 --- a/osgi/framework/src/j3/vm/OSGi.java	1970-01-01 01:00:00.000000000 +0100
-+++ b/osgi/framework/src/j3/vm/OSGi.java	2013-07-03 17:15:27.382558975 +0200
++++ b/osgi/framework/src/j3/vm/OSGi.java	2013-09-26 12:05:27.000000000 +0200
 @@ -0,0 +1,6 @@
 +package j3.vm;
 +
@@ -8,26 +8,26 @@ diff -U 4 -H -d -p -r -N -- a/osgi/framework/src/j3/vm/OSGi.java b/osgi/framewor
 +{
 +	public static native void setBundleClassLoader(long bundleID, ClassLoader loaderObject);
 +}
-diff -U 4 -H -d -p -r -N -- a/osgi/framework/src/org/knopflerfish/framework/BundleGeneration.java b/osgi/framework/src/org/knopflerfish/framework/BundleGeneration.java
---- a/osgi/framework/src/org/knopflerfish/framework/BundleGeneration.java	2013-07-03 17:24:51.446553603 +0200
-+++ b/osgi/framework/src/org/knopflerfish/framework/BundleGeneration.java	2013-07-03 17:17:48.950557625 +0200
-@@ -162,8 +162,9 @@ public class BundleGeneration implements
-     lazyExcludes = null;
+diff -U 4 -H -d -p -r -N -- knopflerfish.verbatim/osgi/framework/src/org/knopflerfish/framework/BundleGeneration.java knopflerfish/osgi/framework/src/org/knopflerfish/framework/BundleGeneration.java
+--- a/osgi/framework/src/org/knopflerfish/framework/BundleGeneration.java	2013-10-01 09:37:41.702234351 +0200
++++ b/osgi/framework/src/org/knopflerfish/framework/BundleGeneration.java	2013-10-01 09:52:27.346257030 +0200
+@@ -208,8 +208,9 @@ public class BundleGeneration implements
      timeStamp = System.currentTimeMillis();
      bpkgs = new BundlePackages(this, exportStr);
+     bundleRevision = new BundleRevisionImpl(this);
      classLoader = b.getClassLoader();
 +    j3.vm.OSGi.setBundleClassLoader(bundle.getBundleId(), classLoader);
+     processCapabilities(capabilityStr);
    }
  
  
-   /**
-@@ -440,8 +441,9 @@ public class BundleGeneration implements
+@@ -513,8 +514,9 @@ public class BundleGeneration implements
              }
            }
- 	}
+         }
          classLoader = bundle.secure.newBundleClassLoader(this);
 +        j3.vm.OSGi.setBundleClassLoader(bundle.getBundleId(), classLoader);
  
          return true;
        }
-       if (fragments != null) {
+       if (isFragmentHost()) {
