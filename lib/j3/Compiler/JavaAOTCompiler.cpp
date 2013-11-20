@@ -2143,7 +2143,8 @@ void mainCompilerStart(JavaThread* th) {
 
   JavaJITCompiler* Comp = NULL;
   if (!M->clinits->empty()) {
-    Comp = JavaJITCompiler::CreateCompiler("JIT");
+    Comp = JavaJITCompiler::CreateCompiler(
+      "JIT", M->isCompilingGarbageCollector());
     Comp->EmitFunctionName = true;
     if (!M->useCooperativeGC()) {
       Comp->disableCooperativeGC();

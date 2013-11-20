@@ -59,6 +59,7 @@ class JavaString : public JavaObject {
   static char* strToAsciiz(const JavaString* self);
   static char* strToAsciiz(const JavaString* self, vmkit::ThreadAllocator* allocator);
   static const ArrayUInt16* strToArray(JavaString* self, Jnjvm* vm);
+  static const UTF8* toUTF8(const JavaString* self, UTF8Map* hashMap);
 
   /// javaToInternal - Replaces all '/' into '.'.
   static const UTF8* javaToInternal(const JavaString* self, UTF8Map* map);

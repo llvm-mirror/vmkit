@@ -12,6 +12,25 @@ namespace vmkit {
 
 class UTF8Map;
 
+template<class T1, class T2>
+int compare_null_terminated_arrays(const T1* array1, size_t size1, const T2* array2, size_t size2)
+{
+	// NULL array is treated as empty
+	if (!array1) size1 = 0;
+	if (!array2) size2 = 0;
+
+	// Compute real sizes, excluding null terminators
+	for (; (size1 != 0) && (array1[size1 - 1] == 0); --size1);
+	for (; (size2 != 0) && (array2[size2 - 1] == 0); --size2);
+
+	int diff = size1 - size2;	// Compare sizes
+	if (diff == 0) {	// Equal sizes, compare contents
+		for (; (size1 != 0) && (diff == 0); --size1, ++array1, ++array2)
+			diff = *array1 - *array2;
+	}
+	return diff;
+}
+
 class UTF8 {
   friend class UTF8Map;
 private:
@@ -36,8 +55,7 @@ public:
   /// equals - Are the two UTF8s equal?
   bool equals(const UTF8* other) const {
     if (other == this) return true;
-    else if (size != other->size) return false;
-    else return !memcmp(elements, other->elements, size * sizeof(uint16));
+    return (*this) == (*other);
   }
   
   /// equals - Does the UTF8 equal to the buffer? 
@@ -47,12 +65,8 @@ public:
   }
 
   /// lessThan - strcmp-like function for UTF8s, used by hash tables.
-  bool lessThan(const UTF8* other) const {
-    if (size < other->size) return true;
-    else if (size > other->size) return false;
-    else return memcmp((const char*)elements, (const char*)other->elements, 
-                       size * sizeof(uint16)) < 0;
-  }
+  bool lessThan(const UTF8* other) const
+    { return (*this) < (*other); }
 
 	static uint32_t readerHasher(const uint16* buf, sint32 size);
 	
@@ -64,9 +78,26 @@ public:
     size = n;
   }
 
+  friend bool operator < (const UTF8& str1, const UTF8& str2) {
+    return UTF8::compare(&str1, &str2) < 0;
+  }
+  friend bool operator == (const UTF8& str1, const UTF8& str2) {
+    return UTF8::compare(&str1, &str2) == 0;
+  }
   friend std::ostream& operator << (std::ostream&, const UTF8&);
+
   void dump() const __attribute__((noinline));
-  int compare(const char *) const;
+  int compare(const char *str, int length = -1) const {
+    return compare_null_terminated_arrays(
+      elements, size, str, (length == -1) ? strlen(str) : length);
+  }
+  int compare(const UTF8& str) const {return UTF8::compare(this, &str);}
+  static int compare(const UTF8* str1, const UTF8* str2) {
+    if (!str1 && !str2) return 0;
+    return compare_null_terminated_arrays(
+    	(!str1 ? NULL : str1->elements), (!str1 ? 0 : str1->size),
+    	(!str2 ? NULL : str2->elements), (!str2 ? 0 : str2->size));
+  }
   std::string& toString(std::string& buffer) const;
 };
 
@@ -81,6 +112,13 @@ struct UTF8MapKey {
     data = d;
     length = l;
   }
+};
+
+class UTF8_Comparator {
+public:
+	bool operator() (const UTF8* str1, const UTF8* str2) const {
+		return (*str1) < (*str2);
+	}
 };
 
 // Provide VmkitDenseMapInfo for UTF8.

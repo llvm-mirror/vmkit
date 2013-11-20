@@ -27,6 +27,10 @@
 ;;; Field 2: The static instance
 %TaskClassMirror = type { i8, i1, i8* }
 
+;;; Field 0: callerNode
+;;; Field 1: data
+%StackEmbeddedListNode = type { %StackEmbeddedListNode*, [1 x i8*] }
+
 %CircularBase = type { %VT*, %CircularBase*, %CircularBase* }
 
 ;;; Field 0:  the parent (circular base)
@@ -41,7 +45,11 @@
 ;;; field 9:  void*  routine
 ;;; field 10: void*  lastKnownFrame
 ;;; field 11: void*  lastExceptionBuffer
-%Thread = type { %CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8* }
+;;; field 12: void*  stackEmbeddedListHead ( 1 = vmkit::StackEmbeddedListNodeCountPerThread )
+%Thread = type {
+	%CircularBase, i32, i8*, i8*, i1, i1, i1, i8*, i8*, i8*, i8*, i8*,
+	[1 x %StackEmbeddedListNode*]
+}
 
 %JavaThread = type { %MutatorThread, i8*, %JavaObject* }
 
@@ -184,7 +192,7 @@ declare i8* @getConstantPoolAt(i8* (%JavaClass*, i32, ...)*, i8**,
 
 ;;; j3VirtualTableLookup - Look up the offset in a virtual table of a
 ;;; specific function.
-declare i32 @j3VirtualTableLookup(%JavaClass*, i32, i32*, %JavaObject*)
+declare %JavaMethod* @j3VirtualTableLookup(%JavaClass*, i32, %JavaMethod**, %JavaObject*)
 
 ;;; j3ClassLookup - Look up a specific class. The function takes a class and
 ;;; an index to lookup in the constant pool and returns and stores it in the

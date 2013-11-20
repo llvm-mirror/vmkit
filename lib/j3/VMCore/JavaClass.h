@@ -1023,12 +1023,15 @@ private:
 	jvalue* marshalArguments(vmkit::ThreadAllocator& allocator, va_list ap);
 
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeSpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__((noinline)) {
+	TYPE invokeSpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj,
+		void* buf) __attribute__((noinline))
+	{
 		llvm_gcroot(obj, 0);
 		verifyNull(obj);
 
 		void* func = this->compiledPtr();
-		FUNC_TYPE_VIRTUAL_BUF call = (FUNC_TYPE_VIRTUAL_BUF)getSignature()->getVirtualCallBuf();
+		FUNC_TYPE_VIRTUAL_BUF call =
+			(FUNC_TYPE_VIRTUAL_BUF)getSignature()->getVirtualCallBuf();
 
 		JavaThread* th = JavaThread::get();
 		th->startJava();
@@ -1043,11 +1046,14 @@ private:
 	}
 
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeVirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) __attribute__((noinline)) {
+	TYPE invokeVirtualBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj,
+		void* buf) __attribute__((noinline))
+	{
 		llvm_gcroot(obj, 0);
 
 		UserCommonClass* theClass = JavaObject::getClass(obj);
-		UserClass* objCl = theClass->isArray() ? theClass->super : theClass->asClass();
+		UserClass* objCl =
+			theClass->isArray() ? theClass->super : theClass->asClass();
 
 		JavaMethod* meth = this;
 		if ((objCl != classDef) && !isFinal(access)) {
@@ -1057,18 +1063,22 @@ private:
 
 		assert(objCl->isSubclassOf(meth->classDef) && "Wrong type");
 
-		return meth->invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buf);
+		return meth->invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(
+			vm, cl, obj, buf);
 	}
 
 	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
-	TYPE invokeStaticBuf(Jnjvm* vm, UserClass* cl, void* buf) __attribute__((noinline)) {
+	TYPE invokeStaticBuf(Jnjvm* vm, UserClass* cl,
+		void* buf) __attribute__((noinline))
+	{
 		if (!cl->isReady()) {
 			cl->resolveClass();
 			cl->initialiseClass(vm);
 		}
 
 		void* func = this->compiledPtr();
-		FUNC_TYPE_STATIC_BUF call = (FUNC_TYPE_STATIC_BUF)getSignature()->getStaticCallBuf();
+		FUNC_TYPE_STATIC_BUF call =
+			(FUNC_TYPE_STATIC_BUF)getSignature()->getStaticCallBuf();
 
 		JavaThread* th = JavaThread::get();
 		th->startJava();
@@ -1083,29 +1093,38 @@ private:
 	}
 
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeVirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) __attribute__((noinline)) {
+	TYPE invokeVirtualAP(Jnjvm* vm, UserClass* cl, JavaObject* obj,
+		va_list ap) __attribute__((noinline))
+	{
 		llvm_gcroot(obj, 0);
 		assert(cl && "Class is NULL");
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
-		return invokeVirtualBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
+		return invokeVirtualBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(
+			vm, cl, obj, buffer);
 	}
 
 	template<class TYPE, class FUNC_TYPE_VIRTUAL_BUF>
-	TYPE invokeSpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj, va_list ap) __attribute__((noinline)) {
+	TYPE invokeSpecialAP(Jnjvm* vm, UserClass* cl, JavaObject* obj,
+		va_list ap) __attribute__((noinline))
+	{
 		llvm_gcroot(obj, 0);
 		assert(cl && "Class is NULL");
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
-		return invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buffer);
+		return invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(
+			vm, cl, obj, buffer);
 	}
 
 	template<class TYPE, class FUNC_TYPE_STATIC_BUF>
-	TYPE invokeStaticAP(Jnjvm* vm, UserClass* cl, va_list ap) __attribute__((noinline)) {
+	TYPE invokeStaticAP(Jnjvm* vm, UserClass* cl,
+		va_list ap) __attribute__((noinline))
+	{
 		assert(cl && "Class is NULL");
 		vmkit::ThreadAllocator allocator;
 		jvalue* buffer = marshalArguments(allocator, ap);
-		return invokeStaticBuf<TYPE, FUNC_TYPE_STATIC_BUF>(vm, cl, buffer);
+		return invokeStaticBuf<TYPE, FUNC_TYPE_STATIC_BUF>(
+			vm, cl, buffer);
 	}
 
 #define JavaMethod_DECL_INVOKE_VA(TYPE, TYPE_NAME) \

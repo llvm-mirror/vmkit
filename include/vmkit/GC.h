@@ -19,14 +19,20 @@ class gc;
 class gcHeader {
 public:
 	word_t _header;
+
 	inline gc* toReference() { return (gc*)((uintptr_t)this + hiddenHeaderSize()); }
 	static inline size_t hiddenHeaderSize() { return sizeof(gcHeader); }
 };
 
 class gcRoot {
 public:
-  word_t& header(){return toHeader()->_header; }
-  inline gcHeader* toHeader() { return (gcHeader*)((uintptr_t)this - gcHeader::hiddenHeaderSize()); }
+
+  inline       word_t& header()       {return toHeader()->_header; }
+  inline const word_t& header() const {return const_cast<gcRoot*>(this)->header(); }
+
+  inline       gcHeader* toHeader()       {
+      return (gcHeader*)((uintptr_t)this - gcHeader::hiddenHeaderSize()); }
+  inline const gcHeader* toHeader() const {return const_cast<gcRoot*>(this)->toHeader(); }
 };
 
 namespace vmkit {

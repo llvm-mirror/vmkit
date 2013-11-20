@@ -21,7 +21,7 @@ namespace vmkit {
 
 void MethodInfoHelper::scan(word_t closure, FrameInfo* FI, word_t ip, word_t addr) {
   //word_t spaddr = (word_t)addr + FI->FrameSize + sizeof(void*);
-  word_t spaddr = System::GetCallerOfAddress(addr);
+  word_t spaddr = System::GetCallerCallFrame(addr);
   for (uint16 i = 0; i < FI->NumLiveOffsets; ++i) {
     word_t obj = *(word_t*)(spaddr + FI->LiveOffsets[i]);    
     // Verify that obj does not come from a JSR bytecode.

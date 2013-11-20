@@ -99,6 +99,8 @@ void J3Intrinsics::init(llvm::Module* module) {
     PointerType::getUnqual(module->getTypeByName("UTF8"));
   AttributeType =
     PointerType::getUnqual(module->getTypeByName("Attribute"));
+  ThreadType =
+    PointerType::getUnqual(module->getTypeByName("Thread"));
   JavaThreadType =
     PointerType::getUnqual(module->getTypeByName("JavaThread"));
   MutatorThreadType =
@@ -151,6 +153,8 @@ void J3Intrinsics::init(llvm::Module* module) {
  
   OffsetBaseClassInArrayClassConstant = constantOne;
   OffsetLogSizeInPrimitiveClassConstant = constantOne;
+
+  OffsetOffsetInJavaMethodConstant = ConstantInt::get(Type::getInt32Ty(Context), 9);
 
   OffsetObjectSizeInClassConstant = constantOne;
   OffsetVTInClassConstant = ConstantInt::get(Type::getInt32Ty(Context), 7);

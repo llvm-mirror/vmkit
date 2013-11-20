@@ -41,17 +41,6 @@ uint32 UTF8::readerHasher(const uint16* buf, sint32 size) {
   return (r1 & 255) + ((r0 & 255) << 8);
 }
 
-int UTF8::compare(const char *s) const
-{
-	int len = strlen(s);
-	int diff = size - len;
-	if (diff != 0) return diff;
-
-	for (int i = 0; (i < size) && (diff == 0); ++i)
-		diff = (char)(elements[i]) - s[i];
-	return diff;
-}
-
 std::string& UTF8::toString(std::string& buffer) const
 {
 	buffer.resize(size);
@@ -64,7 +53,7 @@ std::string& UTF8::toString(std::string& buffer) const
 
 std::ostream& operator << (std::ostream& os, const UTF8& utf8)
 {
-	for (ssize_t i = 0; i < utf8.size; ++i)
+	for (ssize_t i = 0; (i < utf8.size) && (utf8.elements[i] != 0); ++i)
 		os << (std::string::value_type)(utf8.elements[i]);
 	return os;
 }

@@ -44,7 +44,6 @@
 #include "Reader.h"
 #include "Zip.h"
 
-
 using namespace j3;
 using namespace std;
 

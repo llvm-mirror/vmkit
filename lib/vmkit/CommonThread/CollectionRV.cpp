@@ -103,7 +103,7 @@ void CooperativeCollectionRV::join() {
   th->inRV = true;
   
   lockRV();
-  th->setLastSP(System::GetCallerAddress());
+  th->setLastSP(System::GetCallFrameAddress());
   th->joinedRV = true;
   another_mark();
   waitEndOfRV();

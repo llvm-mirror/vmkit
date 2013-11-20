@@ -128,4 +128,20 @@ std::ostream& operator << (std::ostream& os, const JavaString& jstr)
 	return os;
 }
 
+const UTF8* JavaString::toUTF8(const JavaString* self, UTF8Map* hashMap)
+{
+	if (!self) return NULL;
+	if (!hashMap) {
+		Jnjvm* vm = JavaThread::get()->getJVM();
+		hashMap = vm->bootstrapLoader->hashUTF8;
+	}
+
+	const j3::ArrayUInt16 *array = j3::JavaString::getValue(self);
+	const j3::ArrayUInt16::ElementType *elts =
+		j3::ArrayUInt16::getElements(array);
+	size_t count = j3::ArrayUInt16::getSize(array);
+
+	return hashMap->lookupOrCreateReader(elts, count);
+}
+
 }

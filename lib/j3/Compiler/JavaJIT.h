@@ -107,6 +107,7 @@ public:
     overridesThis = false;
     nbHandlers = 0;
     jmpBuffer = NULL;
+    currentThreadPtr = NULL;
   }
 
   /// javaCompile - Compile the Java method.
@@ -168,6 +169,8 @@ private:
 
   llvm::Value* jmpBuffer;
 
+  llvm::Value* currentThreadPtr;
+
   /// return the header of an object
   llvm::Value* objectToHeader(llvm::Value* obj);
   
@@ -182,6 +185,8 @@ private:
                     llvm::BasicBlock* currentBlock, bool usign);
  
   /// getMutatorThreadPtr - Emit code to get a pointer to the current MutatorThread.
+	llvm::Value* getThreadPtr();
+	llvm::Value* getJavaThreadPtr();
 	llvm::Value* getMutatorThreadPtr();
 
   /// getIsolateIDPtr - Emit code to get a pointer to IsolateID.
@@ -570,6 +575,11 @@ private:
 //===--------------------- Yield point support  ---------------------------===//
 
   void checkYieldPoint();
+
+  llvm::Value* getElementPtr(
+    const char *name, llvm::Value* element, llvm::Value* firstIndex, ...);
+  llvm::Value* allocateOnStack(
+    const char* name, size_t byteCount, llvm::Type* realType);
 };
 
 enum Opcode {
