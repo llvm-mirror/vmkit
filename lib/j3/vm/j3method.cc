@@ -323,6 +323,9 @@ void J3Method::buildLLVMNames(J3Class* from) {
 	memcpy(_llvmAllNames, "method_descriptor_", 18);
 	memcpy(_llvmAllNames+18, mangler.cStr(), mangler.length());
 	_llvmAllNames[_llvmAllNamesLength] = 0;
+
+	cl()->loader()->addSymbol(_llvmAllNames, this);
+	cl()->loader()->addSymbol(_llvmAllNames+18, &_selfCode);
 }
 
 size_t J3Method::llvmFunctionNameLength(J3Class* from) {

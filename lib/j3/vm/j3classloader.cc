@@ -37,7 +37,8 @@ void* J3ClassLoader::operator new(size_t n, vmkit::BumpAllocator* allocator) {
 }
 
 J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
-	: _fixedPoint(allocator),
+	: _symbolTable(vmkit::Util::char_less, allocator),
+		_fixedPoint(allocator),
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
 		methodTypes(vmkit::Name::less, allocator), 
@@ -51,6 +52,7 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	//	pthread_mutexattr_init(&attr);
 	//	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&_mutex, 0);//&attr);
+	pthread_mutex_init(&_mutexSymbolTable, 0);
 
 	_vm = v;
 
@@ -59,6 +61,19 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	_pm = vm()->preparePM(module());
 
 	vm()->ee()->addModule(module());
+}
+
+void J3ClassLoader::addSymbol(const char* id, J3Symbol* symbol) {
+	pthread_mutex_lock(&_mutexSymbolTable);
+	_symbolTable[id] = symbol;
+	pthread_mutex_unlock(&_mutexSymbolTable);
+}
+
+J3Symbol* J3ClassLoader::getSymbol(const char* id) {
+	pthread_mutex_lock(&_mutexSymbolTable);
+	J3Symbol* res = _symbolTable[id];
+	pthread_mutex_unlock(&_mutexSymbolTable);
+	return res;
 }
 
 void* J3ClassLoader::lookupNativeFunctionPointer(J3Method* method, const char* symbol) {

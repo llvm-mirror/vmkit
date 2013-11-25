@@ -742,6 +742,8 @@ void J3Class::createLLVMTypes() {
 
 	_nativeName[0] = 'L';
 	memcpy(_nativeName + 1, mangler.cStr()+7, mangler.length());
+
+	loader()->addSymbol(_nativeName, this);
 }
 
 llvm::Type* J3Class::staticLLVMType() {
@@ -859,6 +861,8 @@ llvm::Type* J3ArrayClass::llvmType() {
 		_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->module()->getContext(), 
 																																			body,
 																																			_nativeName));
+
+		loader()->addSymbol(_nativeName, this);
 	}
 	return _llvmType;
 }

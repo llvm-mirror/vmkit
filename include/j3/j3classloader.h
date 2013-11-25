@@ -30,7 +30,7 @@ namespace j3 {
 	class J3Type;
 	class J3;
 	class J3Class;
-
+	class J3Symbol;
 
 	class J3ClassLoader {
 		struct J3MethodLess : public std::binary_function<wchar_t*,wchar_t*,bool> {
@@ -40,7 +40,13 @@ namespace j3 {
 		typedef std::map<J3Method*, J3Method*, J3MethodLess,
 										 vmkit::StdAllocator<std::pair<J3Method*, J3Method*> > > MethodRefMap;
 
+		typedef std::map<const char*, J3Symbol*, vmkit::Util::char_less_t,
+										 vmkit::StdAllocator<std::pair<const char*, J3Symbol*> > > SymbolMap;
+
 		static J3MethodLess  j3MethodLess;
+
+		SymbolMap                            _symbolTable;
+		pthread_mutex_t                      _mutexSymbolTable;
 
 		J3ObjectHandle*                      _javaClassLoader;
 		J3FixedPoint                         _fixedPoint;
@@ -64,6 +70,9 @@ namespace j3 {
 	public:
 		void* operator new(size_t n, vmkit::BumpAllocator* allocator);
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
+
+		void                          addSymbol(const char* id, J3Symbol* symbol);
+		J3Symbol*                     getSymbol(const char* id);
 
 		static void                   destroy(J3ClassLoader* loader);
 
