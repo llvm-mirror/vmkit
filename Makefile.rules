@@ -105,6 +105,7 @@ clean::
 
 cleanall:: 
 	$(Echo) "Cleaning all compilation files"
+	$(Verb) rm -Rf autoconf/autom4te.cache config.log config.status Makefile.config $(BUILD_DIR)
 
 confclean: clean
 	$(Echo) "Cleaning configuration"
