@@ -137,8 +137,8 @@ word_t StackWalker::operator*() {
 
 void StackWalker::operator++() {
   if (addr != thread->baseSP) {
-    assert((addr < thread->baseSP) && "Corrupted stack");
-    assert((addr < System::GetCallerOfAddress(addr)) && "Corrupted stack");
+    //assert((addr < thread->baseSP) && "Corrupted stack");
+    //assert((addr < System::GetCallerOfAddress(addr)) && "Corrupted stack");
     if ((frame != NULL) && (addr == frame->currentFP)) {
       assert(frame->currentIP == 0);
       frame = frame->previousFrame;
