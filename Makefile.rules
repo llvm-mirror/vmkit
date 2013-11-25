@@ -1,0 +1,320 @@
+
+-include $(LEVEL)/Makefile.config
+
+###############################################################################
+#   Configuration
+###############################################################################
+PROJ_OBJ_CWD:= $(call realpath, .)
+PROJ_SRC_CWD:= $(call realpath, $(patsubst $(PROJ_OBJ_ROOT)%,$(PROJ_SRC_ROOT)%,$(PROJ_OBJ_CWD)))
+
+BUILD_DIR=$(PROJ_OBJ_CWD)/$(BUILD_NAME)
+BIN_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
+LIB_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
+
+###############################################################################
+#   Nice printing
+###############################################################################
+ifndef PROF
+PROF=.
+endif
+
+EchoMsg="[$(MAKECMDGOALS) $(PROF)]:"
+Echo=@echo $(EchoMsg)
+
+ifndef VERBOSE
+	SUB_OPT=--no-print-directory -s
+  Verb:=@
+endif
+
+###############################################################################
+#   Compilation flags
+###############################################################################
+COMMON_FLAGS:=-Wall -Wno-return-type-c-linkage -Wno-varargs -Wno-unused-private-field -Werror -Wno-unused-variable \
+		-I$(PROJ_SRC_ROOT)/include -I$(OPENJDK_HOME)/include -I$(OPENJDK_HOME)/include/$(OS) $(COMMON_FLAGS) \
+		-fno-omit-frame-pointer
+
+ifeq ($(OPTIMIZED),1)
+	COMMON_FLAGS+=-O3
+	LLCFLAGS+=-O=3
+else
+	COMMON_FLAGS+=-O0
+	LLCFLAGS+=-O=0
+endif
+
+ifneq ($(DEBUG),0)
+	COMMON_FLAGS+=-g
+endif
+
+LLCFLAGS+=-disable-cfi -disable-fp-elim -relocation-model=pic 
+OPTFLAGS+=-disable-cfi -disable-fp-elim -disable-opt
+
+#LDFLAGS=-fno-common -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-rpath,$(OPENJDK_HOME)/jre/lib/server
+#LDFLAGS=-Wl,-rpath,$(OPENJDK_HOME)/jre/lib/server
+#LDFLAGS=-Wl,-flat_namespace -rdynamic
+CXXFLAGS=$(COMMON_FLAGS) $(LLVM_CXXFLAGS) -std=gnu++98 -fPIC
+SHFLAGS=$(SHOPT) -fno-common -Wl,-flat_namespace -Wl,-undefined,suppress
+
+###############################################################################
+#   Targets
+###############################################################################
+.PHONY: all tidy clean cleanall confclean
+.SECONDARY:
+.SUFFIXES:
+
+all::
+
+check::
+	$(Echo) "---- building with: "
+	$(Echo) "  PROJ_SRC_ROOT: $(PROJ_SRC_ROOT)"
+	$(Echo) "  PROJ_OBJ_ROOT: $(PROJ_OBJ_ROOT)"
+	$(Echo) "  SHFLAGS: $(SHFLAGS)"
+	$(Echo) "  EXEEXT: $(EXEEXT)"
+	$(Echo) "  SHLIBEXT: $(SHLIBEXT)"
+	$(Echo) "  OPTIMIZED: $(OPTIMIZED)"
+	$(Echo) "  DEBUG: $(DEBUG)"
+	$(Echo) "  ASSERT: $(ASSERT)"
+	$(Echo) "  CONFIG_FILES: $(CONFIG_FILES)"
+	$(Echo) "  CONFIG_HEADERS: $(CONFIG_HEADERS)"
+	$(Echo) "  BUILD_NAME: $(BUILD_NAME)"
+	$(Echo) "  CLANG: $(CLANG)"
+	$(Echo) "  CLANGXX: $(CLANGXX)"
+	$(Echo) "  LLC: $(LLC)"
+	$(Echo) "  LOPT: $(LOPT)"
+
+###############################################################################
+#   Recursive target managment
+###############################################################################
+RECURSIVE_TARGETS=all clean cleanall
+
+define do_sub_target
+$1::
+  #$(Echo) "Entering directory $$(PROF)/$2"
+	$(Verb) $(MAKE) $(SUB_OPT) -C $2 $1 PROF=$(PROF)/$2; \
+		if [ $$$$? != 0 ]; then echo "$$(EchoMsg) abort with errors in $$(PROF)/$2"; exit 1; fi
+endef
+
+$(foreach target,$(RECURSIVE_TARGETS),$(foreach dir,$(DIRS),$(eval $(call do_sub_target,$(target),$(dir)))))
+
+tidy:
+	$(Echo) "Cleaning temporary files"
+	$(Verb) find $(PROJ_OBJ_ROOT) \( -iname "*~" -o -iname "\#*" \) -exec rm -f {} \;
+
+clean::
+	$(Echo) "Cleaning compilation files"
+	$(Verb) rm -Rf $(BUILD_DIR)
+
+cleanall:: 
+	$(Echo) "Cleaning all compilation files"
+
+confclean: clean
+	$(Echo) "Cleaning configuration"
+	$(Verb) rm -Rf $(patsubst $(PROJ_OBJ_ROOT)/%,%,$(CONFIG_FILES))
+	$(Verb) rm -Rf $(patsubst $(PROJ_OBJ_ROOT)/%,%,$(CONFIG_HEADERS))
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/config.status $(PROJ_OBJ_ROOT)/config.log
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/autoconf/autom4te.cache $(PROJ_OBJ_ROOT)/autoconf/configure.bak
+
+###############################################################################
+#   Build system managment
+###############################################################################
+SELF=$(PROJ_SRC_ROOT)/Makefile.rules $(PROJ_OBJ_ROOT)/Makefile.config $(PROJ_SRC_CWD)/Makefile
+
+$(PROJ_SRC_ROOT)/configure: $(PROJ_SRC_ROOT)/autoconf/configure.ac
+	$(Echo) "Rebootstraping project"
+	$(Verb) cd $(PROJ_SRC_ROOT)/autoconf && autoconf -o $@ $< && touch $@
+	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status --recheck
+
+define define_config_rule
+$$(LEVEL)/$1 $$(PROJ_OBJ_ROOT)/$1: $$(PROJ_SRC_ROOT)/$1.in $$(PROJ_SRC_ROOT)/configure
+	$(Echo) "Regenerating project files $$1"
+	$(Verb) cd $(PROJ_OBJ_ROOT) && ./config.status -q --$2=$1 && touch $$@
+endef
+
+$(foreach cur,$(CONFIG_FILES),$(eval $(call define_config_rule,$(cur),file)))
+$(foreach cur,$(CONFIG_HEADERS),$(eval $(call define_config_rule,$(cur),header)))
+
+
+###############################################################################
+#   Find sources
+###############################################################################
+define find-sources
+	$(basename $(notdir $(wildcard $(PROJ_SRC_CWD)/*$1)))
+endef
+
+# $(wildcard $(BUILD_DIR)/*$1)))
+
+ifndef BASE_OBJ_FILES
+	BASE_OBJ_FILES=$(call find-sources,.cc)
+endif
+BC_FILES+=$(addsuffix .bc,$(addprefix $(BUILD_DIR)/,$(BASE_OBJ_FILES)))
+OBJ_FILES+=$(addsuffix .o,$(addprefix $(BUILD_DIR)/,$(BASE_OBJ_FILES)))
+DEP_FILES=$(addsuffix .d,$(addprefix $(BUILD_DIR)/,$(BASE_OBJ_FILES)))
+
+check::
+	$(Echo) "  BC_FILES: $(BC_FILES)"
+	$(Echo) "  DEP_FILES: $(DEP_FILES)"
+
+###############################################################################
+#   Module
+###############################################################################
+ifdef MODULE
+
+GEN_MODULE=$(LIB_DIR)/$(MODULE)
+
+all:: $(LIB_DIR)/.dir $(GEN_MODULE).a $(GEN_MODULE).bc
+
+# not used for the moment
+ifdef __EXTRACT__
+
+EXTRACT_NAME=$(BUILD_DIR)/$(MODULE)-llvm-functions
+TABLE_NAME=$(BUILD_DIR)/$(MODULE).table
+STRIP_NAME=$(BUILD_DIR)/$(MODULE).strip
+
+OBJ_FILES+=$(EXTRACT_NAME).o
+
+$(EXTRACT_NAME).cc: $(STRIP_NAME).bc $(TABLE_NAME) $(SELF)
+	$(Echo) "Extracting llvm runtime functions into '$(notdir $@)'"
+	$(Verb) doit() { \
+			echo '#include "llvm/IR/Module.h"';  \
+			echo '#include "llvm/IR/Constants.h"';  \
+			echo '#include "llvm/IR/Instructions.h"';  \
+			echo '#include "j3/j3classloader.h"'; \
+			echo 'using namespace llvm;'; \
+			set -o pipefail; \
+			for f in $(EXTRACT); do \
+				mangled=`cat $(TABLE_NAME) | grep -F "$$f" | gawk -F'@' '{ print $$2 }' | tail -n 1`; \
+		  	$(LLC) $< -march=cpp -cppgen=function -cppfor="$$mangled" -o - \
+					| sed -e "s/makeLLVMFunction/makeLLVMFunction_$(MODULE)_$$mangled/" \
+					| sed -e "s/\\x22//"; \
+				if [ "$$?" != 0 ]; then \
+					echo "Unable to find: $$f" >&2; \
+					exit 1; \
+				fi; \
+			done; \
+			for f in $(EXTRACT_TYPE); do \
+		  	$(LLC) $< -march=cpp -cppgen=type -cppfor="$$f" -o - \
+					| sed -e "s/makeLLVMType/makeLLVMType_$(MODULE)_`echo $$f | sed -e 's/\./_/' | sed -e 's/::/_/'`/" \
+					| sed -e "s/\\x22//" \
+					; \
+			done; \
+			echo "void j3::J3InitialClassLoader::makeLLVMFunctions_$(MODULE)() {"; \
+			for f in $(EXTRACT); do \
+				mangled=`cat $(TABLE_NAME) | grep -F "$$f" | gawk -F'@' '{ print $$2 }' | tail -n 1`; \
+				unmangled=`cat $(TABLE_NAME) | grep -F "$$f" | gawk -F'@' '{ print $$1 }' | tail -n 1`; \
+				echo "  makeLLVMFunction_$(MODULE)_$$mangled(module());"; \
+				echo "  registerCMangling(\"$$mangled\", \"$$unmangled\");"; \
+			done; \
+			for f in $(EXTRACT_TYPE); do \
+				echo "  makeLLVMType_$(MODULE)_`echo $$f | sed -e 's/\./_/' | sed -e 's/::/_/'`(module());"; \
+			done; \
+			echo "}"; \
+		}; doit > $@
+
+$(STRIP_NAME).bc: $(GEN_MODULE).bc
+	$(Echo) "Strip debug info from '$(notdir $<)'"
+	$(Verb) $(LLOPT) -strip-debug $< -o $@
+
+$(TABLE_NAME): $(GEN_MODULE).bc
+	$(Echo) "Demangling '$(notdir $<)' in '$(notdir $@)'"
+	$(Verb) $(LLNM) --defined-only $< | tr -s ' ' | $(GAWK) -F' ' '{ print $$2 }' | \
+			  tee $(TABLE_NAME).mangled | c++filt -n > $(TABLE_NAME).demangled
+	$(Verb) $(GAWK) '{ d=$$0; getline < "'"$(TABLE_NAME).mangled"'"; m=$$0; printf("%s@%s\n", d, m); }' \
+				< $(TABLE_NAME).demangled > $@
+
+endif
+
+endif
+
+###############################################################################
+#   Tool
+###############################################################################
+ifdef TOOL
+TOOL_OUT=$(BIN_DIR)/$(TOOL)$(EXEEXT)
+
+GEN_MODULE=$(LIB_DIR)/libjvm
+SONAME=$(GEN_MODULE)
+
+BC_FILES+=$(addsuffix .bc,$(addprefix $(LIB_DIR)/,$(LIBS))) 
+SO_FILES=$(addsuffix .a,$(addprefix $(LIB_DIR)/,$(LIBS))) 
+SO_LIBS=$(LLVM_LIBS)
+
+all:: $(BIN_DIR)/.dir $(TOOL_OUT) $(GEN_MODULE).bc
+
+$(TOOL_OUT): $(OBJ_FILES) $(SONAME)$(SHLIBEXT)
+	$(Echo) "Linking '$(notdir $@)'"
+	$(Verb) $(CLANGXX) -o $@ -Wl,-rpath,$(LIB_DIR) $(LDFLAGS) $^
+
+endif
+
+###############################################################################
+#   Library
+###############################################################################
+ifdef LIBRARY
+SONAME=$(LIB_DIR)/$(LIBRARY)
+all:: $(LIB_DIR)/.dir $(SONAME)$(SHLIBEXT)
+
+SO_FILES=$(OBJ_FILES)
+
+endif
+
+###############################################################################
+#   GC Managment
+###############################################################################
+STATIC_GC_PASS_LIB=$(LIB_DIR)/static-gc-pass$(SHLIBEXT)
+STATIC_GC_PRINTER_LIB=$(LIB_DIR)/static-gc-printer$(SHLIBEXT)
+
+NO_GC=1
+ifdef NO_GC
+GC_OBJ_FILES=$(OBJ_FILES)
+else
+GC_OBJ_FILES=$(patsubst %.o,%-gc.o,$(OBJ_FILES))
+GC_LLCFLAGS:=-load=$(STATIC_GC_PRINTER_LIB)
+endif
+
+###############################################################################
+#   Compilation
+###############################################################################
+DEPEND_OPTIONS=-MMD -MP -MF "$(BUILD_DIR)/$$*.d.tmp" -MT "$(BUILD_DIR)/$$*.bc" -MT "$(BUILD_DIR)/$$*.d"
+DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUILD_DIR)/$$*.d.tmp"; exit 1; fi
+
+$(SONAME)$(SHLIBEXT): $(SO_FILES)
+	$(Echo) "Linking shared library '$(notdir $@)'"
+	$(Verb) $(CLANGXX) -shared $(LLVM_LDFLAGS) $(SHFLAGS) -o $@ $(SHFLAGS) $^ $(SO_LIBS)
+
+$(GEN_MODULE).bc: $(BC_FILES)
+	$(Echo) "Linking bc module '$(notdir $@)'"
+	$(Verb) $(LLLINK) $^ -o $@
+
+$(GEN_MODULE).a: $(GC_OBJ_FILES)
+	$(Echo) "Linking module '$(notdir $@)'"
+	$(Verb) libtool -static -o $@ $^
+
+%.o: %.bc
+	$(Echo) "Assembling '$(notdir $<)'"
+	$(Verb) $(LLC) $(LLCFLAGS) $(GC_LLCFLAGS) -filetype=obj $< -o $@
+
+%-gc.bc: %.bc
+	$(Echo) "Preparing GC '$(notdir $<)'"
+	$(Verb) $(LLOPT) -load=$(STATIC_GC_PASS_LIB) $(OPTFLAGS) -StaticGCPass $< -o $@
+
+define define_compile_rule
+$(BUILD_DIR)/%.bc: %$1 $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Compiling '$$(notdir $$<)'"
+	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
+
+$(BUILD_DIR)/%.bc: $(BUILD_DIR)/%$1 $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Compiling '$$(notdir $$<)'"
+	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
+endef
+
+$(eval $(call define_compile_rule,.cc,$(CLANGXX),$(CXXFLAGS)))
+
+%/.dir:
+	$(Verb) mkdir -p $(dir $@) && touch $@
+
+ifneq ($(MAKECMDGOALS),tidy)
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),cleanall)
+-include $(DEP_FILES)
+endif
+endif
+endif

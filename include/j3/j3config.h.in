@@ -1,0 +1,6 @@
+
+#define SHLIBEXT      "@SHLIBEXT@"
+#define OPENJDK_HOME  "@jdkhome@"
+
+
+
