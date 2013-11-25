@@ -7,6 +7,10 @@
 PROJ_OBJ_CWD:= $(call realpath, .)
 PROJ_SRC_CWD:= $(call realpath, $(patsubst $(PROJ_OBJ_ROOT)%,$(PROJ_SRC_ROOT)%,$(PROJ_OBJ_CWD)))
 
+ifndef BUILD_NAME
+BUILD_NAME=fake
+endif
+
 BUILD_DIR=$(PROJ_OBJ_CWD)/$(BUILD_NAME)
 BIN_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/bin
 LIB_DIR=$(PROJ_OBJ_ROOT)/$(BUILD_NAME)/lib
@@ -57,7 +61,7 @@ SHFLAGS=$(SHOPT) -fno-common -Wl,-flat_namespace -Wl,-undefined,suppress
 ###############################################################################
 #   Targets
 ###############################################################################
-.PHONY: all tidy clean cleanall confclean
+.PHONY: all tidy clean confclean
 .SECONDARY:
 .SUFFIXES:
 
@@ -84,7 +88,7 @@ check::
 ###############################################################################
 #   Recursive target managment
 ###############################################################################
-RECURSIVE_TARGETS=all clean cleanall
+RECURSIVE_TARGETS=all clean
 
 define do_sub_target
 $1::
@@ -102,10 +106,6 @@ tidy:
 clean::
 	$(Echo) "Cleaning compilation files"
 	$(Verb) rm -Rf $(BUILD_DIR)
-
-cleanall:: 
-	$(Echo) "Cleaning all compilation files"
-	$(Verb) rm -Rf autoconf/autom4te.cache config.log config.status Makefile.config $(BUILD_DIR)
 
 confclean: clean
 	$(Echo) "Cleaning configuration"
@@ -314,7 +314,7 @@ $(eval $(call define_compile_rule,.cc,$(CLANGXX),$(CXXFLAGS)))
 
 ifneq ($(MAKECMDGOALS),tidy)
 ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(MAKECMDGOALS),cleanall)
+ifneq ($(MAKECMDGOALS),confclean)
 -include $(DEP_FILES)
 endif
 endif
