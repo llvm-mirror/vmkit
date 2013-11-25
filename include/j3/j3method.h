@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "vmkit/allocator.h"
+#include "j3/j3symbol.h"
 
 namespace llvm {
 	class FunctionType;
@@ -46,12 +46,18 @@ namespace j3 {
 		}
 	};
 
-	struct  trampolin_t {
-		uint8_t         code[1];
+	class J3MethodCode : public J3Symbol {
+	public:
+		J3Method* self;
+
+		J3MethodCode(J3Method* _self) { self = _self; }
+
+		int isMethodPointer() { return 1; } 
 	};
 
-	class J3Method : public vmkit::PermanentObject {
+	class J3Method : public J3Symbol {
 	public:
+		J3MethodCode                 _selfCode;
 		uint16_t                     _access;
 		J3Class*                     _cl;
 		const vmkit::Name*           _name;
@@ -79,6 +85,8 @@ namespace j3 {
 		void               buildLLVMNames(J3Class* from);
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
+
+		int                 isMethodDescriptor() { return 1; } 
 
 		static J3Method*    newMethod(vmkit::BumpAllocator* allocator, 
 																	uint16_t access, 

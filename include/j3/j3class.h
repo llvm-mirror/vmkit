@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "vmkit/allocator.h"
+#include "j3/j3symbol.h"
 
 namespace llvm {
 	class StructType;
@@ -32,7 +32,7 @@ namespace j3 {
 	class J3ObjectHandle;
 	class J3Field;
 
-	class J3Type : public vmkit::PermanentObject {
+	class J3Type : public J3Symbol {
 		pthread_mutex_t        _mutex;
 		J3ClassLoader*         _loader;
 		J3ArrayClass* volatile _array;
@@ -54,6 +54,8 @@ namespace j3 {
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
 
 		virtual llvm::GlobalValue*  llvmDescriptor(llvm::Module* module) { return 0; }
+
+		int                         isTypeDescriptor() { return 1; }
 
 		bool                        isResolved() { return status >= RESOLVED; }
 		bool                        isInitialised() { return status == INITED; }

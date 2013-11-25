@@ -31,7 +31,8 @@ J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
 	_llvmType = llvm::FunctionType::get(out()->llvmType(), in, 0);
 }
 
-J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) {
+J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) :
+	_selfCode(this) {
 	_access = access;
 	_cl = cl;
 	_name = name;
