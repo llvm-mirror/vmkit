@@ -346,32 +346,26 @@ char* J3Method::llvmDescriptorName(J3Class* from) {
 }
 
 llvm::GlobalValue* J3Method::llvmDescriptor(llvm::Module* module) {
-	if(!_nomcjitDescriptor) {
-		J3ClassLoader* loader = cl()->loader();
-		_nomcjitDescriptor = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(llvmDescriptorName(), loader->vm()->typeJ3Method));
-		loader->vm()->ee()->addGlobalMapping(_nomcjitDescriptor, this);
-	}
-
-	return _nomcjitDescriptor;
+	J3ClassLoader* loader = cl()->loader();
+	llvm::GlobalValue* res = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(llvmDescriptorName(), loader->vm()->typeJ3Method));
+	loader->vm()->ee()->updateGlobalMapping(res, this);
+	return res;
 }
 
 llvm::Function* J3Method::llvmFunction(bool isStub, llvm::Module* module, J3Class* from) {
-	if(!_nomcjitFunction) {
-		llvm::Function* res;
+	llvm::Function* res;
 
-		if(isStub && !_compiledFunction) {
-			char id[llvmFunctionNameLength() + 16];
-			memcpy(id, llvmFunctionName(), llvmFunctionNameLength());
-			memcpy(id + llvmFunctionNameLength(), "_stub", 6);
-			res = (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->llvmType());
-		} else
-			res = (llvm::Function*)module->getOrInsertFunction(llvmFunctionName(from), methodType(from ? from : cl())->llvmType());
+	if(isStub && !_compiledFunction) {
+		char id[llvmFunctionNameLength() + 16];
+		memcpy(id, llvmFunctionName(), llvmFunctionNameLength());
+		memcpy(id + llvmFunctionNameLength(), "_stub", 6);
+		res = (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->llvmType());
+	} else
+		res = (llvm::Function*)module->getOrInsertFunction(llvmFunctionName(from), methodType(from ? from : cl())->llvmType());
 
-		_nomcjitFunction = res;
-		cl()->loader()->vm()->ee()->addGlobalMapping(_nomcjitFunction, functionPointerOrTrampoline());
-	}
+	cl()->loader()->vm()->ee()->updateGlobalMapping(res, functionPointerOrTrampoline());
 
-	return _nomcjitFunction;
+	return res;
 }
 
 void J3Method::dump() {

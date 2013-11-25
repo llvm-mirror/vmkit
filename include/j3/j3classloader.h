@@ -10,7 +10,6 @@
 #include "j3/j3object.h"
 
 namespace llvm {
-	class ExecutionEngine;
 	class DataLayout;
 	class Type;
 	class Function;

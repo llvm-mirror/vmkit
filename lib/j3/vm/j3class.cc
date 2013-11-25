@@ -198,11 +198,9 @@ size_t J3Class::size() {
 }
 
 llvm::GlobalValue* J3Class::llvmDescriptor(llvm::Module* module) {
-	if(!_nomcjitDescriptor) {
-		_nomcjitDescriptor = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3Class));
-		loader()->vm()->ee()->addGlobalMapping(_nomcjitDescriptor, this);
-	}
-	return _nomcjitDescriptor;
+	llvm::GlobalValue* res = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3Class));
+	loader()->vm()->ee()->updateGlobalMapping(res, this);
+	return res;
 }
 
 
@@ -836,11 +834,9 @@ void J3ArrayClass::doInitialise() {
 }
 
 llvm::GlobalValue* J3ArrayClass::llvmDescriptor(llvm::Module* module) {
-	if(!_nomcjitDescriptor) {
-		_nomcjitDescriptor = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3ArrayClass));
-		loader()->vm()->ee()->updateGlobalMapping(_nomcjitDescriptor, this);
-	}
-	return _nomcjitDescriptor;
+	llvm::GlobalValue* res = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3ArrayClass));
+	loader()->vm()->ee()->updateGlobalMapping(res, this);
+	return res;
 }
 
 llvm::Type* J3ArrayClass::llvmType() {

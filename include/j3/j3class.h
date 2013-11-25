@@ -198,7 +198,6 @@ namespace j3 {
 
 		J3Attributes*      _attributes;
 
-		llvm::GlobalValue* _nomcjitDescriptor;
 		J3ClassBytes*      _bytes;
 		size_t             nbCtp;
 		uint8_t*           ctpTypes;
@@ -265,7 +264,6 @@ namespace j3 {
 	class J3ArrayClass : public J3ObjectType {
 		llvm::Type*         _llvmType;
 		J3Type*             _component;
-		llvm::GlobalValue*  _nomcjitDescriptor;
 
 		void                doResolve(J3Field* hiddenFields, size_t nbHiddenFields);
 		void                doInitialise();
