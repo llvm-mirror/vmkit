@@ -17,8 +17,6 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include "vmkit/config.h"
-
 #if defined(__linux__) || defined(__FreeBSD__)
 #define LINUX_OS 1
 #elif defined(__APPLE__)
@@ -150,7 +148,7 @@ public:
     return pagesize;
   }
 
-  static word_t GetCallFrameAddress() __attribute((always_inline)) {
+  static word_t GetCallerAddress() __attribute((always_inline)) {
 #if defined(ARCH_X86) || defined(ARCH_X64)
     return (word_t)__builtin_frame_address(0);
 #else
@@ -158,15 +156,15 @@ public:
 #endif
   }
 
-  static word_t GetCallerCallFrame(word_t currentCallFrame) {
-    return *(word_t*)currentCallFrame;
+  static word_t GetCallerOfAddress(word_t addr) {
+    return ((word_t*)addr)[0];
   }
 
-  static word_t GetReturnAddressOfCallFrame(word_t currentCallFrame) {
+  static word_t GetIPFromCallerAddress(word_t addr) {
 #if defined(MACOS_OS) && defined(ARCH_PPC)
-    return ((word_t*)currentCallFrame)[2];
+    return ((word_t*)addr)[2];
 #else
-    return ((word_t*)currentCallFrame)[1];
+    return ((word_t*)addr)[1];
 #endif
   }
 

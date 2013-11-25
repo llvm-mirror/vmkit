@@ -45,7 +45,6 @@ public:
   llvm::Type* JavaMethodType;
   llvm::Type* JavaFieldType;
   llvm::Type* AttributeType;
-  llvm::Type* ThreadType;
   llvm::Type* JavaThreadType;
   llvm::Type* MutatorThreadType;
   llvm::Type* J3DenseMapType;
@@ -141,8 +140,6 @@ public:
   llvm::Constant* OffsetBaseClassInArrayClassConstant;
   llvm::Constant* OffsetLogSizeInPrimitiveClassConstant;
   
-  llvm::Constant* OffsetOffsetInJavaMethodConstant;
-
   llvm::Constant* ClassReadyConstant;
 
   llvm::Constant* JavaObjectNullConstant;

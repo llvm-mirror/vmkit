@@ -110,9 +110,10 @@ extern "C" void* j3StaticFieldLookup(UserClass* caller, uint32 index) {
 }
 
 // Throws if the method is not found.
-extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index,
-                                       void** javaMethod, JavaObject* obj) {
+extern "C" uint32 j3VirtualTableLookup(UserClass* caller, uint32 index,
+                                       uint32* offset, JavaObject* obj) {
   llvm_gcroot(obj, 0);
+  uint32 res = 0;
   
   UserCommonClass* cl = 0;
   const UTF8* utf8 = 0;
@@ -133,13 +134,15 @@ extern "C" void* j3VirtualTableLookup(UserClass* caller, uint32 index,
       JavaObject::getClass(obj)->asClass();
     dmeth = lookup->lookupMethod(utf8, sign->keyName, false, true, 0);
   } else {
-    *javaMethod = dmeth;
+    *offset = dmeth->offset;
   }
 
   assert(dmeth->classDef->isInitializing() && 
          "Class not ready in a virtual lookup.");
 
-  return dmeth;
+  res = dmeth->offset;
+
+  return res;
 }
 
 // Throws if the class is not found.

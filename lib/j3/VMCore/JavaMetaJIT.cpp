@@ -69,19 +69,19 @@ jvalue* JavaMethod::marshalArguments(vmkit::ThreadAllocator& allocator, va_list 
 		return res;	\
 	}	\
 	TYPE JavaMethod::invoke##TYPE_NAME##Special(Jnjvm* vm, UserClass* cl, JavaObject* obj, ...) {	\
-		llvm_gcroot(obj, 0);	\
-		va_list ap;	\
-		va_start(ap, obj);	\
-		TYPE res = invokeSpecialAP<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, ap);	\
-		va_end(ap);	\
-		return res;	\
+	  llvm_gcroot(obj, 0);	\
+	  va_list ap;	\
+	  va_start(ap, obj);	\
+	  TYPE res = invokeSpecialAP<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, ap);	\
+	  va_end(ap);	\
+	  return res;	\
 	}	\
 	TYPE JavaMethod::invoke##TYPE_NAME##Static(Jnjvm* vm, UserClass* cl, ...) {	\
-		va_list ap;	\
-		va_start(ap, cl);	\
-		TYPE res = invokeStaticAP<TYPE, FUNC_TYPE_STATIC_BUF>(vm, cl, ap);	\
-		va_end(ap);	\
-		return res;	\
+	  va_list ap;	\
+	  va_start(ap, cl);	\
+	  TYPE res = invokeStaticAP<TYPE, FUNC_TYPE_STATIC_BUF>(vm, cl, ap);	\
+	  va_end(ap);	\
+	  return res;	\
 	}
 
 #define JavaMethod_INVOKE_AP(TYPE, TYPE_NAME, FUNC_TYPE_VIRTUAL_AP, FUNC_TYPE_STATIC_AP, FUNC_TYPE_VIRTUAL_BUF, FUNC_TYPE_STATIC_BUF)	\
@@ -104,7 +104,7 @@ jvalue* JavaMethod::marshalArguments(vmkit::ThreadAllocator& allocator, va_list 
 	} 																										\
 	TYPE JavaMethod::invoke##TYPE_NAME##SpecialBuf(Jnjvm* vm, UserClass* cl, JavaObject* obj, void* buf) {	\
 		llvm_gcroot(obj, 0); 																				\
-		return invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buf);								\
+		return invokeSpecialBuf<TYPE, FUNC_TYPE_VIRTUAL_BUF>(vm, cl, obj, buf); 							\
 	}																										\
 	TYPE JavaMethod::invoke##TYPE_NAME##StaticBuf(Jnjvm* vm, UserClass* cl, void* buf) {					\
 		return invokeStaticBuf<TYPE, FUNC_TYPE_STATIC_BUF>(vm, cl, buf); 									\

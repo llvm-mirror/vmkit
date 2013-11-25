@@ -287,8 +287,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* cmp = new ICmpInst(CI, ICmpInst::ICMP_EQ, Del, 
                                     intrinsics->JavaObjectNullConstant, "");
           
-          BasicBlock* NoDelegatee = BasicBlock::Create(*Context, "noDelegatee", &F);
-          BasicBlock* DelegateeOK = BasicBlock::Create(*Context, "delegateeOK", &F);
+          BasicBlock* NoDelegatee = BasicBlock::Create(*Context, "No delegatee", &F);
+          BasicBlock* DelegateeOK = BasicBlock::Create(*Context, "Delegatee OK", &F);
           BranchInst::Create(NoDelegatee, DelegateeOK, cmp, CI);
           PHINode* phi = PHINode::Create(intrinsics->JavaObjectType, 2, "", DelegateeOK);
           phi->addIncoming(Del, CI->getParent());
@@ -398,8 +398,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           Value* test = new ICmpInst(CI, ICmpInst::ICMP_EQ, arg1,
                                      intrinsics->constantPtrNull, "");
  
-          BasicBlock* trueCl = BasicBlock::Create(*Context, "CtpOK", &F);
-          BasicBlock* falseCl = BasicBlock::Create(*Context, "CtpNotOK", &F);
+          BasicBlock* trueCl = BasicBlock::Create(*Context, "Ctp OK", &F);
+          BasicBlock* falseCl = BasicBlock::Create(*Context, "Ctp Not OK", &F);
           PHINode* node = llvm::PHINode::Create(returnType, 2, "", trueCl);
           node->addIncoming(arg1, CI->getParent());
           BranchInst::Create(falseCl, trueCl, test, CI);
@@ -465,8 +465,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
             Value* cmp = new ICmpInst(CI, ICmpInst::ICMP_EQ, LoadedGV, init,
                                       "");
 
-            BasicBlock* OKBlock = BasicBlock::Create(*Context, "OK", &F);
-            BasicBlock* NotOKBlock = BasicBlock::Create(*Context, "NotOK", &F);
+            BasicBlock* OKBlock = BasicBlock::Create(*Context, "", &F);
+            BasicBlock* NotOKBlock = BasicBlock::Create(*Context, "", &F);
             PHINode* node = PHINode::Create(intrinsics->VTType, 2, "",
                                             OKBlock);
             node->addIncoming(LoadedGV, CI->getParent());
@@ -509,8 +509,8 @@ bool LowerConstantCalls::runOnFunction(Function& F) {
           BasicBlock* EndBlock = II->getParent()->splitBasicBlock(II);
           I->getParent()->getTerminator()->eraseFromParent();
           
-          BasicBlock* CurEndBlock = BasicBlock::Create(*Context, "currentEnd", &F);
-          BasicBlock* FailedBlock = BasicBlock::Create(*Context, "failed", &F);
+          BasicBlock* CurEndBlock = BasicBlock::Create(*Context, "", &F);
+          BasicBlock* FailedBlock = BasicBlock::Create(*Context, "", &F);
           PHINode* node = PHINode::Create(Type::getInt1Ty(*Context), 2, "", CurEndBlock);
 
           ConstantInt* CC = ConstantInt::get(Type::getInt32Ty(*Context),

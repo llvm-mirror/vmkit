@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include <sstream>
-#include <errno.h>
 
 #include "vmkit/Locks.h"
 #include "vmkit/Thread.h"
@@ -133,7 +132,7 @@ void JavaThread::printJavaBacktrace() {
 
   while (vmkit::FrameInfo* FI = Walker.get()) {
     if (FI->Metadata != NULL) {
-      MyVM->printMethod(FI, Walker.returnAddress, Walker.callFrameAddress);
+      MyVM->printMethod(FI, Walker.ip, Walker.addr);
     }
     ++Walker;
   }

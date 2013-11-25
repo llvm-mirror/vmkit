@@ -172,7 +172,7 @@ public:
   /// get - Get the thread specific data of the current thread.
   ///
   static Thread* get() {
-    return (Thread*)(System::GetCallFrameAddress() & System::GetThreadIDMask());
+    return (Thread*)(System::GetCallerAddress() & System::GetThreadIDMask());
   }
   
 private:
@@ -239,7 +239,7 @@ public:
   /// stackOverflow - Returns if there is a stack overflow in Java land.
   ///
   bool stackOverflow() {
-    return (System::GetCallFrameAddress() & StackOverflowMask) == 0;
+    return (System::GetCallerAddress() & StackOverflowMask) == 0;
   }
 
   /// operator new - Allocate the Thread object as well as the stack for this
@@ -331,12 +331,11 @@ public:
 ///
 class StackWalker {
 public:
-  word_t callFrameAddress;
-  word_t returnAddress;
+  word_t addr;
+  word_t ip;
   KnownFrame* frame;
   vmkit::Thread* thread;
 
-  StackWalker() __attribute__ ((noinline));
   StackWalker(vmkit::Thread* th) __attribute__ ((noinline));
   void operator++();
   word_t operator*();

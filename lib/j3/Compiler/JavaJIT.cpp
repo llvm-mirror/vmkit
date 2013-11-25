@@ -15,7 +15,6 @@
 #include <string>
 #include <sstream>
 #include <cstring>
-#include <cstdarg>
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -47,37 +46,6 @@
 using namespace j3;
 using namespace llvm;
 using namespace std;
-
-Value* JavaJIT::allocateOnStack(
-	const char* name, size_t byteCount, Type* realType)
-{
-	std::string bufferName(name);
-	bufferName += "Buffer";
-
-	Constant* wordCount = ConstantInt::get(
-		Type::getInt32Ty(*llvmContext),
-		vmkit::System::WordAlignUp(byteCount) / sizeof(void*));
-
-	Value* buffer = new AllocaInst(intrinsics->ptrType,
-		wordCount, sizeof(void*), bufferName, currentBlock);
-	return new BitCastInst(buffer, realType, name, currentBlock);
-}
-
-Value* JavaJIT::getElementPtr(
-	const char *name, Value* element, Value* firstIndex, ...)
-{
-	std::vector<Value*> indexList;
-	indexList.push_back(firstIndex);
-
-	va_list argList;
-	Value* arg;
-	va_start(argList, firstIndex);
-	while ((arg = va_arg(argList, Value*)) != NULL)
-		indexList.push_back(arg);
-	va_end(argList);
-
-	return GetElementPtrInst::Create(element, indexList, name, currentBlock);
-}
 
 void JavaJIT::updateStackInfo(Opinfo& info) {
   if (stackSize()) {
@@ -253,47 +221,37 @@ void JavaJIT::invokeVirtual(uint16 index) {
       indexes2[1] = Offset;
     } else {
       nullChecked = true;
-      GlobalVariable* cachedMethodPtr = new GlobalVariable(
-        *llvmFunction->getParent(), intrinsics->JavaMethodType,
-        false, GlobalValue::ExternalLinkage,
-        Constant::getNullValue(intrinsics->JavaMethodType), "cachedMethodPtr");
-      Value* cachedMethod = new LoadInst(
-        cachedMethodPtr, "cachedMethod", false, currentBlock);
-
+      GlobalVariable* GV = new GlobalVariable(*llvmFunction->getParent(),
+                                              Type::getInt32Ty(*llvmContext),
+                                              false,
+                                              GlobalValue::ExternalLinkage,
+                                              intrinsics->constantZero, "");
+    
       BasicBlock* resolveVirtual = createBasicBlock("resolveVirtual");
       BasicBlock* endResolveVirtual = createBasicBlock("endResolveVirtual");
-      PHINode* methodPtr = PHINode::Create(
-        intrinsics->JavaMethodType, 2, "methodPtr", endResolveVirtual);
-      methodPtr->addIncoming(cachedMethod, currentBlock);
+      PHINode* node = PHINode::Create(Type::getInt32Ty(*llvmContext), 2, "",
+                                      endResolveVirtual);
 
-      Value* test = new ICmpInst(
-        *currentBlock, ICmpInst::ICMP_EQ, cachedMethod,
-        Constant::getNullValue(intrinsics->JavaMethodType), "isCacheEmpty");
+      Value* load = new LoadInst(GV, "", false, currentBlock);
+      Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, load,
+                                 intrinsics->constantZero, "");
       BranchInst::Create(resolveVirtual, endResolveVirtual, test, currentBlock);
-
+      node->addIncoming(load, currentBlock);
       currentBlock = resolveVirtual;
       std::vector<Value*> Args;
       Args.push_back(TheCompiler->getNativeClass(compilingClass));
       Args.push_back(ConstantInt::get(Type::getInt32Ty(*llvmContext), index));
-      Args.push_back(cachedMethodPtr);
+      Args.push_back(GV);
       Value* targetObject = getTarget(signature);
-      targetObject = new LoadInst(
-        targetObject, "targetObject", false, currentBlock);
+      targetObject = new LoadInst(targetObject, "", false, currentBlock);
       if (!thisReference) JITVerifyNull(targetObject);
       Args.push_back(targetObject);
-      Value* calculatedMethodPtr = invoke(intrinsics->VirtualLookupFunction,
-        Args, "calculatedMethod", currentBlock);
-      methodPtr->addIncoming(calculatedMethodPtr, currentBlock);
-
+      load = invoke(intrinsics->VirtualLookupFunction, Args, "", currentBlock);
+      node->addIncoming(load, currentBlock);
       BranchInst::Create(endResolveVirtual, currentBlock);
       currentBlock = endResolveVirtual;
 
-      Value* methodOffset = getElementPtr(
-        "methodOffsetPtr", methodPtr, intrinsics->constantZero,
-        intrinsics->OffsetOffsetInJavaMethodConstant, NULL);
-      methodOffset = new LoadInst(methodOffset, "methodOffset", currentBlock);
-
-      indexes2[1] = methodOffset;
+      indexes2[1] = node;
     }
 
     makeArgs(it, index, args, signature->nbArguments + 1);
@@ -332,32 +290,19 @@ void JavaJIT::invokeVirtual(uint16 index) {
 }
 
 llvm::Value* JavaJIT::getMutatorThreadPtr() {
-	return new BitCastInst(
-		getThreadPtr(), intrinsics->MutatorThreadType, "MutatorThreadPtr", currentBlock);
+  Value* FrameAddr = CallInst::Create(intrinsics->llvm_frameaddress,
+                                     	intrinsics->constantZero, "", currentBlock);
+  Value* threadId = new PtrToIntInst(FrameAddr, intrinsics->pointerSizeType, "",
+                              			 currentBlock);
+  threadId = BinaryOperator::CreateAnd(threadId, intrinsics->constantThreadIDMask,
+                                       "", currentBlock);
+  threadId = new IntToPtrInst(threadId, intrinsics->MutatorThreadType, "MutatorThreadPtr", currentBlock);
+
+  return threadId;
 }
 
-llvm::Value* JavaJIT::getThreadPtr()
-{
-	if (!currentThreadPtr) {
-		Value* frameAddr = CallInst::Create(
-			intrinsics->llvm_frameaddress, intrinsics->constantZero,
-			"frameAddress", currentBlock);
-		Value* ptr = new PtrToIntInst(
-			frameAddr, intrinsics->pointerSizeType, "", currentBlock);
-		ptr = BinaryOperator::CreateAnd(
-			ptr, intrinsics->constantThreadIDMask, "", currentBlock);
-		ptr = new IntToPtrInst(
-			ptr, intrinsics->ThreadType, "threadPtr", currentBlock);
-
-		currentThreadPtr = ptr;
-	}
-
-	return currentThreadPtr;
-}
-
-llvm::Value* JavaJIT::getJavaThreadPtr() {
-	return new BitCastInst(
-		getThreadPtr(), intrinsics->JavaThreadType, "JavaThreadPtr", currentBlock);
+llvm::Value* JavaJIT::getJavaThreadPtr(llvm::Value* mutatorThreadPtr) {
+  return new BitCastInst(mutatorThreadPtr, intrinsics->JavaThreadType, "JavaThreadPtr", currentBlock);
 }
 
 llvm::Value* JavaJIT::getIsolateIDPtr(llvm::Value* mutatorThreadPtr) { 
@@ -475,6 +420,7 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
     return llvmFunction;
   }
   
+  
   Function* func = llvmFunction;
   if (j3) {
     Function* callee = Function::Create(llvmFunction->getFunctionType(),
@@ -500,33 +446,30 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
 
   currentExceptionBlock = endExceptionBlock = 0;
   currentBlock = createBasicBlock("start");
-  endBlock = createBasicBlock("endBlock");
+  endBlock = createBasicBlock("end block");
   
-  getThreadPtr();
-
   if (returnType != Type::getVoidTy(*llvmContext)) {
     endNode = PHINode::Create(returnType, 0, "", endBlock);
   }
   
   // Allocate currentLocalIndexNumber pointer
-  Value* temp = new AllocaInst(
-	Type::getInt32Ty(*llvmContext), "currentLocalIndexNumber", currentBlock);
+  Value* temp = new AllocaInst(Type::getInt32Ty(*llvmContext), "",
+                               currentBlock);
   new StoreInst(intrinsics->constantZero, temp, false, currentBlock);
   
   // Allocate oldCurrentLocalIndexNumber pointer
-  Value* oldCLIN = new AllocaInst(
-	PointerType::getUnqual(Type::getInt32Ty(*llvmContext)),
-	"oldLocalIndexNumber", currentBlock);
+  Value* oldCLIN = new AllocaInst(PointerType::getUnqual(Type::getInt32Ty(*llvmContext)), "",
+                                  currentBlock);
   
   Constant* sizeF = ConstantInt::get(Type::getInt32Ty(*llvmContext), sizeof(vmkit::KnownFrame));
-  Value* Frame = new AllocaInst(Type::getInt8Ty(*llvmContext), sizeF, "knownFrame", currentBlock);
+  Value* Frame = new AllocaInst(Type::getInt8Ty(*llvmContext), sizeF, "", currentBlock);
   
   uint32 nargs = func->arg_size() + 1 + (stat ? 1 : 0); 
   std::vector<Value*> nativeArgs;
   nativeArgs.push_back(NULL); // Will contain the callee
   
   
-  Value* jniEnv = getJNIEnvPtr(getJavaThreadPtr());
+  Value* jniEnv = getJNIEnvPtr(getJavaThreadPtr(getMutatorThreadPtr()));
  
   jniEnv = new BitCastInst(jniEnv, intrinsics->ptrType, "", currentBlock);
 
@@ -544,10 +487,10 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
        index < nargs; ++i, ++index) {
     
     if (i->getType() == intrinsics->JavaObjectType) {
-      BasicBlock* BB = createBasicBlock("continue");
-      BasicBlock* NotZero = createBasicBlock("storeObjParamOnStack");
+      BasicBlock* BB = createBasicBlock("");
+      BasicBlock* NotZero = createBasicBlock("");
       Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
-      PHINode* node = PHINode::Create(Ty, 2, "stack_obj_param_", BB);
+      PHINode* node = PHINode::Create(Ty, 2, "", BB);
 
       Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, i,
                                  intrinsics->JavaObjectNullConstant, "");
@@ -557,9 +500,8 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
 
       currentBlock = NotZero;
 
-      Instruction* temp = new AllocaInst(
-    	intrinsics->JavaObjectType, "nonNullObjParamOnStack",
-        func->begin()->getTerminator());
+      Instruction* temp = new AllocaInst(intrinsics->JavaObjectType, "",
+                                         func->begin()->getTerminator());
       if (i == func->arg_begin() && !stat) {
         this->thisObject = temp;
       }
@@ -587,10 +529,11 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
     }
   }
   
+  
   Instruction* ResultObject = 0;
   if (returnType == intrinsics->JavaObjectType) {
-    ResultObject = new AllocaInst(
-    	intrinsics->JavaObjectType, "resultObjOnStack", func->begin()->begin());
+    ResultObject = new AllocaInst(intrinsics->JavaObjectType, "",
+                                  func->begin()->begin());
     
     if (TheCompiler->useCooperativeGC()) {
       
@@ -612,8 +555,8 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
     Value* Arg = TheCompiler->getMethodInClass(compilingMethod); 
     
     // If the global variable is null, then load it.
-    BasicBlock* unloadedBlock = createBasicBlock("unloadedBlock");
-    BasicBlock* endBlock = createBasicBlock("endBlock");
+    BasicBlock* unloadedBlock = createBasicBlock("");
+    BasicBlock* endBlock = createBasicBlock("");
     Value* test = new LoadInst(nativeFunc, "", currentBlock);
     Type* Ty = test->getType();
     PHINode* node = PHINode::Create(Ty, 2, "", endBlock);
@@ -652,7 +595,7 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
     Type* Ty = PointerType::getUnqual(intrinsics->JavaObjectType);
     Constant* C = Constant::getNullValue(Ty);
     Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, result, C, "");
-    BasicBlock* loadBlock = createBasicBlock("loadBlock");
+    BasicBlock* loadBlock = createBasicBlock("");
 
     endNode->addIncoming(intrinsics->JavaObjectNullConstant, currentBlock);
     BranchInst::Create(endBlock, loadBlock, cmp, currentBlock);
@@ -669,6 +612,7 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
   
   BranchInst::Create(endBlock, currentBlock);
 
+
   currentBlock = endBlock; 
  
   Value* Args2[1] = { oldCLIN };
@@ -679,9 +623,9 @@ llvm::Function* JavaJIT::nativeCompile(word_t natPtr) {
   if (isSynchro(compilingMethod->access))
     endSynchronize();
 
-  BasicBlock* ifNormal = createBasicBlock("ifNormal");
-  BasicBlock* ifException = createBasicBlock("ifException");
-  Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr());
+  BasicBlock* ifNormal = createBasicBlock("");
+  BasicBlock* ifException = createBasicBlock("");
+  Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
   Value* obj = new LoadInst(javaExceptionPtr, "", currentBlock);
   Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, intrinsics->JavaObjectNullConstant, "");
   BranchInst::Create(ifException, ifNormal, test, currentBlock);
@@ -737,8 +681,8 @@ void JavaJIT::monitorEnter(Value* obj) {
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
                             lock, "");
   
-  BasicBlock* OK = createBasicBlock("synchronizePassed");
-  BasicBlock* NotOK = createBasicBlock("synchronizeDidNotPass");
+  BasicBlock* OK = createBasicBlock("synchronize passed");
+  BasicBlock* NotOK = createBasicBlock("synchronize did not pass");
 
   BranchInst::Create(OK, NotOK, cmp, currentBlock);
 
@@ -790,7 +734,7 @@ void JavaJIT::monitorExit(Value* obj) {
   Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, atomic,
                             oldValMask, "");
   
-  BasicBlock* LockFreeCASFailed = createBasicBlock("LockFreeCASFailed");
+  BasicBlock* LockFreeCASFailed = createBasicBlock("Lock-Free CAS Failed");
 
   BranchInst::Create(EndBlock, LockFreeCASFailed, cmp, currentBlock);
 
@@ -1094,30 +1038,28 @@ llvm::Function* JavaJIT::javaCompile() {
     opcodeInfos[i].exceptionBlock = endExceptionBlock;
   }
 
-  getThreadPtr();
-
   Instruction* returnValue = NULL;
   if (returnType == intrinsics->JavaObjectType &&
       TheCompiler->useCooperativeGC()) {
-    returnValue = new AllocaInst(
-    	intrinsics->JavaObjectType, "returnValueStorage", currentBlock);
-    Instruction* cast = new BitCastInst(
-    	returnValue, intrinsics->ptrPtrType, "returnValue", currentBlock);
+    returnValue = new AllocaInst(intrinsics->JavaObjectType, "returnValue",
+                                 currentBlock);
+    Instruction* cast = 
+        new BitCastInst(returnValue, intrinsics->ptrPtrType, "", currentBlock);
     Value* GCArgs[2] = { cast, intrinsics->constantPtrNull };
         
     CallInst::Create(intrinsics->llvm_gc_gcroot, GCArgs, "", currentBlock);
   }
 
   for (int i = 0; i < maxLocals; i++) {
-    intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), setInstructionName(instName, instNameLen, "local_int_%d", i), currentBlock));
+    intLocals.push_back(new AllocaInst(Type::getInt32Ty(*llvmContext), setInstructionName(instName, instNameLen, "int_%d", i), currentBlock));
     new StoreInst(Constant::getNullValue(Type::getInt32Ty(*llvmContext)), intLocals.back(), false, currentBlock);
-    doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), setInstructionName(instName, instNameLen, "local_double_%d", i), currentBlock));
+    doubleLocals.push_back(new AllocaInst(Type::getDoubleTy(*llvmContext), setInstructionName(instName, instNameLen, "double_%d", i), currentBlock));
     new StoreInst(Constant::getNullValue(Type::getDoubleTy(*llvmContext)), doubleLocals.back(), false, currentBlock);
-    longLocals.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), setInstructionName(instName, instNameLen, "local_long_%d", i), currentBlock));
+    longLocals.push_back(new AllocaInst(Type::getInt64Ty(*llvmContext), setInstructionName(instName, instNameLen, "long_%d", i), currentBlock));
     new StoreInst(Constant::getNullValue(Type::getInt64Ty(*llvmContext)), longLocals.back(), false, currentBlock);
-    floatLocals.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), setInstructionName(instName, instNameLen, "local_float_%d", i), currentBlock));
+    floatLocals.push_back(new AllocaInst(Type::getFloatTy(*llvmContext), setInstructionName(instName, instNameLen, "float_%d", i), currentBlock));
     new StoreInst(Constant::getNullValue(Type::getFloatTy(*llvmContext)), floatLocals.back(), false, currentBlock);
-    objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, setInstructionName(instName, instNameLen, "local_object_%d", i), currentBlock));
+    objectLocals.push_back(new AllocaInst(intrinsics->JavaObjectType, setInstructionName(instName, instNameLen, "object_%d", i), currentBlock));
     // The GCStrategy will already initialize the value.
     if (!TheCompiler->useCooperativeGC())
       new StoreInst(Constant::getNullValue(intrinsics->JavaObjectType), objectLocals.back(), false, currentBlock);
@@ -1189,7 +1131,7 @@ llvm::Function* JavaJIT::javaCompile() {
 
   nbHandlers = readExceptionTable(reader, codeLen);
   if (nbHandlers != 0) {
-    jmpBuffer = new AllocaInst(ArrayType::get(Type::getInt8Ty(*llvmContext), sizeof(vmkit::ExceptionBuffer)), "exceptionSavePointStorage", currentBlock);
+    jmpBuffer = new AllocaInst(ArrayType::get(Type::getInt8Ty(*llvmContext), sizeof(vmkit::ExceptionBuffer)), "", currentBlock);
     jmpBuffer = new BitCastInst(jmpBuffer, intrinsics->ptrType, "exceptionSavePoint", currentBlock);
   }
 
@@ -1199,7 +1141,7 @@ llvm::Function* JavaJIT::javaCompile() {
   endBlock = createBasicBlock("end");
 
   if (returnType != Type::getVoidTy(*llvmContext)) {
-    endNode = llvm::PHINode::Create(returnType, 0, "returnValuePhi", endBlock);
+    endNode = llvm::PHINode::Create(returnType, 0, "", endBlock);
   }
 
   checkYieldPoint();
@@ -1223,8 +1165,8 @@ llvm::Function* JavaJIT::javaCompile() {
 
     stackCheck = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, stackCheck,
                               intrinsics->constantPtrZero, "");
-    BasicBlock* stackOverflow = createBasicBlock("stackOverflow");
-    BasicBlock* noStackOverflow = createBasicBlock("noStackOverflow");
+    BasicBlock* stackOverflow = createBasicBlock("stack overflow");
+    BasicBlock* noStackOverflow = createBasicBlock("no stack overflow");
     BranchInst::Create(stackOverflow, noStackOverflow, stackCheck,
                        currentBlock);
     currentBlock = stackOverflow;
@@ -1285,9 +1227,9 @@ llvm::Function* JavaJIT::javaCompile() {
     currentBlock->eraseFromParent();
   } else {
     if (nbHandlers != 0) {
-      BasicBlock* ifNormal = createBasicBlock("noExceptionThrown");
-      BasicBlock* ifException = createBasicBlock("reThrowException");
-      Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr());
+      BasicBlock* ifNormal = createBasicBlock("No exception was thrown");
+      BasicBlock* ifException = createBasicBlock("Rethrow Exception");
+      Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
       Value* obj = new LoadInst(javaExceptionPtr, "pendingException", currentBlock);
       Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_NE, obj, intrinsics->JavaObjectNullConstant, "");
       BranchInst::Create(ifException, ifNormal, test, currentBlock);
@@ -1439,8 +1381,8 @@ void JavaJIT::JITVerifyNull(Value* obj) {
     } else {
       Value* test = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, obj, intrinsics->JavaObjectNullConstant, "");
 
-      BasicBlock* nullObjBlock = createBasicBlock("objectIsNull");
-      BasicBlock* notNullObjBlock = createBasicBlock("objectIsNotNull");
+      BasicBlock* nullObjBlock = createBasicBlock("object is null");
+      BasicBlock* notNullObjBlock = createBasicBlock("object is not null");
 
       BranchInst::Create(nullObjBlock, notNullObjBlock, test, currentBlock);
       currentBlock = nullObjBlock;
@@ -1466,8 +1408,8 @@ Value* JavaJIT::verifyAndComputePtr(Value* obj, Value* index,
     Value* cmp = new ICmpInst(*currentBlock, ICmpInst::ICMP_ULT, index, size,
                               "");
 
-    BasicBlock* ifTrue =  createBasicBlock("trueVerifyAndComputePtr");
-    BasicBlock* ifFalse = createBasicBlock("falseVerifyAndComputePtr");
+    BasicBlock* ifTrue =  createBasicBlock("true verifyAndComputePtr");
+    BasicBlock* ifFalse = createBasicBlock("false verifyAndComputePtr");
 
     BranchInst::Create(ifTrue, ifFalse, cmp, currentBlock);
     
@@ -2238,6 +2180,7 @@ void JavaJIT::getVirtualField(uint16 index) {
   }
 }
 
+
 void JavaJIT::invokeInterface(uint16 index) {
   
   // Do the usual
@@ -2402,13 +2345,14 @@ DebugLoc JavaJIT::CreateLocation() {
 }
 
 Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
-  const char* Name, BasicBlock *InsertAtEnd) {
+                       const char* Name,
+                       BasicBlock *InsertAtEnd) {
   assert(!inlining);
  
   BasicBlock* ifException = NULL;
   if (jmpBuffer != NULL) {
-    BasicBlock* doCall = createBasicBlock("performCall");
-    ifException = createBasicBlock("exceptionThrown");
+    BasicBlock* doCall = createBasicBlock("Perform call");
+    ifException = createBasicBlock("Exception thrown");
     Instruction* check = CallInst::Create(intrinsics->SetjmpFunction, jmpBuffer, "", currentBlock);
     check = new ICmpInst(*currentBlock, ICmpInst::ICMP_EQ, check, intrinsics->constantZero, "");
     BranchInst::Create(doCall, ifException, check, currentBlock);
@@ -2422,7 +2366,7 @@ Instruction* JavaJIT::invoke(Value *F, std::vector<llvm::Value*>& args,
   
   if (jmpBuffer != NULL) {
     CallInst::Create(intrinsics->UnregisterSetjmpFunction, jmpBuffer, "", currentBlock);
-    BasicBlock* ifNormal = createBasicBlock("noExceptionBlock");
+    BasicBlock* ifNormal = createBasicBlock("no exception block");
     BranchInst::Create(ifNormal, currentBlock);
 
     currentBlock = ifException;
@@ -2442,7 +2386,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, const char* Name,
 }
 
 Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
-  const char* Name, BasicBlock *InsertAtEnd) {
+                       const char* Name, BasicBlock *InsertAtEnd) {
   std::vector<Value*> args;
   args.push_back(arg1);
   args.push_back(arg2);
@@ -2450,7 +2394,7 @@ Instruction* JavaJIT::invoke(Value *F, Value* arg1, Value* arg2,
 }
 
 Instruction* JavaJIT::invoke(Value *F, const char* Name,
-  BasicBlock *InsertAtEnd) {
+                       BasicBlock *InsertAtEnd) {
   std::vector<Value*> args;
   return invoke(F, args, Name, InsertAtEnd);
 }
@@ -2461,7 +2405,7 @@ void JavaJIT::throwException(Value* obj, bool checkNull) {
     CallInst::Create(intrinsics->ThrowExceptionFunction, obj, "", currentBlock);
     new UnreachableInst(*llvmContext, currentBlock);
   } else {
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr());
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
     if (vmkit::Collector::needsNonHeapWriteBarrier()) {
       Instruction* ptr = new BitCastInst(javaExceptionPtr, intrinsics->ptrPtrType, "", currentBlock);
       Instruction* val = new BitCastInst(obj, intrinsics->ptrType, "", currentBlock);
@@ -2613,7 +2557,7 @@ unsigned JavaJIT::readExceptionTable(Reader& reader, uint32 codeLen) {
     Value* VTVar = TheCompiler->getVirtualTable(cur->catchClass->virtualVT);
 
     // Get the Java exception.
-    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr());
+    Value* javaExceptionPtr = getJavaExceptionPtr(getJavaThreadPtr(getMutatorThreadPtr()));
     Value* obj = new LoadInst(javaExceptionPtr, "pendingException", currentBlock);
     
     Value* objVT = CallInst::Create(intrinsics->GetVTFunction, obj, "objectVT",

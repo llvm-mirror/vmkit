@@ -336,8 +336,8 @@ bool FatLock::acquire(gc* obj, LockSystem& table) {
 //	if (lockingThreads == 0)
 //      table.deallocate(this);
 
-	word_t methodIP = System::GetCallFrameAddress();
-	methodIP = System::GetReturnAddressOfCallFrame(methodIP);
+	word_t methodIP = System::GetCallerAddress();
+	methodIP = System::GetIPFromCallerAddress(methodIP);
     Thread::get()->throwNullPointerException(methodIP);
   }
 

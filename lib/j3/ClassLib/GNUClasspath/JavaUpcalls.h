@@ -251,7 +251,6 @@ public:
 
   ISOLATE_STATIC JavaMethod* InitObject;
   ISOLATE_STATIC JavaMethod* FinalizeObject;
-  ISOLATE_STATIC JavaMethod* toString;
 
   ISOLATE_STATIC JavaMethod* ErrorWithExcpNoClassDefFoundError;
   ISOLATE_STATIC JavaMethod* ErrorWithExcpExceptionInInitializerError;

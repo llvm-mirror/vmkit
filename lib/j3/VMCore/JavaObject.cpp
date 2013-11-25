@@ -387,11 +387,9 @@ bool JavaObject::instanceOf(JavaObject* self, UserCommonClass* cl) {
 std::ostream& j3::operator << (std::ostream& os, const JavaObject& obj)
 {
 	JavaObject* javaLoader = NULL;
-	const JavaString* jstr = NULL;
-	const JavaObjectVMThread* vmthObj = NULL;
+	const JavaString* threadNameObj = NULL;
 	llvm_gcroot(javaLoader, 0);
-	llvm_gcroot(jstr, 0);
-	llvm_gcroot(vmthObj, 0);
+	llvm_gcroot(threadNameObj, 0);
 
 	if (VMClassLoader::isVMClassLoader(&obj)) {
 		JnjvmClassLoader* loader = ((const VMClassLoader&)obj).getClassLoader();
@@ -418,31 +416,24 @@ std::ostream& j3::operator << (std::ostream& os, const JavaObject& obj)
 		os << &obj << "(class=" << *ccl;
 
 		if (ccl == vm->upcalls->newThread) {
-			jstr = static_cast<const JavaString*>(
+			threadNameObj = static_cast<const JavaString*>(
 				vm->upcalls->threadName->getInstanceObjectField(
 					const_cast<JavaObject*>(&obj)));
 
-			os << ",name=" << *jstr;
+			char *threadName = JavaString::strToAsciiz(threadNameObj);
+			os << ",name=\"" << threadName << '\"';
+			delete [] threadName;
 		}
 #ifndef	 OpenJDKPath
 		else if (ccl == vm->upcalls->newVMThread) {
-			vmthObj = static_cast<const JavaObjectVMThread*>(&obj);
-			for (int retries = 10; (!vmthObj->vmdata) && (retries >= 0); --retries)
+			const JavaObjectVMThread& vmthObj = (const JavaObjectVMThread&)obj;
+			for (int retries = 10; (!vmthObj.vmdata) && (retries >= 0); --retries)
 				usleep(100);
 
-			if (const JavaObject* thObj = vmthObj->vmdata->currentThread())
+			if (const JavaObject* thObj = vmthObj.vmdata->currentThread())
 				os << ",thread=" << *thObj;
 		}
 #endif
-		else if (ccl == vm->upcalls->newClass) {
-			ccl = JavaObjectClass::getClass(
-				const_cast<JavaObjectClass*>(
-					static_cast<const JavaObjectClass*>(&obj)));
-
-			os << ",name=\"" << *ccl->asClass() << '\"';
-		} else if (ccl == vm->upcalls->newString) {
-			os << ',' << static_cast<const JavaString&>(obj);
-		}
 
 		os << ')';
 	}
@@ -458,23 +449,4 @@ void JavaObject::dump() const
 void JavaObject::dumpClass() const
 {
 	JavaObject::getClass(this)->dump();
-}
-
-void JavaObject::dumpToString() const
-{
-	JavaString* jstr = NULL;
-	llvm_gcroot(jstr, 0);
-
-	if (VMClassLoader::isVMClassLoader(this) || VMStaticInstance::isVMStaticInstance(this))
-	{cerr << "<invalid>" << endl; return;}
-
-	Class* cl = JavaObject::getClass(this)->asClass();
-	if (!cl) {cerr << "<invalid>" << endl; return;}
-
-	Jnjvm* vm = cl->classLoader->getJVM();
-	jstr = static_cast<JavaString*>(
-		vm->upcalls->toString->invokeJavaObjectVirtual(
-			vm, cl, const_cast<JavaObject*>(this)));
-
-	cerr << *jstr << endl;
 }

@@ -118,4 +118,3 @@ svn co https://YOUR_USER_NAME@llvm.org/svn/llvm-project/vmkit/trunk
 * Build it:
 
 make -j12
-
