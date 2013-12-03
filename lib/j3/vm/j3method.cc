@@ -46,8 +46,8 @@ uint32_t J3Method::index()  {
 
 void* J3Method::fnPtr() {
 	void* res;
-
-	if(!_compiledFunction) {
+	
+	if(!_fnPtr) {
 		//fprintf(stderr, "materializing: %ls::%ls%ls\n", cl()->name()->cStr(), name()->cStr(), sign()->cStr());
 		if(!isResolved()) {
 			if(cl()->loader()->vm()->options()->debugLinking)
@@ -59,22 +59,16 @@ void* J3Method::fnPtr() {
 		}
 
 		J3CodeGen* codeGen = J3CodeGen::create(this);
-		_compiledFunction = codeGen->generate();
+		_llvmFunction = codeGen->llvmFunction();
+		_fnPtr = codeGen->fnPtr();
 		J3CodeGen::destroy(codeGen);
+	}
 
-		cl()->loader()->pm()->run(*_compiledFunction);
-		
-		//_compiledFunction->dump();
-
-		res = cl()->loader()->vm()->ee()->recompileAndRelinkFunction(_compiledFunction);
-	} else
-		res = cl()->loader()->vm()->ee()->getPointerToFunction(_compiledFunction);
-
-	return res;
+	return _fnPtr;
 }
 
 void* J3Method::functionPointerOrTrampoline() {
-	return _compiledFunction ? fnPtr() : _trampoline;
+	return _fnPtr ? _fnPtr : _trampoline;
 }
 
 void J3Method::setResolved(uint32_t index) { 
@@ -151,9 +145,8 @@ J3Value J3Method::internalInvoke(bool statically, std::vector<llvm::GenericValue
 		target = resolve(self);
 	}
 
-	if(!_compiledFunction)
-		fnPtr(); /* ensure that the function is fully compiled */
-	llvm::GenericValue res = cl()->loader()->vm()->ee()->runFunction(_compiledFunction, *args);
+	fnPtr(); /* ensure that the function is compiled */
+	llvm::GenericValue res = cl()->loader()->vm()->ee()->runFunction(_llvmFunction, *args);
 
 	J3Value holder;
 	J3* vm = cl()->loader()->vm();
@@ -355,7 +348,7 @@ llvm::GlobalValue* J3Method::llvmDescriptor(llvm::Module* module) {
 llvm::Function* J3Method::llvmFunction(bool isStub, llvm::Module* module, J3Class* from) {
 	llvm::Function* res;
 
-	if(isStub && !_compiledFunction) {
+	if(isStub) {
 		char id[llvmFunctionNameLength() + 16];
 		memcpy(id, llvmFunctionName(), llvmFunctionNameLength());
 		memcpy(id + llvmFunctionNameLength(), "_stub", 6);

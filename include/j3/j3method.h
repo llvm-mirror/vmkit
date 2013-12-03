@@ -65,7 +65,8 @@ namespace j3 {
 		J3MethodType*                _methodType;
 		J3Attributes*                _attributes;
 		uint32_t                     _index;
-		llvm::Function*              _compiledFunction;
+		llvm::Function*              _llvmFunction;
+		uint8_t*                     _fnPtr;
 		char* volatile               _llvmAllNames; /* md_ + llvm Name */
 		size_t                       _llvmAllNamesLength;
 		void*                        _nativeFnPtr;

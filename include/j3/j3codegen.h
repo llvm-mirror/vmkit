@@ -60,7 +60,7 @@ namespace j3 {
 		llvm::Module*         module;
 		llvm::BasicBlock*     bb;
 		llvm::IRBuilder<>*    builder;
-		llvm::Function*       llvmFunction;
+		llvm::Function*       _llvmFunction;
 
 		J3*                   vm;
 		J3Class*              cl;
@@ -202,7 +202,8 @@ namespace j3 {
 		static J3CodeGen* create(J3Method* method);
 		static void       destroy(J3CodeGen* codeGen);
 
-		llvm::Function* generate();
+		llvm::Function*   llvmFunction() { return _llvmFunction; }
+		uint8_t*          fnPtr();
 	};
 }
 
