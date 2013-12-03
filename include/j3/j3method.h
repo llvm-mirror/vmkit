@@ -75,7 +75,6 @@ namespace j3 {
 
 		llvm::Type* doNativeType(J3Type* type);
 
-		J3Value            internalInvoke(bool statically, std::vector<llvm::GenericValue>* args);
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, va_list va);
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* args);
 
