@@ -1,15 +1,6 @@
 #include <map>
 #include <dlfcn.h>
 
-#include "llvm/PassManager.h"
-#include "llvm/Linker.h"
-
-#include "llvm/ExecutionEngine/JIT.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/DerivedTypes.h"
-
 #include "vmkit/allocator.h"
 
 #include "j3/j3classloader.h"
@@ -242,8 +233,6 @@ bool J3ClassLoader::J3MethodLess::operator()(j3::J3Method const* lhs, j3::J3Meth
 
 J3InitialClassLoader::J3InitialClassLoader(J3* v, const char* rtjar, vmkit::BumpAllocator* _alloc) 
 	: J3ClassLoader(v, 0, _alloc) {
-	llvm::llvm_start_multithreaded();
-
 	const char** archives = J3Lib::systemClassesArchives();
 	J3ClassBytes* bytes = J3Reader::openFile(allocator(), archives[0]);
 

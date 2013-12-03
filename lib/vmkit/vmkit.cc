@@ -32,6 +32,7 @@ using namespace vmkit;
 VMKit::VMKit(vmkit::BumpAllocator* allocator) :
 	mangleMap(Util::char_less, allocator) {
 	llvm::InitializeNativeTarget();
+	llvm::llvm_start_multithreaded();
 	_allocator = allocator;
 }
 

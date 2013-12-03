@@ -8,7 +8,6 @@
 #include "j3/j3symbol.h"
 
 namespace llvm {
-	class StructType;
 	class Type;
 	class GlobalValue;
 	class Module;

@@ -11,17 +11,6 @@
 
 #include "j3/j3object.h"
 
-namespace llvm {
-	class DataLayout;
-	class Type;
-	class Function;
-
-	namespace legacy {
-		class FunctionPassManager;
-	}
-	using legacy::FunctionPassManager;
-}
-
 namespace j3 {
 	class J3ZipArchive;
 	class J3ClassBytes;
@@ -50,7 +39,6 @@ namespace j3 {
 
 		J3ObjectHandle*                      _javaClassLoader;
 		J3FixedPoint                         _fixedPoint;
-		llvm::FunctionPassManager*           _pm;
 		pthread_mutex_t                      _mutex;       /* a lock */
 		vmkit::BumpAllocator*                _allocator;   /* the local allocator */
 		J3*                                  _vm;          /* my vm */
@@ -85,7 +73,6 @@ namespace j3 {
 
 		vmkit::BumpAllocator*         allocator() { return _allocator; }
 		J3*                           vm() const { return _vm; };
-		llvm::FunctionPassManager*    pm() { return _pm; }
 
 		J3Method*                     method(uint16_t access, J3Class* cl, 
 																				 const vmkit::Name* name, const vmkit::Name* sign); /* find a method ref */

@@ -8,11 +8,8 @@
 #include "j3/j3method.h"
 #include "j3/j3thread.h"
 
-#include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"
-
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 using namespace j3;
 
