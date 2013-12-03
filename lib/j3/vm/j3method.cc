@@ -58,9 +58,10 @@ void* J3Method::fnPtr() {
 				J3::noSuchMethodError(L"unable to find method", cl(), name(), sign());
 		}
 
-		J3CodeGen* codeGen = J3CodeGen::create(this);
-		_llvmFunction = codeGen->llvmFunction();
-		J3CodeGen::destroy(codeGen);
+		llvm::Module* module = cl()->loader()->module();
+		_llvmFunction = llvmFunction(0, module);
+
+		J3CodeGen::translate(this, _llvmFunction);
 
 		cl()->loader()->pm()->run(*_llvmFunction);
 		llvm::ExecutionEngine* ee = cl()->loader()->vm()->ee();

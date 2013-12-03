@@ -60,7 +60,7 @@ namespace j3 {
 		llvm::Module*          module;
 		llvm::BasicBlock*      bb;
 		llvm::IRBuilder<>*     builder;
-		llvm::Function*        _llvmFunction;
+		llvm::Function*        llvmFunction;
 
 		J3*                    vm;
 		J3Class*               cl;
@@ -193,16 +193,13 @@ namespace j3 {
 		llvm::Function*    ziTry;
 		llvm::GlobalValue* gvTypeInfo;            /* typename void* */
 
-		J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* method);
+		J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* method, llvm::Function* _llvmFunction);
 		~J3CodeGen();
 
 		void* operator new(size_t n, vmkit::BumpAllocator* _allocator);
 		void  operator delete(void* ptr);
 	public:
-		static J3CodeGen* create(J3Method* method);
-		static void       destroy(J3CodeGen* codeGen);
-
-		llvm::Function*   llvmFunction() { return _llvmFunction; }
+		static void translate(J3Method* method, llvm::Function* llvmFunction);
 	};
 }
 
