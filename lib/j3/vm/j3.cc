@@ -53,8 +53,8 @@ void J3::introspect() {
 	typeJ3ObjectPtr         = llvm::PointerType::getUnqual(typeJ3Object);
 	typeJ3ObjectHandlePtr   = llvm::PointerType::getUnqual(introspectType("class.j3::J3ObjectHandle"));
 
-	typeGXXException        = llvm::StructType::get(llvm::Type::getInt8Ty(self()->getContext())->getPointerTo(), 
-																									llvm::Type::getInt32Ty(self()->getContext()), NULL);
+	typeGXXException        = llvm::StructType::get(llvm::Type::getInt8Ty(llvmContext())->getPointerTo(), 
+																									llvm::Type::getInt32Ty(llvmContext()), NULL);
 }
 
 void J3::start(int argc, char** argv) {
@@ -72,7 +72,7 @@ void J3::start(int argc, char** argv) {
 	vmkit::BumpAllocator* a = initialClassLoader->allocator();
 
 #define defPrimitive(name, ctype, llvmtype)			\
-	type##name = new(a) J3Primitive(initialClassLoader, J3Cst::ID_##name, llvm::Type::get##llvmtype##Ty(self()->getContext()));
+	type##name = new(a) J3Primitive(initialClassLoader, J3Cst::ID_##name, llvm::Type::get##llvmtype##Ty(llvmContext()));
 	onJavaTypes(defPrimitive)
 #undef defPrimitive
 

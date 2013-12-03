@@ -101,6 +101,7 @@ namespace j3 {
 
 		llvm::Value*       nullCheck(llvm::Value* obj);
 
+		llvm::BasicBlock*  newBB(const char* name);
 		bool               onEndPoint();
 		llvm::BasicBlock*  forwardBranch(const char* id, uint32_t pc, bool doAlloc, bool doPush);
 		void               condBr(llvm::Value* op);

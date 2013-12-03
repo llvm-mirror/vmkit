@@ -55,7 +55,7 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 
 	_vm = v;
 
-	_module = new llvm::Module("j3", vm()->self()->getContext());
+	_module = new llvm::Module("j3", vm()->llvmContext());
 }
 
 void J3ClassLoader::addSymbol(const char* id, J3Symbol* symbol) {

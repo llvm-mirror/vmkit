@@ -90,9 +90,9 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 
 	ziTry                    = 
 		(llvm::Function*)module->getOrInsertFunction("vmkit.try", 
-																								 llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()), 0));
+																								 llvm::FunctionType::get(llvm::Type::getVoidTy(llvmFunction->getContext()), 0));
 
-	bb    = llvm::BasicBlock::Create(llvmFunction->getContext(), "entry", llvmFunction);
+	bb    = newBB("entry");
 	llvm::IRBuilder<> _builder(bb);
 
 	builder = &_builder;
@@ -202,10 +202,10 @@ llvm::Value* J3CodeGen::vt(J3Type* type) {
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
 	if(exceptionNodes[curExceptionNode]->landingPad) {
-		llvm::BasicBlock* succeed = llvm::BasicBlock::Create(llvmFunction->getContext(), "nullcheck-succeed", llvmFunction);
+		llvm::BasicBlock* succeed = newBB("nullcheck-succeed");
 
 		if(!bbNullCheckFailed) {
-			bbNullCheckFailed = llvm::BasicBlock::Create(llvmFunction->getContext(), "nullcheck-failed", llvmFunction);
+			bbNullCheckFailed = newBB("nullcheck-failed");
 			builder->SetInsertPoint(bbNullCheckFailed);
 			builder->CreateInvoke(funcNullPointerException, bbRet, exceptionNodes[curExceptionNode]->landingPad);
 			builder->SetInsertPoint(bb);
@@ -234,7 +234,7 @@ void J3CodeGen::invoke(J3Method* target, llvm::Value* func) {
 	llvm::Value* res;
 
 	if(exceptionNodes[curExceptionNode]->landingPad) {
-		llvm::BasicBlock* after = llvm::BasicBlock::Create(llvmFunction->getContext(), "invoke-after", llvmFunction);
+		llvm::BasicBlock* after = newBB("invoke-after");
 		res = builder->CreateInvoke(func, after, exceptionNodes[curExceptionNode]->landingPad, args);
 		bb = after;
 		builder->SetInsertPoint(bb);
@@ -414,8 +414,8 @@ llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3Type* type) {
 
 void J3CodeGen::instanceof(llvm::Value* obj, J3Type* type) {
 	llvm::BasicBlock* after = forwardBranch("instanceof-after", codeReader->tell(), 0, 0);
-	llvm::BasicBlock* ok = llvm::BasicBlock::Create(llvmFunction->getContext(), "instanceof-ok", llvmFunction);
-	llvm::BasicBlock* test = llvm::BasicBlock::Create(llvmFunction->getContext(), "instanceof", llvmFunction);
+	llvm::BasicBlock* ok = newBB("instanceof-ok");
+	llvm::BasicBlock* test = newBB("instanceof");
 
 	builder->CreateCondBr(builder->CreateIsNull(obj), ok, test);
 
@@ -431,12 +431,12 @@ void J3CodeGen::instanceof(llvm::Value* obj, J3Type* type) {
 
 void J3CodeGen::checkCast(llvm::Value* obj, J3Type* type) {
 	llvm::BasicBlock* succeed = forwardBranch("checkcast-succeed", codeReader->tell(), 0, 0);
-	llvm::BasicBlock* test = llvm::BasicBlock::Create(llvmFunction->getContext(), "checkcast", llvmFunction);
+	llvm::BasicBlock* test = newBB("checkcast");
 
 	builder->CreateCondBr(builder->CreateIsNull(obj), succeed, test);
 
 	if(!bbCheckCastFailed) {
-		bbCheckCastFailed = llvm::BasicBlock::Create(llvmFunction->getContext(), "checkcast-failed", llvmFunction);
+		bbCheckCastFailed = newBB("checkcast-failed");
 		builder->SetInsertPoint(bbCheckCastFailed);
 		builder->CreateCall(funcClassCastException);
 		builder->CreateBr(bbRet);
@@ -518,6 +518,10 @@ void J3CodeGen::ldc(uint32_t idx) {
 	stack.push(res);
 }
 
+llvm::BasicBlock* J3CodeGen::newBB(const char* name) {
+	return llvm::BasicBlock::Create(llvmFunction->getContext(), name, llvmFunction);
+}
+
 void J3CodeGen::condBr(llvm::Value* op) {
 	builder->CreateCondBr(op,
 												forwardBranch("if-true", javaPC + codeReader->readS2(), 1, 1),
@@ -548,7 +552,7 @@ llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doA
 		opInfos[pc].bb = after;
 		return after;
 	} else {
-		llvm::BasicBlock* res = llvm::BasicBlock::Create(llvmFunction->getContext(), id, llvmFunction);
+		llvm::BasicBlock* res = newBB(id);
 
 		if(doAlloc) {
 			opInfos[pc].metaStack = (llvm::Type**)allocator->allocate(sizeof(llvm::Type**)*stack.topStack);
@@ -1307,7 +1311,7 @@ void J3CodeGen::initExceptionNode(J3ExceptionNode** pnode, uint32_t pc, J3Except
 
 void J3CodeGen::addToExceptionNode(J3ExceptionNode* node, J3ExceptionEntry* entry) {
 	if(!node->nbEntries) {
-		node->landingPad = llvm::BasicBlock::Create(llvmFunction->getContext(), "landing-pad", llvmFunction);
+		node->landingPad = newBB("landing-pad");
 		node->curCheck = node->landingPad;
 		builder->SetInsertPoint(node->landingPad);
 
@@ -1331,7 +1335,7 @@ void J3CodeGen::addToExceptionNode(J3ExceptionNode* node, J3ExceptionEntry* entr
 
 	if(node->curCheck) { /* = 0 if I already have a finally */
 		builder->SetInsertPoint(node->curCheck);
-		node->curCheck = llvm::BasicBlock::Create(llvmFunction->getContext(), "next-exception-check", llvmFunction);
+		node->curCheck = newBB("next-exception-check");
 
 		if(entry->catchType) {
 			stack.metaStack[0] = vm->typeJ3ObjectPtr;
@@ -1408,7 +1412,7 @@ void J3CodeGen::generateJava() {
 	J3Reader codeReaderTmp(cl->bytes(), reader.tell(), codeLength);
 	codeReader = &codeReaderTmp;
 
-	bbRet = llvm::BasicBlock::Create(llvmFunction->getContext(), "ret", llvmFunction);
+	bbRet = newBB("ret");
 	builder->SetInsertPoint(bbRet);
 	if(vm->options()->genDebugExecute) {
 		char buf[256];
@@ -1557,8 +1561,8 @@ void J3CodeGen::generateNative() {
 		builder->CreateCall2(funcJ3ThreadRestore, thread, frame);
 
 		if(methodType->out()->llvmType()->isPointerTy()) {
-			llvm::BasicBlock* ifnull = llvm::BasicBlock::Create(llvmFunction->getContext(), "ifnull", llvmFunction);
-			llvm::BasicBlock* ifnotnull = llvm::BasicBlock::Create(llvmFunction->getContext(), "ifnotnull", llvmFunction);
+			llvm::BasicBlock* ifnull = newBB("ifnull");
+			llvm::BasicBlock* ifnotnull = newBB("ifnotnull");
 			builder->CreateCondBr(builder->CreateIsNull(res), ifnull, ifnotnull);
 
 			builder->SetInsertPoint(bb = ifnull);

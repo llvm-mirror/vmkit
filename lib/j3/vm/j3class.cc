@@ -730,8 +730,8 @@ void J3Class::createLLVMTypes() {
 	mangler.mangle("static_")->mangle(name());
 
 	staticLayout._llvmType = 
-		llvm::PointerType::getUnqual(llvm::StructType::create(loader()->module()->getContext(), mangler.cStr()));
-	_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->module()->getContext(), mangler.cStr()+7));
+		llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), mangler.cStr()));
+	_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), mangler.cStr()+7));
 
 	mangler.mangle("_2");
 		
@@ -854,7 +854,7 @@ llvm::Type* J3ArrayClass::llvmType() {
 		memcpy(_nativeName+2, component()->nativeName(), len);
 		_nativeName[_nativeNameLength] = 0;
 
-		_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->module()->getContext(), 
+		_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), 
 																																			body,
 																																			_nativeName));
 

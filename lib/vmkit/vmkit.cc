@@ -43,6 +43,9 @@ void VMKit::destroy(VMKit* vm) {
 	vmkit::BumpAllocator::destroy(vm->allocator());
 }
 
+llvm::LLVMContext& VMKit::llvmContext() {
+	return self()->getContext();
+}
 
 llvm::Type* VMKit::introspectType(const char* name) {
 	llvm::Type* res = self()->getTypeByName(name);

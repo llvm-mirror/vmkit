@@ -7,6 +7,7 @@
 #include "llvm/ExecutionEngine/JITEventListener.h"
 
 namespace llvm {
+	class LLVMContext;
 	class Module;
 	class ExecutionEngine;
 	class DataLayout;
@@ -74,6 +75,7 @@ namespace vmkit {
 		void                       vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath);
 
 		llvm::DataLayout*          dataLayout() { return _dataLayout; }
+		llvm::LLVMContext&         llvmContext();
 		llvm::Module*              self() { return _self; }
 		llvm::ExecutionEngine*     ee() { return _ee; }
 		llvm::FunctionPassManager* preparePM(llvm::Module* mod);
