@@ -69,11 +69,11 @@ void J3ClassLoader::addSymbol(const char* id, J3Symbol* symbol) {
 	pthread_mutex_unlock(&_mutexSymbolTable);
 }
 
-J3Symbol* J3ClassLoader::getSymbol(const char* id) {
+uint64_t J3ClassLoader::getSymbolAddress(const std::string &Name) {
 	pthread_mutex_lock(&_mutexSymbolTable);
-	J3Symbol* res = _symbolTable[id];
+	J3Symbol* res = _symbolTable[Name.c_str()];
 	pthread_mutex_unlock(&_mutexSymbolTable);
-	return res;
+	return res->getSymbolAddress();
 }
 
 void* J3ClassLoader::lookupNativeFunctionPointer(J3Method* method, const char* symbol) {

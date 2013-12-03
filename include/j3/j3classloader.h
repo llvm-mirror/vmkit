@@ -4,6 +4,8 @@
 #include <map>
 #include <vector>
 
+#include "llvm/ExecutionEngine/SectionMemoryManager.h"
+
 #include "vmkit/allocator.h"
 #include "vmkit/names.h"
 
@@ -31,7 +33,7 @@ namespace j3 {
 	class J3Class;
 	class J3Symbol;
 
-	class J3ClassLoader {
+	class J3ClassLoader : public llvm::SectionMemoryManager {
 		struct J3MethodLess : public std::binary_function<wchar_t*,wchar_t*,bool> {
 			bool operator()(const J3Method* lhs, const J3Method* rhs) const;
 		};
@@ -63,6 +65,9 @@ namespace j3 {
 		void                          wrongType(J3Class* from, const vmkit::Name* type);
 		J3Type*                       getTypeInternal(J3Class* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
 
+
+		uint64_t                      getSymbolAddress(const std::string &Name);
+
 	protected:
 		std::vector<void*, vmkit::StdAllocator<void*> > nativeLibraries;
 
@@ -71,7 +76,6 @@ namespace j3 {
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
 
 		void                          addSymbol(const char* id, J3Symbol* symbol);
-		J3Symbol*                     getSymbol(const char* id);
 
 		static void                   destroy(J3ClassLoader* loader);
 

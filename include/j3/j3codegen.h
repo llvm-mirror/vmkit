@@ -96,73 +96,73 @@ namespace j3 {
 
 		bool                  isWide;
 
-		uint32_t          wideReadU1();
-		uint32_t          wideReadS1();
+		uint32_t           wideReadU1();
+		uint32_t           wideReadS1();
 
-		llvm::Value*      nullCheck(llvm::Value* obj);
+		llvm::Value*       nullCheck(llvm::Value* obj);
 
-		bool              onEndPoint();
-		llvm::BasicBlock* forwardBranch(const char* id, uint32_t pc, bool doAlloc, bool doPush);
-		void              condBr(llvm::Value* op);
+		bool               onEndPoint();
+		llvm::BasicBlock*  forwardBranch(const char* id, uint32_t pc, bool doAlloc, bool doPush);
+		void               condBr(llvm::Value* op);
 
-		llvm::Value*      flatten(llvm::Value* v, J3Type* type);
-		llvm::Value*      unflatten(llvm::Value* v, J3Type* type);
+		llvm::Value*       flatten(llvm::Value* v, J3Type* type);
+		llvm::Value*       unflatten(llvm::Value* v, J3Type* type);
 
-		llvm::Value*      handleToObject(llvm::Value* obj);
-		llvm::Value*      javaClass(J3ObjectType* type);
-		llvm::Value*      staticInstance(J3Class* cl);
-		llvm::Value*      vt(J3Type* cl);
-		llvm::Value*      vt(llvm::Value* obj);
-		void              initialiseJ3Type(J3Type* cl);
+		llvm::Value*       handleToObject(llvm::Value* obj);
+		llvm::Value*       javaClass(J3ObjectType* type);
+		llvm::Value*       staticInstance(J3Class* cl);
+		llvm::Value*       vt(J3Type* cl);
+		llvm::Value*       vt(llvm::Value* obj);
+		void               initialiseJ3Type(J3Type* cl);
 
-		llvm::Value*      isAssignableTo(llvm::Value* obj, J3Type* type);
-		void              instanceof(llvm::Value* obj, J3Type* type);
-		void              checkCast(llvm::Value* obj, J3Type* type);
+		llvm::Value*       isAssignableTo(llvm::Value* obj, J3Type* type);
+		void               instanceof(llvm::Value* obj, J3Type* type);
+		void               checkCast(llvm::Value* obj, J3Type* type);
 
-		void              floatToInteger(J3Type* from, J3Type* to);
-		void              compareFP(bool isL);
-		void              compareLong();
+		void               floatToInteger(J3Type* from, J3Type* to);
+		void               compareFP(bool isL);
+		void               compareLong();
 
-		void              get(llvm::Value* obj, J3Field* field);
-		void              getField(uint32_t idx);
-		void              getStatic(uint32_t idx);
+		void               get(llvm::Value* obj, J3Field* field);
+		void               getField(uint32_t idx);
+		void               getStatic(uint32_t idx);
 
-		void              put(llvm::Value* obj, llvm::Value* val, J3Field* field);
-		void              putField(uint32_t idx);
-		void              putStatic(uint32_t idx);
+		void               put(llvm::Value* obj, llvm::Value* val, J3Field* field);
+		void               putField(uint32_t idx);
+		void               putStatic(uint32_t idx);
 
-		void              invoke(J3Method* method, llvm::Value* func);
-		void              invokeVirtual(uint32_t idx);
-		void              invokeStatic(uint32_t idx);
-		void              invokeSpecial(uint32_t idx);
+		void               invoke(J3Method* method, llvm::Value* func);
+		void               invokeVirtual(uint32_t idx);
+		void               invokeStatic(uint32_t idx);
+		void               invokeSpecial(uint32_t idx);
 
-		llvm::Value*      arrayContent(J3Type* cType, llvm::Value* array, llvm::Value* idx);
+		llvm::Value*       arrayContent(J3Type* cType, llvm::Value* array, llvm::Value* idx);
 
-		void              arrayBoundCheck(llvm::Value* obj, llvm::Value* idx);
-		llvm::Value*      arrayLength(llvm::Value* obj);
-		llvm::Value*      arrayLengthPtr(llvm::Value* obj);
-		void              arrayStore(J3Type* cType);
-		void              arrayLoad(J3Type* cType);
+		void               arrayBoundCheck(llvm::Value* obj, llvm::Value* idx);
+		llvm::Value*       arrayLength(llvm::Value* obj);
+		llvm::Value*       arrayLengthPtr(llvm::Value* obj);
+		void               arrayStore(J3Type* cType);
+		void               arrayLoad(J3Type* cType);
 
-		void              newArray(uint8_t atype);
-		void              newArray(J3ArrayClass* type);
-		void              newObject(J3Class* cl);
+		void               newArray(uint8_t atype);
+		void               newArray(J3ArrayClass* type);
+		void               newObject(J3Class* cl);
 
-		void              ldc(uint32_t idx);
+		void               ldc(uint32_t idx);
 
-		void              translate();
+		void               translate();
 
-		void              initExceptionNode(J3ExceptionNode** pnode, uint32_t pc, J3ExceptionNode* node);
-		void              addToExceptionNode(J3ExceptionNode* node, J3ExceptionEntry* entry);
-		void              closeExceptionNode(J3ExceptionNode* node);
+		void               initExceptionNode(J3ExceptionNode** pnode, uint32_t pc, J3ExceptionNode* node);
+		void               addToExceptionNode(J3ExceptionNode* node, J3ExceptionEntry* entry);
+		void               closeExceptionNode(J3ExceptionNode* node);
 
-		void              generateJava();
-		void              generateNative();
+		void               generateJava();
+		void               generateNative();
 
-		llvm::Value*      buildString(const char* msg);
+		llvm::Value*       buildString(const char* msg);
 
-		static void       echoDebugEnter(uint32_t isLeave, const char* msg, ...);
-		static void       echoDebugExecute(uint32_t level, const char* msg, ...);
+		static void        echoDebugEnter(uint32_t isLeave, const char* msg, ...);
+		static void        echoDebugExecute(uint32_t level, const char* msg, ...);
 
 		llvm::Function*    funcJ3MethodIndex;
 		llvm::Function*    funcJ3TypeVT;
