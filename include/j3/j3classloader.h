@@ -15,7 +15,6 @@ namespace llvm {
 	class DataLayout;
 	class Type;
 	class Function;
-	class DIBuilder;
 
 	namespace legacy {
 		class FunctionPassManager;
@@ -59,7 +58,6 @@ namespace j3 {
 		vmkit::NameMap<J3Type*>::map         types;        /* shortcut to find types */
 		vmkit::NameMap<J3MethodType*>::map   methodTypes;  /* shortcut to find method types - REMOVE */
 		llvm::Module*                        _module;      /* the associated llvm module */
-		llvm::DIBuilder*                     _dbgBuilder;
 		MethodRefMap                          methods;      /* all te known method */
 
 		void                          wrongType(J3Class* from, const vmkit::Name* type);
@@ -78,8 +76,6 @@ namespace j3 {
 		void                          addSymbol(const char* id, J3Symbol* symbol);
 
 		static void                   destroy(J3ClassLoader* loader);
-
-		llvm::DIBuilder*              dbgBuilder() const { return _dbgBuilder; }
 
 		J3FixedPoint*                 fixedPoint() { return &_fixedPoint; }
 

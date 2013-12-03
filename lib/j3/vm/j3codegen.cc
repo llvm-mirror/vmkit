@@ -1369,20 +1369,22 @@ void J3CodeGen::generateJava() {
 		->CreateIntToPtr(llvm::ConstantInt::get(vm->dataLayout()->getIntPtrType(module->getContext()), (uintptr_t)0),
 										 vm->typeJ3ObjectPtr);
 
+	llvm::DIBuilder* dbgBuilder = new llvm::DIBuilder(*module);
+
   dbgInfo =
-		loader->dbgBuilder()->createFunction(llvm::DIDescriptor(),    // Function scope
-																				 llvmFunction->getName(), // Function name
-																				 llvmFunction->getName(), // Mangled name
-																				 llvm::DIFile(),          // File where this variable is defined
-																				 0,                       // Line number
-																				 loader->dbgBuilder()     // Function type.
+		dbgBuilder->createFunction(llvm::DIDescriptor(),    // Function scope
+															 llvmFunction->getName(), // Function name
+															 llvmFunction->getName(), // Mangled name
+															 llvm::DIFile(),          // File where this variable is defined
+															 0,                       // Line number
+															 dbgBuilder     // Function type.
 																				 ->createSubroutineType(llvm::DIFile(),       // File in which this subroutine is defined 
 																																llvm::DIArray()),     // An array of subroutine parameter types. 
 																				                                              // This includes return type at 0th index.
-																				 false,                   // True if this function is not externally visible
-																				 false,                   // True if this is a function definition
-																				 0                        // Set to the beginning of the scope this starts
-																				 );
+															 false,                   // True if this function is not externally visible
+															 false,                   // True if this is a function definition
+															 0                        // Set to the beginning of the scope this starts
+															 );
 
 	uint32_t maxStack   = reader.readU2();
 	uint32_t nbLocals  = reader.readU2();

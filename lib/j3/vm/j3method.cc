@@ -58,13 +58,14 @@ void* J3Method::fnPtr() {
 				J3::noSuchMethodError(L"unable to find method", cl(), name(), sign());
 		}
 
-		llvm::Module* module = cl()->loader()->module();
+		llvm::Module* module = new llvm::Module(llvmFunctionName(), cl()->loader()->vm()->self()->getContext());
 		_llvmFunction = llvmFunction(0, module);
 
 		J3CodeGen::translate(this, _llvmFunction);
 
-		cl()->loader()->pm()->run(*_llvmFunction);
+		cl()->loader()->vm()->preparePM(module)->run(*_llvmFunction); /* TODO, check memory */
 		llvm::ExecutionEngine* ee = cl()->loader()->vm()->ee();
+		ee->addModule(module);
 		_fnPtr = (uint8_t*)ee->recompileAndRelinkFunction(_llvmFunction);
 	}
 
