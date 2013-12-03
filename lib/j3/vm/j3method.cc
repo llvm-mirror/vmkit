@@ -60,8 +60,11 @@ void* J3Method::fnPtr() {
 
 		J3CodeGen* codeGen = J3CodeGen::create(this);
 		_llvmFunction = codeGen->llvmFunction();
-		_fnPtr = codeGen->fnPtr();
 		J3CodeGen::destroy(codeGen);
+
+		cl()->loader()->pm()->run(*_llvmFunction);
+		llvm::ExecutionEngine* ee = cl()->loader()->vm()->ee();
+		_fnPtr = (uint8_t*)ee->recompileAndRelinkFunction(_llvmFunction);
 	}
 
 	return _fnPtr;

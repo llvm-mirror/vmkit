@@ -56,45 +56,45 @@ namespace j3 {
 	class J3CodeGen {
 		friend class J3CodeGenVar;
 
-		vmkit::BumpAllocator* allocator;
-		llvm::Module*         module;
-		llvm::BasicBlock*     bb;
-		llvm::IRBuilder<>*    builder;
-		llvm::Function*       _llvmFunction;
+		vmkit::BumpAllocator*  allocator;
+		llvm::Module*          module;
+		llvm::BasicBlock*      bb;
+		llvm::IRBuilder<>*     builder;
+		llvm::Function*        _llvmFunction;
 
-		J3*                   vm;
-		J3Class*              cl;
-		J3ClassLoader*        loader;
-		J3Method*             method;
-		J3MethodType*         methodType;
-		J3Reader*             codeReader;
+		J3*                    vm;
+		J3Class*               cl;
+		J3ClassLoader*         loader;
+		J3Method*              method;
+		J3MethodType*          methodType;
+		J3Reader*              codeReader;
 
-		llvm::BasicBlock*     bbCheckCastFailed;
-		llvm::BasicBlock*     bbNullCheckFailed;
-		llvm::BasicBlock*     bbRet;
+		llvm::BasicBlock*      bbCheckCastFailed;
+		llvm::BasicBlock*      bbNullCheckFailed;
+		llvm::BasicBlock*      bbRet;
 
-		J3ExceptionEntry*     exceptionEntries;
-		J3ExceptionNode**     exceptionNodes;
-		uint32_t              nbExceptionEntries;
-		uint32_t              nbExceptionNodes;
-		uint32_t              curExceptionNode;
+		J3ExceptionEntry*      exceptionEntries;
+		J3ExceptionNode**      exceptionNodes;
+		uint32_t               nbExceptionEntries;
+		uint32_t               nbExceptionNodes;
+		uint32_t               curExceptionNode;
 
-		J3OpInfo*             opInfos;
-		uint32_t*             pendingBranchs;
-		uint32_t              topPendingBranchs;
+		J3OpInfo*              opInfos;
+		uint32_t*              pendingBranchs;
+		uint32_t               topPendingBranchs;
 
-		llvm::Value*          nullValue;
+		llvm::Value*           nullValue;
 
-		llvm::MDNode*         dbgInfo;
-		uint32_t              javaPC;
+		llvm::MDNode*          dbgInfo;
+		uint32_t               javaPC;
 
-		J3CodeGenVar          locals;
-		J3CodeGenVar          stack;
-		J3CodeGenVar          ret;
+		J3CodeGenVar           locals;
+		J3CodeGenVar           stack;
+		J3CodeGenVar           ret;
 
-		bool                  closeBB;
+		bool                   closeBB;
 
-		bool                  isWide;
+		bool                   isWide;
 
 		uint32_t           wideReadU1();
 		uint32_t           wideReadS1();
@@ -203,7 +203,6 @@ namespace j3 {
 		static void       destroy(J3CodeGen* codeGen);
 
 		llvm::Function*   llvmFunction() { return _llvmFunction; }
-		uint8_t*          fnPtr();
 	};
 }
 

@@ -101,9 +101,6 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m) {
 		generateNative();
 	else
 		generateJava();
-
-	loader->pm()->run(*llvmFunction());
-	vm->ee()->recompileAndRelinkFunction(llvmFunction());
 }
 
 J3CodeGen::~J3CodeGen() {
@@ -125,10 +122,6 @@ void J3CodeGen::destroy(J3CodeGen* codeGen) {
 	vmkit::BumpAllocator* allocator = codeGen->allocator;
 	delete codeGen;
 	vmkit::BumpAllocator::destroy(allocator);
-}
-
-uint8_t* J3CodeGen::fnPtr() {
-	return (uint8_t*)vm->ee()->getPointerToFunction(llvmFunction());
 }
 
 uint32_t J3CodeGen::wideReadU1() {
