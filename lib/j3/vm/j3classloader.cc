@@ -7,7 +7,6 @@
 #include "llvm/ExecutionEngine/JIT.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 
-#include "llvm/IR/Module.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/DerivedTypes.h"
 
@@ -54,8 +53,6 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	pthread_mutex_init(&_mutexSymbolTable, 0);
 
 	_vm = v;
-
-	_module = new llvm::Module("j3", vm()->llvmContext());
 }
 
 void J3ClassLoader::addSymbol(const char* id, J3Symbol* symbol) {

@@ -57,8 +57,7 @@ namespace j3 {
 		vmkit::NameMap<J3Class*>::map        classes;      /* classes managed by this class loader */
 		vmkit::NameMap<J3Type*>::map         types;        /* shortcut to find types */
 		vmkit::NameMap<J3MethodType*>::map   methodTypes;  /* shortcut to find method types - REMOVE */
-		llvm::Module*                        _module;      /* the associated llvm module */
-		MethodRefMap                          methods;      /* all te known method */
+		MethodRefMap                         methods;      /* all te known method */
 
 		void                          wrongType(J3Class* from, const vmkit::Name* type);
 		J3Type*                       getTypeInternal(J3Class* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
@@ -97,7 +96,6 @@ namespace j3 {
 		J3Class*                      getClass(const vmkit::Name* name);                     /* find a class */
 		J3Type*                       getType(J3Class* from, const vmkit::Name* type);       /* find a type */
 		J3MethodType*                 getMethodType(J3Class* from, const vmkit::Name* sign); /* get a method type */
-		llvm::Module*                 module() { return _module; }
 
 		virtual J3ClassBytes*         lookup(const vmkit::Name* name);
 
