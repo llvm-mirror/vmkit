@@ -47,7 +47,9 @@ namespace vmkit {
 		llvm::ExecutionEngine*  _ee;
 		llvm::ExecutionEngine*  _oldee;
 
+	protected:
 		void  operator delete(void* self);
+
 	public:
 		void* operator new(size_t n, BumpAllocator* allocator);
 

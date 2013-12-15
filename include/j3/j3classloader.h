@@ -4,10 +4,9 @@
 #include <map>
 #include <vector>
 
-#include "llvm/ExecutionEngine/SectionMemoryManager.h"
-
 #include "vmkit/allocator.h"
 #include "vmkit/names.h"
+#include "vmkit/compiler.h"
 
 #include "j3/j3object.h"
 
@@ -28,7 +27,7 @@ namespace j3 {
 	class J3;
 	class J3Class;
 
-	class J3ClassLoader : public llvm::SectionMemoryManager {
+	class J3ClassLoader : public vmkit::CompilationUnit {
 		struct J3MethodLess : public std::binary_function<wchar_t*,wchar_t*,bool> {
 			bool operator()(const J3Method* lhs, const J3Method* rhs) const;
 		};
@@ -36,18 +35,11 @@ namespace j3 {
 		typedef std::map<J3Method*, J3Method*, J3MethodLess,
 										 vmkit::StdAllocator<std::pair<J3Method*, J3Method*> > > MethodRefMap;
 
-		typedef std::map<const char*, vmkit::Symbol*, vmkit::Util::char_less_t,
-										 vmkit::StdAllocator<std::pair<const char*, vmkit::Symbol*> > > SymbolMap;
-
 		static J3MethodLess  j3MethodLess;
-
-		SymbolMap                            _symbolTable;
-		pthread_mutex_t                      _mutexSymbolTable;
 
 		J3ObjectHandle*                      _javaClassLoader;
 		J3FixedPoint                         _fixedPoint;
 		pthread_mutex_t                      _mutex;       /* a lock */
-		vmkit::BumpAllocator*                _allocator;   /* the local allocator */
 		J3*                                  _vm;          /* my vm */
 		vmkit::NameMap<J3Class*>::map        classes;      /* classes managed by this class loader */
 		vmkit::NameMap<J3Type*>::map         types;        /* shortcut to find types */
@@ -60,22 +52,11 @@ namespace j3 {
 		void                          wrongType(J3Class* from, const vmkit::Name* type);
 		J3Type*                       getTypeInternal(J3Class* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
 
-
-		uint64_t                      getSymbolAddress(const std::string &Name);
-
 	protected:
 		std::vector<void*, vmkit::StdAllocator<void*> > nativeLibraries;
 
 	public:
-		void* operator new(size_t n, vmkit::BumpAllocator* allocator);
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
-
-		llvm::ExecutionEngine*        ee() { return _ee; }
-		llvm::ExecutionEngine*        oldee() { return _oldee; }
-
-		void                          addSymbol(const char* id, vmkit::Symbol* symbol);
-
-		static void                   destroy(J3ClassLoader* loader);
 
 		J3FixedPoint*                 fixedPoint() { return &_fixedPoint; }
 
@@ -84,7 +65,6 @@ namespace j3 {
 		void                          lock() { pthread_mutex_lock(&_mutex); }
 		void                          unlock() { pthread_mutex_unlock(&_mutex); }
 
-		vmkit::BumpAllocator*         allocator() { return _allocator; }
 		J3*                           vm() const { return _vm; };
 
 		J3Method*                     method(uint16_t access, J3Class* cl, 
@@ -116,7 +96,6 @@ namespace j3 {
 
 		const char* cmangled(const char* demangled) { return _cmangled[demangled]; }
 
-		void makeLLVMFunctions_j3();
 		void registerCMangling(const char* mangled, const char* demangled);
 	};
 }
