@@ -13,10 +13,6 @@ namespace llvm {
 	class GlobalValue;
 	class Function;
 	class Type;
-	namespace legacy {
-		class FunctionPassManager;
-	}
-	using legacy::FunctionPassManager;
 }
 
 namespace vmkit {
@@ -75,7 +71,6 @@ namespace vmkit {
 		llvm::DataLayout*          dataLayout() { return _dataLayout; }
 		llvm::LLVMContext&         llvmContext();
 		llvm::Module*              self() { return _self; }
-		llvm::FunctionPassManager* preparePM(llvm::Module* mod);
 		llvm::Function*            getGCRoot(llvm::Module* mod);
 		llvm::Function*            introspectFunction(llvm::Module* dest, const char* name);
 		llvm::GlobalValue*         introspectGlobalValue(llvm::Module* dest, const char* name);

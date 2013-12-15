@@ -9,6 +9,12 @@
 namespace llvm {
 	class Module;
 	class ExecutionEngine;
+
+	namespace legacy {
+		class PassManager;
+	}
+	using legacy::PassManager;
+
 };
 
 namespace vmkit {
@@ -25,19 +31,6 @@ namespace vmkit {
 		uint8_t* getSymbolAddress() { return addr; }
 	};
 
-#if 0
-	class CompilationFragment {
-		BumpAllocator*  _allocator;
-		llvm::Module*   _module;
-
-	public:
-		CompilationFragment(BumpAllocator* allocator);
-
-		BumpAllocator* allocator() { return _allocator; }
-		llvm::Module*  module() { return _module; }
-	};
-#endif
-
 	class CompilationUnit  : public llvm::SectionMemoryManager {
 		typedef std::map<const char*, Symbol*, Util::char_less_t, StdAllocator<std::pair<const char*, Symbol*> > > SymbolMap;
 
@@ -46,6 +39,7 @@ namespace vmkit {
 		pthread_mutex_t         _mutexSymbolTable;
 		llvm::ExecutionEngine*  _ee;
 		llvm::ExecutionEngine*  _oldee;
+		llvm::PassManager*      pm;
 
 	protected:
 		void  operator delete(void* self);
@@ -64,6 +58,8 @@ namespace vmkit {
 		BumpAllocator*          allocator() { return _allocator; }
 		llvm::ExecutionEngine*  ee() { return _ee; }
 		llvm::ExecutionEngine*  oldee() { return _oldee; }
+
+		void                    addModule(llvm::Module* module);
 	};
 }
 

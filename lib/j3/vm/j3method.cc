@@ -7,8 +7,6 @@
 #include "j3/j3thread.h"
 #include "j3/j3codegen.h"
 
-#include "llvm/PassManager.h"
-
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
@@ -61,10 +59,8 @@ uint8_t* J3Method::fnPtr() {
 
 		J3CodeGen::translate(this, _llvmFunction);
 
-		cl()->loader()->vm()->preparePM(module)->run(*_llvmFunction); /* TODO, check memory */
-
 		llvm::ExecutionEngine* ee = cl()->loader()->ee();
-		ee->addModule(module);
+		cl()->loader()->addModule(module);
 		_fnPtr = (uint8_t*)ee->getFunctionAddress(_llvmFunction->getName().data());
 	}
 

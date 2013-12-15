@@ -20,7 +20,6 @@
 
 #include "llvm/DebugInfo.h"
 #include "llvm/DIBuilder.h"
-#include "llvm/PassManager.h"
 
 using namespace j3;
 

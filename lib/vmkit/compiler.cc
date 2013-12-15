@@ -4,7 +4,11 @@
 #include "vmkit/thread.h"
 #include "vmkit/vmkit.h"
 
+#include "llvm/LinkAllPasses.h"
+#include "llvm/PassManager.h"
+
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+
 #include "llvm/IR/Module.h"
 
 using namespace vmkit;
@@ -45,6 +49,42 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id) :
 		Thread::get()->vm()->internalError(L"Error while creating execution engine: %s\n", err.c_str());
 
 	oldee()->DisableLazyCompilation(0);
+
+	pm = new llvm::PassManager();
+	//pm->add(new llvm::TargetData(*ee->getTargetData()));
+
+	pm->add(llvm::createBasicAliasAnalysisPass());
+	
+	pm->add(llvm::createCFGSimplificationPass());      // Clean up disgusting code
+	pm->add(llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
+	pm->add(llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
+	pm->add(llvm::createScalarReplAggregatesPass()); // Break up aggregate allocas
+	pm->add(llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
+	pm->add(llvm::createJumpThreadingPass());        // Thread jumps.
+	pm->add(llvm::createCFGSimplificationPass());    // Merge & remove BBs
+	pm->add(llvm::createInstructionCombiningPass()); // Combine silly seq's
+	pm->add(llvm::createCFGSimplificationPass());    // Merge & remove BBs
+
+	pm->add(llvm::createReassociatePass());          // Reassociate expressions
+	pm->add(llvm::createLoopRotatePass());           // Rotate loops.
+	pm->add(llvm::createLICMPass());                 // Hoist loop invariants
+	pm->add(llvm::createLoopUnswitchPass());         // Unswitch loops.
+	pm->add(llvm::createInstructionCombiningPass());
+	pm->add(llvm::createIndVarSimplifyPass());       // Canonicalize indvars
+	pm->add(llvm::createLoopDeletionPass());         // Delete dead loops
+	pm->add(llvm::createLoopUnrollPass());           // Unroll small loops*/
+	pm->add(llvm::createInstructionCombiningPass()); // Clean up after the unroller
+	pm->add(llvm::createGVNPass());                  // Remove redundancies
+	pm->add(llvm::createMemCpyOptPass());            // Remove memcpy / form memset
+	pm->add(llvm::createSCCPPass());                 // Constant prop with SCCP
+
+	// Run instcombine after redundancy elimination to exploit opportunities
+	// opened up by them.
+	pm->add(llvm::createInstructionCombiningPass());
+	pm->add(llvm::createJumpThreadingPass());         // Thread jumps
+	pm->add(llvm::createDeadStoreEliminationPass());  // Delete dead stores
+	pm->add(llvm::createAggressiveDCEPass());         // Delete dead instructions
+	pm->add(llvm::createCFGSimplificationPass());     // Merge & remove BBs
 }
 
 CompilationUnit::~CompilationUnit() {
@@ -82,4 +122,9 @@ uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
 
 	pthread_mutex_unlock(&_mutexSymbolTable);
 	return (uint64_t)(uintptr_t)res->getSymbolAddress();
+}
+
+void CompilationUnit::addModule(llvm::Module* module) {
+	pm->run(*module);
+	ee()->addModule(module);
 }
