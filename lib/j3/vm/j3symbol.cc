@@ -4,6 +4,6 @@
 
 using namespace j3;
 
-uint64_t J3Symbol::getSymbolAddress() {
+uint8_t* J3Symbol::getSymbolAddress() {
 	J3Thread::get()->vm()->internalError(L"implement me: getSymbolAddress");
 }

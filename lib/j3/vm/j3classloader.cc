@@ -1,6 +1,9 @@
 #include <map>
 #include <dlfcn.h>
 
+#include "llvm/IR/Module.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+
 #include "vmkit/allocator.h"
 
 #include "j3/j3classloader.h"
@@ -44,6 +47,27 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	pthread_mutex_init(&_mutexSymbolTable, 0);
 
 	_vm = v;
+
+	std::string err;
+	_ee = llvm::EngineBuilder(new llvm::Module("class-loader", vm()->llvmContext()))
+		.setUseMCJIT(1)
+		.setMCJITMemoryManager(this)
+		.setErrorStr(&err)
+		.create();
+
+	if (!ee())
+		vm()->internalError(L"Error while creating execution engine: %s\n", err.c_str());
+
+  ee()->RegisterJITEventListener(vm());
+
+	_oldee = llvm::EngineBuilder(new llvm::Module("old ee", vm()->llvmContext()))
+		.setErrorStr(&err)
+		.create();
+
+	if (!oldee())
+		vm()->internalError(L"Error while creating execution engine: %s\n", err.c_str());
+
+	oldee()->DisableLazyCompilation(0);
 }
 
 void J3ClassLoader::addSymbol(const char* id, J3Symbol* symbol) {
@@ -54,9 +78,25 @@ void J3ClassLoader::addSymbol(const char* id, J3Symbol* symbol) {
 
 uint64_t J3ClassLoader::getSymbolAddress(const std::string &Name) {
 	pthread_mutex_lock(&_mutexSymbolTable);
-	J3Symbol* res = _symbolTable[Name.c_str()];
+	const char* id = Name.c_str() + 1;
+
+	std::map<const char*, J3Symbol*>::iterator it = _symbolTable.find(id);
+	J3Symbol* res;
+
+	if(it == _symbolTable.end()) {
+		uint8_t* addr = (uint8_t*)dlsym(RTLD_SELF, id);
+		if(!addr)
+			vm()->internalError(L"unable to resolve native symbol: %s", id);
+		res = new(allocator()) J3NativeSymbol(addr);
+		size_t len = strlen(id);
+		char* buf = (char*)allocator()->allocate(len+1);
+		memcpy(buf, id, len+1);
+		_symbolTable[buf] = res;
+	} else
+		res = it->second;
+
 	pthread_mutex_unlock(&_mutexSymbolTable);
-	return res->getSymbolAddress();
+	return (uint64_t)(uintptr_t)res->getSymbolAddress();
 }
 
 void* J3ClassLoader::lookupNativeFunctionPointer(J3Method* method, const char* symbol) {

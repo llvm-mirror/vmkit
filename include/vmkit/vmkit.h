@@ -9,7 +9,6 @@
 namespace llvm {
 	class LLVMContext;
 	class Module;
-	class ExecutionEngine;
 	class DataLayout;
 	class GlobalValue;
 	class Function;
@@ -55,13 +54,12 @@ namespace vmkit {
 		MangleMap                       mangleMap;
 		BumpAllocator*                  _allocator;
 		llvm::Module*                   _self;
-		llvm::ExecutionEngine*          _ee;
 		llvm::DataLayout*               _dataLayout;
 		void*                           ptrTypeInfo;
 
-		uintptr_t                  addSymbol(llvm::GlobalValue* gv);
+		void                       addSymbol(llvm::GlobalValue* gv);
 
-		static void defaultInternalError(const wchar_t* msg, va_list va) __attribute__((noreturn));
+		static void                defaultInternalError(const wchar_t* msg, va_list va) __attribute__((noreturn));
 	protected:
 		void* operator new(size_t n, BumpAllocator* allocator);
 
@@ -77,7 +75,6 @@ namespace vmkit {
 		llvm::DataLayout*          dataLayout() { return _dataLayout; }
 		llvm::LLVMContext&         llvmContext();
 		llvm::Module*              self() { return _self; }
-		llvm::ExecutionEngine*     ee() { return _ee; }
 		llvm::FunctionPassManager* preparePM(llvm::Module* mod);
 		llvm::Function*            getGCRoot(llvm::Module* mod);
 		llvm::Function*            introspectFunction(llvm::Module* dest, const char* name);

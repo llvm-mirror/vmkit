@@ -612,7 +612,7 @@ void J3CodeGen::echoDebugEnter(uint32_t isLeave, const char* msg, ...) {
 		fprintf(stderr, "%*s", prof, "");
 		if(isLeave)
 			prof -= J3Thread::get()->vm()->options()->debugEnterIndent;
-
+		
 		fprintf(stderr, "%s ", enter);
 		vfprintf(stderr, msg, va);
 		va_end(va);
@@ -631,6 +631,7 @@ void J3CodeGen::echoDebugExecute(uint32_t level, const char* msg, ...) {
 void J3CodeGen::translate() {
 	if(vm->options()->debugTranslate) {
 		fprintf(stderr, "  translating bytecode of: %ls::%ls%ls\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
+
 		if(vm->options()->debugTranslate > 1) {
 			fprintf(stderr, "    exception table:\n");
 			for(uint32_t i=0; i<nbExceptionNodes; i++) {

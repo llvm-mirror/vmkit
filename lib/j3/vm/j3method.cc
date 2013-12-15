@@ -44,9 +44,7 @@ uint32_t J3Method::index()  {
 	return _index; 
 }
 
-void* J3Method::fnPtr() {
-	void* res;
-	
+uint8_t* J3Method::fnPtr() {
 	if(!_fnPtr) {
 		//fprintf(stderr, "materializing: %ls::%ls%ls\n", cl()->name()->cStr(), name()->cStr(), sign()->cStr());
 		if(!isResolved()) {
@@ -64,16 +62,25 @@ void* J3Method::fnPtr() {
 		J3CodeGen::translate(this, _llvmFunction);
 
 		cl()->loader()->vm()->preparePM(module)->run(*_llvmFunction); /* TODO, check memory */
-		llvm::ExecutionEngine* ee = cl()->loader()->vm()->ee();
+
+		llvm::ExecutionEngine* ee = cl()->loader()->ee();
 		ee->addModule(module);
-		_fnPtr = (uint8_t*)ee->recompileAndRelinkFunction(_llvmFunction);
+		_fnPtr = (uint8_t*)ee->getFunctionAddress(_llvmFunction->getName().data());
 	}
 
 	return _fnPtr;
 }
 
-void* J3Method::functionPointerOrTrampoline() {
+uint8_t* J3Method::functionPointerOrTrampoline() {
 	return _fnPtr ? _fnPtr : _trampoline;
+}
+
+uint8_t* J3MethodCode::getSymbolAddress() {
+	return self->functionPointerOrTrampoline();
+}
+
+uint8_t* J3Method::getSymbolAddress() {
+	return (uint8_t*)this;
 }
 
 void J3Method::setResolved(uint32_t index) { 
@@ -183,7 +190,8 @@ J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Valu
 	}
 
 	target->fnPtr(); /* ensure that the function is compiled */
-	llvm::GenericValue res = cl()->loader()->vm()->ee()->runFunction(target->_llvmFunction, args);
+	cl()->loader()->oldee()->updateGlobalMapping(target->_llvmFunction, target->fnPtr());
+	llvm::GenericValue res = cl()->loader()->oldee()->runFunction(target->_llvmFunction, args);
 
 	J3Value holder;
 	cur = methodType()->out();
@@ -312,54 +320,42 @@ void J3Method::buildLLVMNames(J3Class* from) {
 
 	mangler.mangle(mangler.j3Id)->mangle(this)->mangleType(this);
 
-	_llvmAllNamesLength = mangler.length() + 18;
-	_llvmAllNames = (char*)cl()->loader()->allocator()->allocate(_llvmAllNamesLength + 1);
-	memcpy(_llvmAllNames, "method_descriptor_", 18);
-	memcpy(_llvmAllNames+18, mangler.cStr(), mangler.length());
-	_llvmAllNames[_llvmAllNamesLength] = 0;
+	uint32_t length = mangler.length() + 5;
+	_llvmAllNames = (char*)cl()->loader()->allocator()->allocate(length + 1);
+	memcpy(_llvmAllNames, "stub_", 5);
+	memcpy(_llvmAllNames+5, mangler.cStr(), mangler.length());
+	_llvmAllNames[length] = 0;
 
-	cl()->loader()->addSymbol(_llvmAllNames, this);
-	cl()->loader()->addSymbol(_llvmAllNames+18, &_selfCode);
-}
-
-size_t J3Method::llvmFunctionNameLength(J3Class* from) {
-	llvmFunctionName(from);
-	return _llvmAllNamesLength - 18;
+	cl()->loader()->addSymbol(_llvmAllNames,   &_selfCode);
+	cl()->loader()->addSymbol(_llvmAllNames+4, this);
+	cl()->loader()->addSymbol(_llvmAllNames+5, &_selfCode);
 }
 
 char* J3Method::llvmFunctionName(J3Class* from) {
 	if(!_llvmAllNames)
 		buildLLVMNames(from ? from : cl());
-	return _llvmAllNames + 18;
+	return _llvmAllNames + 5;
 }
 
 char* J3Method::llvmDescriptorName(J3Class* from) {
+	if(!_llvmAllNames)
+		buildLLVMNames(from ? from : cl());
+	return _llvmAllNames + 4;
+}
+
+char* J3Method::llvmStubName(J3Class* from) {
 	if(!_llvmAllNames)
 		buildLLVMNames(from ? from : cl());
 	return _llvmAllNames;
 }
 
 llvm::GlobalValue* J3Method::llvmDescriptor(llvm::Module* module) {
-	J3ClassLoader* loader = cl()->loader();
-	llvm::GlobalValue* res = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(llvmDescriptorName(), loader->vm()->typeJ3Method));
-	loader->vm()->ee()->updateGlobalMapping(res, this);
-	return res;
+	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(llvmDescriptorName(), cl()->loader()->vm()->typeJ3Method));
 }
 
 llvm::Function* J3Method::llvmFunction(bool isStub, llvm::Module* module, J3Class* from) {
-	llvm::Function* res;
-
-	if(isStub) {
-		char id[llvmFunctionNameLength() + 16];
-		memcpy(id, llvmFunctionName(), llvmFunctionNameLength());
-		memcpy(id + llvmFunctionNameLength(), "_stub", 6);
-		res = (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->llvmType());
-	} else
-		res = (llvm::Function*)module->getOrInsertFunction(llvmFunctionName(from), methodType(from ? from : cl())->llvmType());
-
-	cl()->loader()->vm()->ee()->updateGlobalMapping(res, functionPointerOrTrampoline());
-
-	return res;
+	const char* id = (isStub && !_fnPtr) ? llvmStubName(from) : llvmFunctionName(from);
+	return (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->llvmType());
 }
 
 void J3Method::dump() {
@@ -416,13 +412,16 @@ llvm::Function* J3Method::nativeLLVMFunction(llvm::Module* module) {
 
 	nativeOut = doNativeType(type->out());
 
+	char* buf = (char*)cl()->loader()->allocator()->allocate(mangler.length()+1);
+	memcpy(buf, mangler.cStr(), mangler.length()+1);
+
 	llvm::FunctionType* fType = llvm::FunctionType::get(nativeOut, nativeIns, 0);
 	llvm::Function* res = llvm::Function::Create(fType,
 																							 llvm::GlobalValue::ExternalLinkage,
-																							 mangler.cStr(),
+																							 buf,
 																							 module);
 
-	loader->vm()->ee()->addGlobalMapping(res, fnPtr);
+	cl()->loader()->addSymbol(buf, new(cl()->loader()->allocator()) J3NativeSymbol((uint8_t*)fnPtr));
 
 	return res;
 }

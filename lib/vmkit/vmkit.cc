@@ -32,6 +32,9 @@ using namespace vmkit;
 VMKit::VMKit(vmkit::BumpAllocator* allocator) :
 	mangleMap(Util::char_less, allocator) {
 	llvm::InitializeNativeTarget();
+	llvm::InitializeNativeTargetAsmPrinter();
+	llvm::InitializeNativeTargetAsmParser();
+	llvm::InitializeNativeTargetDisassembler();
 	llvm::llvm_start_multithreaded();
 	_allocator = allocator;
 }
@@ -60,35 +63,27 @@ llvm::Function* VMKit::introspectFunction(llvm::Module* dest, const char* name) 
 	if(!orig)
 		internalError(L"unable to find internal function: %s", name);
 
-	return orig;
-	//	return (llvm::Function*)dest->getOrInsertFunction(orig->getName(), orig->getFunctionType());
+	return (llvm::Function*)dest->getOrInsertFunction(orig->getName(), orig->getFunctionType());
 }
 
 llvm::GlobalValue* VMKit::introspectGlobalValue(llvm::Module* dest, const char* name) {
-	llvm::GlobalValue* res = mangleMap[name];
-	if(!res)
+	llvm::GlobalValue* orig = mangleMap[name];
+	if(!orig)
 		internalError(L"unable to find internal global value: %s", name);
-	return res;
+	return (llvm::GlobalValue*)dest->getOrInsertGlobal(orig->getName(), orig->getType());
 }
 
-uintptr_t VMKit::addSymbol(llvm::GlobalValue* gv) {
+void VMKit::addSymbol(llvm::GlobalValue* gv) {
 	const char* id = gv->getName().data();
-	void* ptr = dlsym(RTLD_SELF, id);
-
-	if(ptr) {
-		ee()->updateGlobalMapping(gv, ptr);
-		int   status;
-		char* realname;
-		realname = abi::__cxa_demangle(id, 0, 0, &status);
-		const char* tmp = realname ? realname : id;
-		uint32_t length = strlen(tmp);
-		char* mangled = (char*)allocator()->allocate(length+1);
-		strcpy(mangled, tmp);
-		mangleMap[mangled] = gv;
-		free(realname);
-		return (uintptr_t)ptr;
-	} else
-		return 0;
+	int   status;
+	char* realname;
+	realname = abi::__cxa_demangle(id, 0, 0, &status);
+	const char* tmp = realname ? realname : id;
+	uint32_t length = strlen(tmp);
+	char* mangled = (char*)allocator()->allocate(length+1);
+	strcpy(mangled, tmp);
+	mangleMap[mangled] = gv;
+	free(realname);
 }
 
 void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
@@ -103,13 +98,6 @@ void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
 	if(!self())
 		VMKit::internalError(L"Error while reading bitcode file %s: %s\n", selfBitCodePath, err.c_str());
 
-	_ee = llvm::EngineBuilder(self()).setErrorStr(&err).create();
-	if (!ee())
-		VMKit::internalError(L"Error while creating execution engine: %s\n", err.c_str());
-
-	ee()->DisableLazyCompilation(0);
-  ee()->RegisterJITEventListener(this);
-
 	for(llvm::Module::iterator cur=self()->begin(); cur!=self()->end(); cur++)
 		addSymbol(cur);
 
@@ -118,19 +106,11 @@ void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
 
 	_dataLayout = new llvm::DataLayout(self());
 
-	ptrTypeInfo = ee()->getPointerToGlobal(introspectGlobalValue(self(), "typeinfo for void*"));
+	llvm::GlobalValue* typeInfoGV = mangleMap["typeinfo for void*"];
+	ptrTypeInfo = typeInfoGV ? dlsym(RTLD_SELF, typeInfoGV->getName().data()) : 0;
 
 	if(!ptrTypeInfo)
 		internalError(L"unable to find typeinfo for void*"); 
-
-#if 0
-	llvm::Linker* linker = new llvm::Linker(new llvm::Module("linker", vm()->self()->getContext()));
-	std::string err;
-	if(linker->linkInModule(vm()->self(), llvm::Linker::PreserveSource, &err))
-		J3::internalError(L"unable to add self to linker: %s", err.c_str());
-	if(linker->linkInModule(module(), llvm::Linker::PreserveSource, &err))
-		J3::internalError(L"unable to add module to linker: %s", err.c_str());
-#endif
 }
 
 

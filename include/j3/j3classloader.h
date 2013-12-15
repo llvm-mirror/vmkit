@@ -11,6 +11,10 @@
 
 #include "j3/j3object.h"
 
+namespace llvm {
+	class ExecutionEngine;
+}
+
 namespace j3 {
 	class J3ZipArchive;
 	class J3ClassBytes;
@@ -47,6 +51,9 @@ namespace j3 {
 		vmkit::NameMap<J3MethodType*>::map   methodTypes;  /* shortcut to find method types - REMOVE */
 		MethodRefMap                         methods;      /* all te known method */
 
+		llvm::ExecutionEngine*               _ee;
+		llvm::ExecutionEngine*               _oldee;
+
 		void                          wrongType(J3Class* from, const vmkit::Name* type);
 		J3Type*                       getTypeInternal(J3Class* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
 
@@ -59,6 +66,9 @@ namespace j3 {
 	public:
 		void* operator new(size_t n, vmkit::BumpAllocator* allocator);
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
+
+		llvm::ExecutionEngine*        ee() { return _ee; }
+		llvm::ExecutionEngine*        oldee() { return _oldee; }
 
 		void                          addSymbol(const char* id, J3Symbol* symbol);
 

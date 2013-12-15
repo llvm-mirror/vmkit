@@ -30,6 +30,10 @@ J3Type::J3Type(J3ClassLoader* loader, const vmkit::Name* name) {
 	_name = name; 
 }
 
+uint8_t* J3Type::getSymbolAddress() {
+	return (uint8_t*)this;
+}
+
 J3VirtualTable* J3Type::vt() { 
 	return _vt; 
 }
@@ -196,9 +200,7 @@ size_t J3Class::size() {
 }
 
 llvm::GlobalValue* J3Class::llvmDescriptor(llvm::Module* module) {
-	llvm::GlobalValue* res = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3Class));
-	loader()->vm()->ee()->updateGlobalMapping(res, this);
-	return res;
+	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3Class));
 }
 
 
@@ -734,10 +736,10 @@ void J3Class::createLLVMTypes() {
 	mangler.mangle("_2");
 		
 	_nativeNameLength = mangler.length() - 6;
-	_nativeName = (char*)loader()->allocator()->allocate(mangler.length() + 1);
+	_nativeName = (char*)loader()->allocator()->allocate(_nativeNameLength + 1);
 
 	_nativeName[0] = 'L';
-	memcpy(_nativeName + 1, mangler.cStr()+7, mangler.length());
+	memcpy(_nativeName + 1, mangler.cStr()+7, _nativeNameLength); /* copy the 0 */
 
 	loader()->addSymbol(_nativeName, this);
 }
@@ -832,9 +834,7 @@ void J3ArrayClass::doInitialise() {
 }
 
 llvm::GlobalValue* J3ArrayClass::llvmDescriptor(llvm::Module* module) {
-	llvm::GlobalValue* res = llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3ArrayClass));
-	loader()->vm()->ee()->updateGlobalMapping(res, this);
-	return res;
+	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3ArrayClass));
 }
 
 llvm::Type* J3ArrayClass::llvmType() {

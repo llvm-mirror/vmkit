@@ -52,7 +52,7 @@ namespace j3 {
 
 		J3MethodCode(J3Method* _self) { self = _self; }
 
-		int isMethodPointer() { return 1; } 
+		uint8_t* getSymbolAddress();
 	};
 
 	class J3Method : public J3Symbol {
@@ -67,8 +67,7 @@ namespace j3 {
 		uint32_t                     _index;
 		llvm::Function*              _llvmFunction;
 		uint8_t*                     _fnPtr;
-		char* volatile               _llvmAllNames; /* md_ + llvm Name */
-		size_t                       _llvmAllNamesLength;
+		char* volatile               _llvmAllNames; /* stub + _ + native_name */
 		void*                        _nativeFnPtr;
 
 		uint8_t                      _trampoline[1];
@@ -84,7 +83,7 @@ namespace j3 {
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
 
-		int                 isMethodDescriptor() { return 1; } 
+		uint8_t*            getSymbolAddress();
 
 		static J3Method*    newMethod(vmkit::BumpAllocator* allocator, 
 																	uint16_t access, 
@@ -92,9 +91,9 @@ namespace j3 {
 																	const vmkit::Name* name, 
 																	const vmkit::Name* sign);
 
-		size_t              llvmFunctionNameLength(J3Class* from=0);
 		char*               llvmFunctionName(J3Class* from=0);
 		char*               llvmDescriptorName(J3Class* from=0);
+		char*               llvmStubName(J3Class* from=0);
 		llvm::FunctionType* llvmType(J3Class* from=0);
 
 		void                postInitialise(uint32_t access, J3Attributes* attributes);
@@ -129,8 +128,8 @@ namespace j3 {
 		J3Value             invokeVirtual(J3ObjectHandle* obj, J3Value* args);
 		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
 
-		void*               fnPtr();
-		void*               functionPointerOrTrampoline();
+		uint8_t*            fnPtr();
+		uint8_t*            functionPointerOrTrampoline();
 
 		void                dump();
 	};
