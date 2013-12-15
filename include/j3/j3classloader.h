@@ -11,6 +11,10 @@
 
 #include "j3/j3object.h"
 
+namespace vmkit {
+	class Symbol;
+}
+
 namespace llvm {
 	class ExecutionEngine;
 }
@@ -23,7 +27,6 @@ namespace j3 {
 	class J3Type;
 	class J3;
 	class J3Class;
-	class J3Symbol;
 
 	class J3ClassLoader : public llvm::SectionMemoryManager {
 		struct J3MethodLess : public std::binary_function<wchar_t*,wchar_t*,bool> {
@@ -33,8 +36,8 @@ namespace j3 {
 		typedef std::map<J3Method*, J3Method*, J3MethodLess,
 										 vmkit::StdAllocator<std::pair<J3Method*, J3Method*> > > MethodRefMap;
 
-		typedef std::map<const char*, J3Symbol*, vmkit::Util::char_less_t,
-										 vmkit::StdAllocator<std::pair<const char*, J3Symbol*> > > SymbolMap;
+		typedef std::map<const char*, vmkit::Symbol*, vmkit::Util::char_less_t,
+										 vmkit::StdAllocator<std::pair<const char*, vmkit::Symbol*> > > SymbolMap;
 
 		static J3MethodLess  j3MethodLess;
 
@@ -70,7 +73,7 @@ namespace j3 {
 		llvm::ExecutionEngine*        ee() { return _ee; }
 		llvm::ExecutionEngine*        oldee() { return _oldee; }
 
-		void                          addSymbol(const char* id, J3Symbol* symbol);
+		void                          addSymbol(const char* id, vmkit::Symbol* symbol);
 
 		static void                   destroy(J3ClassLoader* loader);
 

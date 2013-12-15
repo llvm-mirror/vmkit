@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "j3/j3symbol.h"
+#include "vmkit/compiler.h"
 
 namespace llvm {
 	class FunctionType;
@@ -46,7 +46,7 @@ namespace j3 {
 		}
 	};
 
-	class J3MethodCode : public J3Symbol {
+	class J3MethodCode : public vmkit::Symbol {
 	public:
 		J3Method* self;
 
@@ -55,7 +55,7 @@ namespace j3 {
 		uint8_t* getSymbolAddress();
 	};
 
-	class J3Method : public J3Symbol {
+	class J3Method : public vmkit::Symbol {
 	public:
 		J3MethodCode                 _selfCode;
 		uint16_t                     _access;

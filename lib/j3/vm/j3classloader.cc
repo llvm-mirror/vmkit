@@ -70,7 +70,7 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	oldee()->DisableLazyCompilation(0);
 }
 
-void J3ClassLoader::addSymbol(const char* id, J3Symbol* symbol) {
+void J3ClassLoader::addSymbol(const char* id, vmkit::Symbol* symbol) {
 	pthread_mutex_lock(&_mutexSymbolTable);
 	_symbolTable[id] = symbol;
 	pthread_mutex_unlock(&_mutexSymbolTable);
@@ -80,14 +80,14 @@ uint64_t J3ClassLoader::getSymbolAddress(const std::string &Name) {
 	pthread_mutex_lock(&_mutexSymbolTable);
 	const char* id = Name.c_str() + 1;
 
-	std::map<const char*, J3Symbol*>::iterator it = _symbolTable.find(id);
-	J3Symbol* res;
+	std::map<const char*, vmkit::Symbol*>::iterator it = _symbolTable.find(id);
+	vmkit::Symbol* res;
 
 	if(it == _symbolTable.end()) {
 		uint8_t* addr = (uint8_t*)dlsym(RTLD_SELF, id);
 		if(!addr)
 			vm()->internalError(L"unable to resolve native symbol: %s", id);
-		res = new(allocator()) J3NativeSymbol(addr);
+		res = new(allocator()) vmkit::NativeSymbol(addr);
 		size_t len = strlen(id);
 		char* buf = (char*)allocator()->allocate(len+1);
 		memcpy(buf, id, len+1);

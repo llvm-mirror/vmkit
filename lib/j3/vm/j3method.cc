@@ -421,7 +421,7 @@ llvm::Function* J3Method::nativeLLVMFunction(llvm::Module* module) {
 																							 buf,
 																							 module);
 
-	cl()->loader()->addSymbol(buf, new(cl()->loader()->allocator()) J3NativeSymbol((uint8_t*)fnPtr));
+	cl()->loader()->addSymbol(buf, new(cl()->loader()->allocator()) vmkit::NativeSymbol((uint8_t*)fnPtr));
 
 	return res;
 }

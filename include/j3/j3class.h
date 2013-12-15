@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "j3/j3symbol.h"
+#include "vmkit/compiler.h"
 
 namespace llvm {
 	class Type;
@@ -31,7 +31,7 @@ namespace j3 {
 	class J3ObjectHandle;
 	class J3Field;
 
-	class J3Type : public J3Symbol {
+	class J3Type : public vmkit::Symbol {
 		pthread_mutex_t        _mutex;
 		J3ClassLoader*         _loader;
 		J3ArrayClass* volatile _array;
