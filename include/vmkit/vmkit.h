@@ -88,6 +88,7 @@ namespace vmkit {
 															 size_t Size,
 															 const llvm::JITEventListener::EmittedFunctionDetails &Details);
 
+		void NotifyObjectEmitted(const llvm::ObjectImage &obj);
 	};
 };
 

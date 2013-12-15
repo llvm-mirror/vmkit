@@ -88,6 +88,9 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id) :
 }
 
 CompilationUnit::~CompilationUnit() {
+	delete pm;
+	delete _ee;
+	delete _oldee;
 }
 
 void CompilationUnit::destroy(CompilationUnit* unit) {

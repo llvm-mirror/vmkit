@@ -17,6 +17,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Argument.h"
+#include "llvm/IR/Intrinsics.h"
 
 #include "llvm/DebugInfo.h"
 #include "llvm/DIBuilder.h"
@@ -86,6 +87,9 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	gvTypeInfo               = vm->introspectGlobalValue(module(),  "typeinfo for void*");
 
 	gcRoot                   = vm->getGCRoot(module());
+
+	//llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::experimental_patchpoint_i64);
+
 
 	ziTry                    = 
 		(llvm::Function*)module()->getOrInsertFunction("vmkit.try", 
