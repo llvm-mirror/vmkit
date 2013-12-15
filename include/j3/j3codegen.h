@@ -57,7 +57,7 @@ namespace j3 {
 		friend class J3CodeGenVar;
 
 		vmkit::BumpAllocator*  allocator;
-		llvm::Module*          module;
+		llvm::Module*          _module;
 		llvm::BasicBlock*      bb;
 		llvm::IRBuilder<>*     builder;
 		llvm::Function*        llvmFunction;
@@ -95,6 +95,8 @@ namespace j3 {
 		bool                   closeBB;
 
 		bool                   isWide;
+
+		llvm::Module*      module();
 
 		uint32_t           wideReadU1();
 		uint32_t           wideReadS1();

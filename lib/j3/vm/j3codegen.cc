@@ -45,52 +45,52 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 
 	llvmFunction = _llvmFunction;
 	llvmFunction->setGC("vmkit");
-	module = llvmFunction->getParent();
+	_module = llvmFunction->getParent();
 
 	bbCheckCastFailed = 0;
 	bbNullCheckFailed = 0;
 	topPendingBranchs = 0;
 	isWide = 0;
 
-	funcJ3MethodIndex            = vm->introspectFunction(module, "j3::J3Method::index()");
-	funcJ3TypeVT                 = vm->introspectFunction(module, "j3::J3Type::vt()");
-	funcJ3TypeInitialise         = vm->introspectFunction(module, "j3::J3Type::initialise()");
-	funcJ3ClassSize              = vm->introspectFunction(module, "j3::J3Class::size()");
-	funcJ3ClassStaticInstance    = vm->introspectFunction(module, "j3::J3Class::staticInstance()");
-	funcJ3ClassStringAt          = vm->introspectFunction(module, "j3::J3Class::stringAt(unsigned short)");
-	funcJ3ObjectTypeJavaClass    = vm->introspectFunction(module, "j3::J3ObjectType::javaClass()");
-	funcJniEnv                   = vm->introspectFunction(module, "j3::J3::jniEnv()");
-	funcJ3ObjectAllocate         = vm->introspectFunction(module, "j3::J3Object::allocate(j3::J3VirtualTable*, unsigned long)");
+	funcJ3MethodIndex            = vm->introspectFunction(module(), "j3::J3Method::index()");
+	funcJ3TypeVT                 = vm->introspectFunction(module(), "j3::J3Type::vt()");
+	funcJ3TypeInitialise         = vm->introspectFunction(module(), "j3::J3Type::initialise()");
+	funcJ3ClassSize              = vm->introspectFunction(module(), "j3::J3Class::size()");
+	funcJ3ClassStaticInstance    = vm->introspectFunction(module(), "j3::J3Class::staticInstance()");
+	funcJ3ClassStringAt          = vm->introspectFunction(module(), "j3::J3Class::stringAt(unsigned short)");
+	funcJ3ObjectTypeJavaClass    = vm->introspectFunction(module(), "j3::J3ObjectType::javaClass()");
+	funcJniEnv                   = vm->introspectFunction(module(), "j3::J3::jniEnv()");
+	funcJ3ObjectAllocate         = vm->introspectFunction(module(), "j3::J3Object::allocate(j3::J3VirtualTable*, unsigned long)");
 	
-	funcThrowException           = vm->introspectFunction(module, "vmkit::VMKit::throwException(void*)");
-	funcClassCastException       = vm->introspectFunction(module, "j3::J3::classCastException()");
-	funcNullPointerException     = vm->introspectFunction(module, "j3::J3::nullPointerException()");
+	funcThrowException           = vm->introspectFunction(module(), "vmkit::VMKit::throwException(void*)");
+	funcClassCastException       = vm->introspectFunction(module(), "j3::J3::classCastException()");
+	funcNullPointerException     = vm->introspectFunction(module(), "j3::J3::nullPointerException()");
 
-	funcJ3ThreadPushHandle       = vm->introspectFunction(module, "j3::J3Thread::push(j3::J3ObjectHandle*)");
-	funcJ3ThreadPush             = vm->introspectFunction(module, "j3::J3Thread::push(j3::J3Object*)");
-	funcJ3ThreadTell             = vm->introspectFunction(module, "j3::J3Thread::tell()");
-	funcJ3ThreadRestore          = vm->introspectFunction(module, "j3::J3Thread::restore(j3::J3ObjectHandle*)");
-	funcJ3ThreadGet              = vm->introspectFunction(module, "j3::J3Thread::get()");
-	funcEchoDebugEnter           = vm->introspectFunction(module, "j3::J3CodeGen::echoDebugEnter(unsigned int, char const*, ...)");
-	funcEchoDebugExecute         = vm->introspectFunction(module, "j3::J3CodeGen::echoDebugExecute(unsigned int, char const*, ...)");
+	funcJ3ThreadPushHandle       = vm->introspectFunction(module(), "j3::J3Thread::push(j3::J3ObjectHandle*)");
+	funcJ3ThreadPush             = vm->introspectFunction(module(), "j3::J3Thread::push(j3::J3Object*)");
+	funcJ3ThreadTell             = vm->introspectFunction(module(), "j3::J3Thread::tell()");
+	funcJ3ThreadRestore          = vm->introspectFunction(module(), "j3::J3Thread::restore(j3::J3ObjectHandle*)");
+	funcJ3ThreadGet              = vm->introspectFunction(module(), "j3::J3Thread::get()");
+	funcEchoDebugEnter           = vm->introspectFunction(module(), "j3::J3CodeGen::echoDebugEnter(unsigned int, char const*, ...)");
+	funcEchoDebugExecute         = vm->introspectFunction(module(), "j3::J3CodeGen::echoDebugExecute(unsigned int, char const*, ...)");
 
-	funcSlowIsAssignableTo       = vm->introspectFunction(module, "j3::J3VirtualTable::slowIsAssignableTo(j3::J3VirtualTable*)");
+	funcSlowIsAssignableTo       = vm->introspectFunction(module(), "j3::J3VirtualTable::slowIsAssignableTo(j3::J3VirtualTable*)");
 	funcFastIsAssignableToPrimaryChecker = 
-		vm->introspectFunction(module, "j3::J3VirtualTable::fastIsAssignableToPrimaryChecker(j3::J3VirtualTable*, unsigned int)");
+		vm->introspectFunction(module(), "j3::J3VirtualTable::fastIsAssignableToPrimaryChecker(j3::J3VirtualTable*, unsigned int)");
 	funcFastIsAssignableToNonPrimaryChecker = 
-		vm->introspectFunction(module, "j3::J3VirtualTable::fastIsAssignableToNonPrimaryChecker(j3::J3VirtualTable*)");
+		vm->introspectFunction(module(), "j3::J3VirtualTable::fastIsAssignableToNonPrimaryChecker(j3::J3VirtualTable*)");
 
-	funcGXXPersonality       = vm->introspectFunction(module, "__gxx_personality_v0");
-	funcCXABeginCatch        = vm->introspectFunction(module, "__cxa_begin_catch");
-	funcCXAEndCatch          = vm->introspectFunction(module, "__cxa_end_catch");
+	funcGXXPersonality       = vm->introspectFunction(module(), "__gxx_personality_v0");
+	funcCXABeginCatch        = vm->introspectFunction(module(), "__cxa_begin_catch");
+	funcCXAEndCatch          = vm->introspectFunction(module(), "__cxa_end_catch");
 
-	gvTypeInfo               = vm->introspectGlobalValue(module,  "typeinfo for void*");
+	gvTypeInfo               = vm->introspectGlobalValue(module(),  "typeinfo for void*");
 
-	gcRoot                   = vm->getGCRoot(module);
+	gcRoot                   = vm->getGCRoot(module());
 
 	ziTry                    = 
-		(llvm::Function*)module->getOrInsertFunction("vmkit.try", 
-																								 llvm::FunctionType::get(llvm::Type::getVoidTy(llvmFunction->getContext()), 0));
+		(llvm::Function*)module()->getOrInsertFunction("vmkit.try", 
+																									 llvm::FunctionType::get(llvm::Type::getVoidTy(llvmFunction->getContext()), 0));
 
 	bb    = newBB("entry");
 	llvm::IRBuilder<> _builder(bb);
@@ -168,12 +168,12 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 
 void J3CodeGen::initialiseJ3Type(J3Type* cl) {
 	if(!cl->isInitialised())
-		builder->CreateCall(funcJ3TypeInitialise, builder->CreateBitCast(cl->llvmDescriptor(module), vm->typeJ3TypePtr));
+		builder->CreateCall(funcJ3TypeInitialise, builder->CreateBitCast(cl->llvmDescriptor(module()), vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::javaClass(J3ObjectType* type) {
 	return builder->CreateCall(funcJ3ObjectTypeJavaClass, 
-														 builder->CreateBitCast(type->llvmDescriptor(module), vm->typeJ3ObjectTypePtr));
+														 builder->CreateBitCast(type->llvmDescriptor(module()), vm->typeJ3ObjectTypePtr));
 }
 
 llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
@@ -184,7 +184,7 @@ llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
 llvm::Value* J3CodeGen::staticInstance(J3Class* cl) {
 	initialiseJ3Type(cl);
 	return builder->CreateBitCast(handleToObject(builder->CreateCall(funcJ3ClassStaticInstance, 
-																																	 cl->llvmDescriptor(module))),
+																																	 cl->llvmDescriptor(module()))),
 																cl->staticLLVMType());
 }
 
@@ -197,7 +197,7 @@ llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
 }
 
 llvm::Value* J3CodeGen::vt(J3Type* type) {
-	return builder->CreateCall(funcJ3TypeVT, builder->CreateBitCast(type->llvmDescriptor(module), vm->typeJ3TypePtr));
+	return builder->CreateCall(funcJ3TypeVT, builder->CreateBitCast(type->llvmDescriptor(module()), vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
@@ -254,7 +254,7 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 	if(target->isResolved())
 		funcEntry = builder->getInt32(target->index());
 	else
-		funcEntry = builder->CreateCall(funcJ3MethodIndex, target->llvmDescriptor(module));
+		funcEntry = builder->CreateCall(funcJ3MethodIndex, target->llvmDescriptor(module()));
 
 	llvm::Value*  obj = nullCheck(stack.top(type->nbIns() - 1));
 	llvm::Value*  gepFunc[] = { builder->getInt32(0),
@@ -269,12 +269,12 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 void J3CodeGen::invokeStatic(uint32_t idx) {
 	J3Method* target = cl->methodAt(idx, J3Cst::ACC_STATIC);
 	initialiseJ3Type(target->cl());
-	invoke(target, target->llvmFunction(1, module, cl));
+	invoke(target, target->llvmFunction(1, module(), cl));
 }
 
 void J3CodeGen::invokeSpecial(uint32_t idx) {
 	J3Method* target = cl->methodAt(idx, 0);
-	invoke(target, target->llvmFunction(1, module, cl));
+	invoke(target, target->llvmFunction(1, module(), cl));
 }
 
 void J3CodeGen::get(llvm::Value* src, J3Field* f) {
@@ -387,7 +387,7 @@ void J3CodeGen::newObject(J3Class* cl) {
 	llvm::Value* size;
 
 	if(!cl->isResolved()) {
-		size = builder->CreateCall(funcJ3ClassSize, cl->llvmDescriptor(module));
+		size = builder->CreateCall(funcJ3ClassSize, cl->llvmDescriptor(module()));
 	} else {
 		size = builder->getInt64(cl->size());
 	}
@@ -510,7 +510,7 @@ void J3CodeGen::ldc(uint32_t idx) {
 		case J3Cst::CONSTANT_Double:  res = llvm::ConstantFP::get(builder->getDoubleTy(), cl->doubleAt(idx)); break;
 		case J3Cst::CONSTANT_Class:   res = handleToObject(javaClass(cl->classAt(idx))); break;
 		case J3Cst::CONSTANT_String:  
-			res = handleToObject(builder->CreateCall2(funcJ3ClassStringAt, cl->llvmDescriptor(module), builder->getInt16(idx)));
+			res = handleToObject(builder->CreateCall2(funcJ3ClassStringAt, cl->llvmDescriptor(module()), builder->getInt16(idx)));
 			break;
 		default:
 			J3::classFormatError(cl, L"wrong ldc type: %d\n", cl->getCtpType(idx));
@@ -590,7 +590,7 @@ llvm::Value* J3CodeGen::buildString(const char* msg) {
 	elmts.push_back(builder->getInt8(0));
 
 	llvm::Constant* str = llvm::ConstantArray::get(llvm::ArrayType::get(builder->getInt8Ty(), n+1), elmts);
-	llvm::Value* var = new llvm::GlobalVariable(*module,
+	llvm::Value* var = new llvm::GlobalVariable(*module(),
 																							str->getType(),
 																							1,
 																							llvm::GlobalVariable::InternalLinkage,
@@ -1371,10 +1371,10 @@ void J3CodeGen::generateJava() {
 		J3::classFormatError(cl, L"Code attribute of %ls %ls is too large (%d)", method->name()->cStr(), method->sign()->cStr(), length);
 
 	nullValue = builder
-		->CreateIntToPtr(llvm::ConstantInt::get(vm->dataLayout()->getIntPtrType(module->getContext()), (uintptr_t)0),
+		->CreateIntToPtr(llvm::ConstantInt::get(vm->dataLayout()->getIntPtrType(module()->getContext()), (uintptr_t)0),
 										 vm->typeJ3ObjectPtr);
 
-	llvm::DIBuilder* dbgBuilder = new llvm::DIBuilder(*module);
+	llvm::DIBuilder* dbgBuilder = new llvm::DIBuilder(*module());
 
   dbgInfo =
 		dbgBuilder->createFunction(llvm::DIDescriptor(),    // Function scope
@@ -1522,7 +1522,7 @@ void J3CodeGen::generateJava() {
 void J3CodeGen::generateNative() {
 	std::vector<llvm::Value*> args;
 
-	llvm::Function* nat = method->nativeLLVMFunction(module);
+	llvm::Function* nat = method->nativeLLVMFunction(module());
 
 	llvm::Value* res;
 	llvm::Value* thread = builder->CreateCall(funcJ3ThreadGet);
