@@ -96,7 +96,7 @@ namespace j3 {
 
 		bool                   isWide;
 
-		llvm::Module*      module();
+		llvm::Module*      module() { return _module; }
 
 		uint32_t           wideReadU1();
 		uint32_t           wideReadS1();
