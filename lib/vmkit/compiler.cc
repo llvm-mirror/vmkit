@@ -42,7 +42,6 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const c
 	if (!ee())
 		Thread::get()->vm()->internalError(L"Error while creating execution engine: %s\n", err.c_str());
 
-  ee()->RegisterJITEventListener(Thread::get()->vm());
 	ee()->finalizeObject();
 
 	_oldee = llvm::EngineBuilder(new llvm::Module("old ee", Thread::get()->vm()->llvmContext()))

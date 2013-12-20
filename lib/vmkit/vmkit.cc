@@ -131,59 +131,6 @@ llvm::Function* VMKit::getGCRoot(llvm::Module* mod) {
 	return llvm::Intrinsic::getDeclaration(mod, llvm::Intrinsic::gcroot);
 }
 
-void VMKit::NotifyObjectEmitted(const llvm::ObjectImage &obj) {
-	fprintf(stderr, "**** object jit event listener!\n");
-}
-
-void VMKit::NotifyFunctionEmitted(const llvm::Function &F,
-																	void *Code,
-																	size_t Size,
-																	const llvm::JITEventListener::EmittedFunctionDetails &Details) {
-
-	fprintf(stderr, "****  jit event listener!\n");
-#if 0
-	const llvm::MachineFunction*             mf = Details.MF;
-	const std::vector<llvm::LandingPadInfo>& landingPads = mf->getMMI().getLandingPads();
-	const llvm::MachineCodeEmitter*          mce = Details.MCE;
-
-	for(std::vector<llvm::LandingPadInfo>::const_iterator i=landingPads.begin(); i!=landingPads.end(); i++) {
-		uintptr_t dest = mce->getLabelAddress(i->LandingPadLabel);
-		
-		for(uint32_t j=0; j<i->BeginLabels.size(); j++) {
-			uintptr_t point = mce->getLabelAddress(i->EndLabels[j]);
-			ExceptionDescriptor* e = new ExceptionDescriptor(&F, point, dest);
-			exceptionTable[point] = e;
-			fprintf(stderr, "      exceptionpoint at 0x%lx goes to 0x%lx\n", point, dest);
-		}
-	}
-
-	if(F.hasGC()) {
-		llvm::GCFunctionInfo* gcInfo = &mf->getGMI()->getFunctionInfo(F);
-		uintptr_t start = (uintptr_t)Code;
-		uintptr_t end = start + Size;
-
-		for(llvm::GCFunctionInfo::iterator safepoint=gcInfo->begin(); safepoint!=gcInfo->end(); safepoint++) {
-			uint32_t kind = safepoint->Kind;
-			llvm::MCSymbol* label = safepoint->Label;
-			uintptr_t addr = mce->getLabelAddress(label);
-
-			if(addr < start || addr > end)
-				internalError(L"safe point is not inside the function (%p %p %p)", start, addr, end);
-
-			Safepoint* sf = Safepoint::create(&F, addr, gcInfo->live_size(safepoint));
-			uint32_t i=0;
-
-			//fprintf(stderr, "      safepoint at 0x%lx\n", addr);
-			for(llvm::GCFunctionInfo::live_iterator live=gcInfo->live_begin(safepoint); live!=gcInfo->live_end(safepoint); live++, i++) {
-				sf->setAt(i, live->StackOffset);
-				//fprintf(stderr, "       offset: %d\n", live->StackOffset); 
-			}
-			safepointMap[addr] = sf;
-		}
-	}
-#endif
-}
-
 void VMKit::log(const wchar_t* msg, ...) {
 	va_list va;
 	va_start(va, msg);

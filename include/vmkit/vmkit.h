@@ -4,8 +4,6 @@
 #include "vmkit/util.h"
 #include "vmkit/allocator.h"
 
-#include "llvm/ExecutionEngine/JITEventListener.h"
-
 namespace llvm {
 	class LLVMContext;
 	class Module;
@@ -27,7 +25,7 @@ namespace vmkit {
 		ExceptionDescriptor(const llvm::Function* llvmFunction, uintptr_t point, uintptr_t landingPad);
 	};
 
-	class VMKit : public llvm::JITEventListener {
+	class VMKit {
 		typedef std::map<const char*, llvm::GlobalValue*, Util::char_less_t, 
 										 StdAllocator<std::pair<const char*, llvm::GlobalValue*> > > MangleMap;
 
@@ -72,13 +70,6 @@ namespace vmkit {
 
 		static void internalError(const wchar_t* msg, ...) __attribute__((noreturn));		
 		static void throwException(void* obj) __attribute__((noreturn));
-
-		void NotifyFunctionEmitted(const llvm::Function &F,
-															 void *Code,
-															 size_t Size,
-															 const llvm::JITEventListener::EmittedFunctionDetails &Details);
-
-		void NotifyObjectEmitted(const llvm::ObjectImage &obj);
 	};
 };
 
