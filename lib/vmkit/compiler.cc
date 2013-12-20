@@ -14,7 +14,7 @@
 
 using namespace vmkit;
 
-uint8_t* Symbol::getSymbolAddress() {
+void* Symbol::getSymbolAddress() {
 	Thread::get()->vm()->internalError(L"implement me: getSymbolAddress");
 }
 
@@ -107,7 +107,7 @@ void CompilationUnit::addSymbol(const char* id, vmkit::Symbol* symbol) {
 	pthread_mutex_unlock(&_mutexSymbolTable);
 }
 
-uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
+Symbol* CompilationUnit::getSymbol(const std::string &Name) {
 	pthread_mutex_lock(&_mutexSymbolTable);
 	const char* id = Name.c_str() + 1;
 
@@ -127,7 +127,11 @@ uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
 		res = it->second;
 
 	pthread_mutex_unlock(&_mutexSymbolTable);
-	return (uint64_t)(uintptr_t)res->getSymbolAddress();
+	return res;
+}
+
+uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
+	return (uint64_t)(uintptr_t)getSymbol(Name)->getSymbolAddress();
 }
 
 void CompilationUnit::compileModule(llvm::Module* module) {

@@ -18,9 +18,13 @@ jint JNICALL GetVersion(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
 
 jclass JNICALL DefineClass(JNIEnv* env, const char* name, jobject loader, const jbyte* buf, jsize len) { enterJVM(); leaveJVM(); NYI(); }
 jclass JNICALL FindClass(JNIEnv* env, const char* name) { 
+	vmkit::Safepoint* sf = J3Thread::get()->getJavaCaller();
+
+	printf("---> %p\n", sf);
 	//jclass res;
 	enterJVM();
 	//J3Class* cl = 
+	fprintf(stderr, "find class: %s\n", name);
 	leaveJVM(); 
 	NYI(); 
 }

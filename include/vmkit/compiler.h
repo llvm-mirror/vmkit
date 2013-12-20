@@ -22,15 +22,15 @@ namespace vmkit {
 
 	class Symbol : public PermanentObject {
 	public:
-		virtual uint8_t* getSymbolAddress();
+		virtual void* getSymbolAddress();
 	};
 
 	class NativeSymbol : public Symbol {
-		uint8_t* addr;
+		void* addr;
 	public:
-		NativeSymbol(uint8_t* _addr) { addr = _addr; }
+		NativeSymbol(void* _addr) { addr = _addr; }
 
-		uint8_t* getSymbolAddress() { return addr; }
+		void* getSymbolAddress() { return addr; }
 	};
 
 	class CompilationUnit  : public llvm::SectionMemoryManager {
@@ -58,6 +58,7 @@ namespace vmkit {
 		VMKit*                  vm() const { return _vmkit; }
 
 		void                    addSymbol(const char* id, vmkit::Symbol* symbol);
+		Symbol*                 getSymbol(const std::string &Name);
 		uint64_t                getSymbolAddress(const std::string &Name);
 
 		BumpAllocator*          allocator() { return _allocator; }

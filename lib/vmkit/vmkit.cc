@@ -53,7 +53,7 @@ void VMKit::addSafepoint(Safepoint* sf) {
 	pthread_mutex_unlock(&safepointMapLock);
 }
 
-Safepoint* VMKit::getSafepoint(uintptr_t addr) {
+Safepoint* VMKit::getSafepoint(void* addr) {
 	pthread_mutex_lock(&safepointMapLock);
 	Safepoint* res = safepointMap[addr];
 	pthread_mutex_unlock(&safepointMapLock);

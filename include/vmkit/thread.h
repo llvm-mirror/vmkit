@@ -26,13 +26,13 @@ namespace vmkit {
 	};
 
 	class StackWalker {
-		uintptr_t framePointer;
+		void** framePointer;
 
 	public:
-		StackWalker(uint32_t initialPop=1);
+		StackWalker(uint32_t initialPop=0) __attribute__((noinline));
 
-		void      next(uint32_t nbPop=1);
-		uintptr_t ip();
+		bool  next(uint32_t nbPop=1);
+		void* ip();
 	};
 }
 

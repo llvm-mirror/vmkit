@@ -44,7 +44,7 @@ uint32_t J3Method::index()  {
 	return _index; 
 }
 
-uint8_t* J3Method::fnPtr() {
+void* J3Method::fnPtr() {
 	if(!_fnPtr) {
 		//fprintf(stderr, "materializing: %ls::%ls%ls\n", cl()->name()->cStr(), name()->cStr(), sign()->cStr());
 		if(!isResolved()) {
@@ -63,22 +63,22 @@ uint8_t* J3Method::fnPtr() {
 
 		cl()->loader()->compileModule(module);
 
-		_fnPtr = (uint8_t*)cl()->loader()->ee()->getFunctionAddress(_llvmFunction->getName().data());
+		_fnPtr = (void*)cl()->loader()->ee()->getFunctionAddress(_llvmFunction->getName().data());
  	}
 
 	return _fnPtr;
 }
 
-uint8_t* J3Method::functionPointerOrTrampoline() {
+void* J3Method::functionPointerOrTrampoline() {
 	return _fnPtr ? _fnPtr : _trampoline;
 }
 
-uint8_t* J3MethodCode::getSymbolAddress() {
+void* J3MethodCode::getSymbolAddress() {
 	return self->functionPointerOrTrampoline();
 }
 
-uint8_t* J3Method::getSymbolAddress() {
-	return (uint8_t*)this;
+void* J3Method::getSymbolAddress() {
+	return this;
 }
 
 void J3Method::setResolved(uint32_t index) { 
@@ -437,7 +437,7 @@ llvm::Function* J3Method::nativeLLVMFunction(llvm::Module* module) {
 																							 buf,
 																							 module);
 
-	cl()->loader()->addSymbol(buf, new(cl()->loader()->allocator()) vmkit::NativeSymbol((uint8_t*)fnPtr));
+	cl()->loader()->addSymbol(buf, new(cl()->loader()->allocator()) vmkit::NativeSymbol(fnPtr));
 
 	return res;
 }

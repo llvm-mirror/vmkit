@@ -11,7 +11,7 @@ namespace vmkit {
 	class CompilationUnit;
 
 	class Safepoint { /* directly in the data sections */
-		uintptr_t        _addr;
+		void*            _addr;
 		const char*      _functionName;
 		CompilationUnit* _unit;
 		uint32_t         _sourceIndex;
@@ -20,7 +20,7 @@ namespace vmkit {
 	public:
 		void        setUnit(CompilationUnit* unit) { _unit = unit; }
 
-		uintptr_t   addr() { return _addr; }
+		void*       addr() { return _addr; }
 		const char* functionName() { return _functionName; }
 		uint32_t    sourceIndex() { return _sourceIndex; }
 		uint32_t    nbLives() { return _nbLives; }

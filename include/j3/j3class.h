@@ -52,7 +52,7 @@ namespace j3 {
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
 
-		uint8_t*                    getSymbolAddress();
+		void*                       getSymbolAddress();
 
 		virtual llvm::GlobalValue*  llvmDescriptor(llvm::Module* module) { return 0; }
 

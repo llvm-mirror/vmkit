@@ -30,8 +30,8 @@ J3Type::J3Type(J3ClassLoader* loader, const vmkit::Name* name) {
 	_name = name; 
 }
 
-uint8_t* J3Type::getSymbolAddress() {
-	return (uint8_t*)this;
+void* J3Type::getSymbolAddress() {
+	return this;
 }
 
 J3VirtualTable* J3Type::vt() { 

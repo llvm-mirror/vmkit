@@ -192,7 +192,7 @@ Safepoint* Safepoint::get(CompilationUnit* unit, llvm::Module* module) {
 }
 
 void Safepoint::dump() {
-	fprintf(stderr, "  [%p] safepoint at 0x%lx for %s::%d\n", this, addr(), functionName(), sourceIndex());
+	fprintf(stderr, "  [%p] safepoint at %p for %s::%d\n", this, addr(), functionName(), sourceIndex());
 	for(uint32_t i=0; i<nbLives(); i++)
 		fprintf(stderr, "    live at %d\n", liveAt(i));
 }

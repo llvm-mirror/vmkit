@@ -14,6 +14,22 @@ J3Thread* J3Thread::create(J3* j3) {
 	return new(allocator) J3Thread(j3, allocator);
 }
 
+vmkit::Safepoint* J3Thread::getJavaCaller(uint32_t level) {
+	vmkit::Safepoint* sf = 0;
+	vmkit::StackWalker walker;
+
+	while(walker.next()) {
+		vmkit::Safepoint* sf = vm()->getSafepoint(walker.ip());
+
+		if(sf && !level--) {
+			//((J3ClassLoader*)sf->unit())->
+			return sf;
+		}
+	}
+
+	return 0;
+}
+
 void J3Thread::ensureCapacity(uint32_t capacity) {
 	_fixedPoint.unsyncEnsureCapacity(capacity);
 }

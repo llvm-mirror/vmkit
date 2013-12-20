@@ -52,7 +52,7 @@ namespace j3 {
 
 		J3MethodCode(J3Method* _self) { self = _self; }
 
-		uint8_t* getSymbolAddress();
+		void* getSymbolAddress();
 	};
 
 	class J3Method : public vmkit::Symbol {
@@ -66,7 +66,7 @@ namespace j3 {
 		J3Attributes*                _attributes;
 		uint32_t                     _index;
 		llvm::Function*              _llvmFunction;
-		uint8_t*                     _fnPtr;
+		void*                        _fnPtr;
 		char* volatile               _llvmAllNames; /* stub + _ + native_name */
 		void*                        _nativeFnPtr;
 
@@ -83,7 +83,7 @@ namespace j3 {
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
 
-		uint8_t*            getSymbolAddress();
+		void*               getSymbolAddress();
 
 		static J3Method*    newMethod(vmkit::BumpAllocator* allocator, 
 																	uint16_t access, 
@@ -128,8 +128,8 @@ namespace j3 {
 		J3Value             invokeVirtual(J3ObjectHandle* obj, J3Value* args);
 		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
 
-		uint8_t*            fnPtr();
-		uint8_t*            functionPointerOrTrampoline();
+		void*               fnPtr();
+		void*               functionPointerOrTrampoline();
 
 		void                dump();
 	};
