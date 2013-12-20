@@ -93,10 +93,31 @@ bool VmkitGCPass::findCustomSafePoints(llvm::GCFunctionInfo& FI, llvm::MachineFu
  *    VmkitGCMetadataPrinter
  */
 void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
+	unsigned IntPtrSize = AP.TM.getDataLayout()->getPointerSize(0);
+	uint32_t i = 0;
+		
+	AP.OutStreamer.AddComment("--- function names for the frame tables ---");
+	AP.OutStreamer.AddBlankLine();
+	AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getSectionForConstant(llvm::SectionKind::getMergeable1ByteCString()));
+	for (iterator I = begin(), IE = end(); I != IE; ++I, i++) {
+		llvm::GCFunctionInfo* gcInfo = *I;
+		if(gcInfo->getFunction().hasGC()) {
+			llvm::SmallString<256> id("gcFunc");
+			id += i;
+
+			llvm::MCSymbol *sym = AP.OutContext.GetOrCreateSymbol(id);
+			AP.OutStreamer.EmitLabel(sym);
+			
+			llvm::StringRef ref = gcInfo->getFunction().getName();
+			uint32_t len = ref.size();
+			for(uint32_t n=0; n<len; n++)
+				AP.EmitInt8(ref.data()[n]);
+			AP.EmitInt8(0);
+		}
+	}
+
 	AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getDataSection());
 
-	unsigned IntPtrSize = AP.TM.getDataLayout()->getPointerSize(0);
-		
 	fprintf(stderr, "generating frame tables for: %s\n", getModule().getModuleIdentifier().c_str());
 	llvm::SmallString<256> symName("_");
 	symName += getModule().getModuleIdentifier();
@@ -111,12 +132,19 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 	AP.OutStreamer.AddBlankLine();
 	AP.OutStreamer.EmitLabel(sym);		
 
-	for (iterator I = begin(), IE = end(); I != IE; ++I) {
+	i = 0;
+	for (iterator I = begin(), IE = end(); I != IE; ++I, i++) {
 		llvm::GCFunctionInfo* gcInfo = *I;
 			
 		if(gcInfo->getFunction().hasGC()) {
 			AP.OutStreamer.AddComment("live roots for " + llvm::Twine(gcInfo->getFunction().getName()));
 			AP.OutStreamer.AddBlankLine();
+
+			llvm::SmallString<256> id("gcFunc");
+			id += i;
+
+			const llvm::MCExpr* funcName = llvm::MCSymbolRefExpr::Create(AP.OutContext.GetOrCreateSymbol(id), AP.OutStreamer.getContext());
+
 			for(llvm::GCFunctionInfo::iterator safepoint=gcInfo->begin(); safepoint!=gcInfo->end(); safepoint++) {
 				llvm::DebugLoc* debug = &safepoint->Loc;
 				uint32_t  kind = safepoint->Kind;
@@ -128,7 +156,8 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 				}
 
 				AP.OutStreamer.EmitValue(address, IntPtrSize);
-				AP.EmitGlobalConstant(&gcInfo->getFunction());
+				AP.OutStreamer.EmitValue(funcName, IntPtrSize);
+				//				AP.EmitGlobalConstant(&gcInfo->getFunction());
 				AP.EmitInt32(0);
 				if(IntPtrSize == 8)
 					AP.EmitInt32(0);
@@ -163,7 +192,7 @@ Safepoint* Safepoint::get(CompilationUnit* unit, llvm::Module* module) {
 }
 
 void Safepoint::dump() {
-	fprintf(stderr, "  [%p] safepoint at 0x%lx for function %p::%d\n", this, addr(), code(), sourceIndex());
+	fprintf(stderr, "  [%p] safepoint at 0x%lx for %s::%d\n", this, addr(), functionName(), sourceIndex());
 	for(uint32_t i=0; i<nbLives(); i++)
 		fprintf(stderr, "    live at %d\n", liveAt(i));
 }

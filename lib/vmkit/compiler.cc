@@ -144,6 +144,7 @@ void CompilationUnit::compileModule(llvm::Module* module) {
 	while(sf->addr()) {
 		sf->setUnit(this);
 		vm()->addSafepoint(sf);
+
 		vm()->getSafepoint(sf->addr())->dump();
 		sf = sf->getNext();
 	}
