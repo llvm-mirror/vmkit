@@ -52,6 +52,11 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	topPendingBranchs = 0;
 	isWide = 0;
 
+	bb    = newBB("entry");
+	llvm::IRBuilder<> _builder(bb);
+
+	builder = &_builder;
+
 	funcJ3MethodIndex            = vm->introspectFunction(module(), "j3::J3Method::index()");
 	funcJ3TypeVT                 = vm->introspectFunction(module(), "j3::J3Type::vt()");
 	funcJ3TypeInitialise         = vm->introspectFunction(module(), "j3::J3Type::initialise()");
@@ -88,17 +93,25 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 
 	gcRoot                   = vm->getGCRoot(module());
 
-	//llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::experimental_patchpoint_i64);
-
+#if 0
+	//stackMap       = llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::experimental_stackmap);
+	//patchPointVoid = llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::experimental_patchpoint_i64);
+	{
+		llvm::Type* ins[] = {
+			builder->getInt64Ty(),
+			builder->getInt32Ty(),
+			builder->getInt8PtrTy(),
+			builder->getInt32Ty()
+		};
+		patchPointVoid = (llvm::Function*)
+			module()->getOrInsertFunction(llvm::Intrinsic::getName(llvm::Intrinsic::experimental_patchpoint_void),
+																		llvm::FunctionType::get(builder->getVoidTy(), ins, 1));
+	}
+#endif
 
 	ziTry                    = 
 		(llvm::Function*)module()->getOrInsertFunction("vmkit.try", 
 																									 llvm::FunctionType::get(llvm::Type::getVoidTy(llvmFunction->getContext()), 0));
-
-	bb    = newBB("entry");
-	llvm::IRBuilder<> _builder(bb);
-
-	builder = &_builder;
 
 	if(J3Cst::isNative(method->access()))
 		generateNative();
@@ -655,10 +668,28 @@ void J3CodeGen::translate() {
 	if(vm->options()->genDebugExecute) {
 		char buf[256];
 		snprintf(buf, 256, "%ls::%ls", method->cl()->name()->cStr(), method->name()->cStr());
+#if 0
+
+		fprintf(stderr, "bitcast: ");
+		builder->CreateBitCast(funcEchoDebugEnter, builder->getInt8PtrTy())->dump();
+		fprintf(stderr, "\n");
+
+		llvm::Value* args[] = {
+			builder->getInt64(42),   /* patch point id */
+			builder->getInt32(0),    /* pad */
+			builder->CreateBitCast(funcEchoDebugEnter, builder->getInt8PtrTy()),     /* function funcEchoDebugEnter */
+			builder->getInt32(3),    /* number of args */
+			builder->getInt32(0),    /* arg[0] */
+			buildString("bip %s\n"), /* arg[1] */
+			buildString(buf)         /* arg[2] */
+		};
+		builder->CreateCall(patchPointVoid, args)->dump();
+#else
 		builder->CreateCall3(funcEchoDebugEnter,
 												 builder->getInt32(0),
 												 buildString("%s\n"),
 												 buildString(buf));
+#endif
 	}
 
 	while(codeReader->remaining()) {

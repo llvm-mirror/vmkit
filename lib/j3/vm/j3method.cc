@@ -42,6 +42,14 @@ uint32_t J3Method::index()  {
 	return _index; 
 }
 
+struct safepoint_t {
+	void*    addr;
+	void*    metaData;
+	uint32_t sourceIndex;
+	uint32_t nbLives;
+	uint32_t lives[2];
+}; /* aligned on a 8-byte boundary on a 64 bit machine, on a 4-byte boundary otherwise */
+
 uint8_t* J3Method::fnPtr() {
 	if(!_fnPtr) {
 		//fprintf(stderr, "materializing: %ls::%ls%ls\n", cl()->name()->cStr(), name()->cStr(), sign()->cStr());
@@ -62,6 +70,29 @@ uint8_t* J3Method::fnPtr() {
 		llvm::ExecutionEngine* ee = cl()->loader()->ee();
 		cl()->loader()->addModule(module);
 		_fnPtr = (uint8_t*)ee->getFunctionAddress(_llvmFunction->getName().data());
+
+#if 1
+		fprintf(stderr, "%s is generated at %p\n", llvmFunctionName(), _fnPtr);
+		llvm::SmallString<256> symName;
+		symName += module->getModuleIdentifier();
+		symName += "__frametable";
+		struct safepoint_t* sf = (safepoint_t*)ee->getGlobalValueAddress(symName.c_str());
+
+		if(!sf)
+			cl()->loader()->vm()->internalError(L"unable to find safepoints");
+		
+		while(sf->addr) {
+			fprintf(stderr, "  [%p] safepoint at %p for function %p::%d\n", sf, sf->addr, sf->metaData, sf->sourceIndex);
+			for(uint32_t i=0; i<sf->nbLives; i++)
+				fprintf(stderr, "    live at %d\n", sf->lives[i]);
+
+			uintptr_t next = (uintptr_t)sf + sizeof(struct safepoint_t) - 2*sizeof(uint32_t) + sf->nbLives*sizeof(uint32_t);
+			//fprintf(stderr, "next at 0x%lx %ld %ld %ld\n", next,
+			//sizeof(struct safepoint_t), sf->nbLives*sizeof(uint32_t), 2*sizeof(uint32_t));
+			sf = (struct safepoint_t*)(((next - 1) & -sizeof(uintptr_t)) + sizeof(uintptr_t));
+			//fprintf(stderr, "=> %p\n", sf);
+		}
+#endif
 	}
 
 	return _fnPtr;
@@ -108,7 +139,7 @@ J3Method* J3Method::newMethod(vmkit::BumpAllocator* allocator,
 															J3Class* cl, 
 															const vmkit::Name* name, 
 															const vmkit::Name* sign) {
-	size_t trampolineSize = 48;
+	size_t trampolineSize = 148;
 	
 	void* tra = (void*)J3ObjectHandle::trampoline;
 	J3Method* res = new(allocator, trampolineSize) J3Method(access, cl, name, sign);
@@ -121,19 +152,35 @@ J3Method* J3Method::newMethod(vmkit::BumpAllocator* allocator,
 		0x51, // 3: push %rcx
 		0x41, 0x50, // 4: push %r8
 		0x41, 0x51, // 6: push %r9
-		0x48, 0x83, 0xc4, 0x08, // 8: sub %esp, 8
-		0x48, 0xbe, dd(res, 0), dd(res, 8), dd(res, 16), dd(res, 24), dd(res, 32), dd(res, 40), dd(res, 48), dd(res, 56), // 12: mov -> %rsi
-		0x48, 0xb8, dd(tra, 0), dd(tra, 8), dd(tra, 16), dd(tra, 24), dd(tra, 32), dd(tra, 40), dd(tra, 48), dd(tra, 56), // 22: mov -> %rax
-		0xff, 0xd0, // 32: call %rax
-		0x48, 0x83, 0xec, 0x08, // 34: add %esp, 8
-		0x41, 0x59, // 38: pop %r9
-		0x41, 0x58, // 40: pop %r8
-		0x59, // 42: pop %rcx
-		0x5a, // 43: pop %rdx
-		0x5e, // 44: pop %rsi
-		0x5f, // 45: pop %rdi
-		0xff, 0xe0 // 46: jmp %rax
-		// total: 48
+		0x48, 0x81, 0xec, 0x88, 0x00, 0x00, 0x00, // 8: sub $128+8, %esp
+		0xf3, 0x0f, 0x11, 0x04, 0x24,             // 15: movss %xmm0, (%rsp)
+		0xf3, 0x0f, 0x11, 0x4c, 0x24, 0x10,       // 20: movss %xmm1, 16(%rsp)
+		0xf3, 0x0f, 0x11, 0x54, 0x24, 0x20,       // 26: movss %xmm2, 32(%rsp)
+		0xf3, 0x0f, 0x11, 0x5c, 0x24, 0x30,       // 32: movss %xmm3, 48(%rsp)
+		0xf3, 0x0f, 0x11, 0x64, 0x24, 0x40,       // 38: movss %xmm4, 64(%rsp)
+		0xf3, 0x0f, 0x11, 0x6c, 0x24, 0x50,       // 44: movss %xmm5, 80(%rsp)
+		0xf3, 0x0f, 0x11, 0x74, 0x24, 0x60,       // 50: movss %xmm6, 96(%rsp)
+		0xf3, 0x0f, 0x11, 0x7c, 0x24, 0x70,       // 56: movss %xmm7, 112(%rsp)
+		0x48, 0xbe, dd(res, 0), dd(res, 8), dd(res, 16), dd(res, 24), dd(res, 32), dd(res, 40), dd(res, 48), dd(res, 56), // 62: mov -> %rsi
+		0x48, 0xb8, dd(tra, 0), dd(tra, 8), dd(tra, 16), dd(tra, 24), dd(tra, 32), dd(tra, 40), dd(tra, 48), dd(tra, 56), // 72: mov -> %rax
+		0xff, 0xd0, // 82: call %rax
+		0xf3, 0x0f, 0x10, 0x04, 0x24,             // 84: movss (%rsp), %xmm0
+		0xf3, 0x0f, 0x10, 0x4c, 0x24, 0x10,       // 89: movss 16(%rsp), %xmm1
+		0xf3, 0x0f, 0x10, 0x54, 0x24, 0x20,       // 95: movss 32(%rsp), %xmm2
+		0xf3, 0x0f, 0x10, 0x5c, 0x24, 0x30,       // 101: movss 48(%rsp), %xmm3
+		0xf3, 0x0f, 0x10, 0x64, 0x24, 0x40,       // 107: movss 64(%rsp), %xmm4
+		0xf3, 0x0f, 0x10, 0x6c, 0x24, 0x50,       // 113: movss 80(%rsp), %xmm5
+		0xf3, 0x0f, 0x10, 0x74, 0x24, 0x60,       // 119: movss 96(%rsp), %xmm6
+		0xf3, 0x0f, 0x10, 0x7c, 0x24, 0x70,       // 125: movss 112(%rsp), %xmm7
+		0x48, 0x81, 0xc4, 0x88, 0x00, 0x00, 0x00, // 131: add $128+8, %esp
+		0x41, 0x59, // 138: pop %r9
+		0x41, 0x58, // 140: pop %r8
+		0x59, // 142: pop %rcx
+		0x5a, // 143: pop %rdx
+		0x5e, // 144: pop %rsi
+		0x5f, // 145: pop %rdi
+		0xff, 0xe0 // 146: jmp %rax
+		// total: 148
 	};
 #undef dd
 
@@ -312,19 +359,21 @@ J3MethodType* J3Method::methodType(J3Class* from) {
 }
 
 void J3Method::buildLLVMNames(J3Class* from) {
+	const char* prefix = "stub_";
+	uint32_t plen = 5;
 	J3Mangler mangler(from);
 
 	mangler.mangle(mangler.j3Id)->mangle(this)->mangleType(this);
 
-	uint32_t length = mangler.length() + 5;
+	uint32_t length = mangler.length() + plen;
 	_llvmAllNames = (char*)cl()->loader()->allocator()->allocate(length + 1);
-	memcpy(_llvmAllNames, "stub_", 5);
-	memcpy(_llvmAllNames+5, mangler.cStr(), mangler.length());
+	memcpy(_llvmAllNames, prefix, plen);
+	memcpy(_llvmAllNames+plen, mangler.cStr(), mangler.length());
 	_llvmAllNames[length] = 0;
 
-	cl()->loader()->addSymbol(_llvmAllNames,   &_selfCode);
+	cl()->loader()->addSymbol(_llvmAllNames+0,   &_selfCode);
 	cl()->loader()->addSymbol(_llvmAllNames+4, this);
-	cl()->loader()->addSymbol(_llvmAllNames+5, &_selfCode);
+	cl()->loader()->addSymbol(_llvmAllNames+plen, &_selfCode);
 }
 
 char* J3Method::llvmFunctionName(J3Class* from) {
@@ -342,7 +391,7 @@ char* J3Method::llvmDescriptorName(J3Class* from) {
 char* J3Method::llvmStubName(J3Class* from) {
 	if(!_llvmAllNames)
 		buildLLVMNames(from ? from : cl());
-	return _llvmAllNames;
+	return _llvmAllNames + 0;
 }
 
 llvm::GlobalValue* J3Method::llvmDescriptor(llvm::Module* module) {

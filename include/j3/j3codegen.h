@@ -193,6 +193,9 @@ namespace j3 {
 		llvm::Function*    funcCXAEndCatch;          /* __cxa_end_catch */
 		llvm::Function*    funcGXXPersonality;       /* __gxx_personality_v0 */
 		llvm::Function*    gcRoot;             
+		llvm::Function*    stackMap;
+		llvm::Function*    patchPoint64;
+		llvm::Function*    patchPointVoid;
 		llvm::Function*    ziTry;
 		llvm::GlobalValue* gvTypeInfo;            /* typename void* */
 

@@ -677,6 +677,7 @@ enable_optimized
 enable_debug
 enable_assert
 with_llvm_config_path
+with_llvm_runtime_config_path
 with_clang_path
 with_jdkhome
 '
@@ -1313,6 +1314,8 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-llvm-config-path=path
                           llvm-config path (use default path)
+  --with-llvm-runtime-config-path=path
+                          llvm-runtime-config path (use llvm-config-path)
   --with-clang-path=path  clang path (use llvm-config --bindir and then
                           default path)
   --with-jdkhome          Build J3 with OpenJDK JRE install (default is
@@ -2113,19 +2116,33 @@ if test ! -x "$LLVM_CONFIG"; then
      as_fn_error $? "Cannot find $LLVM_CONFIG (or not executable)" "$LINENO" 5
 fi
 
+
+# Check whether --with-llvm-runtime-config-path was given.
+if test "${with_llvm_runtime_config_path+set}" = set; then :
+  withval=$with_llvm_runtime_config_path; LLVM_RUNTIME_CONFIG=$with_llvm_runtime_config_path
+else
+  LLVM_RUNTIME_CONFIG="$LLVM_CONFIG"
+
+fi
+
+
+if test ! -x "$LLVM_RUNTIME_CONFIG"; then
+     as_fn_error $? "Cannot find $LLVM_RUNTIME_CONFIG (or not executable)" "$LINENO" 5
+fi
+
 LLVM_PATH="`$LLVM_CONFIG --bindir`"
 
-llvm_cfg=`$LLVM_CONFIG --cxxflags | sed -e 's/-O3//'`
+llvm_cfg=`$LLVM_RUNTIME_CONFIG --cxxflags | sed -e 's/-O3//'`
 
 if ! test -z "`echo $llvm_cfg | grep -- -fno-exceptions`"; then
 	 		as_fn_error $? "You have to compile LLVM with exception enabled, please compile it with 'make REQUIRES_EH=1'" "$LINENO" 5
 fi
 
-LLVM_CXXFLAGS=$llvm_cfg" "-I`$LLVM_CONFIG --src-root`/include
+LLVM_CXXFLAGS=$llvm_cfg" "-I`$LLVM_RUNTIME_CONFIG --src-root`/include
 
-LLVM_LIBS=`$LLVM_CONFIG --libs`
+LLVM_LIBS=`$LLVM_RUNTIME_CONFIG --libs | tr '\n' ' '`
 
-LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
+LLVM_LDFLAGS=`$LLVM_RUNTIME_CONFIG --ldflags`
 
 
 

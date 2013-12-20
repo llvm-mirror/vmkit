@@ -117,7 +117,7 @@ llvm::Function* VMKit::getGCRoot(llvm::Module* mod) {
 }
 
 void VMKit::NotifyObjectEmitted(const llvm::ObjectImage &obj) {
-	fprintf(stderr, "**** object jit event listener!\n");
+	//fprintf(stderr, "**** object jit event listener!\n");
 }
 
 void VMKit::NotifyFunctionEmitted(const llvm::Function &F,
@@ -126,7 +126,7 @@ void VMKit::NotifyFunctionEmitted(const llvm::Function &F,
 																	const llvm::JITEventListener::EmittedFunctionDetails &Details) {
 
 	fprintf(stderr, "****  jit event listener!\n");
-
+#if 0
 	const llvm::MachineFunction*             mf = Details.MF;
 	const std::vector<llvm::LandingPadInfo>& landingPads = mf->getMMI().getLandingPads();
 	const llvm::MachineCodeEmitter*          mce = Details.MCE;
@@ -166,6 +166,7 @@ void VMKit::NotifyFunctionEmitted(const llvm::Function &F,
 			safepointMap[addr] = sf;
 		}
 	}
+#endif
 }
 
 void VMKit::log(const wchar_t* msg, ...) {

@@ -160,17 +160,28 @@ if test ! -x "$LLVM_CONFIG"; then
      AC_MSG_ERROR([Cannot find $LLVM_CONFIG (or not executable)])
 fi
 
+AC_ARG_WITH(llvm-runtime-config-path,
+       [AS_HELP_STRING(--with-llvm-runtime-config-path=path,
+           [llvm-runtime-config path (use llvm-config-path)])],
+       [[LLVM_RUNTIME_CONFIG=$with_llvm_runtime_config_path]],
+       [[LLVM_RUNTIME_CONFIG="$LLVM_CONFIG"]]
+)
+
+if test ! -x "$LLVM_RUNTIME_CONFIG"; then
+     AC_MSG_ERROR([Cannot find $LLVM_RUNTIME_CONFIG (or not executable)])
+fi
+
 LLVM_PATH="`$LLVM_CONFIG --bindir`"
 
-llvm_cfg=`$LLVM_CONFIG --cxxflags | sed -e 's/-O3//'`
+llvm_cfg=`$LLVM_RUNTIME_CONFIG --cxxflags | sed -e 's/-O3//'`
 
 if ! test -z "`echo $llvm_cfg | grep -- -fno-exceptions`"; then
 	 		AC_MSG_ERROR([You have to compile LLVM with exception enabled, please compile it with 'make REQUIRES_EH=1'])
 fi
 
-AC_SUBST(LLVM_CXXFLAGS, [$llvm_cfg" "-I`$LLVM_CONFIG --src-root`/include])
-AC_SUBST(LLVM_LIBS, [`$LLVM_CONFIG --libs`])
-AC_SUBST(LLVM_LDFLAGS, [`$LLVM_CONFIG --ldflags`])
+AC_SUBST(LLVM_CXXFLAGS, [$llvm_cfg" "-I`$LLVM_RUNTIME_CONFIG --src-root`/include])
+AC_SUBST(LLVM_LIBS, [`$LLVM_RUNTIME_CONFIG --libs | tr '\n' ' '`])
+AC_SUBST(LLVM_LDFLAGS, [`$LLVM_RUNTIME_CONFIG --ldflags`])
 
 dnl **************************************************************************
 dnl clang

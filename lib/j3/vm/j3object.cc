@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <setjmp.h>
 
 #include "llvm/IR/DataLayout.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
