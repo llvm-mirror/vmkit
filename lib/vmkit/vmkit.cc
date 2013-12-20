@@ -209,20 +209,6 @@ void VMKit::throwException(void* obj) {
 }
 
 
-void* Safepoint::operator new(size_t unused, size_t nbSlots) {
-	return ::operator new(sizeof(Safepoint) + nbSlots*sizeof(uintptr_t) - sizeof(uintptr_t));
-}
-
-Safepoint::Safepoint(const llvm::Function* llvmFunction, uintptr_t address, size_t nbSlots) {
-	_llvmFunction = llvmFunction;
-	_address = address;
-	_nbSlots = nbSlots;
-}
-
-Safepoint* Safepoint::create(const llvm::Function* llvmFunction, uintptr_t address, size_t nbSlots) {
-	return new(nbSlots) Safepoint(llvmFunction, address, nbSlots);
-}
-
 ExceptionDescriptor::ExceptionDescriptor(const llvm::Function* llvmFunction, uintptr_t point, uintptr_t landingPad) {
 	_llvmFunction = llvmFunction;
 	_point = point;

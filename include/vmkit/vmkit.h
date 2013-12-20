@@ -17,21 +17,7 @@ namespace llvm {
 
 namespace vmkit {
 	class Thread;
-
-	class Safepoint { /* managed with malloc/free */
-		const llvm::Function* _llvmFunction;
-		uintptr_t             _address;
-		size_t                _nbSlots;
-		uintptr_t             _offsets[1];
-
-		void* operator new(size_t unused, size_t nbSlots);
-		Safepoint(const llvm::Function* llvmFunction, uintptr_t address, size_t nbSlots);
-
-	public:
-		static Safepoint* create(const llvm::Function* llvmFunction, uintptr_t address, size_t nbSlots);
-
-		void setAt(size_t idx, uintptr_t offset)  { _offsets[idx] = idx; }
-	};
+	class Safepoint;
 
 	class ExceptionDescriptor { /* managed with malloc/free */
 		const llvm::Function* _llvmFunction;
