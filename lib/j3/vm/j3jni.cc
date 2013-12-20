@@ -10,7 +10,7 @@
 #define enterJVM() try {
 #define leaveJVM() } catch(void* e) { J3Thread::get()->setPendingException(J3Thread::get()->push((J3Object*)e)); }
 
-#define NYI() { fprintf(stderr, "-- not yet implemented: %s --\n", __PRETTY_FUNCTION__); abort(); }
+#define NYI() { J3Thread::get()->vm()->internalError(L"not yet implemented: '%s'", __PRETTY_FUNCTION__); }
 
 namespace j3 {
 
@@ -18,15 +18,17 @@ jint JNICALL GetVersion(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
 
 jclass JNICALL DefineClass(JNIEnv* env, const char* name, jobject loader, const jbyte* buf, jsize len) { enterJVM(); leaveJVM(); NYI(); }
 jclass JNICALL FindClass(JNIEnv* env, const char* name) { 
-	vmkit::Safepoint* sf = J3Thread::get()->getJavaCaller();
+	jclass res;
 
-	printf("---> %p\n", sf);
-	//jclass res;
 	enterJVM();
-	//J3Class* cl = 
-	fprintf(stderr, "find class: %s\n", name);
+	J3Method* m = J3Thread::get()->getJavaCaller();
+	J3ClassLoader* loader = m ? m->cl()->loader() : J3Thread::get()->vm()->initialClassLoader;
+	J3Class* cl = loader->getClass(loader->vm()->names()->get(name));
+	cl->initialise();
+	res = cl->javaClass();
 	leaveJVM(); 
-	NYI(); 
+	
+	return res;
 }
 
 jmethodID JNICALL FromReflectedMethod(JNIEnv* env, jobject method) { enterJVM(); leaveJVM(); NYI(); }

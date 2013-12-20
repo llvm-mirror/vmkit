@@ -23,7 +23,7 @@ namespace j3 {
 	public:
 		static J3Thread*  create(J3* j3);
 
-		vmkit::Safepoint* getJavaCaller(uint32_t level=0);
+		J3Method*         getJavaCaller(uint32_t level=0);
 
 		void              ensureCapacity(uint32_t capacity);
 		J3ObjectHandle*   pendingException() { return _pendingException; }

@@ -140,7 +140,7 @@ void VMKit::log(const wchar_t* msg, ...) {
 	va_end(va);
 }
 
-void VMKit::internalError(const wchar_t* msg, va_list va) {
+void VMKit::vinternalError(const wchar_t* msg, va_list va) {
 	defaultInternalError(msg, va);
 }
 
@@ -155,7 +155,7 @@ void VMKit::internalError(const wchar_t* msg, ...) {
 	va_list va;
 	va_start(va, msg);
 	if(Thread::get() && Thread::get()->vm())
-		Thread::get()->vm()->internalError(msg, va);
+		Thread::get()->vm()->vinternalError(msg, va);
 	else
 		defaultInternalError(msg, va);
 	va_end(va);

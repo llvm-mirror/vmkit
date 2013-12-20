@@ -107,9 +107,8 @@ void CompilationUnit::addSymbol(const char* id, vmkit::Symbol* symbol) {
 	pthread_mutex_unlock(&_mutexSymbolTable);
 }
 
-Symbol* CompilationUnit::getSymbol(const std::string &Name) {
+Symbol* CompilationUnit::getSymbol(const char* id) {
 	pthread_mutex_lock(&_mutexSymbolTable);
-	const char* id = Name.c_str() + 1;
 
 	std::map<const char*, vmkit::Symbol*>::iterator it = _symbolTable.find(id);
 	vmkit::Symbol* res;
@@ -131,7 +130,7 @@ Symbol* CompilationUnit::getSymbol(const std::string &Name) {
 }
 
 uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
-	return (uint64_t)(uintptr_t)getSymbol(Name)->getSymbolAddress();
+	return (uint64_t)(uintptr_t)getSymbol(Name.c_str() + 1)->getSymbolAddress();
 }
 
 void CompilationUnit::compileModule(llvm::Module* module) {
@@ -148,7 +147,7 @@ void CompilationUnit::compileModule(llvm::Module* module) {
 		sf->setUnit(this);
 		vm()->addSafepoint(sf);
 
-		vm()->getSafepoint(sf->addr())->dump();
+		//vm()->getSafepoint(sf->addr())->dump();
 		sf = sf->getNext();
 	}
 }

@@ -58,7 +58,7 @@ namespace vmkit {
 		VMKit*                  vm() const { return _vmkit; }
 
 		void                    addSymbol(const char* id, vmkit::Symbol* symbol);
-		Symbol*                 getSymbol(const std::string &Name);
+		Symbol*                 getSymbol(const char* id);
 		uint64_t                getSymbolAddress(const std::string &Name);
 
 		BumpAllocator*          allocator() { return _allocator; }

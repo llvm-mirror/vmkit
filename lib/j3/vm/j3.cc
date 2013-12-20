@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <dlfcn.h>
 #include <cxxabi.h>
 
 #include "j3/j3class.h"
@@ -10,6 +11,8 @@
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"
+
+#include "vmkit/safepoint.h"
 
 using namespace j3;
 
@@ -170,4 +173,35 @@ void J3::classFormatError(J3Class* cl, const wchar_t* reason, ...) {
 
 void J3::linkageError(J3Method* method) {
 	internalError(L"unable to find native method '%ls::%ls%ls'", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
+}
+
+void J3::vinternalError(const wchar_t* msg, va_list va) {
+	vmkit::Safepoint* sf = 0;
+	vmkit::StackWalker walker;
+
+	fprintf(stderr, "Internal error: ");
+	vfwprintf(stderr, msg, va);
+	fprintf(stderr, "\n");
+
+	while(walker.next()) {
+		vmkit::Safepoint* sf = getSafepoint(walker.ip());
+
+		if(sf) {
+			J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
+			fprintf(stderr, "    in %ls %ls::%ls index %d\n", m->sign()->cStr(), m->cl()->name()->cStr(), m->name()->cStr(),
+							sf->sourceIndex());
+		} else {
+			Dl_info info;
+			
+			if(dladdr(walker.ip(), &info)) {
+				int   status;
+				const char* demangled = abi::__cxa_demangle(info.dli_sname, 0, 0, &status);
+				const char* name = demangled ? demangled : info.dli_sname;
+				fprintf(stderr, "    in %s + %lu\n", name, (uintptr_t)walker.ip() - (uintptr_t)info.dli_saddr);
+			} else {
+				fprintf(stderr, "    in %p\n", walker.ip()); 
+			}
+		}
+	}
+	abort();
 }

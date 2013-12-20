@@ -1,5 +1,9 @@
 #include "j3/j3thread.h"
+#include "j3/j3method.h"
 #include "j3/j3.h"
+
+#include "vmkit/safepoint.h"
+#include "vmkit/compiler.h"
 
 using namespace j3;
 
@@ -14,17 +18,15 @@ J3Thread* J3Thread::create(J3* j3) {
 	return new(allocator) J3Thread(j3, allocator);
 }
 
-vmkit::Safepoint* J3Thread::getJavaCaller(uint32_t level) {
+J3Method* J3Thread::getJavaCaller(uint32_t level) {
 	vmkit::Safepoint* sf = 0;
 	vmkit::StackWalker walker;
 
 	while(walker.next()) {
 		vmkit::Safepoint* sf = vm()->getSafepoint(walker.ip());
 
-		if(sf && !level--) {
-			//((J3ClassLoader*)sf->unit())->
-			return sf;
-		}
+		if(sf && !level--)
+			return ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
 	}
 
 	return 0;

@@ -18,16 +18,17 @@ namespace vmkit {
 		uint32_t         _nbLives;
 
 	public:
-		void        setUnit(CompilationUnit* unit) { _unit = unit; }
+		void              setUnit(CompilationUnit* unit) { _unit = unit; }
 
-		void*       addr() { return _addr; }
-		const char* functionName() { return _functionName; }
-		uint32_t    sourceIndex() { return _sourceIndex; }
-		uint32_t    nbLives() { return _nbLives; }
-		uint32_t    liveAt(uint32_t i) { return ((uint32_t*)(this + 1))[i]; }
+		CompilationUnit*  unit() { return _unit; }
+		void*             addr() { return _addr; }
+		const char*       functionName() { return _functionName; }
+		uint32_t          sourceIndex() { return _sourceIndex; }
+		uint32_t          nbLives() { return _nbLives; }
+		uint32_t          liveAt(uint32_t i) { return ((uint32_t*)(this + 1))[i]; }
 
-		Safepoint*  getNext();
-		void        dump();
+		Safepoint*        getNext();
+		void              dump();
 
 		static Safepoint* get(CompilationUnit* unit, llvm::Module* module);
 	};

@@ -66,7 +66,7 @@ namespace vmkit {
 
 		void log(const wchar_t* msg, ...);
 
-		virtual void internalError(const wchar_t* msg, va_list va) __attribute__((noreturn));
+		virtual void vinternalError(const wchar_t* msg, va_list va) __attribute__((noreturn));
 
 		static void internalError(const wchar_t* msg, ...) __attribute__((noreturn));		
 		static void throwException(void* obj) __attribute__((noreturn));

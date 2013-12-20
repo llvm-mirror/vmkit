@@ -20,10 +20,10 @@ StackWalker::StackWalker(uint32_t initialPop) {
 
 bool StackWalker::next(uint32_t nbPop) {
 	while(nbPop--) {
-		void* next = framePointer[0];
-		if(!next)
+		void** next = (void**)framePointer[0];
+		if(!next || !next[0])
 			return 0;
-		framePointer = (void**)next;
+		framePointer = next;
 	}
 	return 1;
 }

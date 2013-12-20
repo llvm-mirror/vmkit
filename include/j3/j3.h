@@ -94,6 +94,8 @@ namespace j3 {
 
 		void                       start(int argc, char** argv);
 
+		void                       vinternalError(const wchar_t* msg, va_list va) __attribute__((noreturn));
+
 		static JNIEnv* jniEnv();
 
 		static void    noClassDefFoundError(J3Class* cl) __attribute__((noreturn));

@@ -118,7 +118,6 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 
 	AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getDataSection());
 
-	fprintf(stderr, "generating frame tables for: %s\n", getModule().getModuleIdentifier().c_str());
 	llvm::SmallString<256> symName("_");
 	symName += getModule().getModuleIdentifier();
 	symName += "__frametable";
@@ -128,7 +127,7 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 
 	AP.EmitAlignment(IntPtrSize == 4 ? 2 : 3);
 
-	AP.OutStreamer.AddComment("--- module frame tables ---");
+	AP.OutStreamer.AddComment("--- frame tables ---");
 	AP.OutStreamer.AddBlankLine();
 	AP.OutStreamer.EmitLabel(sym);		
 
