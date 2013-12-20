@@ -3,6 +3,7 @@
 #include "vmkit/compiler.h"
 #include "vmkit/thread.h"
 #include "vmkit/vmkit.h"
+#include "vmkit/safepoint.h"
 
 #include "llvm/LinkAllPasses.h"
 #include "llvm/PassManager.h"
@@ -24,10 +25,12 @@ void* CompilationUnit::operator new(size_t n, BumpAllocator* allocator) {
 void  CompilationUnit::operator delete(void* self) {
 }
 
-CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id) :
+CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const char* id) :
 	_symbolTable(vmkit::Util::char_less, allocator) {
 	_allocator = allocator;
 	pthread_mutex_init(&_mutexSymbolTable, 0);
+
+	_vmkit = vmkit;
 
 	std::string err;
 	_ee = llvm::EngineBuilder(new llvm::Module(id, Thread::get()->vm()->llvmContext()))
@@ -40,6 +43,7 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id) :
 		Thread::get()->vm()->internalError(L"Error while creating execution engine: %s\n", err.c_str());
 
   ee()->RegisterJITEventListener(Thread::get()->vm());
+	ee()->finalizeObject();
 
 	_oldee = llvm::EngineBuilder(new llvm::Module("old ee", Thread::get()->vm()->llvmContext()))
 		.setErrorStr(&err)
@@ -127,7 +131,20 @@ uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
 	return (uint64_t)(uintptr_t)res->getSymbolAddress();
 }
 
-void CompilationUnit::addModule(llvm::Module* module) {
+void CompilationUnit::compileModule(llvm::Module* module) {
 	pm->run(*module);
 	ee()->addModule(module);
+	ee()->finalizeObject();
+
+	vmkit::Safepoint* sf = Safepoint::get(this, module);
+
+	if(!sf)
+		vm()->internalError(L"unable to find safepoints");
+		
+	while(sf->addr()) {
+		sf->setUnit(this);
+		vm()->addSafepoint(sf);
+		vm()->getSafepoint(sf->addr())->dump();
+		sf = sf->getNext();
+	}
 }

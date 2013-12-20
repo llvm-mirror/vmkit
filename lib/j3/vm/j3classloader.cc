@@ -21,7 +21,7 @@ using namespace j3;
 J3ClassLoader::J3MethodLess J3ClassLoader::j3MethodLess;
 
 J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
-	: CompilationUnit(allocator, "class-loader"),
+	: CompilationUnit(allocator, v, "class-loader"),
 		_fixedPoint(allocator),
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
@@ -34,8 +34,6 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	//	pthread_mutexattr_init(&attr);
 	//	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&_mutex, 0);//&attr);
-
-	_vm = v;
 }
 
 void* J3ClassLoader::lookupNativeFunctionPointer(J3Method* method, const char* symbol) {

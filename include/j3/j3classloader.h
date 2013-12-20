@@ -40,7 +40,6 @@ namespace j3 {
 		J3ObjectHandle*                      _javaClassLoader;
 		J3FixedPoint                         _fixedPoint;
 		pthread_mutex_t                      _mutex;       /* a lock */
-		J3*                                  _vm;          /* my vm */
 		vmkit::NameMap<J3Class*>::map        classes;      /* classes managed by this class loader */
 		vmkit::NameMap<J3Type*>::map         types;        /* shortcut to find types */
 		vmkit::NameMap<J3MethodType*>::map   methodTypes;  /* shortcut to find method types - REMOVE */
@@ -65,7 +64,7 @@ namespace j3 {
 		void                          lock() { pthread_mutex_lock(&_mutex); }
 		void                          unlock() { pthread_mutex_unlock(&_mutex); }
 
-		J3*                           vm() const { return _vm; };
+		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
 
 		J3Method*                     method(uint16_t access, J3Class* cl, 
 																				 const vmkit::Name* name, const vmkit::Name* sign); /* find a method ref */

@@ -61,29 +61,10 @@ uint8_t* J3Method::fnPtr() {
 
 		J3CodeGen::translate(this, _llvmFunction);
 
-		llvm::ExecutionEngine* ee = cl()->loader()->ee();
-		cl()->loader()->addModule(module);
-		_fnPtr = (uint8_t*)ee->getFunctionAddress(_llvmFunction->getName().data());
+		cl()->loader()->compileModule(module);
 
-#if 1
-		fprintf(stderr, "%s is generated at %p\n", llvmFunctionName(), _fnPtr);
-		llvm::SmallString<256> symName;
-		symName += module->getModuleIdentifier();
-		symName += "__frametable";
-		vmkit::Safepoint* sf = (vmkit::Safepoint*)ee->getGlobalValueAddress(symName.c_str());
-
-		if(!sf)
-			cl()->loader()->vm()->internalError(L"unable to find safepoints");
-		
-		while(sf->addr()) {
-			fprintf(stderr, "  [%p] safepoint at %p for function %p::%d\n", sf, sf->addr(), sf->metaData(), sf->sourceIndex());
-			for(uint32_t i=0; i<sf->nbLives(); i++)
-				fprintf(stderr, "    live at %d\n", sf->liveAt(i));
-
-			sf = sf->getNext();
-		}
-#endif
-	}
+		_fnPtr = (uint8_t*)cl()->loader()->ee()->getFunctionAddress(_llvmFunction->getName().data());
+ 	}
 
 	return _fnPtr;
 }

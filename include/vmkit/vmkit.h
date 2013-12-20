@@ -31,8 +31,9 @@ namespace vmkit {
 		typedef std::map<const char*, llvm::GlobalValue*, Util::char_less_t, 
 										 StdAllocator<std::pair<const char*, llvm::GlobalValue*> > > MangleMap;
 
-		std::map<uintptr_t, Safepoint*>            safepointMap;   /* managed with malloc/free */
-		std::map<uintptr_t, ExceptionDescriptor*>  exceptionTable; /* managed with malloc/free */
+		std::map<uintptr_t, Safepoint*>            safepointMap;    
+		pthread_mutex_t                            safepointMapLock;
+		std::map<uintptr_t, ExceptionDescriptor*>  exceptionTable;   /* managed with malloc/free */
 		MangleMap                       mangleMap;
 		BumpAllocator*                  _allocator;
 		llvm::Module*                   _self;
@@ -49,6 +50,9 @@ namespace vmkit {
 		static void                destroy(VMKit* vm);
 
 		VMKit(BumpAllocator* allocator);
+
+		void                       addSafepoint(Safepoint* sf);
+		Safepoint*                 getSafepoint(uintptr_t addr);
 
 		BumpAllocator*             allocator() { return _allocator; }
 

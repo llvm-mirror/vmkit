@@ -1,4 +1,5 @@
 #include "vmkit/safepoint.h"
+#include "vmkit/compiler.h"
 
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Constants.h"
@@ -25,6 +26,8 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/Mangler.h"
 #include "llvm/Target/TargetLoweringObjectFile.h"
+
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 namespace vmkit {
 	class VmkitGCPass : public llvm::GCStrategy {
@@ -94,6 +97,7 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 
 	unsigned IntPtrSize = AP.TM.getDataLayout()->getPointerSize(0);
 		
+	fprintf(stderr, "generating frame tables for: %s\n", getModule().getModuleIdentifier().c_str());
 	llvm::SmallString<256> symName("_");
 	symName += getModule().getModuleIdentifier();
 	symName += "__frametable";
@@ -125,6 +129,9 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 
 				AP.OutStreamer.EmitValue(address, IntPtrSize);
 				AP.EmitGlobalConstant(&gcInfo->getFunction());
+				AP.EmitInt32(0);
+				if(IntPtrSize == 8)
+					AP.EmitInt32(0);
 				AP.EmitInt32(debug->getLine());
 				AP.EmitInt32(gcInfo->live_size(safepoint));
 
@@ -144,6 +151,19 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
  *    Safepoint
  */
 Safepoint* Safepoint::getNext() {
-	uintptr_t next = (uintptr_t)this + sizeof(Safepoint) - 2*sizeof(uint32_t) + nbLives()*sizeof(uint32_t);
+	uintptr_t next = (uintptr_t)this + sizeof(Safepoint) + nbLives()*sizeof(uint32_t);
 	return (Safepoint*)(((next - 1) & -sizeof(uintptr_t)) + sizeof(uintptr_t));
+}
+
+Safepoint* Safepoint::get(CompilationUnit* unit, llvm::Module* module) {
+	llvm::SmallString<256> symName;
+	symName += module->getModuleIdentifier();
+	symName += "__frametable";
+	return (vmkit::Safepoint*)unit->ee()->getGlobalValueAddress(symName.c_str());
+}
+
+void Safepoint::dump() {
+	fprintf(stderr, "  [%p] safepoint at 0x%lx for function %p::%d\n", this, addr(), code(), sourceIndex());
+	for(uint32_t i=0; i<nbLives(); i++)
+		fprintf(stderr, "    live at %d\n", liveAt(i));
 }

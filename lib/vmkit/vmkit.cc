@@ -7,6 +7,7 @@
 
 #include "vmkit/vmkit.h"
 #include "vmkit/thread.h"
+#include "vmkit/safepoint.h"
 
 #include "llvm/IR/Module.h"
 #include "llvm/IR/LLVMContext.h"
@@ -35,6 +36,7 @@ VMKit::VMKit(vmkit::BumpAllocator* allocator) :
 	llvm::InitializeNativeTargetDisassembler();
 	llvm::llvm_start_multithreaded();
 	_allocator = allocator;
+	pthread_mutex_init(&safepointMapLock, 0);
 }
 
 void* VMKit::operator new(size_t n, vmkit::BumpAllocator* allocator) {
@@ -43,6 +45,19 @@ void* VMKit::operator new(size_t n, vmkit::BumpAllocator* allocator) {
 
 void VMKit::destroy(VMKit* vm) {
 	vmkit::BumpAllocator::destroy(vm->allocator());
+}
+
+void VMKit::addSafepoint(Safepoint* sf) {
+	pthread_mutex_lock(&safepointMapLock);
+	safepointMap[sf->addr()] = sf;
+	pthread_mutex_unlock(&safepointMapLock);
+}
+
+Safepoint* VMKit::getSafepoint(uintptr_t addr) {
+	pthread_mutex_lock(&safepointMapLock);
+	Safepoint* res = safepointMap[addr];
+	pthread_mutex_unlock(&safepointMapLock);
+	return res;
 }
 
 llvm::LLVMContext& VMKit::llvmContext() {
@@ -117,7 +132,7 @@ llvm::Function* VMKit::getGCRoot(llvm::Module* mod) {
 }
 
 void VMKit::NotifyObjectEmitted(const llvm::ObjectImage &obj) {
-	//fprintf(stderr, "**** object jit event listener!\n");
+	fprintf(stderr, "**** object jit event listener!\n");
 }
 
 void VMKit::NotifyFunctionEmitted(const llvm::Function &F,
