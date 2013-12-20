@@ -1,3 +1,5 @@
+#include "vmkit/safepoint.h"
+
 #include "j3/j3method.h"
 #include "j3/j3class.h"
 #include "j3/j3classloader.h"
@@ -42,14 +44,6 @@ uint32_t J3Method::index()  {
 	return _index; 
 }
 
-struct safepoint_t {
-	void*    addr;
-	void*    metaData;
-	uint32_t sourceIndex;
-	uint32_t nbLives;
-	uint32_t lives[2];
-}; /* aligned on a 8-byte boundary on a 64 bit machine, on a 4-byte boundary otherwise */
-
 uint8_t* J3Method::fnPtr() {
 	if(!_fnPtr) {
 		//fprintf(stderr, "materializing: %ls::%ls%ls\n", cl()->name()->cStr(), name()->cStr(), sign()->cStr());
@@ -76,21 +70,17 @@ uint8_t* J3Method::fnPtr() {
 		llvm::SmallString<256> symName;
 		symName += module->getModuleIdentifier();
 		symName += "__frametable";
-		struct safepoint_t* sf = (safepoint_t*)ee->getGlobalValueAddress(symName.c_str());
+		vmkit::Safepoint* sf = (vmkit::Safepoint*)ee->getGlobalValueAddress(symName.c_str());
 
 		if(!sf)
 			cl()->loader()->vm()->internalError(L"unable to find safepoints");
 		
-		while(sf->addr) {
-			fprintf(stderr, "  [%p] safepoint at %p for function %p::%d\n", sf, sf->addr, sf->metaData, sf->sourceIndex);
-			for(uint32_t i=0; i<sf->nbLives; i++)
-				fprintf(stderr, "    live at %d\n", sf->lives[i]);
+		while(sf->addr()) {
+			fprintf(stderr, "  [%p] safepoint at %p for function %p::%d\n", sf, sf->addr(), sf->metaData(), sf->sourceIndex());
+			for(uint32_t i=0; i<sf->nbLives(); i++)
+				fprintf(stderr, "    live at %d\n", sf->liveAt(i));
 
-			uintptr_t next = (uintptr_t)sf + sizeof(struct safepoint_t) - 2*sizeof(uint32_t) + sf->nbLives*sizeof(uint32_t);
-			//fprintf(stderr, "next at 0x%lx %ld %ld %ld\n", next,
-			//sizeof(struct safepoint_t), sf->nbLives*sizeof(uint32_t), 2*sizeof(uint32_t));
-			sf = (struct safepoint_t*)(((next - 1) & -sizeof(uintptr_t)) + sizeof(uintptr_t));
-			//fprintf(stderr, "=> %p\n", sf);
+			sf = sf->getNext();
 		}
 #endif
 	}
