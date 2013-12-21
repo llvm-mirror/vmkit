@@ -15,6 +15,8 @@
 
 #include "llvm/IR/Module.h"
 
+#include "llvm/Target/TargetOptions.h"
+
 using namespace vmkit;
 
 void* Symbol::getSymbolAddress() {
@@ -35,10 +37,15 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const c
 
 	_vmkit = vmkit;
 
+	llvm::TargetOptions opt;
+	opt.NoFramePointerElim = 1;
+
 	std::string err;
 	_ee = llvm::EngineBuilder(new llvm::Module(id, Thread::get()->vm()->llvmContext()))
 		.setUseMCJIT(1)
 		.setMCJITMemoryManager(this)
+		.setOptLevel(llvm::CodeGenOpt::None) /* Aggressive */
+		.setTargetOptions(opt)
 		.setErrorStr(&err)
 		.create();
 
