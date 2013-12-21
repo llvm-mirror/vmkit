@@ -27,7 +27,9 @@ jclass JNICALL FindClass(JNIEnv* env, const char* name) {
 	cl->initialise();
 	res = cl->javaClass();
 	leaveJVM(); 
-	
+
+	fprintf(stderr, "find class --> %p %p\n", res, J3ObjectType::nativeClass(res));
+
 	return res;
 }
 
@@ -98,6 +100,7 @@ jmethodID JNICALL GetMethodID(JNIEnv* env, jclass clazz, const char* name, const
 	vmkit::Names* n = cl->loader()->vm()->names();
 	res = cl->findVirtualMethod(n->get(name), n->get(sig));
 	leaveJVM(); 
+
 	return res;
 }
 
@@ -223,7 +226,21 @@ void JNICALL SetLongField(JNIEnv* env, jobject obj, jfieldID fieldID, jlong val)
 void JNICALL SetFloatField(JNIEnv* env, jobject obj, jfieldID fieldID, jfloat val) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL SetDoubleField(JNIEnv* env, jobject obj, jfieldID fieldID, jdouble val) { enterJVM(); leaveJVM(); NYI(); }
 
-jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { enterJVM(); leaveJVM(); NYI(); }
+jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { 
+	jmethodID res;
+
+	enterJVM(); 
+	
+	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
+	fprintf(stderr, "cl: %p %p\n", clazz, cl);
+	cl->initialise();
+	vmkit::Names* n = cl->loader()->vm()->names();
+	res = cl->findStaticMethod(n->get(name), n->get(sig));
+
+	leaveJVM(); 
+
+	return res;
+}
 
 jobject JNICALL CallStaticObjectMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL CallStaticObjectMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }

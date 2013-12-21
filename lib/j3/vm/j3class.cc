@@ -141,6 +141,7 @@ J3ObjectType* J3ObjectType::nativeClass(J3ObjectHandle* handle) {
 }
 
 J3ObjectHandle* J3ObjectType::javaClass() {
+	fprintf(stderr, "javaClass: %p %p %ls\n", _javaClass, this, name()->cStr());
 	if(!_javaClass) {
 		lock();
 		if(!_javaClass) {
@@ -149,7 +150,9 @@ J3ObjectHandle* J3ObjectType::javaClass() {
 			loader()->fixedPoint()->syncPush(_javaClass);
 			J3Thread::get()->restore(prev);
 			_javaClass->setLong(loader()->vm()->classVMData, (int64_t)(uintptr_t)this);
+			fprintf(stderr, "   -> native class is %p\n", nativeClass(_javaClass));
 			loader()->vm()->classInit->invokeSpecial(_javaClass);
+			fprintf(stderr, "   %p -> native class is %p\n", _javaClass, nativeClass(_javaClass));
 		}
 		unlock();
 	}
