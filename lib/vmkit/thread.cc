@@ -22,12 +22,11 @@ StackWalker::StackWalker(uint32_t initialPop) {
 
 bool StackWalker::next(uint32_t nbPop) {
 	while(nbPop--) {
-		fprintf(stderr, "%p and %p => %p\n", framePointer, Thread::get()->baseFramePointer(), ip());
 		if(framePointer == Thread::get()->baseFramePointer())
 			return 0;
 		framePointer = (void**)System::fp_to_next_fp(framePointer);
 	}
-	return 1;
+	return framePointer != Thread::get()->baseFramePointer();
 }
 	
 void* StackWalker::ip() {
