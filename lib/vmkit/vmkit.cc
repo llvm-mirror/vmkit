@@ -3,8 +3,8 @@
 #include <wchar.h>
 #include <stdlib.h>
 #include <dlfcn.h>
-#include <cxxabi.h>
 
+#include "vmkit/system.h"
 #include "vmkit/vmkit.h"
 #include "vmkit/thread.h"
 #include "vmkit/safepoint.h"
@@ -105,11 +105,11 @@ void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
 	std::string err;
 	llvm::OwningPtr<llvm::MemoryBuffer> buf;
 	if (llvm::MemoryBuffer::getFile(selfBitCodePath, buf))
-		VMKit::internalError(L"Error while opening bitcode file %s\n", selfBitCodePath);
+		VMKit::internalError(L"Error while opening bitcode file %s", selfBitCodePath);
 	_self = llvm::getLazyBitcodeModule(buf.take(), llvm::getGlobalContext(), &err);
 
 	if(!self())
-		VMKit::internalError(L"Error while reading bitcode file %s: %s\n", selfBitCodePath, err.c_str());
+		VMKit::internalError(L"Error while reading bitcode file %s: %s", selfBitCodePath, err.c_str());
 
 	for(llvm::Module::iterator cur=self()->begin(); cur!=self()->end(); cur++)
 		addSymbol(cur);
@@ -120,7 +120,7 @@ void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
 	_dataLayout = new llvm::DataLayout(self());
 
 	llvm::GlobalValue* typeInfoGV = mangleMap["typeinfo for void*"];
-	ptrTypeInfo = typeInfoGV ? dlsym(RTLD_SELF, typeInfoGV->getName().data()) : 0;
+	ptrTypeInfo = typeInfoGV ? dlsym(SELF_HANDLE, typeInfoGV->getName().data()) : 0;
 
 	if(!ptrTypeInfo)
 		internalError(L"unable to find typeinfo for void*"); 
@@ -164,9 +164,12 @@ void VMKit::internalError(const wchar_t* msg, ...) {
 }
 
 void VMKit::throwException(void* obj) {
+#if 0
 	void** exception = (void**)abi::__cxa_allocate_exception(sizeof(void*));
 	*exception = obj;
 	abi::__cxa_throw(exception, (std::type_info*)Thread::get()->vm()->ptrTypeInfo, 0);
+#endif
+	fprintf(stderr, " throw exception...\n");
 	abort();
 }
 

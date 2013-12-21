@@ -44,6 +44,7 @@ AC_CANONICAL_TARGET
 
 dnl Determine the platform type and cache its value. This helps us configure
 dnl the System library to the correct build platform.
+dnl Make sure we aren't attempting to configure for an unknown system
 AC_CACHE_CHECK([type of operating system we're going to host on],
                [vmkit_cv_os_type],
 [case $host in
@@ -56,8 +57,8 @@ AC_CACHE_CHECK([type of operating system we're going to host on],
   *-*-darwin*)
 		OS="darwin"
 		SHLIBEXT=".dylib"
-#    SHOPT="-fno-common -Wl,-flat_namespace -Wl,-undefined,suppress" 
- 	  SHOPT="-Wl,-all_load -Wl,-compatibility_version,1 -Wl,-current_version,1"
+ 	  SHALL="-Wl,-all_load -Wl,-compatibility_version,1 -Wl,-current_version,1"
+		SHNOALL=""
 		EXEEXT="" ;;
   *-*-freebsd*)
     AC_MSG_ERROR([Good luck porting vmkit to your host!]) ;;
@@ -70,7 +71,11 @@ AC_CACHE_CHECK([type of operating system we're going to host on],
   *-*-interix*)
     AC_MSG_ERROR([Good luck porting vmkit to your host!]) ;;
   *-*-linux*)
-    AC_MSG_ERROR([Good luck porting vmkit to your host!]) ;;
+		OS="linux"
+		SHLIBEXT=".so"
+		SHALL="-Wl,--whole-archive"
+		SHNOALL="-Wl,--no-whole-archive"
+		EXEEXT="" ;;
   *-*-solaris*)
     AC_MSG_ERROR([Good luck porting vmkit to your host!]) ;;
   *-*-win32*)
@@ -81,10 +86,10 @@ AC_CACHE_CHECK([type of operating system we're going to host on],
     AC_MSG_ERROR([Good luck porting vmkit to your host!]) ;;
 esac])
 
-dnl Make sure we aren't attempting to configure for an unknown system
 AC_SUBST([OS])
 AC_SUBST([SHLIBEXT])
-AC_SUBST([SHOPT])
+AC_SUBST([SHALL])
+AC_SUBST([SHNOALL])
 AC_SUBST([EXEEXT])
 
 dnl===-----------------------------------------------------------------------===
@@ -222,10 +227,7 @@ dnl===
 dnl=== SECTION 4: Check for programs we need and that they are the right version
 dnl===
 dnl===-----------------------------------------------------------------------===
-dnl Check for compilation tools
 AC_PROG_CPP
-
-dnl Find the install program
 AC_PROG_INSTALL
 
 dnl AC_SUBST(SHLIBEXT,$libltdl_cv_shlibext)
@@ -233,7 +235,7 @@ dnl AC_SUBST(SHLIBEXT,$libltdl_cv_shlibext)
 AC_DEFUN([AX_PATH_PROG_FAIL_OR_SUBST], [
   AC_PATH_PROG([$1], [$2], [no], [$3:$PATH]) 
 	  if test x"${$1}" == x"no"; then 
-      AC_MSG_ERROR([Unable to find $2, please install $2]) 
+      AC_MSG_ERROR([Unable to find $2, please install it]) 
 		fi
   AC_SUBST([$1])
 ]) 
@@ -251,6 +253,8 @@ dnl===
 dnl=== SECTION 5: Check for libraries
 dnl===
 dnl===-----------------------------------------------------------------------===
+
+dnl have to check: zlib, ncurses
 
 dnl===-----------------------------------------------------------------------===
 dnl===
@@ -283,7 +287,7 @@ dnl===
 dnl===-----------------------------------------------------------------------===
 
 dnl Configure header files
-AC_CONFIG_FILES([Makefile.config include/j3/j3config.h])
+AC_CONFIG_FILES([Makefile.config include/vmkit/config.h include/j3/j3config.h])
 
 AC_SUBST([ac_config_files])
 AC_SUBST([ac_config_headers])

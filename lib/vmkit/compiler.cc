@@ -1,5 +1,6 @@
 #include <dlfcn.h>
 
+#include "vmkit/system.h"
 #include "vmkit/compiler.h"
 #include "vmkit/thread.h"
 #include "vmkit/vmkit.h"
@@ -9,6 +10,8 @@
 #include "llvm/PassManager.h"
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/MCJIT.h"
+#include "llvm/ExecutionEngine/JIT.h"
 
 #include "llvm/IR/Module.h"
 
@@ -114,7 +117,7 @@ Symbol* CompilationUnit::getSymbol(const char* id) {
 	vmkit::Symbol* res;
 
 	if(it == _symbolTable.end()) {
-		uint8_t* addr = (uint8_t*)dlsym(RTLD_SELF, id);
+		uint8_t* addr = (uint8_t*)dlsym(SELF_HANDLE, id);
 		if(!addr)
 			Thread::get()->vm()->internalError(L"unable to resolve native symbol: %s", id);
 		res = new(allocator()) vmkit::NativeSymbol(addr);
@@ -130,7 +133,7 @@ Symbol* CompilationUnit::getSymbol(const char* id) {
 }
 
 uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
-	return (uint64_t)(uintptr_t)getSymbol(Name.c_str() + 1)->getSymbolAddress();
+	return (uint64_t)(uintptr_t)getSymbol(System::mcjitSymbol(Name))->getSymbolAddress();
 }
 
 void CompilationUnit::compileModule(llvm::Module* module) {

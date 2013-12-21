@@ -178,10 +178,11 @@ void J3::linkageError(J3Method* method) {
 void J3::vinternalError(const wchar_t* msg, va_list va) {
 	vmkit::Safepoint* sf = 0;
 	vmkit::StackWalker walker;
+	wchar_t buf[65536];
 
-	fprintf(stderr, "Internal error: ");
-	vfwprintf(stderr, msg, va);
-	fprintf(stderr, "\n");
+	vswprintf(buf, 65536, msg, va);
+
+	fprintf(stderr, "Internal error: %ls\n", buf);
 
 	while(walker.next()) {
 		vmkit::Safepoint* sf = getSafepoint(walker.ip());

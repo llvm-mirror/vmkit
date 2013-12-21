@@ -1,4 +1,5 @@
 #include <string.h>
+#include <wchar.h>
 
 #include "vmkit/names.h"
 

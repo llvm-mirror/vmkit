@@ -9,7 +9,7 @@ namespace j3 {
 
 	class J3Lib {
 	public:
-		static const char** systemClassesArchives();
+		static const char*  systemClassesArchives();
 		static int          loadSystemLibraries(std::vector<void*, vmkit::StdAllocator<void*> >* handles);
 	};
 }

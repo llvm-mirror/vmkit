@@ -35,7 +35,7 @@ endif
 ###############################################################################
 COMMON_FLAGS:=-Wall -Wno-return-type-c-linkage -Wno-varargs -Wno-unused-private-field -Werror -Wno-unused-variable \
 		-I$(PROJ_SRC_ROOT)/include -I$(OPENJDK_HOME)/include -I$(OPENJDK_HOME)/include/$(OS) $(COMMON_FLAGS) \
-		-fno-omit-frame-pointer
+		-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
 
 ifeq ($(OPTIMIZED),1)
 	COMMON_FLAGS+=-O3
@@ -52,11 +52,8 @@ endif
 LLCFLAGS+=-disable-cfi -disable-fp-elim -relocation-model=pic 
 OPTFLAGS+=-disable-cfi -disable-fp-elim -disable-opt
 
-#LDFLAGS=-fno-common -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-rpath,$(OPENJDK_HOME)/jre/lib/server
-#LDFLAGS=-Wl,-rpath,$(OPENJDK_HOME)/jre/lib/server
-#LDFLAGS=-Wl,-flat_namespace -rdynamic
-CXXFLAGS=$(COMMON_FLAGS) $(LLVM_CXXFLAGS) -std=gnu++98 -fPIC
-SHFLAGS=$(SHOPT) -fno-common -Wl,-flat_namespace -Wl,-undefined,suppress
+CXXFLAGS=$(LLVM_CXXFLAGS) $(COMMON_FLAGS) -std=gnu++98 -fPIC
+SHFLAGS=-lpthread -ldl -lz -lncurses -fno-common -Wl,-flat_namespace -Wl,-undefined,suppress
 
 ###############################################################################
 #   Targets
@@ -93,7 +90,7 @@ RECURSIVE_TARGETS=all clean
 define do_sub_target
 $1::
   #$(Echo) "Entering directory $$(PROF)/$2"
-	$(Verb) $(MAKE) $(SUB_OPT) -C $2 $1 PROF=$(PROF)/$2; \
+	$(Verb) +$(MAKE) $(SUB_OPT) -C $2 $1 PROF=$(PROF)/$2; \
 		if [ $$$$? != 0 ]; then echo "$$(EchoMsg) abort with errors in $$(PROF)/$2"; exit 1; fi
 endef
 
@@ -140,8 +137,6 @@ $(foreach cur,$(CONFIG_HEADERS),$(eval $(call define_config_rule,$(cur),header))
 define find-sources
 	$(basename $(notdir $(wildcard $(PROJ_SRC_CWD)/*$1)))
 endef
-
-# $(wildcard $(BUILD_DIR)/*$1)))
 
 ifndef BASE_OBJ_FILES
 	BASE_OBJ_FILES=$(call find-sources,.cc)
@@ -279,7 +274,7 @@ DOM=then mv -f "$(BUILD_DIR)/$$*.d.tmp" "$(BUILD_DIR)/$$*.d"; else rm -f "$(BUIL
 
 $(SONAME)$(SHLIBEXT): $(SO_FILES)
 	$(Echo) "Linking shared library '$(notdir $@)'"
-	$(Verb) $(CLANGXX) -shared $(LLVM_LDFLAGS) $(SHFLAGS) -o $@ $(SHFLAGS) $^ $(SO_LIBS)
+	$(Verb) $(CLANGXX) -shared $(LLVM_LDFLAGS) $(SHFLAGS) -o $@ $(SHALL) $^ $(SHNOALL) $(SO_LIBS)
 
 $(GEN_MODULE).bc: $(BC_FILES)
 	$(Echo) "Linking bc module '$(notdir $@)'"
@@ -287,7 +282,7 @@ $(GEN_MODULE).bc: $(BC_FILES)
 
 $(GEN_MODULE).a: $(GC_OBJ_FILES)
 	$(Echo) "Linking module '$(notdir $@)'"
-	$(Verb) libtool -static -o $@ $^
+	$(Verb) ar cru $@ $^ && ranlib $@
 
 %.o: %.bc
 	$(Echo) "Assembling '$(notdir $<)'"

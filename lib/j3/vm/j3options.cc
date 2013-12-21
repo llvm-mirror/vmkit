@@ -1,4 +1,6 @@
 #include "j3/j3options.h"
+#include "j3/j3config.h"
+#include "j3/j3lib.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,12 +10,12 @@ using namespace j3;
 
 J3Options::J3Options() {
 	assertionsEnabled = 1;
-	selfBitCodePath = "/Users/gthomas/research/vmkit4/vmkit/Debug+Asserts/lib/libjvm.bc";
-	rtJar = "/Users/gthomas/research/vmkit4/jdk8/build/macosx-x86_64-normal-server-release/images/lib/rt.jar";
+	selfBitCodePath = SELF_BITCODE;
+	rtJar = J3Lib::systemClassesArchives();
 
 	debugEnterIndent = 1;
 
-	debugExecute = 0;
+	debugExecute = 2;
 	debugLoad = 0;
 	debugResolve = 0;
 	debugIniting = 0;

@@ -1,6 +1,7 @@
 
-#define SHLIBEXT      "@SHLIBEXT@"
-#define OPENJDK_HOME  "@jdkhome@"
+#define SELF_LIBJVM   "@abs_top_builddir@/@BUILD_NAME@/lib/libjvm@SHLIBEXT@"
+#define SELF_BITCODE  "@abs_top_builddir@/@BUILD_NAME@/lib/libjvm.bc"
+#define OPENJDK_HOME  "@jdkhome@/"
 
 
 

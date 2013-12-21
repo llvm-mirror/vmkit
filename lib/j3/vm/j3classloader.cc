@@ -210,8 +210,8 @@ bool J3ClassLoader::J3MethodLess::operator()(j3::J3Method const* lhs, j3::J3Meth
 
 J3InitialClassLoader::J3InitialClassLoader(J3* v, const char* rtjar, vmkit::BumpAllocator* _alloc) 
 	: J3ClassLoader(v, 0, _alloc) {
-	const char** archives = J3Lib::systemClassesArchives();
-	J3ClassBytes* bytes = J3Reader::openFile(allocator(), archives[0]);
+	const char* archives = vm()->options()->rtJar;
+	J3ClassBytes* bytes = J3Reader::openFile(allocator(), archives);
 
 	//makeLLVMFunctions_j3();
 

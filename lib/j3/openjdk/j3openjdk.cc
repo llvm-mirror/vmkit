@@ -1,3 +1,5 @@
+#include "vmkit/config.h"
+#include "vmkit/system.h"
 #include "j3/j3object.h"
 #include "j3/j3lib.h"
 #include "j3/j3config.h"
@@ -14,19 +16,17 @@ using namespace j3;
 #define enterJVM()
 #define leaveJVM()
 
-#define NYI() { fprintf(stderr, "++ not yet implemented: %s ++\n", __PRETTY_FUNCTION__); abort(); }
+#define NYI() { J3Thread::get()->vm()->internalError(L"not yet implemented: '%s'", __PRETTY_FUNCTION__); }
 
-#define OPENJDK_PATH      OPENJDK_HOME"/jre"
-#define OPENJDK_LIBPATH   OPENJDK_PATH"/lib"
-#define OPENJDK_RT        OPENJDK_LIBPATH"/rt.jar"
-#define OPENJDK_LIB       OPENJDK_LIBPATH"/libjava"SHLIBEXT
+#ifdef LINUX_OS
+#define OPENJDK_LIBPATH OPENJDK_HOME"jre/lib/amd64"
+#else
+#define OPENJDK_LIBPATH OPENJDK_HOME"jre/lib"
+#endif
 
-static const char* rtjar[] = {
-	OPENJDK_LIBPATH"/rt.jar",
-	0
-};
+static const char* rtjar = OPENJDK_HOME"jre/lib/rt.jar";
 
-const char** J3Lib::systemClassesArchives() {
+const char* J3Lib::systemClassesArchives() {
 	return rtjar;
 }
 

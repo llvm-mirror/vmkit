@@ -1,4 +1,5 @@
 #include "vmkit/thread.h"
+#include "vmkit/system.h"
 
 using namespace vmkit;
 
@@ -14,14 +15,14 @@ void Thread::destroy(Thread* thread) {
 }
 
 StackWalker::StackWalker(uint32_t initialPop) {
-	framePointer = (void**)__builtin_frame_address(1);
-	next(initialPop);
+	framePointer = System::current_fp();
+	next(initialPop+1);
 }
 
 bool StackWalker::next(uint32_t nbPop) {
 	while(nbPop--) {
-		void** next = (void**)framePointer[0];
-		if(!next || !next[0])
+		void** next = (void**)System::fp_to_next_fp(framePointer);
+		if(!next || !System::fp_to_next_fp(next))
 			return 0;
 		framePointer = next;
 	}
@@ -29,5 +30,5 @@ bool StackWalker::next(uint32_t nbPop) {
 }
 	
 void* StackWalker::ip() {
-	return framePointer[1];
+	return System::fp_to_ip(framePointer);
 }

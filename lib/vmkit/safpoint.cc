@@ -1,5 +1,6 @@
 #include "vmkit/safepoint.h"
 #include "vmkit/compiler.h"
+#include "vmkit/system.h"
 
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Constants.h"
@@ -184,10 +185,11 @@ Safepoint* Safepoint::getNext() {
 }
 
 Safepoint* Safepoint::get(CompilationUnit* unit, llvm::Module* module) {
-	llvm::SmallString<256> symName;
+	std::string symName;
+	symName += '_';
 	symName += module->getModuleIdentifier();
 	symName += "__frametable";
-	return (vmkit::Safepoint*)unit->ee()->getGlobalValueAddress(symName.c_str());
+	return (vmkit::Safepoint*)unit->ee()->getGlobalValueAddress(System::mcjitSymbol(symName));
 }
 
 void Safepoint::dump() {

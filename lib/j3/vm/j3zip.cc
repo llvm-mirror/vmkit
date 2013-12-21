@@ -5,6 +5,7 @@
 //===----------------------------------------------------------------------===//
 
 #include <zlib.h>
+#include <string.h>
 
 #include "j3/j3reader.h"
 #include "j3/j3zip.h"
