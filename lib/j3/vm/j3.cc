@@ -13,6 +13,7 @@
 #include "llvm/IR/DerivedTypes.h"
 
 #include "vmkit/safepoint.h"
+#include "vmkit/system.h"
 
 using namespace j3;
 
@@ -60,7 +61,11 @@ void J3::introspect() {
 void J3::start(int argc, char** argv) {
 	_options.process(argc, argv);
 
-	vmkitBootstrap(J3Thread::create(this), options()->selfBitCodePath);
+	J3Thread* thread = J3Thread::create(this);
+
+	thread->setBaseFramePointer(vmkit::System::current_fp()); 
+
+	vmkitBootstrap(thread, options()->selfBitCodePath);
 
 	introspect();
 

@@ -8,6 +8,7 @@ __thread Thread* Thread::_thread = 0;
 Thread::Thread(VMKit* vm, BumpAllocator* allocator) { 
 	_allocator = allocator;
 	_vm = vm; 
+	_baseFramePointer = 0;
 }
 
 void Thread::destroy(Thread* thread) {
@@ -21,10 +22,10 @@ StackWalker::StackWalker(uint32_t initialPop) {
 
 bool StackWalker::next(uint32_t nbPop) {
 	while(nbPop--) {
-		void** next = (void**)System::fp_to_next_fp(framePointer);
-		if(!next || !System::fp_to_next_fp(next))
+		fprintf(stderr, "%p and %p => %p\n", framePointer, Thread::get()->baseFramePointer(), ip());
+		if(framePointer == Thread::get()->baseFramePointer())
 			return 0;
-		framePointer = next;
+		framePointer = (void**)System::fp_to_next_fp(framePointer);
 	}
 	return 1;
 }

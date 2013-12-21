@@ -9,12 +9,16 @@ namespace vmkit {
 	class Thread : protected PermanentObject {
 		BumpAllocator*       _allocator;
 		VMKit*               _vm;
+		void*                _baseFramePointer;
 
 	protected:
 		Thread(VMKit* vm, BumpAllocator* allocator);
 
 	public:
 		static void destroy(Thread* thread);
+
+		void  setBaseFramePointer(void* fp) { _baseFramePointer = fp; }
+		void* baseFramePointer() { return _baseFramePointer; }
 
 		VMKit* vm() { return _vm; }
 		BumpAllocator* allocator() { return _allocator; }
@@ -33,6 +37,7 @@ namespace vmkit {
 
 		bool  next(uint32_t nbPop=1);
 		void* ip();
+		void* fp() { return framePointer; }
 	};
 }
 

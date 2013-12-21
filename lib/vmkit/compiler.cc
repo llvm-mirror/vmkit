@@ -59,9 +59,13 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const c
 	pm = new llvm::PassManager();
 	//pm->add(new llvm::TargetData(*ee->getTargetData()));
 
+#if 0
 	pm->add(llvm::createBasicAliasAnalysisPass());
+#endif
 	
 	pm->add(llvm::createCFGSimplificationPass());      // Clean up disgusting code
+
+#if 0
 	pm->add(llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
 	pm->add(llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
 	pm->add(llvm::createScalarReplAggregatesPass()); // Break up aggregate allocas
@@ -91,6 +95,7 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const c
 	pm->add(llvm::createDeadStoreEliminationPass());  // Delete dead stores
 	pm->add(llvm::createAggressiveDCEPass());         // Delete dead instructions
 	pm->add(llvm::createCFGSimplificationPass());     // Merge & remove BBs
+#endif
 }
 
 CompilationUnit::~CompilationUnit() {
