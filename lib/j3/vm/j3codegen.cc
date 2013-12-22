@@ -883,15 +883,15 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_baload:                        /* 0x33 */
-				arrayStore(vm->typeByte);
+				arrayLoad(vm->typeByte);
 				break;
 
 			case J3Cst::BC_caload:                        /* 0x34 */
-				arrayStore(vm->typeChar);
+				arrayLoad(vm->typeChar);
 				break;
 
 			case J3Cst::BC_saload:                        /* 0x35 */
-				arrayStore(vm->typeShort);
+				arrayLoad(vm->typeShort);
 				break;
 
 			case J3Cst::BC_istore:                        /* 0x36 wide */

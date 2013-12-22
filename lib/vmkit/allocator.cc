@@ -27,6 +27,7 @@ BumpAllocator::~BumpAllocator() {
 	while(current->next) {
 		BumpAllocatorNode* tmp = current->next;
 		unmap(current, (uintptr_t)current->top - (uintptr_t)current);
+		current = tmp;
 	}
 }
 
