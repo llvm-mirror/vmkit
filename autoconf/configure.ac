@@ -181,7 +181,11 @@ LLVM_PATH="`$LLVM_CONFIG --bindir`"
 llvm_cfg=`$LLVM_RUNTIME_CONFIG --cxxflags | sed -e 's/-O3//'`
 
 if ! test -z "`echo $llvm_cfg | grep -- -fno-exceptions`"; then
-	 		AC_MSG_ERROR([You have to compile LLVM with exception enabled, please compile it with 'make REQUIRES_EH=1'])
+	 		AC_MSG_ERROR([You have to compile LLVM with exception enabled, please compile it with 'make REQUIRES_EH=1 REQUIRES_FRAME_POINTER=1'])
+fi
+
+if ! test -z "`echo $llvm_cfg | grep -- -fomit-frame-pointer`"; then
+	 		AC_MSG_ERROR([You have to compile LLVM with frame pointers, please compile it with 'make REQUIRES_EH=1 REQUIRES_FRAME_POINTER=1'])
 fi
 
 AC_SUBST(LLVM_CXXFLAGS, [$llvm_cfg" "-I`$LLVM_RUNTIME_CONFIG --src-root`/include])

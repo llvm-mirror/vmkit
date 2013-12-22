@@ -2123,7 +2123,11 @@ LLVM_PATH="`$LLVM_CONFIG --bindir`"
 llvm_cfg=`$LLVM_RUNTIME_CONFIG --cxxflags | sed -e 's/-O3//'`
 
 if ! test -z "`echo $llvm_cfg | grep -- -fno-exceptions`"; then
-	 		as_fn_error $? "You have to compile LLVM with exception enabled, please compile it with 'make REQUIRES_EH=1'" "$LINENO" 5
+	 		as_fn_error $? "You have to compile LLVM with exception enabled, please compile it with 'make REQUIRES_EH=1 REQUIRES_FRAME_POINTER=1'" "$LINENO" 5
+fi
+
+if ! test -z "`echo $llvm_cfg | grep -- -fomit-frame-pointer`"; then
+	 		as_fn_error $? "You have to compile LLVM with frame pointers, please compile it with 'make REQUIRES_EH=1 REQUIRES_FRAME_POINTER=1'" "$LINENO" 5
 fi
 
 LLVM_CXXFLAGS=$llvm_cfg" "-I`$LLVM_RUNTIME_CONFIG --src-root`/include
