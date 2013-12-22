@@ -1,6 +1,8 @@
 #include "j3/j3trampoline.h"
 #include "j3/j3object.h"
 #include "j3/j3method.h"
+#include "j3/j3thread.h"
+#include "j3/j3class.h"
 #include "j3/j3.h"
 
 using namespace j3;
@@ -10,23 +12,17 @@ void* J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
 }
 	
 void* J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
-	return staticTrampoline(obj, target);
-	J3::internalError(L"implement me: virtualTrampoline");
-#if 0
 	J3ObjectHandle* prev = J3Thread::get()->tell();
 	J3ObjectHandle* handle = J3Thread::get()->push(obj);
+	J3ObjectType* cl = handle->vt()->type()->asObjectType();
+	J3Method* impl = cl == target->cl() ? target : cl->findVirtualMethod(target->name(), target->sign());
 
-	fprintf(stderr, "target: %ls::%ls\n", target->cl()->name()->cStr(), target->name()->cStr());
-
-	void* res = target->fnPtr();
-
-	if(!J3Cst::isStatic(target->access()))
-		handle->vt()->virtualMethods()[target->index()] = res;
+	void* res = impl->fnPtr();
+	handle->vt()->virtualMethods()[impl->index()] = res;
 
 	J3Thread::get()->restore(prev);
 
 	return res;
-#endif
 }
 
 void* J3Trampoline::buildTrampoline(vmkit::BumpAllocator* allocator, J3Method* m, void* tra) {	
