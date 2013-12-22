@@ -106,6 +106,7 @@ namespace j3 {
 	public:
 
 		uint32_t length() { return _length; }
+		void*    content() { return this+1; }
 	};
 
 	class J3ObjectHandle {
@@ -142,13 +143,15 @@ namespace j3 {
 		void            setObjectAt(uint32_t idx, J3ObjectHandle* v);
 		J3ObjectHandle* getObjectAt(uint32_t idx);
 
-#define defAccessor(name, ctype, llvmtype)						\
-		void  rawSet##name(uint32_t offset, ctype value); \
-		ctype rawGet##name(uint32_t offset);							\
-		void  set##name(J3Field* f, ctype value);					\
-		ctype get##name(J3Field* f);											\
-		void  set##name##At(uint32_t idx, ctype value);		\
-		ctype get##name##At(uint32_t idx);
+#define defAccessor(name, ctype, llvmtype)															\
+		void  rawSet##name(uint32_t offset, ctype value);										\
+		ctype rawGet##name(uint32_t offset);																\
+		void  set##name(J3Field* f, ctype value);														\
+		ctype get##name(J3Field* f);																				\
+		void  set##name##At(uint32_t idx, ctype value);											\
+		ctype get##name##At(uint32_t idx);																	\
+		void  setRegion##name(uint32_t selfIdx, const ctype* buf, uint32_t bufIdx, uint32_t len); \
+		void  getRegion##name(uint32_t selfIdx, const ctype* buf, uint32_t bufIdx, uint32_t len);
 		onJavaPrimitives(defAccessor);
 #undef defAccessor
 	};

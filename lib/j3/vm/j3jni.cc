@@ -229,6 +229,13 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 		return res;																													\
 	}
 
+#define defArrayRegion(jtype, id, j3type)																\
+	void JNICALL Set##id##ArrayRegion(JNIEnv* env, jtype##Array array, jsize start, jsize len, const jtype* buf) { \
+		enterJVM();																													\
+		array->setRegion##j3type(0, buf, start, len);												\
+		leaveJVM();																													\
+	}
+
 #define defJNIObj(jtype, id, j3type)						\
 	defCall(jtype, id, j3type)										\
 	defNonVirtualCall(jtype, id, j3type)					\
@@ -236,7 +243,8 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 
 #define defJNI(jtype, id, j3type)								\
 	defJNIObj(jtype, id, j3type)									\
-	defNewArray(jtype, id, j3type)
+	defNewArray(jtype, id, j3type)								\
+	defArrayRegion(jtype, id, j3type)
 
 	defJNIObj(jobject,  Object,  Object);
 	defJNI   (jboolean, Boolean, Boolean);
@@ -426,15 +434,6 @@ void JNICALL GetIntArrayRegion(JNIEnv* env, jintArray array, jsize start, jsize 
 void JNICALL GetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len, jlong* buf) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL GetFloatArrayRegion(JNIEnv* env, jfloatArray array, jsize start, jsize len, jfloat* buf) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL GetDoubleArrayRegion(JNIEnv* env, jdoubleArray array, jsize start, jsize len, jdouble* buf) { enterJVM(); leaveJVM(); NYI(); }
-
-void JNICALL SetBooleanArrayRegion(JNIEnv* env, jbooleanArray array, jsize start, jsize l, const jboolean* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetByteArrayRegion(JNIEnv* env, jbyteArray array, jsize start, jsize len, const jbyte* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetCharArrayRegion(JNIEnv* env, jcharArray array, jsize start, jsize len, const jchar* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetShortArrayRegion(JNIEnv* env, jshortArray array, jsize start, jsize len, const jshort* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetIntArrayRegion(JNIEnv* env, jintArray array, jsize start, jsize len, const jint* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len, const jlong* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetFloatArrayRegion(JNIEnv* env, jfloatArray array, jsize start, jsize len, const jfloat* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetDoubleArrayRegion(JNIEnv* env, jdoubleArray array, jsize start, jsize len, const jdouble* buf) { enterJVM(); leaveJVM(); NYI(); }
 
 jint JNICALL RegisterNatives(JNIEnv* env, jclass clazz, const JNINativeMethod* methods, jint nMethods) {
 	enterJVM();

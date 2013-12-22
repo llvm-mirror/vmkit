@@ -344,6 +344,22 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 																																				\
 	ctype J3ObjectHandle::get##name##At(uint32_t idx) {										\
 		return rawGet##name(sizeof(J3ArrayObject) + idx*sizeof(ctype));			\
+	}																																			\
+																																				\
+	void  J3ObjectHandle::setRegion##name(uint32_t selfIdx, const ctype* buf, uint32_t bufIdx, uint32_t len) { \
+		if(selfIdx + len > arrayLength())																		\
+			J3::arrayBoundCheckException();																		\
+		memcpy((uint8_t*)array() + sizeof(J3ArrayObject) + selfIdx*sizeof(ctype), \
+					 (uint8_t*)buf + bufIdx*sizeof(ctype),												\
+					 len*sizeof(ctype));																					\
+	}																																			\
+																																				\
+	void  J3ObjectHandle::getRegion##name(uint32_t selfIdx, const ctype* buf, uint32_t bufIdx, uint32_t len) { \
+		if(selfIdx + len > arrayLength())																		\
+			J3::arrayBoundCheckException();																		\
+		memcpy((uint8_t*)buf + bufIdx*sizeof(ctype),												\
+					 (uint8_t*)array() + sizeof(J3ArrayObject) + selfIdx*sizeof(ctype), \
+					 len*sizeof(ctype));																					\
 	}
 
 onJavaPrimitives(defAccessor)
