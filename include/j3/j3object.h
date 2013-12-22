@@ -161,9 +161,9 @@ namespace j3 {
 	class J3FixedPoint {
 		static const uint32_t defaultNodeCapacity = 256;
 
-		pthread_mutex_t            mutex;
+		pthread_mutex_t       mutex;
 		vmkit::BumpAllocator* allocator;
-		J3FixedPointNode*          head;
+		J3FixedPointNode*     head;
 
 		void createNode(uint32_t capacity=defaultNodeCapacity);
 	public:

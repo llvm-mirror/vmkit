@@ -26,7 +26,8 @@ namespace j3 {
 		J3Method*         getJavaCaller(uint32_t level=0);
 
 		void              ensureCapacity(uint32_t capacity);
-		J3ObjectHandle*   pendingException() { return _pendingException; }
+		J3ObjectHandle*   pendingException();
+		bool              hasPendingException() { return _pendingException; }
 		void              setPendingException(J3ObjectHandle* handle) { _pendingException = handle; }
 		J3FixedPoint*     fixedPoint() { return &_fixedPoint; }
 

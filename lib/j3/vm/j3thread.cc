@@ -32,6 +32,13 @@ J3Method* J3Thread::getJavaCaller(uint32_t level) {
 	return 0;
 }
 
+J3ObjectHandle* J3Thread::pendingException() {
+	if(_pendingException) {
+		return push(_pendingException);
+	} else
+		return 0;
+}
+
 void J3Thread::ensureCapacity(uint32_t capacity) {
 	_fixedPoint.unsyncEnsureCapacity(capacity);
 }

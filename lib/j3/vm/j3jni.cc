@@ -28,8 +28,6 @@ jclass JNICALL FindClass(JNIEnv* env, const char* name) {
 	res = cl->javaClass();
 	leaveJVM(); 
 
-	fprintf(stderr, "find class --> %p %p\n", res, J3ObjectType::nativeClass(res));
-
 	return res;
 }
 
@@ -121,12 +119,49 @@ jmethodID JNICALL GetMethodID(JNIEnv* env, jclass clazz, const char* name, const
 		leaveJVM();																													\
 																																				\
 		return res.val##j3type;																							\
+	}																																			\
+																																				\
+	jtype JNICALL Call##id##MethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { \
+		jvalue res;																													\
+																																				\
+		enterJVM();																													\
+		res = methodID->invokeVirtual(obj, args);														\
+		leaveJVM();																													\
+																																				\
+		return res.val##j3type;																							\
+	}																																			\
+																																				\
+	jtype JNICALL CallStatic##id##Method(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { \
+		va_list va;																													\
+		va_start(va, methodID);																							\
+		jobject res = env->CallStatic##id##MethodV(clazz, methodID, va);		\
+		va_end(va);																													\
+		return res;																													\
+	}																																			\
+																																				\
+	jtype JNICALL CallStatic##id##MethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { \
+		jvalue res;																													\
+																																				\
+		enterJVM();																													\
+		res = methodID->invokeStatic(args);																	\
+		leaveJVM();																													\
+																																				\
+		return res.val##j3type;																							\
+	}																																			\
+																																				\
+	jtype JNICALL CallStatic##id##MethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { \
+		jvalue res;																													\
+																																				\
+		enterJVM();																													\
+		res = methodID->invokeStatic(args);																	\
+		leaveJVM();																													\
+																																				\
+		return res.val##j3type;																							\
 	}
 
 	doInvoke(jobject, Object, Object);
 
 
-jobject JNICALL CallObjectMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
 
 jboolean JNICALL CallBooleanMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
 jboolean JNICALL CallBooleanMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
@@ -241,10 +276,6 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 
 	return res;
 }
-
-jobject JNICALL CallStaticObjectMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jobject JNICALL CallStaticObjectMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jobject JNICALL CallStaticObjectMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
 
 jboolean JNICALL CallStaticBooleanMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
 jboolean JNICALL CallStaticBooleanMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
@@ -431,7 +462,9 @@ void JNICALL ReleaseStringCritical(JNIEnv* env, jstring string, const jchar* cst
 jweak JNICALL NewWeakGlobalRef(JNIEnv* env, jobject obj) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL DeleteWeakGlobalRef(JNIEnv* env, jweak ref) { enterJVM(); leaveJVM(); NYI(); }
 
-jboolean JNICALL ExceptionCheck(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
+jboolean JNICALL ExceptionCheck(JNIEnv* env) { 
+	return J3Thread::get()->hasPendingException();
+}
 
 jobject JNICALL NewDirectByteBuffer(JNIEnv* env, void* address, jlong capacity) { enterJVM(); leaveJVM(); NYI(); }
 void* JNICALL GetDirectBufferAddress(JNIEnv* env, jobject buf) { enterJVM(); leaveJVM(); NYI(); }
