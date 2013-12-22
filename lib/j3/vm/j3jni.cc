@@ -267,7 +267,6 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 	enterJVM(); 
 	
 	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
-	fprintf(stderr, "cl: %p %p\n", clazz, cl);
 	cl->initialise();
 	vmkit::Names* n = cl->loader()->vm()->names();
 	res = cl->findStaticMethod(n->get(name), n->get(sig));

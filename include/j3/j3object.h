@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include <stdint.h>
 
+#include "vmkit/stack.h"
+
 #include "j3/j3typesdef.h"
 
 namespace vmkit {
@@ -150,35 +152,15 @@ namespace j3 {
 #undef defAccessor
 	};
 
-	class J3FixedPointNode {
+	class J3FixedPoint : public vmkit::Stack<J3ObjectHandle> {
 	public:
-		J3FixedPointNode* nextFree;
-		J3FixedPointNode* nextBusy;
-		J3ObjectHandle*   top;
-		J3ObjectHandle*   max;
-	};
-
-	class J3FixedPoint {
-		static const uint32_t defaultNodeCapacity = 256;
-
-		pthread_mutex_t       mutex;
-		vmkit::BumpAllocator* allocator;
-		J3FixedPointNode*     head;
-
-		void createNode(uint32_t capacity=defaultNodeCapacity);
-	public:
-		J3FixedPoint(vmkit::BumpAllocator* _allocator);
-
-		void            unsyncEnsureCapacity(uint32_t capacity);
+		J3FixedPoint(vmkit::BumpAllocator* _allocator) : vmkit::Stack<J3ObjectHandle>(_allocator) {}
 
 		J3ObjectHandle* syncPush(J3ObjectHandle* handle) { return syncPush(handle->obj()); }
-		J3ObjectHandle* syncPush(J3Object* obj);
 		J3ObjectHandle* unsyncPush(J3ObjectHandle* handle) { return unsyncPush(handle->obj()); }
-		J3ObjectHandle* unsyncPush(J3Object* obj);
-		void            unsyncPop();
 
-		J3ObjectHandle* unsyncTell() { return head->top; }
-		void            unsyncRestore(J3ObjectHandle* ptr);
+		J3ObjectHandle* syncPush(J3Object* obj);
+		J3ObjectHandle* unsyncPush(J3Object* obj);
 	};
 
 	class J3Value {

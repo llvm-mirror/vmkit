@@ -396,79 +396,16 @@ void* J3ObjectHandle::trampoline(J3Object* obj, J3Method* target) {
 /*
  *  J3FixedPoint
  */
-J3FixedPoint::J3FixedPoint(vmkit::BumpAllocator* _allocator) {
-	pthread_mutex_init(&mutex, 0);
-	allocator = _allocator;
-	head = 0;
-	createNode();
-}
-
-void J3FixedPoint::unsyncEnsureCapacity(uint32_t capacity) {
-	J3ObjectHandle* reserve = head->top + capacity;
-	if(reserve > head->max)
-		createNode(capacity);
-}
-
-void J3FixedPoint::createNode(uint32_t capacity) {
-	uint64_t size = capacity * sizeof(J3Object*) + sizeof(J3FixedPointNode);
-	J3FixedPointNode* nn = (J3FixedPointNode*)allocator->allocate(size);
-	nn->top = (J3ObjectHandle*)(nn + 1);
-	nn->max = (J3ObjectHandle*)((uintptr_t)nn + size);
-	nn->nextFree = 0;
-	nn->nextBusy = head;
-	if(head)
-		head->nextFree = nn;
-	head = nn;
-}
-
 J3ObjectHandle* J3FixedPoint::syncPush(J3Object* obj) {
-	J3FixedPointNode* cur = head;
-	J3ObjectHandle* res = (J3ObjectHandle*)__sync_fetch_and_add((uintptr_t*)&cur->top, (uintptr_t)sizeof(J3ObjectHandle));
-
-	if(res >= cur->max) {
-		pthread_mutex_lock(&mutex);
-		if(cur->nextFree)
-			head = cur->nextFree;
-		else
-			createNode();
-		pthread_mutex_unlock(&mutex);
-		return syncPush(obj);
-	} else {
-		res->_obj = obj;
-		return res;
-	}
+	J3ObjectHandle* res = Stack<J3ObjectHandle>::syncPush();
+	res->_obj = obj;
+	return res;
 }
 
 J3ObjectHandle* J3FixedPoint::unsyncPush(J3Object* obj) {
-	J3ObjectHandle* res = head->top++;
-
-	if(res >= head->max) {
-		if(head->nextFree)
-			head = head->nextFree;
-		else
-			createNode();
-		return unsyncPush(obj);
-	} else {
-		res->_obj = obj;
-		return res;
-	}
-}
-
-void J3FixedPoint::unsyncPop() {
-	J3ObjectHandle* res = head->top - 1;
-	if(res < (J3ObjectHandle*)(head + 1)) {
-		head = head->nextBusy;
-		head->top = (J3ObjectHandle*)(head+1);		
-	} else
-		head->top = res;
-}
-
-void J3FixedPoint::unsyncRestore(J3ObjectHandle* obj) {
-	while(obj <= (J3ObjectHandle*)head || obj > head->max) {
-		head = head->nextBusy;
-		head->top = (J3ObjectHandle*)(head+1);
-	}
-	head->top = obj;
+	J3ObjectHandle* res = Stack<J3ObjectHandle>::unsyncPush();
+	res->_obj = obj;
+	return res;
 }
 
 
