@@ -118,11 +118,26 @@ jmethodID JNICALL GetMethodID(JNIEnv* env, jclass clazz, const char* name, const
 	return res;
 }
 
-#define doInvoke(jtype, id, j3type)																			\
+jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { 
+	jmethodID res;
+
+	enterJVM(); 
+	
+	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
+	cl->initialise();
+	vmkit::Names* n = cl->loader()->vm()->names();
+	res = cl->findStaticMethod(n->get(name), n->get(sig));
+
+	leaveJVM(); 
+
+	return res;
+}
+
+#define defCall(jtype, id, j3type)																			\
 	jtype JNICALL Call##id##Method(JNIEnv* env, jobject obj, jmethodID methodID, ...) { \
 		va_list va;																													\
 		va_start(va, methodID);																							\
-		jobject res = env->Call##id##MethodV(obj, methodID, va);						\
+		jtype res = env->Call##id##MethodV(obj, methodID, va);							\
 		va_end(va);																													\
 		return res;																													\
 	}																																			\
@@ -145,12 +160,13 @@ jmethodID JNICALL GetMethodID(JNIEnv* env, jclass clazz, const char* name, const
 		leaveJVM();																													\
 																																				\
 		return res.val##j3type;																							\
-	}																																			\
-																																				\
+	}
+
+#define defStaticCall(jtype, id, j3type)																\
 	jtype JNICALL CallStatic##id##Method(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { \
 		va_list va;																													\
 		va_start(va, methodID);																							\
-		jobject res = env->CallStatic##id##MethodV(clazz, methodID, va);		\
+		jtype res = env->CallStatic##id##MethodV(clazz, methodID, va);			\
 		va_end(va);																													\
 		return res;																													\
 	}																																			\
@@ -175,85 +191,106 @@ jmethodID JNICALL GetMethodID(JNIEnv* env, jclass clazz, const char* name, const
 		return res.val##j3type;																							\
 	}
 
-	doInvoke(jobject, Object, Object);
+#define defNonVirtualCall(jtype, id, j3type)														\
+	jtype JNICALL CallNonvirtual##id##Method(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { \
+		va_list va;																													\
+		va_start(va, methodID);																							\
+		jtype res = env->CallNonvirtual##id##MethodV(obj, clazz, methodID, va); \
+		va_end(va);																													\
+		return res;																													\
+	}																																			\
+																																				\
+	jtype JNICALL CallNonvirtual##id##MethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { \
+		jvalue res;																													\
+																																				\
+		enterJVM();																													\
+		res = methodID->invokeSpecial(obj, args);														\
+		leaveJVM();																													\
+																																				\
+		return res.val##j3type;																							\
+	}																																			\
+																																				\
+	jtype JNICALL CallNonvirtual##id##MethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { \
+		jvalue res;																													\
+																																				\
+		enterJVM();																													\
+		res = methodID->invokeSpecial(obj, args);														\
+		leaveJVM();																													\
+																																				\
+		return res.val##j3type;																							\
+	}
 
+#define defJNI(jtype, id, j3type)								\
+	defCall(jtype, id, j3type)										\
+	defNonVirtualCall(jtype, id, j3type)					\
+	defStaticCall(jtype, id, j3type)							
 
+	defJNI(jobject,  Object,  Object);
+	defJNI(jboolean, Boolean, Boolean);
+	defJNI(jbyte,    Byte,    Byte);
+	defJNI(jchar,    Char,    Char);
+	defJNI(jshort,   Short,   Short);
+	defJNI(jint,     Int,     Integer);
+	defJNI(jlong,    Long,    Long);
+	defJNI(jfloat,   Float,   Float);
+	defJNI(jdouble,  Double,  Double);
 
-jboolean JNICALL CallBooleanMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL CallBooleanMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL CallBooleanMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallVoidMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { 
+	va_list va;
+	va_start(va, methodID);
+	env->CallVoidMethodV(obj, methodID, va);
+	va_end(va);
+}
 
-jbyte JNICALL CallByteMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jbyte JNICALL CallByteMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jbyte JNICALL CallByteMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallVoidMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { 
+	enterJVM(); 
+	methodID->invokeVirtual(obj, args);
+	leaveJVM(); 
+}
 
-jchar JNICALL CallCharMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jchar JNICALL CallCharMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jchar JNICALL CallCharMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallVoidMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { 
+	enterJVM(); 
+	methodID->invokeVirtual(obj, args);
+	leaveJVM();
+}
 
-jshort JNICALL CallShortMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jshort JNICALL CallShortMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jshort JNICALL CallShortMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallNonvirtualVoidMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { 
+	va_list va;
+	va_start(va, methodID);
+	env->CallNonvirtualVoidMethodV(obj, clazz, methodID, va);
+	va_end(va);
+}
 
-jint JNICALL CallIntMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL CallIntMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL CallIntMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallNonvirtualVoidMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { 
+	enterJVM(); 
+	methodID->invokeSpecial(obj, args);
+	leaveJVM(); 
+}
 
-jlong JNICALL CallLongMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jlong JNICALL CallLongMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jlong JNICALL CallLongMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallNonvirtualVoidMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { 
+	enterJVM(); 
+	methodID->invokeSpecial(obj, args);
+	leaveJVM(); 
+}
 
-jfloat JNICALL CallFloatMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jfloat JNICALL CallFloatMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jfloat JNICALL CallFloatMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallStaticVoidMethod(JNIEnv* env, jclass cls, jmethodID methodID, ...) { 
+	va_list va;
+	va_start(va, methodID);
+	env->CallStaticVoidMethodV(cls, methodID, va);
+	va_end(va);
+}
 
-jdouble JNICALL CallDoubleMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jdouble JNICALL CallDoubleMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jdouble JNICALL CallDoubleMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallStaticVoidMethodV(JNIEnv* env, jclass cls, jmethodID methodID, va_list args) { 
+	enterJVM(); 
+	methodID->invokeStatic(args);
+	leaveJVM(); 
+}
 
-void JNICALL CallVoidMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL CallVoidMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL CallVoidMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jobject JNICALL CallNonvirtualObjectMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jobject JNICALL CallNonvirtualObjectMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jobject JNICALL CallNonvirtualObjectMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jboolean JNICALL CallNonvirtualBooleanMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL CallNonvirtualBooleanMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL CallNonvirtualBooleanMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jbyte JNICALL CallNonvirtualByteMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jbyte JNICALL CallNonvirtualByteMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jbyte JNICALL CallNonvirtualByteMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jchar JNICALL CallNonvirtualCharMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jchar JNICALL CallNonvirtualCharMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jchar CallNonvirtualCharMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jshort JNICALL CallNonvirtualShortMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jshort JNICALL CallNonvirtualShortMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jshort JNICALL CallNonvirtualShortMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jint JNICALL CallNonvirtualIntMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL CallNonvirtualIntMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL CallNonvirtualIntMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jlong JNICALL CallNonvirtualLongMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jlong JNICALL CallNonvirtualLongMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jlong JNICALL CallNonvirtualLongMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jfloat JNICALL CallNonvirtualFloatMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jfloat JNICALL CallNonvirtualFloatMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jfloat JNICALL CallNonvirtualFloatMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jdouble JNICALL CallNonvirtualDoubleMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jdouble JNICALL CallNonvirtualDoubleMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jdouble JNICALL CallNonvirtualDoubleMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-void JNICALL CallNonvirtualVoidMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL CallNonvirtualVoidMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL CallNonvirtualVoidMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL CallStaticVoidMethodA(JNIEnv* env, jclass cls, jmethodID methodID, const jvalue* args) { 
+	enterJVM(); 
+	methodID->invokeStatic(args);
+	leaveJVM(); 
+}
 
 jfieldID JNICALL GetFieldID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { enterJVM(); leaveJVM(); NYI(); }
 
@@ -276,57 +313,6 @@ void JNICALL SetIntField(JNIEnv* env, jobject obj, jfieldID fieldID, jint val) {
 void JNICALL SetLongField(JNIEnv* env, jobject obj, jfieldID fieldID, jlong val) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL SetFloatField(JNIEnv* env, jobject obj, jfieldID fieldID, jfloat val) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL SetDoubleField(JNIEnv* env, jobject obj, jfieldID fieldID, jdouble val) { enterJVM(); leaveJVM(); NYI(); }
-
-jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { 
-	jmethodID res;
-
-	enterJVM(); 
-	
-	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
-	cl->initialise();
-	vmkit::Names* n = cl->loader()->vm()->names();
-	res = cl->findStaticMethod(n->get(name), n->get(sig));
-
-	leaveJVM(); 
-
-	return res;
-}
-
-jboolean JNICALL CallStaticBooleanMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL CallStaticBooleanMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL CallStaticBooleanMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jbyte JNICALL CallStaticByteMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jbyte JNICALL CallStaticByteMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jbyte JNICALL CallStaticByteMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jchar JNICALL CallStaticCharMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jchar JNICALL CallStaticCharMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jchar JNICALL CallStaticCharMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jshort JNICALL CallStaticShortMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jshort JNICALL CallStaticShortMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jshort JNICALL CallStaticShortMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jint JNICALL CallStaticIntMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL CallStaticIntMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL CallStaticIntMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jlong JNICALL CallStaticLongMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jlong JNICALL CallStaticLongMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jlong JNICALL CallStaticLongMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jfloat JNICALL CallStaticFloatMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jfloat JNICALL CallStaticFloatMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jfloat JNICALL CallStaticFloatMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-jdouble JNICALL CallStaticDoubleMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jdouble JNICALL CallStaticDoubleMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jdouble JNICALL CallStaticDoubleMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
-
-void JNICALL CallStaticVoidMethod(JNIEnv* env, jclass cls, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL CallStaticVoidMethodV(JNIEnv* env, jclass cls, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL CallStaticVoidMethodA(JNIEnv* env, jclass cls, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
 
 jfieldID JNICALL GetStaticFieldID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL GetStaticObjectField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
@@ -402,7 +388,15 @@ jobject JNICALL GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize ind
 void JNICALL SetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index, jobject val) { enterJVM(); leaveJVM(); NYI(); }
 
 jbooleanArray JNICALL NewBooleanArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
-jbyteArray JNICALL NewByteArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
+jbyteArray JNICALL NewByteArray(JNIEnv* env, jsize len) { 
+	jbyteArray res;
+	enterJVM(); 
+	res = J3ObjectHandle::doNewArray(J3Thread::get()->vm()->typeBoolean->getArray(), len);
+	fprintf(stderr, " ---> %p\n", res);
+	leaveJVM(); 
+	return res;
+}
+
 jcharArray JNICALL NewCharArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
 jshortArray JNICALL NewShortArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
 jintArray JNICALL NewIntArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
