@@ -402,4 +402,27 @@ J3ObjectHandle* J3LocalReferences::push(J3Object* obj) {
 	return res;
 }
 
+/*
+ *  J3GlobalReferences
+ */
+J3GlobalReferences::J3GlobalReferences(vmkit::BumpAllocator* _allocator) :
+	references(_allocator),
+	emptySlots(_allocator) {
+	pthread_mutex_init(&mutex, 0);
+}
+		
+J3ObjectHandle* J3GlobalReferences::add(J3ObjectHandle* handle) {
+	pthread_mutex_lock(&mutex);
+	J3ObjectHandle* res = emptySlots.isEmpty() ? references.push() : *emptySlots.pop();
+	res->_obj = handle->_obj;
+	pthread_mutex_unlock(&mutex);
+	return res;
+}
+
+void J3GlobalReferences::del(J3ObjectHandle* handle) {
+	handle->harakiri();
+	pthread_mutex_lock(&mutex);
+	*emptySlots.push() = handle;
+	pthread_mutex_unlock(&mutex);
+}
 

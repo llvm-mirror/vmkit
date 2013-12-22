@@ -161,6 +161,17 @@ namespace j3 {
 		J3ObjectHandle* push(J3Object* obj);
 	};
 
+	class J3GlobalReferences {
+		pthread_mutex_t               mutex;
+		vmkit::Stack<J3ObjectHandle>  references;
+		vmkit::Stack<J3ObjectHandle*> emptySlots;
+	public:
+		J3GlobalReferences(vmkit::BumpAllocator* _allocator);
+		
+		J3ObjectHandle* add(J3ObjectHandle* handle);
+		void            del(J3ObjectHandle* handle);
+	};
+
 	class J3Value {
 	public:
 		union {

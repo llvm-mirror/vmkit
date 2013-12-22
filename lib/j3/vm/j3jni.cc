@@ -55,8 +55,24 @@ void JNICALL FatalError(JNIEnv* env, const char* msg) { enterJVM(); leaveJVM(); 
 jint JNICALL PushLocalFrame(JNIEnv* env, jint capacity) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL PopLocalFrame(JNIEnv* env, jobject result) { enterJVM(); leaveJVM(); NYI(); }
 
-jobject JNICALL NewGlobalRef(JNIEnv* env, jobject lobj) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL DeleteGlobalRef(JNIEnv* env, jobject gref) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL NewGlobalRef(JNIEnv* env, jobject lobj) { 
+	jobject res;
+	enterJVM(); 
+	J3Method* m = J3Thread::get()->getJavaCaller();
+	J3ClassLoader* loader = m ? m->cl()->loader() : J3Thread::get()->vm()->initialClassLoader;
+	res = loader->globalReferences()->add(lobj);
+	leaveJVM(); 
+	return res;
+}
+
+void JNICALL DeleteGlobalRef(JNIEnv* env, jobject gref) { 
+	enterJVM(); 
+	J3Method* m = J3Thread::get()->getJavaCaller();
+	J3ClassLoader* loader = m ? m->cl()->loader() : J3Thread::get()->vm()->initialClassLoader;
+	loader->globalReferences()->del(gref);
+	leaveJVM(); 
+}
+
 void JNICALL DeleteLocalRef(JNIEnv* env, jobject obj) { 
 	enterJVM(); 
 	if(obj) obj->harakiri();

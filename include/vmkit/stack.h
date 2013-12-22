@@ -45,6 +45,10 @@ namespace vmkit {
 				createNode(capacity);
 		}
 
+		bool isEmpty() {
+			return head->top == (T*)(head+1) && !head->nextBusy;
+		}
+
 		T* push() {
 			T* res = head->top++;
 
@@ -58,13 +62,14 @@ namespace vmkit {
 			return push();
 		}
 
-		void pop() {
+		T* pop() {
 			T* res = head->top - 1;
 			if(res < (T*)(head + 1)) {
 				head = head->nextBusy;
 				head->top = (T*)(head+1);		
 			} else
 				head->top = res;
+			return head->top;
 		}
 
 		T* tell() { 

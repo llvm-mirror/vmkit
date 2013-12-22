@@ -38,7 +38,7 @@ namespace j3 {
 		static J3MethodLess  j3MethodLess;
 
 		J3ObjectHandle*                      _javaClassLoader;
-		J3LocalReferences                    _globalReferences;
+		J3GlobalReferences                   _globalReferences;
 		pthread_mutex_t                      _mutex;       /* a lock */
 		vmkit::NameMap<J3Class*>::map        classes;      /* classes managed by this class loader */
 		vmkit::NameMap<J3Type*>::map         types;        /* shortcut to find types */
@@ -57,8 +57,8 @@ namespace j3 {
 	public:
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
 
-		J3LocalReferences*            globalReferences() { return &_globalReferences; }
-
+		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
+		
 		J3ObjectHandle*               javaClassLoader() { return _javaClassLoader; }
 
 		void                          lock() { pthread_mutex_lock(&_mutex); }
