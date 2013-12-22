@@ -146,7 +146,7 @@ J3ObjectHandle* J3ObjectType::javaClass() {
 		if(!_javaClass) {
 			J3ObjectHandle* prev = J3Thread::get()->tell();
 			_javaClass = J3ObjectHandle::doNewObject(loader()->vm()->classClass);
-			_javaClass = loader()->fixedPoint()->syncPush(_javaClass);
+			_javaClass = loader()->globalReferences()->push(_javaClass);
 			J3Thread::get()->restore(prev);
 			_javaClass->setLong(loader()->vm()->classVMData, (int64_t)(uintptr_t)this);
 			loader()->vm()->classInit->invokeSpecial(_javaClass);
@@ -291,7 +291,7 @@ void J3Class::doInitialise() {
 		J3ObjectHandle* stacked = J3ObjectHandle::allocate(staticLayout.vt(),
 																											 loader()->vm()->dataLayout()->getTypeAllocSize(staticLayout.llvmType()
 																																																			->getContainedType(0)));
-		_staticInstance = loader()->fixedPoint()->syncPush(stacked);
+		_staticInstance = loader()->globalReferences()->push(stacked);
 		J3Thread::get()->restore(prev);
 
 		for(size_t i=0; i<staticLayout.nbFields; i++) {

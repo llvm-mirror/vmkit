@@ -109,7 +109,8 @@ namespace j3 {
 	};
 
 	class J3ObjectHandle {
-		friend class J3FixedPoint;
+		friend class J3LocalReferences;
+		friend class J3GlobalReferences;
 		friend class J3Method;
 
 	public:
@@ -152,15 +153,12 @@ namespace j3 {
 #undef defAccessor
 	};
 
-	class J3FixedPoint : public vmkit::Stack<J3ObjectHandle> {
+	class J3LocalReferences : public vmkit::Stack<J3ObjectHandle> {
 	public:
-		J3FixedPoint(vmkit::BumpAllocator* _allocator) : vmkit::Stack<J3ObjectHandle>(_allocator) {}
+		J3LocalReferences(vmkit::BumpAllocator* _allocator) : vmkit::Stack<J3ObjectHandle>(_allocator) {}
 
-		J3ObjectHandle* syncPush(J3ObjectHandle* handle) { return syncPush(handle->obj()); }
-		J3ObjectHandle* unsyncPush(J3ObjectHandle* handle) { return unsyncPush(handle->obj()); }
-
-		J3ObjectHandle* syncPush(J3Object* obj);
-		J3ObjectHandle* unsyncPush(J3Object* obj);
+		J3ObjectHandle* push(J3ObjectHandle* handle) { return push(handle->obj()); }
+		J3ObjectHandle* push(J3Object* obj);
 	};
 
 	class J3Value {

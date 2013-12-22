@@ -38,7 +38,7 @@ namespace j3 {
 		static J3MethodLess  j3MethodLess;
 
 		J3ObjectHandle*                      _javaClassLoader;
-		J3FixedPoint                         _fixedPoint;
+		J3LocalReferences                    _globalReferences;
 		pthread_mutex_t                      _mutex;       /* a lock */
 		vmkit::NameMap<J3Class*>::map        classes;      /* classes managed by this class loader */
 		vmkit::NameMap<J3Type*>::map         types;        /* shortcut to find types */
@@ -57,7 +57,7 @@ namespace j3 {
 	public:
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
 
-		J3FixedPoint*                 fixedPoint() { return &_fixedPoint; }
+		J3LocalReferences*            globalReferences() { return &_globalReferences; }
 
 		J3ObjectHandle*               javaClassLoader() { return _javaClassLoader; }
 

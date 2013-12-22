@@ -17,7 +17,6 @@ namespace vmkit {
 	class Stack {
 		static const uint32_t defaultNodeCapacity = 256;
 
-		pthread_mutex_t mutex;
 		BumpAllocator*  allocator;
 		StackNode<T>*   head;
 
@@ -35,35 +34,18 @@ namespace vmkit {
 
 	public:
 		Stack(BumpAllocator* _allocator) {
-			pthread_mutex_init(&mutex, 0);
 			allocator = _allocator;
 			head = 0;
 			createNode();
 		}
 
-		void unsyncEnsureCapacity(uint32_t capacity) {
+		void ensureCapacity(uint32_t capacity) {
 			T* reserve = head->top + capacity;
 			if(reserve > head->max)
 				createNode(capacity);
 		}
 
-		T* syncPush() { 
-			StackNode<T>* cur = head;
-			T* res = (T*)__sync_fetch_and_add((uintptr_t*)&cur->top, (uintptr_t)sizeof(T));
-
-			if(res < cur->max)
-				return res;
-
-			pthread_mutex_lock(&mutex);
-			if(cur->nextFree)
-				head = cur->nextFree;
-			else
-				createNode();
-			pthread_mutex_unlock(&mutex);
-			return syncPush();
-		}
-
-		T* unsyncPush() {
+		T* push() {
 			T* res = head->top++;
 
 			if(res < head->max)
@@ -73,10 +55,10 @@ namespace vmkit {
 				head = head->nextFree;
 			else
 				createNode();
-			return unsyncPush();
+			return push();
 		}
 
-		void unsyncPop() {
+		void pop() {
 			T* res = head->top - 1;
 			if(res < (T*)(head + 1)) {
 				head = head->nextBusy;
@@ -85,11 +67,11 @@ namespace vmkit {
 				head->top = res;
 		}
 
-		T* unsyncTell() { 
+		T* tell() { 
 			return head->top; 
 		}
 
-		void unsyncRestore(T* ptr) {
+		void restore(T* ptr) {
 			while(ptr <= (T*)head || ptr > head->max)
 				head = head->nextBusy;
 			head->top = ptr;

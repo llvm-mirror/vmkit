@@ -120,7 +120,7 @@ J3ObjectHandle* J3::arrayToString(J3ObjectHandle* array) {
 	J3ObjectHandle* res = charArrayToStrings[array];
 	if(!res) {
 		J3ObjectHandle* prev = J3Thread::get()->tell();
-		res = initialClassLoader->fixedPoint()->syncPush(J3ObjectHandle::doNewObject(stringClass));
+		res = initialClassLoader->globalReferences()->push(J3ObjectHandle::doNewObject(stringClass));
 		J3Thread::get()->restore(prev);
 
 		stringInit->invokeSpecial(res, array, 0);
@@ -136,7 +136,7 @@ J3ObjectHandle* J3::nameToString(const vmkit::Name* name) {
 	J3ObjectHandle* res = nameToCharArrays[name];
 	if(!res) {
 		J3ObjectHandle* prev = J3Thread::get()->tell();
-		res = initialClassLoader->fixedPoint()->syncPush(J3ObjectHandle::doNewArray(charArrayClass, name->length()));
+		res = initialClassLoader->globalReferences()->push(J3ObjectHandle::doNewArray(charArrayClass, name->length()));
 		J3Thread::get()->restore(prev);
 
 		for(uint32_t i=0; i<name->length(); i++)

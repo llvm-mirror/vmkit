@@ -9,7 +9,7 @@ using namespace j3;
 
 J3Thread::J3Thread(J3* vm, vmkit::BumpAllocator* allocator) : 
 	Thread(vm, allocator),
-	_fixedPoint(allocator) {
+	_localReferences(allocator) {
 	_jniEnv.functions = &jniEnvTable;
 }
 
@@ -40,23 +40,23 @@ J3ObjectHandle* J3Thread::pendingException() {
 }
 
 void J3Thread::ensureCapacity(uint32_t capacity) {
-	_fixedPoint.unsyncEnsureCapacity(capacity);
+	_localReferences.ensureCapacity(capacity);
 }
 
 J3ObjectHandle* J3Thread::push(J3ObjectHandle* handle) { 
-	return _fixedPoint.unsyncPush(handle); 
+	return _localReferences.push(handle); 
 }
 
 J3ObjectHandle* J3Thread::push(J3Object* obj) { 
-	return _fixedPoint.unsyncPush(obj); 
+	return _localReferences.push(obj); 
 }
 
 J3ObjectHandle* J3Thread::tell() { 
-	return _fixedPoint.unsyncTell(); 
+	return _localReferences.tell(); 
 }
 
-void J3Thread::restore(J3ObjectHandle* obj) { 
-	_fixedPoint.unsyncRestore(obj); 
+void J3Thread::restore(J3ObjectHandle* ptr) { 
+	_localReferences.restore(ptr); 
 }
 
 J3Thread* J3Thread::get() { 

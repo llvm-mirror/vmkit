@@ -394,16 +394,10 @@ void* J3ObjectHandle::trampoline(J3Object* obj, J3Method* target) {
 }
 
 /*
- *  J3FixedPoint
+ *  J3LocalReferences
  */
-J3ObjectHandle* J3FixedPoint::syncPush(J3Object* obj) {
-	J3ObjectHandle* res = Stack<J3ObjectHandle>::syncPush();
-	res->_obj = obj;
-	return res;
-}
-
-J3ObjectHandle* J3FixedPoint::unsyncPush(J3Object* obj) {
-	J3ObjectHandle* res = Stack<J3ObjectHandle>::unsyncPush();
+J3ObjectHandle* J3LocalReferences::push(J3Object* obj) {
+	J3ObjectHandle* res = Stack<J3ObjectHandle>::push();
 	res->_obj = obj;
 	return res;
 }

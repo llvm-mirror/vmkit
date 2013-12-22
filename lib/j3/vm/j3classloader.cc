@@ -22,7 +22,7 @@ J3ClassLoader::J3MethodLess J3ClassLoader::j3MethodLess;
 
 J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
 	: CompilationUnit(allocator, v, "class-loader"),
-		_fixedPoint(allocator),
+		_globalReferences(allocator),
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
 		methodTypes(vmkit::Name::less, allocator), 
