@@ -448,20 +448,20 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 	
 	_access = reader.readU2();
 	
-	J3Class* self = classAt(reader.readU2());
+	J3ObjectType* self = classAt(reader.readU2());
 	
 	if(self != this)
 		J3::classFormatError(this, L"wrong class file (describes class %ls)", self->name()->cStr());
 	
 	uint16_t superIdx = reader.readU2();
 
-	_super = superIdx ? classAt(superIdx) : this;
+	_super = superIdx ? classAt(superIdx)->asClass() : this;
 
 	_nbInterfaces = reader.readU2();
 	_interfaces = (J3Class**)loader()->allocator()->allocate(nbInterfaces()*sizeof(J3Class*));
 	
 	for(size_t i=0; i<nbInterfaces(); i++) {
-		_interfaces[i] = classAt(reader.readU2());
+		_interfaces[i] = classAt(reader.readU2())->asClass();
 	}
 
 	size_t   n = nbHiddenFields + reader.readU2(), nbStaticFields = 0, nbVirtualFields = 0;
@@ -648,7 +648,7 @@ J3Method* J3Class::methodAt(uint16_t idx, uint16_t access) {
 	}
 
 	uint16_t ntIdx = ctpValues[idx] & 0xffff;
-	J3Class* cl = classAt(ctpValues[idx] >> 16);
+	J3Class* cl = classAt(ctpValues[idx] >> 16)->asClass();
 
 	check(ntIdx, J3Cst::CONSTANT_NameAndType);
 	const vmkit::Name* name = nameAt(ctpValues[ntIdx] >> 16);
@@ -670,7 +670,7 @@ J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {
 	}
 
 	uint16_t ntIdx = ctpValues[idx] & 0xffff;
-	J3Class* cl = classAt(ctpValues[idx] >> 16);
+	J3Class* cl = classAt(ctpValues[idx] >> 16)->asClass();
 
 	check(ntIdx, J3Cst::CONSTANT_NameAndType);
 	const vmkit::Name* name = nameAt(ctpValues[ntIdx] >> 16);
@@ -681,16 +681,16 @@ J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {
 	return res;
 }
 
-J3Class* J3Class::classAt(uint16_t idx) {
+J3ObjectType* J3Class::classAt(uint16_t idx) {
 	check(idx, J3Cst::CONSTANT_Class);
-	J3Class* res = (J3Class*)ctpResolved[idx];
+	J3ObjectType* res = (J3ObjectType*)ctpResolved[idx];
 
 	if(res)
 		return res;
 	
 	const vmkit::Name* name = nameAt(ctpValues[idx]);
 	if(name->cStr()[0] == J3Cst::ID_Array)
-		J3::internalError(L"implement me: classAt with array");
+		res = loader()->getType(this, name)->asObjectType();
 	else
 		res = loader()->getClass(name);
 

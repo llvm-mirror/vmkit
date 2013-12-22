@@ -243,7 +243,7 @@ namespace j3 {
 		uint32_t            integerAt(uint16_t idx);
 		uint64_t            longAt(uint16_t idx);
 		J3ObjectHandle*     stringAt(uint16_t idx);
-		J3Class*            classAt(uint16_t idx);
+		J3ObjectType*       classAt(uint16_t idx);
 		J3Method*           methodAt(uint16_t idx, uint16_t access);
 		J3Field*            fieldAt(uint16_t idx, uint16_t access);
 

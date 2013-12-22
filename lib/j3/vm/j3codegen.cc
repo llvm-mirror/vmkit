@@ -1252,7 +1252,7 @@ void J3CodeGen::translate() {
 
 			case J3Cst::BC_invokeinterface: nyi();        /* 0xb9 */
 			case J3Cst::BC_new:                           /* 0xbb */
-				newObject(cl->classAt(codeReader->readU2()));
+				newObject(cl->classAt(codeReader->readU2())->asClass());
 				break;
 				
 			case J3Cst::BC_newarray:                      /* 0xbc */

@@ -100,15 +100,6 @@ void J3::start(int argc, char** argv) {
 	classVMData              = classClass->findVirtualField(hf.name(), hf.type());
 
 	initialClassLoader->method(J3Cst::ACC_STATIC, L"java/lang/System", L"initializeSystemClass", L"()V")->invokeStatic();
-
-#if 0
-	J3Method* m = initialClassLoader->method(J3Cst::ACC_STATIC,
-																					 L"java/lang/ClassLoader",
-																					 L"getSystemClassLoader",
-																					 L"()Ljava/lang/ClassLoader;");
-
-	m->invokeStatic();
-#endif
 }
 
 JNIEnv* J3::jniEnv() {
