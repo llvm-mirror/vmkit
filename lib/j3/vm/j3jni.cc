@@ -220,20 +220,33 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 		return res.val##j3type;																							\
 	}
 
-#define defJNI(jtype, id, j3type)								\
+#define defNewArray(jtype, id, j3type)																	\
+	jtype##Array JNICALL New##id##Array(JNIEnv* env, jsize len) {					\
+		jtype##Array res;																										\
+		enterJVM();																													\
+		res = J3ObjectHandle::doNewArray(J3Thread::get()->vm()->type##j3type->getArray(), len); \
+		leaveJVM();																													\
+		return res;																													\
+	}
+
+#define defJNIObj(jtype, id, j3type)						\
 	defCall(jtype, id, j3type)										\
 	defNonVirtualCall(jtype, id, j3type)					\
-	defStaticCall(jtype, id, j3type)							
+	defStaticCall(jtype, id, j3type)							\
 
-	defJNI(jobject,  Object,  Object);
-	defJNI(jboolean, Boolean, Boolean);
-	defJNI(jbyte,    Byte,    Byte);
-	defJNI(jchar,    Char,    Char);
-	defJNI(jshort,   Short,   Short);
-	defJNI(jint,     Int,     Integer);
-	defJNI(jlong,    Long,    Long);
-	defJNI(jfloat,   Float,   Float);
-	defJNI(jdouble,  Double,  Double);
+#define defJNI(jtype, id, j3type)								\
+	defJNIObj(jtype, id, j3type)									\
+	defNewArray(jtype, id, j3type)
+
+	defJNIObj(jobject,  Object,  Object);
+	defJNI   (jboolean, Boolean, Boolean);
+	defJNI   (jbyte,    Byte,    Byte);
+	defJNI   (jchar,    Char,    Char);
+	defJNI   (jshort,   Short,   Short);
+	defJNI   (jint,     Int,     Integer);
+	defJNI   (jlong,    Long,    Long);
+	defJNI   (jfloat,   Float,   Float);
+	defJNI   (jdouble,  Double,  Double);
 
 void JNICALL CallVoidMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) { 
 	va_list va;
@@ -386,23 +399,6 @@ jsize JNICALL GetArrayLength(JNIEnv* env, jarray array) { enterJVM(); leaveJVM()
 jobjectArray JNICALL NewObjectArray(JNIEnv* env, jsize len, jclass clazz, jobject init) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL SetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index, jobject val) { enterJVM(); leaveJVM(); NYI(); }
-
-jbooleanArray JNICALL NewBooleanArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
-jbyteArray JNICALL NewByteArray(JNIEnv* env, jsize len) { 
-	jbyteArray res;
-	enterJVM(); 
-	res = J3ObjectHandle::doNewArray(J3Thread::get()->vm()->typeBoolean->getArray(), len);
-	fprintf(stderr, " ---> %p\n", res);
-	leaveJVM(); 
-	return res;
-}
-
-jcharArray JNICALL NewCharArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
-jshortArray JNICALL NewShortArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
-jintArray JNICALL NewIntArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
-jlongArray JNICALL NewLongArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
-jfloatArray JNICALL NewFloatArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
-jdoubleArray JNICALL NewDoubleArray(JNIEnv* env, jsize len) { enterJVM(); leaveJVM(); NYI(); }
 
 jboolean* JNICALL GetBooleanArrayElements(JNIEnv* env, jbooleanArray array, jboolean* isCopy) { enterJVM(); leaveJVM(); NYI(); }
 jbyte* JNICALL GetByteArrayElements(JNIEnv* env, jbyteArray array, jboolean* isCopy) { enterJVM(); leaveJVM(); NYI(); }
