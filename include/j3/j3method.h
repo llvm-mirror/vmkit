@@ -69,27 +69,18 @@ namespace j3 {
 		void*                        _fnPtr;
 		char* volatile               _llvmAllNames; /* stub + _ + native_name */
 		void*                        _nativeFnPtr;
-
-		uint8_t                      _trampoline[1];
+		void* volatile               _staticTrampoline;
+		void* volatile               _virtualTrampoline;
 
 		llvm::Type* doNativeType(J3Type* type);
 
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, va_list va);
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* args);
-
-		void*              operator new(size_t size, vmkit::BumpAllocator* allocator, size_t trampolineSize);
-
 		void               buildLLVMNames(J3Class* from);
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
 
 		void*               getSymbolAddress();
-
-		static J3Method*    newMethod(vmkit::BumpAllocator* allocator, 
-																	uint16_t access, 
-																	J3Class* cl, 
-																	const vmkit::Name* name, 
-																	const vmkit::Name* sign);
 
 		char*               llvmFunctionName(J3Class* from=0);
 		char*               llvmDescriptorName(J3Class* from=0);

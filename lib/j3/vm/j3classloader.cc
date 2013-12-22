@@ -179,7 +179,7 @@ J3Method* J3ClassLoader::method(uint16_t access, J3Class* cl, const vmkit::Name*
 	std::map<J3Method*, J3Method*>::iterator it = methods.find(&method);
 
 	if(it == methods.end()) {
-		res = J3Method::newMethod(allocator(), access, cl, name, sign);
+		res = new(allocator()) J3Method(access, cl, name, sign);
 		methods[res] = res;
 	} else {
 		res = it->second;

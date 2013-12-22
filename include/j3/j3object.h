@@ -130,8 +130,6 @@ namespace j3 {
 		static J3ObjectHandle* doNewObject(J3Class* cl);
 		static J3ObjectHandle* doNewArray(J3ArrayClass* cl, uint32_t length);
 
-		static void*           trampoline(J3Object* obj, J3Method* ref);
-
 		void            harakiri() { _obj = 0; }
 
 		uint32_t        hashCode();

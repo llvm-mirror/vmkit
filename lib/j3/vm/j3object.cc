@@ -397,20 +397,6 @@ J3ObjectHandle* J3ObjectHandle::getObjectAt(uint32_t idx) {
 	return rawGetObject(sizeof(J3ArrayObject) + idx*sizeof(J3Object*));
 }
 
-void* J3ObjectHandle::trampoline(J3Object* obj, J3Method* target) {
-	J3ObjectHandle* prev = J3Thread::get()->tell();
-	J3ObjectHandle* handle = J3Thread::get()->push(obj);
-
-	fprintf(stderr, "target: %ls::%ls\n", target->cl()->name()->cStr(), target->name()->cStr());
-
-	void* res = target->fnPtr();
-
-	if(!J3Cst::isStatic(target->access()))
-		handle->vt()->virtualMethods()[target->index()] = res;
-
-	return res;
-}
-
 /*
  *  J3LocalReferences
  */
