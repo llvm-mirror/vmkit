@@ -10,6 +10,7 @@ void* J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
 }
 	
 void* J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
+	return staticTrampoline(obj, target);
 	J3::internalError(L"implement me: virtualTrampoline");
 #if 0
 	J3ObjectHandle* prev = J3Thread::get()->tell();

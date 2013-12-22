@@ -70,14 +70,24 @@ void* J3Method::fnPtr() {
 	return _fnPtr;
 }
 
-void* J3Method::functionPointerOrTrampoline() {
+void* J3Method::functionPointerOrStaticTrampoline() {
+	if(_fnPtr)
+		return _fnPtr;
 	if(!_staticTrampoline)
 		_staticTrampoline = J3Trampoline::buildStaticTrampoline(cl()->loader()->allocator(), this);
-	return _fnPtr ? _fnPtr : _staticTrampoline;
+	return _staticTrampoline;
+}
+
+void* J3Method::functionPointerOrVirtualTrampoline() {
+	if(_fnPtr)
+		return _fnPtr;
+	if(!_virtualTrampoline)
+		_virtualTrampoline = J3Trampoline::buildVirtualTrampoline(cl()->loader()->allocator(), this);
+	return _virtualTrampoline;
 }
 
 void* J3MethodCode::getSymbolAddress() {
-	return self->functionPointerOrTrampoline();
+	return self->functionPointerOrStaticTrampoline();
 }
 
 void* J3Method::getSymbolAddress() {

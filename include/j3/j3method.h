@@ -120,7 +120,8 @@ namespace j3 {
 		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
 
 		void*               fnPtr();
-		void*               functionPointerOrTrampoline();
+		void*               functionPointerOrStaticTrampoline();
+		void*               functionPointerOrVirtualTrampoline();
 
 		void                dump();
 	};

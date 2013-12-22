@@ -72,7 +72,7 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 		memcpy(res->_virtualMethods, super->vt()->_virtualMethods, sizeof(void*)*super->vt()->nbVirtualMethods());
 
 	for(uint32_t i=0; i<cl->nbMethods(); i++) 
-		res->_virtualMethods[pm[i]->index()] = pm[i]->functionPointerOrTrampoline();
+		res->_virtualMethods[pm[i]->index()] = pm[i]->functionPointerOrVirtualTrampoline();
 
 	return res;
 }
