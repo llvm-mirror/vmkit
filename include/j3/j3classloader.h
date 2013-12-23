@@ -39,10 +39,20 @@ namespace j3 {
 
 		J3ObjectHandle*                      _javaClassLoader;
 		J3GlobalReferences                   _globalReferences;
-		pthread_mutex_t                      _mutex;       /* a lock */
+
+		pthread_mutex_t                      _mutexClasses;
 		vmkit::NameMap<J3Class*>::map        classes;      /* classes managed by this class loader */
+
+		pthread_mutex_t                      _mutexTypes;
 		vmkit::NameMap<J3Type*>::map         types;        /* shortcut to find types */
+
+		pthread_mutex_t                      _mutexMethodTypes;
 		vmkit::NameMap<J3MethodType*>::map   methodTypes;  /* shortcut to find method types - REMOVE */
+
+		pthread_mutex_t                      _mutexInterfaceSignatures;
+		vmkit::NameMap<uint32_t>::map        interfaceSignatures; 
+
+		pthread_mutex_t                      _mutexMethods;
 		MethodRefMap                         methods;      /* all te known method */
 
 		llvm::ExecutionEngine*               _ee;
@@ -57,12 +67,11 @@ namespace j3 {
 	public:
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
 
+		uint32_t                      interfaceIndex(const vmkit::Name* sign);
+
 		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
 		
 		J3ObjectHandle*               javaClassLoader() { return _javaClassLoader; }
-
-		void                          lock() { pthread_mutex_lock(&_mutex); }
-		void                          unlock() { pthread_mutex_unlock(&_mutex); }
 
 		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
 

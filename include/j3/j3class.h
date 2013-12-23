@@ -220,6 +220,8 @@ namespace j3 {
 		void          load();
 		void          doResolve(J3Field* hiddenFields, size_t nbHiddenFields);
 		void          doInitialise();
+
+		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access);
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name);
 
@@ -244,6 +246,7 @@ namespace j3 {
 		uint64_t            longAt(uint16_t idx);
 		J3ObjectHandle*     stringAt(uint16_t idx);
 		J3ObjectType*       classAt(uint16_t idx);
+		J3Method*           interfaceMethodAt(uint16_t idx, uint16_t access);
 		J3Method*           methodAt(uint16_t idx, uint16_t access);
 		J3Field*            fieldAt(uint16_t idx, uint16_t access);
 

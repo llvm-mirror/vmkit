@@ -80,6 +80,8 @@ namespace j3 {
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
 
+		uint32_t            interfaceIndex();
+
 		void*               getSymbolAddress();
 
 		char*               llvmFunctionName(J3Class* from=0);

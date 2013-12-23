@@ -637,13 +637,12 @@ uint64_t J3Class::longAt(uint16_t idx) {
 	return ((uint64_t)ctpValues[idx] << 32) + (uint64_t)ctpValues[idx+1];
 }
 
-J3Method* J3Class::methodAt(uint16_t idx, uint16_t access) {
-	check(idx, J3Cst::CONSTANT_Methodref);
+J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
 	J3Method* res = (J3Method*)ctpResolved[idx];
 	
 	if(res) {
 		if((res->access() & J3Cst::ACC_STATIC) != (access & J3Cst::ACC_STATIC))
-			J3::classFormatError(this, L"inconstitent use of virtual and static methods"); 
+			J3::classFormatError(this, L"inconsistent use of virtual and static methods"); 
 		return res;
 	}
 
@@ -657,6 +656,16 @@ J3Method* J3Class::methodAt(uint16_t idx, uint16_t access) {
 	res = loader()->method(access, cl, name, sign);
 
 	return res;
+}
+
+J3Method* J3Class::methodAt(uint16_t idx, uint16_t access) {
+	check(idx, J3Cst::CONSTANT_Methodref);
+	return interfaceOrMethodAt(idx, access);
+}
+
+J3Method* J3Class::interfaceMethodAt(uint16_t idx, uint16_t access) {
+	check(idx, J3Cst::CONSTANT_InterfaceMethodref);
+	return interfaceOrMethodAt(idx, access);
 }
 
 J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {

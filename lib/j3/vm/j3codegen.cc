@@ -262,6 +262,12 @@ void J3CodeGen::invoke(J3Method* target, llvm::Value* func) {
 	}
 }
 
+void J3CodeGen::invokeInterface(uint32_t idx) {
+	J3Method*     target = cl->interfaceMethodAt(idx, 0);
+	fprintf(stderr, "---> %d\n", target->interfaceIndex());
+	J3::internalError(L"implement me: invokeInterface");
+}
+
 void J3CodeGen::invokeVirtual(uint32_t idx) {
 	J3Method*     target = cl->methodAt(idx, 0);
 	J3MethodType* type = target->methodType(cl);
@@ -1250,7 +1256,11 @@ void J3CodeGen::translate() {
 				invokeStatic(codeReader->readU2());
 				break;
 
-			case J3Cst::BC_invokeinterface: nyi();        /* 0xb9 */
+			case J3Cst::BC_invokeinterface:               /* 0xb9 */
+				invokeInterface(codeReader->readU2());
+				codeReader->readU2();
+				break;
+
 			case J3Cst::BC_new:                           /* 0xbb */
 				newObject(cl->classAt(codeReader->readU2())->asClass());
 				break;

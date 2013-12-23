@@ -26,14 +26,33 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
 		methodTypes(vmkit::Name::less, allocator), 
+		interfaceSignatures(vmkit::Name::less, allocator),
 		methods(j3MethodLess, allocator),
 		nativeLibraries(allocator) {
 	_javaClassLoader = javaClassLoader;
 
-	//	pthread_mutexattr_t attr;
-	//	pthread_mutexattr_init(&attr);
-	//	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&_mutex, 0);//&attr);
+	pthread_mutex_init(&_mutexClasses, 0);
+	pthread_mutex_init(&_mutexTypes, 0);
+	pthread_mutex_init(&_mutexMethodTypes, 0);
+	pthread_mutex_init(&_mutexInterfaceSignatures, 0);
+	pthread_mutex_init(&_mutexMethods, 0);
+}
+
+uint32_t J3ClassLoader::interfaceIndex(const vmkit::Name* sign) {
+	pthread_mutex_lock(&_mutexInterfaceSignatures);
+	std::map<const vmkit::Name*, uint32_t>::iterator it = interfaceSignatures.find(sign);
+	uint32_t res;
+
+	if(it == interfaceSignatures.end()) {
+		res = interfaceSignatures.size();
+		interfaceSignatures[sign] = res;
+	} else {
+		res = it->second;
+	}
+
+	pthread_mutex_unlock(&_mutexInterfaceSignatures);
+
+	return res;
 }
 
 void* J3ClassLoader::lookupNativeFunctionPointer(J3Method* method, const char* symbol) {
@@ -47,11 +66,11 @@ void* J3ClassLoader::lookupNativeFunctionPointer(J3Method* method, const char* s
 }
 
 J3Class* J3ClassLoader::getClass(const vmkit::Name* name) {
-	lock();
+	pthread_mutex_lock(&_mutexClasses);
 	J3Class* res = classes[name];
 	if(!res)
 		classes[name] = res = new(allocator()) J3Class(this, name);
-	unlock();
+	pthread_mutex_unlock(&_mutexClasses);
 	return res;
 }
 
@@ -119,9 +138,9 @@ J3Type* J3ClassLoader::getTypeInternal(J3Class* from, const vmkit::Name* typeNam
 }
 
 J3Type* J3ClassLoader::getType(J3Class* from, const vmkit::Name* type) {
-	lock();
+	pthread_mutex_lock(&_mutexTypes);
 	J3Type* res = types[type];
-	unlock();
+	pthread_mutex_unlock(&_mutexTypes);
 
 	if(!res) {
 		uint32_t end;
@@ -132,18 +151,18 @@ J3Type* J3ClassLoader::getType(J3Class* from, const vmkit::Name* type) {
 
 		//printf("Analyse %ls => %ls\n", type->cStr(), res->name()->cStr());
 		
-		lock();
+		pthread_mutex_lock(&_mutexTypes);
 		types[type] = res;
-		unlock();
+		pthread_mutex_unlock(&_mutexTypes);
 	}
 
 	return res;
 }
 
 J3MethodType* J3ClassLoader::getMethodType(J3Class* from, const vmkit::Name* sign) {
-	lock();
+	pthread_mutex_lock(&_mutexMethodTypes);
 	J3MethodType* res = methodTypes[sign];
-	unlock();
+	pthread_mutex_unlock(&_mutexMethodTypes);
 
 	if(!res) {
 		J3Type*  args[sign->length()];
@@ -160,13 +179,13 @@ J3MethodType* J3ClassLoader::getMethodType(J3Class* from, const vmkit::Name* sig
 		if(cur != sign->length())
 			wrongType(from, sign);
 
-		lock();
+		pthread_mutex_lock(&_mutexMethodTypes);
 		J3MethodType* tmp = methodTypes[sign];
 		if(tmp)
 			res = tmp;
 		else
 			res = new(allocator(), nbArgs - 1) J3MethodType(args, nbArgs);
-		unlock();
+		pthread_mutex_unlock(&_mutexMethodTypes);
 	}
 
 	return res;
@@ -175,7 +194,7 @@ J3MethodType* J3ClassLoader::getMethodType(J3Class* from, const vmkit::Name* sig
 J3Method* J3ClassLoader::method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) {
 	J3Method method(access, cl, name, sign), *res;
 
-	lock();
+	pthread_mutex_lock(&_mutexMethods);
 	std::map<J3Method*, J3Method*>::iterator it = methods.find(&method);
 
 	if(it == methods.end()) {
@@ -184,7 +203,7 @@ J3Method* J3ClassLoader::method(uint16_t access, J3Class* cl, const vmkit::Name*
 	} else {
 		res = it->second;
 	}
-	unlock();
+	pthread_mutex_unlock(&_mutexMethods);
 
 	return res;
 }

@@ -138,6 +138,7 @@ namespace j3 {
 		void               invokeVirtual(uint32_t idx);
 		void               invokeStatic(uint32_t idx);
 		void               invokeSpecial(uint32_t idx);
+		void               invokeInterface(uint32_t idx);
 
 		llvm::Value*       arrayContent(J3Type* cType, llvm::Value* array, llvm::Value* idx);
 
