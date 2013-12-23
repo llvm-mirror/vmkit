@@ -263,9 +263,22 @@ void J3CodeGen::invoke(J3Method* target, llvm::Value* func) {
 }
 
 void J3CodeGen::invokeInterface(uint32_t idx) {
-	J3Method*     target = cl->interfaceMethodAt(idx, 0);
-	fprintf(stderr, "---> %d\n", target->interfaceIndex());
-	J3::internalError(L"implement me: invokeInterface");
+	J3Method* target = cl->interfaceMethodAt(idx, 0);
+	J3MethodType* type = target->methodType(cl);
+
+	uint32_t     index = target->interfaceIndex();
+	llvm::Value* thread = builder->CreateCall(funcJ3ThreadGet);
+	llvm::Value* gep[] = { builder->getInt32(0), builder->getInt32(J3Thread::gepInterfaceMethodIndex) };
+	builder->CreateStore(builder->getInt32(index), builder->CreateGEP(thread, gep));
+
+	llvm::Value*  obj = nullCheck(stack.top(type->nbIns() - 1));
+	llvm::Value*  gepFunc[] = { builder->getInt32(0),
+															builder->getInt32(J3VirtualTable::gepInterfaceMethods),
+															builder->getInt32(index % J3VirtualTable::nbInterfaceMethodTable) };
+	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
+																						 type->llvmType()->getPointerTo());
+
+	invoke(target, func);
 }
 
 void J3CodeGen::invokeVirtual(uint32_t idx) {

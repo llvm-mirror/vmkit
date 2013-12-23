@@ -8,6 +8,7 @@
 #include "j3/j3constants.h"
 #include "j3/j3method.h"
 #include "j3/j3thread.h"
+#include "j3/j3trampoline.h"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -30,6 +31,7 @@ J3::J3(vmkit::BumpAllocator* allocator) :
 	clinitName =        names()->get(J3Cst::clinitName);
 	clinitSign =        names()->get(J3Cst::clinitSign);
 	initName =          names()->get(J3Cst::initName);
+	interfaceTrampoline = J3Trampoline::buildInterfaceTrampoline(allocator);
 }
 
 J3* J3::create() {

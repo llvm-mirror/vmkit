@@ -50,6 +50,8 @@ namespace j3 {
 		onJavaTypes(defPrimitive)
 #undef defPrimitive
 
+		void*            interfaceTrampoline;
+
 		J3Type**         arrayInterfaces;
 		uint32_t         nbArrayInterfaces;
 		J3Class*         objectClass;

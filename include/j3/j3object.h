@@ -42,11 +42,14 @@ namespace j3 {
 	public:
 		static const uint32_t nbInterfaceMethodTable = 23;
 		static const uint32_t gepObjectClass = 0;
+		static const uint32_t gepInterfaceMethods = 2;
 		static const uint32_t gepVirtualMethods = 4;
 
 	private:
 		J3Type*               _type;
 		J3TypeChecker         checker;
+		// see: Bowen Alpern, Anthony Cocchi, Stephen Fink, and David Grove. 2001. 
+		// Efficient implementation of Java interfaces: Invokeinterface considered harmless. OOPSLA 2001.
 		void*                 _interfaceMethodTable[nbInterfaceMethodTable];
 		size_t                _nbVirtualMethods;
 		void*                 _virtualMethods[1];

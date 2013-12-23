@@ -14,6 +14,11 @@ namespace j3 {
 	class J3;
 
 	class J3Thread : public vmkit::Thread {
+	public:
+		static const uint32_t gepInterfaceMethodIndex = 1;
+
+	private:
+		uint32_t                   _interfaceMethodIndex;
 		vmkit::BumpAllocator*      allocator;
 		JNIEnv                     _jniEnv;
 		J3LocalReferences          _localReferences;
@@ -23,7 +28,9 @@ namespace j3 {
 	public:
 		static J3Thread*  create(J3* j3);
 
-		J3Method*         getJavaCaller(uint32_t level=0);
+		J3Method*          getJavaCaller(uint32_t level=0);
+
+		uint32_t           interfaceMethodIndex() { return _interfaceMethodIndex; }
 
 		void               ensureCapacity(uint32_t capacity);
 		J3ObjectHandle*    pendingException();

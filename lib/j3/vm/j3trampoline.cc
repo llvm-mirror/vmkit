@@ -7,6 +7,16 @@
 
 using namespace j3;
 
+void* J3Trampoline::interfaceTrampoline(J3Object* obj) {
+	J3ObjectHandle* prev = J3Thread::get()->tell();
+	J3ObjectHandle* handle = J3Thread::get()->push(obj);
+	uint32_t index = J3Thread::get()->interfaceMethodIndex();
+	fprintf(stderr, "%d - %ls\n", index, handle->vt()->type()->name()->cStr());
+
+	J3Thread::get()->restore(prev);
+	J3::internalError(L"implement me: interface Trampoline");
+}
+
 void* J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
 	return target->fnPtr();
 }
@@ -80,4 +90,8 @@ void* J3Trampoline::buildStaticTrampoline(vmkit::BumpAllocator* allocator, J3Met
 
 void* J3Trampoline::buildVirtualTrampoline(vmkit::BumpAllocator* allocator, J3Method* method) {
 	return buildTrampoline(allocator, method, (void*)virtualTrampoline);
+}
+
+void* J3Trampoline::buildInterfaceTrampoline(vmkit::BumpAllocator* allocator) {
+	return buildTrampoline(allocator, 0, (void*)interfaceTrampoline);
 }

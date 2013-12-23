@@ -65,14 +65,32 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 	J3VirtualTable* res = new(cl->loader()->allocator(), n) 
 		J3VirtualTable(cl, cl->super(), (J3Type**)cl->interfaces(), cl->nbInterfaces(), J3Cst::isInterface(cl->access()) ? 1 : 0);
 
-
 	/* virtual table */
 	res->_nbVirtualMethods = n;
 	if(super != cl)  /* super->vt() is not yet allocated for Object */
 		memcpy(res->_virtualMethods, super->vt()->_virtualMethods, sizeof(void*)*super->vt()->nbVirtualMethods());
 
-	//	for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
-	//		res->_interfaceMethodTable[i] = 
+	struct {
+		uint32_t   nbSlots;
+		J3Method** slots;
+	} slots[nbInterfaceMethodTable];
+	
+	for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
+		slots[i].nbSlots = 0;
+
+	for(uint32_t i=0; i<res->checker.nbSecondaryTypes; i++) {
+		J3Class* cl = res->checker.secondaryTypes[i]->type()->asClass();
+		if(J3Cst::isInterface(cl->access())) {
+			for(uint32_t j=0; j<cl->nbMethods(); j++) {
+				J3Method* m = cl->methods()[j];
+				fprintf(stderr, "[%d] method: %ls::%ls\n", i, cl->name()->cStr(), m->name()->cStr());
+			}
+		}
+	}
+
+	void* interfaceTrampoline = cl->loader()->vm()->interfaceTrampoline;
+	for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
+		res->_interfaceMethodTable[i] = interfaceTrampoline;
 
 	for(uint32_t i=0; i<cl->nbMethods(); i++) 
 		res->_virtualMethods[pm[i]->index()] = pm[i]->functionPointerOrVirtualTrampoline();
@@ -187,16 +205,16 @@ J3VirtualTable::J3VirtualTable(J3Type* type, J3Type* super, J3Type** interfaces,
 			checker.display[checker.offset] = this;
 		} 
 
-		for(uint32_t i=0; i<nbInterfaces; i++) {
+		memcpy(checker.secondaryTypes + isSecondary, 
+					 super->vt()->checker.secondaryTypes, 
+					 super->vt()->checker.nbSecondaryTypes*sizeof(J3VirtualTable*));
+
+		for(uint32_t i=0, n=isSecondary+super->vt()->checker.nbSecondaryTypes; i<nbInterfaces; i++) {
 			J3Type* sec = interfaces[i];
 			//printf("In %ls - adding %ls at %d\n", type->name()->cStr(), sec->name()->cStr(), isSecondary+i);
 			sec->resolve();
-			checker.secondaryTypes[isSecondary+i] = sec->vt();
+			checker.secondaryTypes[n++] = sec->vt();
 		}
-		
-		memcpy(checker.secondaryTypes + nbInterfaces + isSecondary, 
-					 super->vt()->checker.secondaryTypes, 
-					 super->vt()->checker.nbSecondaryTypes*sizeof(J3VirtualTable*));
 	}
 
 	//dump();

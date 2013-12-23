@@ -10,6 +10,7 @@ namespace j3 {
 	class J3Object;
 
 	class J3Trampoline {
+		static void* interfaceTrampoline(J3Object* obj);
 		static void* staticTrampoline(J3Object* obj, J3Method* ref);
 		static void* virtualTrampoline(J3Object* obj, J3Method* ref);
 
@@ -17,6 +18,7 @@ namespace j3 {
 	public:
 		static void* buildStaticTrampoline(vmkit::BumpAllocator* allocator, J3Method* target);
 		static void* buildVirtualTrampoline(vmkit::BumpAllocator* allocator, J3Method* target);
+		static void* buildInterfaceTrampoline(vmkit::BumpAllocator* allocator);
 	};
 };
 
