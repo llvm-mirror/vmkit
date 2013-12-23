@@ -18,7 +18,8 @@
 
 using namespace j3;
 
-J3ClassLoader::J3MethodLess J3ClassLoader::j3MethodLess;
+J3ClassLoader::J3MethodLess          J3ClassLoader::j3MethodLess;
+J3ClassLoader::J3InterfaceMethodLess J3ClassLoader::j3InterfaceMethodLess;
 
 J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
 	: CompilationUnit(allocator, v, "class-loader"),
@@ -26,7 +27,7 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
 		methodTypes(vmkit::Name::less, allocator), 
-		interfaceSignatures(vmkit::Name::less, allocator),
+		interfaces(j3InterfaceMethodLess, allocator),
 		methods(j3MethodLess, allocator),
 		nativeLibraries(allocator) {
 	_javaClassLoader = javaClassLoader;
@@ -34,23 +35,23 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	pthread_mutex_init(&_mutexClasses, 0);
 	pthread_mutex_init(&_mutexTypes, 0);
 	pthread_mutex_init(&_mutexMethodTypes, 0);
-	pthread_mutex_init(&_mutexInterfaceSignatures, 0);
+	pthread_mutex_init(&_mutexInterfaces, 0);
 	pthread_mutex_init(&_mutexMethods, 0);
 }
 
-uint32_t J3ClassLoader::interfaceIndex(const vmkit::Name* sign) {
-	pthread_mutex_lock(&_mutexInterfaceSignatures);
-	std::map<const vmkit::Name*, uint32_t>::iterator it = interfaceSignatures.find(sign);
+uint32_t J3ClassLoader::interfaceIndex(J3Method* method) {
+	pthread_mutex_lock(&_mutexInterfaces);
+	InterfaceMethodRefMap::iterator it = interfaces.find(method);
 	uint32_t res;
 
-	if(it == interfaceSignatures.end()) {
-		res = interfaceSignatures.size();
-		interfaceSignatures[sign] = res;
+	if(it == interfaces.end()) {
+		res = interfaces.size();
+		interfaces[method] = res;
 	} else {
 		res = it->second;
 	}
 
-	pthread_mutex_unlock(&_mutexInterfaceSignatures);
+	pthread_mutex_unlock(&_mutexInterfaces);
 
 	return res;
 }
@@ -217,6 +218,12 @@ J3Method* J3ClassLoader::method(uint16_t access, const wchar_t* clName, const wc
 	return method(access, names->get(clName), names->get(name), names->get(sign));
 }
 
+bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {
+	return lhs->name() < rhs->name()
+		|| (lhs->name() == rhs->name()
+				&& (lhs->sign() < rhs->sign()));
+}
+
 bool J3ClassLoader::J3MethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {
 	return lhs->name() < rhs->name()
 		|| (lhs->name() == rhs->name()
@@ -265,11 +272,6 @@ J3ClassBytes* J3InitialClassLoader::lookup(const vmkit::Name* name) {
 	}
 
 	return 0;
-}
-
-bool char_ptr_less::operator()(const char* lhs, const char* rhs) const {
-	//printf("Compare: %ls - %ls - %d\n", lhs, rhs, wcscmp(lhs, rhs));
-	return strcmp(lhs, rhs) < 0;
 }
 
 void J3InitialClassLoader::registerCMangling(const char* mangled, const char* demangled) {

@@ -32,10 +32,18 @@ namespace j3 {
 			bool operator()(const J3Method* lhs, const J3Method* rhs) const;
 		};
 
+		struct J3InterfaceMethodLess : public std::binary_function<wchar_t*,wchar_t*,bool> {
+			bool operator()(const J3Method* lhs, const J3Method* rhs) const;
+		};
+
 		typedef std::map<J3Method*, J3Method*, J3MethodLess,
 										 vmkit::StdAllocator<std::pair<J3Method*, J3Method*> > > MethodRefMap;
 
-		static J3MethodLess  j3MethodLess;
+		typedef std::map<J3Method*, uint32_t, J3InterfaceMethodLess,
+										 vmkit::StdAllocator<std::pair<J3Method*, J3Method*> > > InterfaceMethodRefMap;
+
+		static J3MethodLess           j3MethodLess;
+		static J3InterfaceMethodLess  j3InterfaceMethodLess;
 
 		J3ObjectHandle*                      _javaClassLoader;
 		J3GlobalReferences                   _globalReferences;
@@ -49,8 +57,8 @@ namespace j3 {
 		pthread_mutex_t                      _mutexMethodTypes;
 		vmkit::NameMap<J3MethodType*>::map   methodTypes;  /* shortcut to find method types - REMOVE */
 
-		pthread_mutex_t                      _mutexInterfaceSignatures;
-		vmkit::NameMap<uint32_t>::map        interfaceSignatures; 
+		pthread_mutex_t                      _mutexInterfaces;
+		InterfaceMethodRefMap                interfaces; 
 
 		pthread_mutex_t                      _mutexMethods;
 		MethodRefMap                         methods;      /* all te known method */
@@ -67,7 +75,7 @@ namespace j3 {
 	public:
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
 
-		uint32_t                      interfaceIndex(const vmkit::Name* sign);
+		uint32_t                      interfaceIndex(J3Method* sign);
 
 		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
 		

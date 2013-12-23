@@ -40,12 +40,14 @@ namespace j3 {
 
 	class J3VirtualTable {
 	public:
+		static const uint32_t nbInterfaceMethodTable = 23;
 		static const uint32_t gepObjectClass = 0;
-		static const uint32_t gepVirtualMethods = 3;
+		static const uint32_t gepVirtualMethods = 4;
 
 	private:
 		J3Type*               _type;
 		J3TypeChecker         checker;
+		void*                 _interfaceMethodTable[nbInterfaceMethodTable];
 		size_t                _nbVirtualMethods;
 		void*                 _virtualMethods[1];
 

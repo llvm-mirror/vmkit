@@ -42,7 +42,7 @@ J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const 
 }
 
 uint32_t J3Method::interfaceIndex() {
-	return cl()->loader()->interfaceIndex(name());
+	return cl()->loader()->interfaceIndex(this);
 }
 
 uint32_t J3Method::index()  { 
