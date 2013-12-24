@@ -153,6 +153,8 @@ namespace j3 {
 	public:
 		J3ObjectType(J3ClassLoader* loader, const vmkit::Name* name);
 
+		void prepareInterfaceTable();
+
 		virtual J3Method* findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
 		virtual J3Method* findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
 

@@ -62,38 +62,26 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 		}
 	}
 
+	/* virtual table */
+	uint32_t isConcrete = !J3Cst::isInterface(cl->access()) && ! J3Cst::isAbstract(cl->access());
+
+	n = isConcrete ? n : 0;
+
 	J3VirtualTable* res = new(cl->loader()->allocator(), n) 
 		J3VirtualTable(cl, cl->super(), (J3Type**)cl->interfaces(), cl->nbInterfaces(), J3Cst::isInterface(cl->access()) ? 1 : 0);
-
-	/* virtual table */
 	res->_nbVirtualMethods = n;
-	if(super != cl)  /* super->vt() is not yet allocated for Object */
-		memcpy(res->_virtualMethods, super->vt()->_virtualMethods, sizeof(void*)*super->vt()->nbVirtualMethods());
 
-	struct {
-		uint32_t   nbSlots;
-		J3Method** slots;
-	} slots[nbInterfaceMethodTable];
-	
-	for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
-		slots[i].nbSlots = 0;
+	if(isConcrete) {
+		if(super != cl)  /* super->vt() is not yet allocated for Object */
+			memcpy(res->_virtualMethods, super->vt()->_virtualMethods, sizeof(void*)*super->vt()->nbVirtualMethods());
 
-	for(uint32_t i=0; i<res->checker.nbSecondaryTypes; i++) {
-		J3Class* cl = res->checker.secondaryTypes[i]->type()->asClass();
-		if(J3Cst::isInterface(cl->access())) {
-			for(uint32_t j=0; j<cl->nbMethods(); j++) {
-				J3Method* m = cl->methods()[j];
-				fprintf(stderr, "[%d] method: %ls::%ls\n", i, cl->name()->cStr(), m->name()->cStr());
-			}
-		}
+		void* interfaceTrampoline = cl->loader()->vm()->interfaceTrampoline;
+		for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
+			res->_interfaceMethodTable[i] = interfaceTrampoline;
+
+		for(uint32_t i=0; i<cl->nbMethods(); i++) 
+			res->_virtualMethods[pm[i]->index()] = pm[i]->functionPointerOrVirtualTrampoline();
 	}
-
-	void* interfaceTrampoline = cl->loader()->vm()->interfaceTrampoline;
-	for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
-		res->_interfaceMethodTable[i] = interfaceTrampoline;
-
-	for(uint32_t i=0; i<cl->nbMethods(); i++) 
-		res->_virtualMethods[pm[i]->index()] = pm[i]->functionPointerOrVirtualTrampoline();
 
 	return res;
 }
@@ -159,8 +147,10 @@ J3VirtualTable* J3VirtualTable::create(J3ArrayClass* cl) {
 
 	super->resolve();
 
-	J3VirtualTable* res = new(cl->loader()->allocator(), 0) J3VirtualTable(cl, super, secondaries, nbSecondaries, isSecondary);
-	//memcpy(_virtualMethods, objClass->vt()->virtualMethods(), sizeof(void*)*objClass->nbVt());
+	J3VirtualTable* res = new(cl->loader()->allocator(), objClass->vt()->_nbVirtualMethods) 
+		J3VirtualTable(cl, super, secondaries, nbSecondaries, isSecondary);
+
+	memcpy(res->_virtualMethods, objClass->vt()->_virtualMethods, sizeof(void*)*objClass->vt()->_nbVirtualMethods);
 
 	return res;
 }

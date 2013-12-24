@@ -156,6 +156,32 @@ J3ObjectHandle* J3ObjectType::javaClass() {
 	return _javaClass;
 }
 
+void J3ObjectType::prepareInterfaceTable() {
+#if 0
+	struct {
+		uint32_t   nbSlots;
+		J3Method** slots;
+	} slots[nbInterfaceMethodTable];
+	
+	for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
+		slots[i].nbSlots = 0;
+
+	for(uint32_t i=0; i<res->checker.nbSecondaryTypes; i++) {
+		J3Class* ifce = res->checker.secondaryTypes[i]->type()->asClass();
+		fprintf(stderr, "processing: %ls from %ls\n", ifce->name()->cStr(), cl->name()->cStr());
+		if(J3Cst::isInterface(ifce->access())) {
+			for(uint32_t j=0; j<ifce->nbMethods(); j++) {
+				J3Method* base = ifce->methods()[j];
+				fprintf(stderr, "  %s lookup %ls %ls::%ls in %ls\n", 
+								J3Cst::isAbstract(base->access()) ? "abstract" : "concrete",
+								base->sign()->cStr(), base->cl()->name()->cStr(), base->name()->cStr(), cl->name()->cStr());
+				J3Method* method = cl->findVirtualMethod(base->name(), base->sign(), 1);
+			}
+		}
+	}
+#endif
+}
+
 /*  
  *  ------------ J3Layout ------------
  */
@@ -208,29 +234,44 @@ J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name*
 	//loader()->vm()->log(L"Lookup: %ls %ls in %ls (%d)", methName->cStr(), methSign->cStr(), name()->cStr(), nbVirtualMethods);
 	resolve();
 
-	J3Method* res = findMethod(name, sign);
+	J3Class* cur = this;
+	J3Method* res;
+	while(1) {
+		res = cur->findMethod(name, sign);
 
-	if(!res) {
-		if(super() == this) {
+		if(res)
+			return res;
+
+		if(cur == cur->super()) {
 			if(error)
 				J3::noSuchMethodError(L"no such method", this, name, sign);
 			else
 				return 0;
 		}
-		res = super()->findVirtualMethod(name, sign, error);
+		cur = cur->super();
 	}
-
-	return res;
 }
 
 J3Method* J3Class::findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
 	//loader()->vm()->log(L"Lookup: %ls %ls in %ls", methName->cStr(), methSign->cStr(), name()->cStr());
 	resolve();
 
-	J3Method* res = staticLayout.findMethod(name, sign);
+	J3Class* cur = this;
+	J3Method* res;
+	while(1) {
+		res = cur->staticLayout.findMethod(name, sign);
 
-	if(!res)
-		J3::internalError(L"implement me");
+		if(res)
+			return res;
+
+		if(cur == cur->super()) {
+			if(error)
+				J3::noSuchMethodError(L"no such method", this, name, sign);
+			else
+				return 0;
+		}
+		cur = cur->super();
+	}
 
 	return res;
 }
@@ -372,23 +413,14 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 
 		_vt = J3VirtualTable::create(this);
 
+		prepareInterfaceTable();
+
 		//fprintf(stderr, "virtual part of %ls: ", name()->cStr());
 		//llvmType()->getContainedType(0)->dump();
 		//fprintf(stderr, "\n");
 	}
 	unlock();
 }
-
-#if 0
-void J3Class::addHiddenField(J3Field* f, uint32_t num) {
-	if(this == loader()->vm()->classClass) {
-		f->_access     = J3Cst::ACC_PRIVATE;
-		f->_name       = loader()->vm()->names()->get(L"vmData");
-		f->_type       = (sizeof(uintptr_t) == 8) ? loader()->vm()->typeLong : loader()->vm()->typeInteger;
-		f->_attributes = new (loader()->allocator(), 0) J3Attributes(0);
-	}
-}
-#endif
 
 void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hiddenFields, uint32_t nbHiddenFields) {
 	J3Reader reader(_bytes);
@@ -833,6 +865,7 @@ void J3ArrayClass::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 		J3Class* objectClass = loader()->vm()->objectClass;
 		objectClass->resolve();
 		_vt = J3VirtualTable::create(this);
+		prepareInterfaceTable();
 	}
 	unlock();
 }
