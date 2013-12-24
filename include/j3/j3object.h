@@ -47,7 +47,7 @@ namespace j3 {
 
 	private:
 		J3Type*               _type;
-		J3TypeChecker         checker;
+		J3TypeChecker         _checker;
 		// see: Bowen Alpern, Anthony Cocchi, Stephen Fink, and David Grove. 2001. 
 		// Efficient implementation of Java interfaces: Invokeinterface considered harmless. OOPSLA 2001.
 		void*                 _interfaceMethodTable[nbInterfaceMethodTable];
@@ -62,8 +62,10 @@ namespace j3 {
 		static J3VirtualTable* create(J3ArrayClass* cl);
 		static J3VirtualTable* create(J3Primitive* prim);
 
-		uint32_t      offset() { return checker.offset; }
-		bool          isPrimaryChecker() { return checker.offset < J3TypeChecker::cacheOffset; }
+		J3TypeChecker* checker() { return &_checker; }
+
+		uint32_t      offset() { return _checker.offset; }
+		bool          isPrimaryChecker() { return _checker.offset < J3TypeChecker::cacheOffset; }
 
 		bool          slowIsAssignableTo(J3VirtualTable* parent);
 		bool          fastIsAssignableToPrimaryChecker(J3VirtualTable* parent, uint32_t parentOffset);

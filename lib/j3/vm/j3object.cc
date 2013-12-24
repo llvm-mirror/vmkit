@@ -63,7 +63,7 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 	}
 
 	/* virtual table */
-	uint32_t isConcrete = !J3Cst::isInterface(cl->access()) && ! J3Cst::isAbstract(cl->access());
+	uint32_t isConcrete = !J3Cst::isInterface(cl->access());
 
 	n = isConcrete ? n : 0;
 
@@ -79,8 +79,9 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 		for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
 			res->_interfaceMethodTable[i] = interfaceTrampoline;
 
-		for(uint32_t i=0; i<cl->nbMethods(); i++) 
+		for(uint32_t i=0; i<cl->nbMethods(); i++) {
 			res->_virtualMethods[pm[i]->index()] = pm[i]->functionPointerOrVirtualTrampoline();
+		}
 	}
 
 	return res;
@@ -133,11 +134,11 @@ J3VirtualTable* J3VirtualTable::create(J3ArrayClass* cl) {
 		super->resolve();
 		//printf("%ls super is %ls (%d)\n", cl->name()->cStr(), super->name()->cStr(), isSecondary);
 
-		uint32_t n = baseClass->vt()->checker.nbSecondaryTypes;
+		uint32_t n = baseClass->vt()->checker()->nbSecondaryTypes;
 		secondaries = (J3Type**)alloca(n*sizeof(J3Type*));
 
 		for(uint32_t i=0; i<n; i++) {
-			secondaries[nbSecondaries] = baseClass->vt()->checker.secondaryTypes[i]->type();
+			secondaries[nbSecondaries] = baseClass->vt()->checker()->secondaryTypes[i]->type();
 			if(secondaries[i] != baseClass) { /* don't add myself */
 				secondaries[nbSecondaries] = secondaries[nbSecondaries]->getArray(dim);
 				nbSecondaries++;
@@ -166,71 +167,70 @@ void* J3VirtualTable::operator new(size_t unused, vmkit::BumpAllocator* allocato
 J3VirtualTable::J3VirtualTable(J3Type* type, J3Type* super, J3Type** interfaces, uint32_t nbInterfaces, bool isSecondary) {
 	_type = type;
 
-	//printf("***   Building the vt of %ls based on %ls\n", type->name()->cStr(), super->name()->cStr());
+	//	printf("***   Building the vt of %ls based on %ls at %p\n", type->name()->cStr(), super->name()->cStr(), this);
 
 	if(super == type) {
-		checker.offset = 0;
-		checker.display[checker.offset] = this;
+		checker()->offset = 0;
+		checker()->display[checker()->offset] = this;
 		if(nbInterfaces)
 			J3::internalError(L"a root J3VirtualTable should not have interfaces");
 	} else {
-		uint32_t parentDisplayLength = super->vt()->checker.offset + 1;
+		uint32_t parentDisplayLength = super->vt()->checker()->offset + 1;
 
-		//printf("%ls (%p) secondary: %p %p (%d)\n", type->name()->cStr(), this, checker.secondaryTypes, checker.display[6], parentDisplayLength);
+		//printf("%ls (%p) secondary: %p %p (%d)\n", type->name()->cStr(), this, checker()->secondaryTypes, checker()->display[6], parentDisplayLength);
 
 		if(parentDisplayLength >= J3TypeChecker::cacheOffset)
 			isSecondary = 1;
 
-		memcpy(checker.display, super->vt()->checker.display, parentDisplayLength*sizeof(J3VirtualTable*));
+		memcpy(checker()->display, super->vt()->checker()->display, parentDisplayLength*sizeof(J3VirtualTable*));
 
-		checker.nbSecondaryTypes = super->vt()->checker.nbSecondaryTypes + nbInterfaces + isSecondary;
-		checker.secondaryTypes = (J3VirtualTable**)super->loader()->allocator()->allocate(checker.nbSecondaryTypes*sizeof(J3VirtualTable*));
+		checker()->nbSecondaryTypes = super->vt()->checker()->nbSecondaryTypes + nbInterfaces + isSecondary;
+		checker()->secondaryTypes = (J3VirtualTable**)super->loader()->allocator()->allocate(checker()->nbSecondaryTypes*sizeof(J3VirtualTable*));
 		
 		//printf("%ls: %d - %d %d\n", type->name()->cStr(), isSecondary, parentDisplayLength, J3TypeChecker::displayLength);
 		if(isSecondary) {
-			checker.offset = J3TypeChecker::cacheOffset;
-			checker.secondaryTypes[0] = this;
+			checker()->offset = J3TypeChecker::cacheOffset;
+			checker()->secondaryTypes[0] = this;
 		} else {
-			checker.offset = parentDisplayLength;
-			checker.display[checker.offset] = this;
+			checker()->offset = parentDisplayLength;
+			checker()->display[checker()->offset] = this;
 		} 
 
-		memcpy(checker.secondaryTypes + isSecondary, 
-					 super->vt()->checker.secondaryTypes, 
-					 super->vt()->checker.nbSecondaryTypes*sizeof(J3VirtualTable*));
+		memcpy(checker()->secondaryTypes + isSecondary, 
+					 super->vt()->checker()->secondaryTypes, 
+					 super->vt()->checker()->nbSecondaryTypes*sizeof(J3VirtualTable*));
 
-		for(uint32_t i=0, n=isSecondary+super->vt()->checker.nbSecondaryTypes; i<nbInterfaces; i++) {
+		for(uint32_t i=0, n=isSecondary+super->vt()->checker()->nbSecondaryTypes; i<nbInterfaces; i++) {
 			J3Type* sec = interfaces[i];
-			//printf("In %ls - adding %ls at %d\n", type->name()->cStr(), sec->name()->cStr(), isSecondary+i);
 			sec->resolve();
-			checker.secondaryTypes[n++] = sec->vt();
+			checker()->secondaryTypes[n++] = sec->vt();
 		}
 	}
 
-	if(checker.nbSecondaryTypes) {
-		std::sort(checker.secondaryTypes, &checker.secondaryTypes[checker.nbSecondaryTypes]);
-		J3VirtualTable** it = std::unique(checker.secondaryTypes, &checker.secondaryTypes[checker.nbSecondaryTypes]);
-		checker.nbSecondaryTypes = std::distance(checker.secondaryTypes, it);
+	if(checker()->nbSecondaryTypes) {
+		std::sort(checker()->secondaryTypes, &checker()->secondaryTypes[checker()->nbSecondaryTypes]);
+		J3VirtualTable** it = std::unique(checker()->secondaryTypes, &checker()->secondaryTypes[checker()->nbSecondaryTypes]);
+		checker()->nbSecondaryTypes = std::distance(checker()->secondaryTypes, it);
 	}
 
 	//dump();
 }
 
 bool J3VirtualTable::slowIsAssignableTo(J3VirtualTable* parent) {
-	for(uint32_t i=0; i<checker.nbSecondaryTypes; i++)
-		if(checker.secondaryTypes[i] == parent) {
-			checker.display[J3TypeChecker::cacheOffset] = parent;
+	for(uint32_t i=0; i<checker()->nbSecondaryTypes; i++)
+		if(checker()->secondaryTypes[i] == parent) {
+			checker()->display[J3TypeChecker::cacheOffset] = parent;
 			return true;
 		}
 	return false;
 }
 
 bool J3VirtualTable::fastIsAssignableToPrimaryChecker(J3VirtualTable* parent, uint32_t parentOffset) {
-	return checker.display[parentOffset] == parent;
+	return checker()->display[parentOffset] == parent;
 }
 
 bool J3VirtualTable::fastIsAssignableToNonPrimaryChecker(J3VirtualTable* parent) {
-	if(checker.display[J3TypeChecker::cacheOffset] == parent)
+	if(checker()->display[J3TypeChecker::cacheOffset] == parent)
 		return true;
 	else if(parent == this)
 		return true;
@@ -239,8 +239,8 @@ bool J3VirtualTable::fastIsAssignableToNonPrimaryChecker(J3VirtualTable* parent)
 }
 
 bool J3VirtualTable::isAssignableTo(J3VirtualTable* parent) {
-	uint32_t parentOffset = parent->checker.offset;
-	if(checker.display[parentOffset] == parent)
+	uint32_t parentOffset = parent->checker()->offset;
+	if(checker()->display[parentOffset] == parent)
 		return true;
 	else if(parentOffset != J3TypeChecker::cacheOffset)
 		return false;
@@ -254,7 +254,7 @@ void J3VirtualTable::dump() {
 	fprintf(stderr, "VirtualTable: %s%ls (%p)\n", 
 					type()->isLayout() && !type()->isClass() ? "static_" : "",
 					type()->name()->cStr(), this);
-	checker.dump();
+	checker()->dump();
 
 }
 

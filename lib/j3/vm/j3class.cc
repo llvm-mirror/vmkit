@@ -158,28 +158,28 @@ J3ObjectHandle* J3ObjectType::javaClass() {
 
 void J3ObjectType::prepareInterfaceTable() {
 #if 0
-	struct {
-		uint32_t   nbSlots;
-		J3Method** slots;
-	} slots[nbInterfaceMethodTable];
-	
 	for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
 		slots[i].nbSlots = 0;
+#endif
 
-	for(uint32_t i=0; i<res->checker.nbSecondaryTypes; i++) {
-		J3Class* ifce = res->checker.secondaryTypes[i]->type()->asClass();
-		fprintf(stderr, "processing: %ls from %ls\n", ifce->name()->cStr(), cl->name()->cStr());
-		if(J3Cst::isInterface(ifce->access())) {
-			for(uint32_t j=0; j<ifce->nbMethods(); j++) {
-				J3Method* base = ifce->methods()[j];
-				fprintf(stderr, "  %s lookup %ls %ls::%ls in %ls\n", 
-								J3Cst::isAbstract(base->access()) ? "abstract" : "concrete",
-								base->sign()->cStr(), base->cl()->name()->cStr(), base->name()->cStr(), cl->name()->cStr());
-				J3Method* method = cl->findVirtualMethod(base->name(), base->sign(), 1);
+	for(uint32_t i=0; i<vt()->checker()->nbSecondaryTypes; i++) {
+		J3Type* type = vt()->checker()->secondaryTypes[i]->type();
+		//		fprintf(stderr, "   %p %ls type is %p - %p\n", vt(), name()->cStr(), vt()->checker()->secondaryTypes[i], type);
+
+		if(type->isClass()) {
+			J3Class* ifce = vt()->checker()->secondaryTypes[i]->type()->asClass();
+			//			fprintf(stderr, "processing: %ls from %ls\n", ifce->name()->cStr(), name()->cStr());
+			if(J3Cst::isInterface(ifce->access())) {
+				for(uint32_t j=0; j<ifce->nbMethods(); j++) {
+					J3Method* base = ifce->methods()[j];
+					//					fprintf(stderr, "  %s lookup %ls %ls::%ls in %ls\n", 
+					//									J3Cst::isAbstract(base->access()) ? "abstract" : "concrete",
+					//									base->sign()->cStr(), base->cl()->name()->cStr(), base->name()->cStr(), name()->cStr());
+					J3Method* method = findVirtualMethod(base->name(), base->sign(), J3Cst::isAbstract(base->access()));
+				}
 			}
 		}
 	}
-#endif
 }
 
 /*  
@@ -413,7 +413,8 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 
 		_vt = J3VirtualTable::create(this);
 
-		prepareInterfaceTable();
+		if(!J3Cst::isInterface(access()) && !J3Cst::isAbstract(access()))
+			prepareInterfaceTable();
 
 		//fprintf(stderr, "virtual part of %ls: ", name()->cStr());
 		//llvmType()->getContainedType(0)->dump();
