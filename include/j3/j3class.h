@@ -52,6 +52,9 @@ namespace j3 {
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
 
+		uint64_t                    getLogSize();
+		uint64_t                    getSizeInBits();
+
 		void*                       getSymbolAddress();
 
 		virtual llvm::GlobalValue*  llvmDescriptor(llvm::Module* module) { return 0; }

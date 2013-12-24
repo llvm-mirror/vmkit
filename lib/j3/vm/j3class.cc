@@ -71,6 +71,24 @@ J3ArrayClass* J3Type::getArray(uint32_t prof, const vmkit::Name* name) {
 	return prof > 1 ? _array->getArray(prof-1) : _array;
 }
 
+uint64_t J3Type::getLogSize() {
+	uint32_t res = getSizeInBits();
+
+	switch(res) {
+		case 1:
+		case 8:  return 0;
+		case 16: return 1;
+		case 32: return 2;
+		case 64: return 3;
+		default:
+			J3::internalError(L"unexpected type");
+	}
+}
+
+uint64_t J3Type::getSizeInBits() {
+	return loader()->vm()->dataLayout()->getTypeSizeInBits(llvmType());
+}
+
 bool J3Type::isAssignableTo(J3Type* parent) {
 	resolve();
 	parent->resolve();
@@ -956,3 +974,4 @@ J3Primitive::J3Primitive(J3ClassLoader* loader, char id, llvm::Type* type) : J3T
 	_nativeNameLength = 1;
 	_vt = J3VirtualTable::create(this);
 }
+

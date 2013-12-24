@@ -1,5 +1,6 @@
 #include "vmkit/config.h"
 #include "vmkit/system.h"
+#include "vmkit/safepoint.h"
 #include "j3/j3object.h"
 #include "j3/j3lib.h"
 #include "j3/j3config.h"
@@ -7,6 +8,7 @@
 #include "j3/j3thread.h"
 #include "j3/j3classloader.h"
 #include "j3/j3class.h"
+#include "j3/j3method.h"
 #include "jvm.h"
 
 #include <dlfcn.h>
@@ -220,7 +222,37 @@ jobject JNICALL JVM_NewMultiArray(JNIEnv* env, jclass eltClass, jintArray dim) {
  * to be marked with sun.reflect.CallerSensitive.  The JVM will throw
  * an error if it is not marked propertly.
  */
-jclass JNICALL JVM_GetCallerClass(JNIEnv* env, int depth) { enterJVM(); NYI(); leaveJVM(); }
+jclass JNICALL JVM_GetCallerClass(JNIEnv* env, int depth) { 
+	jclass res;
+	enterJVM(); 
+
+	if(depth != -1)
+		J3::internalError(L"depth should be -1 while it is %d", depth);
+
+	depth = 3;
+	J3Method* caller = 0;
+	J3* vm = J3Thread::get()->vm();
+	vmkit::Safepoint* sf = 0;
+	vmkit::StackWalker walker;
+
+	while(!caller && walker.next()) {
+		vmkit::Safepoint* sf = vm->getSafepoint(walker.ip());
+
+		if(sf) {
+			if(!--depth)
+				caller = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
+		}
+	}
+
+	if(!caller)
+		J3::internalError(L"unable to find caller class, what should I do?");
+
+	res = caller->cl()->javaClass();
+
+	leaveJVM(); 
+
+	return res;
+}
 
 
 /*
@@ -914,4 +946,18 @@ jobjectArray JNICALL JVM_GetThreadStateNames(JNIEnv* env, jint javaThreadState, 
  *
  * ==========================================================================
  */
-void JNICALL JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t info_size) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t info_size) { 
+	enterJVM(); 
+  memset(info, 0, sizeof(info_size));
+
+  info->jvm_version = (8 << 24) | (0 << 16) | 0;
+  info->update_version = 0;
+  info->special_update_version = 0;
+
+  // when we add a new capability in the jvm_version_info struct, we should also
+  // consider to expose this new capability in the sun.rt.jvmCapabilities jvmstat
+  // counter defined in runtimeService.cpp.
+  info->is_attach_supported = 0;//AttachListener::is_attach_supported();
+
+	leaveJVM(); 
+}
