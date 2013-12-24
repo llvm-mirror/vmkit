@@ -19,7 +19,7 @@ J3Options::J3Options() {
 	debugLoad = 0;
 	debugResolve = 0;
 	debugIniting = 0;
-	debugTranslate = 0;
+	debugTranslate = 2;
 	debugLinking = 0;
 
 	genDebugExecute = debugExecute ? 1 : 0;

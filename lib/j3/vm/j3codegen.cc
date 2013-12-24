@@ -997,7 +997,11 @@ void J3CodeGen::translate() {
 				stack.push(stack.top());
 				break;
 
-			case J3Cst::BC_dup_x1: nyi();                 /* 0x5a */
+			case J3Cst::BC_dup_x1:                        /* 0x5a */
+				val1 = stack.pop(); val2 = stack.pop();
+				stack.push(val1); stack.push(val2); stack.push(val1);
+				break;
+
 			case J3Cst::BC_dup_x2: nyi();                 /* 0x5b */
 			case J3Cst::BC_dup2: nyi();                   /* 0x5c */
 			case J3Cst::BC_dup2_x1: nyi();                /* 0x5d */
