@@ -157,27 +157,63 @@ J3ObjectHandle* J3ObjectType::javaClass() {
 }
 
 void J3ObjectType::prepareInterfaceTable() {
-#if 0
-	for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
-		slots[i].nbSlots = 0;
-#endif
+	//fprintf(stderr, "prepare interface table of %ls\n", name()->cStr());
+
+	uint32_t total = 0;
+	J3InterfaceSlotDescriptor* slots = _interfaceSlotDescriptors;
 
 	for(uint32_t i=0; i<vt()->checker()->nbSecondaryTypes; i++) {
 		J3Type* type = vt()->checker()->secondaryTypes[i]->type();
-		//		fprintf(stderr, "   %p %ls type is %p - %p\n", vt(), name()->cStr(), vt()->checker()->secondaryTypes[i], type);
 
 		if(type->isClass()) {
 			J3Class* ifce = vt()->checker()->secondaryTypes[i]->type()->asClass();
-			//			fprintf(stderr, "processing: %ls from %ls\n", ifce->name()->cStr(), name()->cStr());
 			if(J3Cst::isInterface(ifce->access())) {
+				//fprintf(stderr, "  processing interface: %ls\n", ifce->name()->cStr());
 				for(uint32_t j=0; j<ifce->nbMethods(); j++) {
 					J3Method* base = ifce->methods()[j];
-					//					fprintf(stderr, "  %s lookup %ls %ls::%ls in %ls\n", 
-					//									J3Cst::isAbstract(base->access()) ? "abstract" : "concrete",
-					//									base->sign()->cStr(), base->cl()->name()->cStr(), base->name()->cStr(), name()->cStr());
+					//fprintf(stderr, "    processing %s method %ls %ls\n", 
+					//J3Cst::isAbstract(base->access()) ? "abstract" : "concrete",
+					//base->sign()->cStr(), base->name()->cStr());
 					J3Method* method = findVirtualMethod(base->name(), base->sign(), J3Cst::isAbstract(base->access()));
+
+					if(!method)
+						method = base;
+
+					total++;
+					uint32_t index = base->interfaceIndex() % J3VirtualTable::nbInterfaceMethodTable;
+					J3Method** tmp = (J3Method**)alloca(sizeof(J3Method*)*(slots[index].nbMethods+1));
+					memcpy(tmp, slots[index].methods, sizeof(J3Method*)*slots[index].nbMethods);
+					tmp[slots[index].nbMethods] = method;
+					slots[index].methods = tmp;
+					slots[index].nbMethods++;
 				}
 			}
+		}
+	}
+
+	J3Method** methods = (J3Method**)loader()->allocator()->allocate(total*sizeof(J3Method*));
+	uint32_t cur = 0;
+
+	for(uint32_t i=0; i<J3VirtualTable::nbInterfaceMethodTable; i++) {
+		memcpy(methods + cur, slots[i].methods, slots[i].nbMethods*sizeof(J3Method*));
+		slots[i].methods = methods + cur;
+		cur += slots[i].nbMethods;
+	}
+
+	dumpInterfaceSlotDescriptors();
+}
+
+void J3ObjectType::dumpInterfaceSlotDescriptors() {
+	J3InterfaceSlotDescriptor* slots = _interfaceSlotDescriptors;
+	fprintf(stderr, "slot descriptors of %ls\n", name()->cStr());
+	for(uint32_t i=0; i<J3VirtualTable::nbInterfaceMethodTable; i++) {
+		if(slots[i].nbMethods) {
+			fprintf(stderr, "  slot[%d]:\n", i);
+			for(uint32_t j=0; j<slots[i].nbMethods; j++)
+				fprintf(stderr, "    %ls::%ls %ls\n", 
+								slots[i].methods[j]->cl()->name()->cStr(),
+								slots[i].methods[j]->name()->cStr(),
+								slots[i].methods[j]->sign()->cStr());
 		}
 	}
 }

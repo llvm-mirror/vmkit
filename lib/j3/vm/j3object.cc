@@ -75,9 +75,11 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 		if(super != cl)  /* super->vt() is not yet allocated for Object */
 			memcpy(res->_virtualMethods, super->vt()->_virtualMethods, sizeof(void*)*super->vt()->nbVirtualMethods());
 
-		void* interfaceTrampoline = cl->loader()->vm()->interfaceTrampoline;
-		for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
-			res->_interfaceMethodTable[i] = interfaceTrampoline;
+		if(!J3Cst::isAbstract(cl->access())) {
+			void* interfaceTrampoline = cl->loader()->vm()->interfaceTrampoline;
+			for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
+				res->_interfaceMethodTable[i] = interfaceTrampoline;
+		}
 
 		for(uint32_t i=0; i<cl->nbMethods(); i++) {
 			res->_virtualMethods[pm[i]->index()] = pm[i]->functionPointerOrVirtualTrampoline();

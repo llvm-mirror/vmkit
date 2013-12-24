@@ -7,6 +7,8 @@
 
 #include "vmkit/compiler.h"
 
+#include "j3/j3object.h"
+
 namespace llvm {
 	class Type;
 	class GlobalValue;
@@ -27,8 +29,6 @@ namespace j3 {
 	class J3ArrayClass;
 	class J3ObjectType;
 	class J3Method;
-	class J3VirtualTable;
-	class J3ObjectHandle;
 	class J3Field;
 
 	class J3Type : public vmkit::Symbol {
@@ -147,8 +147,15 @@ namespace j3 {
 		void               dump();
 	};
 
+	class J3InterfaceSlotDescriptor {
+	public:
+		uint32_t   nbMethods;
+		J3Method** methods;
+	};
+
 	class J3ObjectType : public J3Type {
-		J3ObjectHandle* _javaClass;
+		J3ObjectHandle*           _javaClass;
+		J3InterfaceSlotDescriptor _interfaceSlotDescriptors[J3VirtualTable::nbInterfaceMethodTable];
 
 	public:
 		J3ObjectType(J3ClassLoader* loader, const vmkit::Name* name);
@@ -163,6 +170,8 @@ namespace j3 {
 		J3ObjectHandle*   javaClass();
 
 		static J3ObjectType* nativeClass(J3ObjectHandle* handle);
+
+		void dumpInterfaceSlotDescriptors();
 	};
 
 	class J3Layout : public J3ObjectType {
