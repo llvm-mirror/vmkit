@@ -42,7 +42,7 @@ namespace j3 {
 		friend class J3Trampoline;
 
 	public:
-		static const uint32_t nbInterfaceMethodTable = 23;
+		static const uint32_t nbInterfaceMethodTable = 41;
 		static const uint32_t gepObjectClass = 0;
 		static const uint32_t gepInterfaceMethods = 2;
 		static const uint32_t gepVirtualMethods = 4;

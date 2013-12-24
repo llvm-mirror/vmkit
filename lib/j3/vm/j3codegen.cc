@@ -59,6 +59,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 
 	funcJ3MethodIndex            = vm->introspectFunction(module(), "j3::J3Method::index()");
 	funcJ3TypeVT                 = vm->introspectFunction(module(), "j3::J3Type::vt()");
+	funcJ3TypeVTAndResolve       = vm->introspectFunction(module(), "j3::J3Type::vtAndResolve()");
 	funcJ3TypeInitialise         = vm->introspectFunction(module(), "j3::J3Type::initialise()");
 	funcJ3ClassSize              = vm->introspectFunction(module(), "j3::J3Class::size()");
 	funcJ3ClassStaticInstance    = vm->introspectFunction(module(), "j3::J3Class::staticInstance()");
@@ -79,7 +80,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	funcEchoDebugEnter           = vm->introspectFunction(module(), "j3::J3CodeGen::echoDebugEnter(unsigned int, char const*, ...)");
 	funcEchoDebugExecute         = vm->introspectFunction(module(), "j3::J3CodeGen::echoDebugExecute(unsigned int, char const*, ...)");
 
-	funcSlowIsAssignableTo       = vm->introspectFunction(module(), "j3::J3VirtualTable::slowIsAssignableTo(j3::J3VirtualTable*)");
+	funcIsAssignableTo           = vm->introspectFunction(module(), "j3::J3VirtualTable::isAssignableTo(j3::J3VirtualTable*)");
 	funcFastIsAssignableToPrimaryChecker = 
 		vm->introspectFunction(module(), "j3::J3VirtualTable::fastIsAssignableToPrimaryChecker(j3::J3VirtualTable*, unsigned int)");
 	funcFastIsAssignableToNonPrimaryChecker = 
@@ -212,8 +213,9 @@ llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
 	return res;
 }
 
-llvm::Value* J3CodeGen::vt(J3Type* type) {
-	return builder->CreateCall(funcJ3TypeVT, builder->CreateBitCast(type->llvmDescriptor(module()), vm->typeJ3TypePtr));
+llvm::Value* J3CodeGen::vt(J3Type* type, bool doResolve) {
+	llvm::Value* func = doResolve && !type->isResolved() ? funcJ3TypeVTAndResolve : funcJ3TypeVT;
+	return builder->CreateCall(func, builder->CreateBitCast(type->llvmDescriptor(module()), vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
@@ -381,6 +383,22 @@ llvm::Value* J3CodeGen::arrayLength(llvm::Value* obj) {
 	return builder->CreateLoad(arrayLengthPtr(obj));
 }
 
+void J3CodeGen::newArray(J3ArrayClass* array) {
+	initialiseJ3Type(array);
+	llvm::DataLayout* layout = vm->dataLayout();
+	llvm::Value* length = stack.pop();
+	llvm::Value* nbb = 
+		builder->CreateAdd(builder->getInt64(layout->getTypeAllocSize(array->llvmType()->getContainedType(0))),
+											 builder->CreateMul(builder->getInt64(layout->getTypeAllocSize(array->component()->llvmType())), 
+																					builder->CreateZExtOrBitCast(length, builder->getInt64Ty())));
+	
+	llvm::Value* res = builder->CreateCall2(funcJ3ObjectAllocate, vt(array), nbb);
+
+	builder->CreateStore(length, arrayLengthPtr(res));
+
+	stack.push(res);
+}
+
 void J3CodeGen::newArray(uint8_t atype) {
 	J3Primitive* prim = 0;
 
@@ -400,22 +418,6 @@ void J3CodeGen::newArray(uint8_t atype) {
 	newArray(prim->getArray());
 }
 
-void J3CodeGen::newArray(J3ArrayClass* array) {
-	initialiseJ3Type(array);
-	llvm::DataLayout* layout = vm->dataLayout();
-	llvm::Value* length = stack.pop();
-	llvm::Value* arraySize = 
-		builder->CreateAdd(builder->getInt64(layout->getTypeAllocSize(array->llvmType()->getContainedType(0))),
-											 builder->CreateMul(builder->getInt64(layout->getTypeAllocSize(array->component()->llvmType())), 
-																					builder->CreateZExtOrBitCast(length, builder->getInt64Ty())));
-	
-	llvm::Value* res = builder->CreateCall2(funcJ3ObjectAllocate, vt(array), arraySize);
-
-	builder->CreateStore(length, arrayLengthPtr(res));
-
-	stack.push(res);
-}
-
 void J3CodeGen::newObject(J3Class* cl) {
 	initialiseJ3Type(cl);
 
@@ -433,8 +435,9 @@ void J3CodeGen::newObject(J3Class* cl) {
 }
 
 llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3Type* type) {
-	llvm::Value* vtType = vt(type);
+	llvm::Value* vtType = vt(type, 1);
 	llvm::Value* vtObj = vt(obj);
+
 	if(type->isResolved()) {
 		if(type->vt()->isPrimaryChecker())
 			return builder->CreateCall3(funcFastIsAssignableToPrimaryChecker, 
@@ -443,8 +446,9 @@ llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3Type* type) {
 																	builder->getInt32(type->vt()->offset()));
 		else 
 			return builder->CreateCall2(funcFastIsAssignableToNonPrimaryChecker, vtObj, vtType);
-	} else
-		return builder->CreateCall2(funcSlowIsAssignableTo, vtObj, vtType);
+	} else {
+		return builder->CreateCall2(funcIsAssignableTo, vtObj, vtType);
+	}
 }
 
 void J3CodeGen::instanceof(llvm::Value* obj, J3Type* type) {
@@ -480,6 +484,7 @@ void J3CodeGen::checkCast(llvm::Value* obj, J3Type* type) {
 	builder->SetInsertPoint(test);
 
 	llvm::Value* res = isAssignableTo(obj, type);
+
 	builder->CreateCondBr(res, succeed, bbCheckCastFailed);
 
 	builder->SetInsertPoint(bb);

@@ -38,6 +38,11 @@ J3VirtualTable* J3Type::vt() {
 	return _vt; 
 }
 
+J3VirtualTable* J3Type::vtAndResolve() { 
+	resolve();
+	return vt(); 
+}
+
 void J3Type::dump() {
 	fprintf(stderr, "Type: %ls", name()->cStr());
 }

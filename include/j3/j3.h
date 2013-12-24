@@ -110,6 +110,8 @@ namespace j3 {
 		static void    classCastException() __attribute__((noreturn));
 
 		static void    arrayBoundCheckException() __attribute__((noreturn));
+
+		static void    printStackTrace();
 	};
 }
 

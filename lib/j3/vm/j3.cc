@@ -174,16 +174,18 @@ void J3::linkageError(J3Method* method) {
 }
 
 void J3::vinternalError(const wchar_t* msg, va_list va) {
-	vmkit::Safepoint* sf = 0;
-	vmkit::StackWalker walker;
 	wchar_t buf[65536];
-
 	vswprintf(buf, 65536, msg, va);
-
 	fprintf(stderr, "Internal error: %ls\n", buf);
+	printStackTrace();
+	abort();
+}
+
+void J3::printStackTrace() {
+	vmkit::StackWalker walker;
 
 	while(walker.next()) {
-		vmkit::Safepoint* sf = getSafepoint(walker.ip());
+		vmkit::Safepoint* sf = J3Thread::get()->vm()->getSafepoint(walker.ip());
 
 		if(sf) {
 			J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
@@ -202,5 +204,5 @@ void J3::vinternalError(const wchar_t* msg, va_list va) {
 			}
 		}
 	}
-	abort();
 }
+

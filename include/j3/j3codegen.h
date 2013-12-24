@@ -114,7 +114,7 @@ namespace j3 {
 		llvm::Value*       handleToObject(llvm::Value* obj);
 		llvm::Value*       javaClass(J3ObjectType* type);
 		llvm::Value*       staticInstance(J3Class* cl);
-		llvm::Value*       vt(J3Type* cl);
+		llvm::Value*       vt(J3Type* cl, bool resolve=0);
 		llvm::Value*       vt(llvm::Value* obj);
 		void               initialiseJ3Type(J3Type* cl);
 
@@ -170,6 +170,7 @@ namespace j3 {
 
 		llvm::Function*    funcJ3MethodIndex;
 		llvm::Function*    funcJ3TypeVT;
+		llvm::Function*    funcJ3TypeVTAndResolve;
 		llvm::Function*    funcJ3TypeInitialise;
 		llvm::Function*    funcJ3ObjectTypeJavaClass;
 		llvm::Function*    funcJ3ClassSize;
@@ -180,7 +181,7 @@ namespace j3 {
 		llvm::Function*    funcClassCastException;
 		llvm::Function*    funcNullPointerException;
 		llvm::Function*    funcThrowException;
-		llvm::Function*    funcSlowIsAssignableTo;
+		llvm::Function*    funcIsAssignableTo;
 		llvm::Function*    funcFastIsAssignableToPrimaryChecker;
 		llvm::Function*    funcFastIsAssignableToNonPrimaryChecker;
 		llvm::Function*    funcJ3ThreadPushHandle;

@@ -65,6 +65,7 @@ namespace j3 {
 		J3Type*                     initialise();
 
 		J3VirtualTable*             vt();
+		J3VirtualTable*             vtAndResolve();
 
 		bool                        isAssignableTo(J3Type* parent);
 
