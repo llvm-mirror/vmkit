@@ -217,6 +217,12 @@ J3VirtualTable::J3VirtualTable(J3Type* type, J3Type* super, J3Type** interfaces,
 		}
 	}
 
+	if(checker.nbSecondaryTypes) {
+		std::sort(checker.secondaryTypes, &checker.secondaryTypes[checker.nbSecondaryTypes]);
+		J3VirtualTable** it = std::unique(checker.secondaryTypes, &checker.secondaryTypes[checker.nbSecondaryTypes]);
+		checker.nbSecondaryTypes = std::distance(checker.secondaryTypes, it);
+	}
+
 	//dump();
 }
 
