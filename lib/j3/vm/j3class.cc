@@ -200,7 +200,7 @@ void J3ObjectType::prepareInterfaceTable() {
 		cur += slots[i].nbMethods;
 	}
 
-	dumpInterfaceSlotDescriptors();
+	//dumpInterfaceSlotDescriptors();
 }
 
 void J3ObjectType::dumpInterfaceSlotDescriptors() {

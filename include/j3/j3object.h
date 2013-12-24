@@ -39,6 +39,8 @@ namespace j3 {
 	};
 
 	class J3VirtualTable {
+		friend class J3Trampoline;
+
 	public:
 		static const uint32_t nbInterfaceMethodTable = 23;
 		static const uint32_t gepObjectClass = 0;

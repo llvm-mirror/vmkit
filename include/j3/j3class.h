@@ -160,18 +160,19 @@ namespace j3 {
 	public:
 		J3ObjectType(J3ClassLoader* loader, const vmkit::Name* name);
 
-		void prepareInterfaceTable();
+		J3InterfaceSlotDescriptor* slotDescriptorAt(uint32_t index) { return &_interfaceSlotDescriptors[index]; }
+		void                       prepareInterfaceTable();
 
-		virtual J3Method* findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
-		virtual J3Method* findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
+		virtual J3Method*          findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
+		virtual J3Method*          findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
 
-		bool              isObjectType() { return 1; }
+		bool                       isObjectType() { return 1; }
 
-		J3ObjectHandle*   javaClass();
+		J3ObjectHandle*            javaClass();
 
-		static J3ObjectType* nativeClass(J3ObjectHandle* handle);
+		static J3ObjectType*       nativeClass(J3ObjectHandle* handle);
 
-		void dumpInterfaceSlotDescriptors();
+		void                       dumpInterfaceSlotDescriptors();
 	};
 
 	class J3Layout : public J3ObjectType {

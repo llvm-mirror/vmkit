@@ -10,11 +10,20 @@ using namespace j3;
 void* J3Trampoline::interfaceTrampoline(J3Object* obj) {
 	J3ObjectHandle* prev = J3Thread::get()->tell();
 	J3ObjectHandle* handle = J3Thread::get()->push(obj);
-	uint32_t index = J3Thread::get()->interfaceMethodIndex();
-	fprintf(stderr, "%d - %ls\n", index, handle->vt()->type()->name()->cStr());
+	J3ObjectType* type = obj->vt()->type()->asObjectType();
+	uint32_t index = J3Thread::get()->interfaceMethodIndex() % J3VirtualTable::nbInterfaceMethodTable;
+	J3InterfaceSlotDescriptor* desc = type->slotDescriptorAt(index);
+	void* res;
+
+	if(desc->nbMethods == 1) {
+		res = desc->methods[0]->fnPtr();
+		handle->vt()->_interfaceMethodTable[index] = res;
+	} else
+		J3::internalError(L"implement me: interface Trampoline with collision");
 
 	J3Thread::get()->restore(prev);
-	J3::internalError(L"implement me: interface Trampoline");
+
+	return res;
 }
 
 void* J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
