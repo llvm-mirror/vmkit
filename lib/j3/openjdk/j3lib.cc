@@ -50,9 +50,6 @@ void J3Lib::bootstrap(J3* vm) {
 
 	threadInit->invokeSpecial(mainThread, appThreadGroup, vm->utfToString("main"));
 						
-	fprintf(stderr, "main thread is at %p\n", threadInit);
-	abort();
-
 	vm->initialClassLoader->method(J3Cst::ACC_STATIC, L"java/lang/System", L"initializeSystemClass", L"()V")->invokeStatic();
 
 	J3Thread::get()->restore(prev);

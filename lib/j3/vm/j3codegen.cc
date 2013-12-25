@@ -1009,7 +1009,17 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_dup_x2: nyi();                 /* 0x5b */
-			case J3Cst::BC_dup2: nyi();                   /* 0x5c */
+
+			case J3Cst::BC_dup2:                          /* 0x5c */
+				val1 = stack.top();
+				if(val1->getType()->isDoubleTy() || val1->getType()->isIntegerTy(64)) {
+					stack.push(val1);
+				} else {
+					val2 = stack.top(1);
+					stack.push(val2); stack.push(val1);
+				}
+				break;
+
 			case J3Cst::BC_dup2_x1: nyi();                /* 0x5d */
 			case J3Cst::BC_dup2_x2: nyi();                /* 0x5e */
 			case J3Cst::BC_swap: nyi();                   /* 0x5f */
