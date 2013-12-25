@@ -5,12 +5,15 @@
 #include <vector>
 
 namespace j3 {
+	class J3;
 	class J3ClassBytes;
 
 	class J3Lib {
 	public:
 		static const char*  systemClassesArchives();
 		static int          loadSystemLibraries(std::vector<void*, vmkit::StdAllocator<void*> >* handles);
+
+		static void         bootstrap(J3* vm);
 	};
 }
 

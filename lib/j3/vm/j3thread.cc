@@ -43,6 +43,11 @@ void J3Thread::ensureCapacity(uint32_t capacity) {
 	_localReferences.ensureCapacity(capacity);
 }
 
+void J3Thread::assocJavaThread(J3ObjectHandle* javaThread) {
+	_javaThread = javaThread;
+	_javaThread->setLong(vm()->threadVMData, (int64_t)(uintptr_t)this);
+}
+
 J3ObjectHandle* J3Thread::push(J3ObjectHandle* handle) { 
 	return _localReferences.push(handle); 
 }

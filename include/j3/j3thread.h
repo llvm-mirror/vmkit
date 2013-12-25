@@ -23,10 +23,14 @@ namespace j3 {
 		JNIEnv                     _jniEnv;
 		J3LocalReferences          _localReferences;
 		J3ObjectHandle*            _pendingException;
+		J3ObjectHandle*            _javaThread;
 
 		J3Thread(J3* vm, vmkit::BumpAllocator* allocator);
 	public:
 		static J3Thread*  create(J3* j3);
+
+		void               assocJavaThread(J3ObjectHandle* javaThread);
+		J3ObjectHandle*    javaThread() { return _javaThread; }
 
 		J3Method*          getJavaCaller(uint32_t level=0);
 

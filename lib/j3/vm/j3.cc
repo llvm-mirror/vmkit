@@ -9,6 +9,7 @@
 #include "j3/j3method.h"
 #include "j3/j3thread.h"
 #include "j3/j3trampoline.h"
+#include "j3/j3lib.h"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -101,7 +102,10 @@ void J3::start(int argc, char** argv) {
 	classInit                = initialClassLoader->method(0, classClass, initName, names()->get(L"()V"));
 	classVMData              = classClass->findVirtualField(hf.name(), hf.type());
 
-	initialClassLoader->method(J3Cst::ACC_STATIC, L"java/lang/System", L"initializeSystemClass", L"()V")->invokeStatic();
+	threadVMData             = initialClassLoader->getClass(names()->get("java/lang/Thread"))
+		->findVirtualField(names()->get(L"eetop"), typeLong);
+
+	J3Lib::bootstrap(this);
 }
 
 JNIEnv* J3::jniEnv() {
@@ -205,4 +209,3 @@ void J3::printStackTrace() {
 		}
 	}
 }
-

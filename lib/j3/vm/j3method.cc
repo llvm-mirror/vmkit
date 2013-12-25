@@ -51,7 +51,7 @@ uint32_t J3Method::index()  {
 
 void* J3Method::fnPtr() {
 	if(!_fnPtr) {
-		//fprintf(stderr, "materializing: %ls::%ls%ls\n", cl()->name()->cStr(), name()->cStr(), sign()->cStr());
+		//fprintf(stderr, "materializing: %ls::%ls%ls\n", this, cl()->name()->cStr(), name()->cStr(), sign()->cStr());
 		if(!isResolved()) {
 			if(cl()->loader()->vm()->options()->debugLinking)
 				fprintf(stderr, "linking %ls::%ls\n", cl()->name()->cStr(), name()->cStr());

@@ -1,9 +1,4 @@
-#include "vmkit/config.h"
-#include "vmkit/system.h"
 #include "vmkit/safepoint.h"
-#include "j3/j3object.h"
-#include "j3/j3lib.h"
-#include "j3/j3config.h"
 #include "j3/j3.h"
 #include "j3/j3thread.h"
 #include "j3/j3classloader.h"
@@ -11,41 +6,12 @@
 #include "j3/j3method.h"
 #include "jvm.h"
 
-#include <dlfcn.h>
-
 using namespace j3;
 
 #define enterJVM()
 #define leaveJVM()
 
 #define NYI() { J3Thread::get()->vm()->internalError(L"not yet implemented: '%s'", __PRETTY_FUNCTION__); }
-
-#ifdef LINUX_OS
-#define OPENJDK_LIBPATH OPENJDK_HOME"jre/lib/amd64"
-#else
-#define OPENJDK_LIBPATH OPENJDK_HOME"jre/lib"
-#endif
-
-static const char* rtjar = OPENJDK_HOME"jre/lib/rt.jar";
-
-const char* J3Lib::systemClassesArchives() {
-	return rtjar;
-}
-
-int J3Lib::loadSystemLibraries(std::vector<void*, vmkit::StdAllocator<void*> >* nativeLibraries) {
-	/* JavaRuntimeSupport checks for a symbol defined in this library */
-	void* h0 = dlopen(OPENJDK_LIBPATH"/libinstrument"SHLIBEXT, RTLD_LAZY | RTLD_GLOBAL);
-	void* handle = dlopen(OPENJDK_LIBPATH"/libjava"SHLIBEXT, RTLD_LAZY | RTLD_LOCAL);
-	
-	if(!handle || !h0) {
-		fprintf(stderr, "Fatal: unable to find java system library: %s\n", dlerror());
-		abort();
-	}
-
-	nativeLibraries->push_back(handle);
-
-	return 0;
-}
 
 
 /*************************************************************************
@@ -82,7 +48,20 @@ jstring JNICALL JVM_InternString(JNIEnv* env, jstring str) { enterJVM(); NYI(); 
  */
 jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored) { enterJVM(); NYI(); leaveJVM(); }
 jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length) { 
+	enterJVM(); 
+
+	printf("to array copy: %p and %p\n", src->vt(), dst->vt());
+
+	J3Type* srcType = src->vt()->type();
+	J3Type* dstType = dst->vt()->type();
+
+	fprintf(stderr, "%ls to %ls\n", srcType->name()->cStr(), dstType->name()->cStr());
+
+	NYI();
+	leaveJVM(); 
+}
+
 jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) { enterJVM(); NYI(); leaveJVM(); }
 
 /*
@@ -157,7 +136,15 @@ void JNICALL JVM_ResumeThread(JNIEnv* env, jobject thread) { enterJVM(); NYI(); 
 void JNICALL JVM_SetThreadPriority(JNIEnv* env, jobject thread, jint prio) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_Yield(JNIEnv* env, jclass threadClass) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_CurrentThread(JNIEnv* env, jclass threadClass) { enterJVM(); NYI(); leaveJVM(); }
+
+jobject JNICALL JVM_CurrentThread(JNIEnv* env, jclass threadClass) { 
+	jobject res;
+	enterJVM(); 
+	res = J3Thread::get()->javaThread();
+	leaveJVM(); 
+	return res;
+}
+
 jint JNICALL JVM_CountStackFrames(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_Interrupt(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
 jboolean JNICALL JVM_IsInterrupted(JNIEnv* env, jobject thread, jboolean clearInterrupted) { enterJVM(); NYI(); leaveJVM(); }

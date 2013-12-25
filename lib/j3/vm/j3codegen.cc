@@ -252,6 +252,7 @@ void J3CodeGen::invoke(J3Method* target, llvm::Value* func) {
 	llvm::Value* res;
 
 	if(exceptionNodes[curExceptionNode]->landingPad) {
+		//llvm::BasicBlock* after = forwardBranch("invoke-after", codeReader->tell(), 0, 0);
 		llvm::BasicBlock* after = newBB("invoke-after");
 		res = builder->CreateInvoke(func, after, exceptionNodes[curExceptionNode]->landingPad, args);
 		bb = after;
@@ -763,9 +764,9 @@ void J3CodeGen::translate() {
 			//printf("Meta stack after: %p\n", metaStack);
 		}
 		
-		if(opInfos[javaPC].bb)
+		if(opInfos[javaPC].bb || bb->empty())
 			opInfos[javaPC].insn = bb->begin();
-		else
+		else 
 			opInfos[javaPC].insn = bb->end()->getPrevNode();
 
 		uint8_t bc   = codeReader->readU1();
