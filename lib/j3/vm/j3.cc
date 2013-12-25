@@ -177,6 +177,14 @@ void J3::linkageError(J3Method* method) {
 	internalError(L"unable to find native method '%ls::%ls%ls'", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
 }
 
+void J3::arrayStoreException() {
+	internalError(L"array store exception");
+}
+
+void J3::arrayIndexOutOfBoundsException() {
+	internalError(L"array bound check exception");
+}
+
 void J3::vinternalError(const wchar_t* msg, va_list va) {
 	wchar_t buf[65536];
 	vswprintf(buf, 65536, msg, va);

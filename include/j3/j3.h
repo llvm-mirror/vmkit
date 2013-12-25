@@ -111,7 +111,8 @@ namespace j3 {
 		static void    nullPointerException() __attribute__((noreturn));
 		static void    classCastException() __attribute__((noreturn));
 
-		static void    arrayBoundCheckException() __attribute__((noreturn));
+		static void    arrayStoreException() __attribute__((noreturn));
+		static void    arrayIndexOutOfBoundsException() __attribute__((noreturn));
 
 		static void    printStackTrace();
 	};

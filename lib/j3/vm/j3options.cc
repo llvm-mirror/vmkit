@@ -15,11 +15,11 @@ J3Options::J3Options() {
 
 	debugEnterIndent = 1;
 
-	debugExecute = 2;
+	debugExecute = 0;
 	debugLoad = 0;
 	debugResolve = 0;
 	debugIniting = 0;
-	debugTranslate = 3;
+	debugTranslate = 0;
 	debugLinking = 0;
 
 	genDebugExecute = debugExecute ? 1 : 0;

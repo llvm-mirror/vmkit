@@ -848,7 +848,7 @@ void J3CodeGen::translate() {
 			case J3Cst::BC_lload:                         /* 0x16 wide */
 			case J3Cst::BC_fload:                         /* 0x17 wide */
 			case J3Cst::BC_dload:                         /* 0x18 wide */
-			case J3Cst::BC_aload:                         /* 0x19 wide */
+			case J3Cst::BC_aload:                         /* 0x19 wide */				
 				stack.push(locals.at(wideReadU1()));
 				break;
 

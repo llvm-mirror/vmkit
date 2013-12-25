@@ -129,6 +129,7 @@ namespace j3 {
 	private:
 		J3Object* volatile _obj;
 
+	public:
 		J3Object*           obj()   { return _obj; }
 		J3ArrayObject*      array() { return (J3ArrayObject*)_obj; }
 	public:
@@ -139,9 +140,13 @@ namespace j3 {
 		static J3ObjectHandle* doNewObject(J3Class* cl);
 		static J3ObjectHandle* doNewArray(J3ArrayClass* cl, uint32_t length);
 
+		bool            isSame(J3ObjectHandle* handle) { return obj() == handle->obj(); }
+
 		void            harakiri() { _obj = 0; }
 
 		uint32_t        hashCode();
+
+		void            rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb); 
 
 		void            rawSetObject(uint32_t offset, J3ObjectHandle* v);
 		J3ObjectHandle* rawGetObject(uint32_t offset);

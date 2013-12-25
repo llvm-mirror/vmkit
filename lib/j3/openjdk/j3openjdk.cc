@@ -51,14 +51,22 @@ jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored) { enterJVM(); NYI(); lea
 void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length) { 
 	enterJVM(); 
 
-	printf("to array copy: %p and %p\n", src->vt(), dst->vt());
+	J3Type* srcType0 = src->vt()->type();
+	J3Type* dstType0 = dst->vt()->type();
 
-	J3Type* srcType = src->vt()->type();
-	J3Type* dstType = dst->vt()->type();
+	if(!srcType0->isArrayClass() || !dstType0->isArrayClass() || !srcType0->isAssignableTo(dstType0))
+		J3::arrayStoreException();
 
-	fprintf(stderr, "%ls to %ls\n", srcType->name()->cStr(), dstType->name()->cStr());
+	if(src_pos >= src->arrayLength() || 
+		 dst_pos >= dst->arrayLength() ||
+		 (src_pos + length) > src->arrayLength() ||
+		 (dst_pos + length) > dst->arrayLength())
+		J3::arrayIndexOutOfBoundsException();
 
-	NYI();
+	uint32_t scale = srcType0->asArrayClass()->component()->getLogSize();
+
+	src->rawArrayCopyTo(src_pos << scale, dst, dst_pos << scale, length << scale);
+
 	leaveJVM(); 
 }
 
@@ -133,7 +141,13 @@ void JNICALL JVM_StopThread(JNIEnv* env, jobject thread, jobject exception) { en
 jboolean JNICALL JVM_IsThreadAlive(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_SuspendThread(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_ResumeThread(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_SetThreadPriority(JNIEnv* env, jobject thread, jint prio) { enterJVM(); NYI(); leaveJVM(); }
+
+void JNICALL JVM_SetThreadPriority(JNIEnv* env, jobject thread, jint prio) { 
+	enterJVM(); 
+	// not yet implemented
+	leaveJVM(); 
+}
+
 void JNICALL JVM_Yield(JNIEnv* env, jclass threadClass) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis) { enterJVM(); NYI(); leaveJVM(); }
 
@@ -415,7 +429,12 @@ jobject JNICALL JVM_DoPrivileged(JNIEnv* env, jclass cls, jobject action, jobjec
 }
 
 jobject JNICALL JVM_GetInheritedAccessControlContext(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_GetStackAccessControlContext(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_GetStackAccessControlContext(JNIEnv* env, jclass cls) { 
+	enterJVM(); 
+  // not yet implemented
+	leaveJVM(); 
+	return 0;
+}
 
 /*
  * Signal support, used to implement the shutdown sequence.  Every VM must

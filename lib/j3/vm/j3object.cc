@@ -278,7 +278,7 @@ J3Object* J3Object::allocate(J3VirtualTable* vt, size_t n) {
 }
 
 J3Object* J3Object::doNewNoInit(J3Class* cl) {
-	return allocate(cl->vt(), cl->size());
+	return allocate(cl->vtAndResolve(), cl->size());
 }
 
 J3Object* J3Object::doNew(J3Class* cl) {
@@ -292,7 +292,7 @@ J3Object* J3Object::doNew(J3Class* cl) {
 J3Object* J3ArrayObject::doNew(J3ArrayClass* cl, uint32_t length) {
 	llvm::DataLayout* layout = cl->loader()->vm()->dataLayout();
 	J3ArrayObject* res = 
-		(J3ArrayObject*)allocate(cl->vt(),
+		(J3ArrayObject*)allocate(cl->vtAndResolve(),
 														 layout->getTypeAllocSize(cl->llvmType()->getContainedType(0))
 														 + layout->getTypeAllocSize(cl->component()->llvmType()) * length);
 
@@ -367,7 +367,7 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 																																				\
 	void  J3ObjectHandle::setRegion##name(uint32_t selfIdx, const ctype* buf, uint32_t bufIdx, uint32_t len) { \
 		if(selfIdx + len > arrayLength())																		\
-			J3::arrayBoundCheckException();																		\
+			J3::arrayIndexOutOfBoundsException();															\
 		memcpy((uint8_t*)array() + sizeof(J3ArrayObject) + selfIdx*sizeof(ctype), \
 					 (uint8_t*)buf + bufIdx*sizeof(ctype),												\
 					 len*sizeof(ctype));																					\
@@ -375,7 +375,7 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 																																				\
 	void  J3ObjectHandle::getRegion##name(uint32_t selfIdx, const ctype* buf, uint32_t bufIdx, uint32_t len) { \
 		if(selfIdx + len > arrayLength())																		\
-			J3::arrayBoundCheckException();																		\
+			J3::arrayIndexOutOfBoundsException();															\
 		memcpy((uint8_t*)buf + bufIdx*sizeof(ctype),												\
 					 (uint8_t*)array() + sizeof(J3ArrayObject) + selfIdx*sizeof(ctype), \
 					 len*sizeof(ctype));																					\
@@ -384,6 +384,13 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 onJavaPrimitives(defAccessor)
 
 #undef defAccessor
+
+void J3ObjectHandle::rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb) {
+	if(isSame(to))
+		memmove((uint8_t*)(to->array()+1) + toOffset, (uint8_t*)(array()+1) + fromOffset, nbb); 
+	else
+		memcpy((uint8_t*)(to->array()+1) + toOffset, (uint8_t*)(array()+1) + fromOffset, nbb); 
+}
 
 void J3ObjectHandle::rawSetObject(uint32_t offset, J3ObjectHandle* value) {
 	*((J3Object**)((uintptr_t)obj() + offset)) = value->obj();
