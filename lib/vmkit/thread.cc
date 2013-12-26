@@ -15,6 +15,19 @@ void Thread::destroy(Thread* thread) {
 	BumpAllocator::destroy(thread->allocator());
 }
 
+void* Thread::doRun(void* _thread) {
+	Thread* thread = (Thread*)_thread;
+	set(thread);
+	thread->_entryPoint();
+	return 0;
+}
+
+void Thread::start(entryPoint_t entryPoint, Thread* thread) {
+	thread->_entryPoint = entryPoint;
+	pthread_t tid;
+	pthread_create(&tid, 0, doRun, thread);
+}
+
 StackWalker::StackWalker(uint32_t initialPop) {
 	framePointer = System::current_fp();
 	next(initialPop+1);

@@ -19,6 +19,18 @@ J3Thread* J3Thread::create(J3* j3) {
 	return new(allocator) J3Thread(j3, allocator);
 }
 
+void J3Thread::doRun() {
+	J3ObjectHandle* handle = get()->javaThread();
+	get()->vm()->threadRun->invokeVirtual(handle);
+}
+
+void J3Thread::start(J3ObjectHandle* handle) {
+	J3Thread* thread = create(J3Thread::get()->vm());
+	thread->assocJavaThread(handle);
+	Thread::start(doRun, thread);
+	while(1);
+}
+
 J3Method* J3Thread::getJavaCaller(uint32_t level) {
 	vmkit::Safepoint* sf = 0;
 	vmkit::StackWalker walker;

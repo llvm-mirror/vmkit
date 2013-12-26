@@ -25,6 +25,8 @@ namespace j3 {
 		J3ObjectHandle*            _pendingException;
 		J3ObjectHandle*            _javaThread;
 
+		static void doRun();
+
 		J3Thread(J3* vm, vmkit::BumpAllocator* allocator);
 	public:
 		static J3Thread*  create(J3* j3);
@@ -52,6 +54,8 @@ namespace j3 {
 		JNIEnv* jniEnv() { return &_jniEnv; }
 
 		static J3Thread* get();
+
+		static void start(J3ObjectHandle* handle);
 	};
 }
 

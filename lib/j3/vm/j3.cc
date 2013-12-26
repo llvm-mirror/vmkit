@@ -104,6 +104,7 @@ void J3::start(int argc, char** argv) {
 
 	threadVMData             = initialClassLoader->getClass(names()->get("java/lang/Thread"))
 		->findVirtualField(names()->get(L"eetop"), typeLong);
+	threadRun                = initialClassLoader->method(0, L"java/lang/Thread", L"run", L"()V");
 
 	J3Lib::bootstrap(this);
 }

@@ -66,6 +66,7 @@ namespace j3 {
 		J3Field*         classVMData;
 
 		J3Field*         threadVMData;
+		J3Method*        threadRun;
 
 		const vmkit::Name* codeAttr;
 		const vmkit::Name* constantValueAttr;

@@ -136,7 +136,12 @@ void JNICALL JVM_DisableCompiler(JNIEnv* env, jclass compCls) { enterJVM(); NYI(
 /*
  * java.lang.Thread
  */
-void JNICALL JVM_StartThread(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_StartThread(JNIEnv* env, jobject thread) { 
+	enterJVM(); 
+	J3Thread::start(thread);
+	leaveJVM(); 
+}
+
 void JNICALL JVM_StopThread(JNIEnv* env, jobject thread, jobject exception) { enterJVM(); NYI(); leaveJVM(); }
 jboolean JNICALL JVM_IsThreadAlive(JNIEnv* env, jobject thread) { 
 	jboolean res;
