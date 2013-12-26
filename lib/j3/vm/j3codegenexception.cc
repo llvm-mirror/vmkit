@@ -62,7 +62,7 @@ void J3ExceptionNode::close(J3CodeGen* codeGen) {
 	if(curCheck) {
 		codeGen->builder->SetInsertPoint(curCheck);
 		codeGen->builder->CreateBr(codeGen->bbRet);
-	}
+	} 
 }
 
 J3ExceptionNode** J3ExceptionTable::newNode(uint32_t pos, uint32_t pc) {

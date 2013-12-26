@@ -134,6 +134,8 @@ namespace j3 {
 
 		void               ldc(uint32_t idx);
 
+		void               selectExceptionNode(uint32_t idx);
+
 		void               translate();
 
 		void               initExceptionNode(J3ExceptionNode** pnode, uint32_t pc, J3ExceptionNode* node);

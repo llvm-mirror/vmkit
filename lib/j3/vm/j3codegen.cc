@@ -552,9 +552,7 @@ void J3CodeGen::ldc(uint32_t idx) {
 	switch(cl->getCtpType(idx)) {
 		case J3Cst::CONSTANT_Long:    res = builder->getInt64(cl->longAt(idx)); break;
 		case J3Cst::CONSTANT_Integer: res = builder->getInt32(cl->integerAt(idx)); break;
-		case J3Cst::CONSTANT_Float:   
-			fprintf(stderr, "generate float: %lf\n", cl->floatAt(idx));
-			res = llvm::ConstantFP::get(builder->getFloatTy(), cl->floatAt(idx)); break;
+		case J3Cst::CONSTANT_Float:   res = llvm::ConstantFP::get(builder->getFloatTy(), cl->floatAt(idx)); break;
 		case J3Cst::CONSTANT_Double:  res = llvm::ConstantFP::get(builder->getDoubleTy(), cl->doubleAt(idx)); break;
 		case J3Cst::CONSTANT_Class:   res = handleToObject(javaClass(cl->classAt(idx))); break;
 		case J3Cst::CONSTANT_String:  
@@ -628,6 +626,21 @@ bool J3CodeGen::onEndPoint() {
 	return 0;
 }
 
+void J3CodeGen::selectExceptionNode(uint32_t idx) {
+	curExceptionNode = idx;
+
+	if(!exceptions.nodes[idx]->isAdded) {
+		exceptions.nodes[idx]->isAdded = 1;
+		for(uint32_t i=0; i<exceptions.nodes[idx]->nbEntries; i++) {
+			J3ExceptionEntry* e = exceptions.nodes[idx]->entries[i];
+			if(!e->isAdded) {
+				e->isAdded = 1;
+				pendingBranchs[topPendingBranchs++] = e->handlerPC;
+			}
+		}
+	}
+}
+
 llvm::Value* J3CodeGen::buildString(const char* msg) {
 	std::vector<llvm::Constant*> elmts;
 	uint32_t n;
@@ -680,7 +693,7 @@ void J3CodeGen::translate() {
 	if(vm->options()->debugTranslate > 1)
 		exceptions.dump(vm->options()->debugTranslate-1);
 
-	curExceptionNode = 0;
+	selectExceptionNode(0);
 
 	stack.topStack = 0;
 	builder->SetInsertPoint(bb);
@@ -721,11 +734,11 @@ void J3CodeGen::translate() {
 
 		if(javaPC < exceptions.nodes[curExceptionNode]->pc || javaPC >= exceptions.nodes[curExceptionNode+1]->pc) {
 			if(javaPC == exceptions.nodes[curExceptionNode+1]->pc)
-				curExceptionNode++;
+				selectExceptionNode(curExceptionNode+1);
 			else
 				for(uint32_t i=0; i<exceptions.nbNodes; i++)
 					if(exceptions.nodes[i]->pc <= javaPC && javaPC < exceptions.nodes[i+1]->pc) {
-						curExceptionNode = i;
+						selectExceptionNode(i);
 						break;
 					}
 			//printf("cur exception node: %d\n", curExceptionNode);

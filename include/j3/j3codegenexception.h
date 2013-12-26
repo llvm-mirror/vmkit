@@ -18,6 +18,7 @@ namespace j3 {
 		uint32_t          handlerPC;
 		uint32_t          catchType;
 		llvm::BasicBlock* bb;
+		bool              isAdded;
 
 		void dump(uint32_t i);
 	};
@@ -29,6 +30,7 @@ namespace j3 {
 		J3ExceptionEntry** entries;
 		llvm::BasicBlock*  landingPad;
 		llvm::BasicBlock*  curCheck; /* last of the linked list of checker */
+		bool               isAdded;
 
 		void close(J3CodeGen* codeGen);
 		void addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry);
