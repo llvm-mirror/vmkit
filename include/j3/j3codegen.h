@@ -55,6 +55,7 @@ namespace j3 {
 
 	class J3CodeGen {
 		friend class J3CodeGenVar;
+		friend class ZJ3ExceptionTable;
 
 		vmkit::BumpAllocator*  allocator;
 		llvm::Module*          _module;

@@ -1432,6 +1432,120 @@ void J3CodeGen::closeExceptionNode(J3ExceptionNode* node) {
 	}
 }
 
+
+namespace j3 {
+class ZJ3ExceptionEntry {
+public:
+	uint32_t          startPC;
+	uint32_t          endPC;
+	uint32_t          handlerPC;
+	uint32_t          catchType;
+	llvm::BasicBlock* bb;
+
+	void dump(uint32_t i);
+};
+
+class ZJ3ExceptionNode {
+public:
+	uint32_t            pc;
+	uint32_t            nbEntries;
+	ZJ3ExceptionEntry** entries;
+};
+
+class ZJ3ExceptionTable {
+public:
+	J3CodeGen*         codeGen;
+	uint32_t           nbEntries;
+	ZJ3ExceptionEntry* entries;
+	ZJ3ExceptionNode*  _exceptionNodes;
+	ZJ3ExceptionNode** nodes;
+	uint32_t           nbNodes;
+
+	ZJ3ExceptionTable(J3CodeGen* _codeGen) { codeGen = _codeGen; }
+
+	ZJ3ExceptionNode** newNode(uint32_t pos, uint32_t pc);
+	
+	ZJ3ExceptionNode** findPos(uint32_t pc);
+	void               read(J3Reader* reader);
+
+	void               dump(bool verbose=0);
+};
+}
+
+void ZJ3ExceptionEntry::dump(uint32_t i) {
+	fprintf(stderr, "  entry[%d]: %d %d %d %d\n", i, startPC, endPC, handlerPC, catchType);
+}
+
+ZJ3ExceptionNode** ZJ3ExceptionTable::newNode(uint32_t pos, uint32_t pc) {
+	ZJ3ExceptionNode* res = &_exceptionNodes[nbNodes++];
+	res->pc = pc;
+	res->entries = (ZJ3ExceptionEntry**)codeGen->allocator->allocate(sizeof(J3ExceptionEntry*)*nbEntries);
+	nodes[pos] = res;
+	if(pos > 1 && nodes[pos-1]->nbEntries) {
+		res->nbEntries = nodes[pos-1]->nbEntries;
+		memcpy(res->entries, nodes[pos-1]->entries, sizeof(J3ExceptionEntry*)*res->nbEntries);
+	}
+	return nodes+pos;
+}
+
+ZJ3ExceptionNode** ZJ3ExceptionTable::findPos(uint32_t pc) {
+	for(uint32_t i=0; i<nbNodes; i++) {
+		if(nodes[i]->pc == pc)
+			return nodes+i;
+		if(pc < nodes[i]->pc) {
+			memmove(nodes+i+1, nodes+i, (nbNodes-i)*sizeof(ZJ3ExceptionNode*));
+			return newNode(i, pc);
+		}
+	}
+	return newNode(nbNodes, pc);
+}
+
+void ZJ3ExceptionTable::read(J3Reader* reader) {
+	nbEntries = reader->readU2();
+	entries = (ZJ3ExceptionEntry*)codeGen->allocator->allocate(sizeof(ZJ3ExceptionEntry)*nbEntries);
+	_exceptionNodes = (ZJ3ExceptionNode*)codeGen->allocator->allocate(sizeof(J3ExceptionNode)*(nbEntries*2 + 2));
+	nodes = (ZJ3ExceptionNode**)codeGen->allocator->allocate(sizeof(J3ExceptionNode*)*(nbEntries*2 + 2));
+	nbNodes = 0;
+
+	newNode(0, 0);
+	for(uint32_t i=0; i<nbEntries; i++) {
+		entries[i].startPC = reader->readU2();
+		entries[i].endPC = reader->readU2();
+		entries[i].handlerPC = reader->readU2();
+		entries[i].catchType = reader->readU2();
+		entries[i].bb = codeGen->forwardBranch("exception-handler", entries[i].handlerPC, 0, 1);
+		codeGen->opInfos[entries[i].handlerPC].topStack = -1;
+
+		ZJ3ExceptionNode** cur = findPos(entries[i].startPC);
+		ZJ3ExceptionNode** end = findPos(entries[i].endPC);
+
+		for(; cur<end; cur++)
+			(*cur)->entries[(*cur)->nbEntries++] = entries+i;
+	}
+
+	dump(1);
+}
+
+void ZJ3ExceptionTable::dump(bool verbose) {
+	if(nbEntries) {
+		fprintf(stderr, "ExceptionTable of %ls::%ls%ls:\n", 
+						codeGen->method->cl()->name()->cStr(), 
+						codeGen->method->name()->cStr(),
+						codeGen->method->sign()->cStr());
+
+		if(verbose) {
+			for(uint32_t i=0; i<nbEntries; i++)
+				entries[i].dump(i);
+		}
+
+		for(uint32_t i=0; i<nbNodes; i++) {
+			fprintf(stderr, "  at pc %d:\n", nodes[i]->pc);
+			for(uint32_t j=0; j<nodes[i]->nbEntries; j++)
+				fprintf(stderr, "    catch %d at %d\n", nodes[i]->entries[j]->catchType, nodes[i]->entries[j]->handlerPC);
+		}
+	}
+}
+
 void J3CodeGen::generateJava() {
 	J3Attribute* attr = method->attributes()->lookup(vm->codeAttr);
 
@@ -1515,6 +1629,14 @@ void J3CodeGen::generateJava() {
 	}
 
 	reader.seek(codeLength, reader.SeekCur);
+
+	uint32_t orig = reader.tell();
+
+	ZJ3ExceptionTable table(this);
+	table.read(&reader);
+	
+	reader.seek(orig, J3Reader::SeekSet);
+
 	nbExceptionEntries = reader.readU2();
 	exceptionEntries = (J3ExceptionEntry*)allocator->allocate(sizeof(J3ExceptionEntry) * nbExceptionEntries);
 	exceptionNodes  = (J3ExceptionNode**)allocator->allocate(sizeof(J3ExceptionNode*) * (nbExceptionEntries * 2 + 2));
@@ -1557,7 +1679,7 @@ void J3CodeGen::generateJava() {
 
 		found = 0; create = 1;
 		for(; cur<nbExceptionNodes && !found; cur++) {
-			//printf("%u %u %u %u\n", cur, exceptionNodes[cur].pc, exceptionEntries[i].startPC,  exceptionEntries[i].endPC);
+			//printf("%u %u %u %u\n", cur, exceptionNodes[cur]->pc, exceptionEntries[i].startPC,  exceptionEntries[i].endPC);
 			if(exceptionEntries[i].endPC == exceptionNodes[cur]->pc) {
 				create = 0;
 				found = 1;
