@@ -3,6 +3,7 @@
 
 #include "llvm/IR/IRBuilder.h"
 #include "j3/j3codegenvar.h"
+#include "j3/j3codegenexception.h"
 
 namespace llvm {
 	class Function;
@@ -25,26 +26,6 @@ namespace j3 {
 	class J3Reader;
 	class J3ObjectType;
 
-	class J3ExceptionEntry {
-	public:
-		uint32_t          startPC;
-		uint32_t          endPC;
-		uint32_t          handlerPC;
-		uint32_t          catchType;
-		llvm::BasicBlock* bb;
-
-		void dump();
-	};
-
-	class J3ExceptionNode {
-	public:
-		uint32_t           pc;
-		uint32_t           nbEntries;
-		llvm::BasicBlock*  landingPad;
-		llvm::BasicBlock*  curCheck;
-		J3ExceptionEntry*  entries[1];
-	};
-
 	class J3OpInfo {
 	public:
 		llvm::Instruction* insn;
@@ -55,7 +36,8 @@ namespace j3 {
 
 	class J3CodeGen {
 		friend class J3CodeGenVar;
-		friend class ZJ3ExceptionTable;
+		friend class J3ExceptionTable;
+		friend class J3ExceptionNode;
 
 		vmkit::BumpAllocator*  allocator;
 		llvm::Module*          _module;
@@ -74,10 +56,7 @@ namespace j3 {
 		llvm::BasicBlock*      bbNullCheckFailed;
 		llvm::BasicBlock*      bbRet;
 
-		J3ExceptionEntry*      exceptionEntries;
-		J3ExceptionNode**      exceptionNodes;
-		uint32_t               nbExceptionEntries;
-		uint32_t               nbExceptionNodes;
+		J3ExceptionTable       exceptions;
 		uint32_t               curExceptionNode;
 
 		J3OpInfo*              opInfos;
