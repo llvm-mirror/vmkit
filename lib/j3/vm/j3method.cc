@@ -115,7 +115,7 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 	if(cl()->loader()->vm()->options()->debugLinking)
 		fprintf(stderr, "virtual linking %ls::%ls\n", cl()->name()->cStr(), name()->cStr());
 	vmkit::Names* n = cl()->loader()->vm()->names();
-	return cl()->findVirtualMethod(name(), sign());
+	return obj->vt()->type()->asObjectType()->findVirtualMethod(name(), sign());
 }
 
 
@@ -157,7 +157,7 @@ J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Valu
 		target = this;
 	else {
 		/* can not use trampoline here */
-		J3ObjectHandle* self = (J3ObjectHandle*)args[0].PointerVal;
+		J3ObjectHandle* self = handle ? handle : inArgs[0].valObject;
 		target = resolve(self);
 	}
 
