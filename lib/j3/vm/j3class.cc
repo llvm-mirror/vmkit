@@ -127,6 +127,12 @@ J3Layout* J3Type::asLayout() {
 	return (J3Layout*)this;
 }
 
+J3StaticLayout* J3Type::asStaticLayout() {
+	if(!isStaticLayout())
+		J3::internalError(L"should not happen");
+	return (J3StaticLayout*)this;
+}
+
 J3Primitive* J3Type::asPrimitive() {
 	if(!isPrimitive())
 		J3::internalError(L"should not happen");
@@ -168,8 +174,7 @@ J3ObjectHandle* J3ObjectType::javaClass() {
 		lock();
 		if(!_javaClass) {
 			J3ObjectHandle* prev = J3Thread::get()->tell();
-			_javaClass = J3ObjectHandle::doNewObject(loader()->vm()->classClass);
-			_javaClass = loader()->globalReferences()->add(_javaClass);
+			_javaClass = loader()->globalReferences()->add(J3ObjectHandle::doNewObject(loader()->vm()->classClass));
 			J3Thread::get()->restore(prev);
 			_javaClass->setLong(loader()->vm()->classVMData, (int64_t)(uintptr_t)this);
 			loader()->vm()->classInit->invokeSpecial(_javaClass);
@@ -244,6 +249,10 @@ void J3ObjectType::dumpInterfaceSlotDescriptors() {
 /*  
  *  ------------ J3Layout ------------
  */
+J3StaticLayout::J3StaticLayout(J3ClassLoader* loader, J3Class* cl, const vmkit::Name* name) : J3Layout(loader, name) {
+	_cl = cl;
+}
+
 J3Layout::J3Layout(J3ClassLoader* loader, const vmkit::Name* name) : J3ObjectType(loader, name) {
 }
 
@@ -264,8 +273,8 @@ J3Field* J3Layout::findField(const vmkit::Name* name, const J3Type* type) {
 	for(size_t i=0; i<nbFields; i++) {
 		J3Field* cur = fields + i;
 
-		//printf("%ls - %ls\n", cur->name()->cStr(), cur->sign()->cStr());
-		//printf("%ls - %ls\n", name->cStr(), sign->cStr());
+		//printf("Compare %ls - %ls\n", cur->name()->cStr(), cur->type()->name()->cStr());
+		//printf("  with  %ls - %ls\n", name->cStr(), type->name()->cStr());
 		if(cur->name() == name && cur->type() == type) {
 			return cur;
 		}
@@ -276,7 +285,7 @@ J3Field* J3Layout::findField(const vmkit::Name* name, const J3Type* type) {
 /*  
  *  ------------ J3Class ------------
  */
-J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name) : J3Layout(loader, name), staticLayout(loader, name) {
+J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name) : J3Layout(loader, name), staticLayout(loader, this, name) {
 	status = CITED;
 }
 
@@ -570,23 +579,24 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 		J3Field* f = fields + i;
 
 		if(i < nbHiddenFields) {
-			f->_cl         = this;
 			f->_access     = hiddenFields[i].access();
 			f->_name       = hiddenFields[i].name();
 			f->_type       = hiddenFields[i].type();
 			f->_attributes = new (loader()->allocator(), 0) J3Attributes(0);
 		} else {
-			f->_cl         = this;
 			f->_access     = reader.readU2();
 			f->_name       = nameAt(reader.readU2());
 			f->_type       = loader()->getType(this, nameAt(reader.readU2()));
 			f->_attributes = readAttributes(&reader);
 		}
 
-		if(J3Cst::isStatic(f->access()))
+		if(J3Cst::isStatic(f->access())) {
+			f->_layout = &staticLayout;
 			nbStaticFields++;
-		else
+		} else {
+			f->_layout = this;
 			nbVirtualFields++;
+		}
 
 		switch(loader()->vm()->dataLayout()->getTypeSizeInBits(f->_type->llvmType())) {
 			case 1:  pFields0[i0++] = f; break;
@@ -646,7 +656,11 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 	_methods = (J3Method**)loader()->allocator()->allocate(sizeof(J3Method*)*nbVirtualMethods);
 
 	for(int i=0; i<n; i++) {
-		J3Layout* layout = J3Cst::isStatic(methodsTmp[i]->access()) ? &staticLayout : this;
+		J3Layout* layout;
+		if(J3Cst::isStatic(methodsTmp[i]->access()))
+			layout = &staticLayout;
+		else
+			layout = this;
 		layout->_methods[layout->_nbMethods++] = methodsTmp[i];
 	}
 
@@ -872,7 +886,7 @@ llvm::Type* J3Class::llvmType() {
 }
 
 void J3Field::dump() {
-	printf("Field: %ls %ls::%ls (%d)\n", type()->name()->cStr(), cl()->name()->cStr(), name()->cStr(), access());
+	printf("Field: %ls %ls::%ls (%d)\n", type()->name()->cStr(), layout()->name()->cStr(), name()->cStr(), access());
 }
 
 

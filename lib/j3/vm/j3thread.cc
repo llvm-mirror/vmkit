@@ -1,5 +1,6 @@
 #include "j3/j3thread.h"
 #include "j3/j3method.h"
+#include "j3/j3class.h"
 #include "j3/j3.h"
 
 #include "vmkit/safepoint.h"
@@ -41,6 +42,10 @@ J3ObjectHandle* J3Thread::pendingException() {
 
 void J3Thread::ensureCapacity(uint32_t capacity) {
 	_localReferences.ensureCapacity(capacity);
+}
+
+J3Thread* J3Thread::nativeThread(J3ObjectHandle* handle) {
+	return (J3Thread*)handle->getLong(get()->vm()->threadVMData);
 }
 
 void J3Thread::assocJavaThread(J3ObjectHandle* javaThread) {

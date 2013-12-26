@@ -31,6 +31,7 @@ namespace j3 {
 
 		void               assocJavaThread(J3ObjectHandle* javaThread);
 		J3ObjectHandle*    javaThread() { return _javaThread; }
+		static J3Thread*   nativeThread(J3ObjectHandle* handle);
 
 		J3Method*          getJavaCaller(uint32_t level=0);
 

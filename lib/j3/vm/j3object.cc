@@ -344,7 +344,7 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 	void J3ObjectHandle::set##name(J3Field* field, ctype value) {					\
 		const llvm::StructLayout* layout =																	\
 			obj()->vt()->type()->loader()->vm()->dataLayout()->								\
-			getStructLayout((llvm::StructType*)(obj()->vt()->type()->llvmType()->getContainedType(0))); \
+			getStructLayout((llvm::StructType*)(field->layout()->llvmType()->getContainedType(0))); \
 		uint32_t offset = layout->getElementOffset(field->num());						\
 		rawSet##name(offset, value);																				\
 	}																																			\
@@ -352,7 +352,7 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 	ctype J3ObjectHandle::get##name(J3Field* field) {											\
 		const llvm::StructLayout* layout =																	\
 			obj()->vt()->type()->loader()->vm()->dataLayout()->								\
-			getStructLayout((llvm::StructType*)(obj()->vt()->type()->llvmType()->getContainedType(0))); \
+			getStructLayout((llvm::StructType*)(field->layout()->llvmType()->getContainedType(0))); \
 		uint32_t offset = layout->getElementOffset(field->num());						\
 		return rawGet##name(offset);																				\
 	}																																			\
@@ -403,7 +403,7 @@ J3ObjectHandle* J3ObjectHandle::rawGetObject(uint32_t offset) {
 void J3ObjectHandle::setObject(J3Field* field, J3ObjectHandle* value) {
 	const llvm::StructLayout* layout =
 		obj()->vt()->type()->loader()->vm()->dataLayout()->
-		getStructLayout((llvm::StructType*)(obj()->vt()->type()->llvmType()->getContainedType(0)));
+		getStructLayout((llvm::StructType*)(field->layout()->llvmType()->getContainedType(0)));
 	uint32_t offset = layout->getElementOffset(field->num());
 	rawSetObject(offset, value);
 }
@@ -411,7 +411,7 @@ void J3ObjectHandle::setObject(J3Field* field, J3ObjectHandle* value) {
 J3ObjectHandle* J3ObjectHandle::getObject(J3Field* field) {
 	const llvm::StructLayout* layout =
 		obj()->vt()->type()->loader()->vm()->dataLayout()->
-		getStructLayout((llvm::StructType*)(obj()->vt()->type()->llvmType()->getContainedType(0)));
+		getStructLayout((llvm::StructType*)(field->layout()->llvmType()->getContainedType(0)));
 	return rawGetObject(layout->getElementOffset(field->num()));
 }
 

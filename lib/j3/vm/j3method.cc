@@ -161,6 +161,7 @@ J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Valu
 		target = resolve(self);
 	}
 
+	//fprintf(stderr, "invoke: %ls::%ls%ls\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
 	target->fnPtr(); /* ensure that the function is compiled */
 	cl()->loader()->oldee()->updateGlobalMapping(target->_llvmFunction, target->fnPtr());
 	llvm::GenericValue res = cl()->loader()->oldee()->runFunction(target->_llvmFunction, args);

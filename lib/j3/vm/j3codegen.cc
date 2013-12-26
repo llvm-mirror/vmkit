@@ -43,6 +43,9 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	loader = cl->loader();
 	vm = loader->vm();
 
+	if(vm->options()->debugTranslate)
+		fprintf(stderr, "  translating bytecode of: %ls::%ls%ls\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
+
 	llvmFunction = _llvmFunction;
 	llvmFunction->setGC("vmkit");
 	_module = llvmFunction->getParent();
@@ -324,12 +327,12 @@ void J3CodeGen::get(llvm::Value* src, J3Field* f) {
 void J3CodeGen::getField(uint32_t idx) {
 	llvm::Value* obj = stack.pop(); 
 	J3Field* f = cl->fieldAt(idx, 0);
-	get(unflatten(nullCheck(obj), f->cl()), f);
+	get(unflatten(nullCheck(obj), f->layout()), f);
 }
 
 void J3CodeGen::getStatic(uint32_t idx) {
 	J3Field* f = cl->fieldAt(idx, J3Cst::ACC_STATIC);
-	get(staticInstance(f->cl()), f);
+	get(staticInstance(f->layout()->asStaticLayout()->cl()), f);
 }
 
 void J3CodeGen::put(llvm::Value* dest, llvm::Value* val, J3Field* f) {
@@ -339,14 +342,14 @@ void J3CodeGen::put(llvm::Value* dest, llvm::Value* val, J3Field* f) {
 
 void J3CodeGen::putStatic(uint32_t idx) {
 	J3Field* f = cl->fieldAt(idx, J3Cst::ACC_STATIC);
-	put(staticInstance(f->cl()), stack.pop(), f);
+	put(staticInstance(f->layout()->asStaticLayout()->cl()), stack.pop(), f);
 }
 
 void J3CodeGen::putField(uint32_t idx) {
 	J3Field* f = cl->fieldAt(idx, 0);
 	llvm::Value* val = stack.pop();
 	llvm::Value* obj = nullCheck(stack.pop());
-	put(unflatten(obj, f->cl()), val, f);
+	put(unflatten(obj, f->layout()), val, f);
 }
 
 void J3CodeGen::arrayBoundCheck(llvm::Value* obj, llvm::Value* idx) {
@@ -670,17 +673,13 @@ void J3CodeGen::echoDebugExecute(uint32_t level, const char* msg, ...) {
 }
 
 void J3CodeGen::translate() {
-	if(vm->options()->debugTranslate) {
-		fprintf(stderr, "  translating bytecode of: %ls::%ls%ls\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
-
-		if(vm->options()->debugTranslate > 1) {
-			fprintf(stderr, "    exception table:\n");
-			for(uint32_t i=0; i<nbExceptionNodes; i++) {
-				fprintf(stderr, "    [%4u] handle", exceptionNodes[i]->pc);
-				for(uint32_t j=0; j<exceptionNodes[i]->nbEntries; j++)
-					fprintf(stderr, " %u", exceptionNodes[i]->entries[j]->catchType);
-				fprintf(stderr, exceptionNodes[i]->nbEntries ? "\n" : " <none>\n");
-			}
+	if(vm->options()->debugTranslate > 1) {
+		fprintf(stderr, "    exception table:\n");
+		for(uint32_t i=0; i<nbExceptionNodes; i++) {
+			fprintf(stderr, "    [%4u] handle", exceptionNodes[i]->pc);
+			for(uint32_t j=0; j<exceptionNodes[i]->nbEntries; j++)
+				fprintf(stderr, " %u", exceptionNodes[i]->entries[j]->catchType);
+			fprintf(stderr, exceptionNodes[i]->nbEntries ? "\n" : " <none>\n");
 		}
 	}
 

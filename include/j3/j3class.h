@@ -26,6 +26,7 @@ namespace j3 {
 	class J3Primitive;
 	class J3Class;
 	class J3Layout;
+	class J3StaticLayout;
 	class J3ArrayClass;
 	class J3ObjectType;
 	class J3Method;
@@ -88,9 +89,11 @@ namespace j3 {
 		J3Primitive*                asPrimitive();
 		J3ArrayClass*               asArrayClass();
 		J3Layout*                   asLayout();
+		J3StaticLayout*             asStaticLayout();
 
 		virtual bool                isObjectType() { return 0; }
 		virtual bool                isArrayClass() { return 0; }
+		virtual bool                isStaticLayout() { return 0; }
 		virtual bool                isLayout() { return 0; }
 		virtual bool                isClass() { return 0; }
 		virtual bool                isPrimitive() { return 0; }
@@ -129,7 +132,7 @@ namespace j3 {
 	class J3Field : public vmkit::PermanentObject {
 		friend class J3Class;
 
-		J3Class*           _cl;
+		J3Layout*          _layout;
 		uint16_t           _access;
 		const vmkit::Name* _name;
 		J3Type*            _type;
@@ -142,7 +145,7 @@ namespace j3 {
 
 		J3Attributes*      attributes() const { return _attributes; }
 		uint16_t           access() { return _access; }
-		J3Class*           cl()  { return _cl; }
+		J3Layout*          layout()  { return _layout; }
 		const vmkit::Name* name() { return _name; }
 		J3Type*            type() { return _type; }
 
@@ -202,8 +205,18 @@ namespace j3 {
 		llvm::Type*       llvmType() { return _llvmType; }
 	};
 
+	class J3StaticLayout : public J3Layout {
+		J3Class* _cl;
+	public:
+		J3StaticLayout(J3ClassLoader* loader, J3Class* cl, const vmkit::Name* name);
+
+		J3Class* cl() { return _cl; }
+
+		virtual bool      isStaticLayout() { return 1; }
+	};
+
 	class J3Class : public J3Layout {
-		J3Layout           staticLayout;
+		J3StaticLayout     staticLayout;
 
 		uint16_t           _access;
 
