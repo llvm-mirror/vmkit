@@ -123,32 +123,34 @@ J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Valu
 	std::vector<llvm::GenericValue> args(methodType()->nbIns());
 	J3* vm = cl()->loader()->vm();
 	J3Type* cur;
-	uint32_t i = 0;
+	uint32_t i = 0, d = 0;
 
-	if(handle)
+	if(handle) {
 		args[i++].PointerVal = handle->obj();
+		d = 1;
+	}
 
 	for(; i<methodType()->nbIns(); i++) {  /* have to avoid collection at this point */
 		cur = methodType()->ins(i);
 		
 		if(cur == vm->typeBoolean)
-			args[i].IntVal = inArgs[i].valBoolean;
+			args[i].IntVal = inArgs[i-d].valBoolean;
 		else if(cur == vm->typeByte)
-			args[i].IntVal = inArgs[i].valByte;
+			args[i].IntVal = inArgs[i-d].valByte;
 		else if(cur == vm->typeShort)
-			args[i].IntVal = inArgs[i].valShort;
+			args[i].IntVal = inArgs[i-d].valShort;
 		else if(cur == vm->typeChar)
-			args[i].IntVal = inArgs[i].valChar;
+			args[i].IntVal = inArgs[i-d].valChar;
 		else if(cur == vm->typeInteger)
-			args[i].IntVal = inArgs[i].valInteger;
+			args[i].IntVal = inArgs[i-d].valInteger;
 		else if(cur == vm->typeLong)
-			args[i].IntVal = inArgs[i].valLong;
+			args[i].IntVal = inArgs[i-d].valLong;
 		else if(cur == vm->typeFloat)
-			args[i].FloatVal = inArgs[i].valFloat;
+			args[i].FloatVal = inArgs[i-d].valFloat;
 		else if(cur == vm->typeDouble)
-			args[i].FloatVal = inArgs[i].valDouble;
+			args[i].FloatVal = inArgs[i-d].valDouble;
 		else
-			args[i].PointerVal = inArgs[i].valObject->obj();
+			args[i].PointerVal = inArgs[i-d].valObject->obj();
 	}
 
 	J3Method* target;
@@ -156,7 +158,6 @@ J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Valu
 	if(statically)
 		target = this;
 	else {
-		/* can not use trampoline here */
 		J3ObjectHandle* self = handle ? handle : inArgs[0].valObject;
 		target = resolve(self);
 	}
@@ -195,35 +196,35 @@ J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, va_lis
 	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*methodType()->nbIns());
 	J3* vm = cl()->loader()->vm();
 	J3Type* cur;
-	uint32_t i = 0;
+	uint32_t i = 0, d = 0;
 
 	if(handle)
-		args[i++].valObject = handle;
+		i = d = 1;
 
-	for(; i<methodType()->nbIns(); i++) {  /* have to avoid collection at this point */
+	for(; i<methodType()->nbIns(); i++) {
 		cur = methodType()->ins(i);
 
 		if(cur == vm->typeBoolean)
-			args[i].valBoolean = va_arg(va, bool);
+			args[i-d].valBoolean = va_arg(va, bool);
 		else if(cur == vm->typeByte)
-			args[i].valByte = va_arg(va, int8_t);
+			args[i-d].valByte = va_arg(va, int8_t);
 		else if(cur == vm->typeShort)
-			args[i].valShort = va_arg(va, int16_t);
+			args[i-d].valShort = va_arg(va, int16_t);
 		else if(cur == vm->typeChar)
-			args[i].valChar = va_arg(va, uint16_t);
+			args[i-d].valChar = va_arg(va, uint16_t);
 		else if(cur == vm->typeInteger)
-			args[i].valInteger = va_arg(va, int32_t);
+			args[i-d].valInteger = va_arg(va, int32_t);
 		else if(cur == vm->typeLong)
-			args[i].valLong = va_arg(va, int64_t);
+			args[i-d].valLong = va_arg(va, int64_t);
 		else if(cur == vm->typeFloat)
-			args[i].valFloat = va_arg(va, float);
+			args[i-d].valFloat = va_arg(va, float);
 		else if(cur == vm->typeDouble)
-			args[i].valDouble = va_arg(va, double);
+			args[i-d].valDouble = va_arg(va, double);
 		else
-			args[i].valObject = va_arg(va, J3ObjectHandle*);
+			args[i-d].valObject = va_arg(va, J3ObjectHandle*);
 	}
 
-	return internalInvoke(statically, 0, args);
+	return internalInvoke(statically, handle, args);
 }
 
 J3Value J3Method::invokeStatic(J3Value* args) {
