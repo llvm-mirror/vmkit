@@ -1,5 +1,6 @@
 #include "vmkit/thread.h"
 #include "vmkit/system.h"
+#include "vmkit/vmkit.h"
 
 using namespace vmkit;
 
@@ -8,7 +9,6 @@ __thread Thread* Thread::_thread = 0;
 Thread::Thread(VMKit* vm, BumpAllocator* allocator) { 
 	_allocator = allocator;
 	_vm = vm; 
-	_baseFramePointer = 0;
 }
 
 void Thread::destroy(Thread* thread) {
@@ -29,19 +29,27 @@ void Thread::start(entryPoint_t entryPoint, Thread* thread) {
 }
 
 StackWalker::StackWalker(uint32_t initialPop) {
-	framePointer = System::current_fp();
+	unw_getcontext(&uc);
+  unw_init_local(&cursor, &uc);
 	next(initialPop+1);
 }
 
 bool StackWalker::next(uint32_t nbPop) {
 	while(nbPop--) {
-		if(framePointer == Thread::get()->baseFramePointer())
+		if(unw_step(&cursor) <= 0)
 			return 0;
-		framePointer = (void**)System::fp_to_next_fp(framePointer);
 	}
-	return framePointer != Thread::get()->baseFramePointer();
+	return 1;
 }
 	
 void* StackWalker::ip() {
-	return System::fp_to_ip(framePointer);
+	unw_word_t ip;
+	unw_get_reg(&cursor, UNW_REG_IP, &ip);
+	return (void*)ip;
+}
+
+void* StackWalker::sp() {
+	unw_word_t sp;
+	unw_get_reg(&cursor, UNW_REG_SP, &sp);
+	return (void*)sp;
 }

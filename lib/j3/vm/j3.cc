@@ -66,8 +66,6 @@ void J3::start(int argc, char** argv) {
 
 	J3Thread* thread = J3Thread::create(this);
 
-	thread->setBaseFramePointer(vmkit::System::current_fp()); 
-
 	vmkitBootstrap(thread, options()->selfBitCodePath);
 
 	introspect();

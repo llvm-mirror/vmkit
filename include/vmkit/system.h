@@ -33,18 +33,6 @@ namespace vmkit {
 #error "what is the correct symbol for your os?"
 #endif
 		}
-
-		static void** current_fp() __attribute__((always_inline)) {
-			return (void**)__builtin_frame_address(0);
-		}
-
-		static void** fp_to_next_fp(void** fp) {
-			return (void**)fp[0];
-		}
-
-		static void* fp_to_ip(void**fp) {
-			return fp[1];
-		}
 	};
 }
 

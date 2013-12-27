@@ -34,8 +34,7 @@ endif
 #   Compilation flags
 ###############################################################################
 COMMON_FLAGS:=-Wall -Wno-return-type-c-linkage -Wno-varargs -Wno-unused-private-field -Werror -Wno-unused-variable \
-		-I$(PROJ_SRC_ROOT)/include -I$(OPENJDK_HOME)/include -I$(OPENJDK_HOME)/include/$(OS) $(COMMON_FLAGS) \
-		-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer
+		-I$(PROJ_SRC_ROOT)/include -I$(OPENJDK_HOME)/include -I$(OPENJDK_HOME)/include/$(OS) $(COMMON_FLAGS)
 
 ifeq ($(OPTIMIZED),1)
 	COMMON_FLAGS+=-O3
@@ -49,8 +48,11 @@ ifneq ($(DEBUG),0)
 	COMMON_FLAGS+=-g
 endif
 
-LLCFLAGS+=-disable-cfi -disable-fp-elim -relocation-model=pic 
-OPTFLAGS+=-disable-cfi -disable-fp-elim -disable-opt
+#LLCFLAGS+=-disable-cfi -disable-fp-elim -relocation-model=pic 
+#OPTFLAGS+=-disable-cfi -disable-fp-elim -disable-opt
+
+LLCFLAGS+=-relocation-model=pic 
+OPTFLAGS+=-disable-opt
 
 CXXFLAGS=$(LLVM_CXXFLAGS) $(COMMON_FLAGS) -std=gnu++98 -fPIC
 SHFLAGS=-lpthread -ldl -lz -lncurses -fno-common -Wl,-flat_namespace -Wl,-undefined,suppress
