@@ -4,8 +4,6 @@
 
 using namespace vmkit;
 
-__thread Thread* Thread::_thread = 0;
-
 Thread::Thread(VMKit* vm) { 
 	_vm = vm; 
 }
@@ -18,15 +16,25 @@ void Thread::operator delete(void* p) {
 	ThreadAllocator::allocator()->release(p);
 }
 
+Thread* Thread::get() {
+	return (Thread*)((uintptr_t)__builtin_frame_address(0) & ThreadAllocator::allocator()->magic());
+}
+
 void* Thread::doRun(void* _thread) {
 	Thread* thread = (Thread*)_thread;
-	set(thread);
 	thread->run();
 	return 0;
 }
 
 void Thread::start() {
-	pthread_create(&_tid, 0, doRun, this);
+	pthread_attr_t attr;
+
+	pthread_attr_init(&attr);
+	pthread_attr_setstack(&attr, ThreadAllocator::allocator()->stackAddr(this), ThreadAllocator::allocator()->stackSize(this));
+
+	pthread_create(&_tid, &attr, doRun, this);
+
+	pthread_attr_destroy(&attr);
 }
 
 void Thread::join() {

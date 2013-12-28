@@ -26,10 +26,7 @@ namespace vmkit {
 
 		VMKit* vm() { return _vm; }
 
-		static __thread Thread* _thread;
-
-		static Thread* get()          { return _thread; }
-		static void set(Thread* thread) { _thread = thread; }
+		static Thread* get();
 
 		void start();
 		void join();

@@ -46,7 +46,6 @@ void* BumpAllocator::allocate(size_t size) {
 		pthread_mutex_lock(&mutex);
 		size_t total = round((uintptr_t)size + sizeof(BumpAllocatorNode), 4096);
 		BumpAllocatorNode* newBucket = (BumpAllocatorNode*)map(total);
-		//memset(newBucket, 0, total);
 		newBucket->next = current->next;
 		current->next = newBucket;
 		newBucket->top  = (uint8_t*)((uintptr_t)newBucket + bucketSize);
@@ -59,11 +58,8 @@ void* BumpAllocator::allocate(size_t size) {
 		uint8_t* res = __sync_fetch_and_add(&node->top, (uint8_t*)round(size, 8));
 		uint8_t* end = res + size;
 
-		if(res >= (uint8_t*)node && (res + size) < ((uint8_t*)node) + bucketSize) {
-			//printf("%p -> %lu %lu (%p -> %p)\n", res, size, round((uintptr_t)size, 64), node, ((uint8_t*)node) + bucketSize);
-			//memset(res, 0, size);
+		if(res >= (uint8_t*)node && (res + size) < ((uint8_t*)node) + bucketSize)
 			return res;
-		}
 
 		pthread_mutex_lock(&mutex);
 		BumpAllocatorNode* newBucket = (BumpAllocatorNode*)map(bucketSize);
@@ -78,7 +74,6 @@ void* BumpAllocator::map(size_t n) {
 	void* res = mmap(0, n, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, 0, 0);
 	if(res == MAP_FAILED)
 		Thread::get()->vm()->internalError(L"unable to map %ld bytes", n);
-	//memset(res, 0, n);
 	return res;
 }
 
@@ -129,7 +124,7 @@ void* ThreadAllocator::allocate() {
 
 		spaces.push_back(space);
 
-		uintptr_t base = (((uintptr_t)space - 1) & -PAGE_SIZE) + PAGE_SIZE;
+		uintptr_t base = (((uintptr_t)space - 1) & -topStack) + topStack;
 		uint32_t n = (base == (uintptr_t)space) ? refill : (refill - 1);
 
 		for(uint32_t i=0; i<n; i++) {
@@ -156,5 +151,5 @@ void* ThreadAllocator::stackAddr(void* thread) {
 }
 
 size_t ThreadAllocator::stackSize(void* thread) {
-	return topStack;
+	return topStack - baseStack;
 }

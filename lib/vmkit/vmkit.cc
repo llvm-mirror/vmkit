@@ -100,8 +100,6 @@ void VMKit::addSymbol(llvm::GlobalValue* gv) {
 }
 
 void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
-	Thread::set(initialThread);
-
 	std::string err;
 	llvm::OwningPtr<llvm::MemoryBuffer> buf;
 	if (llvm::MemoryBuffer::getFile(selfBitCodePath, buf))
