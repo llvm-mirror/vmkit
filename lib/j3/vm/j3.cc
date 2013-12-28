@@ -66,9 +66,7 @@ void J3::start(int argc, char** argv) {
 
 	vmkit::ThreadAllocator::initialize(sizeof(J3Thread), options()->stackSize);
 
-	vmkit::BumpAllocator* threadAllocator = vmkit::BumpAllocator::create();
-	J3Thread* thread = new(threadAllocator) J3ThreadBootstrap(this, threadAllocator);
-
+	J3Thread* thread = new J3ThreadBootstrap(this);
 
 	vmkitBootstrap(thread, options()->selfBitCodePath);	
 }

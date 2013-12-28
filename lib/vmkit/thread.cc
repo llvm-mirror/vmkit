@@ -10,12 +10,12 @@ Thread::Thread(VMKit* vm) {
 	_vm = vm; 
 }
 
-void* Thread::operator new(size_t n, BumpAllocator* allocator) {
+void* Thread::operator new(size_t n) {
 	return ThreadAllocator::allocator()->allocate();
 }
 
 void Thread::operator delete(void* p) {
-	VMKit::internalError(L"not yet implemented");
+	ThreadAllocator::allocator()->release(p);
 }
 
 void* Thread::doRun(void* _thread) {

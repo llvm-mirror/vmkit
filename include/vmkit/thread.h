@@ -19,7 +19,7 @@ namespace vmkit {
 		Thread(VMKit* vm);
 		virtual ~Thread() {}
 
-		void* operator new(size_t n, BumpAllocator* allocator);
+		void* operator new(size_t n);
 		void operator delete(void* p);
 
 		virtual void run() {}
