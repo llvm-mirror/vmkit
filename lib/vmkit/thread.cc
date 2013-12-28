@@ -18,14 +18,13 @@ void Thread::destroy(Thread* thread) {
 void* Thread::doRun(void* _thread) {
 	Thread* thread = (Thread*)_thread;
 	set(thread);
-	thread->_entryPoint();
+	thread->run();
 	return 0;
 }
 
-void Thread::start(entryPoint_t entryPoint, Thread* thread) {
-	thread->_entryPoint = entryPoint;
+void Thread::start() {
 	pthread_t tid;
-	pthread_create(&tid, 0, doRun, thread);
+	pthread_create(&tid, 0, doRun, this);
 }
 
 StackWalker::StackWalker(uint32_t initialPop) {

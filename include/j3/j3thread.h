@@ -19,12 +19,13 @@ namespace j3 {
 
 	private:
 		uint32_t                   _interfaceMethodIndex;
-		vmkit::BumpAllocator*      allocator;
+		vmkit::BumpAllocator*      _allocator;
 		JNIEnv                     _jniEnv;
 		J3LocalReferences          _localReferences;
 		J3ObjectHandle*            _pendingException;
 		J3ObjectHandle*            _javaThread;
 
+		virtual void run();
 		static void doRun();
 
 		J3Thread(J3* vm, vmkit::BumpAllocator* allocator);

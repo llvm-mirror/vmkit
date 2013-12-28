@@ -10,7 +10,8 @@ using namespace j3;
 
 J3Thread::J3Thread(J3* vm, vmkit::BumpAllocator* allocator) : 
 	Thread(vm, allocator),
-	_localReferences(allocator) {
+	_allocator(allocator),
+	_localReferences(_allocator) {
 	_jniEnv.functions = &jniEnvTable;
 }
 
@@ -24,10 +25,15 @@ void J3Thread::doRun() {
 	get()->vm()->threadRun->invokeVirtual(handle);
 }
 
+void J3Thread::run() {
+	J3ObjectHandle* handle = javaThread();
+	vm()->threadRun->invokeVirtual(handle);
+}
+
 void J3Thread::start(J3ObjectHandle* handle) {
 	J3Thread* thread = create(J3Thread::get()->vm());
 	thread->assocJavaThread(handle);
-	Thread::start(doRun, thread);
+	thread->Thread::start();
 	while(1);
 }
 

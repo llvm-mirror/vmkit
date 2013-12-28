@@ -10,11 +10,8 @@ namespace vmkit {
 	class VMKit;
 
 	class Thread : protected PermanentObject {
-		typedef void (*entryPoint_t)();
-
 		BumpAllocator*       _allocator;
 		VMKit*               _vm;
-		entryPoint_t         _entryPoint;
 
 		static void* doRun(void* thread);
 
@@ -24,6 +21,8 @@ namespace vmkit {
 	public:
 		static void destroy(Thread* thread);
 
+		virtual void run() {}
+
 		VMKit* vm() { return _vm; }
 		BumpAllocator* allocator() { return _allocator; }
 
@@ -32,7 +31,7 @@ namespace vmkit {
 		static Thread* get()          { return _thread; }
 		static void set(Thread* thread) { _thread = thread; }
 
-		static void start(entryPoint_t entryPoint, Thread* thread);
+		void start();
 	};
 
 	class StackWalker {
