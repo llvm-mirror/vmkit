@@ -49,8 +49,8 @@ int main(int argc, char** argv) {
 	for(llvm::Module::iterator cur=module->begin(); cur!=module->end(); cur++)
 		add(mangler, cur);
 
-	for(llvm::Module::global_iterator cur=module->global_begin(); cur!=module->global_end(); cur++)
-		add(mangler, cur);
+	//	for(llvm::Module::global_iterator cur=module->global_begin(); cur!=module->global_end(); cur++)
+	//		add(mangler, cur);
 
 	FILE* fp = fopen(argv[2], "r");
 	size_t linecapp = 0;

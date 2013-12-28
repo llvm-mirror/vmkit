@@ -100,7 +100,9 @@ void VMKit::addSymbol(llvm::GlobalValue* gv) {
 }
 
 void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
+	_selfBitCodePath = selfBitCodePath;
 	std::string err;
+
 	llvm::OwningPtr<llvm::MemoryBuffer> buf;
 	if (llvm::MemoryBuffer::getFile(selfBitCodePath, buf))
 		VMKit::internalError(L"Error while opening bitcode file %s", selfBitCodePath);

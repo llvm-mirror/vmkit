@@ -13,6 +13,8 @@
 #include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/ExecutionEngine/JIT.h"
 
+#include "llvm/Bitcode/ReaderWriter.h"
+
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 
@@ -31,17 +33,43 @@ void* CompilationUnit::operator new(size_t n, BumpAllocator* allocator) {
 void  CompilationUnit::operator delete(void* self) {
 }
 
+#include <sys/time.h>
+
 CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const char* id) :
+	_mangleMap(Util::char_less, allocator),
 	_symbolTable(vmkit::Util::char_less, allocator) {
 	_allocator = allocator;
 	pthread_mutex_init(&_mutexSymbolTable, 0);
 
 	_vmkit = vmkit;
 
+	std::string err;
+
+	struct timeval start, end;
+	gettimeofday(&start, 0);
+
+	llvm::LLVMContext* context = new llvm::LLVMContext();
+	llvm::OwningPtr<llvm::MemoryBuffer> buf;
+	if (llvm::MemoryBuffer::getFile(vm()->selfBitCodePath(), buf))
+		VMKit::internalError(L"Error while opening bitcode file %s", vm()->selfBitCodePath());
+	llvm::Module* module = llvm::getLazyBitcodeModule(buf.take(), *context, &err);
+
+	if(!module)
+		VMKit::internalError(L"Error while reading bitcode file %s: %s", vm()->selfBitCodePath(), err.c_str());
+
+	for(llvm::Module::iterator cur=module->begin(); cur!=module->end(); cur++)
+		addSymbol(cur);
+
+	for(llvm::Module::global_iterator cur=module->global_begin(); cur!=module->global_end(); cur++)
+		addSymbol(cur);
+
+	gettimeofday(&end, 0);
+	double d = start.tv_sec*1. + start.tv_usec*1e-6 - end.tv_sec*1. -end.tv_usec*1e-6;
+	fprintf(stderr, " took: %lf\n", d);
+
 	llvm::TargetOptions opt;
 	opt.NoFramePointerElim = 1;
 
-	std::string err;
 	_ee = llvm::EngineBuilder(new llvm::Module(id, Thread::get()->vm()->llvmContext()))
 		.setUseMCJIT(1)
 		.setMCJITMemoryManager(this)
@@ -110,6 +138,19 @@ CompilationUnit::~CompilationUnit() {
 	delete pm;
 	delete _ee;
 	delete _oldee;
+}
+
+void CompilationUnit::addSymbol(llvm::GlobalValue* gv) {
+	const char* id = gv->getName().data();
+	int   status;
+	char* realname;
+	realname = abi::__cxa_demangle(id, 0, 0, &status);
+	const char* tmp = realname ? realname : id;
+	uint32_t length = strlen(tmp);
+	char* mangled = (char*)allocator()->allocate(length+1);
+	strcpy(mangled, tmp);
+	_mangleMap[mangled] = gv;
+	free(realname);
 }
 
 void CompilationUnit::destroy(CompilationUnit* unit) {

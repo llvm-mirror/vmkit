@@ -25,6 +25,7 @@ namespace vmkit {
 		pthread_mutex_t                         safepointMapLock;
 		MangleMap                               mangleMap;
 		BumpAllocator*                          _allocator;
+		const char*                             _selfBitCodePath;
 		llvm::Module*                           _self;
 		llvm::DataLayout*                       _dataLayout;
 		void*                                   ptrTypeInfo;
@@ -39,6 +40,8 @@ namespace vmkit {
 		static void                destroy(VMKit* vm);
 
 		VMKit(BumpAllocator* allocator);
+
+		const char*                selfBitCodePath() { return _selfBitCodePath; }
 
 		void                       addSafepoint(Safepoint* sf);
 		Safepoint*                 getSafepoint(void* addr);
