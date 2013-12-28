@@ -81,6 +81,8 @@ namespace j3 {
 		uint32_t           wideReadU1();
 		uint32_t           wideReadS1();
 
+		llvm::Value*       currentThread();
+
 		llvm::Value*       nullCheck(llvm::Value* obj);
 
 		llvm::BasicBlock*  newBB(const char* name);
@@ -170,13 +172,13 @@ namespace j3 {
 		llvm::Function*    funcJ3ThreadPush;
 		llvm::Function*    funcJ3ThreadTell;
 		llvm::Function*    funcJ3ThreadRestore;
-		llvm::Function*    funcJ3ThreadGet;
 		llvm::Function*    funcEchoDebugExecute;
 		llvm::Function*    funcEchoDebugEnter;
 		llvm::Function*    funcCXABeginCatch;        /* __cxa_begin_catch */
 		llvm::Function*    funcCXAEndCatch;          /* __cxa_end_catch */
 		llvm::Function*    funcGXXPersonality;       /* __gxx_personality_v0 */
 		llvm::Function*    gcRoot;             
+		llvm::Function*    frameAddress;
 		llvm::Function*    stackMap;
 		llvm::Function*    patchPoint64;
 		llvm::Function*    patchPointVoid;

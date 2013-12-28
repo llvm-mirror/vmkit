@@ -46,6 +46,7 @@ void J3::introspect() {
 	typeJ3Type              = introspectType("class.j3::J3Type");
 	typeJ3TypePtr           = llvm::PointerType::getUnqual(typeJ3Type);
 	typeJ3ObjectTypePtr     = llvm::PointerType::getUnqual(introspectType("class.j3::J3ObjectType"));
+	typeJ3Thread            = llvm::PointerType::getUnqual(introspectType("class.j3::J3Thread"));
 	typeJ3Class             = introspectType("class.j3::J3Class");
 	typeJ3ClassPtr          = llvm::PointerType::getUnqual(typeJ3Class);
 	typeJ3ArrayClass        = introspectType("class.j3::J3ArrayClass");

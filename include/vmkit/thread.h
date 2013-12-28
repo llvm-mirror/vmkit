@@ -30,6 +30,8 @@ namespace vmkit {
 
 		void start();
 		void join();
+
+		static uintptr_t getThreadMask();
 	};
 
 	class StackWalker {

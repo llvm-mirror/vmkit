@@ -78,7 +78,6 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	funcJ3ThreadPush             = vm->introspectFunction(module(), "j3::J3Thread::push(j3::J3Object*)");
 	funcJ3ThreadTell             = vm->introspectFunction(module(), "j3::J3Thread::tell()");
 	funcJ3ThreadRestore          = vm->introspectFunction(module(), "j3::J3Thread::restore(j3::J3ObjectHandle*)");
-	funcJ3ThreadGet              = vm->introspectFunction(module(), "j3::J3Thread::get()");
 	funcEchoDebugEnter           = vm->introspectFunction(module(), "j3::J3CodeGen::echoDebugEnter(unsigned int, char const*, ...)");
 	funcEchoDebugExecute         = vm->introspectFunction(module(), "j3::J3CodeGen::echoDebugExecute(unsigned int, char const*, ...)");
 
@@ -95,6 +94,8 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	gvTypeInfo               = vm->introspectGlobalValue(module(),  "typeinfo for void*");
 
 	gcRoot                   = vm->getGCRoot(module());
+
+	frameAddress             = llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::frameaddress);
 
 #if 0
 	//stackMap       = llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::experimental_stackmap);
@@ -188,6 +189,15 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 	}
 }
 
+llvm::Value* J3CodeGen::currentThread() {
+	llvm::Type* type = vm->dataLayout()->getIntPtrType(module()->getContext());
+
+	return builder->CreateIntToPtr(builder->CreateAnd(builder->CreatePtrToInt(builder->CreateCall(frameAddress, builder->getInt32(0)),
+																																						type),
+																										llvm::ConstantInt::get(type, vmkit::Thread::getThreadMask())),
+																 vm->typeJ3Thread);
+}
+
 void J3CodeGen::initialiseJ3Type(J3Type* cl) {
 	if(!cl->isInitialised())
 		builder->CreateCall(funcJ3TypeInitialise, builder->CreateBitCast(cl->llvmDescriptor(module()), vm->typeJ3TypePtr));
@@ -275,7 +285,7 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 	J3MethodType* type = target->methodType(cl);
 
 	uint32_t     index = target->interfaceIndex();
-	llvm::Value* thread = builder->CreateCall(funcJ3ThreadGet);
+	llvm::Value* thread = currentThread();
 	llvm::Value* gep[] = { builder->getInt32(0), builder->getInt32(J3Thread::gepInterfaceMethodIndex) };
 	builder->CreateStore(builder->getInt32(index), builder->CreateGEP(thread, gep));
 
@@ -1492,7 +1502,7 @@ void J3CodeGen::generateNative() {
 	llvm::Function* nat = method->nativeLLVMFunction(module());
 
 	llvm::Value* res;
-	llvm::Value* thread = builder->CreateCall(funcJ3ThreadGet);
+	llvm::Value* thread = currentThread();
 	llvm::Value* frame = builder->CreateCall(funcJ3ThreadTell, thread);
 
 	if(J3Cst::isSynchronized(method->access())) {
