@@ -23,5 +23,4 @@ _x(funcFastIsAssignableToNonPrimaryChecker, "j3::J3VirtualTable::fastIsAssignabl
 _x(funcGXXPersonality,           "__gxx_personality_v0")
 _x(funcCXABeginCatch,            "__cxa_begin_catch")
 _x(funcCXAEndCatch,              "__cxa_end_catch")
-_x(gvTypeInfo,                   "typeinfo for void*")
 _x(funcFake,                     "j3::J3::forceSymbolDefinition()")

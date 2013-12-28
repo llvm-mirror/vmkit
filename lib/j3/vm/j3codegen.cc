@@ -59,37 +59,10 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 
 	builder = &_builder;
 
-	funcJ3MethodIndex            = vm->introspectFunction(module(), "j3::J3Method::index()");
-	funcJ3TypeVT                 = vm->introspectFunction(module(), "j3::J3Type::vt()");
-	funcJ3TypeVTAndResolve       = vm->introspectFunction(module(), "j3::J3Type::vtAndResolve()");
-	funcJ3TypeInitialise         = vm->introspectFunction(module(), "j3::J3Type::initialise()");
-	funcJ3ClassSize              = vm->introspectFunction(module(), "j3::J3Class::size()");
-	funcJ3ClassStaticInstance    = vm->introspectFunction(module(), "j3::J3Class::staticInstance()");
-	funcJ3ClassStringAt          = vm->introspectFunction(module(), "j3::J3Class::stringAt(unsigned short)");
-	funcJ3ObjectTypeJavaClass    = vm->introspectFunction(module(), "j3::J3ObjectType::javaClass()");
-	funcJniEnv                   = vm->introspectFunction(module(), "j3::J3::jniEnv()");
-	funcJ3ObjectAllocate         = vm->introspectFunction(module(), "j3::J3Object::allocate(j3::J3VirtualTable*, unsigned long)");
-	
-	funcThrowException           = vm->introspectFunction(module(), "vmkit::VMKit::throwException(void*)");
-	funcClassCastException       = vm->introspectFunction(module(), "j3::J3::classCastException()");
-	funcNullPointerException     = vm->introspectFunction(module(), "j3::J3::nullPointerException()");
-
-	funcJ3ThreadPushHandle       = vm->introspectFunction(module(), "j3::J3Thread::push(j3::J3ObjectHandle*)");
-	funcJ3ThreadPush             = vm->introspectFunction(module(), "j3::J3Thread::push(j3::J3Object*)");
-	funcJ3ThreadTell             = vm->introspectFunction(module(), "j3::J3Thread::tell()");
-	funcJ3ThreadRestore          = vm->introspectFunction(module(), "j3::J3Thread::restore(j3::J3ObjectHandle*)");
-	funcEchoDebugEnter           = vm->introspectFunction(module(), "j3::J3CodeGen::echoDebugEnter(unsigned int, char const*, ...)");
-	funcEchoDebugExecute         = vm->introspectFunction(module(), "j3::J3CodeGen::echoDebugExecute(unsigned int, char const*, ...)");
-
-	funcIsAssignableTo           = vm->introspectFunction(module(), "j3::J3VirtualTable::isAssignableTo(j3::J3VirtualTable*)");
-	funcFastIsAssignableToPrimaryChecker = 
-		vm->introspectFunction(module(), "j3::J3VirtualTable::fastIsAssignableToPrimaryChecker(j3::J3VirtualTable*, unsigned int)");
-	funcFastIsAssignableToNonPrimaryChecker = 
-		vm->introspectFunction(module(), "j3::J3VirtualTable::fastIsAssignableToNonPrimaryChecker(j3::J3VirtualTable*)");
-
-	funcGXXPersonality       = vm->introspectFunction(module(), "__gxx_personality_v0");
-	funcCXABeginCatch        = vm->introspectFunction(module(), "__cxa_begin_catch");
-	funcCXAEndCatch          = vm->introspectFunction(module(), "__cxa_end_catch");
+#define _x(name, id)														\
+	name = vm->introspectFunction(module(), id);
+#include "j3/j3meta.def"
+#undef _x
 
 	gvTypeInfo               = vm->introspectGlobalValue(module(),  "typeinfo for void*");
 
@@ -112,10 +85,6 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 																		llvm::FunctionType::get(builder->getVoidTy(), ins, 1));
 	}
 #endif
-
-	ziTry                    = 
-		(llvm::Function*)module()->getOrInsertFunction("vmkit.try", 
-																									 llvm::FunctionType::get(llvm::Type::getVoidTy(llvmFunction->getContext()), 0));
 
 	if(J3Cst::isNative(method->access()))
 		generateNative();

@@ -152,38 +152,16 @@ namespace j3 {
 		static void        echoDebugEnter(uint32_t isLeave, const char* msg, ...);
 		static void        echoDebugExecute(uint32_t level, const char* msg, ...);
 
-		llvm::Function*    funcJ3MethodIndex;
-		llvm::Function*    funcJ3TypeVT;
-		llvm::Function*    funcJ3TypeVTAndResolve;
-		llvm::Function*    funcJ3TypeInitialise;
-		llvm::Function*    funcJ3ObjectTypeJavaClass;
-		llvm::Function*    funcJ3ClassSize;
-		llvm::Function*    funcJ3ClassStaticInstance;
-		llvm::Function*    funcJ3ClassStringAt;
-		llvm::Function*    funcJ3ObjectAllocate;
-		llvm::Function*    funcJniEnv;
-		llvm::Function*    funcClassCastException;
-		llvm::Function*    funcNullPointerException;
-		llvm::Function*    funcThrowException;
-		llvm::Function*    funcIsAssignableTo;
-		llvm::Function*    funcFastIsAssignableToPrimaryChecker;
-		llvm::Function*    funcFastIsAssignableToNonPrimaryChecker;
-		llvm::Function*    funcJ3ThreadPushHandle;
-		llvm::Function*    funcJ3ThreadPush;
-		llvm::Function*    funcJ3ThreadTell;
-		llvm::Function*    funcJ3ThreadRestore;
-		llvm::Function*    funcEchoDebugExecute;
-		llvm::Function*    funcEchoDebugEnter;
-		llvm::Function*    funcCXABeginCatch;        /* __cxa_begin_catch */
-		llvm::Function*    funcCXAEndCatch;          /* __cxa_end_catch */
-		llvm::Function*    funcGXXPersonality;       /* __gxx_personality_v0 */
+#define _x(name, id)														\
+		llvm::Function* name;
+#include "j3/j3meta.def"
+#undef _x
+		llvm::GlobalValue* gvTypeInfo;            /* typename void* */
 		llvm::Function*    gcRoot;             
 		llvm::Function*    frameAddress;
 		llvm::Function*    stackMap;
 		llvm::Function*    patchPoint64;
 		llvm::Function*    patchPointVoid;
-		llvm::Function*    ziTry;
-		llvm::GlobalValue* gvTypeInfo;            /* typename void* */
 
 		J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* method, llvm::Function* _llvmFunction);
 		~J3CodeGen();
