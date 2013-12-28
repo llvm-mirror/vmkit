@@ -3,8 +3,9 @@
 #                     The vmkit project
 #===------------------------------------------------------------------------===#
 
-LEVEL := .
+LEVEL := ../..
 
-DIRS := tools/vmkit-extract lib tools
+LIBS := 
+TOOL := vmkit-extract
 
 include $(LEVEL)/Makefile.rules

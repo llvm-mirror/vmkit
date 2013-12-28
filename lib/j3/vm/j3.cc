@@ -221,3 +221,13 @@ void J3::printStackTrace() {
 		}
 	}
 }
+
+void J3::forceSymbolDefinition() {
+	J3ArrayObject a; a.length(); /* J3ArrayObject */
+	try {
+		throw (void*)0;
+	} catch(void* e) {
+	}
+}
+
+

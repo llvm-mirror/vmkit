@@ -118,6 +118,8 @@ namespace j3 {
 		static void    arrayIndexOutOfBoundsException() __attribute__((noreturn));
 
 		static void    printStackTrace();
+
+		void forceSymbolDefinition();
 	};
 }
 

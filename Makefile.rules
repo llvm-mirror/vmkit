@@ -228,18 +228,40 @@ endif
 ifdef TOOL
 TOOL_OUT=$(BIN_DIR)/$(TOOL)$(EXEEXT)
 
-GEN_MODULE=$(LIB_DIR)/libjvm
-SONAME=$(GEN_MODULE)
+FINAL_MODULE=$(LIB_DIR)/libjvm
+STRIP_MODULE=$(BUILD_DIR)/libjvm
+GEN_MODULE=$(BUILD_DIR)/libjvm-no-strip
+SONAME=$(FINAL_MODULE)
 
 BC_FILES+=$(addsuffix .bc,$(addprefix $(LIB_DIR)/,$(LIBS))) 
 SO_FILES=$(addsuffix .a,$(addprefix $(LIB_DIR)/,$(LIBS))) 
 SO_LIBS=$(LLVM_LIBS)
 
-all:: $(BIN_DIR)/.dir $(TOOL_OUT) $(GEN_MODULE).bc
+TOOL_ALL=$(BIN_DIR)/.dir $(TOOL_OUT)
+TOOL_DEP=$(OBJ_FILES)
 
-$(TOOL_OUT): $(OBJ_FILES) $(SONAME)$(SHLIBEXT)
+ifdef WITH_DYLIB
+TOOL_ALL+=$(FINAL_MODULE).bc
+TOOL_DEP+=$(SONAME)$(SHLIBEXT)
+else
+TOOL_DEP+=$(SO_FILES)
+TOOL_FLAGS=$(LLVM_LDFLAGS) $(SHFLAGS)
+LDFLAGS=$(SO_LIBS)
+endif
+
+all:: $(TOOL_ALL)
+
+$(TOOL_OUT): $(TOOL_DEP)
 	$(Echo) "Linking '$(notdir $@)'"
-	$(Verb) $(CLANGXX) -o $@ -Wl,-rpath,$(LIB_DIR) $(LDFLAGS) $^
+	$(Verb) $(CLANGXX) $(TOOL_FLAGS) -o $@ -Wl,-rpath,$(LIB_DIR) $(LDFLAGS) $^
+
+$(FINAL_MODULE).bc: $(STRIP_MODULE).bc $(BIN_DIR)/vmkit-extract $(PROJ_SRC_ROOT)/$(EXTRACTOR)
+	$(Echo) "Extracting runtime function to '$(notdir $@)'"
+	$(Verb) $(BIN_DIR)/vmkit-extract $< $(PROJ_SRC_ROOT)/$(EXTRACTOR) > $@
+
+$(STRIP_MODULE).bc: $(GEN_MODULE).bc
+	$(Echo) "Strip debug info from '$(notdir $<)'"
+	$(Verb) $(LLOPT) -strip-debug $< -o $@
 
 endif
 
