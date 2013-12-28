@@ -10,21 +10,21 @@ namespace vmkit {
 	class VMKit;
 
 	class Thread : protected PermanentObject {
-		BumpAllocator*       _allocator;
 		VMKit*               _vm;
+		pthread_t            _tid;
 
 		static void* doRun(void* thread);
 
-	protected:
-		Thread(VMKit* vm, BumpAllocator* allocator);
-
 	public:
-		static void destroy(Thread* thread);
+		Thread(VMKit* vm);
+		virtual ~Thread() {}
+
+		void* operator new(size_t n, BumpAllocator* allocator);
+		void operator delete(void* p);
 
 		virtual void run() {}
 
 		VMKit* vm() { return _vm; }
-		BumpAllocator* allocator() { return _allocator; }
 
 		static __thread Thread* _thread;
 
@@ -32,6 +32,7 @@ namespace vmkit {
 		static void set(Thread* thread) { _thread = thread; }
 
 		void start();
+		void join();
 	};
 
 	class StackWalker {

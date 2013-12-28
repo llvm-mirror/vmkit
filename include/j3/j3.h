@@ -97,6 +97,7 @@ namespace j3 {
 		J3ObjectHandle*            nameToString(const vmkit::Name* name);
 		J3ObjectHandle*            arrayToString(J3ObjectHandle* array);
 
+		void                       run();
 		void                       start(int argc, char** argv);
 
 		void                       vinternalError(const wchar_t* msg, va_list va) __attribute__((noreturn));

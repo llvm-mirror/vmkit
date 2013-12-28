@@ -64,10 +64,17 @@ void J3::introspect() {
 void J3::start(int argc, char** argv) {
 	_options.process(argc, argv);
 
-	J3Thread* thread = J3Thread::create(this);
+	vmkit::BumpAllocator* threadAllocator = vmkit::BumpAllocator::create();
+	J3Thread* thread = new(threadAllocator) J3ThreadBootstrap(this, threadAllocator);
 
 	vmkitBootstrap(thread, options()->selfBitCodePath);
+	
+	//thread->start();
+	//thread->join();
+	run();
+}
 
+void J3::run() {
 	introspect();
 
 	vmkit::BumpAllocator* loaderAllocator = vmkit::BumpAllocator::create();

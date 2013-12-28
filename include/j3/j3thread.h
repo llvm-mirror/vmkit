@@ -28,9 +28,8 @@ namespace j3 {
 		virtual void run();
 		static void doRun();
 
-		J3Thread(J3* vm, vmkit::BumpAllocator* allocator);
 	public:
-		static J3Thread*  create(J3* j3);
+		J3Thread(J3* vm, vmkit::BumpAllocator* allocator);
 
 		void               assocJavaThread(J3ObjectHandle* javaThread);
 		J3ObjectHandle*    javaThread() { return _javaThread; }
@@ -57,6 +56,13 @@ namespace j3 {
 		static J3Thread* get();
 
 		static void start(J3ObjectHandle* handle);
+	};
+
+	class J3ThreadBootstrap : public J3Thread {
+	public:
+		J3ThreadBootstrap(J3* j3, vmkit::BumpAllocator* allocator);
+
+		void run();
 	};
 }
 

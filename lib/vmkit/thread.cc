@@ -6,13 +6,16 @@ using namespace vmkit;
 
 __thread Thread* Thread::_thread = 0;
 
-Thread::Thread(VMKit* vm, BumpAllocator* allocator) { 
-	_allocator = allocator;
+Thread::Thread(VMKit* vm) { 
 	_vm = vm; 
 }
 
-void Thread::destroy(Thread* thread) {
-	BumpAllocator::destroy(thread->allocator());
+void* Thread::operator new(size_t n, BumpAllocator* allocator) {
+	return allocator->allocate(n);
+}
+
+void Thread::operator delete(void* p) {
+	VMKit::internalError(L"not yet implemented");
 }
 
 void* Thread::doRun(void* _thread) {
@@ -23,8 +26,12 @@ void* Thread::doRun(void* _thread) {
 }
 
 void Thread::start() {
-	pthread_t tid;
-	pthread_create(&tid, 0, doRun, this);
+	pthread_create(&_tid, 0, doRun, this);
+}
+
+void Thread::join() {
+	void* res;
+	pthread_join(_tid, &res);
 }
 
 StackWalker::StackWalker(uint32_t initialPop) {

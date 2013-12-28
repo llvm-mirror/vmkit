@@ -9,15 +9,10 @@
 using namespace j3;
 
 J3Thread::J3Thread(J3* vm, vmkit::BumpAllocator* allocator) : 
-	Thread(vm, allocator),
+	Thread(vm),
 	_allocator(allocator),
 	_localReferences(_allocator) {
 	_jniEnv.functions = &jniEnvTable;
-}
-
-J3Thread* J3Thread::create(J3* j3) {
-	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
-	return new(allocator) J3Thread(j3, allocator);
 }
 
 void J3Thread::doRun() {
@@ -31,7 +26,8 @@ void J3Thread::run() {
 }
 
 void J3Thread::start(J3ObjectHandle* handle) {
-	J3Thread* thread = create(J3Thread::get()->vm());
+	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
+	J3Thread* thread = new(allocator) J3Thread(get()->vm(), allocator);
 	thread->assocJavaThread(handle);
 	thread->Thread::start();
 	while(1);
@@ -89,4 +85,11 @@ void J3Thread::restore(J3ObjectHandle* ptr) {
 
 J3Thread* J3Thread::get() { 
 	return (J3Thread*)Thread::get(); 
+}
+
+J3ThreadBootstrap::J3ThreadBootstrap(J3* vm, vmkit::BumpAllocator* allocator) : J3Thread(vm, allocator) {
+}
+
+void J3ThreadBootstrap::run() {
+	vm()->run();
 }
