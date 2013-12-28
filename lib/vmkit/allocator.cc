@@ -8,6 +8,8 @@
 
 using namespace vmkit;
 
+ThreadAllocator* ThreadAllocator::_allocator = 0;
+
 void* BumpAllocator::operator new(size_t n) {
 	return (void*)((uintptr_t)map(bucketSize) + sizeof(BumpAllocatorNode));
 }
@@ -90,4 +92,69 @@ void PermanentObject::operator delete(void* ptr) {
   
 void PermanentObject::operator delete[](void* ptr) {
 	Thread::get()->vm()->internalError(L"should not happen");
+}
+
+ThreadAllocator::ThreadAllocator(uintptr_t minThreadStruct, uintptr_t minFullSize) {
+	pthread_mutex_init(&mutex, 0);
+	spaces.reserve(1);
+	freeThreads.reserve(refill);
+
+	minThreadStruct = ((minThreadStruct - 1) & -PAGE_SIZE) + PAGE_SIZE;
+	baseStack = minThreadStruct;
+
+	uintptr_t min = PTHREAD_STACK_MIN + minThreadStruct + PAGE_SIZE;
+	if(minFullSize < min)
+		minFullSize = min;
+
+	topStack = 1L << (__builtin_clzl(0) - __builtin_clzl(minFullSize-1));
+}
+
+void ThreadAllocator::initialize(uintptr_t minThreadStruct, uintptr_t minFullSize) {
+	if(_allocator) {
+		fprintf(stderr, "Never try to modify the thread structure layout dynamically\n");
+		abort();
+	}
+	_allocator = new ThreadAllocator(minThreadStruct, minFullSize);
+}
+
+void* ThreadAllocator::allocate() {
+	pthread_mutex_lock(&mutex);
+	if(!freeThreads.size()) {
+		void* space = mmap(0, topStack*refill, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+
+		if(space == MAP_FAILED) {
+			fprintf(stderr, "unable to allocate a thread\n");
+			abort();
+		}
+
+		spaces.push_back(space);
+
+		uintptr_t base = (((uintptr_t)space - 1) & -PAGE_SIZE) + PAGE_SIZE;
+		uint32_t n = (base == (uintptr_t)space) ? refill : (refill - 1);
+
+		for(uint32_t i=0; i<n; i++) {
+			mprotect((void*)(base + baseStack), PROT_NONE, PAGE_SIZE);
+			freeThreads.push_back((void*)base);
+			base += topStack;
+		}
+	}
+
+	void* res = freeThreads.back();
+	freeThreads.pop_back();
+	pthread_mutex_unlock(&mutex);
+	return res;
+}
+
+void ThreadAllocator::release(void* thread) {
+	pthread_mutex_lock(&mutex);
+	freeThreads.push_back(thread);
+	pthread_mutex_unlock(&mutex);
+}
+
+void* ThreadAllocator::stackAddr(void* thread) {
+	return (void*)((uintptr_t)thread + baseStack);
+}
+
+size_t ThreadAllocator::stackSize(void* thread) {
+	return topStack;
 }

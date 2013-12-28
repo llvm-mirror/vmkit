@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <map>
+#include <vector>
 
 namespace vmkit {
 	class BumpAllocatorNode { /* always the first bytes of a bucket */
@@ -113,6 +114,31 @@ namespace vmkit {
 	template<typename T>
 	struct T_ptr_less_t : public PermanentObject {
     bool operator()(const T& lhs, const T& rhs) const { return lhs < rhs; } 
+	};
+
+	class ThreadAllocator {
+		static const uint32_t refill = 128;
+
+		static ThreadAllocator* _allocator;
+
+		pthread_mutex_t       mutex;
+		std::vector<void*>    spaces;
+		std::vector<void*>    freeThreads;
+		uintptr_t             baseStack;
+		uintptr_t             topStack;
+
+		ThreadAllocator(uintptr_t minThreadStruct, uintptr_t minFullSize);
+	public:
+		static void initialize(uintptr_t minThreadStruct, uintptr_t minFullSize);
+		static ThreadAllocator* allocator() { return _allocator; }
+
+		void* allocate();
+		void  release(void* thread);
+
+		void*     stackAddr(void* thread);
+		size_t    stackSize(void* thread); 
+
+		uintptr_t magic() { return -topStack; }
 	};
 } // end namespace vmkit
 

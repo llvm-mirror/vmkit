@@ -34,6 +34,8 @@ namespace j3 {
 		uint32_t       debugIniting;
 		uint32_t       debugTranslate;
 		uint32_t       debugLinking;
+		
+		uintptr_t      stackSize;
 
 		J3Options();
 

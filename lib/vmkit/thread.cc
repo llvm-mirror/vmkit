@@ -11,7 +11,7 @@ Thread::Thread(VMKit* vm) {
 }
 
 void* Thread::operator new(size_t n, BumpAllocator* allocator) {
-	return allocator->allocate(n);
+	return ThreadAllocator::allocator()->allocate();
 }
 
 void Thread::operator delete(void* p) {

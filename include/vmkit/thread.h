@@ -9,7 +9,7 @@
 namespace vmkit {
 	class VMKit;
 
-	class Thread : protected PermanentObject {
+	class Thread {
 		VMKit*               _vm;
 		pthread_t            _tid;
 

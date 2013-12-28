@@ -23,6 +23,8 @@ J3Options::J3Options() {
 	debugLinking = 1;
 
 	genDebugExecute = debugExecute ? 1 : 0;
+
+	stackSize = 0x80*0x1000;
 }
 
 #define nyi(cmd) ({ fprintf(stderr, "option '%s' not yet implemented\n", cmd); })

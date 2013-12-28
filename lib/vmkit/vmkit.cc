@@ -124,6 +124,9 @@ void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
 
 	if(!ptrTypeInfo)
 		internalError(L"unable to find typeinfo for void*"); 
+
+	initialThread->start();
+	initialThread->join();
 }
 
 
@@ -171,11 +174,4 @@ void VMKit::throwException(void* obj) {
 #endif
 	fprintf(stderr, " throw exception...\n");
 	abort();
-}
-
-
-ExceptionDescriptor::ExceptionDescriptor(const llvm::Function* llvmFunction, uintptr_t point, uintptr_t landingPad) {
-	_llvmFunction = llvmFunction;
-	_point = point;
-	_landingPad = landingPad;
 }
