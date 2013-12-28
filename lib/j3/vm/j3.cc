@@ -69,12 +69,12 @@ void J3::start(int argc, char** argv) {
 
 	vmkitBootstrap(thread, options()->selfBitCodePath);
 	
-	//thread->start();
-	//thread->join();
-	run();
+	thread->Thread::start();
+	thread->join();
 }
 
 void J3::run() {
+	fprintf(stderr, "      Bootstraping j3....\n");
 	introspect();
 
 	vmkit::BumpAllocator* loaderAllocator = vmkit::BumpAllocator::create();

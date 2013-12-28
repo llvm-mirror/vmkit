@@ -55,7 +55,7 @@ LLCFLAGS+=-relocation-model=pic
 OPTFLAGS+=-disable-opt
 
 CXXFLAGS=$(LLVM_CXXFLAGS) $(COMMON_FLAGS) -std=gnu++98 -fPIC
-SHFLAGS=-lpthread -ldl -lz -lncurses -fno-common -Wl,-flat_namespace -Wl,-undefined,suppress
+SHFLAGS=-lpthread -ldl -lz -lncurses -framework CoreFoundation -fno-common -Wl,-flat_namespace -Wl,-undefined,suppress
 
 ###############################################################################
 #   Targets
