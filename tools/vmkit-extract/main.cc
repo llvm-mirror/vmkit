@@ -62,6 +62,8 @@ int main(int argc, char** argv) {
 		*e = 0;
 		llvm::GlobalValue* gv = mangler[p];
 
+		//gv->setName(p);
+
 		if(gv) {
 			extracted.push_back(gv);
 			if (gv->isMaterializable()) {

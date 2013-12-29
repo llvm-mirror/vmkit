@@ -35,20 +35,15 @@ namespace vmkit {
 	};
 
 	class CompilationUnit  : public llvm::SectionMemoryManager {
-		typedef std::map<const char*, llvm::GlobalValue*, Util::char_less_t, 
-										 StdAllocator<std::pair<const char*, llvm::GlobalValue*> > > MangleMap;
 		typedef std::map<const char*, Symbol*, Util::char_less_t, StdAllocator<std::pair<const char*, Symbol*> > > SymbolMap;
 
 		VMKit*                  _vmkit;
 		BumpAllocator*          _allocator;
-		MangleMap               _mangleMap;
 		SymbolMap               _symbolTable;
 		pthread_mutex_t         _mutexSymbolTable;
 		llvm::ExecutionEngine*  _ee;
 		llvm::ExecutionEngine*  _oldee;
 		llvm::PassManager*      pm;
-
-		void                    addSymbol(llvm::GlobalValue* gv);
 
 	protected:
 		void  operator delete(void* self);
