@@ -11,7 +11,7 @@
 #include "j3/j3options.h"
 #include "j3/j3typesdef.h"
 #include "j3/j3jni.h"
-
+#include "j3/j3monitor.h"
 
 namespace j3 {
 	class J3InitialClassLoader;
@@ -30,7 +30,7 @@ namespace j3 {
 
 		static vmkit::T_ptr_less_t<J3ObjectHandle*> charArrayLess;
 
-		J3Options                          _options;
+		J3Options                            _options;
 
 		pthread_mutex_t                      stringsMutex;
 		vmkit::NameMap<J3ObjectHandle*>::map nameToCharArrays;
@@ -49,6 +49,8 @@ namespace j3 {
 		J3Primitive* type##name;
 		onJavaTypes(defPrimitive)
 #undef defPrimitive
+
+		J3MonitorManager monitorManager;
 
 		void*            interfaceTrampoline;
 
@@ -116,6 +118,8 @@ namespace j3 {
 
 		static void    arrayStoreException() __attribute__((noreturn));
 		static void    arrayIndexOutOfBoundsException() __attribute__((noreturn));
+
+		static void    illegalMonitorStateException() __attribute__((noreturn));
 
 		static void    printStackTrace();
 

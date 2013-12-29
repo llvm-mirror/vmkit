@@ -25,7 +25,8 @@ J3::J3(vmkit::BumpAllocator* allocator) :
 	VMKit(allocator),
 	nameToCharArrays(vmkit::Name::less, allocator),
 	charArrayToStrings(charArrayLess, allocator),
-	_names(allocator) {
+	_names(allocator),
+	monitorManager(allocator) {
 	pthread_mutex_init(&stringsMutex, 0);
 	constantValueAttr = names()->get(J3Cst::constantValueAttr);
 	codeAttr =          names()->get(J3Cst::codeAttr);
@@ -187,6 +188,10 @@ void J3::arrayStoreException() {
 
 void J3::arrayIndexOutOfBoundsException() {
 	internalError(L"array bound check exception");
+}
+
+void J3::illegalMonitorStateException() {
+	internalError(L"illegal monitor state exception");
 }
 
 void J3::vinternalError(const wchar_t* msg, va_list va) {

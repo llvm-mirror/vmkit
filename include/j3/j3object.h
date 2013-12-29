@@ -86,10 +86,18 @@ namespace j3 {
 		friend class J3ObjectHandle;
 	public:
 		static const uint32_t gepVT = 0;
+		static const uint32_t gepHeader = 1;
 
 	private:
 		J3VirtualTable* _vt;
 		uintptr_t       _header;
+		/* 
+		 *     biased (not yet implemented):  0         | epoch | age        | 101
+		 *                                    thread_id | epoch | age        | 101
+		 *     not locked:                    hash-code 24 bits | age 5 bits | 001
+		 *     stack locked:                      pointer to lock record      | 00
+		 *     inflated:                          pointer to monitor          | 01
+		 */
 
 		J3Object(); /* never directly allocate an object */
 

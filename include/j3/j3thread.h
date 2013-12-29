@@ -14,6 +14,8 @@ namespace j3 {
 	class J3;
 
 	class J3Thread : public vmkit::Thread {
+		friend class J3Monitor;
+
 	public:
 		static const uint32_t gepInterfaceMethodIndex = 1;
 
@@ -24,6 +26,7 @@ namespace j3 {
 		J3LocalReferences          _localReferences;
 		J3ObjectHandle*            _pendingException;
 		J3ObjectHandle*            _javaThread;
+		J3Thread*                  _nextLocked;
 
 		virtual void run();
 		static void doRun();
