@@ -285,8 +285,11 @@ J3Field* J3Layout::findField(const vmkit::Name* name, const J3Type* type) {
 /*  
  *  ------------ J3Class ------------
  */
-J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name) : J3Layout(loader, name), staticLayout(loader, this, name) {
-	status = CITED;
+J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes) : 
+	J3Layout(loader, name), 
+	staticLayout(loader, this, name){
+	_bytes = bytes;
+	status = LOADED;
 }
 
 size_t J3Class::size() { 
@@ -437,26 +440,7 @@ void J3Class::doInitialise() {
 	unlock();
 }
 
-void J3Class::load() {
-	if(status < LOADED) {
-		lock();
-		if(status < LOADED) {
-			if(loader()->vm()->options()->debugLoad)
-				fprintf(stderr, "Loading: %ls\n", name()->cStr());
-
-			_bytes = loader()->lookup(name());
-
-			if(!_bytes)
-				J3::noClassDefFoundError(this);
-
-			status = LOADED;
-		}
-		unlock();
-	}
-}
-
 void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
-	load();
 	lock();
 	if(status < RESOLVED) {
 		if(loader()->vm()->options()->debugResolve)
@@ -807,7 +791,7 @@ J3ObjectType* J3Class::classAt(uint16_t idx) {
 	if(name->cStr()[0] == J3Cst::ID_Array)
 		res = loader()->getType(this, name)->asObjectType();
 	else
-		res = loader()->getClass(name);
+		res = loader()->loadClass(name);
 
 	ctpResolved[idx] = res;
 

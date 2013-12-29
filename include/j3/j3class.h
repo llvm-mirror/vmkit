@@ -38,7 +38,7 @@ namespace j3 {
 		J3ArrayClass* volatile _array;
 
 	protected:
-		enum { CITED, LOADED, RESOLVED, INITED };
+		enum { LOADED, RESOLVED, INITED };
 
 		const vmkit::Name*     _name;
 		char*                  _nativeName;
@@ -246,13 +246,12 @@ namespace j3 {
 
 		void          createLLVMTypes();
 
-		void          load();
 		void          doResolve(J3Field* hiddenFields, size_t nbHiddenFields);
 		void          doInitialise();
 
 		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access);
 	public:
-		J3Class(J3ClassLoader* loader, const vmkit::Name* name);
+		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes);
 
 		size_t              nbInterfaces() { return _nbInterfaces; }
 		J3Class**           interfaces() { return _interfaces; }

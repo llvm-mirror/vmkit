@@ -89,11 +89,12 @@ namespace j3 {
 																				 const vmkit::Name* name, const vmkit::Name* sign); 
 		J3Method*                     method(uint16_t access, const wchar_t* clName, const wchar_t* name, const wchar_t* sign); 
 
-		J3Class*                      getClass(const vmkit::Name* name);                     /* find a class */
+		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
+		J3Class*                      findLoadedClass(const vmkit::Name* name);
+		virtual J3Class*              loadClass(const vmkit::Name* name);
+
 		J3Type*                       getType(J3Class* from, const vmkit::Name* type);       /* find a type */
 		J3MethodType*                 getMethodType(J3Class* from, const vmkit::Name* sign); /* get a method type */
-
-		virtual J3ClassBytes*         lookup(const vmkit::Name* name);
 
 		void*                         lookupNativeFunctionPointer(J3Method* method, const char* symb);
 	};
@@ -108,11 +109,9 @@ namespace j3 {
 	public:
 		J3InitialClassLoader(J3* vm, const char* rtjar, vmkit::BumpAllocator* allocator);
 
-		J3ClassBytes* lookup(const vmkit::Name* name);
-
+		J3Class*    loadClass(const vmkit::Name* name);
 		const char* cmangled(const char* demangled) { return _cmangled[demangled]; }
-
-		void registerCMangling(const char* mangled, const char* demangled);
+		void        registerCMangling(const char* mangled, const char* demangled);
 	};
 }
 

@@ -283,23 +283,23 @@ jclass JNICALL JVM_FindPrimitiveClass(JNIEnv* env, const char *utf) {
 	J3Class* res;
 
   if(!strcmp(utf, "boolean"))
-		res = loader->getClass(names->get(L"java/lang/Boolean"));
+		res = loader->loadClass(names->get(L"java/lang/Boolean"));
 	else if(!strcmp(utf, "byte"))
-		res = loader->getClass(names->get(L"java/lang/Byte"));
+		res = loader->loadClass(names->get(L"java/lang/Byte"));
 	else if(!strcmp(utf, "char"))
-		res = loader->getClass(names->get(L"java/lang/Character"));
+		res = loader->loadClass(names->get(L"java/lang/Character"));
 	else if(!strcmp(utf, "short"))
-		res = loader->getClass(names->get(L"java/lang/Short"));
+		res = loader->loadClass(names->get(L"java/lang/Short"));
 	else if(!strcmp(utf, "int"))
-		res = loader->getClass(names->get(L"java/lang/Integer"));
+		res = loader->loadClass(names->get(L"java/lang/Integer"));
 	else if(!strcmp(utf, "long"))
-		res = loader->getClass(names->get(L"java/lang/Long"));
+		res = loader->loadClass(names->get(L"java/lang/Long"));
 	else if(!strcmp(utf, "float"))
-		res = loader->getClass(names->get(L"java/lang/Float"));
+		res = loader->loadClass(names->get(L"java/lang/Float"));
 	else if(!strcmp(utf, "double"))
-		res = loader->getClass(names->get(L"java/lang/Double"));
+		res = loader->loadClass(names->get(L"java/lang/Double"));
 	else if(!strcmp(utf, "void"))
-		res = loader->getClass(names->get(L"java/lang/Void"));
+		res = loader->loadClass(names->get(L"java/lang/Void"));
 	else
 		J3::internalError(L"unsupported primitive: %s", utf);
 

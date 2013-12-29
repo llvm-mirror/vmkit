@@ -89,23 +89,23 @@ void J3::run() {
 
 	nbArrayInterfaces    = 2;
 	arrayInterfaces      = (J3Type**)initialClassLoader->allocator()->allocate(2*sizeof(J3Type*));
-	arrayInterfaces[0]   = initialClassLoader->getClass(names()->get(L"java/lang/Cloneable"));
-	arrayInterfaces[1]   = initialClassLoader->getClass(names()->get(L"java/io/Serializable"));
+	arrayInterfaces[0]   = initialClassLoader->loadClass(names()->get(L"java/lang/Cloneable"));
+	arrayInterfaces[1]   = initialClassLoader->loadClass(names()->get(L"java/io/Serializable"));
 
 	charArrayClass           = typeChar->getArray();
-	objectClass              = initialClassLoader->getClass(names()->get(L"java/lang/Object"));
+	objectClass              = initialClassLoader->loadClass(names()->get(L"java/lang/Object"));
 	
-	stringClass              = initialClassLoader->getClass(names()->get(L"java/lang/String"));
+	stringClass              = initialClassLoader->loadClass(names()->get(L"java/lang/String"));
 	stringInit               = initialClassLoader->method(0, stringClass, initName, names()->get(L"([CZ)V"));
 	stringValue              = stringClass->findVirtualField(names()->get(L"value"), typeChar->getArray());
 
-	classClass               = initialClassLoader->getClass(names()->get(L"java/lang/Class"));
+	classClass               = initialClassLoader->loadClass(names()->get(L"java/lang/Class"));
 	J3Field hf(J3Cst::ACC_PRIVATE, names()->get(L"** vmData **"), typeLong);
 	classClass->resolve(&hf, 1);
 	classInit                = initialClassLoader->method(0, classClass, initName, names()->get(L"()V"));
 	classVMData              = classClass->findVirtualField(hf.name(), hf.type());
 
-	threadVMData             = initialClassLoader->getClass(names()->get("java/lang/Thread"))
+	threadVMData             = initialClassLoader->loadClass(names()->get("java/lang/Thread"))
 		->findVirtualField(names()->get(L"eetop"), typeLong);
 	threadRun                = initialClassLoader->method(0, L"java/lang/Thread", L"run", L"()V");
 
@@ -160,8 +160,8 @@ void J3::nullPointerException() {
 	internalError(L"implement me: null pointer exception");
 }
 
-void J3::noClassDefFoundError(J3Class* cl) {
-	internalError(L"NoClassDefFoundError: %ls (%p - %p)", cl->name()->cStr(), cl, cl->name());
+void J3::noClassDefFoundError(const vmkit::Name* name) {
+	internalError(L"NoClassDefFoundError: %ls", name);
 }
 
 void J3::noSuchMethodError(const wchar_t* msg, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) {

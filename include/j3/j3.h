@@ -105,7 +105,7 @@ namespace j3 {
 
 		static JNIEnv* jniEnv();
 
-		static void    noClassDefFoundError(J3Class* cl) __attribute__((noreturn));
+		static void    noClassDefFoundError(const vmkit::Name* name) __attribute__((noreturn));
 		static void    classFormatError(J3Class* cl, const wchar_t* reason, ...) __attribute__((noreturn));
 		static void    noSuchMethodError(const wchar_t* msg, 
 																		 J3Class* clName, const vmkit::Name* name, const vmkit::Name* sign) __attribute__((noreturn));

@@ -23,7 +23,7 @@ jclass JNICALL FindClass(JNIEnv* env, const char* name) {
 	enterJVM();
 	J3Method* m = J3Thread::get()->getJavaCaller();
 	J3ClassLoader* loader = m ? m->cl()->loader() : J3Thread::get()->vm()->initialClassLoader;
-	J3Class* cl = loader->getClass(loader->vm()->names()->get(name));
+	J3Class* cl = loader->loadClass(loader->vm()->names()->get(name));
 	cl->initialise();
 	res = cl->javaClass();
 	leaveJVM(); 

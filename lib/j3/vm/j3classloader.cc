@@ -66,17 +66,25 @@ void* J3ClassLoader::lookupNativeFunctionPointer(J3Method* method, const char* s
 	return 0;
 }
 
-J3Class* J3ClassLoader::getClass(const vmkit::Name* name) {
+J3Class* J3ClassLoader::findLoadedClass(const vmkit::Name* name) {
 	pthread_mutex_lock(&_mutexClasses);
-	J3Class* res = classes[name];
-	if(!res)
-		classes[name] = res = new(allocator()) J3Class(this, name);
+	std::map<const vmkit::Name*, J3Class*>::iterator it = classes.find(name);
+	J3Class* res = it == classes.end() ? 0 : it->second;
 	pthread_mutex_unlock(&_mutexClasses);
 	return res;
 }
 
-J3ClassBytes* J3ClassLoader::lookup(const vmkit::Name* name) { 
-	J3::internalError(L"should not happen");
+J3Class* J3ClassLoader::defineClass(const vmkit::Name* name, J3ClassBytes* bytes) {
+	pthread_mutex_lock(&_mutexClasses);
+	J3Class* res = classes[name];
+	if(!res)
+		classes[name] = res = new(allocator()) J3Class(this, name, bytes);
+	pthread_mutex_unlock(&_mutexClasses);
+	return res;
+}
+
+J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
+	J3::internalError(L"implement me: loadClass from a Java class loader");
 }
 
 void J3ClassLoader::wrongType(J3Class* from, const vmkit::Name* type) {
@@ -120,7 +128,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3Class* from, const vmkit::Name* typeNam
 					
 					buf[pos++ - start] = 0;
 
-					res = getClass(vm()->names()->get(buf));
+					res = loadClass(vm()->names()->get(buf));
 				}
 				break;
 			case J3Cst::ID_Left:
@@ -210,7 +218,7 @@ J3Method* J3ClassLoader::method(uint16_t access, J3Class* cl, const vmkit::Name*
 }
 
 J3Method* J3ClassLoader::method(uint16_t access, const vmkit::Name* clName, const vmkit::Name* name, const vmkit::Name* sign) {
-	return method(access, getClass(clName), name, sign);
+	return method(access, loadClass(clName), name, sign);
 }
 
 J3Method* J3ClassLoader::method(uint16_t access, const wchar_t* clName, const wchar_t* name, const wchar_t* sign) {
@@ -253,9 +261,14 @@ J3InitialClassLoader::J3InitialClassLoader(J3* v, const char* rtjar, vmkit::Bump
 		J3::internalError(L"unable to find java library");
 }
 
-J3ClassBytes* J3InitialClassLoader::lookup(const vmkit::Name* name) {
-	char tmp[name->length()+16];
+J3Class* J3InitialClassLoader::loadClass(const vmkit::Name* name) {
+	J3Class* res = findLoadedClass(name);
 
+	if(res)
+		return res;
+
+	char tmp[name->length()+16];
+		
 	//printf("L: %ls\n", name->cStr());
 	for(int i=0; i<name->length(); i++) {
 		char c = name->cStr()[i] & 0xff;
@@ -265,10 +278,10 @@ J3ClassBytes* J3InitialClassLoader::lookup(const vmkit::Name* name) {
 	J3ZipFile* file = archive->getFile(tmp);
 
 	if(file) {
-		J3ClassBytes* res = new(allocator(), file->ucsize) J3ClassBytes(file->ucsize);
-
-		if(archive->readFile(res, file))
-			return res;
+		J3ClassBytes* bytes = new(allocator(), file->ucsize) J3ClassBytes(file->ucsize);
+		
+		if(archive->readFile(bytes, file))
+			return defineClass(name, bytes);
 	}
 
 	return 0;
