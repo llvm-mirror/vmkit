@@ -169,6 +169,7 @@ namespace j3 {
 		J3ObjectType(J3ClassLoader* loader, const vmkit::Name* name);
 
 		uint32_t                   logSize() { return sizeof(uintptr_t) == 8 ? 3 : 2; }
+		llvm::Type*                llvmType();
 
 		J3InterfaceSlotDescriptor* slotDescriptorAt(uint32_t index) { return &_interfaceSlotDescriptors[index]; }
 		void                       prepareInterfaceTable();
@@ -187,8 +188,6 @@ namespace j3 {
 
 	class J3Layout : public J3ObjectType {
 		friend class J3Class;
-
-		llvm::Type*       _llvmType;
 
 		size_t            nbFields;
 		J3Field*          fields;
@@ -209,7 +208,6 @@ namespace j3 {
 
 		J3Method*         findMethod(const vmkit::Name* name, const vmkit::Name* sign);
 		J3Field*          findField(const vmkit::Name* name, const J3Type* type);
-		llvm::Type*       llvmType() { return _llvmType; }
 	};
 
 	class J3StaticLayout : public J3Layout {
@@ -220,8 +218,6 @@ namespace j3 {
 		J3Class* cl() { return _cl; }
 
 		virtual bool      isStaticLayout() { return 1; }
-
-		llvm::Type*       llvmType();
 	};
 
 	class J3Class : public J3Layout {
@@ -251,7 +247,6 @@ namespace j3 {
 
 		void          fillFields(J3Field** fields, size_t n);
 
-		void          createLLVMTypes();
 		void          doNativeName();
 
 		void          doResolve(J3Field* hiddenFields, size_t nbHiddenFields);
@@ -284,7 +279,6 @@ namespace j3 {
 		J3Method*           methodAt(uint16_t idx, uint16_t access);
 		J3Field*            fieldAt(uint16_t idx, uint16_t access);
 
-		llvm::Type*         llvmType();
 		llvm::GlobalValue*  llvmDescriptor(llvm::Module* module);
 
 		J3ClassBytes*       bytes() { return _bytes; }

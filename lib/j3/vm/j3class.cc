@@ -147,6 +147,10 @@ J3ObjectType* J3Type::asObjectType() {
 J3ObjectType::J3ObjectType(J3ClassLoader* loader, const vmkit::Name* name) : J3Type(loader, name) {
 }
 
+llvm::Type* J3ObjectType::llvmType() {
+	return loader()->vm()->typeJ3ObjectPtr;
+}
+
 J3Method* J3ObjectType::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
 	J3::internalError(L"should not happe: %ls::%ls\n", J3ObjectType::name()->cStr(), name->cStr());
 }
@@ -241,10 +245,6 @@ void J3ObjectType::dumpInterfaceSlotDescriptors() {
  */
 J3StaticLayout::J3StaticLayout(J3ClassLoader* loader, J3Class* cl, const vmkit::Name* name) : J3Layout(loader, name) {
 	_cl = cl;
-}
-
-llvm::Type* J3StaticLayout::llvmType() {
-	return loader()->vm()->typeJ3ObjectPtr;
 }
 
 J3Layout::J3Layout(J3ClassLoader* loader, const vmkit::Name* name) : J3ObjectType(loader, name) {
@@ -448,10 +448,6 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 
 		if(!J3Cst::isInterface(access()) && !J3Cst::isAbstract(access()))
 			prepareInterfaceTable();
-
-		//fprintf(stderr, "virtual part of %ls: ", name()->cStr());
-		//llvmType()->getContainedType(0)->dump();
-		//fprintf(stderr, "\n");
 	}
 	unlock();
 }
@@ -587,10 +583,6 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 	fillFields(pFields2, i2);
 	fillFields(pFields1, i1);
 	fillFields(pFields0, i0);
-
-	//fprintf(stderr, "static part of %ls: ", name()->cStr());
-	//staticLayout.llvmType()->getContainedType(0)->dump();
-	//fprintf(stderr, "\n");
 	
 	size_t     nbVirtualMethods = 0, nbStaticMethods = 0;
 
@@ -815,27 +807,6 @@ void J3Class::doNativeName() {
 	loader()->addSymbol(_nativeName, this);
 }
 
-void J3Class::createLLVMTypes() {
-	J3Mangler mangler(this);
-
-	mangler.mangle("static_")->mangle(name());
-
-	_llvmType = loader()->vm()->typeJ3ObjectPtr;
-
-	doNativeName();
-}
-
-llvm::Type* J3Class::llvmType() {
-	llvm::Type* res = _llvmType;
-
-	if(!res) {
-		createLLVMTypes();
-		res = _llvmType;
-	}
-
-	return res;
-}
-
 void J3Field::dump() {
 	printf("Field: %ls %ls::%ls (%d)\n", type()->name()->cStr(), layout()->name()->cStr(), name()->cStr(), access());
 }
@@ -927,6 +898,7 @@ llvm::Type* J3ArrayClass::llvmType() {
 																																			body,
 																																			_nativeName));
 	}
+	//return loader()->vm()->typeJ3ObjectPtr;
 	return _llvmType;
 }
 
