@@ -150,7 +150,7 @@ llvm::Value* J3CodeGen::flatten(llvm::Value* v, J3Type* type) {
 llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 	if(type == vm->typeInteger || type == vm->typeLong || type == vm->typeFloat || type == vm->typeDouble)
 		return v;
-	else if(type->llvmType()->isPointerTy() && v->getType() != type->llvmType())
+	else if(type->llvmType()->isPointerTy())
 		return builder->CreateBitCast(v, type->llvmType());
 	else if(type == vm->typeBoolean || type == vm->typeByte || type == vm->typeShort)
 		return builder->CreateSExtOrTrunc(v, type->llvmType());

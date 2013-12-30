@@ -820,14 +820,12 @@ void J3Class::createLLVMTypes() {
 
 	mangler.mangle("static_")->mangle(name());
 
-	staticLayout._llvmType = 
-		llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), mangler.cStr()));
-	_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), mangler.cStr()+7));
+	_llvmType = loader()->vm()->typeJ3ObjectPtr;
 
 	doNativeName();
 }
 
-llvm::Type* J3Class::virtualLLVMType() {
+llvm::Type* J3Class::llvmType() {
 	llvm::Type* res = _llvmType;
 
 	if(!res) {
@@ -836,10 +834,6 @@ llvm::Type* J3Class::virtualLLVMType() {
 	}
 
 	return res;
-}
-
-llvm::Type* J3Class::llvmType() {
-	return virtualLLVMType();
 }
 
 void J3Field::dump() {

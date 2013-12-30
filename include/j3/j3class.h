@@ -285,7 +285,6 @@ namespace j3 {
 		J3Field*            fieldAt(uint16_t idx, uint16_t access);
 
 		llvm::Type*         llvmType();
-		llvm::Type*         virtualLLVMType();
 		llvm::GlobalValue*  llvmDescriptor(llvm::Module* module);
 
 		J3ClassBytes*       bytes() { return _bytes; }
