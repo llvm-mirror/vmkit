@@ -29,6 +29,7 @@ namespace vmkit {
 		llvm::Module*                           _self;
 		llvm::DataLayout*                       _dataLayout;
 		void*                                   ptrTypeInfo;
+		pthread_mutex_t                         _compilerLock;
 
 		void                            addSymbol(llvm::GlobalValue* gv);
 
@@ -40,6 +41,9 @@ namespace vmkit {
 		static void                destroy(VMKit* vm);
 
 		VMKit(BumpAllocator* allocator);
+
+		void                       lockCompiler();
+		void                       unlockCompiler();
 
 		const char*                selfBitCodePath() { return _selfBitCodePath; }
 

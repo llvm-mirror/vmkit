@@ -107,7 +107,9 @@ void J3CodeGen::operator delete(void* ptr) {
 
 void J3CodeGen::translate(J3Method* method, llvm::Function* llvmFunction) {
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
+	method->cl()->loader()->vm()->lockCompiler();
 	delete new(allocator) J3CodeGen(allocator, method, llvmFunction);
+	method->cl()->loader()->vm()->unlockCompiler();
 	vmkit::BumpAllocator::destroy(allocator);
 }
 

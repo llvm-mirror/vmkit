@@ -37,6 +37,7 @@ VMKit::VMKit(vmkit::BumpAllocator* allocator) :
 	llvm::llvm_start_multithreaded();
 	_allocator = allocator;
 	pthread_mutex_init(&safepointMapLock, 0);
+	pthread_mutex_init(&_compilerLock, 0);
 }
 
 void* VMKit::operator new(size_t n, vmkit::BumpAllocator* allocator) {
@@ -45,6 +46,14 @@ void* VMKit::operator new(size_t n, vmkit::BumpAllocator* allocator) {
 
 void VMKit::destroy(VMKit* vm) {
 	vmkit::BumpAllocator::destroy(vm->allocator());
+}
+
+void VMKit::lockCompiler() {
+	pthread_mutex_lock(&_compilerLock);
+}
+
+void VMKit::unlockCompiler() {
+	pthread_mutex_unlock(&_compilerLock);
 }
 
 void VMKit::addSafepoint(Safepoint* sf) {

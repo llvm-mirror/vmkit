@@ -111,6 +111,8 @@ void J3::run() {
 		->findVirtualField(names()->get(L"eetop"), typeLong);
 	threadRun                = initialClassLoader->method(0, L"java/lang/Thread", L"run", L"()V");
 
+	fieldClass               = initialClassLoader->loadClass(names()->get("java/lang/reflect/Field"));
+
 	J3Lib::bootstrap(this);
 }
 

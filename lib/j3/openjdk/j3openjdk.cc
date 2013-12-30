@@ -384,7 +384,14 @@ jbyteArray JNICALL JVM_GetClassTypeAnnotations(JNIEnv* env, jclass cls) { enterJ
  */
 
 jobjectArray JNICALL JVM_GetClassDeclaredMethods(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); NYI(); leaveJVM(); }
-jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jboolean publicOnly) { 
+	enterJVM(); 
+	J3ObjectType* type = J3ObjectType::nativeClass(ofClass);
+
+	NYI(); 
+	leaveJVM(); 
+}
+
 jobjectArray JNICALL JVM_GetClassDeclaredConstructors(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); NYI(); leaveJVM(); }
 
 /* Differs from JVM_GetClassModifiers in treatment of inner classes.
