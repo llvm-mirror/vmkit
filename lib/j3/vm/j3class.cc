@@ -544,8 +544,7 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 	J3Field* pFields0[n]; size_t i0 = 0; /* sort fields by reverse size */
 	J3Field* pFields1[n]; size_t i1 = 0;
 	J3Field* pFields2[n]; size_t i2 = 0;
-	J3Field* pFields4[n]; size_t i4 = 0;
-	J3Field* pFields8[n]; size_t i8 = 0;
+	J3Field* pFields3[n]; size_t i3 = 0;
 
 	memset(fields, 0, sizeof(J3Field)*n);
 	
@@ -572,12 +571,11 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 			nbVirtualFields++;
 		}
 
-		switch(loader()->vm()->dataLayout()->getTypeSizeInBits(f->_type->llvmType())) {
-			case 1:  pFields0[i0++] = f; break;
-			case 8:  pFields1[i1++] = f; break;
-			case 16: pFields2[i2++] = f; break;
-			case 32: pFields4[i4++] = f; break;
-			case 64: pFields8[i8++] = f; break;
+		switch(f->_type->logSize()) {
+			case 0:  pFields0[i0++] = f; break;
+			case 1:  pFields1[i1++] = f; break;
+			case 2:  pFields2[i2++] = f; break;
+			case 3:  pFields3[i3++] = f; break;
 			default: J3::internalError(L"should not happen");
 		}
 	}
@@ -590,8 +588,7 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 	staticBody.push_back(loader()->vm()->typeJ3Object);
 	virtualBody->push_back(0);
 
-	fillFields(&staticBody, virtualBody, pFields8, i8);
-	fillFields(&staticBody, virtualBody, pFields4, i4);
+	fillFields(&staticBody, virtualBody, pFields3, i3);
 	fillFields(&staticBody, virtualBody, pFields2, i2);
 	fillFields(&staticBody, virtualBody, pFields1, i1);
 	fillFields(&staticBody, virtualBody, pFields0, i0);
