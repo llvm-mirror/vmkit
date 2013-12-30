@@ -292,7 +292,6 @@ namespace j3 {
 	};
 
 	class J3ArrayClass : public J3ObjectType {
-		llvm::Type*         _llvmType;
 		J3Type*             _component;
 
 		void                doResolve(J3Field* hiddenFields, size_t nbHiddenFields);
@@ -307,7 +306,6 @@ namespace j3 {
 
 		J3Type*             component() { return _component; }
 		bool                isArrayClass() { return 1; }
-		llvm::Type*         llvmType();
 	};
 
 	class J3Primitive : public J3Type {

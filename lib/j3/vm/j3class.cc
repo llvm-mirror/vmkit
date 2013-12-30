@@ -886,22 +886,6 @@ void J3ArrayClass::doNativeName() {
 	loader()->addSymbol(_nativeName, this);
 }
 
-llvm::Type* J3ArrayClass::llvmType() {
-	if(!_llvmType) {
-		llvm::Type* body[2] = {
-			loader()->vm()->typeJ3ArrayObject,
-			llvm::ArrayType::get(component()->llvmType(), 0) /* has to be called first */
-		};
-		
-		doNativeName();
-		_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), 
-																																			body,
-																																			_nativeName));
-	}
-	//return loader()->vm()->typeJ3ObjectPtr;
-	return _llvmType;
-}
-
 /*  
  *  ------------ J3Primitive ------------
  */
