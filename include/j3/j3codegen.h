@@ -112,6 +112,8 @@ namespace j3 {
 		void               compareFP(bool isL);
 		void               compareLong();
 
+		llvm::Value*       fieldOffset(llvm::Value* obj, J3Field* f);
+
 		void               get(llvm::Value* obj, J3Field* field);
 		void               getField(uint32_t idx);
 		void               getStatic(uint32_t idx);

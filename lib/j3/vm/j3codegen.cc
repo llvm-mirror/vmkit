@@ -401,9 +401,15 @@ void J3CodeGen::invokeSpecial(uint32_t idx) {
 	invoke(target, target->unsafe_llvmFunction(1, module(), cl));
 }
 
+llvm::Value* J3CodeGen::fieldOffset(llvm::Value* obj, J3Field* f) {
+	llvm::Type* uintPtrTy = builder->getIntPtrTy(vm->dataLayout());
+	return builder->CreateIntToPtr(builder->CreateAdd(builder->CreatePtrToInt(obj, uintPtrTy),
+																										llvm::ConstantInt::get(uintPtrTy, f->offset())),
+																 f->type()->llvmType()->getPointerTo());
+}
+
 void J3CodeGen::get(llvm::Value* src, J3Field* f) {
-	llvm::Value* gep[2] = { builder->getInt32(0), builder->getInt32(f->num()) };
-	llvm::Value* res = flatten(builder->CreateLoad(builder->CreateGEP(src, gep)), f->type());
+	llvm::Value* res = flatten(builder->CreateLoad(fieldOffset(src, f)), f->type());
 	stack.push(res);
 }
 
@@ -419,8 +425,7 @@ void J3CodeGen::getStatic(uint32_t idx) {
 }
 
 void J3CodeGen::put(llvm::Value* dest, llvm::Value* val, J3Field* f) {
-	llvm::Value* gep[2] = { builder->getInt32(0), builder->getInt32(f->num()) };
-	builder->CreateStore(unflatten(val, f->type()), builder->CreateGEP(dest, gep));
+	builder->CreateStore(unflatten(val, f->type()), fieldOffset(dest, f));
 }
 
 void J3CodeGen::putStatic(uint32_t idx) {

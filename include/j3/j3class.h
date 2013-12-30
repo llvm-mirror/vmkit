@@ -138,8 +138,7 @@ namespace j3 {
 		const vmkit::Name* _name;
 		J3Type*            _type;
 		J3Attributes*      _attributes;
-		uint32_t           _num;
-		uint32_t           _offset;
+		uintptr_t          _offset;
 
 	public:
 		J3Field() {}
@@ -151,7 +150,7 @@ namespace j3 {
 		const vmkit::Name* name() { return _name; }
 		J3Type*            type() { return _type; }
 
-		uint32_t           num() { return _num; }
+		uintptr_t          offset() { return _offset; }
 
 		void               dump();
 	};
@@ -197,13 +196,13 @@ namespace j3 {
 		size_t            _nbMethods;
 		J3Method**        _methods;
 
-		size_t             _structSize;
+		uintptr_t         _structSize;
 	public:
 		J3Layout(J3ClassLoader* loader, const vmkit::Name* name);
 
 		virtual bool      isLayout() { return 1; }
 
-		size_t            structSize();
+		uintptr_t         structSize();
 
 		size_t            nbMethods() { return _nbMethods; }
 		J3Method**        methods() { return _methods; }

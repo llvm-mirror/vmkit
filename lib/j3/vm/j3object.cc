@@ -416,19 +416,11 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 	}																																			\
 																																				\
 	void J3ObjectHandle::set##name(J3Field* field, ctype value) {					\
-		const llvm::StructLayout* layout =																	\
-			obj()->vt()->type()->loader()->vm()->dataLayout()->								\
-			getStructLayout((llvm::StructType*)(field->layout()->llvmType()->getContainedType(0))); \
-		uint32_t offset = layout->getElementOffset(field->num());						\
-		rawSet##name(offset, value);																				\
+		rawSet##name(field->offset(), value);																\
 	}																																			\
 																																				\
 	ctype J3ObjectHandle::get##name(J3Field* field) {											\
-		const llvm::StructLayout* layout =																	\
-			obj()->vt()->type()->loader()->vm()->dataLayout()->								\
-			getStructLayout((llvm::StructType*)(field->layout()->llvmType()->getContainedType(0))); \
-		uint32_t offset = layout->getElementOffset(field->num());						\
-		return rawGet##name(offset);																				\
+		return rawGet##name(field->offset());																\
 	}																																			\
 																																				\
 	void J3ObjectHandle::set##name##At(uint32_t idx, ctype value) {				\
@@ -475,18 +467,11 @@ J3ObjectHandle* J3ObjectHandle::rawGetObject(uint32_t offset) {
 }
 
 void J3ObjectHandle::setObject(J3Field* field, J3ObjectHandle* value) {
-	const llvm::StructLayout* layout =
-		obj()->vt()->type()->loader()->vm()->dataLayout()->
-		getStructLayout((llvm::StructType*)(field->layout()->llvmType()->getContainedType(0)));
-	uint32_t offset = layout->getElementOffset(field->num());
-	rawSetObject(offset, value);
+	rawSetObject(field->offset(), value);
 }
 
 J3ObjectHandle* J3ObjectHandle::getObject(J3Field* field) {
-	const llvm::StructLayout* layout =
-		obj()->vt()->type()->loader()->vm()->dataLayout()->
-		getStructLayout((llvm::StructType*)(field->layout()->llvmType()->getContainedType(0)));
-	return rawGetObject(layout->getElementOffset(field->num()));
+	return rawGetObject(field->offset());
 }
 
 void J3ObjectHandle::setObjectAt(uint32_t idx, J3ObjectHandle* value) {

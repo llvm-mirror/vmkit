@@ -246,7 +246,7 @@ J3StaticLayout::J3StaticLayout(J3ClassLoader* loader, J3Class* cl, const vmkit::
 J3Layout::J3Layout(J3ClassLoader* loader, const vmkit::Name* name) : J3ObjectType(loader, name) {
 }
 
-size_t J3Layout::structSize() { 
+uintptr_t J3Layout::structSize() { 
 	return _structSize; 
 }
 
@@ -651,17 +651,15 @@ void J3Class::fillFields(std::vector<llvm::Type*>* staticBody, std::vector<llvm:
 
 		if(J3Cst::isStatic(fields[i]->access())) {
 			//fprintf(stderr, "   adding static field: %ls %ls::%ls\n", cur->type()->name()->cStr(), name()->cStr(), cur->name()->cStr());
-			cur->_num = staticBody->size();
 			layout = &staticLayout;
 			staticBody->push_back(cur->type()->llvmType());
 		} else {
-			cur->_num = virtualBody->size();
 			layout = this;
 			virtualBody->push_back(cur->type()->llvmType());
 		}
-		layout->fields[layout->nbFields++] = *fields[i];
 		cur->_offset = layout->structSize();
 		layout->_structSize += 1 << fields[i]->type()->logSize();
+		layout->fields[layout->nbFields++] = *fields[i];
 	}
 }
 
