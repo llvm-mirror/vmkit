@@ -348,8 +348,8 @@ J3Monitor* J3Object::monitor() {
 
 			if(!(header & 3)) { /* stack locked */
 				J3LockRecord* record = (J3LockRecord*)header;
-				fprintf(stderr, " preparing monitor with %p\n", record);
 				/* I can read record->header because, in the worst case, the owner is blocked in the sched_yield loop */
+				/* however, I can not read lockCount because the owner is maybe playing with this value */
 				monitor->prepare(this, record->header, record); 
 			} else {            /* not locked at all */
 				if((header & 7) != 1)
