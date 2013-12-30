@@ -50,6 +50,7 @@ namespace j3 {
 		virtual void                doResolve(J3Field* hiddenFields, size_t nbHiddenFields) { status = RESOLVED; }
 		virtual void                doInitialise() { status = INITED; }
 
+		virtual void                doNativeName();
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
 

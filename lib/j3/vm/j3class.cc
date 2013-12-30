@@ -47,15 +47,19 @@ void J3Type::dump() {
 	fprintf(stderr, "Type: %ls", name()->cStr());
 }
 
+void J3Type::doNativeName() {
+	J3::internalError(L"should not happen");
+}
+
 char* J3Type::nativeName() {
 	if(!_nativeName)
-		llvmType();
+		doNativeName();
 	return _nativeName;
 }
 
 uint32_t J3Type::nativeNameLength() {
 	if(!_nativeNameLength)
-		llvmType();
+		doNativeName();
 	return _nativeNameLength;
 }
 
