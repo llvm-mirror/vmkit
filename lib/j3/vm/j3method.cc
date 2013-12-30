@@ -26,10 +26,16 @@ J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
 	_nbIns = nbArgs-1;
 	memcpy(_ins, args, (nbArgs-1)*sizeof(J3Type*));
 			
-	std::vector<llvm::Type*> in;
-	for(uint32_t i=0; i<nbIns(); i++)
-		in.push_back(ins(i)->llvmType());
-	_llvmType = llvm::FunctionType::get(out()->llvmType(), in, 0);
+}
+
+llvm::FunctionType* J3MethodType::llvmType() {
+	if(!_llvmType) {
+		std::vector<llvm::Type*> in;
+		for(uint32_t i=0; i<nbIns(); i++)
+			in.push_back(ins(i)->llvmType());
+		_llvmType = llvm::FunctionType::get(out()->llvmType(), in, 0);
+	}
+	return _llvmType;
 }
 
 J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) :
