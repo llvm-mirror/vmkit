@@ -45,7 +45,7 @@ namespace j3 {
 
 		static J3*  create();
 
-#define defPrimitive(name, ctype, llvmtype)			\
+#define defPrimitive(name, ctype, llvmtype, scale)	\
 		J3Primitive* type##name;
 		onJavaTypes(defPrimitive)
 #undef defPrimitive

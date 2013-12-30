@@ -174,7 +174,7 @@ namespace j3 {
 		void            setObjectAt(uint32_t idx, J3ObjectHandle* v);
 		J3ObjectHandle* getObjectAt(uint32_t idx);
 
-#define defAccessor(name, ctype, llvmtype)															\
+#define defAccessor(name, ctype, llvmtype, scale)												\
 		void  rawSet##name(uint32_t offset, ctype value);										\
 		ctype rawGet##name(uint32_t offset);																\
 		void  set##name(J3Field* f, ctype value);														\
@@ -209,13 +209,13 @@ namespace j3 {
 	class J3Value {
 	public:
 		union {
-#define doIt(name, ctype, llvmtype) \
+#define doIt(name, ctype, llvmtype, scale)			\
 			ctype val##name;
 			onJavaFields(doIt);
 #undef doIt
 		};
 
-#define doIt(name, ctype, llvmtype) \
+#define doIt(name, ctype, llvmtype, scale)			\
 		J3Value(ctype val) { val##name = val; }
 		onJavaFields(doIt);
 #undef doIt

@@ -68,7 +68,7 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 		 (dst_pos + length) > dst->arrayLength())
 		J3::arrayIndexOutOfBoundsException();
 
-	uint32_t scale = srcType0->asArrayClass()->component()->getLogSize();
+	uint32_t scale = srcType0->asArrayClass()->component()->logSize();
 
 	src->rawArrayCopyTo(src_pos << scale, dst, dst_pos << scale, length << scale);
 

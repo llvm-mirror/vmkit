@@ -85,8 +85,8 @@ void J3::run() {
 
 	vmkit::BumpAllocator* a = initialClassLoader->allocator();
 
-#define defPrimitive(name, ctype, llvmtype)			\
-	type##name = new(a) J3Primitive(initialClassLoader, J3Cst::ID_##name, llvm::Type::get##llvmtype##Ty(llvmContext()));
+#define defPrimitive(name, ctype, llvmtype, scale)											\
+	type##name = new(a) J3Primitive(initialClassLoader, J3Cst::ID_##name, llvm::Type::get##llvmtype##Ty(llvmContext()), scale);
 	onJavaTypes(defPrimitive)
 #undef defPrimitive
 

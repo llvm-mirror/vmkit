@@ -406,7 +406,7 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 
 
 
-#define defAccessor(name, ctype, llvmtype)															\
+#define defAccessor(name, ctype, llvmtype, scale)												\
 	void J3ObjectHandle::rawSet##name(uint32_t offset, ctype value) {			\
 		*((ctype*)((uintptr_t)obj() + offset)) = value;											\
 	}																																			\

@@ -53,7 +53,7 @@ namespace j3 {
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
 
-		uint64_t                    getLogSize();
+		virtual uint32_t            logSize() = 0;
 		uint64_t                    getSizeInBits();
 
 		void*                       getSymbolAddress();
@@ -167,6 +167,8 @@ namespace j3 {
 
 	public:
 		J3ObjectType(J3ClassLoader* loader, const vmkit::Name* name);
+
+		uint32_t                   logSize() { return sizeof(uintptr_t) == 8 ? 3 : 2; }
 
 		J3InterfaceSlotDescriptor* slotDescriptorAt(uint32_t index) { return &_interfaceSlotDescriptors[index]; }
 		void                       prepareInterfaceTable();
@@ -312,11 +314,13 @@ namespace j3 {
 	};
 
 	class J3Primitive : public J3Type {
+		uint32_t     _logSize;
 		llvm::Type*  _llvmType;
 
 	public:
-		J3Primitive(J3ClassLoader* loader, char id, llvm::Type* type);
+		J3Primitive(J3ClassLoader* loader, char id, llvm::Type* type, uint32_t logSize);
 
+		uint32_t    logSize() { return _logSize; }
 		bool        isPrimitive() { return 1; }
 		llvm::Type* llvmType() { return _llvmType; }
 	};
