@@ -43,7 +43,7 @@ void J3Lib::bootstrap(J3* vm) {
 																															L"java/lang/Thread",
 																															J3Cst::initName,
 																															L"(Ljava/lang/ThreadGroup;Ljava/lang/String;)V");
-	J3ObjectHandle* mainThread = vm->initialClassLoader->globalReferences()->add(J3ObjectHandle::doNewObject(threadInit->cl()));
+	J3ObjectHandle* mainThread = J3ObjectHandle::doNewObject(threadInit->cl());
 
 	J3Thread::get()->assocJavaThread(mainThread);
 	mainThread->setInteger(threadInit->cl()->findVirtualField(vm->names()->get(L"priority"), vm->typeInteger), 5);

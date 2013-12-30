@@ -151,6 +151,8 @@ namespace j3 {
 		J3VirtualTable*     vt()    { return obj()->vt(); }
 		uint32_t            arrayLength() { return array()->length(); }
 
+		J3ObjectHandle& operator=(const J3ObjectHandle& h) { _obj = h._obj; return *this; }
+
 		static J3ObjectHandle* allocate(J3VirtualTable* vt, size_t n);
 		static J3ObjectHandle* doNewObject(J3Class* cl);
 		static J3ObjectHandle* doNewArray(J3ArrayClass* cl, uint32_t length);

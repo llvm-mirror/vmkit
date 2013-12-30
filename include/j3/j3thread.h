@@ -24,7 +24,7 @@ namespace j3 {
 		JNIEnv                     _jniEnv;
 		J3LocalReferences          _localReferences;
 		J3ObjectHandle*            _pendingException;
-		J3ObjectHandle*            _javaThread;
+		J3ObjectHandle             _javaThread;
 
 		virtual void run();
 		static void doRun();
@@ -34,7 +34,7 @@ namespace j3 {
 		~J3Thread();
 
 		void               assocJavaThread(J3ObjectHandle* javaThread);
-		J3ObjectHandle*    javaThread() { return _javaThread; }
+		J3ObjectHandle*    javaThread() { return &_javaThread; }
 		static J3Thread*   nativeThread(J3ObjectHandle* handle);
 
 		J3Method*          getJavaCaller(uint32_t level=0);

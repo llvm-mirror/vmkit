@@ -21,6 +21,7 @@ J3Thread::~J3Thread() {
 
 void J3Thread::doRun() {
 	J3ObjectHandle* handle = get()->javaThread();
+	fprintf(stderr, " *** target is %ls\n", handle->vt()->type()->name()->cStr());
 	get()->vm()->threadRun->invokeVirtual(handle);
 }
 
@@ -30,11 +31,11 @@ void J3Thread::run() {
 }
 
 void J3Thread::start(J3ObjectHandle* handle) {
+	fprintf(stderr, " start %ls\n", handle->vt()->type()->name()->cStr());
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
 	J3Thread* thread = new J3Thread(get()->vm());
 	thread->assocJavaThread(handle);
 	thread->Thread::start();
-	while(1);
 }
 
 J3Method* J3Thread::getJavaCaller(uint32_t level) {
@@ -67,8 +68,8 @@ J3Thread* J3Thread::nativeThread(J3ObjectHandle* handle) {
 }
 
 void J3Thread::assocJavaThread(J3ObjectHandle* javaThread) {
-	_javaThread = javaThread;
-	_javaThread->setLong(vm()->threadVMData, (int64_t)(uintptr_t)this);
+	_javaThread = *javaThread;
+	_javaThread.setLong(vm()->threadVMData, (int64_t)(uintptr_t)this);
 }
 
 J3ObjectHandle* J3Thread::push(J3ObjectHandle* handle) { 

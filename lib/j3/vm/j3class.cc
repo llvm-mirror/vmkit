@@ -158,7 +158,7 @@ J3ObjectType::J3ObjectType(J3ClassLoader* loader, const vmkit::Name* name) : J3T
 }
 
 J3Method* J3ObjectType::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
-	J3::internalError(L"should not happen");
+	J3::internalError(L"should not happe: %ls::%ls\n", J3ObjectType::name()->cStr(), name->cStr());
 }
 
 J3Method* J3ObjectType::findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
