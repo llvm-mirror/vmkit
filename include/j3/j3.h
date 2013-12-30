@@ -82,6 +82,7 @@ namespace j3 {
 		llvm::Type* typeJ3VirtualTablePtr;
 		llvm::Type* typeJ3Type;
 		llvm::Type* typeJ3TypePtr;
+		llvm::Type* typeJ3LayoutPtr;
 		llvm::Type* typeJ3Thread;
 		llvm::Type* typeJ3ObjectTypePtr;
 		llvm::Type* typeJ3Class;
