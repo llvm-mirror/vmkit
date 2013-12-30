@@ -28,16 +28,6 @@ J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
 			
 }
 
-llvm::FunctionType* J3MethodType::unsafe_llvmFunctionType() {
-	if(!_llvmFunctionType) {
-		std::vector<llvm::Type*> in;
-		for(uint32_t i=0; i<nbIns(); i++)
-			in.push_back(ins(i)->llvmType());
-		_llvmFunctionType = llvm::FunctionType::get(out()->llvmType(), in, 0);
-	}
-	return _llvmFunctionType;
-}
-
 J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) :
 	_selfCode(this) {
 	_access = access;
@@ -55,8 +45,13 @@ uint32_t J3Method::index()  {
 	return _index; 
 }
 
+void J3Method::markCompiled(llvm::Function* llvmFunction, void* fnPtr) {
+	_llvmFunction = llvmFunction;
+	_fnPtr = fnPtr;
+}
+
 void* J3Method::fnPtr() {
-	if(!_fnPtr) {
+	if(!isCompiled()) {
 		//fprintf(stderr, "materializing: %ls::%ls%ls\n", this, cl()->name()->cStr(), name()->cStr(), sign()->cStr());
 		if(!isResolved()) {
 			if(cl()->loader()->vm()->options()->debugLinking)
@@ -67,23 +62,14 @@ void* J3Method::fnPtr() {
 				J3::noSuchMethodError(L"unable to find method", cl(), name(), sign());
 		}
 
-		cl()->loader()->vm()->lockCompiler();
-		llvm::Module* module = new llvm::Module(llvmFunctionName(), cl()->loader()->vm()->llvmContext());
-		_llvmFunction = unsafe_llvmFunction(0, module);
-
-		J3CodeGen::translate(this, _llvmFunction);
-
-		cl()->loader()->compileModule(module);
-
-		_fnPtr = (void*)cl()->loader()->ee()->getFunctionAddress(_llvmFunction->getName().data());
-		cl()->loader()->vm()->unlockCompiler();
+		J3CodeGen::translate(this);
  	}
 
 	return _fnPtr;
 }
 
 void* J3Method::functionPointerOrStaticTrampoline() {
-	if(_fnPtr)
+	if(isCompiled())
 		return _fnPtr;
 	if(!_staticTrampoline)
 		_staticTrampoline = J3Trampoline::buildStaticTrampoline(cl()->loader()->allocator(), this);
@@ -91,7 +77,7 @@ void* J3Method::functionPointerOrStaticTrampoline() {
 }
 
 void* J3Method::functionPointerOrVirtualTrampoline() {
-	if(_fnPtr)
+	if(isCompiled())
 		return _fnPtr;
 	if(!_virtualTrampoline)
 		_virtualTrampoline = J3Trampoline::buildVirtualTrampoline(cl()->loader()->allocator(), this);
@@ -335,15 +321,6 @@ char* J3Method::llvmStubName(J3Class* from) {
 	return _llvmAllNames + 0;
 }
 
-llvm::GlobalValue* J3Method::unsafe_llvmDescriptor(llvm::Module* module) {
-	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(llvmDescriptorName(), cl()->loader()->vm()->typeJ3Method));
-}
-
-llvm::Function* J3Method::unsafe_llvmFunction(bool isStub, llvm::Module* module, J3Class* from) {
-	const char* id = (isStub && !_fnPtr) ? llvmStubName(from) : llvmFunctionName(from);
-	return (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->unsafe_llvmFunctionType());
-}
-
 void J3Method::dump() {
 	printf("Method: %ls %ls::%ls\n", sign()->cStr(), cl()->name()->cStr(), name()->cStr());
 }
@@ -352,62 +329,4 @@ void J3Method::registerNative(void* fnPtr) {
 	if(_nativeFnPtr)
 		J3::noSuchMethodError(L"unable to dynamically modify a native function", cl(), name(), sign());
 	_nativeFnPtr = fnPtr;
-}
-
-llvm::Type* J3Method::doNativeType(J3Type* type) {
-	llvm::Type* t = type->llvmType();
-
-	if(t->isPointerTy())
-		return cl()->loader()->vm()->typeJ3ObjectHandlePtr;
-	else
-		return t;
-}
-
-llvm::Function* J3Method::unsafe_nativeLLVMFunction(llvm::Module* module) {
-	J3ClassLoader* loader = cl()->loader();
-	J3Mangler      mangler(cl());
-
-	mangler.mangle(mangler.javaId)->mangle(this);
-	uint32_t length = mangler.length();
-	mangler.mangleType(this);
-
-	void* fnPtr = _nativeFnPtr;
-
-	if(!fnPtr)
-		fnPtr = loader->lookupNativeFunctionPointer(this, mangler.cStr());
-
-	if(!fnPtr) {
-		mangler.cStr()[length] = 0;
-		fnPtr = loader->lookupNativeFunctionPointer(this, mangler.mangleType(this)->cStr());
-	}
-
-	if(!fnPtr)
-		J3::linkageError(this);
-
-	J3MethodType*            type = methodType();
-	std::vector<llvm::Type*> nativeIns;
-	llvm::Type*              nativeOut;
-
-	nativeIns.push_back(loader->vm()->typeJNIEnvPtr);
-
-	if(J3Cst::isStatic(access()))
-		nativeIns.push_back(doNativeType(loader->vm()->classClass));
-			
-	for(int i=0; i<type->nbIns(); i++)
-		nativeIns.push_back(doNativeType(type->ins(i)));
-
-	nativeOut = doNativeType(type->out());
-
-	char* buf = (char*)cl()->loader()->allocator()->allocate(mangler.length()+1);
-	memcpy(buf, mangler.cStr(), mangler.length()+1);
-
-	llvm::FunctionType* fType = llvm::FunctionType::get(nativeOut, nativeIns, 0);
-	llvm::Function* res = llvm::Function::Create(fType,
-																							 llvm::GlobalValue::ExternalLinkage,
-																							 buf,
-																							 module);
-
-	cl()->loader()->addSymbol(buf, new(cl()->loader()->allocator()) vmkit::NativeSymbol(fnPtr));
-
-	return res;
 }

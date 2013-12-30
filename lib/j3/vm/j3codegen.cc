@@ -26,7 +26,7 @@ using namespace j3;
 
 #define _onEndPoint() ({ if(onEndPoint()) return; })
 
-J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Function* _llvmFunction) :
+J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m) :
 	exceptions(this) {
 	
 	allocator = _allocator;
@@ -45,9 +45,9 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	if(vm->options()->debugTranslate)
 		fprintf(stderr, "  translating bytecode of: %ls::%ls%ls\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
 
-	llvmFunction = _llvmFunction;
+	module = new llvm::Module(method->llvmFunctionName(), vm->llvmContext());
+	llvmFunction = buildFunction(method, 0);
 	llvmFunction->setGC("vmkit");
-	_module = llvmFunction->getParent();
 
 	bbCheckCastFailed = 0;
 	bbNullCheckFailed = 0;
@@ -62,19 +62,19 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	uintPtrTy = builder->getIntPtrTy(vm->dataLayout());
 
 #define _x(name, id)														\
-	name = vm->introspectFunction(module(), id);
+	name = vm->introspectFunction(module, id);
 #include "j3/j3meta.def"
 #undef _x
 
-	gvTypeInfo               = vm->introspectGlobalValue(module(),  "typeinfo for void*");
+	gvTypeInfo               = vm->introspectGlobalValue(module,  "typeinfo for void*");
 
-	gcRoot                   = vm->getGCRoot(module());
+	gcRoot                   = vm->getGCRoot(module);
 
-	frameAddress             = llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::frameaddress);
+	frameAddress             = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::frameaddress);
 
 #if 0
-	//stackMap       = llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::experimental_stackmap);
-	//patchPointVoid = llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::experimental_patchpoint_i64);
+	//stackMap       = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::experimental_stackmap);
+	//patchPointVoid = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::experimental_patchpoint_i64);
 	{
 		llvm::Type* ins[] = {
 			builder->getInt64Ty(),
@@ -83,7 +83,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 			builder->getInt32Ty()
 		};
 		patchPointVoid = (llvm::Function*)
-			module()->getOrInsertFunction(llvm::Intrinsic::getName(llvm::Intrinsic::experimental_patchpoint_void),
+			module->getOrInsertFunction(llvm::Intrinsic::getName(llvm::Intrinsic::experimental_patchpoint_void),
 																		llvm::FunctionType::get(builder->getVoidTy(), ins, 1));
 	}
 #endif
@@ -99,6 +99,11 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 
 	if(vm->options()->debugTranslate > 3)
 		llvmFunction->dump();
+
+	loader->compileModule(module);
+	void* fnPtr = (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
+
+	method->markCompiled(llvmFunction, fnPtr);
 }
 
 J3CodeGen::~J3CodeGen() {
@@ -111,10 +116,14 @@ void* J3CodeGen::operator new(size_t n, vmkit::BumpAllocator* _allocator) {
 void J3CodeGen::operator delete(void* ptr) {
 }
 
-void J3CodeGen::translate(J3Method* method, llvm::Function* llvmFunction) {
+void J3CodeGen::translate(J3Method* method) {
+	method->cl()->loader()->vm()->lockCompiler();
+
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
-	delete new(allocator) J3CodeGen(allocator, method, llvmFunction);
+	delete new(allocator) J3CodeGen(allocator, method);
 	vmkit::BumpAllocator::destroy(allocator);
+
+	method->cl()->loader()->vm()->unlockCompiler();
 }
 
 uint32_t J3CodeGen::wideReadU1() {
@@ -162,6 +171,34 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 		type->dump();
 		J3::internalError(L"should not happen");
 	}
+}
+
+llvm::FunctionType* J3CodeGen::llvmFunctionType(J3MethodType* type) {
+	llvm::FunctionType* res = type->functionType();
+
+	if(!res) {
+		std::vector<llvm::Type*> in;
+		for(uint32_t i=0; i<type->nbIns(); i++)
+			in.push_back(type->ins(i)->llvmType());
+		res = llvm::FunctionType::get(type->out()->llvmType(), in, 0);
+		type->setFunctionType(res);
+	}
+	return res;
+}
+
+llvm::Function* J3CodeGen::buildFunction(J3Method* method, bool isStub) {
+	const char* id = (isStub && !method->isCompiled()) ? method->llvmStubName(cl) : method->llvmFunctionName(cl);
+	return (llvm::Function*)module->getOrInsertFunction(id, llvmFunctionType(method->methodType(cl)));
+}
+
+llvm::Value* J3CodeGen::typeDescriptor(J3ObjectType* objectType, llvm::Type* type) {
+	llvm::Value* v = module->getOrInsertGlobal(objectType->nativeName(), 
+																							 vm->typeJ3ObjectType);
+	return type == vm->typeJ3ObjectTypePtr ? v : builder->CreateBitCast(v, type);
+}
+
+llvm::Value* J3CodeGen::methodDescriptor(J3Method* method) {
+	return module->getOrInsertGlobal(method->llvmDescriptorName(), vm->typeJ3Method);
 }
 
 llvm::Value* J3CodeGen::spToCurrentThread(llvm::Value* sp) {
@@ -273,11 +310,11 @@ void J3CodeGen::monitorExit(llvm::Value* obj) {
 
 void J3CodeGen::initialiseJ3ObjectType(J3ObjectType* cl) {
 	if(!cl->isInitialised())
-		builder->CreateCall(funcJ3TypeInitialise, builder->CreateBitCast(cl->unsafe_llvmDescriptor(module()), vm->typeJ3TypePtr));
+		builder->CreateCall(funcJ3TypeInitialise, typeDescriptor(cl, vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::javaClass(J3ObjectType* type) {
-	return builder->CreateCall(funcJ3ObjectTypeJavaClass, type->unsafe_llvmDescriptor(module()));
+	return builder->CreateCall(funcJ3ObjectTypeJavaClass, typeDescriptor(type, vm->typeJ3ObjectTypePtr));
 }
 
 llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
@@ -288,7 +325,7 @@ llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
 llvm::Value* J3CodeGen::staticInstance(J3Class* cl) {
 	initialiseJ3ObjectType(cl);
 	return handleToObject(builder->CreateCall(funcJ3ClassStaticInstance, 
-																						builder->CreateBitCast(cl->unsafe_llvmDescriptor(module()), vm->typeJ3ClassPtr)));
+																						typeDescriptor(cl, vm->typeJ3ClassPtr)));
 }
 
 llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
@@ -301,7 +338,7 @@ llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
 
 llvm::Value* J3CodeGen::vt(J3ObjectType* type, bool doResolve) {
 	llvm::Value* func = doResolve && !type->isResolved() ? funcJ3TypeVTAndResolve : funcJ3TypeVT;
-	return builder->CreateCall(func, builder->CreateBitCast(type->unsafe_llvmDescriptor(module()), vm->typeJ3TypePtr));
+	return builder->CreateCall(func, typeDescriptor(type, vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
@@ -365,7 +402,7 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 															builder->getInt32(J3VirtualTable::gepInterfaceMethods),
 															builder->getInt32(index % J3VirtualTable::nbInterfaceMethodTable) };
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
-																						 type->unsafe_llvmFunctionType()->getPointerTo());
+																						 llvmFunctionType(type)->getPointerTo());
 
 	invoke(target, func);
 }
@@ -378,14 +415,14 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 	if(target->isResolved())
 		funcEntry = builder->getInt32(target->index());
 	else
-		funcEntry = builder->CreateCall(funcJ3MethodIndex, target->unsafe_llvmDescriptor(module()));
+		funcEntry = builder->CreateCall(funcJ3MethodIndex, methodDescriptor(target));
 
 	llvm::Value*  obj = nullCheck(stack.top(type->nbIns() - 1));
 	llvm::Value*  gepFunc[] = { builder->getInt32(0),
 															builder->getInt32(J3VirtualTable::gepVirtualMethods),
 															funcEntry };
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
-																						 type->unsafe_llvmFunctionType()->getPointerTo());
+																						 llvmFunctionType(type)->getPointerTo());
 
 	invoke(target, func);
 }
@@ -393,12 +430,12 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 void J3CodeGen::invokeStatic(uint32_t idx) {
 	J3Method* target = cl->methodAt(idx, J3Cst::ACC_STATIC);
 	initialiseJ3ObjectType(target->cl());
-	invoke(target, target->unsafe_llvmFunction(1, module(), cl));
+	invoke(target, buildFunction(target));
 }
 
 void J3CodeGen::invokeSpecial(uint32_t idx) {
 	J3Method* target = cl->methodAt(idx, 0);
-	invoke(target, target->unsafe_llvmFunction(1, module(), cl));
+	invoke(target, buildFunction(target));
 }
 
 llvm::Value* J3CodeGen::fieldOffset(llvm::Value* obj, J3Field* f) {
@@ -514,7 +551,7 @@ void J3CodeGen::newObject(J3Class* cl) {
 	llvm::Value* size;
 
 	if(!cl->isResolved()) {
-		size = builder->CreateCall(funcJ3LayoutStructSize, builder->CreateBitCast(cl->unsafe_llvmDescriptor(module()), vm->typeJ3LayoutPtr));
+		size = builder->CreateCall(funcJ3LayoutStructSize, typeDescriptor(cl, vm->typeJ3LayoutPtr));
 	} else {
 		size = builder->getInt64(cl->structSize());
 	}
@@ -641,7 +678,7 @@ void J3CodeGen::ldc(uint32_t idx) {
 		case J3Cst::CONSTANT_Class:   res = handleToObject(javaClass(cl->classAt(idx))); break;
 		case J3Cst::CONSTANT_String:  
 			res = handleToObject(builder->CreateCall2(funcJ3ClassStringAt, 
-																								builder->CreateBitCast(cl->unsafe_llvmDescriptor(module()), vm->typeJ3ClassPtr),
+																								typeDescriptor(cl, vm->typeJ3ClassPtr),
 																								builder->getInt16(idx)));
 			break;
 		default:
@@ -737,7 +774,7 @@ llvm::Value* J3CodeGen::buildString(const char* msg) {
 	elmts.push_back(builder->getInt8(0));
 
 	llvm::Constant* str = llvm::ConstantArray::get(llvm::ArrayType::get(builder->getInt8Ty(), n+1), elmts);
-	llvm::Value* var = new llvm::GlobalVariable(*module(),
+	llvm::Value* var = new llvm::GlobalVariable(*module,
 																							str->getType(),
 																							1,
 																							llvm::GlobalVariable::InternalLinkage,
@@ -1492,7 +1529,7 @@ void J3CodeGen::generateJava() {
 	if(!reader.adjustSize(length))
 		J3::classFormatError(cl, L"Code attribute of %ls %ls is too large (%d)", method->name()->cStr(), method->sign()->cStr(), length);
 
-	llvm::DIBuilder* dbgBuilder = new llvm::DIBuilder(*module());
+	llvm::DIBuilder* dbgBuilder = new llvm::DIBuilder(*module);
 
   dbgInfo =
 		dbgBuilder->createFunction(llvm::DIDescriptor(),    // Function scope
@@ -1568,10 +1605,66 @@ void J3CodeGen::generateJava() {
 	ret.killUnused();
 }
 
+llvm::Type* J3CodeGen::doNativeType(J3Type* type) {
+	llvm::Type* t = type->llvmType();
+
+	if(t->isPointerTy())
+		return vm->typeJ3ObjectHandlePtr;
+	else
+		return t;
+}
+
+llvm::Function* J3CodeGen::lookupNative() {
+	J3Mangler      mangler(cl);
+
+	mangler.mangle(mangler.javaId)->mangle(method);
+	uint32_t length = mangler.length();
+	mangler.mangleType(method);
+
+	void* fnPtr = method->nativeFnPtr();
+
+	if(!fnPtr)
+		fnPtr = loader->lookupNativeFunctionPointer(method, mangler.cStr());
+
+	if(!fnPtr) {
+		mangler.cStr()[length] = 0;
+		fnPtr = loader->lookupNativeFunctionPointer(method, mangler.mangleType(method)->cStr());
+	}
+
+	if(!fnPtr)
+		J3::linkageError(method);
+
+	std::vector<llvm::Type*> nativeIns;
+	llvm::Type*              nativeOut;
+
+	nativeIns.push_back(vm->typeJNIEnvPtr);
+
+	if(J3Cst::isStatic(method->access()))
+		nativeIns.push_back(doNativeType(vm->classClass));
+			
+	for(int i=0; i<methodType->nbIns(); i++)
+		nativeIns.push_back(doNativeType(methodType->ins(i)));
+
+	nativeOut = doNativeType(methodType->out());
+
+	char* buf = (char*)loader->allocator()->allocate(mangler.length()+1);
+	memcpy(buf, mangler.cStr(), mangler.length()+1);
+
+	llvm::FunctionType* fType = llvm::FunctionType::get(nativeOut, nativeIns, 0);
+	llvm::Function* res = llvm::Function::Create(fType,
+																							 llvm::GlobalValue::ExternalLinkage,
+																							 buf,
+																							 module);
+
+	loader->addSymbol(buf, new(loader->allocator()) vmkit::NativeSymbol(fnPtr));
+
+	return res;
+}
+
 void J3CodeGen::generateNative() {
 	std::vector<llvm::Value*> args;
 
-	llvm::Function* nat = method->unsafe_nativeLLVMFunction(module());
+	llvm::Function* nat = lookupNative();
 
 	llvm::Value* res;
 	llvm::Value* thread = currentThread();

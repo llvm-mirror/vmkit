@@ -151,10 +151,6 @@ llvm::Type* J3ObjectType::llvmType() {
 	return loader()->vm()->typeJ3ObjectPtr;
 }
 
-llvm::GlobalValue* J3ObjectType::unsafe_llvmDescriptor(llvm::Module* module) {
-	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3ObjectType));
-}
-
 J3Method* J3ObjectType::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
 	J3::internalError(L"should not happe: %ls::%ls\n", J3ObjectType::name()->cStr(), name->cStr());
 }

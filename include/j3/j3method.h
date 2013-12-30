@@ -9,10 +9,6 @@
 namespace llvm {
 	class FunctionType;
 	class Function;
-	class Type;
-	class GlobalValue;
-	class Module;
-	struct GenericValue;
 }
 
 namespace vmkit {
@@ -36,7 +32,8 @@ namespace j3 {
 	public:
 		J3MethodType(J3Type** args, size_t nbArgs);
 
-		llvm::FunctionType* unsafe_llvmFunctionType();                   /* call only while compiler locked */
+		void                setFunctionType(llvm::FunctionType* functionType) { _llvmFunctionType = functionType; }
+		llvm::FunctionType* functionType() { return _llvmFunctionType; }
 		uint32_t            nbIns() { return _nbIns; }
 		J3Type*             out() { return _out; }
 		J3Type*             ins(uint32_t idx) { return _ins[idx]; }
@@ -72,13 +69,15 @@ namespace j3 {
 		void* volatile               _staticTrampoline;
 		void* volatile               _virtualTrampoline;
 
-		llvm::Type* doNativeType(J3Type* type);
-
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, va_list va);
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* args);
 		void               buildLLVMNames(J3Class* from);
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
+
+		void*               nativeFnPtr() { return _nativeFnPtr; }
+
+		void                markCompiled(llvm::Function* llvmFunction, void* fnPtr);
 
 		uint32_t            interfaceIndex();
 
@@ -87,20 +86,16 @@ namespace j3 {
 		char*               llvmFunctionName(J3Class* from=0);
 		char*               llvmDescriptorName(J3Class* from=0);
 		char*               llvmStubName(J3Class* from=0);
-		llvm::FunctionType* llvmType(J3Class* from=0);
 
 		void                postInitialise(uint32_t access, J3Attributes* attributes);
 		void                setResolved(uint32_t index); 
 
 		J3Method*           resolve(J3ObjectHandle* obj);
 
-		llvm::Function*     unsafe_nativeLLVMFunction(llvm::Module* module); /* call only while compiler locked */
-		llvm::GlobalValue*  unsafe_llvmDescriptor(llvm::Module* module);
-		llvm::Function*     unsafe_llvmFunction(bool isStub, llvm::Module* module, J3Class* from=0); /* call only while compiler locked */
-
 		uint32_t            index();
 		uint32_t*           indexPtr() { return &_index; }
 		bool                isResolved() { return _index != -1; }
+		bool                isCompiled() { return _fnPtr; }
 
 		J3Attributes*       attributes() const { return _attributes; }
 		uint16_t            access() const { return _access; }

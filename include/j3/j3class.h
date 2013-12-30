@@ -11,8 +11,6 @@
 
 namespace llvm {
 	class Type;
-	class GlobalValue;
-	class Module;
 }
 
 namespace vmkit {
@@ -168,7 +166,6 @@ namespace j3 {
 
 		uint32_t                   logSize() { return sizeof(uintptr_t) == 8 ? 3 : 2; }
 		llvm::Type*                llvmType();
-		llvm::GlobalValue*         unsafe_llvmDescriptor(llvm::Module* module);
 
 		J3InterfaceSlotDescriptor* slotDescriptorAt(uint32_t index) { return &_interfaceSlotDescriptors[index]; }
 		void                       prepareInterfaceTable();
