@@ -28,14 +28,14 @@ J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
 			
 }
 
-llvm::FunctionType* J3MethodType::llvmType() {
-	if(!_llvmType) {
+llvm::FunctionType* J3MethodType::llvmFunctionType() {
+	if(!_llvmFunctionType) {
 		std::vector<llvm::Type*> in;
 		for(uint32_t i=0; i<nbIns(); i++)
 			in.push_back(ins(i)->llvmType());
-		_llvmType = llvm::FunctionType::get(out()->llvmType(), in, 0);
+		_llvmFunctionType = llvm::FunctionType::get(out()->llvmType(), in, 0);
 	}
-	return _llvmType;
+	return _llvmFunctionType;
 }
 
 J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) :
@@ -67,6 +67,7 @@ void* J3Method::fnPtr() {
 				J3::noSuchMethodError(L"unable to find method", cl(), name(), sign());
 		}
 
+		cl()->loader()->vm()->lockCompiler();
 		llvm::Module* module = new llvm::Module(llvmFunctionName(), cl()->loader()->vm()->llvmContext());
 		_llvmFunction = llvmFunction(0, module);
 
@@ -75,6 +76,7 @@ void* J3Method::fnPtr() {
 		cl()->loader()->compileModule(module);
 
 		_fnPtr = (void*)cl()->loader()->ee()->getFunctionAddress(_llvmFunction->getName().data());
+		cl()->loader()->vm()->unlockCompiler();
  	}
 
 	return _fnPtr;
@@ -337,7 +339,7 @@ llvm::GlobalValue* J3Method::llvmDescriptor(llvm::Module* module) {
 
 llvm::Function* J3Method::llvmFunction(bool isStub, llvm::Module* module, J3Class* from) {
 	const char* id = (isStub && !_fnPtr) ? llvmStubName(from) : llvmFunctionName(from);
-	return (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->llvmType());
+	return (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->llvmFunctionType());
 }
 
 void J3Method::dump() {

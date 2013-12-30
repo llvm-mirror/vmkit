@@ -28,7 +28,7 @@ namespace j3 {
 	class J3ObjectHandle;
 
 	class J3MethodType : public vmkit::PermanentObject {
-		llvm::FunctionType* volatile _llvmType;
+		llvm::FunctionType* volatile _llvmFunctionType;
 		J3Type*                      _out;
 		uint32_t                     _nbIns;
 		J3Type*                      _ins[1];
@@ -36,7 +36,7 @@ namespace j3 {
 	public:
 		J3MethodType(J3Type** args, size_t nbArgs);
 
-		llvm::FunctionType* llvmType();
+		llvm::FunctionType* llvmFunctionType(); /* only call this function from j3codegen */
 		uint32_t            nbIns() { return _nbIns; }
 		J3Type*             out() { return _out; }
 		J3Type*             ins(uint32_t idx) { return _ins[idx]; }
@@ -96,7 +96,7 @@ namespace j3 {
 
 		llvm::Function*     nativeLLVMFunction(llvm::Module* module);
 		llvm::GlobalValue*  llvmDescriptor(llvm::Module* module);
-		llvm::Function*     llvmFunction(bool isStub, llvm::Module* module, J3Class* from=0);
+		llvm::Function*     llvmFunction(bool isStub, llvm::Module* module, J3Class* from=0); /* only call from J3CodeGen */
 
 		uint32_t            index();
 		uint32_t*           indexPtr() { return &_index; }

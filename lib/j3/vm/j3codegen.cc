@@ -107,9 +107,7 @@ void J3CodeGen::operator delete(void* ptr) {
 
 void J3CodeGen::translate(J3Method* method, llvm::Function* llvmFunction) {
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
-	method->cl()->loader()->vm()->lockCompiler();
 	delete new(allocator) J3CodeGen(allocator, method, llvmFunction);
-	method->cl()->loader()->vm()->unlockCompiler();
 	vmkit::BumpAllocator::destroy(allocator);
 }
 
@@ -367,7 +365,7 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 															builder->getInt32(J3VirtualTable::gepInterfaceMethods),
 															builder->getInt32(index % J3VirtualTable::nbInterfaceMethodTable) };
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
-																						 type->llvmType()->getPointerTo());
+																						 type->llvmFunctionType()->getPointerTo());
 
 	invoke(target, func);
 }
@@ -387,7 +385,7 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 															builder->getInt32(J3VirtualTable::gepVirtualMethods),
 															funcEntry };
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
-																						 type->llvmType()->getPointerTo());
+																						 type->llvmFunctionType()->getPointerTo());
 
 	invoke(target, func);
 }
