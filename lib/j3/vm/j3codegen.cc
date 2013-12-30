@@ -513,7 +513,7 @@ void J3CodeGen::newObject(J3Class* cl) {
 	llvm::Value* size;
 
 	if(!cl->isResolved()) {
-		size = builder->CreateCall(funcJ3ClassSize, cl->llvmDescriptor(module()));
+		size = builder->CreateCall(funcJ3LayoutSize, cl->llvmDescriptor(module()));
 	} else {
 		size = builder->getInt64(cl->size());
 	}

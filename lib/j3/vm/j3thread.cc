@@ -35,7 +35,7 @@ void J3Thread::start(J3ObjectHandle* handle) {
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
 	J3Thread* thread = new J3Thread(get()->vm());
 	thread->assocJavaThread(handle);
-	thread->Thread::start();
+	//thread->Thread::start();
 }
 
 J3Method* J3Thread::getJavaCaller(uint32_t level) {

@@ -138,6 +138,7 @@ namespace j3 {
 		J3Type*            _type;
 		J3Attributes*      _attributes;
 		uint32_t           _num;
+		uint32_t           _offset;
 
 	public:
 		J3Field() {}
@@ -192,10 +193,14 @@ namespace j3 {
 		
 		size_t            _nbMethods;
 		J3Method**        _methods;
+
+		size_t             _size;
 	public:
 		J3Layout(J3ClassLoader* loader, const vmkit::Name* name);
 
 		virtual bool      isLayout() { return 1; }
+
+		size_t            size();
 
 		size_t            nbMethods() { return _nbMethods; }
 		J3Method**        methods() { return _methods; }
@@ -219,8 +224,6 @@ namespace j3 {
 		J3StaticLayout     staticLayout;
 
 		uint16_t           _access;
-
-		size_t             _size;
 
 		size_t             _nbInterfaces;
 		J3Class**          _interfaces;
@@ -258,8 +261,6 @@ namespace j3 {
 		J3Class*            super() { return _super; }
 		uint16_t            access() { return _access; }
 
-		void                adjustSize(uint32_t n) { _size += n; }
-		size_t              size();
 		J3ObjectHandle*     staticInstance();
 
 		void                registerNative(const vmkit::Name* methName, const vmkit::Name* methSign, void* fnPtr);

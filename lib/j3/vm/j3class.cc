@@ -256,6 +256,10 @@ J3StaticLayout::J3StaticLayout(J3ClassLoader* loader, J3Class* cl, const vmkit::
 J3Layout::J3Layout(J3ClassLoader* loader, const vmkit::Name* name) : J3ObjectType(loader, name) {
 }
 
+size_t J3Layout::size() { 
+	return _size; 
+}
+
 J3Method* J3Layout::findMethod(const vmkit::Name* name, const vmkit::Name* sign) {
 	for(size_t i=0; i<nbMethods(); i++) {
 		J3Method* cur = methods()[i];
@@ -290,10 +294,6 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	staticLayout(loader, this, name){
 	_bytes = bytes;
 	status = LOADED;
-}
-
-size_t J3Class::size() { 
-	return _size; 
 }
 
 llvm::GlobalValue* J3Class::llvmDescriptor(llvm::Module* module) {
