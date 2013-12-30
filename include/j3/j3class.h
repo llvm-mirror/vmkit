@@ -220,6 +220,8 @@ namespace j3 {
 		J3Class* cl() { return _cl; }
 
 		virtual bool      isStaticLayout() { return 1; }
+
+		llvm::Type*       llvmType();
 	};
 
 	class J3Class : public J3Layout {
@@ -283,7 +285,6 @@ namespace j3 {
 		J3Field*            fieldAt(uint16_t idx, uint16_t access);
 
 		llvm::Type*         llvmType();
-		llvm::Type*         staticLLVMType();
 		llvm::Type*         virtualLLVMType();
 		llvm::GlobalValue*  llvmDescriptor(llvm::Module* module);
 

@@ -243,6 +243,10 @@ J3StaticLayout::J3StaticLayout(J3ClassLoader* loader, J3Class* cl, const vmkit::
 	_cl = cl;
 }
 
+llvm::Type* J3StaticLayout::llvmType() {
+	return loader()->vm()->typeJ3ObjectPtr;
+}
+
 J3Layout::J3Layout(J3ClassLoader* loader, const vmkit::Name* name) : J3ObjectType(loader, name) {
 }
 
@@ -584,8 +588,6 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 	fillFields(pFields1, i1);
 	fillFields(pFields0, i0);
 
-	staticLLVMType()->getContainedType(0);
-
 	//fprintf(stderr, "static part of %ls: ", name()->cStr());
 	//staticLayout.llvmType()->getContainedType(0)->dump();
 	//fprintf(stderr, "\n");
@@ -823,17 +825,6 @@ void J3Class::createLLVMTypes() {
 	_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), mangler.cStr()+7));
 
 	doNativeName();
-}
-
-llvm::Type* J3Class::staticLLVMType() {
-	llvm::Type* res = staticLayout._llvmType;
-
-	if(!res) {
-		createLLVMTypes();
-		res = staticLayout._llvmType;
-	}
-
-	return res;
 }
 
 llvm::Type* J3Class::virtualLLVMType() {

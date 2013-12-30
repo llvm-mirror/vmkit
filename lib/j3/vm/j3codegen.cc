@@ -290,9 +290,8 @@ llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
 
 llvm::Value* J3CodeGen::staticInstance(J3Class* cl) {
 	initialiseJ3Type(cl);
-	return builder->CreateBitCast(handleToObject(builder->CreateCall(funcJ3ClassStaticInstance, 
-																																	 cl->llvmDescriptor(module()))),
-																cl->staticLLVMType());
+	return handleToObject(builder->CreateCall(funcJ3ClassStaticInstance, 
+																						cl->llvmDescriptor(module())));
 }
 
 llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
