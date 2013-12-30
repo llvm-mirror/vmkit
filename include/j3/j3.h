@@ -92,6 +92,7 @@ namespace j3 {
 		llvm::Type* typeJ3Object;
 		llvm::Type* typeJ3ObjectPtr;
 		llvm::Type* typeJ3ObjectHandlePtr;
+		llvm::Type* typeJ3LockRecord;
 		llvm::Type* typeGXXException;
 
 		J3Options*                 options() { return &_options; }

@@ -81,6 +81,7 @@ namespace j3 {
 		uint32_t           wideReadU1();
 		uint32_t           wideReadS1();
 
+		llvm::Value*       spToCurrentThread(llvm::Value* sp);
 		llvm::Value*       currentThread();
 
 		llvm::Value*       nullCheck(llvm::Value* obj);
@@ -99,6 +100,9 @@ namespace j3 {
 		llvm::Value*       vt(J3Type* cl, bool resolve=0);
 		llvm::Value*       vt(llvm::Value* obj);
 		void               initialiseJ3Type(J3Type* cl);
+
+		void               monitorEnter(llvm::Value* obj);
+		void               monitorExit(llvm::Value* obj);
 
 		llvm::Value*       isAssignableTo(llvm::Value* obj, J3Type* type);
 		void               instanceof(llvm::Value* obj, J3Type* type);

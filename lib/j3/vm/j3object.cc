@@ -274,6 +274,7 @@ uintptr_t* J3Object::header() {
 J3Object* J3Object::allocate(J3VirtualTable* vt, size_t n) {
 	J3Object* res = (J3Object*)vmkit::GC::allocate(n);
 	res->_vt = vt;
+	res->_header = 1;
 	return res;
 }
 
@@ -284,6 +285,14 @@ J3Object* J3Object::doNewNoInit(J3Class* cl) {
 J3Object* J3Object::doNew(J3Class* cl) {
 	cl->initialise();
 	return doNewNoInit(cl);
+}
+
+void J3Object::monitorEnter(J3Object* obj) {
+	J3::internalError(L"implement me: monitorenter");
+}
+
+void J3Object::monitorExit(J3Object* obj) {
+	J3::internalError(L"implement me: monitorexit");
 }
 
 /*

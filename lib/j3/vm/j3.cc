@@ -58,6 +58,7 @@ void J3::introspect() {
 	typeJ3Object            = introspectType("class.j3::J3Object");
 	typeJ3ObjectPtr         = llvm::PointerType::getUnqual(typeJ3Object);
 	typeJ3ObjectHandlePtr   = llvm::PointerType::getUnqual(introspectType("class.j3::J3ObjectHandle"));
+	typeJ3LockRecord        = introspectType("class.j3::J3LockRecord");
 
 	typeGXXException        = llvm::StructType::get(llvm::Type::getInt8Ty(llvmContext())->getPointerTo(), 
 																									llvm::Type::getInt32Ty(llvmContext()), NULL);
@@ -229,6 +230,7 @@ void J3::printStackTrace() {
 
 void J3::forceSymbolDefinition() {
 	J3ArrayObject a; a.length(); /* J3ArrayObject */
+	J3LockRecord* l = new J3LockRecord(); /* J3LockRecord */
 	try {
 		throw (void*)0;
 	} catch(void* e) {

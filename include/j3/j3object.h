@@ -92,14 +92,17 @@ namespace j3 {
 		J3VirtualTable* _vt;
 		uintptr_t       _header;
 		/* 
-		 *     biased (not yet implemented):  0         | epoch | age        | 101
-		 *                                    thread_id | epoch | age        | 101
-		 *     not locked:                    hash-code 24 bits | age 5 bits | 001
-		 *     stack locked:                      pointer to lock record      | 00
-		 *     inflated:                          pointer to monitor          | 01
+		 *     biasable (not yet implemented):  0         | epoch | age        | 101
+		 *     biased (not yet implemented):    thread_id | epoch | age        | 101
+		 *     not locked:                      hash-code 24 bits | age 5 bits | 001
+		 *     stack locked:                        pointer to lock record      | 00
+		 *     inflated:                            pointer to monitor          | 10
 		 */
 
 		J3Object(); /* never directly allocate an object */
+
+		static void monitorEnter(J3Object* obj);
+		static void monitorExit(J3Object* obj);
 
 		static J3Object* allocate(J3VirtualTable* vt, size_t n);
 		static J3Object* doNewNoInit(J3Class* cl);

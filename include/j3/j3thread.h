@@ -15,12 +15,11 @@ namespace j3 {
 
 	class J3Thread : public vmkit::Thread {
 		friend class J3Monitor;
+		friend class J3CodeGen;
 
-	public:
 		static const uint32_t gepInterfaceMethodIndex = 1;
+		uint32_t              _interfaceMethodIndex;
 
-	private:
-		uint32_t                   _interfaceMethodIndex;
 		vmkit::BumpAllocator*      _allocator;
 		JNIEnv                     _jniEnv;
 		J3LocalReferences          _localReferences;
