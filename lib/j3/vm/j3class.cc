@@ -443,13 +443,14 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 		if(super() == this) {
 			virtualBody[0] = loader()->vm()->typeJ3Object;
 		} else {
-			super()->resolve();
 			virtualBody[0] = super()->llvmType()->getContainedType(0);
 		}
 
 		llvm::cast<llvm::StructType>(llvmType()->getContainedType(0))->setBody(virtualBody);
 
-		_structSize = loader()->vm()->dataLayout()->getTypeAllocSize(llvmType()->getContainedType(0));
+		uint64_t kkk = loader()->vm()->dataLayout()->getTypeAllocSize(llvmType()->getContainedType(0));
+		if(kkk != structSize())
+			J3::internalError(L"should not happen");
 			
 		staticLayout._vt = J3VirtualTable::create(&staticLayout);
 
@@ -588,10 +589,20 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 	staticBody.push_back(loader()->vm()->typeJ3Object);
 	virtualBody->push_back(0);
 
+	if(super() == this)
+		_structSize = sizeof(J3Object);
+	else {
+		super()->resolve();
+		_structSize = super()->structSize();
+	}
+
 	fillFields(&staticBody, virtualBody, pFields3, i3);
 	fillFields(&staticBody, virtualBody, pFields2, i2);
 	fillFields(&staticBody, virtualBody, pFields1, i1);
 	fillFields(&staticBody, virtualBody, pFields0, i0);
+
+	_structSize = ((_structSize - 1) & -sizeof(uintptr_t)) + sizeof(uintptr_t);
+	staticLayout._structSize = ((staticLayout._structSize - 1) & -sizeof(uintptr_t)) + sizeof(uintptr_t);
 
 	staticLLVMType()->getContainedType(0);
 
@@ -654,7 +665,8 @@ void J3Class::fillFields(std::vector<llvm::Type*>* staticBody, std::vector<llvm:
 			virtualBody->push_back(cur->type()->llvmType());
 		}
 		layout->fields[layout->nbFields++] = *fields[i];
-
+		cur->_offset = layout->structSize();
+		layout->_structSize += 1 << fields[i]->type()->logSize();
 	}
 }
 
