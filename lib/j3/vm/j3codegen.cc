@@ -86,6 +86,10 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 	}
 #endif
 
+	nullValue = builder
+		->CreateIntToPtr(llvm::ConstantInt::get(builder->getIntPtrTy(vm->dataLayout()), (uintptr_t)0),
+										 vm->typeJ3ObjectPtr);
+
 	if(J3Cst::isNative(method->access()))
 		generateNative();
 	else
@@ -1492,10 +1496,6 @@ void J3CodeGen::generateJava() {
 	if(!reader.adjustSize(length))
 		J3::classFormatError(cl, L"Code attribute of %ls %ls is too large (%d)", method->name()->cStr(), method->sign()->cStr(), length);
 
-	nullValue = builder
-		->CreateIntToPtr(llvm::ConstantInt::get(builder->getIntPtrTy(vm->dataLayout()), (uintptr_t)0),
-										 vm->typeJ3ObjectPtr);
-
 	llvm::DIBuilder* dbgBuilder = new llvm::DIBuilder(*module());
 
   dbgInfo =
@@ -1620,7 +1620,7 @@ void J3CodeGen::generateNative() {
 			builder->CreateCondBr(builder->CreateIsNull(res), ifnull, ifnotnull);
 
 			builder->SetInsertPoint(bb = ifnull);
-			builder->CreateRet(unflatten(res, methodType->out()));
+			builder->CreateRet(unflatten(nullValue, methodType->out()));
 
 			builder->SetInsertPoint(bb = ifnotnull);
 			res = unflatten(handleToObject(res), methodType->out());
