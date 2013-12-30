@@ -59,6 +59,8 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 
 	builder = &_builder;
 
+	uintPtrTy = builder->getIntPtrTy(vm->dataLayout());
+
 #define _x(name, id)														\
 	name = vm->introspectFunction(module(), id);
 #include "j3/j3meta.def"
@@ -87,7 +89,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, llvm::Functi
 #endif
 
 	nullValue = builder
-		->CreateIntToPtr(llvm::ConstantInt::get(builder->getIntPtrTy(vm->dataLayout()), (uintptr_t)0),
+		->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0),
 										 vm->typeJ3ObjectPtr);
 
 	if(J3Cst::isNative(method->access()))
@@ -163,10 +165,8 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 }
 
 llvm::Value* J3CodeGen::spToCurrentThread(llvm::Value* sp) {
-	llvm::Type* type = builder->getIntPtrTy(vm->dataLayout());
-
-	return builder->CreateIntToPtr(builder->CreateAnd(builder->CreatePtrToInt(sp, type),
-																										llvm::ConstantInt::get(type, vmkit::Thread::getThreadMask())),
+	return builder->CreateIntToPtr(builder->CreateAnd(builder->CreatePtrToInt(sp, uintPtrTy),
+																										llvm::ConstantInt::get(uintPtrTy, vmkit::Thread::getThreadMask())),
 																 vm->typeJ3Thread);
 }
 
@@ -175,7 +175,6 @@ llvm::Value* J3CodeGen::currentThread() {
 }
 
 void J3CodeGen::monitorEnter(llvm::Value* obj) {
-	llvm::Type* uintPtrTy = builder->getIntPtrTy(vm->dataLayout());
 	llvm::Type* recordTy = vm->typeJ3LockRecord;
 	llvm::Type* recordPtrTy = vm->typeJ3LockRecord->getPointerTo();
 
@@ -225,7 +224,6 @@ void J3CodeGen::monitorEnter(llvm::Value* obj) {
 }
 
 void J3CodeGen::monitorExit(llvm::Value* obj) {
-	llvm::Type* uintPtrTy = builder->getIntPtrTy(vm->dataLayout());
 	llvm::Type* recordPtrTy = vm->typeJ3LockRecord->getPointerTo();
 
 	llvm::BasicBlock* ok = forwardBranch("unlock-ok", codeReader->tell(), 0, 0);
@@ -405,7 +403,6 @@ void J3CodeGen::invokeSpecial(uint32_t idx) {
 }
 
 llvm::Value* J3CodeGen::fieldOffset(llvm::Value* obj, J3Field* f) {
-	llvm::Type* uintPtrTy = builder->getIntPtrTy(vm->dataLayout());
 	return builder->CreateIntToPtr(builder->CreateAdd(builder->CreatePtrToInt(obj, uintPtrTy),
 																										llvm::ConstantInt::get(uintPtrTy, f->offset())),
 																 f->type()->llvmType()->getPointerTo());
@@ -480,12 +477,11 @@ llvm::Value* J3CodeGen::arrayLength(llvm::Value* obj) {
 
 void J3CodeGen::newArray(J3ArrayClass* array) {
 	initialiseJ3Type(array);
-	llvm::DataLayout* layout = vm->dataLayout();
 	llvm::Value* length = stack.pop();
 	llvm::Value* nbb = 
-		builder->CreateAdd(builder->getInt64(layout->getTypeAllocSize(array->llvmType()->getContainedType(0))),
-											 builder->CreateMul(builder->getInt64(layout->getTypeAllocSize(array->component()->llvmType())), 
-																					builder->CreateZExtOrBitCast(length, builder->getInt64Ty())));
+		builder->CreateAdd(llvm::ConstantInt::get(uintPtrTy, sizeof(J3ArrayObject)),
+											 builder->CreateMul(llvm::ConstantInt::get(uintPtrTy, 1 << array->component()->logSize()),
+																					builder->CreateZExtOrBitCast(length, uintPtrTy)));
 	
 	llvm::Value* res = builder->CreateCall2(funcJ3ObjectAllocate, vt(array), nbb);
 
@@ -1574,7 +1570,7 @@ void J3CodeGen::generateJava() {
 void J3CodeGen::generateNative() {
 	std::vector<llvm::Value*> args;
 
-	llvm::Function* nat = method->nativeLLVMFunction(module());
+	llvm::Function* nat = method->unsafe_nativeLLVMFunction(module());
 
 	llvm::Value* res;
 	llvm::Value* thread = currentThread();

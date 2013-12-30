@@ -63,6 +63,7 @@ namespace j3 {
 		uint32_t*              pendingBranchs;
 		uint32_t               topPendingBranchs;
 
+		llvm::Type*            uintPtrTy;
 		llvm::Value*           nullValue;
 
 		llvm::MDNode*          dbgInfo;

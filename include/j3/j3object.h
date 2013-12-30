@@ -108,7 +108,7 @@ namespace j3 {
 		static void monitorEnter(J3Object* obj);
 		static void monitorExit(J3Object* obj);
 
-		static J3Object* allocate(J3VirtualTable* vt, size_t n);
+		static J3Object* allocate(J3VirtualTable* vt, uintptr_t n);
 		static J3Object* doNewNoInit(J3Class* cl);
 		static J3Object* doNew(J3Class* cl);
 	public:
@@ -125,7 +125,7 @@ namespace j3 {
 
 	private:
 		uint32_t _length;
-		static J3Object* doNew(J3ArrayClass* cl, uint32_t length);
+		static J3Object* doNew(J3ArrayClass* cl, uintptr_t length);
 
 	public:
 

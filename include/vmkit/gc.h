@@ -6,7 +6,7 @@
 namespace vmkit {
 	class GC {
 	public:
-		static void* allocate(size_t sz);
+		static void* allocate(uintptr_t sz);
 	};
 };
 

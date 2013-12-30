@@ -363,7 +363,7 @@ llvm::Type* J3Method::doNativeType(J3Type* type) {
 		return t;
 }
 
-llvm::Function* J3Method::nativeLLVMFunction(llvm::Module* module) {
+llvm::Function* J3Method::unsafe_nativeLLVMFunction(llvm::Module* module) {
 	J3ClassLoader* loader = cl()->loader();
 	J3Mangler      mangler(cl());
 

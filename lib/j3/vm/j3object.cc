@@ -272,7 +272,7 @@ volatile uintptr_t* J3Object::header() {
 	return &_header; 
 }
 
-J3Object* J3Object::allocate(J3VirtualTable* vt, size_t n) {
+J3Object* J3Object::allocate(J3VirtualTable* vt, uintptr_t n) {
 	J3Object* res = (J3Object*)vmkit::GC::allocate(n);
 	res->_vt = vt;
 	res->_header = 1;
@@ -366,12 +366,8 @@ J3Monitor* J3Object::monitor() {
 /*
  *    ---   J3ArrayObject ---
  */
-J3Object* J3ArrayObject::doNew(J3ArrayClass* cl, uint32_t length) {
-	llvm::DataLayout* layout = cl->loader()->vm()->dataLayout();
-	J3ArrayObject* res = 
-		(J3ArrayObject*)allocate(cl->vtAndResolve(),
-														 layout->getTypeAllocSize(cl->llvmType()->getContainedType(0))
-														 + layout->getTypeAllocSize(cl->component()->llvmType()) * length);
+J3Object* J3ArrayObject::doNew(J3ArrayClass* cl, uintptr_t length) {
+	J3ArrayObject* res = (J3ArrayObject*)allocate(cl->vtAndResolve(), sizeof(J3ArrayObject) + (1 << cl->component()->logSize()) * length);
 
 	res->_length = length;
 

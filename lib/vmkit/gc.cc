@@ -3,6 +3,6 @@
 
 using namespace vmkit;
 
-void* GC::allocate(size_t sz) {
+void* GC::allocate(uintptr_t sz) {
 	return calloc(sz, 1);
 }
