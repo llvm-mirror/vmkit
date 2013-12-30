@@ -97,58 +97,31 @@ void J3CodeGenVar::drop(uint32_t n) {
 	topStack -= n;
 }
 
-void J3CodeGenVar::setAt(llvm::Value* value, uint32_t idx) {
-	//if(idx >= nbLocals + maxStack)
-	//J3::classFormatError(cl, L"bad index %lu", idx);
-	llvm::Type*   t = value->getType();
-	llvm::AllocaInst** stack;
-
+llvm::AllocaInst** J3CodeGenVar::stackOf(llvm::Type* t) {
 	if(t->isIntegerTy(64)) {
-		stack = longStack;
+		return longStack;
 	} else if(t->isIntegerTy()) {
-		stack = intStack;
+		return intStack;
 	} else if(t->isFloatTy()) {
-		stack = floatStack;
+		return floatStack;
 	} else if(t->isDoubleTy()) {
-		stack = doubleStack;
+		return doubleStack;
 	} else if(t->isPointerTy()) {
-		stack = refStack;
-	} else
-		J3::internalError(L"should not happen");
+		return refStack;
+	} 
+		
+	J3::internalError(L"should not happen");
+}
 
-	//	fprintf(stderr, "setAt[%u]: ", idx);
-	//	value->dump();
-	//	fprintf(stderr, "\n");
-
+void J3CodeGenVar::setAt(llvm::Value* value, uint32_t idx) {
+	llvm::Type*   t = value->getType();
 	metaStack[idx] = t;
-
-	codeGen->builder->CreateStore(value, stack[idx]);
+	codeGen->builder->CreateStore(value, stackOf(t)[idx]);
 }
 
 llvm::Value* J3CodeGenVar::at(uint32_t idx) {
-	//if(idx >= nbLocals + maxStack)
-	//vm->classFormatError(cl, L"bad index %lu", idx);
 	llvm::Type* t = metaStack[idx];
-	llvm::Value* res;
-
-	if(t->isIntegerTy(64)) {
-		res = codeGen->builder->CreateLoad(longStack[idx]);
-	} else if(t->isIntegerTy()) {
-		res = codeGen->builder->CreateLoad(intStack[idx]);
-	} else if(t->isFloatTy()) {
-		res = codeGen->builder->CreateLoad(floatStack[idx]);
-	} else if(t->isDoubleTy()) {
-		res = codeGen->builder->CreateLoad(doubleStack[idx]);
-	} else if(t->isPointerTy()) {
-		res = codeGen->builder->CreateLoad(refStack[idx]);
-	} else
-		J3::internalError(L"should not happen");
-
-	//	fprintf(stderr, "top: ");
-	//	res->dump();
-	//	fprintf(stderr, "\n");
-
-	return res;
+	return codeGen->builder->CreateLoad(stackOf(t)[idx]);
 }
 
 void J3CodeGenVar::push(llvm::Value* value) {

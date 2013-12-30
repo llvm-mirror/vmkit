@@ -14,6 +14,8 @@ namespace j3 {
 
 	class J3CodeGenVar {
 		void                killUnused(llvm::AllocaInst** stack, bool isObj);
+
+		llvm::AllocaInst**  stackOf(llvm::Type* t);
 	public:
 		J3CodeGen*          codeGen;
 		llvm::AllocaInst**  intStack;
