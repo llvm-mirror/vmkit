@@ -95,7 +95,7 @@ namespace j3 {
 		J3Method*           resolve(J3ObjectHandle* obj);
 
 		llvm::Function*     unsafe_nativeLLVMFunction(llvm::Module* module); /* call only while compiler locked */
-		llvm::GlobalValue*  llvmDescriptor(llvm::Module* module);
+		llvm::GlobalValue*  unsafe_llvmDescriptor(llvm::Module* module);
 		llvm::Function*     unsafe_llvmFunction(bool isStub, llvm::Module* module, J3Class* from=0); /* call only while compiler locked */
 
 		uint32_t            index();

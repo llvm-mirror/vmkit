@@ -59,8 +59,6 @@ namespace j3 {
 
 		void*                       getSymbolAddress();
 
-		virtual llvm::GlobalValue*  llvmDescriptor(llvm::Module* module) { return 0; }
-
 		int                         isTypeDescriptor() { return 1; }
 
 		bool                        isResolved() { return status >= RESOLVED; }
@@ -170,6 +168,7 @@ namespace j3 {
 
 		uint32_t                   logSize() { return sizeof(uintptr_t) == 8 ? 3 : 2; }
 		llvm::Type*                llvmType();
+		llvm::GlobalValue*         unsafe_llvmDescriptor(llvm::Module* module);
 
 		J3InterfaceSlotDescriptor* slotDescriptorAt(uint32_t index) { return &_interfaceSlotDescriptors[index]; }
 		void                       prepareInterfaceTable();
@@ -279,8 +278,6 @@ namespace j3 {
 		J3Method*           methodAt(uint16_t idx, uint16_t access);
 		J3Field*            fieldAt(uint16_t idx, uint16_t access);
 
-		llvm::GlobalValue*  llvmDescriptor(llvm::Module* module);
-
 		J3ClassBytes*       bytes() { return _bytes; }
 
 		bool                isClass() { return 1; }
@@ -300,9 +297,6 @@ namespace j3 {
 		void                doNativeName();
 	public:
 		J3ArrayClass(J3ClassLoader* loader, J3Type* component, const vmkit::Name* name);
-
-
-		llvm::GlobalValue*  llvmDescriptor(llvm::Module* module);
 
 		J3Type*             component() { return _component; }
 		bool                isArrayClass() { return 1; }

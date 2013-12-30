@@ -98,16 +98,16 @@ namespace j3 {
 		llvm::Value*       handleToObject(llvm::Value* obj);
 		llvm::Value*       javaClass(J3ObjectType* type);
 		llvm::Value*       staticInstance(J3Class* cl);
-		llvm::Value*       vt(J3Type* cl, bool resolve=0);
+		llvm::Value*       vt(J3ObjectType* cl, bool resolve=0);
 		llvm::Value*       vt(llvm::Value* obj);
-		void               initialiseJ3Type(J3Type* cl);
+		void               initialiseJ3ObjectType(J3ObjectType* cl);
 
 		void               monitorEnter(llvm::Value* obj);
 		void               monitorExit(llvm::Value* obj);
 
-		llvm::Value*       isAssignableTo(llvm::Value* obj, J3Type* type);
-		void               instanceof(llvm::Value* obj, J3Type* type);
-		void               checkCast(llvm::Value* obj, J3Type* type);
+		llvm::Value*       isAssignableTo(llvm::Value* obj, J3ObjectType* type);
+		void               instanceof(llvm::Value* obj, J3ObjectType* type);
+		void               checkCast(llvm::Value* obj, J3ObjectType* type);
 
 		void               floatToInteger(J3Type* from, J3Type* to);
 		void               compareFP(bool isL);

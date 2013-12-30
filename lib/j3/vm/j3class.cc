@@ -151,6 +151,10 @@ llvm::Type* J3ObjectType::llvmType() {
 	return loader()->vm()->typeJ3ObjectPtr;
 }
 
+llvm::GlobalValue* J3ObjectType::unsafe_llvmDescriptor(llvm::Module* module) {
+	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3ObjectType));
+}
+
 J3Method* J3ObjectType::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
 	J3::internalError(L"should not happe: %ls::%ls\n", J3ObjectType::name()->cStr(), name->cStr());
 }
@@ -289,11 +293,6 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	_bytes = bytes;
 	status = LOADED;
 }
-
-llvm::GlobalValue* J3Class::llvmDescriptor(llvm::Module* module) {
-	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3Class));
-}
-
 
 J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
 	//loader()->vm()->log(L"Lookup: %ls %ls in %ls (%d)", methName->cStr(), methSign->cStr(), name()->cStr(), nbVirtualMethods);
@@ -869,10 +868,6 @@ void J3ArrayClass::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 void J3ArrayClass::doInitialise() {
 	resolve();
 	status = INITED;
-}
-
-llvm::GlobalValue* J3ArrayClass::llvmDescriptor(llvm::Module* module) {
-	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3ArrayClass));
 }
 
 void J3ArrayClass::doNativeName() {

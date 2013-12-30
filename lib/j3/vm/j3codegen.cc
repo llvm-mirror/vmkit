@@ -271,14 +271,13 @@ void J3CodeGen::monitorExit(llvm::Value* obj) {
 	builder->CreateBr(ok);
 }
 
-void J3CodeGen::initialiseJ3Type(J3Type* cl) {
+void J3CodeGen::initialiseJ3ObjectType(J3ObjectType* cl) {
 	if(!cl->isInitialised())
-		builder->CreateCall(funcJ3TypeInitialise, builder->CreateBitCast(cl->llvmDescriptor(module()), vm->typeJ3TypePtr));
+		builder->CreateCall(funcJ3TypeInitialise, builder->CreateBitCast(cl->unsafe_llvmDescriptor(module()), vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::javaClass(J3ObjectType* type) {
-	return builder->CreateCall(funcJ3ObjectTypeJavaClass, 
-														 builder->CreateBitCast(type->llvmDescriptor(module()), vm->typeJ3ObjectTypePtr));
+	return builder->CreateCall(funcJ3ObjectTypeJavaClass, type->unsafe_llvmDescriptor(module()));
 }
 
 llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
@@ -287,9 +286,9 @@ llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
 }
 
 llvm::Value* J3CodeGen::staticInstance(J3Class* cl) {
-	initialiseJ3Type(cl);
+	initialiseJ3ObjectType(cl);
 	return handleToObject(builder->CreateCall(funcJ3ClassStaticInstance, 
-																						cl->llvmDescriptor(module())));
+																						builder->CreateBitCast(cl->unsafe_llvmDescriptor(module()), vm->typeJ3ClassPtr)));
 }
 
 llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
@@ -300,9 +299,9 @@ llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
 	return res;
 }
 
-llvm::Value* J3CodeGen::vt(J3Type* type, bool doResolve) {
+llvm::Value* J3CodeGen::vt(J3ObjectType* type, bool doResolve) {
 	llvm::Value* func = doResolve && !type->isResolved() ? funcJ3TypeVTAndResolve : funcJ3TypeVT;
-	return builder->CreateCall(func, builder->CreateBitCast(type->llvmDescriptor(module()), vm->typeJ3TypePtr));
+	return builder->CreateCall(func, builder->CreateBitCast(type->unsafe_llvmDescriptor(module()), vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
@@ -379,7 +378,7 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 	if(target->isResolved())
 		funcEntry = builder->getInt32(target->index());
 	else
-		funcEntry = builder->CreateCall(funcJ3MethodIndex, target->llvmDescriptor(module()));
+		funcEntry = builder->CreateCall(funcJ3MethodIndex, target->unsafe_llvmDescriptor(module()));
 
 	llvm::Value*  obj = nullCheck(stack.top(type->nbIns() - 1));
 	llvm::Value*  gepFunc[] = { builder->getInt32(0),
@@ -393,7 +392,7 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 
 void J3CodeGen::invokeStatic(uint32_t idx) {
 	J3Method* target = cl->methodAt(idx, J3Cst::ACC_STATIC);
-	initialiseJ3Type(target->cl());
+	initialiseJ3ObjectType(target->cl());
 	invoke(target, target->unsafe_llvmFunction(1, module(), cl));
 }
 
@@ -476,7 +475,7 @@ llvm::Value* J3CodeGen::arrayLength(llvm::Value* obj) {
 }
 
 void J3CodeGen::newArray(J3ArrayClass* array) {
-	initialiseJ3Type(array);
+	initialiseJ3ObjectType(array);
 	llvm::Value* length = stack.pop();
 	llvm::Value* nbb = 
 		builder->CreateAdd(llvm::ConstantInt::get(uintPtrTy, sizeof(J3ArrayObject)),
@@ -510,12 +509,12 @@ void J3CodeGen::newArray(uint8_t atype) {
 }
 
 void J3CodeGen::newObject(J3Class* cl) {
-	initialiseJ3Type(cl);
+	initialiseJ3ObjectType(cl);
 
 	llvm::Value* size;
 
 	if(!cl->isResolved()) {
-		size = builder->CreateCall(funcJ3LayoutStructSize, builder->CreateBitCast(cl->llvmDescriptor(module()), vm->typeJ3LayoutPtr));
+		size = builder->CreateCall(funcJ3LayoutStructSize, builder->CreateBitCast(cl->unsafe_llvmDescriptor(module()), vm->typeJ3LayoutPtr));
 	} else {
 		size = builder->getInt64(cl->structSize());
 	}
@@ -525,7 +524,7 @@ void J3CodeGen::newObject(J3Class* cl) {
 	stack.push(res);
 }
 
-llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3Type* type) {
+llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) {
 	llvm::Value* vtType = vt(type, 1);
 	llvm::Value* vtObj = vt(obj);
 
@@ -542,7 +541,7 @@ llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3Type* type) {
 	}
 }
 
-void J3CodeGen::instanceof(llvm::Value* obj, J3Type* type) {
+void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
 	llvm::BasicBlock* after = forwardBranch("instanceof-after", codeReader->tell(), 0, 0);
 	llvm::BasicBlock* ok = newBB("instanceof-ok");
 	llvm::BasicBlock* test = newBB("instanceof");
@@ -559,7 +558,7 @@ void J3CodeGen::instanceof(llvm::Value* obj, J3Type* type) {
 	builder->CreateBr(after);
 }
 
-void J3CodeGen::checkCast(llvm::Value* obj, J3Type* type) {
+void J3CodeGen::checkCast(llvm::Value* obj, J3ObjectType* type) {
 	llvm::BasicBlock* succeed = forwardBranch("checkcast-succeed", codeReader->tell(), 0, 0);
 	llvm::BasicBlock* test = newBB("checkcast");
 
@@ -641,7 +640,9 @@ void J3CodeGen::ldc(uint32_t idx) {
 		case J3Cst::CONSTANT_Double:  res = llvm::ConstantFP::get(builder->getDoubleTy(), cl->doubleAt(idx)); break;
 		case J3Cst::CONSTANT_Class:   res = handleToObject(javaClass(cl->classAt(idx))); break;
 		case J3Cst::CONSTANT_String:  
-			res = handleToObject(builder->CreateCall2(funcJ3ClassStringAt, cl->llvmDescriptor(module()), builder->getInt16(idx)));
+			res = handleToObject(builder->CreateCall2(funcJ3ClassStringAt, 
+																								builder->CreateBitCast(cl->unsafe_llvmDescriptor(module()), vm->typeJ3ClassPtr),
+																								builder->getInt16(idx)));
 			break;
 		default:
 			J3::classFormatError(cl, L"wrong ldc type: %d\n", cl->getCtpType(idx));

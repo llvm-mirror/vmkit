@@ -335,7 +335,7 @@ char* J3Method::llvmStubName(J3Class* from) {
 	return _llvmAllNames + 0;
 }
 
-llvm::GlobalValue* J3Method::llvmDescriptor(llvm::Module* module) {
+llvm::GlobalValue* J3Method::unsafe_llvmDescriptor(llvm::Module* module) {
 	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(llvmDescriptorName(), cl()->loader()->vm()->typeJ3Method));
 }
 
