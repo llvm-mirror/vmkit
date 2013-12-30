@@ -36,7 +36,7 @@ namespace j3 {
 	public:
 		J3MethodType(J3Type** args, size_t nbArgs);
 
-		llvm::FunctionType* llvmFunctionType(); /* only call this function from j3codegen */
+		llvm::FunctionType* unsafe_llvmFunctionType();                   /* only call while compiler locked */
 		uint32_t            nbIns() { return _nbIns; }
 		J3Type*             out() { return _out; }
 		J3Type*             ins(uint32_t idx) { return _ins[idx]; }
@@ -96,7 +96,7 @@ namespace j3 {
 
 		llvm::Function*     nativeLLVMFunction(llvm::Module* module);
 		llvm::GlobalValue*  llvmDescriptor(llvm::Module* module);
-		llvm::Function*     llvmFunction(bool isStub, llvm::Module* module, J3Class* from=0); /* only call from J3CodeGen */
+		llvm::Function*     unsafe_llvmFunction(bool isStub, llvm::Module* module, J3Class* from=0); /* only call while compiler locked */
 
 		uint32_t            index();
 		uint32_t*           indexPtr() { return &_index; }

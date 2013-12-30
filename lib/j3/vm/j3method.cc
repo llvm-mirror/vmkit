@@ -28,7 +28,7 @@ J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
 			
 }
 
-llvm::FunctionType* J3MethodType::llvmFunctionType() {
+llvm::FunctionType* J3MethodType::unsafe_llvmFunctionType() {
 	if(!_llvmFunctionType) {
 		std::vector<llvm::Type*> in;
 		for(uint32_t i=0; i<nbIns(); i++)
@@ -69,7 +69,7 @@ void* J3Method::fnPtr() {
 
 		cl()->loader()->vm()->lockCompiler();
 		llvm::Module* module = new llvm::Module(llvmFunctionName(), cl()->loader()->vm()->llvmContext());
-		_llvmFunction = llvmFunction(0, module);
+		_llvmFunction = unsafe_llvmFunction(0, module);
 
 		J3CodeGen::translate(this, _llvmFunction);
 
@@ -172,7 +172,9 @@ J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Valu
 
 	//fprintf(stderr, "invoke: %ls::%ls%ls\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
 	target->fnPtr(); /* ensure that the function is compiled */
+	cl()->loader()->vm()->lockCompiler();
 	cl()->loader()->oldee()->updateGlobalMapping(target->_llvmFunction, target->fnPtr());
+	cl()->loader()->vm()->unlockCompiler();
 	llvm::GenericValue res = cl()->loader()->oldee()->runFunction(target->_llvmFunction, args);
 
 	J3Value holder;
@@ -337,9 +339,9 @@ llvm::GlobalValue* J3Method::llvmDescriptor(llvm::Module* module) {
 	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(llvmDescriptorName(), cl()->loader()->vm()->typeJ3Method));
 }
 
-llvm::Function* J3Method::llvmFunction(bool isStub, llvm::Module* module, J3Class* from) {
+llvm::Function* J3Method::unsafe_llvmFunction(bool isStub, llvm::Module* module, J3Class* from) {
 	const char* id = (isStub && !_fnPtr) ? llvmStubName(from) : llvmFunctionName(from);
-	return (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->llvmFunctionType());
+	return (llvm::Function*)module->getOrInsertFunction(id, methodType(from ? from : cl())->unsafe_llvmFunctionType());
 }
 
 void J3Method::dump() {
