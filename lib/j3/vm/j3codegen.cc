@@ -511,9 +511,9 @@ void J3CodeGen::newObject(J3Class* cl) {
 	llvm::Value* size;
 
 	if(!cl->isResolved()) {
-		size = builder->CreateCall(funcJ3LayoutSize, builder->CreateBitCast(cl->llvmDescriptor(module()), vm->typeJ3LayoutPtr));
+		size = builder->CreateCall(funcJ3LayoutStructSize, builder->CreateBitCast(cl->llvmDescriptor(module()), vm->typeJ3LayoutPtr));
 	} else {
-		size = builder->getInt64(cl->size());
+		size = builder->getInt64(cl->structSize());
 	}
 
 	llvm::Value* res = builder->CreateCall2(funcJ3ObjectAllocate, vt(cl), size);

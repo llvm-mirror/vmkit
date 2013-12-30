@@ -196,13 +196,13 @@ namespace j3 {
 		size_t            _nbMethods;
 		J3Method**        _methods;
 
-		size_t             _size;
+		size_t             _structSize;
 	public:
 		J3Layout(J3ClassLoader* loader, const vmkit::Name* name);
 
 		virtual bool      isLayout() { return 1; }
 
-		size_t            size();
+		size_t            structSize();
 
 		size_t            nbMethods() { return _nbMethods; }
 		J3Method**        methods() { return _methods; }

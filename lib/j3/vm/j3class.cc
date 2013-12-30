@@ -242,8 +242,8 @@ J3StaticLayout::J3StaticLayout(J3ClassLoader* loader, J3Class* cl, const vmkit::
 J3Layout::J3Layout(J3ClassLoader* loader, const vmkit::Name* name) : J3ObjectType(loader, name) {
 }
 
-size_t J3Layout::size() { 
-	return _size; 
+size_t J3Layout::structSize() { 
+	return _structSize; 
 }
 
 J3Method* J3Layout::findMethod(const vmkit::Name* name, const vmkit::Name* sign) {
@@ -445,7 +445,7 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 
 		llvm::cast<llvm::StructType>(llvmType()->getContainedType(0))->setBody(virtualBody);
 
-		_size = loader()->vm()->dataLayout()->getTypeAllocSize(llvmType()->getContainedType(0));
+		_structSize = loader()->vm()->dataLayout()->getTypeAllocSize(llvmType()->getContainedType(0));
 			
 		staticLayout._vt = J3VirtualTable::create(&staticLayout);
 

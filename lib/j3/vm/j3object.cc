@@ -280,7 +280,7 @@ J3Object* J3Object::allocate(J3VirtualTable* vt, size_t n) {
 }
 
 J3Object* J3Object::doNewNoInit(J3Class* cl) {
-	return allocate(cl->vtAndResolve(), cl->size());
+	return allocate(cl->vtAndResolve(), cl->structSize());
 }
 
 J3Object* J3Object::doNew(J3Class* cl) {
