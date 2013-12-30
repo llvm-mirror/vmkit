@@ -250,6 +250,7 @@ namespace j3 {
 		void          fillFields(std::vector<llvm::Type*>* staticBody, std::vector<llvm::Type*>* virtualBody, J3Field** fields, size_t n);
 
 		void          createLLVMTypes();
+		void          doNativeName();
 
 		void          doResolve(J3Field* hiddenFields, size_t nbHiddenFields);
 		void          doInitialise();
@@ -302,6 +303,8 @@ namespace j3 {
 
 		void                doResolve(J3Field* hiddenFields, size_t nbHiddenFields);
 		void                doInitialise();
+
+		void                doNativeName();
 	public:
 		J3ArrayClass(J3ClassLoader* loader, J3Type* component, const vmkit::Name* name);
 

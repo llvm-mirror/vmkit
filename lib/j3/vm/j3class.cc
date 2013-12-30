@@ -809,6 +809,23 @@ void J3Class::check(uint16_t idx, uint32_t id) {
 		J3::classFormatError(this, L"wrong constant pool type %d at index %d for %d", id, idx, nbCtp);
 }
 
+void J3Class::doNativeName() {
+	J3Mangler mangler(this);
+
+	mangler.mangle(name());
+		
+	_nativeNameLength = mangler.length() + 3;
+	_nativeName = (char*)loader()->allocator()->allocate(_nativeNameLength + 1);
+
+	_nativeName[0] = 'L';
+	memcpy(_nativeName + 1, mangler.cStr(), mangler.length());
+	_nativeName[_nativeNameLength-2] = '_';
+	_nativeName[_nativeNameLength-1] = '2';
+	_nativeName[_nativeNameLength]   = 0;
+
+	loader()->addSymbol(_nativeName, this);
+}
+
 void J3Class::createLLVMTypes() {
 	J3Mangler mangler(this);
 
@@ -818,15 +835,7 @@ void J3Class::createLLVMTypes() {
 		llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), mangler.cStr()));
 	_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), mangler.cStr()+7));
 
-	mangler.mangle("_2");
-		
-	_nativeNameLength = mangler.length() - 6;
-	_nativeName = (char*)loader()->allocator()->allocate(_nativeNameLength + 1);
-
-	_nativeName[0] = 'L';
-	memcpy(_nativeName + 1, mangler.cStr()+7, _nativeNameLength); /* copy the 0 */
-
-	loader()->addSymbol(_nativeName, this);
+	doNativeName();
 }
 
 llvm::Type* J3Class::staticLLVMType() {
@@ -923,26 +932,28 @@ llvm::GlobalValue* J3ArrayClass::llvmDescriptor(llvm::Module* module) {
 	return llvm::cast<llvm::GlobalValue>(module->getOrInsertGlobal(nativeName(), loader()->vm()->typeJ3ArrayClass));
 }
 
+void J3ArrayClass::doNativeName() {
+	uint32_t len = component()->nativeNameLength();
+	_nativeNameLength = len + 2;
+	_nativeName = (char*)loader()->allocator()->allocate(_nativeNameLength + 1);
+	_nativeName[0] = '_';
+	_nativeName[1] = '3';
+	memcpy(_nativeName+2, component()->nativeName(), len);
+	_nativeName[_nativeNameLength] = 0;
+	loader()->addSymbol(_nativeName, this);
+}
+
 llvm::Type* J3ArrayClass::llvmType() {
 	if(!_llvmType) {
 		llvm::Type* body[2] = {
 			loader()->vm()->typeJ3ArrayObject,
 			llvm::ArrayType::get(component()->llvmType(), 0) /* has to be called first */
 		};
-		uint32_t len = component()->nativeNameLength();
-
-		_nativeNameLength = len + 2;
-		_nativeName = (char*)loader()->allocator()->allocate(_nativeNameLength + 1);
-		_nativeName[0] = '_';
-		_nativeName[1] = '3';
-		memcpy(_nativeName+2, component()->nativeName(), len);
-		_nativeName[_nativeNameLength] = 0;
-
+		
+		doNativeName();
 		_llvmType = llvm::PointerType::getUnqual(llvm::StructType::create(loader()->vm()->llvmContext(), 
 																																			body,
 																																			_nativeName));
-
-		loader()->addSymbol(_nativeName, this);
 	}
 	return _llvmType;
 }
