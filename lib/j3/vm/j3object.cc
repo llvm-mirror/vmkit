@@ -13,6 +13,7 @@
 #include "j3/j3.h"
 #include "j3/j3constants.h"
 #include "j3/j3thread.h"
+#include "j3/j3monitor.h"
 
 using namespace j3;
 
@@ -267,7 +268,7 @@ J3VirtualTable* J3Object::vt() {
 	return _vt; 
 }
 
-uintptr_t* J3Object::header() { 
+volatile uintptr_t* J3Object::header() { 
 	return &_header; 
 }
 
@@ -295,6 +296,73 @@ void J3Object::monitorExit(J3Object* obj) {
 	J3::internalError(L"implement me: monitorexit");
 }
 
+uint32_t J3Object::hashCode() {
+	static uint32_t curHashCode = 0;
+
+	while(1) {
+		uintptr_t header = _header;
+		if((header & 0x7) == 1) { /* not locked, not inflated */
+			uint32_t res = header >> 8;
+			if(res)
+				return res;
+			do {
+				res = __sync_add_and_fetch(&curHashCode, 1) & 0xffffff;
+			} while(!res);
+			
+			if(__sync_val_compare_and_swap(&_header, header, res<<8 | (header & 0xff)) == header)
+				return res;
+		} else {
+			/* if stack locked, force the inflation because I can not modify the stack of the owner */
+			J3Monitor* m = monitor();
+
+			header = m->header;
+
+			uint32_t res = header >> 8;
+			if(res)
+				return res;
+			do {
+				res = __sync_add_and_fetch(&curHashCode, 1) & 0xffffff;
+			} while(!res);
+			
+			if(__sync_val_compare_and_swap(&m->header, header, res<<8 | (header & 0xff)) == header)
+				return res;
+		}
+	}
+}
+
+J3Monitor* J3Object::monitor() {
+	uintptr_t header = _header;
+
+	while(1) {
+		uintptr_t header = _header;
+
+		if((header & 0x3) == 2) { /* already inflated */ 
+			J3Monitor* res = (J3Monitor*)(header & -2);
+			if(res)
+				return res;
+			else
+				sched_yield(); /* another guy is trying to inflate this monitor */
+		} else if(__sync_val_compare_and_swap(&_header, header, 2) == header) {
+			/* ok, I'm the boss */
+			J3Monitor* monitor = J3Thread::get()->vm()->monitorManager.allocate();
+
+			if(!(header & 3)) { /* stack locked */
+				J3LockRecord* record = (J3LockRecord*)header;
+				fprintf(stderr, " preparing monitor with %p\n", record);
+				/* I can read record->header because, in the worst case, the owner is blocked in the sched_yield loop */
+				monitor->prepare(this, record->header, record); 
+			} else {            /* not locked at all */
+				if((header & 7) != 1)
+					J3::internalError(L"should not happen");
+				monitor->prepare(this, header, 0);
+			}
+			_header = (uintptr_t)monitor | 2;
+
+			return monitor;
+		}
+	}
+}
+
 /*
  *    ---   J3ArrayObject ---
  */
@@ -313,15 +381,12 @@ J3Object* J3ArrayObject::doNew(J3ArrayClass* cl, uint32_t length) {
 /*
  *    J3ObjectHandle
  */
+void J3ObjectHandle::wait() {
+	obj()->monitor()->wait();
+}
+
 uint32_t J3ObjectHandle::hashCode() {
-	do {
-		uintptr_t oh = *obj()->header();
-		uintptr_t res = oh;
-		if(res)
-			return res;
-		uintptr_t nh = oh + 256;
-		__sync_val_compare_and_swap(obj()->header(), oh, nh);
-	} while(1);
+	return obj()->hashCode();
 }
 
 J3ObjectHandle* J3ObjectHandle::allocate(J3VirtualTable* vt, size_t n) {

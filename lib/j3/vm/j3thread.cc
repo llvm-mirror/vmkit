@@ -87,6 +87,10 @@ void J3Thread::restore(J3ObjectHandle* ptr) {
 	_localReferences.restore(ptr); 
 }
 
+J3Thread* J3Thread::get(void* ptr) { 
+	return (J3Thread*)Thread::get(ptr); 
+}
+
 J3Thread* J3Thread::get() { 
 	return (J3Thread*)Thread::get(); 
 }

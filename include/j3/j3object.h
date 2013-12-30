@@ -22,6 +22,7 @@ namespace j3 {
 	class J3VirtualTable;
 	class J3FixedPoint;
 	class J3Method;
+	class J3Monitor;
 
 	// see: Cliff Click and John Rose. 2002. Fast subtype checking in the HotSpot JVM. 
 	// In Proceedings of the 2002 joint ACM-ISCOPE conference on Java Grande (JGI '02). ACM, New York, NY, USA, 96-107. 
@@ -89,8 +90,8 @@ namespace j3 {
 		static const uint32_t gepHeader = 1;
 
 	private:
-		J3VirtualTable* _vt;
-		uintptr_t       _header;
+		J3VirtualTable*     _vt;
+		volatile uintptr_t  _header;
 		/* 
 		 *     biasable (not yet implemented):  0         | epoch | age        | 101
 		 *     biased (not yet implemented):    thread_id | epoch | age        | 101
@@ -101,6 +102,9 @@ namespace j3 {
 
 		J3Object(); /* never directly allocate an object */
 
+		J3Monitor* monitor();
+		uint32_t   hashCode();
+
 		static void monitorEnter(J3Object* obj);
 		static void monitorExit(J3Object* obj);
 
@@ -109,8 +113,8 @@ namespace j3 {
 		static J3Object* doNew(J3Class* cl);
 	public:
 
-		J3VirtualTable* vt();
-		uintptr_t*      header();
+		J3VirtualTable*     vt();
+		volatile uintptr_t* header();
 	};
 
 	class J3ArrayObject : public J3Object {
@@ -150,6 +154,8 @@ namespace j3 {
 		static J3ObjectHandle* allocate(J3VirtualTable* vt, size_t n);
 		static J3ObjectHandle* doNewObject(J3Class* cl);
 		static J3ObjectHandle* doNewArray(J3ArrayClass* cl, uint32_t length);
+
+		void            wait();
 
 		bool            isSame(J3ObjectHandle* handle) { return obj() == handle->obj(); }
 

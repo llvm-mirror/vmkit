@@ -17,7 +17,11 @@ void Thread::operator delete(void* p) {
 }
 
 Thread* Thread::get() {
-	return (Thread*)((uintptr_t)__builtin_frame_address(0) & getThreadMask());
+	return get(__builtin_frame_address(0));
+}
+
+Thread* Thread::get(void* ptr) {
+	return (Thread*)((uintptr_t)ptr & getThreadMask());
 }
 
 uintptr_t Thread::getThreadMask() {

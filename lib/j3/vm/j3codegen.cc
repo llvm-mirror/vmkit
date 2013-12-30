@@ -197,6 +197,8 @@ void J3CodeGen::monitorEnter(llvm::Value* obj) {
 	builder->CreateStore(record, recordPtr);
 	llvm::Value* gepR[] = { builder->getInt32(0), builder->getInt32(J3LockRecord::gepHeader) };
 	builder->CreateStore(header, builder->CreateGEP(record, gepR));
+	llvm::Value* gepC[] = { builder->getInt32(0), builder->getInt32(J3LockRecord::gepLockCount) };
+	builder->CreateStore(builder->getInt32(0), builder->CreateGEP(record, gepC));
 	llvm::Value* orig = builder->CreateOr(builder->CreateAnd(header, llvm::ConstantInt::get(uintPtrTy, ~6)), 
 																				llvm::ConstantInt::get(uintPtrTy, 1)); /* ...001 */
 	llvm::Value* res = builder->CreateAtomicCmpXchg(headerPtr, 
@@ -208,7 +210,6 @@ void J3CodeGen::monitorEnter(llvm::Value* obj) {
 
 	/* stack locked, increment the counter */
 	builder->SetInsertPoint(stackLocked);
-	llvm::Value* gepC[] = { builder->getInt32(0), builder->getInt32(J3LockRecord::gepLockCount) };
 	llvm::Value* countPtr = builder->CreateGEP(builder->CreateLoad(recordPtr), gepC);
 	builder->CreateStore(builder->CreateAdd(builder->CreateLoad(countPtr), builder->getInt32(1)), countPtr);
 	builder->CreateBr(ok);

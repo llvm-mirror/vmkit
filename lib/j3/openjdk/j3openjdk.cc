@@ -33,7 +33,12 @@ jint JNICALL JVM_IHashCode(JNIEnv* env, jobject obj) {
 	return res;
 }
 
-void JNICALL JVM_MonitorWait(JNIEnv* env, jobject obj, jlong ms) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_MonitorWait(JNIEnv* env, jobject obj, jlong ms) { 
+	enterJVM(); 
+	obj->wait();
+	leaveJVM(); 
+}
+
 void JNICALL JVM_MonitorNotify(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_MonitorNotifyAll(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJVM(); }
 jobject JNICALL JVM_Clone(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJVM(); }

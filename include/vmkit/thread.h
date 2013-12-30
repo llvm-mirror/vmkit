@@ -26,12 +26,13 @@ namespace vmkit {
 
 		VMKit* vm() { return _vm; }
 
+		static uintptr_t getThreadMask();
+		static Thread* get(void* ptr);
 		static Thread* get();
 
 		void start();
 		void join();
 
-		static uintptr_t getThreadMask();
 	};
 
 	class StackWalker {

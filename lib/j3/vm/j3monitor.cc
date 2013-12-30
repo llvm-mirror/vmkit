@@ -16,29 +16,39 @@ bool J3Monitor::isDeflatable() {
 	return pthread_mutex_trylock(&mutex) == 0;
 }
 
-void J3Monitor::prepare(J3Object* _object, J3Thread* _owner, uint32_t _recursiveCount, uintptr_t _header) {
+void J3Monitor::prepare(J3Object* _object, uintptr_t _header, J3LockRecord* _record) {
 	object = _object;
-	owner = _owner;
-	recursiveCount = _recursiveCount;
+	record = _record;
 	header = _header;
+	owner  = _record ? J3Thread::get(_record) : 0;
+}
+
+void J3Monitor::checkRecord() {
+	if(record) {
+		lockCount = record->lockCount;
+		record    = 0;
+	}
 }
 
 void J3Monitor::lock() {
 	J3Thread* self = J3Thread::get();
-	if(owner == self) {
-		recursiveCount++;
-	} else {
+
+	if(owner == self)
+		checkRecord();
+	else {
 		pthread_mutex_lock(&mutex);
-		recursiveCount++;
 		owner = self;
 	}
+	lockCount++;
 }
 
 void J3Monitor::unlock() {
 	J3Thread* self = J3Thread::get();
 	if(owner != self)
 		J3::illegalMonitorStateException();
-	if(!--recursiveCount) {
+
+	checkRecord();
+	if(!--lockCount) {
 		owner = 0;
 		pthread_mutex_unlock(&mutex);
 	} else
@@ -55,7 +65,9 @@ void J3Monitor::timed_wait(uint64_t ms, uint32_t ns) {
 	if(owner != self)
 		J3::illegalMonitorStateException();
 
-	uint32_t r = recursiveCount;
+	checkRecord();
+
+	uint32_t r = lockCount;
 	owner = 0;
 
 	if(ms || ns) {
@@ -69,11 +81,12 @@ void J3Monitor::timed_wait(uint64_t ms, uint32_t ns) {
 			ts.tv_nsec -= 1e9;
 		}
 		pthread_cond_timedwait(&cond, &mutex, &ts);
+		
 	} else
 		pthread_cond_wait(&cond, &mutex);
 
 	owner = self;
-	recursiveCount = r;
+	lockCount = r;
 }
 
 void J3Monitor::notify() {

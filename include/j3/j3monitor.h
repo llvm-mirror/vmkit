@@ -23,20 +23,24 @@ namespace j3 {
 
 	class J3Monitor {
 		friend class J3MonitorManager;
+		friend class J3Object;
 
 		J3Monitor*      _next;
 
 		J3Thread*       owner;
-		uint32_t        recursiveCount;
+		uint32_t        lockCount;
 		pthread_mutex_t mutex;
 		pthread_cond_t  cond;
 		uintptr_t       header;
 		J3Object*       object;
+		J3LockRecord*   record;
+
+		void checkRecord();
 
 		void init(J3Monitor* next); /* acquire the lock for the next inflate */		
 	public:
 		bool isDeflatable(); /* acquire the lock for the next inflate */
-		void prepare(J3Object* _object, J3Thread* _owner, uint32_t _recursiveCount, uintptr_t _header);
+		void prepare(J3Object* _object, uintptr_t header, J3LockRecord* _record);
 
 		void lock();
 		void unlock();
