@@ -390,9 +390,8 @@ void J3Class::doInitialise() {
 			interfaces()[i]->initialise();
 
 		J3ObjectHandle* prev = J3Thread::get()->tell();
-		J3ObjectHandle* stacked = J3ObjectHandle::allocate(staticLayout.vt(),
-																											 loader()->vm()->dataLayout()->getTypeAllocSize(staticLayout.llvmType()
-																																																			->getContainedType(0)));
+		J3ObjectHandle* stacked = J3ObjectHandle::allocate(staticLayout.vt(), staticLayout.structSize());
+
 		_staticInstance = loader()->globalReferences()->add(stacked);
 		J3Thread::get()->restore(prev);
 
@@ -436,18 +435,9 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 		if(loader()->vm()->options()->debugResolve)
 			fprintf(stderr, "Resolving: %ls\n", name()->cStr());
 
-		std::vector<llvm::Type*> virtualBody;
 		status = RESOLVED;
-		readClassBytes(&virtualBody, hiddenFields, nbHiddenFields);
+		readClassBytes(hiddenFields, nbHiddenFields);
 		
-		if(super() == this) {
-			virtualBody[0] = loader()->vm()->typeJ3Object;
-		} else {
-			virtualBody[0] = super()->llvmType()->getContainedType(0);
-		}
-
-		llvm::cast<llvm::StructType>(llvmType()->getContainedType(0))->setBody(virtualBody);
-
 		staticLayout._vt = J3VirtualTable::create(&staticLayout);
 
 		_vt = J3VirtualTable::create(this);
@@ -462,7 +452,7 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 	unlock();
 }
 
-void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hiddenFields, uint32_t nbHiddenFields) {
+void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 	J3Reader reader(_bytes);
 
 	uint32_t magic = reader.readU4();
@@ -580,11 +570,6 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 	staticLayout.fields = new(loader()->allocator()) J3Field[nbStaticFields];
 	fields = new(loader()->allocator()) J3Field[nbVirtualFields];
 
-	std::vector<llvm::Type*> staticBody;
-
-	staticBody.push_back(loader()->vm()->typeJ3Object);
-	virtualBody->push_back(0);
-
 	if(super() == this)
 		_structSize = sizeof(J3Object);
 	else {
@@ -594,14 +579,12 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 
 	_structSize = ((_structSize - 1) & -sizeof(uintptr_t)) + sizeof(uintptr_t);
 
-	fillFields(&staticBody, virtualBody, pFields3, i3);
-	fillFields(&staticBody, virtualBody, pFields2, i2);
-	fillFields(&staticBody, virtualBody, pFields1, i1);
-	fillFields(&staticBody, virtualBody, pFields0, i0);
+	fillFields(pFields3, i3);
+	fillFields(pFields2, i2);
+	fillFields(pFields1, i1);
+	fillFields(pFields0, i0);
 
 	staticLLVMType()->getContainedType(0);
-
-	llvm::cast<llvm::StructType>(staticLLVMType()->getContainedType(0))->setBody(staticBody);
 
 	//fprintf(stderr, "static part of %ls: ", name()->cStr());
 	//staticLayout.llvmType()->getContainedType(0)->dump();
@@ -644,7 +627,7 @@ void J3Class::readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hid
 	_attributes = readAttributes(&reader);
 }
 
-void J3Class::fillFields(std::vector<llvm::Type*>* staticBody, std::vector<llvm::Type*>* virtualBody, J3Field** fields, size_t n) {
+void J3Class::fillFields(J3Field** fields, size_t n) {
 	for(size_t i=0; i<n; i++) {
 		J3Field*  cur = fields[i];
 		J3Layout* layout;
@@ -652,10 +635,8 @@ void J3Class::fillFields(std::vector<llvm::Type*>* staticBody, std::vector<llvm:
 		if(J3Cst::isStatic(fields[i]->access())) {
 			//fprintf(stderr, "   adding static field: %ls %ls::%ls\n", cur->type()->name()->cStr(), name()->cStr(), cur->name()->cStr());
 			layout = &staticLayout;
-			staticBody->push_back(cur->type()->llvmType());
 		} else {
 			layout = this;
-			virtualBody->push_back(cur->type()->llvmType());
 		}
 		cur->_offset = layout->structSize();
 		layout->_structSize += 1 << fields[i]->type()->logSize();

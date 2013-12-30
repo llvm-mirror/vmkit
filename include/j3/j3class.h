@@ -243,11 +243,11 @@ namespace j3 {
 		J3ObjectHandle*    _staticInstance;
 
 		J3Attributes* readAttributes(J3Reader* reader);
-		void          readClassBytes(std::vector<llvm::Type*>* virtualBody, J3Field* hiddenFields, uint32_t nbHiddenFields);
+		void          readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields);
 
 		void          check(uint16_t idx, uint32_t id=-1);
 
-		void          fillFields(std::vector<llvm::Type*>* staticBody, std::vector<llvm::Type*>* virtualBody, J3Field** fields, size_t n);
+		void          fillFields(J3Field** fields, size_t n);
 
 		void          createLLVMTypes();
 		void          doNativeName();
