@@ -29,6 +29,14 @@ namespace j3 {
 	class J3ObjectType;
 	class J3Method;
 	class J3Field;
+	class J3Attributes;
+
+	class J3InterfaceSlotDescriptor {
+	public:
+		uint32_t   nbMethods;
+		J3Method** methods;
+	};
+
 
 	class J3Type : public vmkit::Symbol {
 		pthread_mutex_t        _mutex;
@@ -94,71 +102,14 @@ namespace j3 {
 		virtual bool                isLayout() { return 0; }
 		virtual bool                isClass() { return 0; }
 		virtual bool                isPrimitive() { return 0; }
+
 		virtual llvm::Type*         llvmType() = 0;
 
 		void dump();
 	};
 
-	class J3Attribute : public vmkit::PermanentObject {
-		friend class J3Class;
-
-		const vmkit::Name* _id;
-		uint32_t           _offset;
-	public:
-		
-		const vmkit::Name* id() { return _id; }
-		uint32_t           offset() { return _offset; }
-	};
-
-	class J3Attributes : public vmkit::PermanentObject {
-		size_t       _nbAttributes;
-		J3Attribute  _attributes[1];
-	public:
-		J3Attributes(size_t n) { _nbAttributes = n; }
-
-		void* operator new(size_t unused, vmkit::BumpAllocator* allocator, size_t n) {
-			return vmkit::PermanentObject::operator new(sizeof(J3Attributes) + (n - 1) * sizeof(J3Attribute), allocator);
-		}
-
-		size_t       nbAttributes() { return _nbAttributes; }
-		J3Attribute* attribute(size_t n);
-		
-		J3Attribute* lookup(const vmkit::Name* attr);
-	};
-
-	class J3Field : public vmkit::PermanentObject {
-		friend class J3Class;
-
-		J3Layout*          _layout;
-		uint16_t           _access;
-		const vmkit::Name* _name;
-		J3Type*            _type;
-		J3Attributes*      _attributes;
-		uintptr_t          _offset;
-
-	public:
-		J3Field() {}
-		J3Field(uint16_t access, const vmkit::Name* name, J3Type* type) { _access = access; _name = name; _type = type; }
-
-		J3Attributes*      attributes() const { return _attributes; }
-		uint16_t           access() { return _access; }
-		J3Layout*          layout()  { return _layout; }
-		const vmkit::Name* name() { return _name; }
-		J3Type*            type() { return _type; }
-
-		uintptr_t          offset() { return _offset; }
-
-		void               dump();
-	};
-
-	class J3InterfaceSlotDescriptor {
-	public:
-		uint32_t   nbMethods;
-		J3Method** methods;
-	};
-
 	class J3ObjectType : public J3Type {
-		J3ObjectHandle*           _javaClass;
+		J3ObjectHandle* volatile  _javaClass;
 		J3InterfaceSlotDescriptor _interfaceSlotDescriptors[J3VirtualTable::nbInterfaceMethodTable];
 
 	public:
@@ -185,10 +136,12 @@ namespace j3 {
 	class J3Layout : public J3ObjectType {
 		friend class J3Class;
 
-		size_t            nbFields;
-		J3Field*          fields;
+		size_t            _nbFields;
+		size_t            _nbPublicFields;
+		J3Field*          _fields;
 		
 		size_t            _nbMethods;
+		size_t            _nbPublicMethods;
 		J3Method**        _methods;
 
 		uintptr_t         _structSize;
@@ -199,7 +152,12 @@ namespace j3 {
 
 		uintptr_t         structSize();
 
+		size_t            nbFields() { return _nbFields; }
+		size_t            nbPublicFields() { return _nbPublicFields; }
+		J3Field*          fields() { return _fields; }
+
 		size_t            nbMethods() { return _nbMethods; }
+		size_t            nbPublicMethods() { return _nbPublicMethods; }
 		J3Method**        methods() { return _methods; }
 
 		J3Method*         findMethod(const vmkit::Name* name, const vmkit::Name* sign);
@@ -217,7 +175,7 @@ namespace j3 {
 	};
 
 	class J3Class : public J3Layout {
-		J3StaticLayout     staticLayout;
+		J3StaticLayout     _staticLayout;
 
 		uint16_t           _access;
 
@@ -251,6 +209,8 @@ namespace j3 {
 		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access);
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes);
+
+		J3StaticLayout*     staticLayout() { return &_staticLayout; }
 
 		size_t              nbInterfaces() { return _nbInterfaces; }
 		J3Class**           interfaces() { return _interfaces; }

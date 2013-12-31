@@ -4,6 +4,8 @@
 #include "j3/j3classloader.h"
 #include "j3/j3class.h"
 #include "j3/j3method.h"
+#include "j3/j3constants.h"
+#include "j3/j3field.h"
 #include "jvm.h"
 
 using namespace j3;
@@ -385,11 +387,31 @@ jbyteArray JNICALL JVM_GetClassTypeAnnotations(JNIEnv* env, jclass cls) { enterJ
 
 jobjectArray JNICALL JVM_GetClassDeclaredMethods(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); NYI(); leaveJVM(); }
 jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jboolean publicOnly) { 
+	jobjectArray res;
+
 	enterJVM(); 
 	J3ObjectType* type = J3ObjectType::nativeClass(ofClass);
 
+	if(type->isClass()) {
+		J3Class* cl = type->asClass();
+		cl->resolve();
+		size_t total = publicOnly ? 
+			cl->nbPublicFields() + cl->staticLayout()->nbPublicFields() :
+			cl->nbFields() + cl->staticLayout()->nbFields();
+
+		res = J3ObjectHandle::doNewArray(type->loader()->vm()->fieldClass->getArray(), total);
+
+		size_t cur = 0;
+		for(uint32_t i=0; i<cl->nbFields(); i++)
+			if(!publicOnly || J3Cst::isPublic(cl->fields()[i].access()))
+				res->setObjectAt(i, cl->fields()[i].javaField());
+	} else
+		res = J3ObjectHandle::doNewArray(type->loader()->vm()->fieldClass->getArray(), 0);
+
 	NYI(); 
-	leaveJVM(); 
+	leaveJVM();
+ 
+	return res;
 }
 
 jobjectArray JNICALL JVM_GetClassDeclaredConstructors(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); NYI(); leaveJVM(); }

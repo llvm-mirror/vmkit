@@ -11,6 +11,8 @@
 #include "j3/j3mangler.h"
 #include "j3/j3jni.h"
 #include "j3/j3object.h"
+#include "j3/j3field.h"
+#include "j3/j3attribute.h"
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 

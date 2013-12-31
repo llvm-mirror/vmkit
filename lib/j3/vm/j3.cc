@@ -10,6 +10,7 @@
 #include "j3/j3thread.h"
 #include "j3/j3trampoline.h"
 #include "j3/j3lib.h"
+#include "j3/j3field.h"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"

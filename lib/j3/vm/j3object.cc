@@ -14,6 +14,7 @@
 #include "j3/j3constants.h"
 #include "j3/j3thread.h"
 #include "j3/j3monitor.h"
+#include "j3/j3field.h"
 
 using namespace j3;
 
@@ -455,11 +456,11 @@ void J3ObjectHandle::rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uin
 }
 
 void J3ObjectHandle::rawSetObject(uint32_t offset, J3ObjectHandle* value) {
-	*((J3Object**)((uintptr_t)obj() + offset)) = value->obj();
+	*((J3Object**)((uintptr_t)obj() + offset)) = value ? value->obj() : 0;
 }
 
 J3ObjectHandle* J3ObjectHandle::rawGetObject(uint32_t offset) {
-	return J3Thread::get()->push(*((J3Object**)((uintptr_t)obj() + offset)));
+	return obj() ? J3Thread::get()->push(*((J3Object**)((uintptr_t)obj() + offset))) : 0;
 }
 
 void J3ObjectHandle::setObject(J3Field* field, J3ObjectHandle* value) {
