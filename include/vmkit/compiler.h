@@ -42,7 +42,6 @@ namespace vmkit {
 		SymbolMap               _symbolTable;
 		pthread_mutex_t         _mutexSymbolTable;
 		llvm::ExecutionEngine*  _ee;
-		llvm::ExecutionEngine*  _oldee;
 		llvm::PassManager*      pm;
 
 	protected:
@@ -64,7 +63,6 @@ namespace vmkit {
 
 		BumpAllocator*          allocator() { return _allocator; }
 		llvm::ExecutionEngine*  ee() { return _ee; }
-		llvm::ExecutionEngine*  oldee() { return _oldee; }
 
 		void                    compileModule(llvm::Module* module);
 	};

@@ -14,10 +14,6 @@ namespace vmkit {
 	class Symbol;
 }
 
-namespace llvm {
-	class ExecutionEngine;
-}
-
 namespace j3 {
 	class J3ZipArchive;
 	class J3ClassBytes;
@@ -62,9 +58,6 @@ namespace j3 {
 
 		pthread_mutex_t                      _mutexMethods;
 		MethodRefMap                         methods;      /* all te known method */
-
-		llvm::ExecutionEngine*               _ee;
-		llvm::ExecutionEngine*               _oldee;
 
 		void                          wrongType(J3Class* from, const vmkit::Name* type);
 		J3Type*                       getTypeInternal(J3Class* from, const vmkit::Name* type, uint32_t start, uint32_t* end);

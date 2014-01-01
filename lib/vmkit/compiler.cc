@@ -58,15 +58,6 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const c
 
 	ee()->finalizeObject();
 
-	_oldee = llvm::EngineBuilder(new llvm::Module("old ee", Thread::get()->vm()->llvmContext()))
-		.setErrorStr(&err)
-		.create();
-
-	if (!oldee())
-		Thread::get()->vm()->internalError(L"Error while creating execution engine: %s\n", err.c_str());
-
-	oldee()->DisableLazyCompilation(0);
-
 	pm = new llvm::PassManager();
 	//pm->add(new llvm::TargetData(*ee->getTargetData()));
 
@@ -112,7 +103,6 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const c
 CompilationUnit::~CompilationUnit() {
 	delete pm;
 	delete _ee;
-	delete _oldee;
 }
 
 void CompilationUnit::destroy(CompilationUnit* unit) {
