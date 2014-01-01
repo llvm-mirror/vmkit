@@ -387,6 +387,7 @@ jbyteArray JNICALL JVM_GetClassTypeAnnotations(JNIEnv* env, jclass cls) { enterJ
 
 jobjectArray JNICALL JVM_GetClassDeclaredMethods(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); NYI(); leaveJVM(); }
 jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jboolean publicOnly) { 
+	NYI();
 	jobjectArray res;
 
 	enterJVM(); 

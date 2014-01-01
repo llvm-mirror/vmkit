@@ -378,7 +378,7 @@ const char* JNICALL GetStringUTFChars(JNIEnv* env, jstring str, jboolean* isCopy
 
 	enterJVM(); 
 	J3* vm = str->vt()->type()->loader()->vm();
-	jobject content = str->getObject(vm->stringValue);
+	jobject content = str->getObject(vm->stringClassValue);
 	uint32_t length = content->arrayLength();
 	res = new char[length+1];
 

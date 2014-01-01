@@ -8,6 +8,7 @@
 #include "vmkit/vmkit.h"
 #include "vmkit/allocator.h"
 
+#include "j3/j3signature.h"
 #include "j3/j3options.h"
 #include "j3/j3typesdef.h"
 #include "j3/j3jni.h"
@@ -28,20 +29,24 @@ namespace j3 {
 		typedef std::map<J3ObjectHandle*, J3ObjectHandle*, vmkit::T_ptr_less_t<J3ObjectHandle*>, 
 										 vmkit::StdAllocator<std::pair<J3ObjectHandle*, J3ObjectHandle*> > > StringMap;
 
-		static vmkit::T_ptr_less_t<J3ObjectHandle*> charArrayLess;
+		typedef std::map<llvm::FunctionType*, J3LLVMSignature*, vmkit::T_ptr_less_t<llvm::FunctionType*>, 
+										 vmkit::StdAllocator<std::pair<llvm::FunctionType*, J3LLVMSignature*> > > SignatureMap;
 
-		J3Options                            _options;
+		static vmkit::T_ptr_less_t<J3ObjectHandle*>     charArrayLess;
+	  static vmkit::T_ptr_less_t<llvm::FunctionType*> llvmFunctionTypeLess;
 
-		pthread_mutex_t                      stringsMutex;
-		vmkit::NameMap<J3ObjectHandle*>::map nameToCharArrays;
-		StringMap                            charArrayToStrings;
-		vmkit::Names                         _names;
+		J3Options                             _options;
+	
+		pthread_mutex_t                       stringsMutex;
+		vmkit::NameMap<J3ObjectHandle*>::map  nameToCharArrays;
+		StringMap                             charArrayToStrings;
+		vmkit::Names                          _names;
 
 		void                       introspect();
 
 		J3(vmkit::BumpAllocator* allocator);
 	public:
-		J3InitialClassLoader*               initialClassLoader;
+		J3InitialClassLoader*                 initialClassLoader;
 
 		static J3*  create();
 
@@ -51,6 +56,7 @@ namespace j3 {
 #undef defPrimitive
 
 		J3MonitorManager monitorManager;
+	  SignatureMap     llvmSignatures; /* protected by the lock of the compiler */
 
 		void*            interfaceTrampoline;
 
@@ -60,17 +66,20 @@ namespace j3 {
 		J3ArrayClass*    charArrayClass;
 
 		J3Class*         stringClass;
-		J3Method*        stringInit;
-		J3Field*         stringValue;
+		J3Method*        stringClassInit;
+		J3Field*         stringClassValue;
 
 		J3Class*         classClass;
-		J3Method*        classInit;
-		J3Field*         classVMData;
+		J3Method*        classClassInit;
+		J3Field*         classClassVMData;
 
-		J3Field*         threadVMData;
-		J3Method*        threadRun;
+		J3Field*         threadClassVMData;
+		J3Method*        threadClassRun;
 
 		J3Class*         fieldClass;
+		J3Field*         fieldClassClass;
+		J3Field*         fieldClassSlot;
+		J3Method*        fieldClassInit;
 
 		const vmkit::Name* codeAttr;
 		const vmkit::Name* constantValueAttr;

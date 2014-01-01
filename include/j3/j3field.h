@@ -23,11 +23,13 @@ namespace j3 {
 		J3Attributes*             _attributes;
 		uintptr_t                 _offset;
 		J3ObjectHandle* volatile  _javaField;
+		uint32_t                  _slot;
 
 	public:
 		J3Field() {}
 		J3Field(uint16_t access, const vmkit::Name* name, J3Type* type) { _access = access; _name = name; _type = type; }
 
+		uint32_t           slot() const { return _slot; }
 		J3ObjectHandle*    javaField();
 		J3Attributes*      attributes() const { return _attributes; }
 		uint16_t           access() { return _access; }

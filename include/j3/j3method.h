@@ -16,6 +16,7 @@ namespace vmkit {
 }
 
 namespace j3 {
+	class J3LLVMSignature;
 	class J3Type;
 	class J3Attributes;
 	class J3Class;
@@ -24,7 +25,7 @@ namespace j3 {
 	class J3ObjectHandle;
 
 	class J3MethodType : public vmkit::PermanentObject {
-		llvm::FunctionType* volatile _llvmFunctionType;
+		J3LLVMSignature*             _llvmSignature;
 		J3Type*                      _out;
 		uint32_t                     _nbIns;
 		J3Type*                      _ins[1];
@@ -32,8 +33,8 @@ namespace j3 {
 	public:
 		J3MethodType(J3Type** args, size_t nbArgs);
 
-		void                setFunctionType(llvm::FunctionType* functionType) { _llvmFunctionType = functionType; }
-		llvm::FunctionType* functionType() { return _llvmFunctionType; }
+		void                setLLVMSignature(J3LLVMSignature* llvmSignature) { _llvmSignature = llvmSignature; }
+		J3LLVMSignature*    llvmSignature() { return _llvmSignature; }
 		uint32_t            nbIns() { return _nbIns; }
 		J3Type*             out() { return _out; }
 		J3Type*             ins(uint32_t idx) { return _ins[idx]; }
@@ -71,6 +72,7 @@ namespace j3 {
 
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, va_list va);
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* args);
+		J3Value            internalInvoke(bool statically, J3Value* args);
 		void               buildLLVMNames(J3Class* from);
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);

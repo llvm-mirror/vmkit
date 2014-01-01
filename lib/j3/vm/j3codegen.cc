@@ -102,8 +102,16 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m) :
 	if(vm->options()->debugTranslate > 3)
 		llvmFunction->dump();
 
+	if(!methodType->llvmSignature()->caller())
+		methodType->llvmSignature()->generateCallerIR(this, module, "generic-caller");
+
 	loader->compileModule(module);
 	void* fnPtr = (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
+
+	if(!methodType->llvmSignature()->caller()) {
+		J3LLVMSignature::function_t caller = (J3LLVMSignature::function_t)loader->ee()->getFunctionAddress("generic-caller");
+		methodType->llvmSignature()->_caller = caller;
+	}
 
 	method->markCompiled(llvmFunction, fnPtr);
 }
@@ -176,16 +184,19 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 }
 
 llvm::FunctionType* J3CodeGen::llvmFunctionType(J3MethodType* type) {
-	llvm::FunctionType* res = type->functionType();
+	J3LLVMSignature* res = type->llvmSignature();
 
 	if(!res) {
 		std::vector<llvm::Type*> in;
 		for(uint32_t i=0; i<type->nbIns(); i++)
 			in.push_back(type->ins(i)->llvmType());
-		res = llvm::FunctionType::get(type->out()->llvmType(), in, 0);
-		type->setFunctionType(res);
+		llvm::FunctionType* funcType = llvm::FunctionType::get(type->out()->llvmType(), in, 0);
+		res = vm->llvmSignatures[funcType];
+		if(!res)
+			vm->llvmSignatures[funcType] = res = new(vm->allocator()) J3LLVMSignature(funcType);
+		type->setLLVMSignature(res);
 	}
-	return res;
+	return res->functionType();
 }
 
 llvm::Function* J3CodeGen::buildFunction(J3Method* method, bool isStub) {
@@ -316,7 +327,7 @@ void J3CodeGen::initialiseJ3ObjectType(J3ObjectType* cl) {
 }
 
 llvm::Value* J3CodeGen::javaClass(J3ObjectType* type) {
-	return builder->CreateCall(funcJ3ObjectTypeJavaClass, typeDescriptor(type, vm->typeJ3ObjectTypePtr));
+	return builder->CreateCall(funcJ3TypeJavaClass, typeDescriptor(type, vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {

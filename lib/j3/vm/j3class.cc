@@ -49,6 +49,21 @@ void J3Type::dump() {
 	fprintf(stderr, "Type: %ls", name()->cStr());
 }
 
+J3ObjectHandle* J3Type::javaClass() {
+	if(!_javaClass) {
+		lock();
+		if(!_javaClass) {
+			J3ObjectHandle* prev = J3Thread::get()->tell();
+			_javaClass = loader()->globalReferences()->add(J3ObjectHandle::doNewObject(loader()->vm()->classClass));
+			J3Thread::get()->restore(prev);
+			javaClass()->setLong(loader()->vm()->classClassVMData, (int64_t)(uintptr_t)this);
+			loader()->vm()->classClassInit->invokeSpecial(javaClass());
+		}
+		unlock();
+	}
+	return _javaClass;
+}
+
 void J3Type::doNativeName() {
 	J3::internalError(L"should not happen");
 }
@@ -162,22 +177,7 @@ J3Method* J3ObjectType::findStaticMethod(const vmkit::Name* name, const vmkit::N
 }
 
 J3ObjectType* J3ObjectType::nativeClass(J3ObjectHandle* handle) {
-	return (J3ObjectType*)(uintptr_t)handle->getLong(J3Thread::get()->vm()->classVMData);
-}
-
-J3ObjectHandle* J3ObjectType::javaClass() {
-	if(!_javaClass) {
-		lock();
-		if(!_javaClass) {
-			J3ObjectHandle* prev = J3Thread::get()->tell();
-			_javaClass = loader()->globalReferences()->add(J3ObjectHandle::doNewObject(loader()->vm()->classClass));
-			J3Thread::get()->restore(prev);
-			javaClass()->setLong(loader()->vm()->classVMData, (int64_t)(uintptr_t)this);
-			loader()->vm()->classInit->invokeSpecial(javaClass());
-		}
-		unlock();
-	}
-	return _javaClass;
+	return (J3ObjectType*)(uintptr_t)handle->getLong(J3Thread::get()->vm()->classClassVMData);
 }
 
 void J3ObjectType::prepareInterfaceTable() {
@@ -360,6 +360,14 @@ J3Field* J3Class::findStaticField(const vmkit::Name* fname, const J3Type* ftype,
 		J3::internalError(L"implement me");
 
 	return res;
+}
+
+J3Field* J3Class::findVirtualField(const wchar_t* name, const J3Type* type, bool error) {
+	return findVirtualField(loader()->vm()->names()->get(name), type, error);
+}
+
+J3Field* J3Class::findStaticField(const wchar_t* name, const J3Type* type, bool error) {
+	return findStaticField(loader()->vm()->names()->get(name), type, error);
 }
 
 void J3Class::registerNative(const vmkit::Name* methName, const vmkit::Name* methSign, void* fnPtr) {
@@ -632,6 +640,7 @@ void J3Class::fillFields(J3Field** fields, size_t n) {
 			layout = this;
 		}
 		cur->_offset = layout->structSize();
+		cur->_slot = i;
 		layout->_structSize += 1 << fields[i]->type()->logSize();
 		layout->fields()[layout->_nbFields++] = *fields[i];
 

@@ -112,115 +112,62 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 	return obj->vt()->type()->asObjectType()->findVirtualMethod(name(), sign());
 }
 
+J3Value J3Method::internalInvoke(bool statically, J3Value* inArgs) {
+	J3Method* target = statically ? this : resolve(inArgs[0].valObject);
+
+	void* fn = fnPtr();
+
+	//fprintf(stderr, "Internal invoke %ls::%ls%ls\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
+	
+	J3Value res = methodType()->llvmSignature()->caller()(fn, inArgs);
+
+	return res;
+}
 
 J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* inArgs) {
-	std::vector<llvm::GenericValue> args(methodType()->nbIns());
-	J3* vm = cl()->loader()->vm();
-	J3Type* cur;
-	uint32_t i = 0, d = 0;
-
+	J3Value* reIn;
 	if(handle) {
-		args[i++].PointerVal = handle->obj();
-		d = 1;
-	}
-
-	for(; i<methodType()->nbIns(); i++) {  /* have to avoid collection at this point */
-		cur = methodType()->ins(i);
-		
-		if(cur == vm->typeBoolean)
-			args[i].IntVal = inArgs[i-d].valBoolean;
-		else if(cur == vm->typeByte)
-			args[i].IntVal = inArgs[i-d].valByte;
-		else if(cur == vm->typeShort)
-			args[i].IntVal = inArgs[i-d].valShort;
-		else if(cur == vm->typeChar)
-			args[i].IntVal = inArgs[i-d].valChar;
-		else if(cur == vm->typeInteger)
-			args[i].IntVal = inArgs[i-d].valInteger;
-		else if(cur == vm->typeLong)
-			args[i].IntVal = inArgs[i-d].valLong;
-		else if(cur == vm->typeFloat)
-			args[i].FloatVal = inArgs[i-d].valFloat;
-		else if(cur == vm->typeDouble)
-			args[i].FloatVal = inArgs[i-d].valDouble;
-		else
-			args[i].PointerVal = inArgs[i-d].valObject->obj();
-	}
-
-	J3Method* target;
-
-	if(statically)
-		target = this;
-	else {
-		J3ObjectHandle* self = handle ? handle : inArgs[0].valObject;
-		target = resolve(self);
-	}
-
-	//fprintf(stderr, "invoke: %ls::%ls%ls\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
-	target->fnPtr(); /* ensure that the function is compiled */
-	cl()->loader()->vm()->lockCompiler();
-	cl()->loader()->oldee()->updateGlobalMapping(target->_llvmFunction, target->fnPtr());
-	cl()->loader()->vm()->unlockCompiler();
-	llvm::GenericValue res = cl()->loader()->oldee()->runFunction(target->_llvmFunction, args);
-
-	J3Value holder;
-	cur = methodType()->out();
-	
-	if(cur == vm->typeBoolean)
-		holder.valBoolean = (bool)res.IntVal.getZExtValue();
-	else if(cur == vm->typeByte)
-		holder.valByte = (int8_t)res.IntVal.getZExtValue();
-	else if(cur == vm->typeShort)
-		holder.valShort = (int16_t)res.IntVal.getZExtValue();
-	else if(cur == vm->typeChar)
-		holder.valChar = (uint16_t)res.IntVal.getZExtValue();
-	else if(cur == vm->typeInteger)
-		holder.valInteger = (int32_t)res.IntVal.getZExtValue();
-	else if(cur == vm->typeLong)
-		holder.valLong = res.IntVal.getZExtValue();
-	else if(cur == vm->typeFloat)
-		holder.valFloat = res.FloatVal;
-	else if(cur == vm->typeDouble)
-		holder.valDouble = res.FloatVal;
-	else if(cur != vm->typeVoid)
-		holder.valObject = J3Thread::get()->push((J3Object*)res.PointerVal);
-
-	return holder;
+		reIn = (J3Value*)alloca(methodType()->nbIns()*sizeof(J3Value));
+		reIn[0].valObject = handle;
+		memcpy(reIn+1, inArgs, (methodType()->nbIns() - 1)*sizeof(J3Value));
+	} else
+		reIn = inArgs;
+	return internalInvoke(statically, reIn);
 }
 
 J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, va_list va) {
 	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*methodType()->nbIns());
 	J3* vm = cl()->loader()->vm();
 	J3Type* cur;
-	uint32_t i = 0, d = 0;
+	uint32_t i = 0;
 
 	if(handle)
-		i = d = 1;
+		args[i++].valObject = handle;
 
 	for(; i<methodType()->nbIns(); i++) {
 		cur = methodType()->ins(i);
 
 		if(cur == vm->typeBoolean)
-			args[i-d].valBoolean = va_arg(va, bool);
+			args[i].valBoolean = va_arg(va, bool);
 		else if(cur == vm->typeByte)
-			args[i-d].valByte = va_arg(va, int8_t);
+			args[i].valByte = va_arg(va, int8_t);
 		else if(cur == vm->typeShort)
-			args[i-d].valShort = va_arg(va, int16_t);
+			args[i].valShort = va_arg(va, int16_t);
 		else if(cur == vm->typeChar)
-			args[i-d].valChar = va_arg(va, uint16_t);
+			args[i].valChar = va_arg(va, uint16_t);
 		else if(cur == vm->typeInteger)
-			args[i-d].valInteger = va_arg(va, int32_t);
+			args[i].valInteger = va_arg(va, int32_t);
 		else if(cur == vm->typeLong)
-			args[i-d].valLong = va_arg(va, int64_t);
+			args[i].valLong = va_arg(va, int64_t);
 		else if(cur == vm->typeFloat)
-			args[i-d].valFloat = va_arg(va, float);
+			args[i].valFloat = va_arg(va, float);
 		else if(cur == vm->typeDouble)
-			args[i-d].valDouble = va_arg(va, double);
+			args[i].valDouble = va_arg(va, double);
 		else
-			args[i-d].valObject = va_arg(va, J3ObjectHandle*);
+			args[i].valObject = va_arg(va, J3ObjectHandle*);
 	}
 
-	return internalInvoke(statically, handle, args);
+	return internalInvoke(statically, args);
 }
 
 J3Value J3Method::invokeStatic(J3Value* args) {

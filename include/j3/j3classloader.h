@@ -84,14 +84,16 @@ namespace j3 {
 		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
 
 		J3Method*                     method(uint16_t access, J3Class* cl, 
-																				 const vmkit::Name* name, const vmkit::Name* sign); /* find a method ref */
+																				 const vmkit::Name* name, const vmkit::Name* sign);
 		J3Method*                     method(uint16_t access, const vmkit::Name* clName, 
 																				 const vmkit::Name* name, const vmkit::Name* sign); 
+		J3Method*                     method(uint16_t access, J3Class* cl, const wchar_t* name, const wchar_t* sign); 
 		J3Method*                     method(uint16_t access, const wchar_t* clName, const wchar_t* name, const wchar_t* sign); 
 
 		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
 		J3Class*                      findLoadedClass(const vmkit::Name* name);
 		virtual J3Class*              loadClass(const vmkit::Name* name);
+		J3Class*                      loadClass(const wchar_t* name);
 
 		J3Type*                       getType(J3Class* from, const vmkit::Name* type);       /* find a type */
 		J3MethodType*                 getMethodType(J3Class* from, const vmkit::Name* sign); /* get a method type */

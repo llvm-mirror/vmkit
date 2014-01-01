@@ -46,10 +46,11 @@ namespace j3 {
 	protected:
 		enum { LOADED, RESOLVED, INITED };
 
-		const vmkit::Name*     _name;
-		char*                  _nativeName;
-		uint32_t               _nativeNameLength;
-		J3VirtualTable*        _vt;
+		const vmkit::Name*        _name;
+		char*                     _nativeName;
+		uint32_t                  _nativeNameLength;
+		J3VirtualTable*           _vt; 
+		J3ObjectHandle* volatile  _javaClass;
 
 		volatile int           status;
 
@@ -59,6 +60,8 @@ namespace j3 {
 		virtual void                doNativeName();
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
+
+		J3ObjectHandle*             javaClass();
 
 		virtual uint32_t            logSize() = 0;
 		uint64_t                    getSizeInBits();
@@ -109,7 +112,6 @@ namespace j3 {
 	};
 
 	class J3ObjectType : public J3Type {
-		J3ObjectHandle* volatile  _javaClass;
 		J3InterfaceSlotDescriptor _interfaceSlotDescriptors[J3VirtualTable::nbInterfaceMethodTable];
 
 	public:
@@ -125,8 +127,6 @@ namespace j3 {
 		virtual J3Method*          findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
 
 		bool                       isObjectType() { return 1; }
-
-		J3ObjectHandle*            javaClass();
 
 		static J3ObjectType*       nativeClass(J3ObjectHandle* handle);
 
@@ -241,8 +241,11 @@ namespace j3 {
 
 		J3Method*           findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
 		J3Method*           findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
+
 		J3Field*            findVirtualField(const vmkit::Name* name, const J3Type* type, bool error=1);
 		J3Field*            findStaticField(const vmkit::Name* name, const J3Type* type, bool error=1);
+		J3Field*            findVirtualField(const wchar_t* name, const J3Type* type, bool error=1);
+		J3Field*            findStaticField(const wchar_t* name, const J3Type* type, bool error=1);
 	};
 
 	class J3ArrayClass : public J3ObjectType {
@@ -266,9 +269,9 @@ namespace j3 {
 	public:
 		J3Primitive(J3ClassLoader* loader, char id, llvm::Type* type, uint32_t logSize);
 
-		uint32_t    logSize() { return _logSize; }
+		uint32_t    logSize()     { return _logSize; }
 		bool        isPrimitive() { return 1; }
-		llvm::Type* llvmType() { return _llvmType; }
+		llvm::Type* llvmType()    { return _llvmType; }
 	};
 }
 

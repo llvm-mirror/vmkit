@@ -87,6 +87,10 @@ J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
 	J3::internalError(L"implement me: loadClass from a Java class loader");
 }
 
+J3Class* J3ClassLoader::loadClass(const wchar_t* name) {
+	return loadClass(vm()->names()->get(name));
+}
+
 void J3ClassLoader::wrongType(J3Class* from, const vmkit::Name* type) {
 	J3::classFormatError(from, L"wrong type: %ls", type->cStr());
 }
@@ -224,6 +228,11 @@ J3Method* J3ClassLoader::method(uint16_t access, const vmkit::Name* clName, cons
 J3Method* J3ClassLoader::method(uint16_t access, const wchar_t* clName, const wchar_t* name, const wchar_t* sign) {
 	vmkit::Names* names = vm()->names();
 	return method(access, names->get(clName), names->get(name), names->get(sign));
+}
+
+J3Method* J3ClassLoader::method(uint16_t access, J3Class* cl, const wchar_t* name, const wchar_t* sign) {
+	vmkit::Names* names = vm()->names();
+	return method(access, cl, names->get(name), names->get(sign));
 }
 
 bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {

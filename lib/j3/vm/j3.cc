@@ -21,13 +21,15 @@
 using namespace j3;
 
 vmkit::T_ptr_less_t<J3ObjectHandle*> J3::charArrayLess;
+vmkit::T_ptr_less_t<llvm::FunctionType*> J3::llvmFunctionTypeLess;
 
 J3::J3(vmkit::BumpAllocator* allocator) : 
 	VMKit(allocator),
 	nameToCharArrays(vmkit::Name::less, allocator),
 	charArrayToStrings(charArrayLess, allocator),
 	_names(allocator),
-	monitorManager(allocator) {
+	monitorManager(allocator),
+	llvmSignatures(llvmFunctionTypeLess, allocator) {
 	pthread_mutex_init(&stringsMutex, 0);
 	constantValueAttr = names()->get(J3Cst::constantValueAttr);
 	codeAttr =          names()->get(J3Cst::codeAttr);
@@ -92,29 +94,44 @@ void J3::run() {
 	onJavaTypes(defPrimitive)
 #undef defPrimitive
 
+#define z_class(clName)                      initialClassLoader->loadClass(names()->get(clName))
+#define z_method(access, cl, name, sign)     initialClassLoader->method(access, cl, name, sign)
+#define z_field(access, cl, name, type)      J3Cst::isStatic(access)	\
+			? cl->findStaticField(name, type)																\
+			: cl->findVirtualField(name, type);
+
+
 	nbArrayInterfaces    = 2;
 	arrayInterfaces      = (J3Type**)initialClassLoader->allocator()->allocate(2*sizeof(J3Type*));
-	arrayInterfaces[0]   = initialClassLoader->loadClass(names()->get(L"java/lang/Cloneable"));
-	arrayInterfaces[1]   = initialClassLoader->loadClass(names()->get(L"java/io/Serializable"));
+	arrayInterfaces[0]   = z_class(L"java/lang/Cloneable");
+	arrayInterfaces[1]   = z_class(L"java/io/Serializable");
 
 	charArrayClass           = typeChar->getArray();
-	objectClass              = initialClassLoader->loadClass(names()->get(L"java/lang/Object"));
+	objectClass              = z_class(L"java/lang/Object");
 	
-	stringClass              = initialClassLoader->loadClass(names()->get(L"java/lang/String"));
-	stringInit               = initialClassLoader->method(0, stringClass, initName, names()->get(L"([CZ)V"));
-	stringValue              = stringClass->findVirtualField(names()->get(L"value"), typeChar->getArray());
+	stringClass              = z_class(L"java/lang/String");
+	stringClassInit          = z_method(0, stringClass, J3Cst::initName, L"([CZ)V");
+	stringClassValue         = z_field(0, stringClass, L"value", charArrayClass);
 
-	classClass               = initialClassLoader->loadClass(names()->get(L"java/lang/Class"));
+	classClass               = z_class(L"java/lang/Class");
 	J3Field hf(J3Cst::ACC_PRIVATE, names()->get(L"** vmData **"), typeLong);
 	classClass->resolve(&hf, 1);
-	classInit                = initialClassLoader->method(0, classClass, initName, names()->get(L"()V"));
-	classVMData              = classClass->findVirtualField(hf.name(), hf.type());
+	classClassInit           = z_method(0, classClass, J3Cst::initName, L"()V");
+	classClassVMData         = z_field(0, classClass, hf.name(), hf.type());
 
-	threadVMData             = initialClassLoader->loadClass(names()->get("java/lang/Thread"))
+	threadClassRun           = z_method(0, z_class(L"java/lang/Thread"), L"run", L"()V");
+	threadClassVMData        = initialClassLoader->loadClass(names()->get("java/lang/Thread"))
 		->findVirtualField(names()->get(L"eetop"), typeLong);
-	threadRun                = initialClassLoader->method(0, L"java/lang/Thread", L"run", L"()V");
 
-	fieldClass               = initialClassLoader->loadClass(names()->get("java/lang/reflect/Field"));
+	fieldClass               = z_class(L"java/lang/reflect/Field");
+	fieldClassInit           = z_method(0, fieldClass, J3Cst::initName, 
+																			L"(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V");
+	fieldClassClass          = z_field(0, fieldClass, L"clazz", classClass);
+	fieldClassSlot           = z_field(0, fieldClass, L"slot", typeInteger);
+#if 0
+		J3Field*         fieldClassSlot;
+		J3Method*        fieldClassInit;
+#endif
 
 	J3Lib::bootstrap(this);
 }
@@ -131,7 +148,7 @@ J3ObjectHandle* J3::arrayToString(J3ObjectHandle* array) {
 		res = initialClassLoader->globalReferences()->add(J3ObjectHandle::doNewObject(stringClass));
 		J3Thread::get()->restore(prev);
 
-		stringInit->invokeSpecial(res, array, 0);
+		stringClassInit->invokeSpecial(res, array, 0);
 
 		charArrayToStrings[array] = res;
 	}
@@ -234,7 +251,9 @@ void J3::printStackTrace() {
 }
 
 void J3::forceSymbolDefinition() {
+	J3Value val;
 	J3ArrayObject a; a.length(); /* J3ArrayObject */
+	printf("---> %p\n", &val.valFloat);
 	J3LockRecord* l = new J3LockRecord(); /* J3LockRecord */
 	try {
 		throw (void*)0;

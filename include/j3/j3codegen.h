@@ -38,6 +38,7 @@ namespace j3 {
 		friend class J3CodeGenVar;
 		friend class J3ExceptionTable;
 		friend class J3ExceptionNode;
+		friend class J3LLVMSignature;
 
 		vmkit::BumpAllocator*  allocator;
 		llvm::Module*          module;

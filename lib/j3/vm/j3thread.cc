@@ -21,12 +21,12 @@ J3Thread::~J3Thread() {
 
 void J3Thread::doRun() {
 	J3ObjectHandle* handle = get()->javaThread();
-	get()->vm()->threadRun->invokeVirtual(handle);
+	get()->vm()->threadClassRun->invokeVirtual(handle);
 }
 
 void J3Thread::run() {
 	J3ObjectHandle* handle = javaThread();
-	vm()->threadRun->invokeVirtual(handle);
+	vm()->threadClassRun->invokeVirtual(handle);
 }
 
 void J3Thread::start(J3ObjectHandle* handle) {
@@ -62,12 +62,12 @@ void J3Thread::ensureCapacity(uint32_t capacity) {
 }
 
 J3Thread* J3Thread::nativeThread(J3ObjectHandle* handle) {
-	return (J3Thread*)handle->getLong(get()->vm()->threadVMData);
+	return (J3Thread*)handle->getLong(get()->vm()->threadClassVMData);
 }
 
 void J3Thread::assocJavaThread(J3ObjectHandle* javaThread) {
 	_javaThread = *javaThread;
-	_javaThread.setLong(vm()->threadVMData, (int64_t)(uintptr_t)this);
+	_javaThread.setLong(vm()->threadClassVMData, (int64_t)(uintptr_t)this);
 }
 
 J3ObjectHandle* J3Thread::push(J3ObjectHandle* handle) { 
