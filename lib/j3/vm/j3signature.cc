@@ -34,10 +34,28 @@ void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module,
 		llvm::Type*  t = *it;
 		llvm::Value* arg;
 
-		if(t->isPointerTy())
-			arg = builder.CreateLoad(builder.CreateGEP(builder.CreateIntToPtr(builder.CreateLoad(ins), 
-																																				codeGen->vm->typeJ3ObjectHandlePtr), gepHandle));
-		else {
+		if(t->isPointerTy()) {
+			llvm::BasicBlock* ifnull = llvm::BasicBlock::Create(caller->getContext(), "if-arg-null", caller);
+			llvm::BasicBlock* ifnotnull = llvm::BasicBlock::Create(caller->getContext(), "if-arg-notnull", caller);
+			llvm::BasicBlock* after = llvm::BasicBlock::Create(caller->getContext(), "if-arg-after", caller);
+			llvm::Value*      alloca = builder.CreateAlloca(codeGen->vm->typeJ3ObjectPtr);
+			llvm::Value*      obj = builder.CreateLoad(ins);
+
+			builder.CreateCondBr(builder.CreateIsNull(obj), ifnull, ifnotnull);
+
+			builder.SetInsertPoint(ifnull);
+			builder.CreateStore(codeGen->nullValue, alloca);
+			builder.CreateBr(after);
+
+			builder.SetInsertPoint(ifnotnull);
+			builder.CreateStore(builder.CreateLoad(builder.CreateGEP(builder.CreateIntToPtr(obj,
+																																										 codeGen->vm->typeJ3ObjectHandlePtr), gepHandle)),
+													alloca);
+			builder.CreateBr(after);
+
+			builder.SetInsertPoint(after);
+			arg = builder.CreateLoad(alloca);
+		} else {
 			arg = builder.CreateLoad(builder.CreateTruncOrBitCast(ins, t->getPointerTo()));
 		}
 
@@ -75,4 +93,6 @@ void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module,
 		res = builder.getInt64(0);
 
 	builder.CreateRet(res);
+
+	//	caller->dump();
 }
