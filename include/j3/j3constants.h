@@ -23,12 +23,23 @@ namespace j3 {
 
 		static const int MAGIC = 0xcafebabe;
 
-		static wchar_t codeAttr[];
-		static wchar_t constantValueAttr[];
+#define onJavaConstantNames(_)																					\
+		_(clinitName,                 L"<clinit>")													\
+		_(clinitSign,                 L"()V")																\
+		_(initName,                   L"<init>")														\
+																																				\
+		_(codeAttribute,              L"Code")															\
+		_(constantValueAttribute,     L"ConstantValue")											\
+		_(annotationsAttribute,       L"RuntimeVisibleAnnotations")					\
+		_(exceptionsAttribute,        L"Exceptions")												\
+		_(lineNumberTableAttribute,   L"LineNumberTable")										\
+		_(innerClassesAttribute,      L"InnerClasses")											\
+		_(sourceFileAttribute,        L"SourceFile")												\
+		_(signatureAttribute,         L"Signature")													\
+		_(enclosingMethodAttribute,   L"EnclosingMethod")										\
+		_(paramAnnotationsAttribute,  L"RuntimeVisibleParameterAnnotations") \
+		_(annotationDefaultAttribute, L"AnnotationDefault")
 
-		static wchar_t clinitName[];
-		static wchar_t clinitSign[];
-		static wchar_t initName[];
 		static char    nativePrefix[];
 
 		static void initialize(vmkit::Names* names);

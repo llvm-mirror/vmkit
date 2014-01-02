@@ -13,6 +13,7 @@
 #include "j3/j3typesdef.h"
 #include "j3/j3jni.h"
 #include "j3/j3monitor.h"
+#include "j3/j3constants.h"
 
 namespace j3 {
 	class J3InitialClassLoader;
@@ -50,6 +51,11 @@ namespace j3 {
 
 		static J3*  create();
 
+#define defJavaConstantName(name, id) \
+	  const vmkit::Name* name;
+	  onJavaConstantNames(defJavaConstantName)
+#undef defJavaConstantName
+
 #define defPrimitive(name, ctype, llvmtype, scale)	\
 		J3Primitive* type##name;
 		onJavaTypes(defPrimitive)
@@ -73,6 +79,7 @@ namespace j3 {
 		J3Method*        classClassInit;
 		J3Field*         classClassVMData;
 
+		J3Class*         threadClass;
 		J3Field*         threadClassVMData;
 		J3Method*        threadClassRun;
 
@@ -80,12 +87,6 @@ namespace j3 {
 		J3Field*         fieldClassClass;
 		J3Field*         fieldClassSlot;
 		J3Method*        fieldClassInit;
-
-		const vmkit::Name* codeAttr;
-		const vmkit::Name* constantValueAttr;
-		const vmkit::Name* initName;
-		const vmkit::Name* clinitName;
-		const vmkit::Name* clinitSign;
 
 		llvm::Type* typeJNIEnvPtr;
 		llvm::Type* typeJ3VirtualTablePtr;

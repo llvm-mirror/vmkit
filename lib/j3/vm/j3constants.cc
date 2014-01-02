@@ -8,12 +8,6 @@
 
 using namespace j3;
 
-wchar_t J3Cst::codeAttr[] = L"Code";
-wchar_t J3Cst::constantValueAttr[] = L"ConstantValue";
-
-wchar_t J3Cst::clinitName[] = L"<clinit>";
-wchar_t J3Cst::clinitSign[] = L"()V";
-wchar_t J3Cst::initName[]   = L"<init>";
 char    J3Cst::nativePrefix[] = "Java_";
 
 const vmkit::Name* J3Cst::rewrite(J3* vm, const vmkit::Name* clName, const vmkit::Name* orig) {

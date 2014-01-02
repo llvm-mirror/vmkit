@@ -1529,7 +1529,7 @@ void J3CodeGen::explore() {
 #endif
 
 void J3CodeGen::generateJava() {
-	J3Attribute* attr = method->attributes()->lookup(vm->codeAttr);
+	J3Attribute* attr = method->attributes()->lookup(vm->codeAttribute);
 
 	if(!attr)
 		J3::classFormatError(cl, L"No Code attribute in %ls %ls", method->name()->cStr(), method->sign()->cStr());

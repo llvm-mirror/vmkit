@@ -30,12 +30,13 @@ J3::J3(vmkit::BumpAllocator* allocator) :
 	_names(allocator),
 	monitorManager(allocator),
 	llvmSignatures(llvmFunctionTypeLess, allocator) {
+
+#define defJavaConstantName(name, id) \
+	name = names()->get(id);
+	onJavaConstantNames(defJavaConstantName)
+#undef defJavaConstantName
+
 	pthread_mutex_init(&stringsMutex, 0);
-	constantValueAttr = names()->get(J3Cst::constantValueAttr);
-	codeAttr =          names()->get(J3Cst::codeAttr);
-	clinitName =        names()->get(J3Cst::clinitName);
-	clinitSign =        names()->get(J3Cst::clinitSign);
-	initName =          names()->get(J3Cst::initName);
 	interfaceTrampoline = J3Trampoline::buildInterfaceTrampoline(allocator);
 }
 
@@ -97,8 +98,8 @@ void J3::run() {
 #define z_class(clName)                      initialClassLoader->loadClass(names()->get(clName))
 #define z_method(access, cl, name, sign)     initialClassLoader->method(access, cl, name, sign)
 #define z_field(access, cl, name, type)      J3Cst::isStatic(access)	\
-			? cl->findStaticField(name, type)																\
-			: cl->findVirtualField(name, type);
+			? cl->findStaticField(names()->get(name), type)									\
+			: cl->findVirtualField(names()->get(name), type);
 
 
 	nbArrayInterfaces    = 2;
@@ -110,22 +111,23 @@ void J3::run() {
 	objectClass              = z_class(L"java/lang/Object");
 	
 	stringClass              = z_class(L"java/lang/String");
-	stringClassInit          = z_method(0, stringClass, J3Cst::initName, L"([CZ)V");
+	stringClassInit          = z_method(0, stringClass, initName, names()->get(L"([CZ)V"));
 	stringClassValue         = z_field(0, stringClass, L"value", charArrayClass);
 
 	classClass               = z_class(L"java/lang/Class");
 	J3Field hf(J3Cst::ACC_PRIVATE, names()->get(L"** vmData **"), typeLong);
 	classClass->resolve(&hf, 1);
-	classClassInit           = z_method(0, classClass, J3Cst::initName, L"()V");
-	classClassVMData         = z_field(0, classClass, hf.name(), hf.type());
+	classClassInit           = z_method(0, classClass, initName, names()->get(L"()V"));
+	classClassVMData         = classClass->findVirtualField(hf.name(), hf.type());
 
-	threadClassRun           = z_method(0, z_class(L"java/lang/Thread"), L"run", L"()V");
+	threadClass              = z_class(L"java/lang/Thread");
+	threadClassRun           = z_method(0, threadClass, L"run", L"()V");
 	threadClassVMData        = initialClassLoader->loadClass(names()->get("java/lang/Thread"))
 		->findVirtualField(names()->get(L"eetop"), typeLong);
 
 	fieldClass               = z_class(L"java/lang/reflect/Field");
-	fieldClassInit           = z_method(0, fieldClass, J3Cst::initName, 
-																			L"(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V");
+	fieldClassInit           = z_method(0, fieldClass, initName, 
+																			names()->get(L"(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
 	fieldClassClass          = z_field(0, fieldClass, L"clazz", classClass);
 	fieldClassSlot           = z_field(0, fieldClass, L"slot", typeInteger);
 #if 0
@@ -251,9 +253,7 @@ void J3::printStackTrace() {
 }
 
 void J3::forceSymbolDefinition() {
-	J3Value val;
 	J3ArrayObject a; a.length(); /* J3ArrayObject */
-	printf("---> %p\n", &val.valFloat);
 	J3LockRecord* l = new J3LockRecord(); /* J3LockRecord */
 	try {
 		throw (void*)0;

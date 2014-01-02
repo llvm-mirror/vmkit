@@ -244,8 +244,6 @@ namespace j3 {
 
 		J3Field*            findVirtualField(const vmkit::Name* name, const J3Type* type, bool error=1);
 		J3Field*            findStaticField(const vmkit::Name* name, const J3Type* type, bool error=1);
-		J3Field*            findVirtualField(const wchar_t* name, const J3Type* type, bool error=1);
-		J3Field*            findStaticField(const wchar_t* name, const J3Type* type, bool error=1);
 	};
 
 	class J3ArrayClass : public J3ObjectType {

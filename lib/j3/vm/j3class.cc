@@ -362,14 +362,6 @@ J3Field* J3Class::findStaticField(const vmkit::Name* fname, const J3Type* ftype,
 	return res;
 }
 
-J3Field* J3Class::findVirtualField(const wchar_t* name, const J3Type* type, bool error) {
-	return findVirtualField(loader()->vm()->names()->get(name), type, error);
-}
-
-J3Field* J3Class::findStaticField(const wchar_t* name, const J3Type* type, bool error) {
-	return findStaticField(loader()->vm()->names()->get(name), type, error);
-}
-
 void J3Class::registerNative(const vmkit::Name* methName, const vmkit::Name* methSign, void* fnPtr) {
 	resolve();
 	J3Method* res = staticLayout()->findMethod(methName, methSign);
@@ -406,7 +398,7 @@ void J3Class::doInitialise() {
 
 		for(size_t i=0; i<staticLayout()->nbFields(); i++) {
 			J3Field* cur = staticLayout()->fields() + i;
-			J3Attribute* attr = cur->attributes()->lookup(loader()->vm()->constantValueAttr);
+			J3Attribute* attr = cur->attributes()->lookup(loader()->vm()->constantValueAttribute);
 
 			if(attr) {
 				J3Reader reader(bytes());

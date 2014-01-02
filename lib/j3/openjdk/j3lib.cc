@@ -23,26 +23,26 @@ static const char* rtjar = OPENJDK_HOME"jre/lib/rt.jar";
 
 void J3Lib::bootstrap(J3* vm) {
 	J3ObjectHandle* prev = J3Thread::get()->tell();
-
+	J3Class* threadGroupClass = vm->initialClassLoader->loadClass(vm->names()->get(L"java/lang/ThreadGroup"));
 	J3Method*       sysThreadGroupInit = vm->initialClassLoader->method(0, 
-																																			L"java/lang/ThreadGroup", 
-																																			J3Cst::initName, 
-																																			L"()V");
+																																			threadGroupClass, 
+																																			vm->initName, 
+																																			vm->names()->get(L"()V"));
 	J3ObjectHandle* sysThreadGroup = J3ObjectHandle::doNewObject(sysThreadGroupInit->cl());
 	sysThreadGroupInit->invokeSpecial(sysThreadGroup);
 
 
 	J3Method*       appThreadGroupInit = vm->initialClassLoader->method(0, 
-																																			L"java/lang/ThreadGroup", 
-																																			J3Cst::initName, 
-																																			L"(Ljava/lang/ThreadGroup;Ljava/lang/String;)V");
+																																			threadGroupClass,
+																																			vm->initName, 
+																																			vm->names()->get(L"(Ljava/lang/ThreadGroup;Ljava/lang/String;)V"));
 	J3ObjectHandle* appThreadGroup = J3ObjectHandle::doNewObject(appThreadGroupInit->cl());
 	appThreadGroupInit->invokeSpecial(appThreadGroup, sysThreadGroup, vm->utfToString("main"));
 
 	J3Method*       threadInit = vm->initialClassLoader->method(0,
-																															L"java/lang/Thread",
-																															J3Cst::initName,
-																															L"(Ljava/lang/ThreadGroup;Ljava/lang/String;)V");
+																															vm->threadClass,
+																															vm->initName,
+																															vm->names()->get(L"(Ljava/lang/ThreadGroup;Ljava/lang/String;)V"));
 	J3ObjectHandle* mainThread = J3ObjectHandle::doNewObject(threadInit->cl());
 
 	J3Thread::get()->assocJavaThread(mainThread);
