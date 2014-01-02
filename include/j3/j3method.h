@@ -36,8 +36,8 @@ namespace j3 {
 
 		void                setLLVMSignature(J3LLVMSignature* llvmSignature) { _llvmSignature = llvmSignature; }
 		J3LLVMSignature*    llvmSignature() { return _llvmSignature; }
-		uint32_t            nbIns() { return _nbIns; }
 		J3Type*             out() { return _out; }
+		uint32_t            nbIns() { return _nbIns; }
 		J3Type*             ins(uint32_t idx) { return _ins[idx]; }
 
 		void* operator new(size_t unused, vmkit::BumpAllocator* allocator, size_t n) {

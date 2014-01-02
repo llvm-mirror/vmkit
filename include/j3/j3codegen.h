@@ -81,7 +81,7 @@ namespace j3 {
 		uint32_t            wideReadU1();
 		uint32_t            wideReadS1();
 
-		llvm::FunctionType* llvmFunctionType(J3MethodType* type);
+		llvm::FunctionType* llvmFunctionType(J3Method* method);
 		llvm::Function*     buildFunction(J3Method* method, bool isStub=1);
 		llvm::Value*        methodDescriptor(J3Method* method);
 		llvm::Value*        typeDescriptor(J3ObjectType* objectType, llvm::Type* type);
@@ -127,7 +127,7 @@ namespace j3 {
 		void                putField(uint32_t idx);
 		void                putStatic(uint32_t idx);
 
-		void                invoke(J3Method* method, llvm::Value* func);
+		void                invoke(uint32_t access, J3Method* method, llvm::Value* func);
 		void                invokeVirtual(uint32_t idx);
 		void                invokeStatic(uint32_t idx);
 		void                invokeSpecial(uint32_t idx);

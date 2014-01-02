@@ -134,44 +134,44 @@ J3Value J3Method::internalInvoke(bool statically, J3Value* inArgs) {
 J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* inArgs) {
 	J3Value* reIn;
 	if(handle) {
-		reIn = (J3Value*)alloca(methodType()->nbIns()*sizeof(J3Value));
+		reIn = (J3Value*)alloca((methodType()->nbIns()+1)*sizeof(J3Value));
 		reIn[0].valObject = handle;
-		memcpy(reIn+1, inArgs, (methodType()->nbIns() - 1)*sizeof(J3Value));
+		memcpy(reIn+1, inArgs, methodType()->nbIns()*sizeof(J3Value));
 	} else
 		reIn = inArgs;
 	return internalInvoke(statically, reIn);
 }
 
 J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, va_list va) {
-	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*methodType()->nbIns());
+	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*(methodType()->nbIns() + 1));
 	J3* vm = cl()->loader()->vm();
 	J3Type* cur;
-	uint32_t i = 0;
+	uint32_t d = 0;
 
 	if(handle)
-		args[i++].valObject = handle;
+		args[d++].valObject = handle;
 
-	for(; i<methodType()->nbIns(); i++) {
+	for(uint32_t i=0; i<methodType()->nbIns(); i++) {
 		cur = methodType()->ins(i);
 
 		if(cur == vm->typeBoolean)
-			args[i].valBoolean = va_arg(va, bool);
+			args[i+d].valBoolean = va_arg(va, bool);
 		else if(cur == vm->typeByte)
-			args[i].valByte = va_arg(va, int8_t);
+			args[i+d].valByte = va_arg(va, int8_t);
 		else if(cur == vm->typeShort)
-			args[i].valShort = va_arg(va, int16_t);
+			args[i+d].valShort = va_arg(va, int16_t);
 		else if(cur == vm->typeChar)
-			args[i].valChar = va_arg(va, uint16_t);
+			args[i+d].valChar = va_arg(va, uint16_t);
 		else if(cur == vm->typeInteger)
-			args[i].valInteger = va_arg(va, int32_t);
+			args[i+d].valInteger = va_arg(va, int32_t);
 		else if(cur == vm->typeLong)
-			args[i].valLong = va_arg(va, int64_t);
+			args[i+d].valLong = va_arg(va, int64_t);
 		else if(cur == vm->typeFloat)
-			args[i].valFloat = va_arg(va, float);
+			args[i+d].valFloat = va_arg(va, float);
 		else if(cur == vm->typeDouble)
-			args[i].valDouble = va_arg(va, double);
+			args[i+d].valDouble = va_arg(va, double);
 		else
-			args[i].valObject = va_arg(va, J3ObjectHandle*);
+			args[i+d].valObject = va_arg(va, J3ObjectHandle*);
 	}
 
 	return internalInvoke(statically, args);
@@ -234,9 +234,6 @@ J3MethodType* J3Method::methodType(J3Class* from) {
 
 		if(sign()->cStr()[0] != J3Cst::ID_Left)
 			loader->wrongType(from, sign());
-
-		if(!J3Cst::isStatic(access()))
-			args[nbArgs++] = cl();
 
 		while(sign()->cStr()[cur] != J3Cst::ID_Right) {
 			args[nbArgs++] = loader->getTypeInternal(from, sign(), cur, &cur);
@@ -305,17 +302,11 @@ J3ObjectHandle* J3Method::javaMethod() {
 			J3* vm = cl()->loader()->vm();
 
 			uint32_t nbIns = methodType()->nbIns();
-			uint32_t d = 0;
-
-			if(!J3Cst::isStatic(access())) {
-				nbIns--;
-				d = 1;
-			}
 
 			J3ObjectHandle* parameters = J3ObjectHandle::doNewArray(vm->classClass->getArray(), nbIns);
 
 			for(uint32_t i=0; i<nbIns; i++)
-				parameters->setObjectAt(i, methodType()->ins(i+d)->javaClass());
+				parameters->setObjectAt(i, methodType()->ins(i)->javaClass());
 
 			J3Attribute* exceptionAttribute = attributes()->lookup(vm->exceptionsAttribute);
 			J3ObjectHandle* exceptions;

@@ -187,13 +187,19 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 	}
 }
 
-llvm::FunctionType* J3CodeGen::llvmFunctionType(J3MethodType* type) {
+llvm::FunctionType* J3CodeGen::llvmFunctionType(J3Method* method) {
+	J3MethodType* type = method->methodType(cl);
 	J3LLVMSignature* res = type->llvmSignature();
 
 	if(!res) {
 		std::vector<llvm::Type*> in;
+
+		if(!J3Cst::isStatic(method->access()))
+			in.push_back(vm->typeJ3ObjectPtr);
+
 		for(uint32_t i=0; i<type->nbIns(); i++)
 			in.push_back(type->ins(i)->llvmType());
+
 		llvm::FunctionType* funcType = llvm::FunctionType::get(type->out()->llvmType(), in, 0);
 		res = vm->llvmSignatures[funcType];
 		if(!res)
@@ -205,7 +211,7 @@ llvm::FunctionType* J3CodeGen::llvmFunctionType(J3MethodType* type) {
 
 llvm::Function* J3CodeGen::buildFunction(J3Method* method, bool isStub) {
 	const char* id = (isStub && !method->isCompiled()) ? method->llvmStubName(cl) : method->llvmFunctionName(cl);
-	return (llvm::Function*)module->getOrInsertFunction(id, llvmFunctionType(method->methodType(cl)));
+	return (llvm::Function*)module->getOrInsertFunction(id, llvmFunctionType(method));
 }
 
 llvm::Value* J3CodeGen::typeDescriptor(J3ObjectType* objectType, llvm::Type* type) {
@@ -381,14 +387,20 @@ llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
 
 #define nyi() J3::internalError("not yet implemented: '%s' (%d)", J3Cst::opcodeNames[bc], bc);
 
-void J3CodeGen::invoke(J3Method* target, llvm::Value* func) {
+void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	J3MethodType* type = target->methodType(cl);
 	std::vector<llvm::Value*> args;
+	uint32_t d = 0;
+
+	if(!J3Cst::isStatic(access)) {
+		args.push_back(unflatten(stack.top(type->nbIns()), target->cl()));
+		d = 1;
+	}
 
 	for(uint32_t i=0; i<type->nbIns(); i++)
 		args.push_back(unflatten(stack.top(type->nbIns() - i - 1), type->ins(i)));
 
-	stack.drop(type->nbIns());
+	stack.drop(d + type->nbIns());
 
 	llvm::Value* res;
 
@@ -415,14 +427,14 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 	llvm::Value* gep[] = { builder->getInt32(0), builder->getInt32(J3Thread::gepInterfaceMethodIndex) };
 	builder->CreateStore(builder->getInt32(index), builder->CreateGEP(thread, gep));
 
-	llvm::Value*  obj = nullCheck(stack.top(type->nbIns() - 1));
+	llvm::Value*  obj = nullCheck(stack.top(type->nbIns()));
 	llvm::Value*  gepFunc[] = { builder->getInt32(0),
 															builder->getInt32(J3VirtualTable::gepInterfaceMethods),
 															builder->getInt32(index % J3VirtualTable::nbInterfaceMethodTable) };
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
-																						 llvmFunctionType(type)->getPointerTo());
+																						 llvmFunctionType(target)->getPointerTo());
 
-	invoke(target, func);
+	invoke(0, target, func);
 }
 
 void J3CodeGen::invokeVirtual(uint32_t idx) {
@@ -435,33 +447,33 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 	else
 		funcEntry = builder->CreateCall(funcJ3MethodIndex, methodDescriptor(target));
 
-	llvm::Value*  obj = nullCheck(stack.top(type->nbIns() - 1));
+	llvm::Value*  obj = nullCheck(stack.top(type->nbIns()));
 	llvm::Value*  gepFunc[] = { builder->getInt32(0),
 															builder->getInt32(J3VirtualTable::gepVirtualMethods),
 															funcEntry };
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
-																						 llvmFunctionType(type)->getPointerTo());
+																						 llvmFunctionType(target)->getPointerTo());
 
-
+	char buf[65536]; snprintf(buf, 65536, "%s::%s%s", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
 	builder->CreateCall5(funcEchoDebugExecute,
 											 builder->getInt32(2),
-											 buildString("Invoking %p::%d %p\n"),
+											 buildString("Invoking %s %p::%d\n"),
+											 buildString(buf),
 											 vt(obj),
-											 funcEntry,
-											 func);
+											 funcEntry);
 
-	invoke(target, func);
+	invoke(0, target, func);
 }
 
 void J3CodeGen::invokeStatic(uint32_t idx) {
 	J3Method* target = cl->methodAt(idx, J3Cst::ACC_STATIC);
 	initialiseJ3ObjectType(target->cl());
-	invoke(target, buildFunction(target));
+	invoke(J3Cst::ACC_STATIC, target, buildFunction(target));
 }
 
 void J3CodeGen::invokeSpecial(uint32_t idx) {
 	J3Method* target = cl->methodAt(idx, 0);
-	invoke(target, buildFunction(target));
+	invoke(0, target, buildFunction(target));
 }
 
 llvm::Value* J3CodeGen::fieldOffset(llvm::Value* obj, J3Field* f) {
@@ -1600,8 +1612,14 @@ void J3CodeGen::generateJava() {
 	}
 
 	uint32_t n=0, pos=0;
-	for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++, n++) {
-		J3Type* type = methodType->ins(n);
+	for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++) {
+		J3Type* type;
+
+		if(!pos && !J3Cst::isStatic(method->access()))
+			type = method->cl();
+		else
+			type = methodType->ins(n++);
+
 		locals.setAt(flatten(cur, type), pos);
 
 		if(vm->options()->debugExecute)
@@ -1696,6 +1714,8 @@ llvm::Function* J3CodeGen::lookupNative() {
 
 	if(J3Cst::isStatic(method->access()))
 		nativeIns.push_back(doNativeType(vm->classClass));
+	else
+		nativeIns.push_back(vm->typeJ3ObjectHandlePtr);
 			
 	for(int i=0; i<methodType->nbIns(); i++)
 		nativeIns.push_back(doNativeType(methodType->ins(i)));
@@ -1735,19 +1755,23 @@ void J3CodeGen::generateNative() {
 
 	args.push_back(builder->CreateCall(funcJniEnv));
 	if(J3Cst::isStatic(method->access()))
-		args.push_back(builder->CreateCall2(funcJ3ThreadPushHandle, thread, javaClass(cl))); /* avoid harakiri */
+		args.push_back(builder->CreateCall2(funcJ3ThreadPushHandle, thread, javaClass(cl)));
 
-	if(methodType->nbIns()) {
-		uint32_t i = 0;
+	uint32_t i = 0, selfDone = 0;
 
-		for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++, i++) {
-			llvm::Value* a;
+	for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++) {
+		llvm::Value* a;
+		if(!selfDone && !J3Cst::isStatic(method->access())) {
+			selfDone = 1; 
+			a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, method->cl()));
+		} else {
 			if(methodType->ins(i)->llvmType()->isPointerTy())
 				a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, methodType->ins(i)));
 			else
 				a = cur;
-			args.push_back(a);
+			i++;
 		}
+		args.push_back(a);
 	}
 
 	res = builder->CreateCall(nat, args);

@@ -48,6 +48,7 @@ J3Mangler* J3Mangler::mangle(J3Method* method) {
 	memcpy(cur, method->cl()->nativeName() + 1, method->cl()->nativeNameLength() - 3);
 	*next = '_';
 	cur = next+1;
+
 	mangle(method->name());
 
 	return this;
