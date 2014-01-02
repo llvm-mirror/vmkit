@@ -4,6 +4,7 @@
 #include "j3/j3.h"
 #include "j3/j3method.h"
 #include "j3/j3thread.h"
+#include "j3/j3attribute.h"
 
 using namespace j3;
 
@@ -11,23 +12,24 @@ J3ObjectHandle* J3Field::javaField() {
 	if(!_javaField) {
 		layout()->lock();
 
-		J3ObjectHandle* prev = J3Thread::get()->tell();
-		_javaField = layout()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(layout()->loader()->vm()->fieldClass));
+		if(!_javaField) {
+			J3ObjectHandle* prev = J3Thread::get()->tell();
+			_javaField = layout()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(layout()->loader()->vm()->fieldClass));
 
-		J3* vm = layout()->loader()->vm();
+			J3* vm = layout()->loader()->vm();
 
-		vm->fieldClassInit->invokeSpecial(_javaField,                       /* this */
-																			0,//layout()->javaClass(),            /* declaring class */
-																			0,//vm->nameToString(name()),         /* name */
-																			0,//type()->javaClass(),              /* type */
-																			0,//access(),                         /* access */
-																			0,//slot(),                           /* slot */
-																			0,//vm->nameToString(type()->name()), /* signature */
-																			0);                               /* annotations */
+			vm->fieldClassInit->invokeSpecial(_javaField,                       /* this */
+																				layout()->javaClass(),            /* declaring class */
+																				vm->nameToString(name()),         /* name */
+																				type()->javaClass(),              /* type */
+																				access(),                         /* access */
+																				slot(),                           /* slot */
+																				vm->nameToString(type()->name()), /* signature */
+																				layout()
+																				->asClass()->extractAttribute(attributes()->lookup(vm->annotationsAttribute)));/* annotations */
 
-
-		J3Thread::get()->restore(prev);
-		J3::internalError(L"implement me: javaField");
+			J3Thread::get()->restore(prev);
+		}
 		layout()->unlock();
 	}
 	return _javaField;

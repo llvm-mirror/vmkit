@@ -135,6 +135,9 @@ namespace vmkit {
 		void* allocate();
 		void  release(void* thread);
 
+		void*     alternateStackAddr(void* thread);
+		size_t    alternateStackSize(void* thread); 
+
 		void*     stackAddr(void* thread);
 		size_t    stackSize(void* thread); 
 

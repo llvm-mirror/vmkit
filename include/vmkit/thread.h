@@ -3,6 +3,7 @@
 
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
+#include <signal.h>
 
 #include "vmkit/allocator.h"
 
@@ -14,6 +15,8 @@ namespace vmkit {
 		pthread_t            _tid;
 
 		static void* doRun(void* thread);
+		static void sigsegvHandler(int n, siginfo_t* info, void* context);
+		static void sigendHandler(int n, siginfo_t* info, void* context);
 
 	public:
 		Thread(VMKit* vm);

@@ -292,6 +292,13 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	status = LOADED;
 }
 
+J3ObjectHandle* J3Class::extractAttribute(J3Attribute* attr) {
+	if(attr)
+		J3::internalError(L"extract attribute");
+	else
+		return J3ObjectHandle::doNewArray(loader()->vm()->typeByte->getArray(), 0);
+}
+
 J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
 	//loader()->vm()->log(L"Lookup: %ls %ls in %ls (%d)", methName->cStr(), methSign->cStr(), name()->cStr(), nbVirtualMethods);
 	resolve();

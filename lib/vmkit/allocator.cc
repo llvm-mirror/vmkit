@@ -95,9 +95,9 @@ ThreadAllocator::ThreadAllocator(uintptr_t minThreadStruct, uintptr_t minFullSiz
 	freeThreads.reserve(refill);
 
 	minThreadStruct = ((minThreadStruct - 1) & -PAGE_SIZE) + PAGE_SIZE;
-	baseStack = minThreadStruct;
+	baseStack = minThreadStruct + PAGE_SIZE;
 
-	uintptr_t min = PTHREAD_STACK_MIN + minThreadStruct + PAGE_SIZE;
+	uintptr_t min = PTHREAD_STACK_MIN + minThreadStruct + (PAGE_SIZE<<1);
 	if(minFullSize < min)
 		minFullSize = min;
 
@@ -152,4 +152,12 @@ void* ThreadAllocator::stackAddr(void* thread) {
 
 size_t ThreadAllocator::stackSize(void* thread) {
 	return topStack - baseStack;
+}
+
+void* ThreadAllocator::alternateStackAddr(void* thread) {
+	return (void*)((uintptr_t)thread + baseStack - PAGE_SIZE);
+}
+
+size_t ThreadAllocator::alternateStackSize(void* thread) {
+	return PAGE_SIZE;
 }

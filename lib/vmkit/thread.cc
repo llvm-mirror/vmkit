@@ -8,6 +8,14 @@ Thread::Thread(VMKit* vm) {
 	_vm = vm; 
 }
 
+void Thread::sigsegvHandler(int n, siginfo_t* info, void* context) {
+	get()->vm()->sigsegv((uintptr_t)info->si_addr);
+}
+
+void Thread::sigendHandler(int n, siginfo_t* info, void* context) {
+	get()->vm()->sigend();
+}
+
 void* Thread::operator new(size_t n) {
 	return ThreadAllocator::allocator()->allocate();
 }
@@ -30,6 +38,38 @@ uintptr_t Thread::getThreadMask() {
 
 void* Thread::doRun(void* _thread) {
 	Thread* thread = (Thread*)_thread;
+
+  // Set the alternate stack as the second page of the thread's
+  // stack.
+  stack_t st;
+  st.ss_sp = ThreadAllocator::allocator()->alternateStackAddr(thread);
+  st.ss_flags = 0;
+  st.ss_size = ThreadAllocator::allocator()->alternateStackSize(thread);
+  sigaltstack(&st, NULL);
+
+  // Set the SIGSEGV handler to diagnose errors.
+  struct sigaction sa;
+  sigset_t mask;
+  sigfillset(&mask);
+  sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_NODEFER;
+  sa.sa_mask = mask;
+  sa.sa_sigaction = sigsegvHandler;
+  sigaction(SIGSEGV, &sa, NULL);
+  sigaction(SIGBUS, &sa, NULL);
+
+  // to handle termination
+  st.ss_sp = ThreadAllocator::allocator()->alternateStackAddr(thread);
+  st.ss_flags = 0;
+  st.ss_size = ThreadAllocator::allocator()->alternateStackSize(thread);
+  sigaltstack(&st, NULL);
+  sigfillset(&mask);
+  sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_NODEFER;
+  sa.sa_mask = mask;
+  sa.sa_sigaction = sigendHandler;
+  //sigaction(SIGHUP, &sa, NULL);
+	//sigaction(SIGINT, &sa, NULL);
+  //sigaction(SIGTERM, &sa, NULL);
+
 	thread->run();
 	return 0;
 }

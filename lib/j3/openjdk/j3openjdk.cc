@@ -48,7 +48,23 @@ jobject JNICALL JVM_Clone(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJV
 /*
  * java.lang.String
  */
-jstring JNICALL JVM_InternString(JNIEnv* env, jstring str) { enterJVM(); NYI(); leaveJVM(); }
+jstring JNICALL JVM_InternString(JNIEnv* env, jstring str) { 
+	jstring res;
+	enterJVM(); 
+
+	J3* vm = J3Thread::get()->vm();
+	J3ObjectHandle* value = str->getObject(vm->stringClassValue);
+	uint32_t length = value->arrayLength();
+	wchar_t copy[length];
+
+	for(uint32_t i=0; i<length; i++)
+		copy[i] = value->getCharAt(length);
+
+	res = vm->nameToString(vm->names()->get(copy));
+
+	leaveJVM(); 
+	return res;
+}
 
 /*
  * java.lang.System
@@ -408,7 +424,6 @@ jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jbo
 	} else
 		res = J3ObjectHandle::doNewArray(type->loader()->vm()->fieldClass->getArray(), 0);
 
-	NYI(); 
 	leaveJVM();
  
 	return res;

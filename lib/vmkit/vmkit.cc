@@ -175,6 +175,14 @@ void VMKit::internalError(const wchar_t* msg, ...) {
 	abort();
 }
 
+void VMKit::sigsegv(uintptr_t addr) {
+	internalError(L"sigsegv at %p", (void*)addr);
+}
+
+void VMKit::sigend() {
+	internalError(L"sig terminate");
+}
+
 static int fake = 0;
 
 void VMKit::throwException(void* obj) {

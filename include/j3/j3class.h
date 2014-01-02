@@ -30,6 +30,7 @@ namespace j3 {
 	class J3Method;
 	class J3Field;
 	class J3Attributes;
+	class J3Attribute;
 
 	class J3InterfaceSlotDescriptor {
 	public:
@@ -209,6 +210,8 @@ namespace j3 {
 		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access);
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes);
+
+		J3ObjectHandle*     extractAttribute(J3Attribute* attr);
 
 		J3StaticLayout*     staticLayout() { return &_staticLayout; }
 
