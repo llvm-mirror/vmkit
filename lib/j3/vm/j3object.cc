@@ -468,9 +468,7 @@ J3ObjectHandle* J3ObjectHandle::rawCASObject(uintptr_t offset, J3ObjectHandle* o
 		return orig;
 	else if(res == ov)
 		return value;
-	else if(!res)
-		return 0;
-	else
+	else 
 		return J3Thread::get()->push(res);
 }
 
@@ -479,7 +477,7 @@ void J3ObjectHandle::rawSetObject(uintptr_t offset, J3ObjectHandle* value) {
 }
 
 J3ObjectHandle* J3ObjectHandle::rawGetObject(uintptr_t offset) {
-	return obj() ? J3Thread::get()->push(*((J3Object**)((uintptr_t)obj() + offset))) : 0;
+	return J3Thread::get()->push(*((J3Object**)((uintptr_t)obj() + offset)));
 }
 
 void J3ObjectHandle::setObject(J3Field* field, J3ObjectHandle* value) {
@@ -509,9 +507,12 @@ void J3ObjectHandle::rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uin
  *  J3LocalReferences
  */
 J3ObjectHandle* J3LocalReferences::push(J3Object* obj) {
-	J3ObjectHandle* res = Stack<J3ObjectHandle>::push();
-	res->_obj = obj;
-	return res;
+	if(obj) {
+		J3ObjectHandle* res = Stack<J3ObjectHandle>::push();
+		res->_obj = obj;
+		return res;
+	} else
+		return 0;
 }
 
 /*
@@ -524,17 +525,22 @@ J3GlobalReferences::J3GlobalReferences(vmkit::BumpAllocator* _allocator) :
 }
 		
 J3ObjectHandle* J3GlobalReferences::add(J3ObjectHandle* handle) {
-	pthread_mutex_lock(&mutex);
-	J3ObjectHandle* res = emptySlots.isEmpty() ? references.push() : *emptySlots.pop();
-	res->_obj = handle->_obj;
-	pthread_mutex_unlock(&mutex);
-	return res;
+	if(handle) {
+		pthread_mutex_lock(&mutex);
+		J3ObjectHandle* res = emptySlots.isEmpty() ? references.push() : *emptySlots.pop();
+		res->_obj = handle->_obj;
+		pthread_mutex_unlock(&mutex);
+		return res;
+	} else
+		return 0;
 }
 
 void J3GlobalReferences::del(J3ObjectHandle* handle) {
-	handle->harakiri();
-	pthread_mutex_lock(&mutex);
-	*emptySlots.push() = handle;
-	pthread_mutex_unlock(&mutex);
+	if(handle) {
+		handle->harakiri();
+		pthread_mutex_lock(&mutex);
+		*emptySlots.push() = handle;
+		pthread_mutex_unlock(&mutex);
+	}
 }
 

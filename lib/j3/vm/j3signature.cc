@@ -69,15 +69,6 @@ void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module,
 	if(ret != builder.getVoidTy()) {
 		if(ret->isPointerTy()) {
 			codeGen->builder = &builder;
-
-			llvm::BasicBlock* ifnull = llvm::BasicBlock::Create(caller->getContext(), "ifnull", caller);
-			llvm::BasicBlock* ifnotnull = llvm::BasicBlock::Create(caller->getContext(), "ifnotnull", caller);
-			builder.CreateCondBr(builder.CreateIsNull(res), ifnull, ifnotnull);
-
-			builder.SetInsertPoint(ifnull);
-			builder.CreateRet(builder.getInt64(0));
-
-			builder.SetInsertPoint(ifnotnull);
 			codeGen->currentThread();
 			res = builder.CreatePtrToInt(builder.CreateCall2(codeGen->funcJ3ThreadPush, codeGen->currentThread(), res),
 																	 uint64Ty);

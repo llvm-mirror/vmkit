@@ -348,7 +348,12 @@ jclass JNICALL JVM_FindClassFromBootLoader(JNIEnv* env, const char *name) { ente
  * or NoClassDefFoundError depending on the value of the last
  * argument.
  */
-jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *name, jboolean init, jobject loader, jboolean throwError) { enterJVM(); NYI(); leaveJVM(); }
+jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *name, jboolean init, jobject loader, jboolean throwError) { 
+	enterJVM(); 
+	fprintf(stderr, " class loader: %p\n", loader);
+	NYI(); 
+	leaveJVM(); 
+}
 
 /*
  * Find a class from a given class.

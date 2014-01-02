@@ -357,7 +357,14 @@ void JNICALL SetStaticFloatField(JNIEnv* env, jclass clazz, jfieldID fieldID, jf
 void JNICALL SetStaticDoubleField(JNIEnv* env, jclass clazz, jfieldID fieldID, jdouble value) { enterJVM(); leaveJVM(); NYI(); }
 
 jstring JNICALL NewString(JNIEnv* env, const jchar* unicode, jsize len) { enterJVM(); leaveJVM(); NYI(); }
-jsize JNICALL GetStringLength(JNIEnv* env, jstring str) { enterJVM(); leaveJVM(); NYI(); }
+jsize JNICALL GetStringLength(JNIEnv* env, jstring str) { 
+	jsize res;
+	enterJVM(); 
+	res = str->getObject(J3Thread::get()->vm()->stringClassValue)->arrayLength();
+	leaveJVM(); 
+	return res;
+}
+
 const jchar* JNICALL GetStringChars(JNIEnv* env, jstring str, jboolean* isCopy) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL ReleaseStringChars(JNIEnv* env, jstring str, const jchar* chars) { enterJVM(); leaveJVM(); NYI(); }
 
@@ -371,13 +378,19 @@ jstring JNICALL NewStringUTF(JNIEnv* env, const char* utf) {
 	return res;
 }
 
-jsize JNICALL GetStringUTFLength(JNIEnv* env, jstring str) { enterJVM(); leaveJVM(); NYI(); }
+jsize JNICALL GetStringUTFLength(JNIEnv* env, jstring str) { 
+	jsize res;
+	enterJVM(); 
+	res = str->getObject(J3Thread::get()->vm()->stringClassValue)->arrayLength();
+	leaveJVM(); 
+	return res;
+}
 
 const char* JNICALL GetStringUTFChars(JNIEnv* env, jstring str, jboolean* isCopy) { 
 	char* res;
 
 	enterJVM(); 
-	J3* vm = str->vt()->type()->loader()->vm();
+	J3* vm = J3Thread::get()->vm();
 	jobject content = str->getObject(vm->stringClassValue);
 	uint32_t length = content->arrayLength();
 	res = new char[length+1];
@@ -455,7 +468,19 @@ jint JNICALL MonitorExit(JNIEnv* env, jobject obj) { enterJVM(); leaveJVM(); NYI
 jint JNICALL GetJavaVM(JNIEnv* env, JavaVM** vm) { enterJVM(); leaveJVM(); NYI(); }
 
 void JNICALL GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len, jchar* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len, char* buf) { enterJVM(); leaveJVM(); NYI(); }
+
+void JNICALL GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len, char* buf) { 
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	jobject content = str->getObject(vm->stringClassValue);
+
+	for(uint32_t i=0; i<len; i++)
+		buf[i] = content->getCharAt(start+i);
+
+	//buf[len] = 0;
+
+	leaveJVM(); 
+}
 
 void* JNICALL GetPrimitiveArrayCritical(JNIEnv* env, jarray array, jboolean* isCopy) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL ReleasePrimitiveArrayCritical(JNIEnv* env, jarray array, void* carray, jint mode) { enterJVM(); leaveJVM(); NYI(); }

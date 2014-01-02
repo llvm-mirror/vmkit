@@ -193,7 +193,7 @@ namespace j3 {
 	public:
 		J3LocalReferences(vmkit::BumpAllocator* _allocator) : vmkit::Stack<J3ObjectHandle>(_allocator) {}
 
-		J3ObjectHandle* push(J3ObjectHandle* handle) { return push(handle->obj()); }
+		J3ObjectHandle* push(J3ObjectHandle* handle) { return handle ? push(handle->obj()) : 0; }
 		J3ObjectHandle* push(J3Object* obj);
 	};
 
