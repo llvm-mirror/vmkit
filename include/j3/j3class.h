@@ -132,6 +132,8 @@ namespace j3 {
 		static J3ObjectType*       nativeClass(J3ObjectHandle* handle);
 
 		void                       dumpInterfaceSlotDescriptors();
+
+		virtual J3ObjectHandle*    clone(J3ObjectHandle* obj);
 	};
 
 	class J3Layout : public J3ObjectType {
@@ -217,6 +219,8 @@ namespace j3 {
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes);
 
+		J3ObjectHandle*     clone(J3ObjectHandle* obj);
+
 		size_t              nbConstructors() { return _nbConstructors; }
 		size_t              nbPublicConstructors() { return _nbPublicConstructors; }
 
@@ -267,6 +271,8 @@ namespace j3 {
 		void                doNativeName();
 	public:
 		J3ArrayClass(J3ClassLoader* loader, J3Type* component, const vmkit::Name* name);
+
+		J3ObjectHandle*     clone(J3ObjectHandle* obj);
 
 		J3Type*             component() { return _component; }
 		bool                isArrayClass() { return 1; }

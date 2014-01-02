@@ -43,7 +43,13 @@ void JNICALL JVM_MonitorWait(JNIEnv* env, jobject obj, jlong ms) {
 
 void JNICALL JVM_MonitorNotify(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_MonitorNotifyAll(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_Clone(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_Clone(JNIEnv* env, jobject obj) { 
+	jobject res;
+	enterJVM(); 
+	res = obj->vt()->type()->asObjectType()->clone(obj);
+	leaveJVM(); 
+	return res;
+}
 
 /*
  * java.lang.String

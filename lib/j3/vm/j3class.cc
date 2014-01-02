@@ -180,6 +180,10 @@ J3ObjectType* J3ObjectType::nativeClass(J3ObjectHandle* handle) {
 	return (J3ObjectType*)(uintptr_t)handle->getLong(J3Thread::get()->vm()->classClassVMData);
 }
 
+J3ObjectHandle* J3ObjectType::clone(J3ObjectHandle* obj) {
+	J3::internalError("should not happen");
+}
+
 void J3ObjectType::prepareInterfaceTable() {
 	//fprintf(stderr, "prepare interface table of %s\n", name()->cStr());
 
@@ -294,6 +298,12 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	_staticLayout(loader, this, name){
 	_bytes = bytes;
 	status = LOADED;
+}
+
+J3ObjectHandle* J3Class::clone(J3ObjectHandle* obj) {
+	J3ObjectHandle* res = J3ObjectHandle::doNewObject(this);
+	obj->rawObjectCopyTo(0, res, 0, structSize());
+	return res;
 }
 
 J3ObjectHandle* J3Class::extractAttribute(J3Attribute* attr) {
@@ -858,6 +868,13 @@ J3ArrayClass::J3ArrayClass(J3ClassLoader* loader, J3Type* component, const vmkit
 
 		_name = loader->vm()->names()->get(buf);
 	}
+}
+
+J3ObjectHandle* J3ArrayClass::clone(J3ObjectHandle* obj) {
+	size_t n = obj->arrayLength();
+	J3ObjectHandle* res = J3ObjectHandle::doNewArray(this, n);
+	obj->rawArrayCopyTo(0, res, 0, n<<component()->logSize());
+	return res;
 }
 
 J3Method* J3ArrayClass::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {

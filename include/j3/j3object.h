@@ -165,6 +165,7 @@ namespace j3 {
 
 		uint32_t        hashCode();
 
+		void            rawObjectCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb); 
 		void            rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb); 
 
 		J3ObjectHandle* rawCASObject(uintptr_t offset, J3ObjectHandle* orig, J3ObjectHandle* value);
