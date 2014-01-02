@@ -855,33 +855,6 @@ void J3CodeGen::translate() {
 	builder->SetInsertPoint(bb);
 	_onEndPoint();
 
-	if(vm->options()->genDebugExecute) {
-		char buf[256];
-		snprintf(buf, 256, "%s::%s", method->cl()->name()->cStr(), method->name()->cStr());
-#if 0
-
-		fprintf(stderr, "bitcast: ");
-		builder->CreateBitCast(funcEchoDebugEnter, builder->getInt8PtrTy())->dump();
-		fprintf(stderr, "\n");
-
-		llvm::Value* args[] = {
-			builder->getInt64(42),   /* patch point id */
-			builder->getInt32(0),    /* pad */
-			builder->CreateBitCast(funcEchoDebugEnter, builder->getInt8PtrTy()),     /* function funcEchoDebugEnter */
-			builder->getInt32(3),    /* number of args */
-			builder->getInt32(0),    /* arg[0] */
-			buildString("bip %s\n"), /* arg[1] */
-			buildString(buf)         /* arg[2] */
-		};
-		builder->CreateCall(patchPointVoid, args)->dump();
-#else
-		builder->CreateCall3(funcEchoDebugEnter,
-												 builder->getInt32(0),
-												 buildString("%s\n"),
-												 buildString(buf));
-#endif
-	}
-
 	while(codeReader->remaining()) {
 		llvm::Value* val1;
 		llvm::Value* val2;
@@ -1590,10 +1563,46 @@ void J3CodeGen::generateJava() {
 	stack.init(this, maxStack, allocator->allocate(J3CodeGenVar::reservedSize(maxStack)));
 	ret.init(this, 1, allocator->allocate(J3CodeGenVar::reservedSize(1)));
 
+
+	if(vm->options()->genDebugExecute) {
+		char buf[256];
+		snprintf(buf, 256, "%s::%s", method->cl()->name()->cStr(), method->name()->cStr());
+#if 0
+
+		fprintf(stderr, "bitcast: ");
+		builder->CreateBitCast(funcEchoDebugEnter, builder->getInt8PtrTy())->dump();
+		fprintf(stderr, "\n");
+
+		llvm::Value* args[] = {
+			builder->getInt64(42),   /* patch point id */
+			builder->getInt32(0),    /* pad */
+			builder->CreateBitCast(funcEchoDebugEnter, builder->getInt8PtrTy()),     /* function funcEchoDebugEnter */
+			builder->getInt32(3),    /* number of args */
+			builder->getInt32(0),    /* arg[0] */
+			buildString("bip %s\n"), /* arg[1] */
+			buildString(buf)         /* arg[2] */
+		};
+		builder->CreateCall(patchPointVoid, args)->dump();
+#else
+		builder->CreateCall3(funcEchoDebugEnter,
+												 builder->getInt32(0),
+												 buildString("%s\n"),
+												 buildString(buf));
+#endif
+	}
+
 	uint32_t n=0, pos=0;
 	for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++, n++) {
 		J3Type* type = methodType->ins(n);
 		locals.setAt(flatten(cur, type), pos);
+
+		if(vm->options()->debugExecute)
+			builder->CreateCall4(funcEchoDebugExecute,
+													 builder->getInt32(2),
+													 buildString("            arg[%d]: %p\n"),
+													 builder->getInt32(pos),
+													 locals.at(pos));
+		
 		pos += (type == vm->typeLong || type == vm->typeDouble) ? 2 : 1;
 	}
 
