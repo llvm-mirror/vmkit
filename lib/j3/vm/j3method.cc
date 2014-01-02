@@ -50,7 +50,7 @@ void J3Method::markCompiled(llvm::Function* llvmFunction, void* fnPtr) {
 	_fnPtr = fnPtr;
 }
 
-void* J3Method::fnPtr() {
+void* J3Method::fnPtr(bool withCaller) {
 	if(!isCompiled()) {
 		//fprintf(stderr, "materializing: %ls::%ls%ls\n", this, cl()->name()->cStr(), name()->cStr(), sign()->cStr());
 		if(!isResolved()) {
@@ -62,7 +62,7 @@ void* J3Method::fnPtr() {
 				J3::noSuchMethodError(L"unable to find method", cl(), name(), sign());
 		}
 
-		J3CodeGen::translate(this);
+		J3CodeGen::translate(this, 1, withCaller);
  	}
 
 	return _fnPtr;
@@ -115,10 +115,13 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 J3Value J3Method::internalInvoke(bool statically, J3Value* inArgs) {
 	J3Method* target = statically ? this : resolve(inArgs[0].valObject);
 
-	void* fn = fnPtr();
+	void* fn = fnPtr(1);
 
 	//fprintf(stderr, "Internal invoke %ls::%ls%ls\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
 	
+	if(!methodType()->llvmSignature()->caller())
+		J3CodeGen::translate(this, 0, 1);
+		
 	J3Value res = methodType()->llvmSignature()->caller()(fn, inArgs);
 
 	return res;

@@ -118,7 +118,7 @@ namespace j3 {
 		J3Value             invokeVirtual(J3ObjectHandle* obj, J3Value* args);
 		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
 
-		void*               fnPtr();
+		void*               fnPtr(bool withCaller);
 		void*               functionPointerOrStaticTrampoline();
 		void*               functionPointerOrVirtualTrampoline();
 

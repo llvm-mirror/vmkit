@@ -176,13 +176,13 @@ namespace j3 {
 		llvm::Function*    patchPoint64;
 		llvm::Function*    patchPointVoid;
 
-		J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* method);
+		J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* method, bool withMethod, bool withCaller);
 		~J3CodeGen();
 
 		void* operator new(size_t n, vmkit::BumpAllocator* _allocator);
 		void  operator delete(void* ptr);
 	public:
-		static void translate(J3Method* method);
+		static void translate(J3Method* method, bool withMethod=1, bool withCaller=1);
 	};
 }
 

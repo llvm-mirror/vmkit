@@ -28,7 +28,7 @@ using namespace j3;
 
 #define _onEndPoint() ({ if(onEndPoint()) return; })
 
-J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m) :
+J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMethod, bool withCaller) :
 	exceptions(this) {
 	
 	allocator = _allocator;
@@ -94,26 +94,30 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m) :
 		->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0),
 										 vm->typeJ3ObjectPtr);
 
-	if(J3Cst::isNative(method->access()))
-		generateNative();
-	else
-		generateJava();
+	if(withMethod) {
+		if(J3Cst::isNative(method->access()))
+			generateNative();
+		else
+			generateJava();
 
-	if(vm->options()->debugTranslate > 3)
-		llvmFunction->dump();
+		if(vm->options()->debugTranslate > 3)
+			llvmFunction->dump();
+	}
 
-	if(!methodType->llvmSignature()->caller())
+	if(withCaller && !methodType->llvmSignature()->caller())
 		methodType->llvmSignature()->generateCallerIR(this, module, "generic-caller");
 
 	loader->compileModule(module);
-	void* fnPtr = (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
 
-	if(!methodType->llvmSignature()->caller()) {
+	if(withCaller && !methodType->llvmSignature()->caller()) {
 		J3LLVMSignature::function_t caller = (J3LLVMSignature::function_t)loader->ee()->getFunctionAddress("generic-caller");
 		methodType->llvmSignature()->_caller = caller;
 	}
 
-	method->markCompiled(llvmFunction, fnPtr);
+	if(withMethod) {
+		void* fnPtr = (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
+		method->markCompiled(llvmFunction, fnPtr);
+	}
 }
 
 J3CodeGen::~J3CodeGen() {
@@ -126,11 +130,11 @@ void* J3CodeGen::operator new(size_t n, vmkit::BumpAllocator* _allocator) {
 void J3CodeGen::operator delete(void* ptr) {
 }
 
-void J3CodeGen::translate(J3Method* method) {
+void J3CodeGen::translate(J3Method* method, bool withMethod, bool withCaller) {
 	method->cl()->loader()->vm()->lockCompiler();
 
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
-	delete new(allocator) J3CodeGen(allocator, method);
+	delete new(allocator) J3CodeGen(allocator, method, withMethod, withCaller);
 	vmkit::BumpAllocator::destroy(allocator);
 
 	method->cl()->loader()->vm()->unlockCompiler();
