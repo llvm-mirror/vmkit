@@ -9,6 +9,7 @@
 #include "j3/j3thread.h"
 #include "j3/j3codegen.h"
 #include "j3/j3trampoline.h"
+#include "j3/j3attribute.h"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Module.h"
@@ -124,7 +125,7 @@ J3Value J3Method::internalInvoke(bool statically, J3Value* inArgs) {
 		J3CodeGen::translate(this, 0, 1);
 		caller = methodType()->llvmSignature()->caller();
 	}
-		
+
 	J3Value res = caller(fn, inArgs);
 
 	return res;
@@ -290,22 +291,34 @@ J3ObjectHandle* J3Method::javaMethod() {
 		if(!_javaMethod) {
 			J3ObjectHandle* prev = J3Thread::get()->tell();
 			J3* vm = cl()->loader()->vm();
+			J3ObjectHandle* parameters = J3ObjectHandle::doNewArray(vm->classClass->getArray(), methodType()->nbIns());
+
+			for(uint32_t i=0; i<methodType()->nbIns(); i++)
+				parameters->setObjectAt(i, methodType()->ins(i)->javaClass());
+
+			J3Attribute* exceptionAttribute = attributes()->lookup(vm->exceptionsAttribute);
+			J3ObjectHandle* exceptions;
+
+			if(exceptionAttribute)
+				J3::internalError("implement me: excp");
+			else
+				exceptions = J3ObjectHandle::doNewArray(vm->classClass->getArray(), 0);
+
+			J3ObjectHandle* annotations = cl()->extractAttribute(attributes()->lookup(vm->annotationsAttribute));
+			J3ObjectHandle* paramAnnotations = cl()->extractAttribute(attributes()->lookup(vm->paramAnnotationsAttribute));
 
 			if(name() == cl()->loader()->vm()->initName) {
-				fprintf(stderr, " slot: %d\n", slot());
 				_javaMethod = cl()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(vm->constructorClass));
 
 				vm->constructorClassInit->invokeSpecial(_javaMethod,
 																								cl()->javaClass(),
-																								0, //	Class<?>[] parameterTypes,
-																								0, // Class<?>[] checkedExceptions,
+																								parameters,
+																								exceptions,
 																								access(),
 																								slot(),
 																								vm->nameToString(sign()),
-																								0, //byte[] annotations,
-																								0); //byte[] parameterAnnotations)
-
-				J3::internalError("implement me: java constructor");
+																								annotations,
+																								paramAnnotations);
 			} else 
 				J3::internalError("implement me: javaMethod");
 

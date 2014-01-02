@@ -85,5 +85,5 @@ void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module,
 
 	builder.CreateRet(res);
 
-	caller->dump();
+	//caller->dump();
 }
