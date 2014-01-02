@@ -227,13 +227,26 @@ J3Value J3Method::invokeVirtual(J3ObjectHandle* handle, ...) {
 
 J3MethodType* J3Method::methodType(J3ObjectType* from) {
 	if(!_methodType) {
-		const vmkit::Name* realSign = sign();
+		const vmkit::Name* sign = J3Method::sign();
 		J3ClassLoader*     loader = cl()->loader();
+		J3Type*            args[1+sign->length()];
+		uint32_t           nbArgs = 0;
+		uint32_t           cur = 1;
+
+		if(sign->cStr()[0] != J3Cst::ID_Left)
+			loader->wrongType(from, sign);
 
 		if(!J3Cst::isStatic(access()))
-			realSign = J3Cst::rewrite(cl(), sign());
+			args[nbArgs++] = cl();
 
-		_methodType = loader->getMethodType(from ? from : cl(), realSign);
+		while(sign->cStr()[cur] != J3Cst::ID_Right) {
+			args[nbArgs++] = loader->getTypeInternal(from, sign, cur, &cur);
+		}
+		args[nbArgs++] = loader->getTypeInternal(from, sign, cur+1, &cur);
+		if(cur != sign->length())
+			loader->wrongType(from, sign);
+		
+		_methodType = new(loader->allocator(), nbArgs - 1) J3MethodType(args, nbArgs);
 	}
 
 	return _methodType;

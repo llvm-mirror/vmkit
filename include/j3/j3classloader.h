@@ -51,23 +51,20 @@ namespace j3 {
 		pthread_mutex_t                      _mutexTypes;
 		vmkit::NameMap<J3Type*>::map         types;        /* shortcut to find types */
 
-		pthread_mutex_t                      _mutexMethodTypes;
-		vmkit::NameMap<J3MethodType*>::map   methodTypes;  /* shortcut to find method types - REMOVE */
-
 		pthread_mutex_t                      _mutexInterfaces;
 		InterfaceMethodRefMap                interfaces; 
 
 		pthread_mutex_t                      _mutexMethods;
 		MethodRefMap                         methods;      /* all te known method */
 
-		void                          wrongType(J3ObjectType* from, const vmkit::Name* type);
-		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
-
 	protected:
 		std::vector<void*, vmkit::StdAllocator<void*> > nativeLibraries;
 
 	public:
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
+
+		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
+		void                          wrongType(J3ObjectType* from, const vmkit::Name* type);
 
 		uint32_t                      interfaceIndex(J3Method* sign);
 
