@@ -227,24 +227,23 @@ J3Value J3Method::invokeVirtual(J3ObjectHandle* handle, ...) {
 
 J3MethodType* J3Method::methodType(J3ObjectType* from) {
 	if(!_methodType) {
-		const vmkit::Name* sign = J3Method::sign();
 		J3ClassLoader*     loader = cl()->loader();
-		J3Type*            args[1+sign->length()];
+		J3Type*            args[1+sign()->length()];
 		uint32_t           nbArgs = 0;
 		uint32_t           cur = 1;
 
-		if(sign->cStr()[0] != J3Cst::ID_Left)
-			loader->wrongType(from, sign);
+		if(sign()->cStr()[0] != J3Cst::ID_Left)
+			loader->wrongType(from, sign());
 
 		if(!J3Cst::isStatic(access()))
 			args[nbArgs++] = cl();
 
-		while(sign->cStr()[cur] != J3Cst::ID_Right) {
-			args[nbArgs++] = loader->getTypeInternal(from, sign, cur, &cur);
+		while(sign()->cStr()[cur] != J3Cst::ID_Right) {
+			args[nbArgs++] = loader->getTypeInternal(from, sign(), cur, &cur);
 		}
-		args[nbArgs++] = loader->getTypeInternal(from, sign, cur+1, &cur);
-		if(cur != sign->length())
-			loader->wrongType(from, sign);
+		args[nbArgs++] = loader->getTypeInternal(from, sign(), cur+1, &cur);
+		if(cur != sign()->length())
+			loader->wrongType(from, sign());
 		
 		_methodType = new(loader->allocator(), nbArgs - 1) J3MethodType(args, nbArgs);
 	}
@@ -304,10 +303,19 @@ J3ObjectHandle* J3Method::javaMethod() {
 		if(!_javaMethod) {
 			J3ObjectHandle* prev = J3Thread::get()->tell();
 			J3* vm = cl()->loader()->vm();
-			J3ObjectHandle* parameters = J3ObjectHandle::doNewArray(vm->classClass->getArray(), methodType()->nbIns());
 
-			for(uint32_t i=0; i<methodType()->nbIns(); i++)
-				parameters->setObjectAt(i, methodType()->ins(i)->javaClass());
+			uint32_t nbIns = methodType()->nbIns();
+			uint32_t d = 0;
+
+			if(!J3Cst::isStatic(access())) {
+				nbIns--;
+				d = 1;
+			}
+
+			J3ObjectHandle* parameters = J3ObjectHandle::doNewArray(vm->classClass->getArray(), nbIns);
+
+			for(uint32_t i=0; i<nbIns; i++)
+				parameters->setObjectAt(i, methodType()->ins(i+d)->javaClass());
 
 			J3Attribute* exceptionAttribute = attributes()->lookup(vm->exceptionsAttribute);
 			J3ObjectHandle* exceptions;
