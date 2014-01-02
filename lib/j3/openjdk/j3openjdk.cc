@@ -404,7 +404,15 @@ jobject JNICALL JVM_GetClassLoader(JNIEnv* env, jclass cls) {
 	return res;
 }
 
-jboolean JNICALL JVM_IsInterface(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_IsInterface(JNIEnv* env, jclass cls) { 
+	jboolean res;
+	enterJVM(); 
+	J3ObjectType* type = J3ObjectType::nativeClass(cls);
+	res = type->isArrayClass() ? 0 : J3Cst::isInterface(type->asClass()->access());
+	leaveJVM(); 
+	return res;
+}
+
 jobjectArray JNICALL JVM_GetClassSigners(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_SetClassSigners(JNIEnv* env, jclass cls, jobjectArray signers) { enterJVM(); NYI(); leaveJVM(); }
 jobject JNICALL JVM_GetProtectionDomain(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
