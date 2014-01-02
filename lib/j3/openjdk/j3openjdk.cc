@@ -468,7 +468,27 @@ jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jbo
 	return res;
 }
 
-jobjectArray JNICALL JVM_GetClassDeclaredConstructors(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetClassDeclaredConstructors(JNIEnv* env, jclass ofClass, jboolean publicOnly) { 
+	jobjectArray res;
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	J3ObjectType* type = J3ObjectType::nativeClass(ofClass);
+	if(type->isClass()) {
+		J3Class* cl = type->asClass();
+		res = J3ObjectHandle::doNewArray(vm->constructorClass->getArray(), 
+																		 publicOnly ? cl->nbPublicConstructors() : cl->nbConstructors());
+
+		for(uint32_t i=0, pos=0; i<cl->nbMethods(); i++) {
+			J3Method* m = cl->methods()[i];
+			if(m->name() == vm->initName && (!publicOnly || J3Cst::isPublic(m->access())))
+				res->setObjectAt(pos++, m->javaMethod());
+		}
+	} else
+		res = J3ObjectHandle::doNewArray(vm->constructorClass->getArray(), 0);
+
+	leaveJVM(); 
+	return res;
+}
 
 /* Differs from JVM_GetClassModifiers in treatment of inner classes.
    This returns the access flags for the class as specified in the

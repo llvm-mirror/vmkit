@@ -118,11 +118,14 @@ J3Value J3Method::internalInvoke(bool statically, J3Value* inArgs) {
 	void* fn = fnPtr(1);
 
 	//fprintf(stderr, "Internal invoke %s::%s%s\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
-	
-	if(!methodType()->llvmSignature()->caller())
+
+	J3LLVMSignature::function_t caller = methodType()->llvmSignature()->caller();
+	if(!caller) {
 		J3CodeGen::translate(this, 0, 1);
+		caller = methodType()->llvmSignature()->caller();
+	}
 		
-	J3Value res = methodType()->llvmSignature()->caller()(fn, inArgs);
+	J3Value res = caller(fn, inArgs);
 
 	return res;
 }
@@ -280,3 +283,38 @@ void J3Method::registerNative(void* fnPtr) {
 		J3::noSuchMethodError("unable to dynamically modify a native function", cl(), name(), sign());
 	_nativeFnPtr = fnPtr;
 }
+
+J3ObjectHandle* J3Method::javaMethod() {
+	if(!_javaMethod) {
+		cl()->lock();
+		if(!_javaMethod) {
+			J3ObjectHandle* prev = J3Thread::get()->tell();
+			J3* vm = cl()->loader()->vm();
+
+			if(name() == cl()->loader()->vm()->initName) {
+				fprintf(stderr, " slot: %d\n", slot());
+				_javaMethod = cl()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(vm->constructorClass));
+
+				vm->constructorClassInit->invokeSpecial(_javaMethod,
+																								cl()->javaClass(),
+																								0, //	Class<?>[] parameterTypes,
+																								0, // Class<?>[] checkedExceptions,
+																								access(),
+																								slot(),
+																								vm->nameToString(sign()),
+																								0, //byte[] annotations,
+																								0); //byte[] parameterAnnotations)
+
+				J3::internalError("implement me: java constructor");
+			} else 
+				J3::internalError("implement me: javaMethod");
+
+			J3Thread::get()->restore(prev);
+		}
+		cl()->unlock();
+	}
+
+	return _javaMethod;
+}
+
+

@@ -195,6 +195,9 @@ namespace j3 {
 		uint32_t*          ctpValues;
 		void**             ctpResolved;
 
+		size_t             _nbConstructors;
+		size_t             _nbPublicConstructors;
+
 		/* GC Object */
 		J3ObjectHandle*    _staticInstance;
 
@@ -213,6 +216,9 @@ namespace j3 {
 		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access);
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes);
+
+		size_t              nbConstructors() { return _nbConstructors; }
+		size_t              nbPublicConstructors() { return _nbPublicConstructors; }
 
 		J3ObjectHandle*     extractAttribute(J3Attribute* attr);
 

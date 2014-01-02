@@ -63,12 +63,14 @@ namespace j3 {
 		J3MethodType*                _methodType;
 		J3Attributes*                _attributes;
 		uint32_t                     _index;
+		uint32_t                     _slot;
 		llvm::Function*              _llvmFunction;
 		void*                        _fnPtr;
 		char* volatile               _llvmAllNames; /* stub + _ + native_name */
 		void*                        _nativeFnPtr;
 		void* volatile               _staticTrampoline;
 		void* volatile               _virtualTrampoline;
+		J3ObjectHandle* volatile     _javaMethod;
 
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, va_list va);
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* args);
@@ -76,6 +78,10 @@ namespace j3 {
 		void               buildLLVMNames(J3Class* from);
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
+
+		uint32_t            slot() { return _slot; }
+
+		J3ObjectHandle*     javaMethod();
 
 		void*               nativeFnPtr() { return _nativeFnPtr; }
 

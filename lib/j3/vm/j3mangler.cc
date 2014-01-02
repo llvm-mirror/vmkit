@@ -65,11 +65,11 @@ J3Mangler* J3Mangler::mangle(const char* prefix) {
 }
 
 J3Mangler* J3Mangler::mangle(const vmkit::Name* name) {
-	J3Utf16Converter converter(name);
+	J3Utf16Encoder encoder(name);
 
 	next = cur;
-	while(!converter.isEof()) {
-		uint16_t c = converter.nextUtf16();
+	while(!encoder.isEof()) {
+		uint16_t c = encoder.nextUtf16();
 
 		if(c > 256) {
 			check(6);

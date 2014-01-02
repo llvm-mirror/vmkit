@@ -17,8 +17,10 @@ namespace j3 {
 	class J3LLVMSignature : vmkit::PermanentObject {
 		friend class J3CodeGen;
 
+	public:
 		typedef J3Value (*function_t)(void* fn, J3Value* args);
 
+	private:
 		llvm::FunctionType* _functionType;
 		function_t          _caller;
 

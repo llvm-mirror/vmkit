@@ -89,6 +89,11 @@ namespace j3 {
 		J3Field*         fieldClassAccess;
 		J3Method*        fieldClassInit;
 
+		J3Class*         constructorClass;
+		J3Field*         constructorClassClass;
+		J3Field*         constructorClassSlot;
+		J3Method*        constructorClassInit;
+
 		llvm::Type* typeJNIEnvPtr;
 		llvm::Type* typeJ3VirtualTablePtr;
 		llvm::Type* typeJ3Type;

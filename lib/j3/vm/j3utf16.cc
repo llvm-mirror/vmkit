@@ -5,16 +5,16 @@
 
 using namespace j3;
 
-J3Utf16Converter::J3Utf16Converter(const vmkit::Name* _name) { 
+J3Utf16Encoder::J3Utf16Encoder(const vmkit::Name* _name) { 
 	name = _name; 
 	pos = 0; 
 }
 
-bool J3Utf16Converter::isEof() { 
+bool J3Utf16Encoder::isEof() { 
 	return pos == name->length(); 
 }
 
-uint16_t J3Utf16Converter::nextUtf16() {
+uint16_t J3Utf16Encoder::nextUtf16() {
 	const char* str = name->cStr();
 	size_t   n = 0;
 	size_t   i = 0;
@@ -36,7 +36,7 @@ uint16_t J3Utf16Converter::nextUtf16() {
 	return x;
 }
 
-size_t J3CharConverter::convert(J3ObjectHandle* charArray, char* dest) {
+size_t J3Utf16Decoder::decode(J3ObjectHandle* charArray, char* dest) {
 	size_t length = charArray->arrayLength();
 	size_t pos = 0;
 
@@ -54,7 +54,7 @@ size_t J3CharConverter::convert(J3ObjectHandle* charArray, char* dest) {
 	return pos;
 }
 		
-size_t J3CharConverter::maxSize(J3ObjectHandle* charArray) {
+size_t J3Utf16Decoder::maxSize(J3ObjectHandle* charArray) {
 	return 1 + charArray->arrayLength() * 3;
 }
 

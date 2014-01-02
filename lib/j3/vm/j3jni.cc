@@ -383,8 +383,8 @@ jsize JNICALL GetStringUTFLength(JNIEnv* env, jstring str) {
 	jsize res;
 	enterJVM(); 
 	jobject content = str->getObject(J3Thread::get()->vm()->stringClassValue);
-	char buf[J3CharConverter::maxSize(content)];
-	res = J3CharConverter::convert(content, buf);
+	char buf[J3Utf16Decoder::maxSize(content)];
+	res = J3Utf16Decoder::decode(content, buf);
 	leaveJVM(); 
 	return res;
 }
@@ -395,8 +395,8 @@ const char* JNICALL GetStringUTFChars(JNIEnv* env, jstring str, jboolean* isCopy
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
 	jobject content = str->getObject(vm->stringClassValue);
-	res = new char[J3CharConverter::maxSize(content)];
-	J3CharConverter::convert(content, res);
+	res = new char[J3Utf16Decoder::maxSize(content)];
+	J3Utf16Decoder::decode(content, res);
 
 	if(isCopy)
 		*isCopy = 1;
@@ -471,7 +471,7 @@ void JNICALL GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
 	jobject content = str->getObject(vm->stringClassValue);
-	J3CharConverter::convert(content, buf);
+	J3Utf16Decoder::decode(content, buf);
 	leaveJVM(); 
 }
 

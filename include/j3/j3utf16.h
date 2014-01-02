@@ -11,20 +11,20 @@ namespace vmkit {
 namespace j3 {
 	class J3ObjectHandle;
 
-	class J3Utf16Converter {
+	class J3Utf16Encoder {
 		const vmkit::Name* name;
 		size_t             pos;
 	public:
-		J3Utf16Converter(const vmkit::Name* _name);
+		J3Utf16Encoder(const vmkit::Name* _name);
 
 		bool isEof();
 		uint16_t nextUtf16();
 	};
 
-	class J3CharConverter {
+	class J3Utf16Decoder {
 	public:
 		static size_t maxSize(J3ObjectHandle* charArray);
-		static size_t convert(J3ObjectHandle* charArray, char* dest);
+		static size_t decode(J3ObjectHandle* charArray, char* dest);
 	};
 }
 

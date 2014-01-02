@@ -127,16 +127,17 @@ void J3::run() {
 		->findVirtualField(names()->get("eetop"), typeLong);
 
 	fieldClass               = z_class("java/lang/reflect/Field");
-	fieldClassInit           = z_method(0, fieldClass, initName, 
-																			names()->get("(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
 	fieldClassClass          = z_field(0, fieldClass, "clazz", classClass);
 	fieldClassSlot           = z_field(0, fieldClass, "slot", typeInteger);
 	fieldClassAccess         = z_field(0, fieldClass, "modifiers", typeInteger);
+	fieldClassInit           = z_method(0, fieldClass, initName, 
+																			names()->get("(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
 
-#if 0
-		J3Field*         fieldClassSlot;
-		J3Method*        fieldClassInit;
-#endif
+	constructorClass         = z_class("java/lang/reflect/Constructor");
+	constructorClassClass    = z_field(0, constructorClass, "clazz", classClass);
+	constructorClassSlot     = z_field(0, constructorClass, "slot", typeInteger);
+	constructorClassInit     = z_method(0, constructorClass, initName,
+																			names()->get("(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;IILjava/lang/String;[B[B)V"));
 
 	J3Lib::bootstrap(this);
 }
@@ -168,10 +169,10 @@ J3ObjectHandle* J3::nameToString(const vmkit::Name* name) {
 		J3ObjectHandle* prev = J3Thread::get()->tell();
 		uint16_t buf[name->length()];
 		size_t pos = 0;
-		J3Utf16Converter converter(name);
+		J3Utf16Encoder encoder(name);
 
-		while(!converter.isEof())
-			buf[pos++] = converter.nextUtf16();
+		while(!encoder.isEof())
+			buf[pos++] = encoder.nextUtf16();
 
 		res = initialClassLoader->globalReferences()->add(J3ObjectHandle::doNewArray(charArrayClass, pos));
 		res->setRegionChar(0, buf, 0, pos);

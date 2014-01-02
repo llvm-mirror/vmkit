@@ -617,8 +617,9 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 		if(J3Cst::isStatic(access)) {
 			nbStaticMethods++;
 			method->setResolved(0);
-		} else
+		} else {
 			nbVirtualMethods++;
+		}
 	}
 
 	staticLayout()->_methods = (J3Method**)loader()->allocator()->allocate(sizeof(J3Method*)*nbStaticMethods);
@@ -628,9 +629,18 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 		J3Layout* layout;
 		if(J3Cst::isStatic(methodsTmp[i]->access()))
 			layout = staticLayout();
-		else
+		else {
 			layout = this;
+			if(methodsTmp[i]->name() == loader()->vm()->initName) {
+				_nbConstructors++;
+				if(J3Cst::isPublic(methodsTmp[i]->access()))
+					_nbPublicConstructors++;
+			}
+		}
+
+		methodsTmp[i]->_slot = layout->_nbMethods;
 		layout->_methods[layout->_nbMethods++] = methodsTmp[i];
+
 		if(J3Cst::isPublic(methodsTmp[i]->access()))
 			layout->_nbPublicMethods++;
 	}
