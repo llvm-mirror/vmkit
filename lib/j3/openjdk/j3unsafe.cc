@@ -46,6 +46,11 @@ extern "C" {
 		J3Field* fields = J3Cst::isStatic(access) ? cl->staticLayout()->fields() : cl->fields();
 		return fields[slot].offset();
 	}
+
+	JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapObject(JNIEnv* env, jobject unsafe, 
+																																	 jobject handle, jlong offset, jobject orig, jobject value) {
+		return handle->rawCASObject(offset, orig, value) == orig;
+	}
 }
 
 

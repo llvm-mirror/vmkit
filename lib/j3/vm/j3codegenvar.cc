@@ -98,6 +98,9 @@ void J3CodeGenVar::drop(uint32_t n) {
 }
 
 llvm::AllocaInst** J3CodeGenVar::stackOf(llvm::Type* t) {
+	if(!t)
+		J3::internalError(L"unable to find the type of a local/stack");
+
 	if(t->isIntegerTy(64)) {
 		return longStack;
 	} else if(t->isIntegerTy()) {

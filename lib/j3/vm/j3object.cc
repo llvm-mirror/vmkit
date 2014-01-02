@@ -401,14 +401,26 @@ J3ObjectHandle* J3ObjectHandle::doNewArray(J3ArrayClass* cl, uint32_t length) {
 	return J3Thread::get()->push(res);
 }
 
-
-
 #define defAccessor(name, ctype, llvmtype, scale)												\
-	void J3ObjectHandle::rawSet##name(uint32_t offset, ctype value) {			\
+	ctype J3ObjectHandle::rawCAS##name(uintptr_t offset, ctype orig, ctype value) { \
+		if(scale == 2) {																										\
+			uint32_t io = *((uint32_t*)&orig);																\
+			uint32_t iv = *((uint32_t*)&value);																\
+			uint32_t ir = __sync_val_compare_and_swap((uint32_t*)((uintptr_t)obj() + offset), io, iv); \
+			return *((ctype*)&ir);																						\
+		} else {																														\
+			uint64_t io = *((uint32_t*)&orig);																\
+			uint64_t iv = *((uint32_t*)&value);																\
+			uint64_t ir = __sync_val_compare_and_swap((uint64_t*)((uintptr_t)obj() + offset), io, iv); \
+			return *((ctype*)&ir);																						\
+		}																																		\
+	}																																			\
+																																				\
+	void J3ObjectHandle::rawSet##name(uintptr_t offset, ctype value) {		\
 		*((ctype*)((uintptr_t)obj() + offset)) = value;											\
 	}																																			\
 																																				\
-	ctype J3ObjectHandle::rawGet##name(uint32_t offset) {									\
+	ctype J3ObjectHandle::rawGet##name(uintptr_t offset) {								\
 		return *((ctype*)((uintptr_t)obj() + offset));											\
 	}																																			\
 																																				\
@@ -448,18 +460,25 @@ onJavaPrimitives(defAccessor)
 
 #undef defAccessor
 
-void J3ObjectHandle::rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb) {
-	if(isSame(to))
-		memmove((uint8_t*)(to->array()+1) + toOffset, (uint8_t*)(array()+1) + fromOffset, nbb); 
+J3ObjectHandle* J3ObjectHandle::rawCASObject(uintptr_t offset, J3ObjectHandle* orig, J3ObjectHandle* value) {
+	J3Object* oo = orig ? orig->obj() : 0;
+	J3Object* ov = value ? value->obj() : 0;
+	J3Object* res = __sync_val_compare_and_swap((J3Object**)((uintptr_t)obj() + offset), oo, ov);
+	if(res == oo)
+		return orig;
+	else if(res == ov)
+		return value;
+	else if(!res)
+		return 0;
 	else
-		memcpy((uint8_t*)(to->array()+1) + toOffset, (uint8_t*)(array()+1) + fromOffset, nbb); 
+		return J3Thread::get()->push(res);
 }
 
-void J3ObjectHandle::rawSetObject(uint32_t offset, J3ObjectHandle* value) {
+void J3ObjectHandle::rawSetObject(uintptr_t offset, J3ObjectHandle* value) {
 	*((J3Object**)((uintptr_t)obj() + offset)) = value ? value->obj() : 0;
 }
 
-J3ObjectHandle* J3ObjectHandle::rawGetObject(uint32_t offset) {
+J3ObjectHandle* J3ObjectHandle::rawGetObject(uintptr_t offset) {
 	return obj() ? J3Thread::get()->push(*((J3Object**)((uintptr_t)obj() + offset))) : 0;
 }
 
@@ -477,6 +496,13 @@ void J3ObjectHandle::setObjectAt(uint32_t idx, J3ObjectHandle* value) {
 
 J3ObjectHandle* J3ObjectHandle::getObjectAt(uint32_t idx) {
 	return rawGetObject(sizeof(J3ArrayObject) + idx*sizeof(J3Object*));
+}
+
+void J3ObjectHandle::rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb) {
+	if(isSame(to))
+		memmove((uint8_t*)(to->array()+1) + toOffset, (uint8_t*)(array()+1) + fromOffset, nbb); 
+	else
+		memcpy((uint8_t*)(to->array()+1) + toOffset, (uint8_t*)(array()+1) + fromOffset, nbb); 
 }
 
 /*

@@ -167,16 +167,18 @@ namespace j3 {
 
 		void            rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb); 
 
-		void            rawSetObject(uint32_t offset, J3ObjectHandle* v);
-		J3ObjectHandle* rawGetObject(uint32_t offset);
+		J3ObjectHandle* rawCASObject(uintptr_t offset, J3ObjectHandle* orig, J3ObjectHandle* value);
+		void            rawSetObject(uintptr_t offset, J3ObjectHandle* v);
+		J3ObjectHandle* rawGetObject(uintptr_t offset);
 		void            setObject(J3Field* f, J3ObjectHandle* v);
 		J3ObjectHandle* getObject(J3Field* f);
 		void            setObjectAt(uint32_t idx, J3ObjectHandle* v);
 		J3ObjectHandle* getObjectAt(uint32_t idx);
 
 #define defAccessor(name, ctype, llvmtype, scale)												\
-		void  rawSet##name(uint32_t offset, ctype value);										\
-		ctype rawGet##name(uint32_t offset);																\
+		ctype rawCAS##name(uintptr_t offset, ctype orig, ctype value);			\
+		void  rawSet##name(uintptr_t offset, ctype value);									\
+		ctype rawGet##name(uintptr_t offset);																\
 		void  set##name(J3Field* f, ctype value);														\
 		ctype get##name(J3Field* f);																				\
 		void  set##name##At(uint32_t idx, ctype value);											\
