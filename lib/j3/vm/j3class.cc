@@ -730,7 +730,7 @@ J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
 	}
 
 	uint16_t ntIdx = ctpValues[idx] & 0xffff;
-	J3Class* cl = classAt(ctpValues[idx] >> 16)->asClass();
+	J3ObjectType* cl = classAt(ctpValues[idx] >> 16);
 
 	check(ntIdx, J3Cst::CONSTANT_NameAndType);
 	const vmkit::Name* name = nameAt(ctpValues[ntIdx] >> 16);

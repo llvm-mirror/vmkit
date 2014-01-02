@@ -8,24 +8,24 @@ namespace vmkit {
 }
 
 namespace j3 {
-	class J3Class;
+	class J3ObjectType;
 	class J3Method;
 
 	class J3Mangler {
 		static const uint32_t max = 65536;
 
-		J3Class* from;
-		char     buf[max];
-		char*    cur;
-		char*    next;
+		J3ObjectType* from;
+		char          buf[max];
+		char*         cur;
+		char*         next;
 
-		void     check(uint32_t n);
+		void          check(uint32_t n);
 
 	public:
 		static const char*    j3Id;
 		static const char*    javaId;
 
-		J3Mangler(J3Class* from);
+		J3Mangler(J3ObjectType* from);
 
 		char*    cStr() { return buf; }
 		uint32_t length() { return cur - buf; }

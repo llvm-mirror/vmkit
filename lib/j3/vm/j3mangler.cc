@@ -11,7 +11,7 @@ const char*    J3Mangler::j3Id = "j3_";
 const char*    J3Mangler::javaId = "Java_";
 
 
-J3Mangler::J3Mangler(J3Class* _from) {
+J3Mangler::J3Mangler(J3ObjectType* _from) {
 	from = _from;
 	cur  = buf;
 }

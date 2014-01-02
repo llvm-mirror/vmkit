@@ -21,6 +21,7 @@ namespace j3 {
 	class J3Method;
 	class J3Type;
 	class J3;
+	class J3ObjectType;
 	class J3Class;
 
 	class J3ClassLoader : public vmkit::CompilationUnit {
@@ -59,8 +60,8 @@ namespace j3 {
 		pthread_mutex_t                      _mutexMethods;
 		MethodRefMap                         methods;      /* all te known method */
 
-		void                          wrongType(J3Class* from, const vmkit::Name* type);
-		J3Type*                       getTypeInternal(J3Class* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
+		void                          wrongType(J3ObjectType* from, const vmkit::Name* type);
+		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
 
 	protected:
 		std::vector<void*, vmkit::StdAllocator<void*> > nativeLibraries;
@@ -76,17 +77,15 @@ namespace j3 {
 
 		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
 
-		J3Method*                     method(uint16_t access, J3Class* cl, 
+		J3Method*                     method(uint16_t access, J3ObjectType* cl, 
 																				 const vmkit::Name* name, const vmkit::Name* sign);
-		J3Method*                     method(uint16_t access, const vmkit::Name* clName, 
-																				 const vmkit::Name* name, const vmkit::Name* sign); 
 
 		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
 		J3Class*                      findLoadedClass(const vmkit::Name* name);
 		virtual J3Class*              loadClass(const vmkit::Name* name);
 
 		J3Type*                       getType(J3Class* from, const vmkit::Name* type);       /* find a type */
-		J3MethodType*                 getMethodType(J3Class* from, const vmkit::Name* sign); /* get a method type */
+		J3MethodType*                 getMethodType(J3ObjectType* from, const vmkit::Name* sign); /* get a method type */
 
 		void*                         lookupNativeFunctionPointer(J3Method* method, const char* symb);
 	};

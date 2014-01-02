@@ -87,11 +87,11 @@ J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
 	J3::internalError("implement me: loadClass from a Java class loader");
 }
 
-void J3ClassLoader::wrongType(J3Class* from, const vmkit::Name* type) {
+void J3ClassLoader::wrongType(J3ObjectType* from, const vmkit::Name* type) {
 	J3::classFormatError(from, "wrong type: %s", type->cStr());
 }
 
-J3Type* J3ClassLoader::getTypeInternal(J3Class* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend) {
+J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend) {
 	J3Type*        res  = 0;
 	const char*    type = typeName->cStr();
 	uint32_t       len  = typeName->length();
@@ -168,7 +168,7 @@ J3Type* J3ClassLoader::getType(J3Class* from, const vmkit::Name* type) {
 	return res;
 }
 
-J3MethodType* J3ClassLoader::getMethodType(J3Class* from, const vmkit::Name* sign) {
+J3MethodType* J3ClassLoader::getMethodType(J3ObjectType* from, const vmkit::Name* sign) {
 	pthread_mutex_lock(&_mutexMethodTypes);
 	J3MethodType* res = methodTypes[sign];
 	pthread_mutex_unlock(&_mutexMethodTypes);
@@ -200,7 +200,7 @@ J3MethodType* J3ClassLoader::getMethodType(J3Class* from, const vmkit::Name* sig
 	return res;
 }
 
-J3Method* J3ClassLoader::method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) {
+J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* cl, const vmkit::Name* name, const vmkit::Name* sign) {
 	J3Method method(access, cl, name, sign), *res;
 
 	pthread_mutex_lock(&_mutexMethods);
@@ -215,10 +215,6 @@ J3Method* J3ClassLoader::method(uint16_t access, J3Class* cl, const vmkit::Name*
 	pthread_mutex_unlock(&_mutexMethods);
 
 	return res;
-}
-
-J3Method* J3ClassLoader::method(uint16_t access, const vmkit::Name* clName, const vmkit::Name* name, const vmkit::Name* sign) {
-	return method(access, loadClass(clName), name, sign);
 }
 
 bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {

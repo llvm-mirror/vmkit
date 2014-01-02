@@ -1,5 +1,6 @@
 #include "j3/j3codegenvar.h"
 #include "j3/j3codegen.h"
+#include "j3/j3class.h"
 #include "j3/j3.h"
 #include "j3/j3classloader.h"
 

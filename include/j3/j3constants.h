@@ -107,7 +107,7 @@ namespace j3 {
 			return ((value - 1) & (-bound)) + bound;
 		}
 
-		static const vmkit::Name* rewrite(J3* vm, const vmkit::Name* clName, const vmkit::Name* orig);
+		static const vmkit::Name* rewrite(J3ObjectType* cl, const vmkit::Name* orig);
 
 #define defOpcode(ID, val, effect)											\
 		static const uint8_t BC_##ID = val;

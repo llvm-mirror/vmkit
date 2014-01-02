@@ -34,7 +34,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	allocator = _allocator;
 
 	method = m;
-	cl = method->cl();
+	cl = method->cl()->asClass();
 	methodType = method->methodType();
 	loader = cl->loader();
 	vm = loader->vm();

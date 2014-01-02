@@ -204,15 +204,15 @@ void J3::noClassDefFoundError(const vmkit::Name* name) {
 	internalError("NoClassDefFoundError: %s", name);
 }
 
-void J3::noSuchMethodError(const char* msg, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) {
+void J3::noSuchMethodError(const char* msg, J3ObjectType* cl, const vmkit::Name* name, const vmkit::Name* sign) {
 	internalError("%s: %s::%s %s", msg, cl->name()->cStr(), name->cStr(), sign->cStr());
 }
 
-void J3::noSuchFieldError(const char* msg, J3Class* cl, const vmkit::Name* name, J3Type* type) {
+void J3::noSuchFieldError(const char* msg, J3ObjectType* cl, const vmkit::Name* name, J3Type* type) {
 	internalError("%s: %s::%s %s", msg, cl->name()->cStr(), name->cStr(), type->name()->cStr());
 }
 
-void J3::classFormatError(J3Class* cl, const char* reason, ...) {
+void J3::classFormatError(J3ObjectType* cl, const char* reason, ...) {
 	char buf[65536];
 	va_list va;
 	va_start(va, reason);

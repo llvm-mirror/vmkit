@@ -29,7 +29,7 @@ J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
 			
 }
 
-J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) :
+J3Method::J3Method(uint16_t access, J3ObjectType* cl, const vmkit::Name* name, const vmkit::Name* sign) :
 	_selfCode(this) {
 	_access = access;
 	_cl = cl;
@@ -225,13 +225,13 @@ J3Value J3Method::invokeVirtual(J3ObjectHandle* handle, ...) {
 	return res;
 }
 
-J3MethodType* J3Method::methodType(J3Class* from) {
+J3MethodType* J3Method::methodType(J3ObjectType* from) {
 	if(!_methodType) {
 		const vmkit::Name* realSign = sign();
 		J3ClassLoader*     loader = cl()->loader();
 
 		if(!J3Cst::isStatic(access()))
-			realSign = J3Cst::rewrite(loader->vm(), cl()->name(), sign());
+			realSign = J3Cst::rewrite(cl(), sign());
 
 		_methodType = loader->getMethodType(from ? from : cl(), realSign);
 	}
@@ -239,7 +239,7 @@ J3MethodType* J3Method::methodType(J3Class* from) {
 	return _methodType;
 }
 
-void J3Method::buildLLVMNames(J3Class* from) {
+void J3Method::buildLLVMNames(J3ObjectType* from) {
 	const char* prefix = "stub_";
 	uint32_t plen = 5;
 	J3Mangler mangler(from);
@@ -304,8 +304,8 @@ J3ObjectHandle* J3Method::javaMethod() {
 			else
 				exceptions = J3ObjectHandle::doNewArray(vm->classClass->getArray(), 0);
 
-			J3ObjectHandle* annotations = cl()->extractAttribute(attributes()->lookup(vm->annotationsAttribute));
-			J3ObjectHandle* paramAnnotations = cl()->extractAttribute(attributes()->lookup(vm->paramAnnotationsAttribute));
+			J3ObjectHandle* annotations = cl()->asClass()->extractAttribute(attributes()->lookup(vm->annotationsAttribute));
+			J3ObjectHandle* paramAnnotations = cl()->asClass()->extractAttribute(attributes()->lookup(vm->paramAnnotationsAttribute));
 
 			if(name() == cl()->loader()->vm()->initName) {
 				_javaMethod = cl()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(vm->constructorClass));
