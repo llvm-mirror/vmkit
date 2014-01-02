@@ -5,6 +5,7 @@
 #include "j3/j3object.h"
 #include "j3/j3method.h"
 #include "j3/j3thread.h"
+#include "j3/j3utf16.h"
 #include <stdlib.h>
 
 #define enterJVM() try {
@@ -381,7 +382,9 @@ jstring JNICALL NewStringUTF(JNIEnv* env, const char* utf) {
 jsize JNICALL GetStringUTFLength(JNIEnv* env, jstring str) { 
 	jsize res;
 	enterJVM(); 
-	res = str->getObject(J3Thread::get()->vm()->stringClassValue)->arrayLength();
+	jobject content = str->getObject(J3Thread::get()->vm()->stringClassValue);
+	char buf[J3CharConverter::maxSize(content)];
+	res = J3CharConverter::convert(content, buf);
 	leaveJVM(); 
 	return res;
 }
@@ -392,13 +395,8 @@ const char* JNICALL GetStringUTFChars(JNIEnv* env, jstring str, jboolean* isCopy
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
 	jobject content = str->getObject(vm->stringClassValue);
-	uint32_t length = content->arrayLength();
-	res = new char[length+1];
-
-	for(uint32_t i=0; i<length; i++)
-		res[i] = content->getCharAt(i);
-
-	res[length] = 0;
+	res = new char[J3CharConverter::maxSize(content)];
+	J3CharConverter::convert(content, res);
 
 	if(isCopy)
 		*isCopy = 1;
@@ -473,11 +471,7 @@ void JNICALL GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
 	jobject content = str->getObject(vm->stringClassValue);
-
-	for(uint32_t i=0; i<len; i++)
-		buf[i] = content->getCharAt(start+i);
-
-	buf[len] = 0;
+	J3CharConverter::convert(content, buf);
 	leaveJVM(); 
 }
 
