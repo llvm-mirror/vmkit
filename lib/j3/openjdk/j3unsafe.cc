@@ -3,6 +3,7 @@
 #include "j3/j3thread.h"
 #include "j3/j3class.h"
 #include "j3/j3classloader.h"
+#include "j3/j3field.h"
 #include "j3/j3.h"
 
 #include "llvm/IR/DataLayout.h"
@@ -34,4 +35,19 @@ extern "C" {
 	JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_addressSize(JNIEnv* env, jobject unsafe) {
 		return J3Thread::get()->vm()->objectClass->getSizeInBits()>>3;
 	}
+
+	/// objectFieldOffset - Pointer offset of the specified field
+	///
+	JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(JNIEnv* env, jobject unsafe, jobject field) {
+		J3* vm = J3Thread::get()->vm();
+		J3Class* cl = J3Class::nativeClass(field->getObject(vm->fieldClassClass))->asClass();
+		uint32_t slot = field->getInteger(vm->fieldClassSlot);
+		uint32_t access = field->getInteger(vm->fieldClassAccess);
+		J3Field* fields = J3Cst::isStatic(access) ? cl->staticLayout()->fields() : cl->fields();
+		return fields[slot].offset();
+	}
 }
+
+
+
+

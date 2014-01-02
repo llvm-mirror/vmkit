@@ -53,12 +53,15 @@ jstring JNICALL JVM_InternString(JNIEnv* env, jstring str) {
 	enterJVM(); 
 
 	J3* vm = J3Thread::get()->vm();
+
 	J3ObjectHandle* value = str->getObject(vm->stringClassValue);
 	uint32_t length = value->arrayLength();
-	wchar_t copy[length];
+	wchar_t copy[length+1];
 
 	for(uint32_t i=0; i<length; i++)
-		copy[i] = value->getCharAt(length);
+		copy[i] = value->getCharAt(i);
+
+	copy[length] = 0;
 
 	res = vm->nameToString(vm->names()->get(copy));
 
@@ -420,12 +423,15 @@ jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jbo
 		size_t cur = 0;
 		for(uint32_t i=0; i<cl->nbFields(); i++)
 			if(!publicOnly || J3Cst::isPublic(cl->fields()[i].access()))
-				res->setObjectAt(i, cl->fields()[i].javaField());
+				res->setObjectAt(cur++, cl->fields()[i].javaField());
+		for(uint32_t i=0; i<cl->staticLayout()->nbFields(); i++)
+			if(!publicOnly || J3Cst::isPublic(cl->staticLayout()->fields()[i].access()))
+				res->setObjectAt(cur++, cl->staticLayout()->fields()[i].javaField());
 	} else
 		res = J3ObjectHandle::doNewArray(type->loader()->vm()->fieldClass->getArray(), 0);
 
 	leaveJVM();
- 
+
 	return res;
 }
 

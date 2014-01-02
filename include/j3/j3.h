@@ -86,6 +86,7 @@ namespace j3 {
 		J3Class*         fieldClass;
 		J3Field*         fieldClassClass;
 		J3Field*         fieldClassSlot;
+		J3Field*         fieldClassAccess;
 		J3Method*        fieldClassInit;
 
 		llvm::Type* typeJNIEnvPtr;
@@ -126,6 +127,8 @@ namespace j3 {
 		static void    classFormatError(J3Class* cl, const wchar_t* reason, ...) __attribute__((noreturn));
 		static void    noSuchMethodError(const wchar_t* msg, 
 																		 J3Class* clName, const vmkit::Name* name, const vmkit::Name* sign) __attribute__((noreturn));
+		static void    noSuchFieldError(const wchar_t* msg, 
+																		J3Class* clName, const vmkit::Name* name, J3Type* type) __attribute__((noreturn));
 		static void    linkageError(J3Method* method) __attribute__((noreturn));
 
 		static void    nullPointerException() __attribute__((noreturn));

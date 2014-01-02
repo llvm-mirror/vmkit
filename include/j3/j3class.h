@@ -163,6 +163,8 @@ namespace j3 {
 
 		J3Method*         findMethod(const vmkit::Name* name, const vmkit::Name* sign);
 		J3Field*          findField(const vmkit::Name* name, const J3Type* type);
+
+		virtual J3ObjectHandle* extractAttribute(J3Attribute* attr) = 0;
 	};
 
 	class J3StaticLayout : public J3Layout {
@@ -173,6 +175,7 @@ namespace j3 {
 		J3Class* cl() { return _cl; }
 
 		virtual bool      isStaticLayout() { return 1; }
+		J3ObjectHandle*   extractAttribute(J3Attribute* attr);
 	};
 
 	class J3Class : public J3Layout {
@@ -245,8 +248,8 @@ namespace j3 {
 		J3Method*           findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
 		J3Method*           findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
 
-		J3Field*            findVirtualField(const vmkit::Name* name, const J3Type* type, bool error=1);
-		J3Field*            findStaticField(const vmkit::Name* name, const J3Type* type, bool error=1);
+		J3Field*            findVirtualField(const vmkit::Name* name, J3Type* type, bool error=1);
+		J3Field*            findStaticField(const vmkit::Name* name, J3Type* type, bool error=1);
 	};
 
 	class J3ArrayClass : public J3ObjectType {

@@ -130,6 +130,8 @@ void J3::run() {
 																			names()->get(L"(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
 	fieldClassClass          = z_field(0, fieldClass, L"clazz", classClass);
 	fieldClassSlot           = z_field(0, fieldClass, L"slot", typeInteger);
+	fieldClassAccess         = z_field(0, fieldClass, L"modifiers", typeInteger);
+
 #if 0
 		J3Field*         fieldClassSlot;
 		J3Method*        fieldClassInit;
@@ -194,6 +196,10 @@ void J3::noSuchMethodError(const wchar_t* msg, J3Class* cl, const vmkit::Name* n
 	internalError(L"%ls: %ls::%ls %ls", msg, cl->name()->cStr(), name->cStr(), sign->cStr());
 }
 
+void J3::noSuchFieldError(const wchar_t* msg, J3Class* cl, const vmkit::Name* name, J3Type* type) {
+	internalError(L"%ls: %ls::%ls %ls", msg, cl->name()->cStr(), name->cStr(), type->name()->cStr());
+}
+
 void J3::classFormatError(J3Class* cl, const wchar_t* reason, ...) {
 	wchar_t buf[65536];
 	va_list va;
@@ -224,7 +230,8 @@ void J3::vinternalError(const wchar_t* msg, va_list va) {
 	vswprintf(buf, 65536, msg, va);
 	fprintf(stderr, "Internal error: %ls\n", buf);
 	printStackTrace();
-	exit(1);
+	//	exit(1);
+	abort();
 }
 
 void J3::printStackTrace() {

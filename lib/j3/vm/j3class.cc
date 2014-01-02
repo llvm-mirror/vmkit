@@ -249,6 +249,10 @@ J3StaticLayout::J3StaticLayout(J3ClassLoader* loader, J3Class* cl, const vmkit::
 	_cl = cl;
 }
 
+J3ObjectHandle* J3StaticLayout::extractAttribute(J3Attribute* attr) { 
+	return cl()->extractAttribute(attr); 
+}
+
 J3Layout::J3Layout(J3ClassLoader* loader, const vmkit::Name* name) : J3ObjectType(loader, name) {
 }
 
@@ -304,9 +308,9 @@ J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name*
 	resolve();
 
 	J3Class* cur = this;
-	J3Method* res;
+
 	while(1) {
-		res = cur->findMethod(name, sign);
+		J3Method* res = cur->findMethod(name, sign);
 
 		if(res)
 			return res;
@@ -326,9 +330,9 @@ J3Method* J3Class::findStaticMethod(const vmkit::Name* name, const vmkit::Name* 
 	resolve();
 
 	J3Class* cur = this;
-	J3Method* res;
+
 	while(1) {
-		res = cur->staticLayout()->findMethod(name, sign);
+		J3Method* res = cur->staticLayout()->findMethod(name, sign);
 
 		if(res)
 			return res;
@@ -341,23 +345,30 @@ J3Method* J3Class::findStaticMethod(const vmkit::Name* name, const vmkit::Name* 
 		}
 		cur = cur->super();
 	}
-
-	return res;
 }
 
-J3Field* J3Class::findVirtualField(const vmkit::Name* name, const J3Type* type, bool error) {
-	//loader()->vm()->log(L"Lookup: %ls %ls in %ls", methName->cStr(), methSign->cStr(), name()->cStr());
+J3Field* J3Class::findVirtualField(const vmkit::Name* name, J3Type* type, bool error) {
+	//loader()->vm()->log(L"Lookup: %ls %ls in %ls", type->name()->cStr(), name->cStr(), J3Class::name()->cStr());
 	resolve();
+	J3Class* cur = this;
 
-	J3Field* res = findField(name, type);
+	while(1) {
+		J3Field* res = cur->findField(name, type);
 
-	if(!res)
-		J3::internalError(L"implement me");
+		if(res)
+			return res;
 
-	return res;
+		if(cur == cur->super()) {
+			if(error)
+				J3::noSuchFieldError(L"no such field", this, name, type);
+			else
+				return 0;
+		}
+		cur = cur->super();
+	}
 }
 
-J3Field* J3Class::findStaticField(const vmkit::Name* fname, const J3Type* ftype, bool error) {
+J3Field* J3Class::findStaticField(const vmkit::Name* fname, J3Type* ftype, bool error) {
 	//fprintf(stderr, "Lookup static field %ls %ls::%ls\n", ftype->name()->cStr(), name()->cStr(), fname->cStr());
 	resolve();
 
@@ -630,16 +641,11 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 void J3Class::fillFields(J3Field** fields, size_t n) {
 	for(size_t i=0; i<n; i++) {
 		J3Field*  cur = fields[i];
-		J3Layout* layout;
+		J3Layout* layout = J3Cst::isStatic(fields[i]->access()) ? (J3Layout*)staticLayout() : this;
 
-		if(J3Cst::isStatic(fields[i]->access())) {
-			//fprintf(stderr, "   adding static field: %ls %ls::%ls\n", cur->type()->name()->cStr(), name()->cStr(), cur->name()->cStr());
-			layout = staticLayout();
-		} else {
-			layout = this;
-		}
+		//fprintf(stderr, "   adding static field: %ls %ls::%ls\n", cur->type()->name()->cStr(), name()->cStr(), cur->name()->cStr());
 		cur->_offset = layout->structSize();
-		cur->_slot = i;
+		cur->_slot = layout->_nbFields;
 		layout->_structSize += 1 << fields[i]->type()->logSize();
 		layout->fields()[layout->_nbFields++] = *fields[i];
 
@@ -750,7 +756,7 @@ J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {
 
 	check(ntIdx, J3Cst::CONSTANT_NameAndType);
 	const vmkit::Name* name = nameAt(ctpValues[ntIdx] >> 16);
-	const J3Type*      type = loader()->getType(this, nameAt(ctpValues[ntIdx] & 0xffff));
+	J3Type*            type = loader()->getType(this, nameAt(ctpValues[ntIdx] & 0xffff));
 	
 	res = J3Cst::isStatic(access) ? cl->findStaticField(name, type) : cl->findVirtualField(name, type);
 

@@ -25,11 +25,11 @@ J3ObjectHandle* J3Field::javaField() {
 																				access(),                         /* access */
 																				slot(),                           /* slot */
 																				vm->nameToString(type()->name()), /* signature */
-																				layout()
-																				->asClass()->extractAttribute(attributes()->lookup(vm->annotationsAttribute)));/* annotations */
+																				layout()->extractAttribute(attributes()->lookup(vm->annotationsAttribute)));/* annotations */
 
 			J3Thread::get()->restore(prev);
 		}
+
 		layout()->unlock();
 	}
 	return _javaField;
