@@ -348,11 +348,31 @@ jclass JNICALL JVM_FindClassFromBootLoader(JNIEnv* env, const char *name) { ente
  * or NoClassDefFoundError depending on the value of the last
  * argument.
  */
-jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *name, jboolean init, jobject loader, jboolean throwError) { 
-	enterJVM(); 
-	fprintf(stderr, " class loader: %p\n", loader);
-	NYI(); 
+jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *jname, jboolean init, jobject jloader, jboolean throwError) { 
+	jclass res;
+	enterJVM();
+	J3* vm = J3Thread::get()->vm();
+	if(jloader)
+		J3::internalError(L"implement me: jloader");
+	J3ClassLoader* loader = J3Thread::get()->vm()->initialClassLoader;
+	const vmkit::Name* name = vm->names()->get(jname);
+	J3Class* cl = loader->loadClass(name);
+	if(!cl) {
+		if(throwError)
+			J3::noClassDefFoundError(name);
+		else
+			J3::classNotFoundException(name);
+	}
+
+	if(init)
+		cl->initialise();
+	else
+		cl->resolve();
+
+	res = cl->javaClass();
+
 	leaveJVM(); 
+	return res;
 }
 
 /*

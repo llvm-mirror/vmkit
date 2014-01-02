@@ -477,8 +477,7 @@ void JNICALL GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len
 	for(uint32_t i=0; i<len; i++)
 		buf[i] = content->getCharAt(start+i);
 
-	//buf[len] = 0;
-
+	buf[len] = 0;
 	leaveJVM(); 
 }
 

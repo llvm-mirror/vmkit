@@ -188,6 +188,10 @@ void J3::nullPointerException() {
 	internalError(L"implement me: null pointer exception");
 }
 
+void J3::classNotFoundException(const vmkit::Name* name) {
+	internalError(L"ClassNotFoundException: %ls", name);
+}
+
 void J3::noClassDefFoundError(const vmkit::Name* name) {
 	internalError(L"NoClassDefFoundError: %ls", name);
 }
