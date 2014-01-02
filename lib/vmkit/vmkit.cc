@@ -76,14 +76,14 @@ llvm::LLVMContext& VMKit::llvmContext() {
 llvm::Type* VMKit::introspectType(const char* name) {
 	llvm::Type* res = self()->getTypeByName(name);
 	if(!res)
-		internalError(L"unable to find internal type: %s", name);
+		internalError("unable to find internal type: %s", name);
 	return res;
 }
 
 llvm::Function* VMKit::introspectFunction(llvm::Module* dest, const char* name) {
 	llvm::Function* orig = (llvm::Function*)mangleMap[name];
 	if(!orig)
-		internalError(L"unable to find internal function: %s", name);
+		internalError("unable to find internal function: %s", name);
 
 	return (llvm::Function*)dest->getOrInsertFunction(orig->getName(), orig->getFunctionType());
 }
@@ -91,7 +91,7 @@ llvm::Function* VMKit::introspectFunction(llvm::Module* dest, const char* name) 
 llvm::GlobalValue* VMKit::introspectGlobalValue(llvm::Module* dest, const char* name) {
 	llvm::GlobalValue* orig = mangleMap[name];
 	if(!orig)
-		internalError(L"unable to find internal global value: %s", name);
+		internalError("unable to find internal global value: %s", name);
 	return (llvm::GlobalValue*)dest->getOrInsertGlobal(orig->getName(), orig->getType());
 }
 
@@ -114,11 +114,11 @@ void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
 
 	llvm::OwningPtr<llvm::MemoryBuffer> buf;
 	if (llvm::MemoryBuffer::getFile(selfBitCodePath, buf))
-		VMKit::internalError(L"Error while opening bitcode file %s", selfBitCodePath);
+		VMKit::internalError("Error while opening bitcode file %s", selfBitCodePath);
 	_self = llvm::getLazyBitcodeModule(buf.take(), llvm::getGlobalContext(), &err);
 
 	if(!self())
-		VMKit::internalError(L"Error while reading bitcode file %s: %s", selfBitCodePath, err.c_str());
+		VMKit::internalError("Error while reading bitcode file %s: %s", selfBitCodePath, err.c_str());
 
 	for(llvm::Module::iterator cur=self()->begin(); cur!=self()->end(); cur++)
 		addSymbol(cur);
@@ -132,7 +132,7 @@ void VMKit::vmkitBootstrap(Thread* initialThread, const char* selfBitCodePath) {
 	ptrTypeInfo = typeInfoGV ? dlsym(SELF_HANDLE, typeInfoGV->getName().data()) : 0;
 
 	if(!ptrTypeInfo)
-		internalError(L"unable to find typeinfo for void*"); 
+		internalError("unable to find typeinfo for void*"); 
 
 	initialThread->start();
 	initialThread->join();
@@ -143,27 +143,27 @@ llvm::Function* VMKit::getGCRoot(llvm::Module* mod) {
 	return llvm::Intrinsic::getDeclaration(mod, llvm::Intrinsic::gcroot);
 }
 
-void VMKit::log(const wchar_t* msg, ...) {
+void VMKit::log(const char* msg, ...) {
 	va_list va;
 	va_start(va, msg);
 	fprintf(stderr, "[vmkit]: ");
-	vfwprintf(stderr, msg, va);
+	vfprintf(stderr, msg, va);
 	fprintf(stderr, "\n");
 	va_end(va);
 }
 
-void VMKit::vinternalError(const wchar_t* msg, va_list va) {
+void VMKit::vinternalError(const char* msg, va_list va) {
 	defaultInternalError(msg, va);
 }
 
-void VMKit::defaultInternalError(const wchar_t* msg, va_list va) {
+void VMKit::defaultInternalError(const char* msg, va_list va) {
 	fprintf(stderr, "Fatal error: ");
-	vfwprintf(stderr, msg, va);
+	vfprintf(stderr, msg, va);
 	fprintf(stderr, "\n");
 	abort();
 }
 
-void VMKit::internalError(const wchar_t* msg, ...) {
+void VMKit::internalError(const char* msg, ...) {
 	va_list va;
 	va_start(va, msg);
 	if(Thread::get() && Thread::get()->vm())
@@ -176,11 +176,11 @@ void VMKit::internalError(const wchar_t* msg, ...) {
 }
 
 void VMKit::sigsegv(uintptr_t addr) {
-	internalError(L"sigsegv at %p", (void*)addr);
+	internalError("sigsegv at %p", (void*)addr);
 }
 
 void VMKit::sigend() {
-	internalError(L"sig terminate");
+	internalError("sig terminate");
 }
 
 static int fake = 0;

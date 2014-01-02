@@ -13,7 +13,7 @@ using namespace j3;
 #define enterJVM()
 #define leaveJVM()
 
-#define NYI() { J3Thread::get()->vm()->internalError(L"not yet implemented: '%s'", __PRETTY_FUNCTION__); }
+#define NYI() { J3Thread::get()->vm()->internalError("not yet implemented: '%s'", __PRETTY_FUNCTION__); }
 
 
 /*************************************************************************
@@ -56,7 +56,7 @@ jstring JNICALL JVM_InternString(JNIEnv* env, jstring str) {
 
 	J3ObjectHandle* value = str->getObject(vm->stringClassValue);
 	uint32_t length = value->arrayLength();
-	wchar_t copy[length+1];
+	char copy[length+1];
 
 	for(uint32_t i=0; i<length; i++)
 		copy[i] = value->getCharAt(i);
@@ -268,7 +268,7 @@ jclass JNICALL JVM_GetCallerClass(JNIEnv* env, int depth) {
 	enterJVM(); 
 
 	if(depth != -1)
-		J3::internalError(L"depth should be -1 while it is %d", depth);
+		J3::internalError("depth should be -1 while it is %d", depth);
 
 	depth = 3;
 	J3Method* caller = 0;
@@ -286,7 +286,7 @@ jclass JNICALL JVM_GetCallerClass(JNIEnv* env, int depth) {
 	}
 
 	if(!caller)
-		J3::internalError(L"unable to find caller class, what should I do?");
+		J3::internalError("unable to find caller class, what should I do?");
 
 	res = caller->cl()->javaClass();
 
@@ -309,25 +309,25 @@ jclass JNICALL JVM_FindPrimitiveClass(JNIEnv* env, const char *utf) {
 	J3Class* res;
 
   if(!strcmp(utf, "boolean"))
-		res = loader->loadClass(names->get(L"java/lang/Boolean"));
+		res = loader->loadClass(names->get("java/lang/Boolean"));
 	else if(!strcmp(utf, "byte"))
-		res = loader->loadClass(names->get(L"java/lang/Byte"));
+		res = loader->loadClass(names->get("java/lang/Byte"));
 	else if(!strcmp(utf, "char"))
-		res = loader->loadClass(names->get(L"java/lang/Character"));
+		res = loader->loadClass(names->get("java/lang/Character"));
 	else if(!strcmp(utf, "short"))
-		res = loader->loadClass(names->get(L"java/lang/Short"));
+		res = loader->loadClass(names->get("java/lang/Short"));
 	else if(!strcmp(utf, "int"))
-		res = loader->loadClass(names->get(L"java/lang/Integer"));
+		res = loader->loadClass(names->get("java/lang/Integer"));
 	else if(!strcmp(utf, "long"))
-		res = loader->loadClass(names->get(L"java/lang/Long"));
+		res = loader->loadClass(names->get("java/lang/Long"));
 	else if(!strcmp(utf, "float"))
-		res = loader->loadClass(names->get(L"java/lang/Float"));
+		res = loader->loadClass(names->get("java/lang/Float"));
 	else if(!strcmp(utf, "double"))
-		res = loader->loadClass(names->get(L"java/lang/Double"));
+		res = loader->loadClass(names->get("java/lang/Double"));
 	else if(!strcmp(utf, "void"))
-		res = loader->loadClass(names->get(L"java/lang/Void"));
+		res = loader->loadClass(names->get("java/lang/Void"));
 	else
-		J3::internalError(L"unsupported primitive: %s", utf);
+		J3::internalError("unsupported primitive: %s", utf);
 
 	leaveJVM(); 
 	return res->javaClass();
@@ -353,7 +353,7 @@ jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *jname, jboo
 	enterJVM();
 	J3* vm = J3Thread::get()->vm();
 	if(jloader)
-		J3::internalError(L"implement me: jloader");
+		J3::internalError("implement me: jloader");
 	J3ClassLoader* loader = J3Thread::get()->vm()->initialClassLoader;
 	const vmkit::Name* name = vm->names()->get(jname);
 	J3Class* cl = loader->loadClass(name);

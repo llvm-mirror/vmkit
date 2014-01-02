@@ -73,7 +73,7 @@ void* BumpAllocator::allocate(size_t size) {
 void* BumpAllocator::map(size_t n) {
 	void* res = mmap(0, n, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, 0, 0);
 	if(res == MAP_FAILED)
-		Thread::get()->vm()->internalError(L"unable to map %ld bytes", n);
+		Thread::get()->vm()->internalError("unable to map %ld bytes", n);
 	return res;
 }
 
@@ -82,11 +82,11 @@ void BumpAllocator::unmap(void* p, size_t n) {
 }
 
 void PermanentObject::operator delete(void* ptr) {
-	Thread::get()->vm()->internalError(L"should not happen");
+	Thread::get()->vm()->internalError("should not happen");
 }
   
 void PermanentObject::operator delete[](void* ptr) {
-	Thread::get()->vm()->internalError(L"should not happen");
+	Thread::get()->vm()->internalError("should not happen");
 }
 
 ThreadAllocator::ThreadAllocator(uintptr_t minThreadStruct, uintptr_t minFullSize) {

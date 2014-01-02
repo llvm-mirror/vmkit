@@ -12,13 +12,8 @@ namespace vmkit {
 			bool operator()(const char* s1, const char* s2) const;
 		};
 
-		struct wchar_t_less_t {
-			bool operator()(const wchar_t* lhs, const wchar_t* rhs) const;
-		};
-
 		static struct char_less_t     char_less;
 		static struct char_less_t_dbg char_less_dbg;
-		static struct wchar_t_less_t  wchar_t_less;
 	};
 };
 

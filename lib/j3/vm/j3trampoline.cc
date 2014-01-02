@@ -19,7 +19,7 @@ void* J3Trampoline::interfaceTrampoline(J3Object* obj) {
 		res = desc->methods[0]->fnPtr(0);
 		handle->vt()->_interfaceMethodTable[index] = res;
 	} else
-		J3::internalError(L"implement me: interface Trampoline with collision");
+		J3::internalError("implement me: interface Trampoline with collision");
 
 	J3Thread::get()->restore(prev);
 

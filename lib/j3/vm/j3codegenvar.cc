@@ -85,7 +85,7 @@ void J3CodeGenVar::dump() {
 			v = refStack[i];
 		else {
 			t->dump();
-			J3::internalError(L"should not happen");
+			J3::internalError("should not happen");
 		}
 
 		v->dump();
@@ -99,7 +99,7 @@ void J3CodeGenVar::drop(uint32_t n) {
 
 llvm::AllocaInst** J3CodeGenVar::stackOf(llvm::Type* t) {
 	if(!t)
-		J3::internalError(L"unable to find the type of a local/stack");
+		J3::internalError("unable to find the type of a local/stack");
 
 	if(t->isIntegerTy(64)) {
 		return longStack;
@@ -113,7 +113,7 @@ llvm::AllocaInst** J3CodeGenVar::stackOf(llvm::Type* t) {
 		return refStack;
 	} 
 		
-	J3::internalError(L"should not happen");
+	J3::internalError("should not happen");
 }
 
 void J3CodeGenVar::setAt(llvm::Value* value, uint32_t idx) {
@@ -132,14 +132,14 @@ void J3CodeGenVar::push(llvm::Value* value) {
 	//	value->dump();
 	//	fprintf(stderr, "\n");
 	if(topStack >= maxStack)
-		J3::classFormatError(codeGen->cl, L"too many push in... ");
+		J3::classFormatError(codeGen->cl, "too many push in... ");
 
 	setAt(value, topStack++);
 }
 
 llvm::Value* J3CodeGenVar::pop() {
 	if(!topStack)
-		J3::classFormatError(codeGen->cl, L"too many pop in... ");
+		J3::classFormatError(codeGen->cl, "too many pop in... ");
 
 	llvm::Value* res = at(--topStack);
 	return res;
@@ -147,7 +147,7 @@ llvm::Value* J3CodeGenVar::pop() {
 
 llvm::Value* J3CodeGenVar::top(uint32_t idx) {
 	if(topStack <= idx)
-		J3::classFormatError(codeGen->cl, L"too large top in... ");
+		J3::classFormatError(codeGen->cl, "too large top in... ");
 	
 	return at(topStack - idx - 1);
 }

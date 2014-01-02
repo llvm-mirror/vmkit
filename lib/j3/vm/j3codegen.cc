@@ -40,12 +40,12 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	vm = loader->vm();
 
 #if 0
-	if(m->cl()->name() == vm->names()->get(L"java/util/concurrent/atomic/AtomicInteger"))
+	if(m->cl()->name() == vm->names()->get("java/util/concurrent/atomic/AtomicInteger"))
 		vm->options()->debugTranslate = 4;
 #endif
 
 	if(vm->options()->debugTranslate)
-		fprintf(stderr, "  translating bytecode of: %ls::%ls%ls\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
+		fprintf(stderr, "  translating bytecode of: %s::%s%s\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
 
 	module = new llvm::Module(method->llvmFunctionName(), vm->llvmContext());
 	llvmFunction = buildFunction(method, 0);
@@ -169,7 +169,7 @@ llvm::Value* J3CodeGen::flatten(llvm::Value* v, J3Type* type) {
 	else if(type == vm->typeChar)
 		return builder->CreateZExt(v, vm->typeInteger->llvmType());
 	else
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 }
 
 llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
@@ -183,7 +183,7 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 		return builder->CreateZExtOrTrunc(v, type->llvmType());
 	else {
 		type->dump();
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 	}
 }
 
@@ -379,7 +379,7 @@ llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
 	return obj;
 }
 
-#define nyi() J3::internalError(L"not yet implemented: '%s' (%d)", J3Cst::opcodeNames[bc], bc);
+#define nyi() J3::internalError("not yet implemented: '%s' (%d)", J3Cst::opcodeNames[bc], bc);
 
 void J3CodeGen::invoke(J3Method* target, llvm::Value* func) {
 	J3MethodType* type = target->methodType(cl);
@@ -557,7 +557,7 @@ void J3CodeGen::newArray(uint8_t atype) {
 		case J3Cst::T_INT:     prim = vm->typeInteger; break;
 		case J3Cst::T_LONG:    prim = vm->typeLong; break;
 		default:
-			J3::classFormatError(cl, L"wrong atype: %d\n", atype);
+			J3::classFormatError(cl, "wrong atype: %d\n", atype);
 	}
 
 	newArray(prim->getArray());
@@ -700,7 +700,7 @@ void J3CodeGen::ldc(uint32_t idx) {
 																								builder->getInt16(idx)));
 			break;
 		default:
-			J3::classFormatError(cl, L"wrong ldc type: %d\n", cl->getCtpType(idx));
+			J3::classFormatError(cl, "wrong ldc type: %d\n", cl->getCtpType(idx));
 	}
 	stack.push(res);
 }
@@ -725,7 +725,7 @@ llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doA
 		//printf("split at %d (%s)\n", pc, id);
 		llvm::Instruction* insn = opInfos[pc].insn;
 		if(!insn)
-			J3::classFormatError(cl, L"jmp: not to an instruction");
+			J3::classFormatError(cl, "jmp: not to an instruction");
 		insn = insn->getNextNode();
 		//fprintf(stderr, "--- instruction ---\n");
 		//insn->dump();
@@ -857,7 +857,7 @@ void J3CodeGen::translate() {
 
 	if(vm->options()->genDebugExecute) {
 		char buf[256];
-		snprintf(buf, 256, "%ls::%ls", method->cl()->name()->cStr(), method->name()->cStr());
+		snprintf(buf, 256, "%s::%s", method->cl()->name()->cStr(), method->name()->cStr());
 #if 0
 
 		fprintf(stderr, "bitcast: ");
@@ -903,7 +903,7 @@ void J3CodeGen::translate() {
 		if(opInfos[javaPC].insn || opInfos[javaPC].bb) {
 			if(closeBB && !bb->getTerminator()) {
 				if(!opInfos[javaPC].bb)
-					J3::internalError(L"random split???");
+					J3::internalError("random split???");
 				builder->CreateBr(opInfos[javaPC].bb);
 			}
 		}
@@ -955,7 +955,7 @@ void J3CodeGen::translate() {
 
 		if(vm->options()->genDebugExecute) {
 			char buf[256];
-			snprintf(buf, 256, "    [%4d] executing: %-20s in %ls::%ls", javaPC, 
+			snprintf(buf, 256, "    [%4d] executing: %-20s in %s::%s", javaPC, 
 							 J3Cst::opcodeNames[bc], method->cl()->name()->cStr(), method->name()->cStr());
 			builder->CreateCall3(funcEchoDebugExecute,
 													 builder->getInt32(2),
@@ -1526,15 +1526,15 @@ void J3CodeGen::translate() {
 			case J3Cst::BC_impdep2:                       /* 0xff */
 			case J3Cst::BC_xxxunusedxxx1:                 /* 0xba */
 			default:
-				J3::classFormatError(cl, L"unknow opcode '%s' (%d)", J3Cst::opcodeNames[bc], bc);
+				J3::classFormatError(cl, "unknow opcode '%s' (%d)", J3Cst::opcodeNames[bc], bc);
 		}
 	}
-	J3::classFormatError(cl, L"the last bytecode does not return");
+	J3::classFormatError(cl, "the last bytecode does not return");
 }
 
 #if 0
 void J3CodeGen::explore() {
-	printf("  exploring bytecode of: %ls::%ls%ls\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
+	printf("  exploring bytecode of: %s::%s%s\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
 	while(codeReader->remaining()) {
 		uint8_t bc = codeReader->readU1();
 
@@ -1545,7 +1545,7 @@ void J3CodeGen::explore() {
 			case J3Cst::BC_##id: effect; break;
 #include "j3/j3bc.def"
 			default:
-				J3::internalError(L"unknow opcode '%s' (%d)", J3Cst::opcodeNames[bc], bc);
+				J3::internalError("unknow opcode '%s' (%d)", J3Cst::opcodeNames[bc], bc);
 		}
 	}
 }
@@ -1555,7 +1555,7 @@ void J3CodeGen::generateJava() {
 	J3Attribute* attr = method->attributes()->lookup(vm->codeAttribute);
 
 	if(!attr)
-		J3::classFormatError(cl, L"No Code attribute in %ls %ls", method->name()->cStr(), method->sign()->cStr());
+		J3::classFormatError(cl, "No Code attribute in %s %s", method->name()->cStr(), method->sign()->cStr());
 
 	J3Reader reader(cl->bytes());
 	reader.seek(attr->offset(), reader.SeekSet);
@@ -1563,7 +1563,7 @@ void J3CodeGen::generateJava() {
 	uint32_t length = reader.readU4();
 	
 	if(!reader.adjustSize(length))
-		J3::classFormatError(cl, L"Code attribute of %ls %ls is too large (%d)", method->name()->cStr(), method->sign()->cStr(), length);
+		J3::classFormatError(cl, "Code attribute of %s %s is too large (%d)", method->name()->cStr(), method->sign()->cStr(), length);
 
 	llvm::DIBuilder* dbgBuilder = new llvm::DIBuilder(*module);
 
@@ -1610,7 +1610,7 @@ void J3CodeGen::generateJava() {
 	builder->SetInsertPoint(bbRet);
 	if(vm->options()->genDebugExecute) {
 		char buf[256];
-		snprintf(buf, 256, "%ls::%ls", method->cl()->name()->cStr(), method->name()->cStr());
+		snprintf(buf, 256, "%s::%s", method->cl()->name()->cStr(), method->name()->cStr());
 		builder->CreateCall3(funcEchoDebugEnter,
 												 builder->getInt32(1),
 												 buildString("%s\n"),

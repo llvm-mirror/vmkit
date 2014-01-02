@@ -36,6 +36,6 @@ J3ObjectHandle* J3Field::javaField() {
 }
 
 void J3Field::dump() {
-	printf("Field: %ls %ls::%ls (%d)\n", type()->name()->cStr(), layout()->name()->cStr(), name()->cStr(), access());
+	printf("Field: %s %s::%s (%d)\n", type()->name()->cStr(), layout()->name()->cStr(), name()->cStr(), access());
 }
 

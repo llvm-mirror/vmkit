@@ -24,11 +24,11 @@ namespace j3 {
 	class J3Class;
 
 	class J3ClassLoader : public vmkit::CompilationUnit {
-		struct J3MethodLess : public std::binary_function<wchar_t*,wchar_t*,bool> {
+		struct J3MethodLess {
 			bool operator()(const J3Method* lhs, const J3Method* rhs) const;
 		};
 
-		struct J3InterfaceMethodLess : public std::binary_function<wchar_t*,wchar_t*,bool> {
+		struct J3InterfaceMethodLess {
 			bool operator()(const J3Method* lhs, const J3Method* rhs) const;
 		};
 
@@ -80,13 +80,10 @@ namespace j3 {
 																				 const vmkit::Name* name, const vmkit::Name* sign);
 		J3Method*                     method(uint16_t access, const vmkit::Name* clName, 
 																				 const vmkit::Name* name, const vmkit::Name* sign); 
-		J3Method*                     method(uint16_t access, J3Class* cl, const wchar_t* name, const wchar_t* sign); 
-		J3Method*                     method(uint16_t access, const wchar_t* clName, const wchar_t* name, const wchar_t* sign); 
 
 		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
 		J3Class*                      findLoadedClass(const vmkit::Name* name);
 		virtual J3Class*              loadClass(const vmkit::Name* name);
-		J3Class*                      loadClass(const wchar_t* name);
 
 		J3Type*                       getType(J3Class* from, const vmkit::Name* type);       /* find a type */
 		J3MethodType*                 getMethodType(J3Class* from, const vmkit::Name* sign); /* get a method type */

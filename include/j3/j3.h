@@ -119,16 +119,16 @@ namespace j3 {
 		void                       run();
 		void                       start(int argc, char** argv);
 
-		void                       vinternalError(const wchar_t* msg, va_list va) __attribute__((noreturn));
+		void                       vinternalError(const char* msg, va_list va) __attribute__((noreturn));
 
 		static JNIEnv* jniEnv();
 
 		static void    classNotFoundException(const vmkit::Name* name) __attribute__((noreturn));
 		static void    noClassDefFoundError(const vmkit::Name* name) __attribute__((noreturn));
-		static void    classFormatError(J3Class* cl, const wchar_t* reason, ...) __attribute__((noreturn));
-		static void    noSuchMethodError(const wchar_t* msg, 
+		static void    classFormatError(J3Class* cl, const char* reason, ...) __attribute__((noreturn));
+		static void    noSuchMethodError(const char* msg, 
 																		 J3Class* clName, const vmkit::Name* name, const vmkit::Name* sign) __attribute__((noreturn));
-		static void    noSuchFieldError(const wchar_t* msg, 
+		static void    noSuchFieldError(const char* msg, 
 																		J3Class* clName, const vmkit::Name* name, J3Type* type) __attribute__((noreturn));
 		static void    linkageError(J3Method* method) __attribute__((noreturn));
 

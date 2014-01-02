@@ -46,7 +46,7 @@ J3VirtualTable* J3Type::vtAndResolve() {
 }
 
 void J3Type::dump() {
-	fprintf(stderr, "Type: %ls", name()->cStr());
+	fprintf(stderr, "Type: %s", name()->cStr());
 }
 
 J3ObjectHandle* J3Type::javaClass() {
@@ -65,7 +65,7 @@ J3ObjectHandle* J3Type::javaClass() {
 }
 
 void J3Type::doNativeName() {
-	J3::internalError(L"should not happen");
+	J3::internalError("should not happen");
 }
 
 char* J3Type::nativeName() {
@@ -112,7 +112,7 @@ J3Type* J3Type::resolve(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 	if(status < RESOLVED)
 		doResolve(hiddenFields, nbHiddenFields);
 	else
-		J3::internalError(L"trying to resolve class %ls with hidden fields while it is already loaded", name()->cStr());
+		J3::internalError("trying to resolve class %s with hidden fields while it is already loaded", name()->cStr());
 	return this;
 }
 
@@ -124,37 +124,37 @@ J3Type* J3Type::initialise() {
 
 J3Class* J3Type::asClass() {
 	if(!isClass())
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 	return (J3Class*)this;
 }
 
 J3Layout* J3Type::asLayout() {
 	if(!isLayout())
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 	return (J3Layout*)this;
 }
 
 J3StaticLayout* J3Type::asStaticLayout() {
 	if(!isStaticLayout())
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 	return (J3StaticLayout*)this;
 }
 
 J3Primitive* J3Type::asPrimitive() {
 	if(!isPrimitive())
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 	return (J3Primitive*)this;
 }
 
 J3ArrayClass* J3Type::asArrayClass() {
 	if(!isArrayClass())
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 	return (J3ArrayClass*)this;
 }
 
 J3ObjectType* J3Type::asObjectType() {
 	if(!isObjectType())
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 	return (J3ObjectType*)this;
 }
 
@@ -169,11 +169,11 @@ llvm::Type* J3ObjectType::llvmType() {
 }
 
 J3Method* J3ObjectType::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
-	J3::internalError(L"should not happe: %ls::%ls\n", J3ObjectType::name()->cStr(), name->cStr());
+	J3::internalError("should not happe: %s::%s\n", J3ObjectType::name()->cStr(), name->cStr());
 }
 
 J3Method* J3ObjectType::findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
-	J3::internalError(L"should not happen");
+	J3::internalError("should not happen");
 }
 
 J3ObjectType* J3ObjectType::nativeClass(J3ObjectHandle* handle) {
@@ -181,7 +181,7 @@ J3ObjectType* J3ObjectType::nativeClass(J3ObjectHandle* handle) {
 }
 
 void J3ObjectType::prepareInterfaceTable() {
-	//fprintf(stderr, "prepare interface table of %ls\n", name()->cStr());
+	//fprintf(stderr, "prepare interface table of %s\n", name()->cStr());
 
 	uint32_t total = 0;
 	J3InterfaceSlotDescriptor* slots = _interfaceSlotDescriptors;
@@ -192,10 +192,10 @@ void J3ObjectType::prepareInterfaceTable() {
 		if(type->isClass()) {
 			J3Class* ifce = vt()->checker()->secondaryTypes[i]->type()->asClass();
 			if(J3Cst::isInterface(ifce->access())) {
-				//fprintf(stderr, "  processing interface: %ls\n", ifce->name()->cStr());
+				//fprintf(stderr, "  processing interface: %s\n", ifce->name()->cStr());
 				for(uint32_t j=0; j<ifce->nbMethods(); j++) {
 					J3Method* base = ifce->methods()[j];
-					//fprintf(stderr, "    processing %s method %ls %ls\n", 
+					//fprintf(stderr, "    processing %s method %s %s\n", 
 					//J3Cst::isAbstract(base->access()) ? "abstract" : "concrete",
 					//base->sign()->cStr(), base->name()->cStr());
 					J3Method* method = findVirtualMethod(base->name(), base->sign(), J3Cst::isAbstract(base->access()));
@@ -229,12 +229,12 @@ void J3ObjectType::prepareInterfaceTable() {
 
 void J3ObjectType::dumpInterfaceSlotDescriptors() {
 	J3InterfaceSlotDescriptor* slots = _interfaceSlotDescriptors;
-	fprintf(stderr, "slot descriptors of %ls\n", name()->cStr());
+	fprintf(stderr, "slot descriptors of %s\n", name()->cStr());
 	for(uint32_t i=0; i<J3VirtualTable::nbInterfaceMethodTable; i++) {
 		if(slots[i].nbMethods) {
 			fprintf(stderr, "  slot[%d]:\n", i);
 			for(uint32_t j=0; j<slots[i].nbMethods; j++)
-				fprintf(stderr, "    %ls::%ls %ls\n", 
+				fprintf(stderr, "    %s::%s %s\n", 
 								slots[i].methods[j]->cl()->name()->cStr(),
 								slots[i].methods[j]->name()->cStr(),
 								slots[i].methods[j]->sign()->cStr());
@@ -264,8 +264,8 @@ J3Method* J3Layout::findMethod(const vmkit::Name* name, const vmkit::Name* sign)
 	for(size_t i=0; i<nbMethods(); i++) {
 		J3Method* cur = methods()[i];
 
-		//printf("%ls - %ls\n", cur->name()->cStr(), cur->sign()->cStr());
-		//printf("%ls - %ls\n", name->cStr(), sign->cStr());
+		//printf("%s - %s\n", cur->name()->cStr(), cur->sign()->cStr());
+		//printf("%s - %s\n", name->cStr(), sign->cStr());
 		if(cur->name() == name && cur->sign() == sign) {
 			return cur;
 		}
@@ -277,8 +277,8 @@ J3Field* J3Layout::findField(const vmkit::Name* name, const J3Type* type) {
 	for(size_t i=0; i<nbFields(); i++) {
 		J3Field* cur = fields() + i;
 
-		//printf("Compare %ls - %ls\n", cur->name()->cStr(), cur->type()->name()->cStr());
-		//printf("  with  %ls - %ls\n", name->cStr(), type->name()->cStr());
+		//printf("Compare %s - %s\n", cur->name()->cStr(), cur->type()->name()->cStr());
+		//printf("  with  %s - %s\n", name->cStr(), type->name()->cStr());
 		if(cur->name() == name && cur->type() == type) {
 			return cur;
 		}
@@ -298,13 +298,13 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 
 J3ObjectHandle* J3Class::extractAttribute(J3Attribute* attr) {
 	if(attr)
-		J3::internalError(L"extract attribute");
+		J3::internalError("extract attribute");
 	else
 		return J3ObjectHandle::doNewArray(loader()->vm()->typeByte->getArray(), 0);
 }
 
 J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
-	//loader()->vm()->log(L"Lookup: %ls %ls in %ls (%d)", methName->cStr(), methSign->cStr(), name()->cStr(), nbVirtualMethods);
+	//loader()->vm()->log("Lookup: %s %s in %s (%d)", methName->cStr(), methSign->cStr(), name()->cStr(), nbVirtualMethods);
 	resolve();
 
 	J3Class* cur = this;
@@ -317,7 +317,7 @@ J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name*
 
 		if(cur == cur->super()) {
 			if(error)
-				J3::noSuchMethodError(L"no such method", this, name, sign);
+				J3::noSuchMethodError("no such method", this, name, sign);
 			else
 				return 0;
 		}
@@ -326,7 +326,7 @@ J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name*
 }
 
 J3Method* J3Class::findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
-	//loader()->vm()->log(L"Lookup: %ls %ls in %ls", methName->cStr(), methSign->cStr(), name()->cStr());
+	//loader()->vm()->log("Lookup: %s %s in %s", methName->cStr(), methSign->cStr(), name()->cStr());
 	resolve();
 
 	J3Class* cur = this;
@@ -339,7 +339,7 @@ J3Method* J3Class::findStaticMethod(const vmkit::Name* name, const vmkit::Name* 
 
 		if(cur == cur->super()) {
 			if(error)
-				J3::noSuchMethodError(L"no such method", this, name, sign);
+				J3::noSuchMethodError("no such method", this, name, sign);
 			else
 				return 0;
 		}
@@ -348,7 +348,7 @@ J3Method* J3Class::findStaticMethod(const vmkit::Name* name, const vmkit::Name* 
 }
 
 J3Field* J3Class::findVirtualField(const vmkit::Name* name, J3Type* type, bool error) {
-	//loader()->vm()->log(L"Lookup: %ls %ls in %ls", type->name()->cStr(), name->cStr(), J3Class::name()->cStr());
+	//loader()->vm()->log("Lookup: %s %s in %s", type->name()->cStr(), name->cStr(), J3Class::name()->cStr());
 	resolve();
 	J3Class* cur = this;
 
@@ -360,7 +360,7 @@ J3Field* J3Class::findVirtualField(const vmkit::Name* name, J3Type* type, bool e
 
 		if(cur == cur->super()) {
 			if(error)
-				J3::noSuchFieldError(L"no such field", this, name, type);
+				J3::noSuchFieldError("no such field", this, name, type);
 			else
 				return 0;
 		}
@@ -369,13 +369,13 @@ J3Field* J3Class::findVirtualField(const vmkit::Name* name, J3Type* type, bool e
 }
 
 J3Field* J3Class::findStaticField(const vmkit::Name* fname, J3Type* ftype, bool error) {
-	//fprintf(stderr, "Lookup static field %ls %ls::%ls\n", ftype->name()->cStr(), name()->cStr(), fname->cStr());
+	//fprintf(stderr, "Lookup static field %s %s::%s\n", ftype->name()->cStr(), name()->cStr(), fname->cStr());
 	resolve();
 
 	J3Field* res = staticLayout()->findField(fname, ftype);
 
 	if(!res)
-		J3::internalError(L"implement me");
+		J3::internalError("implement me");
 
 	return res;
 }
@@ -386,7 +386,7 @@ void J3Class::registerNative(const vmkit::Name* methName, const vmkit::Name* met
 	if(!res)
 		res = findMethod(methName, methSign);
 	if(!res || !J3Cst::isNative(res->access()))
-		J3::noSuchMethodError(L"unable to find native method", this, methName, methSign);
+		J3::noSuchMethodError("unable to find native method", this, methName, methSign);
 
 	res->registerNative(fnPtr);
 }
@@ -400,7 +400,7 @@ void J3Class::doInitialise() {
 	lock();
 	if(status < INITED) {
 		if(loader()->vm()->options()->debugIniting)
-			fprintf(stderr, "Initing: %ls\n", name()->cStr());
+			fprintf(stderr, "Initing: %s\n", name()->cStr());
 		status = INITED;
 
 		super()->initialise();
@@ -424,7 +424,7 @@ void J3Class::doInitialise() {
 
 				uint32_t length = reader.readU4();
 				if(length != 2)
-					J3::classFormatError(this, L"bad length for ConstantAttribute");
+					J3::classFormatError(this, "bad length for ConstantAttribute");
 				
 				uint32_t idx = reader.readU2();
 
@@ -435,7 +435,7 @@ void J3Class::doInitialise() {
 					case J3Cst::CONSTANT_Integer: staticInstance()->setInteger(cur, integerAt(idx)); break;
 					case J3Cst::CONSTANT_String:  staticInstance()->setObject(cur, stringAt(idx)); break;
 					default:
-						J3::classFormatError(this, L"invalid ctp entry ConstantAttribute with type %d", getCtpType(idx));
+						J3::classFormatError(this, "invalid ctp entry ConstantAttribute with type %d", getCtpType(idx));
 				}
 			}
 		}
@@ -452,7 +452,7 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 	lock();
 	if(status < RESOLVED) {
 		if(loader()->vm()->options()->debugResolve)
-			fprintf(stderr, "Resolving: %ls\n", name()->cStr());
+			fprintf(stderr, "Resolving: %s\n", name()->cStr());
 
 		status = RESOLVED;
 		readClassBytes(hiddenFields, nbHiddenFields);
@@ -472,7 +472,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 
 	uint32_t magic = reader.readU4();
 	if(magic != J3Cst::MAGIC)
-		J3::classFormatError(this, L"bad magic");
+		J3::classFormatError(this, "bad magic");
 			
 	/* uint16_t minor = */reader.readU2();
 	/* uint16_t major = */reader.readU2();
@@ -480,7 +480,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 	nbCtp     = reader.readU2();
 	
 	if(nbCtp < 1)
-		J3::classFormatError(this, L"zero-sized constant pool");
+		J3::classFormatError(this, "zero-sized constant pool");
 	
 	ctpTypes    = (uint8_t*)loader()->allocator()->allocate(nbCtp * sizeof(uint8_t));
 	ctpValues   = (uint32_t*)loader()->allocator()->allocate(nbCtp * sizeof(uint32_t));
@@ -519,7 +519,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 				ctpValues[i] |= reader.readU2();
 				break;
 			default:
-				J3::classFormatError(this, L"wrong constant pool entry type: %d", ctpTypes[i]);
+				J3::classFormatError(this, "wrong constant pool entry type: %d", ctpTypes[i]);
 		}
 	}
 	
@@ -528,7 +528,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 	J3ObjectType* self = classAt(reader.readU2());
 	
 	if(self != this)
-		J3::classFormatError(this, L"wrong class file (describes class %ls)", self->name()->cStr());
+		J3::classFormatError(this, "wrong class file (describes class %s)", self->name()->cStr());
 	
 	uint16_t superIdx = reader.readU2();
 
@@ -578,7 +578,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 			case 1:  pFields1[i1++] = f; break;
 			case 2:  pFields2[i2++] = f; break;
 			case 3:  pFields3[i3++] = f; break;
-			default: J3::internalError(L"should not happen");
+			default: J3::internalError("should not happen");
 		}
 	}
 
@@ -643,7 +643,7 @@ void J3Class::fillFields(J3Field** fields, size_t n) {
 		J3Field*  cur = fields[i];
 		J3Layout* layout = J3Cst::isStatic(fields[i]->access()) ? (J3Layout*)staticLayout() : this;
 
-		//fprintf(stderr, "   adding static field: %ls %ls::%ls\n", cur->type()->name()->cStr(), name()->cStr(), cur->name()->cStr());
+		//fprintf(stderr, "   adding static field: %s %s::%s\n", cur->type()->name()->cStr(), name()->cStr(), cur->name()->cStr());
 		cur->_offset = layout->structSize();
 		cur->_slot = layout->_nbFields;
 		layout->_structSize += 1 << fields[i]->type()->logSize();
@@ -715,7 +715,7 @@ J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
 	
 	if(res) {
 		if((res->access() & J3Cst::ACC_STATIC) != (access & J3Cst::ACC_STATIC))
-			J3::classFormatError(this, L"inconsistent use of virtual and static methods"); 
+			J3::classFormatError(this, "inconsistent use of virtual and static methods"); 
 		return res;
 	}
 
@@ -747,7 +747,7 @@ J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {
 
 	if(res) {
 		if((res->access() & J3Cst::ACC_STATIC) != (access & J3Cst::ACC_STATIC))
-			J3::classFormatError(this, L"inconstitent use of virtual and static field"); 
+			J3::classFormatError(this, "inconstitent use of virtual and static field"); 
 		return res;
 	}
 
@@ -803,7 +803,7 @@ const vmkit::Name*  J3Class::nameAt(uint16_t idx) {
 
 void J3Class::check(uint16_t idx, uint32_t id) {
 	if(idx > nbCtp || (id != -1 && ctpTypes[idx] != id))
-		J3::classFormatError(this, L"wrong constant pool type %d at index %d for %d", id, idx, nbCtp);
+		J3::classFormatError(this, "wrong constant pool type %d at index %d for %d", id, idx, nbCtp);
 }
 
 void J3Class::doNativeName() {
@@ -832,15 +832,15 @@ J3ArrayClass::J3ArrayClass(J3ClassLoader* loader, J3Type* component, const vmkit
 	if(!name) {
 		const vmkit::Name* compName = component->name();
 		uint32_t           len = compName->length();
-		wchar_t            buf[len + 16];
+		char               buf[len + 16];
 		uint32_t           pos = 0;
 
-		//printf("     build array of %ls\n", component->name()->cStr());
+		//printf("     build array of %s\n", component->name()->cStr());
 		buf[pos++] = J3Cst::ID_Array;
 	
 		if(component->isClass())
 			buf[pos++] = J3Cst::ID_Classname;
-		memcpy(buf+pos, compName->cStr(), len * sizeof(wchar_t));
+		memcpy(buf+pos, compName->cStr(), len * sizeof(char));
 		pos += len;
 		if(component->isClass())
 			buf[pos++] = J3Cst::ID_End;

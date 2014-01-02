@@ -25,13 +25,13 @@ void J3TypeChecker::dump() {
 	fprintf(stderr, "    offset: %u\n", offset);
 	for(uint32_t i=0; i<cacheOffset; i++) {
 		if(display[i])
-			fprintf(stderr, "    display[%u]: %ls\n", i, display[i]->type()->name()->cStr());
+			fprintf(stderr, "    display[%u]: %s\n", i, display[i]->type()->name()->cStr());
 	}
 	for(uint32_t i=0; i<nbSecondaryTypes; i++) {
-		fprintf(stderr, "    secondary[%u]: %ls\n", i, secondaryTypes[i]->type()->name()->cStr());
+		fprintf(stderr, "    secondary[%u]: %s\n", i, secondaryTypes[i]->type()->name()->cStr());
 	}
 	if(display[cacheOffset])
-		fprintf(stderr, "    cache: %ls\n", display[cacheOffset]->type()->name()->cStr());
+		fprintf(stderr, "    cache: %s\n", display[cacheOffset]->type()->name()->cStr());
 }
 
 /*
@@ -136,7 +136,7 @@ J3VirtualTable* J3VirtualTable::create(J3ArrayClass* cl) {
 			isSecondary = 1;
 		super = baseClass->super()->getArray(dim);
 		super->resolve();
-		//printf("%ls super is %ls (%d)\n", cl->name()->cStr(), super->name()->cStr(), isSecondary);
+		//printf("%s super is %ls (%d)\n", cl->name()->cStr(), super->name()->cStr(), isSecondary);
 
 		uint32_t n = baseClass->vt()->checker()->nbSecondaryTypes;
 		secondaries = (J3Type**)alloca(n*sizeof(J3Type*));
@@ -171,17 +171,17 @@ void* J3VirtualTable::operator new(size_t unused, vmkit::BumpAllocator* allocato
 J3VirtualTable::J3VirtualTable(J3Type* type, J3Type* super, J3Type** interfaces, uint32_t nbInterfaces, bool isSecondary) {
 	_type = type;
 
-	//	printf("***   Building the vt of %ls based on %ls at %p\n", type->name()->cStr(), super->name()->cStr(), this);
+	//	printf("***   Building the vt of %s based on %ls at %p\n", type->name()->cStr(), super->name()->cStr(), this);
 
 	if(super == type) {
 		checker()->offset = 0;
 		checker()->display[checker()->offset] = this;
 		if(nbInterfaces)
-			J3::internalError(L"a root J3VirtualTable should not have interfaces");
+			J3::internalError("a root J3VirtualTable should not have interfaces");
 	} else {
 		uint32_t parentDisplayLength = super->vt()->checker()->offset + 1;
 
-		//printf("%ls (%p) secondary: %p %p (%d)\n", type->name()->cStr(), this, checker()->secondaryTypes, checker()->display[6], parentDisplayLength);
+		//printf("%s (%p) secondary: %p %p (%d)\n", type->name()->cStr(), this, checker()->secondaryTypes, checker()->display[6], parentDisplayLength);
 
 		if(parentDisplayLength >= J3TypeChecker::cacheOffset)
 			isSecondary = 1;
@@ -191,7 +191,7 @@ J3VirtualTable::J3VirtualTable(J3Type* type, J3Type* super, J3Type** interfaces,
 		checker()->nbSecondaryTypes = super->vt()->checker()->nbSecondaryTypes + nbInterfaces + isSecondary;
 		checker()->secondaryTypes = (J3VirtualTable**)super->loader()->allocator()->allocate(checker()->nbSecondaryTypes*sizeof(J3VirtualTable*));
 		
-		//printf("%ls: %d - %d %d\n", type->name()->cStr(), isSecondary, parentDisplayLength, J3TypeChecker::displayLength);
+		//printf("%s: %d - %d %d\n", type->name()->cStr(), isSecondary, parentDisplayLength, J3TypeChecker::displayLength);
 		if(isSecondary) {
 			checker()->offset = J3TypeChecker::cacheOffset;
 			checker()->secondaryTypes[0] = this;
@@ -255,7 +255,7 @@ bool J3VirtualTable::isAssignableTo(J3VirtualTable* parent) {
 }
 
 void J3VirtualTable::dump() {
-	fprintf(stderr, "VirtualTable: %s%ls (%p)\n", 
+	fprintf(stderr, "VirtualTable: %s%s (%p)\n", 
 					type()->isLayout() && !type()->isClass() ? "static_" : "",
 					type()->name()->cStr(), this);
 	checker()->dump();
@@ -290,11 +290,11 @@ J3Object* J3Object::doNew(J3Class* cl) {
 }
 
 void J3Object::monitorEnter(J3Object* obj) {
-	J3::internalError(L"implement me: monitorenter");
+	J3::internalError("implement me: monitorenter");
 }
 
 void J3Object::monitorExit(J3Object* obj) {
-	J3::internalError(L"implement me: monitorexit");
+	J3::internalError("implement me: monitorexit");
 }
 
 uint32_t J3Object::hashCode() {
@@ -354,7 +354,7 @@ J3Monitor* J3Object::monitor() {
 				monitor->prepare(this, record->header, record); 
 			} else {            /* not locked at all */
 				if((header & 7) != 1)
-					J3::internalError(L"should not happen");
+					J3::internalError("should not happen");
 				monitor->prepare(this, header, 0);
 			}
 			_header = (uintptr_t)monitor | 2;

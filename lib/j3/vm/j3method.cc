@@ -52,14 +52,14 @@ void J3Method::markCompiled(llvm::Function* llvmFunction, void* fnPtr) {
 
 void* J3Method::fnPtr(bool withCaller) {
 	if(!isCompiled()) {
-		//fprintf(stderr, "materializing: %ls::%ls%ls\n", this, cl()->name()->cStr(), name()->cStr(), sign()->cStr());
+		//fprintf(stderr, "materializing: %s::%s%s\n", this, cl()->name()->cStr(), name()->cStr(), sign()->cStr());
 		if(!isResolved()) {
 			if(cl()->loader()->vm()->options()->debugLinking)
-				fprintf(stderr, "linking %ls::%ls\n", cl()->name()->cStr(), name()->cStr());
+				fprintf(stderr, "linking %s::%s\n", cl()->name()->cStr(), name()->cStr());
 
 			cl()->initialise();
 			if(!isResolved())
-				J3::noSuchMethodError(L"unable to find method", cl(), name(), sign());
+				J3::noSuchMethodError("unable to find method", cl(), name(), sign());
 		}
 
 		J3CodeGen::translate(this, 1, withCaller);
@@ -94,20 +94,20 @@ void* J3Method::getSymbolAddress() {
 
 void J3Method::setResolved(uint32_t index) { 
 	if(isResolved())
-		J3::internalError(L"trying to re-resolve a resolved method, should not happen");
+		J3::internalError("trying to re-resolve a resolved method, should not happen");
 	_index = index; 
 }
 
 void J3Method::postInitialise(uint32_t access, J3Attributes* attributes) {
 	if((access & J3Cst::ACC_STATIC) != (_access & J3Cst::ACC_STATIC))
-		J3::classFormatError(cl(), L"trying to modify the static flag of %ls", cl()->name()->cStr());
+		J3::classFormatError(cl(), "trying to modify the static flag of %s", cl()->name()->cStr());
 	_access = access;
 	_attributes = attributes;
 }
 
 J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 	if(cl()->loader()->vm()->options()->debugLinking)
-		fprintf(stderr, "virtual linking %ls::%ls\n", cl()->name()->cStr(), name()->cStr());
+		fprintf(stderr, "virtual linking %s::%s\n", cl()->name()->cStr(), name()->cStr());
 	vmkit::Names* n = cl()->loader()->vm()->names();
 	return obj->vt()->type()->asObjectType()->findVirtualMethod(name(), sign());
 }
@@ -117,7 +117,7 @@ J3Value J3Method::internalInvoke(bool statically, J3Value* inArgs) {
 
 	void* fn = fnPtr(1);
 
-	//fprintf(stderr, "Internal invoke %ls::%ls%ls\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
+	//fprintf(stderr, "Internal invoke %s::%s%s\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
 	
 	if(!methodType()->llvmSignature()->caller())
 		J3CodeGen::translate(this, 0, 1);
@@ -272,11 +272,11 @@ char* J3Method::llvmStubName(J3Class* from) {
 }
 
 void J3Method::dump() {
-	printf("Method: %ls %ls::%ls\n", sign()->cStr(), cl()->name()->cStr(), name()->cStr());
+	printf("Method: %s %s::%s\n", sign()->cStr(), cl()->name()->cStr(), name()->cStr());
 }
 
 void J3Method::registerNative(void* fnPtr) {
 	if(_nativeFnPtr)
-		J3::noSuchMethodError(L"unable to dynamically modify a native function", cl(), name(), sign());
+		J3::noSuchMethodError("unable to dynamically modify a native function", cl(), name(), sign());
 	_nativeFnPtr = fnPtr;
 }

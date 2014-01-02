@@ -11,6 +11,7 @@
 #include "j3/j3trampoline.h"
 #include "j3/j3lib.h"
 #include "j3/j3field.h"
+#include "j3/j3utf16.h"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -104,33 +105,33 @@ void J3::run() {
 
 	nbArrayInterfaces    = 2;
 	arrayInterfaces      = (J3Type**)initialClassLoader->allocator()->allocate(2*sizeof(J3Type*));
-	arrayInterfaces[0]   = z_class(L"java/lang/Cloneable");
-	arrayInterfaces[1]   = z_class(L"java/io/Serializable");
+	arrayInterfaces[0]   = z_class("java/lang/Cloneable");
+	arrayInterfaces[1]   = z_class("java/io/Serializable");
 
 	charArrayClass           = typeChar->getArray();
-	objectClass              = z_class(L"java/lang/Object");
+	objectClass              = z_class("java/lang/Object");
 	
-	stringClass              = z_class(L"java/lang/String");
-	stringClassInit          = z_method(0, stringClass, initName, names()->get(L"([CZ)V"));
-	stringClassValue         = z_field(0, stringClass, L"value", charArrayClass);
+	stringClass              = z_class("java/lang/String");
+	stringClassInit          = z_method(0, stringClass, initName, names()->get("([CZ)V"));
+	stringClassValue         = z_field(0, stringClass, "value", charArrayClass);
 
-	classClass               = z_class(L"java/lang/Class");
-	J3Field hf(J3Cst::ACC_PRIVATE, names()->get(L"** vmData **"), typeLong);
+	classClass               = z_class("java/lang/Class");
+	J3Field hf(J3Cst::ACC_PRIVATE, names()->get("** vmData **"), typeLong);
 	classClass->resolve(&hf, 1);
-	classClassInit           = z_method(0, classClass, initName, names()->get(L"()V"));
+	classClassInit           = z_method(0, classClass, initName, names()->get("()V"));
 	classClassVMData         = classClass->findVirtualField(hf.name(), hf.type());
 
-	threadClass              = z_class(L"java/lang/Thread");
-	threadClassRun           = z_method(0, threadClass, L"run", L"()V");
+	threadClass              = z_class("java/lang/Thread");
+	threadClassRun           = z_method(0, threadClass, names()->get("run"), names()->get("()V"));
 	threadClassVMData        = initialClassLoader->loadClass(names()->get("java/lang/Thread"))
-		->findVirtualField(names()->get(L"eetop"), typeLong);
+		->findVirtualField(names()->get("eetop"), typeLong);
 
-	fieldClass               = z_class(L"java/lang/reflect/Field");
+	fieldClass               = z_class("java/lang/reflect/Field");
 	fieldClassInit           = z_method(0, fieldClass, initName, 
-																			names()->get(L"(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
-	fieldClassClass          = z_field(0, fieldClass, L"clazz", classClass);
-	fieldClassSlot           = z_field(0, fieldClass, L"slot", typeInteger);
-	fieldClassAccess         = z_field(0, fieldClass, L"modifiers", typeInteger);
+																			names()->get("(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
+	fieldClassClass          = z_field(0, fieldClass, "clazz", classClass);
+	fieldClassSlot           = z_field(0, fieldClass, "slot", typeInteger);
+	fieldClassAccess         = z_field(0, fieldClass, "modifiers", typeInteger);
 
 #if 0
 		J3Field*         fieldClassSlot;
@@ -165,11 +166,17 @@ J3ObjectHandle* J3::nameToString(const vmkit::Name* name) {
 	J3ObjectHandle* res = nameToCharArrays[name];
 	if(!res) {
 		J3ObjectHandle* prev = J3Thread::get()->tell();
-		res = initialClassLoader->globalReferences()->add(J3ObjectHandle::doNewArray(charArrayClass, name->length()));
+		uint16_t buf[name->length()];
+		size_t pos = 0;
+		J3Utf16Converter converter(name);
+
+		while(!converter.isEof())
+			buf[pos++] = converter.nextUtf16();
+
+		res = initialClassLoader->globalReferences()->add(J3ObjectHandle::doNewArray(charArrayClass, pos));
+		res->setRegionChar(0, buf, 0, pos);
 		J3Thread::get()->restore(prev);
 
-		for(uint32_t i=0; i<name->length(); i++)
-			res->setCharAt(i, name->cStr()[i]);
 		nameToCharArrays[name] = res;
 	}
 	pthread_mutex_unlock(&stringsMutex);
@@ -181,58 +188,58 @@ J3ObjectHandle* J3::utfToString(const char* name) {
 }
 
 void J3::classCastException() {
-	internalError(L"implement me: class cast exception");
+	internalError("implement me: class cast exception");
 }
 
 void J3::nullPointerException() {
-	internalError(L"implement me: null pointer exception");
+	internalError("implement me: null pointer exception");
 }
 
 void J3::classNotFoundException(const vmkit::Name* name) {
-	internalError(L"ClassNotFoundException: %ls", name);
+	internalError("ClassNotFoundException: %s", name);
 }
 
 void J3::noClassDefFoundError(const vmkit::Name* name) {
-	internalError(L"NoClassDefFoundError: %ls", name);
+	internalError("NoClassDefFoundError: %s", name);
 }
 
-void J3::noSuchMethodError(const wchar_t* msg, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) {
-	internalError(L"%ls: %ls::%ls %ls", msg, cl->name()->cStr(), name->cStr(), sign->cStr());
+void J3::noSuchMethodError(const char* msg, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) {
+	internalError("%s: %s::%s %s", msg, cl->name()->cStr(), name->cStr(), sign->cStr());
 }
 
-void J3::noSuchFieldError(const wchar_t* msg, J3Class* cl, const vmkit::Name* name, J3Type* type) {
-	internalError(L"%ls: %ls::%ls %ls", msg, cl->name()->cStr(), name->cStr(), type->name()->cStr());
+void J3::noSuchFieldError(const char* msg, J3Class* cl, const vmkit::Name* name, J3Type* type) {
+	internalError("%s: %s::%s %s", msg, cl->name()->cStr(), name->cStr(), type->name()->cStr());
 }
 
-void J3::classFormatError(J3Class* cl, const wchar_t* reason, ...) {
-	wchar_t buf[65536];
+void J3::classFormatError(J3Class* cl, const char* reason, ...) {
+	char buf[65536];
 	va_list va;
 	va_start(va, reason);
-	vswprintf(buf, 65536, reason, va);
+	vsnprintf(buf, 65536, reason, va);
 	va_end(va);
-	internalError(L"ClassFormatError in '%ls' caused by '%ls'", cl->name()->cStr(), buf);
+	internalError("ClassFormatError in '%s' caused by '%s'", cl->name()->cStr(), buf);
 }
 
 void J3::linkageError(J3Method* method) {
-	internalError(L"unable to find native method '%ls::%ls%ls'", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
+	internalError("unable to find native method '%s::%s%s'", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
 }
 
 void J3::arrayStoreException() {
-	internalError(L"array store exception");
+	internalError("array store exception");
 }
 
 void J3::arrayIndexOutOfBoundsException() {
-	internalError(L"array bound check exception");
+	internalError("array bound check exception");
 }
 
 void J3::illegalMonitorStateException() {
-	internalError(L"illegal monitor state exception");
+	internalError("illegal monitor state exception");
 }
 
-void J3::vinternalError(const wchar_t* msg, va_list va) {
-	wchar_t buf[65536];
-	vswprintf(buf, 65536, msg, va);
-	fprintf(stderr, "Internal error: %ls\n", buf);
+void J3::vinternalError(const char* msg, va_list va) {
+	char buf[65536];
+	vsnprintf(buf, 65536, msg, va);
+	fprintf(stderr, "Internal error: %s\n", buf);
 	printStackTrace();
 	//	exit(1);
 	abort();
@@ -246,7 +253,7 @@ void J3::printStackTrace() {
 
 		if(sf) {
 			J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
-			fprintf(stderr, "    in %ls %ls::%ls index %d\n", m->sign()->cStr(), m->cl()->name()->cStr(), m->name()->cStr(),
+			fprintf(stderr, "    in %s %s::%s index %d\n", m->sign()->cStr(), m->cl()->name()->cStr(), m->name()->cStr(),
 							sf->sourceIndex());
 		} else {
 			Dl_info info;

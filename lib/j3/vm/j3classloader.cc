@@ -84,20 +84,16 @@ J3Class* J3ClassLoader::defineClass(const vmkit::Name* name, J3ClassBytes* bytes
 }
 
 J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
-	J3::internalError(L"implement me: loadClass from a Java class loader");
-}
-
-J3Class* J3ClassLoader::loadClass(const wchar_t* name) {
-	return loadClass(vm()->names()->get(name));
+	J3::internalError("implement me: loadClass from a Java class loader");
 }
 
 void J3ClassLoader::wrongType(J3Class* from, const vmkit::Name* type) {
-	J3::classFormatError(from, L"wrong type: %ls", type->cStr());
+	J3::classFormatError(from, "wrong type: %s", type->cStr());
 }
 
 J3Type* J3ClassLoader::getTypeInternal(J3Class* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend) {
 	J3Type*        res  = 0;
-	const wchar_t* type = typeName->cStr();
+	const char*    type = typeName->cStr();
 	uint32_t       len  = typeName->length();
 	uint32_t       pos  = start;
 	uint32_t       prof = 0;
@@ -120,7 +116,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3Class* from, const vmkit::Name* typeNam
 			case J3Cst::ID_Classname: 
 				{ 
 					uint32_t start = ++pos;
-					wchar_t buf[len + 1 - start], c;
+					char buf[len + 1 - start], c;
 					
 					memset(buf, 0, len + 1 - pos);
 					
@@ -162,7 +158,7 @@ J3Type* J3ClassLoader::getType(J3Class* from, const vmkit::Name* type) {
 		if(end != type->length())
 			wrongType(from, type);
 
-		//printf("Analyse %ls => %ls\n", type->cStr(), res->name()->cStr());
+		//printf("Analyse %s => %ls\n", type->cStr(), res->name()->cStr());
 		
 		pthread_mutex_lock(&_mutexTypes);
 		types[type] = res;
@@ -225,16 +221,6 @@ J3Method* J3ClassLoader::method(uint16_t access, const vmkit::Name* clName, cons
 	return method(access, loadClass(clName), name, sign);
 }
 
-J3Method* J3ClassLoader::method(uint16_t access, const wchar_t* clName, const wchar_t* name, const wchar_t* sign) {
-	vmkit::Names* names = vm()->names();
-	return method(access, names->get(clName), names->get(name), names->get(sign));
-}
-
-J3Method* J3ClassLoader::method(uint16_t access, J3Class* cl, const wchar_t* name, const wchar_t* sign) {
-	vmkit::Names* names = vm()->names();
-	return method(access, cl, names->get(name), names->get(sign));
-}
-
 bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {
 	return lhs->name() < rhs->name()
 		|| (lhs->name() == rhs->name()
@@ -261,13 +247,13 @@ J3InitialClassLoader::J3InitialClassLoader(J3* v, const char* rtjar, vmkit::Bump
 	if (bytes) {
 		archive = new(allocator()) J3ZipArchive(bytes, allocator());
 		if(!archive) {
-			J3::internalError(L"unable to find system archive");
+			J3::internalError("unable to find system archive");
 		}
 	} else 
-		J3::internalError(L"unable to find system archive");
+		J3::internalError("unable to find system archive");
 
 	if(J3Lib::loadSystemLibraries(&nativeLibraries) == -1)
-		J3::internalError(L"unable to find java library");
+		J3::internalError("unable to find java library");
 }
 
 J3Class* J3InitialClassLoader::loadClass(const vmkit::Name* name) {
@@ -278,7 +264,7 @@ J3Class* J3InitialClassLoader::loadClass(const vmkit::Name* name) {
 
 	char tmp[name->length()+16];
 		
-	//printf("L: %ls\n", name->cStr());
+	//printf("L: %s\n", name->cStr());
 	for(int i=0; i<name->length(); i++) {
 		char c = name->cStr()[i] & 0xff;
 		tmp[i] = c == '.' ? '/' : c;

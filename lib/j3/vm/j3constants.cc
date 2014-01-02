@@ -11,13 +11,13 @@ using namespace j3;
 char    J3Cst::nativePrefix[] = "Java_";
 
 const vmkit::Name* J3Cst::rewrite(J3* vm, const vmkit::Name* clName, const vmkit::Name* orig) {
-	wchar_t res[clName->length() + orig->length() + 3];
+	char res[clName->length() + orig->length() + 3];
 
 	res[0] = ID_Left;
 	res[1] = ID_Classname;
-	memcpy(res+2, clName->cStr(), sizeof(wchar_t)*clName->length());
+	memcpy(res+2, clName->cStr(), sizeof(char)*clName->length());
 	res[2 + clName->length()] = ID_End;
-	memcpy(res+3+clName->length(), orig->cStr()+1, sizeof(wchar_t)*(orig->length()-1));
+	memcpy(res+3+clName->length(), orig->cStr()+1, sizeof(char)*(orig->length()-1));
 	res[2 + clName->length() + orig->length()] = 0;
 
 	return vm->names()->get(res);

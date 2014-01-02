@@ -24,21 +24,21 @@ namespace j3 {
 		static const int MAGIC = 0xcafebabe;
 
 #define onJavaConstantNames(_)																					\
-		_(clinitName,                 L"<clinit>")													\
-		_(clinitSign,                 L"()V")																\
-		_(initName,                   L"<init>")														\
+		_(clinitName,                 "<clinit>")														\
+		_(clinitSign,                 "()V")																\
+		_(initName,                   "<init>")															\
 																																				\
-		_(codeAttribute,              L"Code")															\
-		_(constantValueAttribute,     L"ConstantValue")											\
-		_(annotationsAttribute,       L"RuntimeVisibleAnnotations")					\
-		_(exceptionsAttribute,        L"Exceptions")												\
-		_(lineNumberTableAttribute,   L"LineNumberTable")										\
-		_(innerClassesAttribute,      L"InnerClasses")											\
-		_(sourceFileAttribute,        L"SourceFile")												\
-		_(signatureAttribute,         L"Signature")													\
-		_(enclosingMethodAttribute,   L"EnclosingMethod")										\
-		_(paramAnnotationsAttribute,  L"RuntimeVisibleParameterAnnotations") \
-		_(annotationDefaultAttribute, L"AnnotationDefault")
+		_(codeAttribute,              "Code")																\
+		_(constantValueAttribute,     "ConstantValue")											\
+		_(annotationsAttribute,       "RuntimeVisibleAnnotations")					\
+		_(exceptionsAttribute,        "Exceptions")													\
+		_(lineNumberTableAttribute,   "LineNumberTable")										\
+		_(innerClassesAttribute,      "InnerClasses")												\
+		_(sourceFileAttribute,        "SourceFile")													\
+		_(signatureAttribute,         "Signature")													\
+		_(enclosingMethodAttribute,   "EnclosingMethod")										\
+		_(paramAnnotationsAttribute,  "RuntimeVisibleParameterAnnotations") \
+		_(annotationDefaultAttribute, "AnnotationDefault")
 
 		static char    nativePrefix[];
 
@@ -79,20 +79,20 @@ namespace j3 {
 
 #undef DO_IS
 
-		static const wchar_t ID_Void =      'V';
-		static const wchar_t ID_Byte =      'B';
-		static const wchar_t ID_Char =      'C';
-		static const wchar_t ID_Double =    'D';
-		static const wchar_t ID_Float =     'F';
-		static const wchar_t ID_Integer =   'I';
-		static const wchar_t ID_Long =      'J';
-		static const wchar_t ID_Classname = 'L';
-		static const wchar_t ID_End =       ';';
-		static const wchar_t ID_Short =     'S';
-		static const wchar_t ID_Boolean =   'Z';
-		static const wchar_t ID_Array =     '[';
-		static const wchar_t ID_Left =      '(';
-		static const wchar_t ID_Right =     ')';
+		static const char ID_Void =        'V';
+		static const char ID_Byte =        'B';
+		static const char ID_Char =        'C';
+		static const char ID_Double =      'D';
+		static const char ID_Float =       'F';
+		static const char ID_Integer =     'I';
+		static const char ID_Long =        'J';
+		static const char ID_Classname =   'L';
+		static const char ID_End =         ';';
+		static const char ID_Short =       'S';
+		static const char ID_Boolean =     'Z';
+		static const char ID_Array =       '[';
+		static const char ID_Left =        '(';
+		static const char ID_Right =       ')';
 
 		static const uint8_t T_BOOLEAN =    4;
 		static const uint8_t T_CHAR =       5;

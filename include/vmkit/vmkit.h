@@ -33,7 +33,7 @@ namespace vmkit {
 
 		void                            addSymbol(llvm::GlobalValue* gv);
 
-		static void                     defaultInternalError(const wchar_t* msg, va_list va) __attribute__((noreturn));
+		static void                     defaultInternalError(const char* msg, va_list va) __attribute__((noreturn));
 	protected:
 		void* operator new(size_t n, BumpAllocator* allocator);
 
@@ -62,13 +62,13 @@ namespace vmkit {
 		llvm::GlobalValue*         introspectGlobalValue(llvm::Module* dest, const char* name);
 		llvm::Type*                introspectType(const char* name);
 
-		void log(const wchar_t* msg, ...);
+		void log(const char* msg, ...);
 
-		virtual void vinternalError(const wchar_t* msg, va_list va) __attribute__((noreturn));
+		virtual void vinternalError(const char* msg, va_list va) __attribute__((noreturn));
 		virtual void sigsegv(uintptr_t addr) __attribute__((noreturn));
 		virtual void sigend() __attribute__((noreturn));
 
-		static void internalError(const wchar_t* msg, ...) __attribute__((noreturn));		
+		static void internalError(const char* msg, ...) __attribute__((noreturn));		
 		static void throwException(void* obj) __attribute__((noreturn));
 	};
 };

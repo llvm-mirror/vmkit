@@ -5,7 +5,7 @@ using namespace j3;
 
 J3Attribute* J3Attributes::attribute(size_t n) { 
 	if(n >= _nbAttributes)
-		J3::internalError(L"should not happen");
+		J3::internalError("should not happen");
 	return _attributes + n; 
 }
 

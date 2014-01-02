@@ -23,7 +23,7 @@
 using namespace vmkit;
 
 void* Symbol::getSymbolAddress() {
-	Thread::get()->vm()->internalError(L"implement me: getSymbolAddress");
+	Thread::get()->vm()->internalError("implement me: getSymbolAddress");
 }
 
 void* CompilationUnit::operator new(size_t n, BumpAllocator* allocator) {
@@ -54,7 +54,7 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const c
 		.create();
 
 	if (!ee())
-		Thread::get()->vm()->internalError(L"Error while creating execution engine: %s\n", err.c_str());
+		Thread::get()->vm()->internalError("Error while creating execution engine: %s\n", err.c_str());
 
 	ee()->finalizeObject();
 
@@ -125,7 +125,7 @@ Symbol* CompilationUnit::getSymbol(const char* id) {
 	if(it == _symbolTable.end()) {
 		uint8_t* addr = (uint8_t*)dlsym(SELF_HANDLE, id);
 		if(!addr)
-			Thread::get()->vm()->internalError(L"unable to resolve native symbol: %s", id);
+			Thread::get()->vm()->internalError("unable to resolve native symbol: %s", id);
 		res = new(allocator()) vmkit::NativeSymbol(addr);
 		size_t len = strlen(id);
 		char* buf = (char*)allocator()->allocate(len+1);
@@ -150,7 +150,7 @@ void CompilationUnit::compileModule(llvm::Module* module) {
 	vmkit::Safepoint* sf = Safepoint::get(this, module);
 
 	if(!sf)
-		vm()->internalError(L"unable to find safepoints");
+		vm()->internalError("unable to find safepoints");
 		
 	while(sf->addr()) {
 		sf->setUnit(this);

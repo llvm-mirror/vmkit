@@ -119,7 +119,7 @@ void J3ExceptionTable::read(J3Reader* reader, uint32_t codeLength) {
 
 void J3ExceptionTable::dump(bool verbose) {
 	if(nbEntries) {
-		fprintf(stderr, "    ExceptionTable of %ls::%ls%ls:\n", 
+		fprintf(stderr, "    ExceptionTable of %s::%s%s:\n", 
 						codeGen->method->cl()->name()->cStr(), 
 						codeGen->method->name()->cStr(),
 						codeGen->method->sign()->cStr());

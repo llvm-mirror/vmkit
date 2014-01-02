@@ -8,19 +8,19 @@
 
 namespace vmkit {
 	class Name : public PermanentObject {
-		uint32_t                      _length;
-		wchar_t                       _content[1];
+		size_t  _length;
+		char    _content[1];
 
 	public:
 		void* operator new(size_t unused, BumpAllocator* allocator, size_t length);
 
-		Name(uint32_t length, const wchar_t* content);
+		Name(size_t length, const char* content);
 
-		const wchar_t* cStr() const {
+		const char* cStr() const {
 			return _content;
 		}
 
-		uint32_t length() const {
+		size_t length() const {
 			return _length;
 		}
 
@@ -31,14 +31,15 @@ namespace vmkit {
 		BumpAllocator*  allocator;
 		pthread_mutex_t mutex;
 
-		std::map<const wchar_t*, const Name*, Util::wchar_t_less_t, 
-						 StdAllocator<std::pair<const wchar_t*, const Name*> > > names;
+		std::map<const char*, const Name*, Util::char_less_t, 
+						 StdAllocator<std::pair<const char*, const Name*> > > names;
 
+		const Name*   get(const char* s, size_t length);
 	public:
 		Names(BumpAllocator* allocator);
 
-		const Name*   get(const wchar_t* s);
-		const Name*   get(const char* s, size_t start=0, size_t length=-1);
+		const Name*   get(const char* s);
+		const Name*   get(const char* s, size_t start, size_t length);
 		const Name*   get(char c);
 
 	};
