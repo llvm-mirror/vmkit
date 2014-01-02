@@ -860,12 +860,18 @@ J3ArrayClass::J3ArrayClass(J3ClassLoader* loader, J3Type* component, const vmkit
 	}
 }
 
+J3Method* J3ArrayClass::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
+	return loader()->vm()->objectClass->findVirtualMethod(name, sign, error);
+}
+
+J3Method* J3ArrayClass::findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
+	return loader()->vm()->objectClass->findStaticMethod(name, sign, error);
+}
+
 void J3ArrayClass::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 	lock();
 	if(status < RESOLVED) {
 		status = RESOLVED;
-		J3Class* objectClass = loader()->vm()->objectClass;
-		objectClass->resolve();
 		_vt = J3VirtualTable::create(this);
 		prepareInterfaceTable();
 	}

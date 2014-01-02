@@ -29,7 +29,7 @@ J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
 			
 }
 
-J3Method::J3Method(uint16_t access, J3ObjectType* cl, const vmkit::Name* name, const vmkit::Name* sign) :
+J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) :
 	_selfCode(this) {
 	_access = access;
 	_cl = cl;
@@ -225,7 +225,7 @@ J3Value J3Method::invokeVirtual(J3ObjectHandle* handle, ...) {
 	return res;
 }
 
-J3MethodType* J3Method::methodType(J3ObjectType* from) {
+J3MethodType* J3Method::methodType(J3Class* from) {
 	if(!_methodType) {
 		J3ClassLoader*     loader = cl()->loader();
 		J3Type*            args[1+sign()->length()];
@@ -251,7 +251,7 @@ J3MethodType* J3Method::methodType(J3ObjectType* from) {
 	return _methodType;
 }
 
-void J3Method::buildLLVMNames(J3ObjectType* from) {
+void J3Method::buildLLVMNames(J3Class* from) {
 	const char* prefix = "stub_";
 	uint32_t plen = 5;
 	J3Mangler mangler(from);

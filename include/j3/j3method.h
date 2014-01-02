@@ -58,7 +58,7 @@ namespace j3 {
 	public:
 		J3MethodCode                 _selfCode;
 		uint16_t                     _access;
-		J3ObjectType*                _cl;
+		J3Class*                     _cl;
 		const vmkit::Name*           _name;
 		const vmkit::Name*           _sign;
 		J3MethodType*                _methodType;
@@ -76,9 +76,9 @@ namespace j3 {
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, va_list va);
 		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* args);
 		J3Value            internalInvoke(bool statically, J3Value* args);
-		void               buildLLVMNames(J3ObjectType* from);
+		void               buildLLVMNames(J3Class* from);
 	public:
-		J3Method(uint16_t access, J3ObjectType* cl, const vmkit::Name* name, const vmkit::Name* sign);
+		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
 
 		uint32_t            slot() { return _slot; }
 
@@ -108,10 +108,10 @@ namespace j3 {
 
 		J3Attributes*       attributes() const { return _attributes; }
 		uint16_t            access() const { return _access; }
-		J3ObjectType*       cl()     const { return _cl; }
+		J3Class*            cl()     const { return _cl; }
 		const vmkit::Name*  name()   const { return _name; }
 		const vmkit::Name*  sign()   const { return _sign; }
-		J3MethodType*       methodType(J3ObjectType* from=0);
+		J3MethodType*       methodType(J3Class* from=0);
 
 		void                registerNative(void* ptr);
 

@@ -85,11 +85,11 @@ J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
 	J3::internalError("implement me: loadClass from a Java class loader");
 }
 
-void J3ClassLoader::wrongType(J3ObjectType* from, const vmkit::Name* type) {
+void J3ClassLoader::wrongType(J3Class* from, const vmkit::Name* type) {
 	J3::classFormatError(from, "wrong type: %s", type->cStr());
 }
 
-J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend) {
+J3Type* J3ClassLoader::getTypeInternal(J3Class* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend) {
 	J3Type*        res  = 0;
 	const char*    type = typeName->cStr();
 	uint32_t       len  = typeName->length();
@@ -166,21 +166,26 @@ J3Type* J3ClassLoader::getType(J3Class* from, const vmkit::Name* type) {
 	return res;
 }
 
-J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* cl, const vmkit::Name* name, const vmkit::Name* sign) {
-	J3Method method(access, cl, name, sign), *res;
+J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* type, const vmkit::Name* name, const vmkit::Name* sign) {
+	if(type->isArrayClass())
+		return method(access, vm()->objectClass, name, sign);
+	else {
+		J3Class* cl = type->asClass();
+		J3Method method(access, cl, name, sign), *res;
 
-	pthread_mutex_lock(&_mutexMethods);
-	std::map<J3Method*, J3Method*>::iterator it = methods.find(&method);
+		pthread_mutex_lock(&_mutexMethods);
+		std::map<J3Method*, J3Method*>::iterator it = methods.find(&method);
 
-	if(it == methods.end()) {
-		res = new(allocator()) J3Method(access, cl, name, sign);
-		methods[res] = res;
-	} else {
-		res = it->second;
+		if(it == methods.end()) {
+			res = new(allocator()) J3Method(access, cl, name, sign);
+			methods[res] = res;
+		} else {
+			res = it->second;
+		}
+		pthread_mutex_unlock(&_mutexMethods);
+
+		return res;
 	}
-	pthread_mutex_unlock(&_mutexMethods);
-
-	return res;
 }
 
 bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {

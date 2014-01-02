@@ -442,6 +442,14 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
 																						 llvmFunctionType(type)->getPointerTo());
 
+
+	builder->CreateCall5(funcEchoDebugExecute,
+											 builder->getInt32(2),
+											 buildString("Invoking %p::%d %p\n"),
+											 vt(obj),
+											 funcEntry,
+											 func);
+
 	invoke(target, func);
 }
 

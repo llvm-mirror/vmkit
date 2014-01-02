@@ -110,6 +110,7 @@ void J3::run() {
 
 	charArrayClass           = typeChar->getArray();
 	objectClass              = z_class("java/lang/Object");
+	objectClass->resolve();
 	
 	stringClass              = z_class("java/lang/String");
 	stringClassInit          = z_method(0, stringClass, initName, names()->get("([CZ)V"));
@@ -242,8 +243,8 @@ void J3::vinternalError(const char* msg, va_list va) {
 	vsnprintf(buf, 65536, msg, va);
 	fprintf(stderr, "Internal error: %s\n", buf);
 	printStackTrace();
-	//exit(1);
-	abort();
+	exit(1);
+	//abort();
 }
 
 void J3::printStackTrace() {

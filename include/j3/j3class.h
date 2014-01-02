@@ -270,6 +270,9 @@ namespace j3 {
 
 		J3Type*             component() { return _component; }
 		bool                isArrayClass() { return 1; }
+
+		J3Method*           findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
+		J3Method*           findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
 	};
 
 	class J3Primitive : public J3Type {

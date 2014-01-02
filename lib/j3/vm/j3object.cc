@@ -156,6 +156,7 @@ J3VirtualTable* J3VirtualTable::create(J3ArrayClass* cl) {
 		J3VirtualTable(cl, super, secondaries, nbSecondaries, isSecondary);
 
 	memcpy(res->_virtualMethods, objClass->vt()->_virtualMethods, sizeof(void*)*objClass->vt()->_nbVirtualMethods);
+	memcpy(res->_interfaceMethodTable, objClass->vt()->_interfaceMethodTable, sizeof(void*)*nbInterfaceMethodTable);
 
 	return res;
 }
