@@ -363,10 +363,11 @@ llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
 		llvm::BasicBlock* succeed = newBB("nullcheck-succeed");
 
 		if(!bbNullCheckFailed) {
+			llvm::BasicBlock* prev = builder->GetInsertBlock();
 			bbNullCheckFailed = newBB("nullcheck-failed");
 			builder->SetInsertPoint(bbNullCheckFailed);
 			builder->CreateInvoke(funcNullPointerException, bbRet, exceptions.nodes[curExceptionNode]->landingPad);
-			builder->SetInsertPoint(bb);
+			builder->SetInsertPoint(prev);
 		}
 
 		builder->CreateCondBr(builder->CreateIsNotNull(obj), succeed, bbNullCheckFailed);
@@ -729,12 +730,27 @@ llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doA
 		//fprintf(stderr, "--- instruction ---\n");
 		//insn->dump();
 		llvm::BasicBlock* before = insn->getParent();
-		//fprintf(stderr, "--- basic block ---\n");
+		llvm::BranchInst* fakeTerminator = 0;
+		bool isSelf = builder->GetInsertBlock() == before;
+
+		//fprintf(stderr, "--- before split ---\n");
 		//before->dump();
+		if(!before->getTerminator())
+			fakeTerminator = llvm::BranchInst::Create(bbRet, before);
+
 		llvm::BasicBlock* after = before->splitBasicBlock(insn);
+
+		if(fakeTerminator)
+			fakeTerminator->eraseFromParent();
+
+		if(isSelf) {
+			bb = after;
+			builder->SetInsertPoint(after);
+		}
 		//fprintf(stderr, "--- after split ---\n");
 		//before->dump();
 		//after->dump();
+
 		opInfos[pc].bb = after;
 		return after;
 	} else {
@@ -1571,9 +1587,11 @@ void J3CodeGen::generateJava() {
 	stack.init(this, maxStack, allocator->allocate(J3CodeGenVar::reservedSize(maxStack)));
 	ret.init(this, 1, allocator->allocate(J3CodeGenVar::reservedSize(1)));
 
-	uint32_t n=0;
+	uint32_t n=0, pos=0;
 	for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++, n++) {
-		locals.setAt(flatten(cur, methodType->ins(n)), n);
+		J3Type* type = methodType->ins(n);
+		locals.setAt(flatten(cur, type), pos);
+		pos += (type == vm->typeLong || type == vm->typeDouble) ? 2 : 1;
 	}
 
 	//builder->CreateCall(ziTry);
