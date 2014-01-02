@@ -15,7 +15,7 @@ J3Options::J3Options() {
 
 	debugEnterIndent = 1;
 
-	debugExecute = 0;
+	debugExecute = 2;
 	debugLoad = 0;
 	debugResolve = 0;
 	debugIniting = 0;

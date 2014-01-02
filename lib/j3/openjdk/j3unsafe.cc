@@ -51,6 +51,16 @@ extern "C" {
 																																	 jobject handle, jlong offset, jobject orig, jobject value) {
 		return handle->rawCASObject(offset, orig, value) == orig;
 	}
+
+	JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapInt(JNIEnv* env, jobject unsafe, 
+																																jobject handle, jlong offset, jint orig, jint value) {
+		return handle->rawCASInteger(offset, orig, value) == orig;
+	}
+
+	JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_getIntVolatile(JNIEnv* env, jobject unsafe, 
+																														 jobject handle, jlong offset) {
+		return handle->rawGetInteger(offset);
+	}
 }
 
 

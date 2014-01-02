@@ -1327,7 +1327,10 @@ void J3CodeGen::translate() {
 			case J3Cst::BC_d2l: nyi();                    /* 0x8f */
 			case J3Cst::BC_d2f: nyi();                    /* 0x90 */
 			case J3Cst::BC_i2b: nyi();                    /* 0x91 */
-			case J3Cst::BC_i2c: nyi();                    /* 0x92 */
+			case J3Cst::BC_i2c:                           /* 0x92 */
+				stack.push(builder->CreateZExt(builder->CreateTrunc(stack.pop(), builder->getInt16Ty()), builder->getInt32Ty()));
+				break;
+
 			case J3Cst::BC_i2s: nyi();                    /* 0x93 */
 
 			case J3Cst::BC_lcmp:                          /* 0x94 */
