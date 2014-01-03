@@ -171,25 +171,11 @@ J3Type* J3ClassLoader::getType(J3ObjectType* from, const vmkit::Name* type) {
 
 J3Signature* J3ClassLoader::getSignature(J3ObjectType* from, const vmkit::Name* signature) {
 	pthread_mutex_lock(&_mutexMethodTypes);
+
 	J3Signature* res = methodTypes[signature];
+	if(!res)
+		methodTypes[signature] = res = new(allocator()) J3Signature(this, signature);
 
-	if(!res) {
-		J3Type*            args[1+signature->length()];
-		uint32_t           nbArgs = 0;
-		uint32_t           cur = 1;
-
-		if(signature->cStr()[0] != J3Cst::ID_Left)
-			wrongType(from, signature);
-
-		while(signature->cStr()[cur] != J3Cst::ID_Right) {
-			args[nbArgs++] = getTypeInternal(from, signature, cur, &cur);
-	}
-		args[nbArgs++] = getTypeInternal(from, signature, cur+1, &cur);
-		if(cur != signature->length())
-			wrongType(from, signature);
-		
-		methodTypes[signature] = res = new(allocator(), nbArgs - 1) J3Signature(this, signature, args, nbArgs);
-	}
 	pthread_mutex_unlock(&_mutexMethodTypes);
 
 	return res;

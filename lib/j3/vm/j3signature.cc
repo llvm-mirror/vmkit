@@ -1,6 +1,7 @@
 #include "j3/j3signature.h"
 #include "j3/j3object.h"
 #include "j3/j3codegen.h"
+#include "j3/j3classloader.h"
 #include "j3/j3.h"
 
 #include "llvm/IR/Function.h"
@@ -9,13 +10,31 @@
 
 using namespace j3;
 
-J3Signature::J3Signature(J3ClassLoader* loader, const vmkit::Name* name, J3Type** args, size_t nbArgs) {
+J3Signature::J3Signature(J3ClassLoader* loader, const vmkit::Name* name) {
 	_loader = loader;
 	_name = name;
-	_out = args[nbArgs-1];
-	_nbIns = nbArgs-1;
-	memcpy(_ins, args, (nbArgs-1)*sizeof(J3Type*));
-			
+}
+
+void J3Signature::checkInOut() {
+	if(!_out) {
+		J3Type*            args[1+name()->length()];
+		uint32_t           nbArgs = 0;
+		uint32_t           cur = 1;
+		
+		if(name()->cStr()[0] != J3Cst::ID_Left)
+			loader()->wrongType(0, name());
+
+		while(name()->cStr()[cur] != J3Cst::ID_Right)
+			args[nbArgs++] = loader()->getTypeInternal(0, name(), cur, &cur);
+
+		_nbIns = nbArgs;
+		_ins = (J3Type**)loader()->allocator()->allocate(nbArgs*sizeof(J3Type*));
+		memcpy(_ins, args, nbArgs*sizeof(J3Type*));
+
+		_out = loader()->getTypeInternal(0, name(), cur+1, &cur);
+		if(cur != name()->length())
+			loader()->wrongType(0, name());
+	}
 }
 
 void J3Signature::setLLVMSignature(uint32_t access, J3LLVMSignature* llvmSignature) { 

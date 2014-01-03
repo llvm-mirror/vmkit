@@ -26,23 +26,20 @@ namespace j3 {
 		J3LLVMSignature*             _virtualLLVMSignature;
 		J3Type*                      _out;
 		uint32_t                     _nbIns;
-		J3Type*                      _ins[1];
+		J3Type**                     _ins;
+
+		void checkInOut();
 
 	public:
-		J3Signature(J3ClassLoader* loader, const vmkit::Name* name, J3Type** args, size_t nbArgs);
+		J3Signature(J3ClassLoader* loader, const vmkit::Name* name);
 
 		const vmkit::Name*  name() { return _name; }
 		J3ClassLoader*      loader() { return _loader; }
 		void                setLLVMSignature(uint32_t access, J3LLVMSignature* llvmSignature);
 		J3LLVMSignature*    llvmSignature(uint32_t access);
-		J3Type*             out() { return _out; }
-		uint32_t            nbIns() { return _nbIns; }
-		J3Type*             ins(uint32_t idx) { return _ins[idx]; }
-
-		void* operator new(size_t unused, vmkit::BumpAllocator* allocator, size_t n) {
-			return vmkit::PermanentObject::operator new(sizeof(J3Signature) + (n - 1) * sizeof(J3Type*), allocator);
-		}
-
+		J3Type*             out() { checkInOut(); return _out; }
+		uint32_t            nbIns() { checkInOut(); return _nbIns; }
+		J3Type*             ins(uint32_t idx) { checkInOut(); return _ins[idx]; }
 	};
 
 	class J3LLVMSignature : vmkit::PermanentObject {
