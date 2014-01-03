@@ -1701,9 +1701,9 @@ llvm::Type* J3CodeGen::doNativeType(J3Type* type) {
 llvm::Function* J3CodeGen::lookupNative() {
 	J3Mangler      mangler(cl);
 
-	mangler.mangle(mangler.javaId)->mangle(method);
+	mangler.mangle(mangler.javaId)->mangle(method->cl()->name(), method->name());
 	uint32_t length = mangler.length();
-	mangler.mangleType(method);
+	mangler.mangle(method->signature());
 
 	void* fnPtr = method->nativeFnPtr();
 
@@ -1712,7 +1712,7 @@ llvm::Function* J3CodeGen::lookupNative() {
 
 	if(!fnPtr) {
 		mangler.cStr()[length] = 0;
-		fnPtr = loader->lookupNativeFunctionPointer(method, mangler.mangleType(method)->cStr());
+		fnPtr = loader->lookupNativeFunctionPointer(method, mangler.cStr());
 	}
 
 	if(!fnPtr)

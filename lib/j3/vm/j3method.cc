@@ -223,7 +223,7 @@ void J3Method::buildLLVMNames(J3Class* from) {
 	uint32_t plen = 5;
 	J3Mangler mangler(from);
 
-	mangler.mangle(mangler.j3Id)->mangle(this)->mangleType(this);
+	mangler.mangle(mangler.j3Id)->mangle(cl()->name(), name())->mangle(signature());
 
 	uint32_t length = mangler.length() + plen;
 	_llvmAllNames = (char*)cl()->loader()->allocator()->allocate(length + 1);
