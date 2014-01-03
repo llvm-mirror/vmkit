@@ -1534,7 +1534,7 @@ void J3CodeGen::translate() {
 
 #if 0
 void J3CodeGen::explore() {
-	printf("  exploring bytecode of: %s::%s%s\n", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
+	printf("  exploring bytecode of: %s::%s%s\n", method->cl()->name()->cStr(), method->name()->cStr(), method->signature()->cStr());
 	while(codeReader->remaining()) {
 		uint8_t bc = codeReader->readU1();
 

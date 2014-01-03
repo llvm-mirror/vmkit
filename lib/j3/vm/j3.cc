@@ -99,7 +99,7 @@ void J3::run() {
 	clinitSign = initialClassLoader->getSignature(0, clinitSignName);
 
 #define z_class(clName)                      initialClassLoader->loadClass(names()->get(clName))
-#define z_method(access, cl, name, sign)     initialClassLoader->method(access, cl, name, initialClassLoader->getSignature(cl, sign))
+#define z_method(access, cl, name, signature)     initialClassLoader->method(access, cl, name, initialClassLoader->getSignature(cl, signature))
 #define z_field(access, cl, name, type)      J3Cst::isStatic(access)	\
 			? cl->findStaticField(names()->get(name), type)									\
 			: cl->findVirtualField(names()->get(name), type);
@@ -207,8 +207,8 @@ void J3::noClassDefFoundError(const vmkit::Name* name) {
 	internalError("NoClassDefFoundError: %s", name);
 }
 
-void J3::noSuchMethodError(const char* msg, J3ObjectType* cl, const vmkit::Name* name, J3Signature* sign) {
-	internalError("%s: %s::%s %s", msg, cl->name()->cStr(), name->cStr(), sign->name()->cStr());
+void J3::noSuchMethodError(const char* msg, J3ObjectType* cl, const vmkit::Name* name, J3Signature* signature) {
+	internalError("%s: %s::%s %s", msg, cl->name()->cStr(), name->cStr(), signature->name()->cStr());
 }
 
 void J3::noSuchFieldError(const char* msg, J3ObjectType* cl, const vmkit::Name* name, J3Type* type) {

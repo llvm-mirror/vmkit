@@ -68,10 +68,10 @@ namespace j3 {
 
 		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
 		J3Type*                       getType(J3ObjectType* from, const vmkit::Name* type);       /* find a type */
-		J3Signature*                  getSignature(J3ObjectType* from, const vmkit::Name* sign); /* get a method type */
+		J3Signature*                  getSignature(J3ObjectType* from, const vmkit::Name* signature); /* get a method type */
 		void                          wrongType(J3ObjectType* from, const vmkit::Name* type);
 
-		uint32_t                      interfaceIndex(J3Method* sign);
+		uint32_t                      interfaceIndex(J3Method* signature);
 
 		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
 		
@@ -80,7 +80,7 @@ namespace j3 {
 		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
 
 		J3Method*                     method(uint16_t access, J3ObjectType* cl, 
-																				 const vmkit::Name* name, J3Signature* sign);
+																				 const vmkit::Name* name, J3Signature* signature);
 
 		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
 		J3Class*                      findLoadedClass(const vmkit::Name* name);

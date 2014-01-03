@@ -134,7 +134,7 @@ namespace j3 {
 		static void    noClassDefFoundError(const vmkit::Name* name) __attribute__((noreturn));
 		static void    classFormatError(J3ObjectType* cl, const char* reason, ...) __attribute__((noreturn));
 		static void    noSuchMethodError(const char* msg, 
-																		 J3ObjectType* clName, const vmkit::Name* name, J3Signature* sign) __attribute__((noreturn));
+																		 J3ObjectType* clName, const vmkit::Name* name, J3Signature* signature) __attribute__((noreturn));
 		static void    noSuchFieldError(const char* msg, 
 																		J3ObjectType* clName, const vmkit::Name* name, J3Type* type) __attribute__((noreturn));
 		static void    linkageError(J3Method* method) __attribute__((noreturn));

@@ -169,44 +169,44 @@ J3Type* J3ClassLoader::getType(J3ObjectType* from, const vmkit::Name* type) {
 }
 
 
-J3Signature* J3ClassLoader::getSignature(J3ObjectType* from, const vmkit::Name* sign) {
+J3Signature* J3ClassLoader::getSignature(J3ObjectType* from, const vmkit::Name* signature) {
 	pthread_mutex_lock(&_mutexMethodTypes);
-	J3Signature* res = methodTypes[sign];
+	J3Signature* res = methodTypes[signature];
 
 	if(!res) {
-		J3Type*            args[1+sign->length()];
+		J3Type*            args[1+signature->length()];
 		uint32_t           nbArgs = 0;
 		uint32_t           cur = 1;
 
-		if(sign->cStr()[0] != J3Cst::ID_Left)
-			wrongType(from, sign);
+		if(signature->cStr()[0] != J3Cst::ID_Left)
+			wrongType(from, signature);
 
-		while(sign->cStr()[cur] != J3Cst::ID_Right) {
-			args[nbArgs++] = getTypeInternal(from, sign, cur, &cur);
+		while(signature->cStr()[cur] != J3Cst::ID_Right) {
+			args[nbArgs++] = getTypeInternal(from, signature, cur, &cur);
 	}
-		args[nbArgs++] = getTypeInternal(from, sign, cur+1, &cur);
-		if(cur != sign->length())
-			wrongType(from, sign);
+		args[nbArgs++] = getTypeInternal(from, signature, cur+1, &cur);
+		if(cur != signature->length())
+			wrongType(from, signature);
 		
-		methodTypes[sign] = res = new(allocator(), nbArgs - 1) J3Signature(this, sign, args, nbArgs);
+		methodTypes[signature] = res = new(allocator(), nbArgs - 1) J3Signature(this, signature, args, nbArgs);
 	}
 	pthread_mutex_unlock(&_mutexMethodTypes);
 
 	return res;
 }
 
-J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* type, const vmkit::Name* name, J3Signature* sign) {
+J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* type, const vmkit::Name* name, J3Signature* signature) {
 	if(type->isArrayClass())
-		return method(access, vm()->objectClass, name, sign);
+		return method(access, vm()->objectClass, name, signature);
 	else {
 		J3Class* cl = type->asClass();
-		J3Method method(access, cl, name, sign), *res;
+		J3Method method(access, cl, name, signature), *res;
 
 		pthread_mutex_lock(&_mutexMethods);
 		std::map<J3Method*, J3Method*>::iterator it = methods.find(&method);
 
 		if(it == methods.end()) {
-			res = new(allocator()) J3Method(access, cl, name, sign);
+			res = new(allocator()) J3Method(access, cl, name, signature);
 			methods[res] = res;
 		} else {
 			res = it->second;
