@@ -66,7 +66,7 @@ namespace j3 {
 	public:
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
 
-		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
+		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end, bool unify);
 		J3Type*                       getType(J3ObjectType* from, const vmkit::Name* type);       /* find a type */
 		J3Signature*                  getSignature(J3ObjectType* from, const vmkit::Name* signature); /* get a method type */
 		void                          wrongType(J3ObjectType* from, const vmkit::Name* type);

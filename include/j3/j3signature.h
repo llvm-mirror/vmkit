@@ -24,17 +24,20 @@ namespace j3 {
 		const vmkit::Name*           _name;
 		J3LLVMSignature*             _staticLLVMSignature;
 		J3LLVMSignature*             _virtualLLVMSignature;
-		J3Type*                      _out;
+		J3Type* volatile             _out;
 		uint32_t                     _nbIns;
 		J3Type**                     _ins;
+		llvm::FunctionType*          _staticFunctionType;
+		llvm::FunctionType* volatile _virtualFunctionType;
 
 		void checkInOut();
-
+		void checkFunctionType();
 	public:
 		J3Signature(J3ClassLoader* loader, const vmkit::Name* name);
 
 		const vmkit::Name*  name() { return _name; }
 		J3ClassLoader*      loader() { return _loader; }
+		llvm::FunctionType* functionType(uint32_t access); /* has to be called when compiler lock is held */
 		void                setLLVMSignature(uint32_t access, J3LLVMSignature* llvmSignature);
 		J3LLVMSignature*    llvmSignature(uint32_t access);
 		J3Type*             out() { checkInOut(); return _out; }

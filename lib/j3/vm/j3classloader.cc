@@ -91,7 +91,7 @@ void J3ClassLoader::wrongType(J3ObjectType* from, const vmkit::Name* type) {
 	J3::classFormatError(from, "wrong type: %s", type->cStr());
 }
 
-J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend) {
+J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend, bool unify) {
 	J3Type*        res  = 0;
 	const char*    type = typeName->cStr();
 	uint32_t       len  = typeName->length();
@@ -114,7 +114,16 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 			case J3Cst::ID_Short:     res = vm()->typeShort; pos++; break;
 			case J3Cst::ID_Boolean:   res = vm()->typeBoolean; pos++; break;
 			case J3Cst::ID_Classname: 
-				{ 
+				if(unify) {
+					uint32_t start = ++pos;
+					for(; pos < len && type[pos] != J3Cst::ID_End; pos++);
+					
+					if(type[pos] != J3Cst::ID_End)
+						wrongType(from, typeName);
+
+					pos++;
+					res = vm()->objectClass;
+				} else {
 					uint32_t start = ++pos;
 					char buf[len + 1 - start], c;
 					
@@ -140,7 +149,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 
 	*pend = pos;
 		
-	if(prof)
+	if(prof && !unify)
 		res = res->getArray(prof, start ? 0 : typeName);
 
 	return res;
@@ -153,7 +162,7 @@ J3Type* J3ClassLoader::getType(J3ObjectType* from, const vmkit::Name* type) {
 
 	if(!res) {
 		uint32_t end;
-		res = getTypeInternal(from, type, 0, &end);
+		res = getTypeInternal(from, type, 0, &end, 0);
 
 		if(end != type->length())
 			wrongType(from, type);

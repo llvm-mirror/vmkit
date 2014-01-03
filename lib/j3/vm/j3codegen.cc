@@ -210,6 +210,7 @@ llvm::FunctionType* J3CodeGen::llvmFunctionType(J3Method* method) {
 			vm->llvmSignatures[funcType] = res = new(vm->allocator()) J3LLVMSignature(funcType);
 		type->setLLVMSignature(method->access(), res);
 	}
+
 	return res->functionType();
 }
 
