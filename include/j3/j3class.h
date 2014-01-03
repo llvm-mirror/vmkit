@@ -31,6 +31,7 @@ namespace j3 {
 	class J3Field;
 	class J3Attributes;
 	class J3Attribute;
+	class J3Signature;
 
 	class J3InterfaceSlotDescriptor {
 	public:
@@ -124,8 +125,8 @@ namespace j3 {
 		J3InterfaceSlotDescriptor* slotDescriptorAt(uint32_t index) { return &_interfaceSlotDescriptors[index]; }
 		void                       prepareInterfaceTable();
 
-		virtual J3Method*          findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
-		virtual J3Method*          findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
+		virtual J3Method*          findVirtualMethod(const vmkit::Name* name, J3Signature* sign, bool error=1);
+		virtual J3Method*          findStaticMethod(const vmkit::Name* name, J3Signature* sign, bool error=1);
 
 		bool                       isObjectType() { return 1; }
 
@@ -163,7 +164,7 @@ namespace j3 {
 		size_t            nbPublicMethods() { return _nbPublicMethods; }
 		J3Method**        methods() { return _methods; }
 
-		J3Method*         findMethod(const vmkit::Name* name, const vmkit::Name* sign);
+		J3Method*         findMethod(const vmkit::Name* name, J3Signature* sign);
 		J3Field*          findField(const vmkit::Name* name, const J3Type* type);
 
 		virtual J3ObjectHandle* extractAttribute(J3Attribute* attr) = 0;
@@ -255,8 +256,8 @@ namespace j3 {
 
 		bool                isClass() { return 1; }
 
-		J3Method*           findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
-		J3Method*           findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
+		J3Method*           findVirtualMethod(const vmkit::Name* name, J3Signature* sign, bool error=1);
+		J3Method*           findStaticMethod(const vmkit::Name* name, J3Signature* sign, bool error=1);
 
 		J3Field*            findVirtualField(const vmkit::Name* name, J3Type* type, bool error=1);
 		J3Field*            findStaticField(const vmkit::Name* name, J3Type* type, bool error=1);
@@ -277,8 +278,8 @@ namespace j3 {
 		J3Type*             component() { return _component; }
 		bool                isArrayClass() { return 1; }
 
-		J3Method*           findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
-		J3Method*           findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error=1);
+		J3Method*           findVirtualMethod(const vmkit::Name* name, J3Signature* sign, bool error=1);
+		J3Method*           findStaticMethod(const vmkit::Name* name, J3Signature* sign, bool error=1);
 	};
 
 	class J3Primitive : public J3Type {

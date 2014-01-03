@@ -168,11 +168,11 @@ llvm::Type* J3ObjectType::llvmType() {
 	return loader()->vm()->typeJ3ObjectPtr;
 }
 
-J3Method* J3ObjectType::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
+J3Method* J3ObjectType::findVirtualMethod(const vmkit::Name* name, J3Signature* sign, bool error) {
 	J3::internalError("should not happe: %s::%s\n", J3ObjectType::name()->cStr(), name->cStr());
 }
 
-J3Method* J3ObjectType::findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
+J3Method* J3ObjectType::findStaticMethod(const vmkit::Name* name, J3Signature* sign, bool error) {
 	J3::internalError("should not happen");
 }
 
@@ -202,7 +202,7 @@ void J3ObjectType::prepareInterfaceTable() {
 					//fprintf(stderr, "    processing %s method %s %s\n", 
 					//J3Cst::isAbstract(base->access()) ? "abstract" : "concrete",
 					//base->sign()->cStr(), base->name()->cStr());
-					J3Method* method = findVirtualMethod(base->name(), base->sign(), J3Cst::isAbstract(base->access()));
+					J3Method* method = findVirtualMethod(base->name(), base->signature(), J3Cst::isAbstract(base->access()));
 
 					if(!method)
 						method = base;
@@ -241,7 +241,7 @@ void J3ObjectType::dumpInterfaceSlotDescriptors() {
 				fprintf(stderr, "    %s::%s %s\n", 
 								slots[i].methods[j]->cl()->name()->cStr(),
 								slots[i].methods[j]->name()->cStr(),
-								slots[i].methods[j]->sign()->cStr());
+								slots[i].methods[j]->signature()->name()->cStr());
 		}
 	}
 }
@@ -264,13 +264,13 @@ uintptr_t J3Layout::structSize() {
 	return _structSize; 
 }
 
-J3Method* J3Layout::findMethod(const vmkit::Name* name, const vmkit::Name* sign) {
+J3Method* J3Layout::findMethod(const vmkit::Name* name, J3Signature* sign) {
 	for(size_t i=0; i<nbMethods(); i++) {
 		J3Method* cur = methods()[i];
 
 		//printf("%s - %s\n", cur->name()->cStr(), cur->sign()->cStr());
 		//printf("%s - %s\n", name->cStr(), sign->cStr());
-		if(cur->name() == name && cur->sign() == sign) {
+		if(cur->name() == name && cur->signature() == sign) {
 			return cur;
 		}
 	}
@@ -313,7 +313,7 @@ J3ObjectHandle* J3Class::extractAttribute(J3Attribute* attr) {
 		return J3ObjectHandle::doNewArray(loader()->vm()->typeByte->getArray(), 0);
 }
 
-J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
+J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, J3Signature* sign, bool error) {
 	//loader()->vm()->log("Lookup: %s %s in %s (%d)", methName->cStr(), methSign->cStr(), name()->cStr(), nbVirtualMethods);
 	resolve();
 
@@ -335,7 +335,7 @@ J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, const vmkit::Name*
 	}
 }
 
-J3Method* J3Class::findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
+J3Method* J3Class::findStaticMethod(const vmkit::Name* name, J3Signature* sign, bool error) {
 	//loader()->vm()->log("Lookup: %s %s in %s", methName->cStr(), methSign->cStr(), name()->cStr());
 	resolve();
 
@@ -390,13 +390,14 @@ J3Field* J3Class::findStaticField(const vmkit::Name* fname, J3Type* ftype, bool 
 	return res;
 }
 
-void J3Class::registerNative(const vmkit::Name* methName, const vmkit::Name* methSign, void* fnPtr) {
+void J3Class::registerNative(const vmkit::Name* name, const vmkit::Name* signName, void* fnPtr) {
 	resolve();
-	J3Method* res = staticLayout()->findMethod(methName, methSign);
+	J3Signature* sign = loader()->getSignature(this, signName);
+	J3Method* res = staticLayout()->findMethod(name, sign);
 	if(!res)
-		res = findMethod(methName, methSign);
+		res = findMethod(name, sign);
 	if(!res || !J3Cst::isNative(res->access()))
-		J3::noSuchMethodError("unable to find native method", this, methName, methSign);
+		J3::noSuchMethodError("unable to find native method", this, name, sign);
 
 	res->registerNative(fnPtr);
 }
@@ -618,7 +619,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 		uint16_t           access = reader.readU2();
 		const vmkit::Name* name = nameAt(reader.readU2());
 		const vmkit::Name* sign = nameAt(reader.readU2());
-		J3Method*          method = loader()->method(access, this, name, sign);
+		J3Method*          method = loader()->method(access, this, name, loader()->getSignature(this, sign));
 		J3Attributes*      attributes = readAttributes(&reader);
 		
 		method->postInitialise(access, attributes);
@@ -746,7 +747,7 @@ J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
 	const vmkit::Name* name = nameAt(ctpValues[ntIdx] >> 16);
 	const vmkit::Name* sign = nameAt(ctpValues[ntIdx] & 0xffff);
 
-	res = loader()->method(access, cl, name, sign);
+	res = loader()->method(access, cl, name, loader()->getSignature(this, sign));
 
 	return res;
 }
@@ -877,11 +878,11 @@ J3ObjectHandle* J3ArrayClass::clone(J3ObjectHandle* obj) {
 	return res;
 }
 
-J3Method* J3ArrayClass::findVirtualMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
+J3Method* J3ArrayClass::findVirtualMethod(const vmkit::Name* name, J3Signature* sign, bool error) {
 	return loader()->vm()->objectClass->findVirtualMethod(name, sign, error);
 }
 
-J3Method* J3ArrayClass::findStaticMethod(const vmkit::Name* name, const vmkit::Name* sign, bool error) {
+J3Method* J3ArrayClass::findStaticMethod(const vmkit::Name* name, J3Signature* sign, bool error) {
 	return loader()->vm()->objectClass->findStaticMethod(name, sign, error);
 }
 

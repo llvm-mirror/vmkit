@@ -34,7 +34,7 @@ void* J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
 	J3ObjectHandle* prev = J3Thread::get()->tell();
 	J3ObjectHandle* handle = J3Thread::get()->push(obj);
 	J3ObjectType* cl = handle->vt()->type()->asObjectType();
-	J3Method* impl = cl == target->cl() ? target : cl->findVirtualMethod(target->name(), target->sign());
+	J3Method* impl = cl == target->cl() ? target : cl->findVirtualMethod(target->name(), target->signature());
 
 	void* res = impl->fnPtr(0);
 	handle->vt()->virtualMethods()[impl->index()] = res;

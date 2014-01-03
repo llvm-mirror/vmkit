@@ -87,11 +87,11 @@ J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
 	J3::internalError("implement me: loadClass from a Java class loader");
 }
 
-void J3ClassLoader::wrongType(J3Class* from, const vmkit::Name* type) {
+void J3ClassLoader::wrongType(J3ObjectType* from, const vmkit::Name* type) {
 	J3::classFormatError(from, "wrong type: %s", type->cStr());
 }
 
-J3Type* J3ClassLoader::getTypeInternal(J3Class* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend) {
+J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend) {
 	J3Type*        res  = 0;
 	const char*    type = typeName->cStr();
 	uint32_t       len  = typeName->length();
@@ -146,7 +146,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3Class* from, const vmkit::Name* typeNam
 	return res;
 }
 
-J3Type* J3ClassLoader::getType(J3Class* from, const vmkit::Name* type) {
+J3Type* J3ClassLoader::getType(J3ObjectType* from, const vmkit::Name* type) {
 	pthread_mutex_lock(&_mutexTypes);
 	J3Type* res = types[type];
 	pthread_mutex_unlock(&_mutexTypes);
@@ -169,9 +169,9 @@ J3Type* J3ClassLoader::getType(J3Class* from, const vmkit::Name* type) {
 }
 
 
-J3MethodType* J3ClassLoader::getMethodType(J3Class* from, const vmkit::Name* sign) {
+J3Signature* J3ClassLoader::getSignature(J3ObjectType* from, const vmkit::Name* sign) {
 	pthread_mutex_lock(&_mutexMethodTypes);
-	J3MethodType* res = methodTypes[sign];
+	J3Signature* res = methodTypes[sign];
 
 	if(!res) {
 		J3Type*            args[1+sign->length()];
@@ -188,14 +188,14 @@ J3MethodType* J3ClassLoader::getMethodType(J3Class* from, const vmkit::Name* sig
 		if(cur != sign->length())
 			wrongType(from, sign);
 		
-		methodTypes[sign] = res = new(allocator(), nbArgs - 1) J3MethodType(args, nbArgs);
+		methodTypes[sign] = res = new(allocator(), nbArgs - 1) J3Signature(this, sign, args, nbArgs);
 	}
 	pthread_mutex_unlock(&_mutexMethodTypes);
 
 	return res;
 }
 
-J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* type, const vmkit::Name* name, const vmkit::Name* sign) {
+J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* type, const vmkit::Name* name, J3Signature* sign) {
 	if(type->isArrayClass())
 		return method(access, vm()->objectClass, name, sign);
 	else {
@@ -220,14 +220,14 @@ J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* type, const vmkit
 bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {
 	return lhs->name() < rhs->name()
 		|| (lhs->name() == rhs->name()
-				&& (lhs->sign() < rhs->sign()));
+				&& (lhs->signature() < rhs->signature()));
 }
 
 bool J3ClassLoader::J3MethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {
 	return lhs->name() < rhs->name()
 		|| (lhs->name() == rhs->name()
-				&& (lhs->sign() < rhs->sign()
-						|| (lhs->sign() == rhs->sign()
+				&& (lhs->signature() < rhs->signature()
+						|| (lhs->signature() == rhs->signature()
 								&& (lhs->cl() < rhs->cl()
 										|| (lhs->cl() == rhs->cl()
 												&& ((lhs->access() & J3Cst::ACC_STATIC) < (rhs->access() & J3Cst::ACC_STATIC)))))));

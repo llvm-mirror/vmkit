@@ -9,21 +9,23 @@
 
 using namespace j3;
 
-J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
+J3Signature::J3Signature(J3ClassLoader* loader, const vmkit::Name* name, J3Type** args, size_t nbArgs) {
+	_loader = loader;
+	_name = name;
 	_out = args[nbArgs-1];
 	_nbIns = nbArgs-1;
 	memcpy(_ins, args, (nbArgs-1)*sizeof(J3Type*));
 			
 }
 
-void J3MethodType::setLLVMSignature(uint32_t access, J3LLVMSignature* llvmSignature) { 
+void J3Signature::setLLVMSignature(uint32_t access, J3LLVMSignature* llvmSignature) { 
 	if(J3Cst::isStatic(access))
 		_staticLLVMSignature = llvmSignature;
 	else
 		_virtualLLVMSignature = llvmSignature;
 }
 
-J3LLVMSignature* J3MethodType::llvmSignature(uint32_t access) { 
+J3LLVMSignature* J3Signature::llvmSignature(uint32_t access) { 
 	return J3Cst::isStatic(access) ? _staticLLVMSignature : _virtualLLVMSignature; 
 }
 

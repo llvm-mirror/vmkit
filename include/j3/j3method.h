@@ -24,7 +24,7 @@ namespace j3 {
 	class J3Method;
 	class J3Value;
 	class J3ObjectHandle;
-	class J3MethodType;
+	class J3Signature;
 
 	class J3MethodCode : public vmkit::Symbol {
 	public:
@@ -41,8 +41,7 @@ namespace j3 {
 		uint16_t                     _access;
 		J3Class*                     _cl;
 		const vmkit::Name*           _name;
-		const vmkit::Name*           _sign;
-		J3MethodType*                _methodType;
+		J3Signature*                 _signature;
 		J3Attributes*                _attributes;
 		uint32_t                     _index;
 		uint32_t                     _slot;
@@ -59,7 +58,7 @@ namespace j3 {
 		J3Value            internalInvoke(bool statically, J3Value* args);
 		void               buildLLVMNames(J3Class* from);
 	public:
-		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign);
+		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Signature* signature);
 
 		uint32_t            slot() { return _slot; }
 
@@ -91,8 +90,7 @@ namespace j3 {
 		uint16_t            access() const { return _access; }
 		J3Class*            cl()     const { return _cl; }
 		const vmkit::Name*  name()   const { return _name; }
-		const vmkit::Name*  sign()   const { return _sign; }
-		J3MethodType*       methodType(J3Class* from=0);
+		J3Signature*        signature() const { return _signature; }
 
 		void                registerNative(void* ptr);
 

@@ -122,7 +122,7 @@ void J3ExceptionTable::dump(bool verbose) {
 		fprintf(stderr, "    ExceptionTable of %s::%s%s:\n", 
 						codeGen->method->cl()->name()->cStr(), 
 						codeGen->method->name()->cStr(),
-						codeGen->method->sign()->cStr());
+						codeGen->method->signature()->name()->cStr());
 
 		if(verbose) {
 			for(uint32_t i=0; i<nbEntries; i++)

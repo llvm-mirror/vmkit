@@ -17,7 +17,7 @@ namespace vmkit {
 namespace j3 {
 	class J3ZipArchive;
 	class J3ClassBytes;
-	class J3MethodType;
+	class J3Signature;
 	class J3Method;
 	class J3Type;
 	class J3;
@@ -58,7 +58,7 @@ namespace j3 {
 		MethodRefMap                         methods;      /* all te known method */
 
 		pthread_mutex_t                      _mutexMethodTypes;
-		vmkit::NameMap<J3MethodType*>::map   methodTypes;
+		vmkit::NameMap<J3Signature*>::map   methodTypes;
 
 	protected:
 		std::vector<void*, vmkit::StdAllocator<void*> > nativeLibraries;
@@ -66,10 +66,10 @@ namespace j3 {
 	public:
 		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
 
-		J3Type*                       getTypeInternal(J3Class* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
-		J3Type*                       getType(J3Class* from, const vmkit::Name* type);       /* find a type */
-		J3MethodType*                 getMethodType(J3Class* from, const vmkit::Name* sign); /* get a method type */
-		void                          wrongType(J3Class* from, const vmkit::Name* type);
+		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end);
+		J3Type*                       getType(J3ObjectType* from, const vmkit::Name* type);       /* find a type */
+		J3Signature*                  getSignature(J3ObjectType* from, const vmkit::Name* sign); /* get a method type */
+		void                          wrongType(J3ObjectType* from, const vmkit::Name* type);
 
 		uint32_t                      interfaceIndex(J3Method* sign);
 
@@ -80,7 +80,7 @@ namespace j3 {
 		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
 
 		J3Method*                     method(uint16_t access, J3ObjectType* cl, 
-																				 const vmkit::Name* name, const vmkit::Name* sign);
+																				 const vmkit::Name* name, J3Signature* sign);
 
 		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
 		J3Class*                      findLoadedClass(const vmkit::Name* name);

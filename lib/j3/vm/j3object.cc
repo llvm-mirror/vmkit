@@ -52,7 +52,7 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 
 	for(uint32_t i=0; i<cl->nbMethods(); i++) {
 		J3Method* meth = cl->methods()[i];
-		J3Method* parent = cl == super ? 0 : super->findVirtualMethod(meth->name(), meth->sign(), 0);
+		J3Method* parent = cl == super ? 0 : super->findVirtualMethod(meth->name(), meth->signature(), 0);
 		
 		if(parent) {
 			pm[i] = parent;

@@ -32,11 +32,6 @@ J3::J3(vmkit::BumpAllocator* allocator) :
 	monitorManager(allocator),
 	llvmSignatures(llvmFunctionTypeLess, allocator) {
 
-#define defJavaConstantName(name, id) \
-	name = names()->get(id);
-	onJavaConstantNames(defJavaConstantName)
-#undef defJavaConstantName
-
 	pthread_mutex_init(&stringsMutex, 0);
 	interfaceTrampoline = J3Trampoline::buildInterfaceTrampoline(allocator);
 }
@@ -82,6 +77,11 @@ void J3::start(int argc, char** argv) {
 }
 
 void J3::run() {
+#define defJavaConstantName(name, id) \
+	name = names()->get(id);
+	onJavaConstantNames(defJavaConstantName)
+#undef defJavaConstantName
+
 	introspect();
 
 	vmkit::BumpAllocator* loaderAllocator = vmkit::BumpAllocator::create();
@@ -96,8 +96,10 @@ void J3::run() {
 	onJavaTypes(defPrimitive)
 #undef defPrimitive
 
+	clinitSign = initialClassLoader->getSignature(0, clinitSignName);
+
 #define z_class(clName)                      initialClassLoader->loadClass(names()->get(clName))
-#define z_method(access, cl, name, sign)     initialClassLoader->method(access, cl, name, sign)
+#define z_method(access, cl, name, sign)     initialClassLoader->method(access, cl, name, initialClassLoader->getSignature(cl, sign))
 #define z_field(access, cl, name, type)      J3Cst::isStatic(access)	\
 			? cl->findStaticField(names()->get(name), type)									\
 			: cl->findVirtualField(names()->get(name), type);
@@ -205,8 +207,8 @@ void J3::noClassDefFoundError(const vmkit::Name* name) {
 	internalError("NoClassDefFoundError: %s", name);
 }
 
-void J3::noSuchMethodError(const char* msg, J3ObjectType* cl, const vmkit::Name* name, const vmkit::Name* sign) {
-	internalError("%s: %s::%s %s", msg, cl->name()->cStr(), name->cStr(), sign->cStr());
+void J3::noSuchMethodError(const char* msg, J3ObjectType* cl, const vmkit::Name* name, J3Signature* sign) {
+	internalError("%s: %s::%s %s", msg, cl->name()->cStr(), name->cStr(), sign->name()->cStr());
 }
 
 void J3::noSuchFieldError(const char* msg, J3ObjectType* cl, const vmkit::Name* name, J3Type* type) {
@@ -223,7 +225,10 @@ void J3::classFormatError(J3ObjectType* cl, const char* reason, ...) {
 }
 
 void J3::linkageError(J3Method* method) {
-	internalError("unable to find native method '%s::%s%s'", method->cl()->name()->cStr(), method->name()->cStr(), method->sign()->cStr());
+	internalError("unable to find native method '%s::%s%s'", 
+								method->cl()->name()->cStr(), 
+								method->name()->cStr(), 
+								method->signature()->name()->cStr());
 }
 
 void J3::arrayStoreException() {
@@ -255,7 +260,7 @@ void J3::printStackTrace() {
 
 		if(sf) {
 			J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
-			fprintf(stderr, "    in %s %s::%s index %d\n", m->sign()->cStr(), m->cl()->name()->cStr(), m->name()->cStr(),
+			fprintf(stderr, "    in %s %s::%s index %d\n", m->signature()->name()->cStr(), m->cl()->name()->cStr(), m->name()->cStr(),
 							sf->sourceIndex());
 		} else {
 			Dl_info info;

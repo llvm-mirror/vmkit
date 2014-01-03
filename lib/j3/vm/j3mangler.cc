@@ -23,7 +23,7 @@ void J3Mangler::check(uint32_t n) {
 }
 
 J3Mangler* J3Mangler::mangleType(J3Method* method) {
-	J3MethodType* type = method->methodType(from);
+	J3Signature* type = method->signature();
 
 	if(type->nbIns()) {
 		check(2);

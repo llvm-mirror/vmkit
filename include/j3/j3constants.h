@@ -25,7 +25,7 @@ namespace j3 {
 
 #define onJavaConstantNames(_)																					\
 		_(clinitName,                 "<clinit>")														\
-		_(clinitSign,                 "()V")																\
+		_(clinitSignName,             "()V")																\
 		_(initName,                   "<init>")															\
 																																				\
 		_(codeAttribute,              "Code")																\

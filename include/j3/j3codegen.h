@@ -22,9 +22,10 @@ namespace j3 {
 	class J3ClassLoader;
 	class J3Field;
 	class J3Method;
-	class J3MethodType;
+	class J3Signature;
 	class J3Reader;
 	class J3ObjectType;
+	class J3Signature;
 
 	class J3OpInfo {
 	public:
@@ -50,7 +51,7 @@ namespace j3 {
 		J3Class*               cl;
 		J3ClassLoader*         loader;
 		J3Method*              method;
-		J3MethodType*          methodType;
+		J3Signature*           signature;
 		J3Reader*              codeReader;
 
 		llvm::BasicBlock*      bbCheckCastFailed;
