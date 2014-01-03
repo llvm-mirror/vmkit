@@ -22,13 +22,6 @@
 
 using namespace j3;
 
-J3MethodType::J3MethodType(J3Type** args, size_t nbArgs) {
-	_out = args[nbArgs-1];
-	_nbIns = nbArgs-1;
-	memcpy(_ins, args, (nbArgs-1)*sizeof(J3Type*));
-			
-}
-
 J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, const vmkit::Name* sign) :
 	_selfCode(this) {
 	_access = access;
@@ -120,10 +113,10 @@ J3Value J3Method::internalInvoke(bool statically, J3Value* inArgs) {
 
 	//fprintf(stderr, "Internal invoke %s::%s%s\n", target->cl()->name()->cStr(), target->name()->cStr(), target->sign()->cStr());
 
-	J3LLVMSignature::function_t caller = methodType()->llvmSignature()->caller();
+	J3LLVMSignature::function_t caller = methodType()->llvmSignature(access())->caller();
 	if(!caller) {
 		J3CodeGen::translate(this, 0, 1);
-		caller = methodType()->llvmSignature()->caller();
+		caller = methodType()->llvmSignature(access())->caller();
 	}
 
 	J3Value res = caller(fn, inArgs);
@@ -226,24 +219,8 @@ J3Value J3Method::invokeVirtual(J3ObjectHandle* handle, ...) {
 }
 
 J3MethodType* J3Method::methodType(J3Class* from) {
-	if(!_methodType) {
-		J3ClassLoader*     loader = cl()->loader();
-		J3Type*            args[1+sign()->length()];
-		uint32_t           nbArgs = 0;
-		uint32_t           cur = 1;
-
-		if(sign()->cStr()[0] != J3Cst::ID_Left)
-			loader->wrongType(from, sign());
-
-		while(sign()->cStr()[cur] != J3Cst::ID_Right) {
-			args[nbArgs++] = loader->getTypeInternal(from, sign(), cur, &cur);
-		}
-		args[nbArgs++] = loader->getTypeInternal(from, sign(), cur+1, &cur);
-		if(cur != sign()->length())
-			loader->wrongType(from, sign());
-		
-		_methodType = new(loader->allocator(), nbArgs - 1) J3MethodType(args, nbArgs);
-	}
+	if(!_methodType)
+		_methodType = cl()->loader()->getMethodType(from, sign());
 
 	return _methodType;
 }

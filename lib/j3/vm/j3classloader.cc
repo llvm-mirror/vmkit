@@ -28,6 +28,7 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 		types(vmkit::Name::less, allocator),
 		interfaces(j3InterfaceMethodLess, allocator),
 		methods(j3MethodLess, allocator),
+		methodTypes(vmkit::Name::less, allocator),
 		nativeLibraries(allocator) {
 	_javaClassLoader = javaClassLoader;
 
@@ -35,6 +36,7 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	pthread_mutex_init(&_mutexTypes, 0);
 	pthread_mutex_init(&_mutexInterfaces, 0);
 	pthread_mutex_init(&_mutexMethods, 0);
+	pthread_mutex_init(&_mutexMethodTypes, 0);
 }
 
 uint32_t J3ClassLoader::interfaceIndex(J3Method* method) {
@@ -162,6 +164,33 @@ J3Type* J3ClassLoader::getType(J3Class* from, const vmkit::Name* type) {
 		types[type] = res;
 		pthread_mutex_unlock(&_mutexTypes);
 	}
+
+	return res;
+}
+
+
+J3MethodType* J3ClassLoader::getMethodType(J3Class* from, const vmkit::Name* sign) {
+	pthread_mutex_lock(&_mutexMethodTypes);
+	J3MethodType* res = methodTypes[sign];
+
+	if(!res) {
+		J3Type*            args[1+sign->length()];
+		uint32_t           nbArgs = 0;
+		uint32_t           cur = 1;
+
+		if(sign->cStr()[0] != J3Cst::ID_Left)
+			wrongType(from, sign);
+
+		while(sign->cStr()[cur] != J3Cst::ID_Right) {
+			args[nbArgs++] = getTypeInternal(from, sign, cur, &cur);
+	}
+		args[nbArgs++] = getTypeInternal(from, sign, cur+1, &cur);
+		if(cur != sign->length())
+			wrongType(from, sign);
+		
+		methodTypes[sign] = res = new(allocator(), nbArgs - 1) J3MethodType(args, nbArgs);
+	}
+	pthread_mutex_unlock(&_mutexMethodTypes);
 
 	return res;
 }

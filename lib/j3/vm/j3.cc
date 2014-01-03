@@ -243,8 +243,8 @@ void J3::vinternalError(const char* msg, va_list va) {
 	vsnprintf(buf, 65536, msg, va);
 	fprintf(stderr, "Internal error: %s\n", buf);
 	printStackTrace();
-	exit(1);
-	//abort();
+	//exit(1);
+	abort();
 }
 
 void J3::printStackTrace() {

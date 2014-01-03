@@ -104,14 +104,15 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 			llvmFunction->dump();
 	}
 
-	if(withCaller && !methodType->llvmSignature()->caller())
-		methodType->llvmSignature()->generateCallerIR(this, module, "generic-caller");
+	uint32_t access = method->access();
+	if(withCaller && !methodType->llvmSignature(access)->caller())
+		methodType->llvmSignature(access)->generateCallerIR(this, module, "generic-caller");
 
 	loader->compileModule(module);
 
-	if(withCaller && !methodType->llvmSignature()->caller()) {
+	if(withCaller && !methodType->llvmSignature(access)->caller()) {
 		J3LLVMSignature::function_t caller = (J3LLVMSignature::function_t)loader->ee()->getFunctionAddress("generic-caller");
-		methodType->llvmSignature()->_caller = caller;
+		methodType->llvmSignature(access)->_caller = caller;
 	}
 
 	if(withMethod) {
@@ -189,7 +190,7 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 
 llvm::FunctionType* J3CodeGen::llvmFunctionType(J3Method* method) {
 	J3MethodType* type = method->methodType(cl);
-	J3LLVMSignature* res = type->llvmSignature();
+	J3LLVMSignature* res = type->llvmSignature(method->access());
 
 	if(!res) {
 		std::vector<llvm::Type*> in;
@@ -204,7 +205,7 @@ llvm::FunctionType* J3CodeGen::llvmFunctionType(J3Method* method) {
 		res = vm->llvmSignatures[funcType];
 		if(!res)
 			vm->llvmSignatures[funcType] = res = new(vm->allocator()) J3LLVMSignature(funcType);
-		type->setLLVMSignature(res);
+		type->setLLVMSignature(method->access(), res);
 	}
 	return res->functionType();
 }

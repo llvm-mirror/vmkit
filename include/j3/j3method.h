@@ -24,26 +24,7 @@ namespace j3 {
 	class J3Method;
 	class J3Value;
 	class J3ObjectHandle;
-
-	class J3MethodType : public vmkit::PermanentObject {
-		J3LLVMSignature*             _llvmSignature;
-		J3Type*                      _out;
-		uint32_t                     _nbIns;
-		J3Type*                      _ins[1];
-
-	public:
-		J3MethodType(J3Type** args, size_t nbArgs);
-
-		void                setLLVMSignature(J3LLVMSignature* llvmSignature) { _llvmSignature = llvmSignature; }
-		J3LLVMSignature*    llvmSignature() { return _llvmSignature; }
-		J3Type*             out() { return _out; }
-		uint32_t            nbIns() { return _nbIns; }
-		J3Type*             ins(uint32_t idx) { return _ins[idx]; }
-
-		void* operator new(size_t unused, vmkit::BumpAllocator* allocator, size_t n) {
-			return vmkit::PermanentObject::operator new(sizeof(J3MethodType) + (n - 1) * sizeof(J3Type*), allocator);
-		}
-	};
+	class J3MethodType;
 
 	class J3MethodCode : public vmkit::Symbol {
 	public:
