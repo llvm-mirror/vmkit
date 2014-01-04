@@ -125,7 +125,6 @@ namespace j3 {
 		J3InterfaceSlotDescriptor* slotDescriptorAt(uint32_t index) { return &_interfaceSlotDescriptors[index]; }
 		void                       prepareInterfaceTable();
 
-		virtual J3Method*          findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error=1);
 
 		bool                       isObjectType() { return 1; }
 
@@ -133,7 +132,11 @@ namespace j3 {
 
 		void                       dumpInterfaceSlotDescriptors();
 
+		virtual J3Method*          findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error=1);
 		virtual J3ObjectHandle*    clone(J3ObjectHandle* obj);
+		virtual uint16_t           access();
+		virtual uint16_t           modifiers();
+		virtual J3Class*           super();
 	};
 
 	class J3Layout : public J3ObjectType {
@@ -232,6 +235,7 @@ namespace j3 {
 		J3Class**           interfaces() { return _interfaces; }
 		J3Class*            super() { return _super; }
 		uint16_t            access() { return _access; }
+		uint16_t            modifiers();
 
 		J3ObjectHandle*     staticInstance();
 
@@ -275,6 +279,10 @@ namespace j3 {
 		bool                isArrayClass() { return 1; }
 
 		J3Method*           findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error=1);
+
+		uint16_t            access();
+		uint16_t            modifiers();
+		J3Class*            super();
 	};
 
 	class J3Primitive : public J3Type {

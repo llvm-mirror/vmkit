@@ -180,6 +180,18 @@ J3ObjectHandle* J3ObjectType::clone(J3ObjectHandle* obj) {
 	J3::internalError("should not happen");
 }
 
+uint16_t J3ObjectType::access() {
+	J3::internalError("should not happen");
+}
+
+uint16_t J3ObjectType::modifiers() {
+	J3::internalError("should not happen");
+}
+
+J3Class* J3ObjectType::super() {
+	J3::internalError("should not happen");
+}
+
 void J3ObjectType::prepareInterfaceTable() {
 	//fprintf(stderr, "prepare interface table of %s\n", name()->cStr());
 
@@ -294,6 +306,16 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	_staticLayout(loader, this, name){
 	_bytes = bytes;
 	status = LOADED;
+}
+
+uint16_t J3Class::modifiers() {
+	return access();
+#if 0
+  if (isEnum(res) && cl->getSuper() != vm->upcalls->EnumClass) {
+    // javac may put that flag to inner classes of enum classes.
+    res &= ~ACC_ENUM;
+  }
+#endif
 }
 
 J3ObjectHandle* J3Class::clone(J3ObjectHandle* obj) {
@@ -846,8 +868,20 @@ J3ObjectHandle* J3ArrayClass::clone(J3ObjectHandle* obj) {
 	return res;
 }
 
+uint16_t J3ArrayClass::access() {
+	return super()->access();
+}
+
+uint16_t J3ArrayClass::modifiers() {
+	return super()->modifiers();
+}
+
+J3Class* J3ArrayClass::super() {
+	return loader()->vm()->objectClass;
+}
+
 J3Method* J3ArrayClass::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
-	return loader()->vm()->objectClass->findMethod(access, name, signature, error);
+	return super()->findMethod(access, name, signature, error);
 }
 
 void J3ArrayClass::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {

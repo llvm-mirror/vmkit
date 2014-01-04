@@ -247,6 +247,19 @@ void J3Method::registerNative(void* fnPtr) {
 	_nativeFnPtr = fnPtr;
 }
 
+J3Method* J3Method::nativeMethod(J3ObjectHandle* handle) {
+	J3* vm = J3Thread::get()->vm();
+	if(handle->vt()->type() == vm->constructorClass) {
+		J3Class* cl = J3ObjectType::nativeClass(handle->getObject(vm->constructorClassClass))->asClass();
+		uint32_t slot = handle->getInteger(vm->constructorClassSlot);
+		J3Method* res = cl->methods()[slot];
+		if(res->name() != vm->initName)
+			J3::internalError("nativeName with a java.lang.reflect.Constructor with a non-constructot method");
+		return res;
+	} else
+		J3::internalError("implement me: nativeMethod with method");
+}
+
 J3ObjectHandle* J3Method::javaMethod() {
 	if(!_javaMethod) {
 		cl()->lock();

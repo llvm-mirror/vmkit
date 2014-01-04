@@ -37,7 +37,15 @@ jfieldID JNICALL FromReflectedField(JNIEnv* env, jobject field) { enterJVM(); le
 
 jobject JNICALL ToReflectedMethod(JNIEnv* env, jclass cls, jmethodID methodID, jboolean isStatic) { enterJVM(); leaveJVM(); NYI(); }
 
-jclass JNICALL GetSuperclass(JNIEnv* env, jclass sub) { enterJVM(); leaveJVM(); NYI(); }
+jclass JNICALL GetSuperclass(JNIEnv* env, jclass sub) { 
+	jclass res;
+	enterJVM();
+	J3ObjectType* cl = J3ObjectType::nativeClass(sub);
+	res = J3Thread::get()->vm()->objectClass ? 0 : cl->javaClass();
+	leaveJVM(); 
+	return res;
+}
+
 jboolean JNICALL IsAssignableFrom(JNIEnv* env, jclass sub, jclass sup) { enterJVM(); leaveJVM(); NYI(); }
 
 jobject JNICALL ToReflectedField(JNIEnv* env, jclass cls, jfieldID fieldID, jboolean isStatic) { enterJVM(); leaveJVM(); NYI(); }

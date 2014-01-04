@@ -62,6 +62,7 @@ namespace j3 {
 
 		uint32_t            slot() { return _slot; }
 
+		static J3Method*    nativeMethod(J3ObjectHandle* handle);
 		J3ObjectHandle*     javaMethod();
 
 		void*               nativeFnPtr() { return _nativeFnPtr; }

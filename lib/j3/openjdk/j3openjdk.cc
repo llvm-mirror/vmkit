@@ -401,7 +401,14 @@ jclass JNICALL JVM_DefineClassWithSource(JNIEnv* env, const char *name, jobject 
  * Reflection support functions
  */
 
-jstring JNICALL JVM_GetClassName(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jstring JNICALL JVM_GetClassName(JNIEnv* env, jclass cls) { 
+	jstring res;
+	enterJVM(); 
+	res = J3Thread::get()->vm()->nameToString(J3ObjectType::nativeClass(cls)->name());
+	leaveJVM(); 
+	return res;
+}
+
 jobjectArray JNICALL JVM_GetClassInterfaces(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
 jobject JNICALL JVM_GetClassLoader(JNIEnv* env, jclass cls) { 
 	enterJVM(); 
@@ -425,7 +432,14 @@ jobject JNICALL JVM_GetProtectionDomain(JNIEnv* env, jclass cls) { enterJVM(); N
 jboolean JNICALL JVM_IsArrayClass(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
 jboolean JNICALL JVM_IsPrimitiveClass(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
 jclass JNICALL JVM_GetComponentType(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_GetClassModifiers(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetClassModifiers(JNIEnv* env, jclass cls) { 
+	jint res;
+	enterJVM(); 
+	res = J3ObjectType::nativeClass(cls)->modifiers();
+	leaveJVM(); 
+	return res;
+}
+
 jobjectArray JNICALL JVM_GetDeclaredClasses(JNIEnv* env, jclass ofClass) { enterJVM(); NYI(); leaveJVM(); }
 jclass JNICALL JVM_GetDeclaringClass(JNIEnv* env, jclass ofClass) { enterJVM(); NYI(); leaveJVM(); }
 
@@ -502,7 +516,13 @@ jobjectArray JNICALL JVM_GetClassDeclaredConstructors(JNIEnv* env, jclass ofClas
    present) to find the source-level access flags. Only the values of
    the low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
    valid. */
-jint JNICALL JVM_GetClassAccessFlags(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetClassAccessFlags(JNIEnv* env, jclass cls) { 
+	jint res;
+	enterJVM(); 
+	res = J3ObjectType::nativeClass(cls)->access();
+	leaveJVM(); 
+	return res;
+}
 
 /* The following two reflection routines are still needed due to startup time issues */
 /*
@@ -513,7 +533,16 @@ jobject JNICALL JVM_InvokeMethod(JNIEnv* env, jobject method, jobject obj, jobje
 /*
  * java.lang.reflect.Constructor
  */
-jobject JNICALL JVM_NewInstanceFromConstructor(JNIEnv* env, jobject c, jobjectArray args0) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_NewInstanceFromConstructor(JNIEnv* env, jobject c, jobjectArray args0) { 
+	enterJVM(); 
+	J3Method* cons = J3Method::nativeMethod(c);
+	jobject res = J3ObjectHandle::doNewObject(cons->cl());
+	if(cons->signature()->nbIns())
+		J3::internalError("implement me: JVM_NewInstanceFromConstructor with arguments");
+	cons->invokeSpecial(res);
+	leaveJVM(); 
+	return res;
+}
 
 /*
  * Constant pool access; currently used to implement reflective access to annotations (JDK 1.5)
