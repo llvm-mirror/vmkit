@@ -406,7 +406,18 @@ jlong JNICALL GetStaticLongField(JNIEnv* env, jclass clazz, jfieldID fieldID) { 
 jfloat JNICALL GetStaticFloatField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
 jdouble JNICALL GetStaticDoubleField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
 
-jstring JNICALL NewString(JNIEnv* env, const jchar* unicode, jsize len) { enterJVM(); leaveJVM(); NYI(); }
+jstring JNICALL NewString(JNIEnv* env, const jchar* unicode, jsize len) { 
+	jstring res;
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	J3ObjectHandle* content = J3ObjectHandle::doNewArray(vm->typeChar->getArray(), len);
+	content->setRegionChar(0, unicode, 0, len);
+	res = J3ObjectHandle::doNewObject(vm->stringClass);
+	vm->stringClassInit->invokeSpecial(res, content, 0);
+	leaveJVM(); 
+	return res;
+}
+
 jsize JNICALL GetStringLength(JNIEnv* env, jstring str) { 
 	jsize res;
 	enterJVM(); 
@@ -462,7 +473,13 @@ void JNICALL ReleaseStringUTFChars(JNIEnv* env, jstring str, const char* chars) 
 }
 
 
-jsize JNICALL GetArrayLength(JNIEnv* env, jarray array) { enterJVM(); leaveJVM(); NYI(); }
+jsize JNICALL GetArrayLength(JNIEnv* env, jarray array) { 
+	jsize res;
+	enterJVM();
+	res = array->arrayLength();
+	leaveJVM(); 
+	return res;
+}
 
 jobjectArray JNICALL NewObjectArray(JNIEnv* env, jsize len, jclass clazz, jobject init) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index) { enterJVM(); leaveJVM(); NYI(); }
@@ -514,7 +531,11 @@ jint JNICALL MonitorExit(JNIEnv* env, jobject obj) { enterJVM(); leaveJVM(); NYI
 
 jint JNICALL GetJavaVM(JNIEnv* env, JavaVM** vm) { enterJVM(); leaveJVM(); NYI(); }
 
-void JNICALL GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len, jchar* buf) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len, jchar* buf) { 
+	enterJVM(); 
+	str->getObject(J3Thread::get()->vm()->stringClassValue)->getRegionChar(start, buf, 0, len);
+	leaveJVM(); 
+}
 
 void JNICALL GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len, char* buf) { 
 	enterJVM(); 

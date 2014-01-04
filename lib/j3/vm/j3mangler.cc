@@ -77,49 +77,56 @@ J3Mangler* J3Mangler::mangle(const vmkit::Name* name) {
 }
 
 J3Mangler* J3Mangler::mangle(uint16_t c) {
-	if(c > 256) {
-		check(6);
-		*cur++ = '_';
-		*cur++ = '0';
-		*cur++ = (c >> 24 & 0xf) + '0';
-		*cur++ = (c >> 16 & 0xf) + '0';
-		*cur++ = (c >> 8  & 0xf) + '0';
-		*cur++ = (c >> 0  & 0xf) + '0';
-	} else {
-
-		switch(c) {
-			case '<':
-			case '>':
-				break; /* do not encode at all */
-			case '(':
-			case ')':
-				J3Thread::get()->vm()->internalError("should not try to encode a special character such as %c", (char)c);
-			case '_': 
-				check(2);
-				*cur++ = '_'; 
-				*cur++ = '1'; 
-				break;
-			case ';': 
-				check(2);
-				*cur++ = '_'; 
-				*cur++ = '2'; 
-				break;
-			case '[': 
-				check(2);
-				*cur++ = '_'; 
-				*cur++ = '3'; 
-				break;
-			case '/': 
-				c = '_';
-			default: 
+	switch(c) {
+		case '<':
+		case '>':
+			break; /* do not encode at all */
+		case '(':
+		case ')':
+			J3Thread::get()->vm()->internalError("should not try to encode a special character such as %c", (char)c);
+		case '_': 
+			check(2);
+			*cur++ = '_'; 
+			*cur++ = '1'; 
+			break;
+		case ';': 
+			check(2);
+			*cur++ = '_'; 
+			*cur++ = '2'; 
+			break;
+		case '[': 
+			check(2);
+			*cur++ = '_'; 
+			*cur++ = '3'; 
+			break;
+		case '/': 
+			c = '_';
+		default: 
+			if((c >= 'a' && c <= 'z') ||
+				 (c >= 'A' && c <= 'Z') ||
+				 (c >= '0' && c <= '9') ||
+				 (c == '_')) {
 				check(1);
 				*cur++ = c;
-		}
-
+			} else {
+				check(6);
+				*cur++ = '_';
+				*cur++ = '0';
+				*cur++ = hex(c >> 12);
+				*cur++ = hex(c >> 8);
+				*cur++ = hex(c >> 4);
+				*cur++ = hex(c >> 0);
+			} 
 	}
+
 	cur = next;
 
 	return this;
+}
+
+char J3Mangler::hex(uint32_t n) {
+	n = n & 0xf;
+	return n < 10 ? (n + '0') : (n + 'a' - 10);
 }
 
 void J3Mangler::check(size_t n) {

@@ -22,7 +22,7 @@ namespace j3 {
 		char*    next;
 
 		void     check(size_t n);
-
+		char     hex(uint32_t n);
 	public:
 		static const char*    j3Id;
 		static const char*    javaId;
