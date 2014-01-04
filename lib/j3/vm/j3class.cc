@@ -53,11 +53,12 @@ J3ObjectHandle* J3Type::javaClass(bool doPush) {
 	if(!_javaClass) {
 		lock();
 		if(!_javaClass) {
+			J3* vm = J3Thread::get()->vm();
 			J3ObjectHandle* prev = J3Thread::get()->tell();
-			_javaClass = loader()->globalReferences()->add(J3ObjectHandle::doNewObject(loader()->vm()->classClass));
+			_javaClass = loader()->globalReferences()->add(J3ObjectHandle::doNewObject(vm->classClass));
 			J3Thread::get()->restore(prev);
-			_javaClass->setLong(loader()->vm()->classClassVMData, (int64_t)(uintptr_t)this);
-			loader()->vm()->classClassInit->invokeSpecial(_javaClass);
+			_javaClass->setLong(vm->classClassVMData, (int64_t)(uintptr_t)this);
+			vm->classClassInit->invokeSpecial(_javaClass);
 		}
 		unlock();
 	}
@@ -165,7 +166,7 @@ J3ObjectType::J3ObjectType(J3ClassLoader* loader, const vmkit::Name* name) : J3T
 }
 
 llvm::Type* J3ObjectType::llvmType() {
-	return loader()->vm()->typeJ3ObjectPtr;
+	return J3Thread::get()->vm()->typeJ3ObjectPtr;
 }
 
 J3Method* J3ObjectType::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
@@ -336,7 +337,7 @@ J3ObjectHandle* J3Class::extractAttribute(J3Attribute* attr) {
 	if(attr)
 		J3::internalError("extract attribute");
 	else
-		return J3ObjectHandle::doNewArray(loader()->vm()->typeByte->getArray(), 0);
+		return J3ObjectHandle::doNewArray(J3Thread::get()->vm()->typeByte->getArray(), 0);
 }
 
 J3Method* J3Class::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
@@ -402,7 +403,8 @@ void J3Class::doInitialise() {
 	resolve();
 	lock();
 	if(status < INITED) {
-		if(loader()->vm()->options()->debugIniting)
+		J3* vm = J3Thread::get()->vm();
+		if(vm->options()->debugIniting)
 			fprintf(stderr, "Initing: %s\n", name()->cStr());
 		status = INITED;
 
@@ -419,7 +421,7 @@ void J3Class::doInitialise() {
 
 		for(size_t i=0; i<staticLayout()->nbFields(); i++) {
 			J3Field* cur = staticLayout()->fields() + i;
-			J3Attribute* attr = cur->attributes()->lookup(loader()->vm()->constantValueAttribute);
+			J3Attribute* attr = cur->attributes()->lookup(vm->constantValueAttribute);
 
 			if(attr) {
 				J3Reader reader(bytes());
@@ -443,7 +445,7 @@ void J3Class::doInitialise() {
 			}
 		}
 
-		J3Method* clinit = staticLayout()->localFindMethod(loader()->vm()->clinitName, loader()->vm()->clinitSign);
+		J3Method* clinit = staticLayout()->localFindMethod(vm->clinitName, vm->clinitSign);
 			
 		if(clinit)
 			clinit->invokeStatic();
@@ -454,7 +456,7 @@ void J3Class::doInitialise() {
 void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 	lock();
 	if(status < RESOLVED) {
-		if(loader()->vm()->options()->debugResolve)
+		if(J3Thread::get()->vm()->options()->debugResolve)
 			fprintf(stderr, "Resolving: %s\n", name()->cStr());
 
 		status = RESOLVED;
@@ -632,7 +634,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 			layout = staticLayout();
 		else {
 			layout = this;
-			if(methodsTmp[i]->name() == loader()->vm()->initName) {
+			if(methodsTmp[i]->name() == J3Thread::get()->vm()->initName) {
 				_nbConstructors++;
 				if(J3Cst::isPublic(methodsTmp[i]->access()))
 					_nbPublicConstructors++;
@@ -692,7 +694,7 @@ J3ObjectHandle* J3Class::stringAt(uint16_t idx, bool doPush) {
 	check(idx, J3Cst::CONSTANT_String);
 	J3ObjectHandle* res = (J3ObjectHandle*)ctpResolved[idx];
 	if(!res) {
-		ctpResolved[idx] = res = loader()->vm()->nameToString(nameAt(ctpValues[idx]), 0);
+		ctpResolved[idx] = res = J3Thread::get()->vm()->nameToString(nameAt(ctpValues[idx]), 0);
 	}
 	return (J3ObjectHandle*)res;
 }
@@ -813,7 +815,7 @@ const vmkit::Name*  J3Class::nameAt(uint16_t idx) {
 
 	uint16_t len = reader.readU2(), i=0, n=0;
 
-	res = loader()->vm()->names()->get((const char*)reader.pointer(), 0, len);
+	res = J3Thread::get()->vm()->names()->get((const char*)reader.pointer(), 0, len);
 
 	ctpResolved[idx] = (void*)res;
 
@@ -865,7 +867,7 @@ J3ArrayClass::J3ArrayClass(J3ClassLoader* loader, J3Type* component, const vmkit
 			buf[pos++] = J3Cst::ID_End;
 		buf[pos] = 0;
 
-		_name = loader->vm()->names()->get(buf);
+		_name = J3Thread::get()->vm()->names()->get(buf);
 	}
 }
 
@@ -885,7 +887,7 @@ uint16_t J3ArrayClass::modifiers() {
 }
 
 J3Class* J3ArrayClass::super() {
-	return loader()->vm()->objectClass;
+	return J3Thread::get()->vm()->objectClass;
 }
 
 J3Method* J3ArrayClass::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
@@ -922,7 +924,7 @@ void J3ArrayClass::doNativeName() {
  *  ------------ J3Primitive ------------
  */
 J3Primitive::J3Primitive(J3ClassLoader* loader, char id, llvm::Type* type, uint32_t logSize) : 
-	J3Type(loader, loader->vm()->names()->get(id)) {
+	J3Type(loader, J3Thread::get()->vm()->names()->get(id)) {
 	_llvmType = type;
 	_nativeName = (char*)loader->allocator()->allocate(2);
 	_nativeName[0] = id;

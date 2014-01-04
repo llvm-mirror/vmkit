@@ -572,6 +572,7 @@ jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jbo
 
 	enterJVM(); 
 	J3ObjectType* type = J3ObjectType::nativeClass(ofClass);
+	J3* vm = J3Thread::get()->vm();
 
 	if(type->isClass()) {
 		J3Class* cl = type->asClass();
@@ -580,7 +581,7 @@ jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jbo
 			cl->nbPublicFields() + cl->staticLayout()->nbPublicFields() :
 			cl->nbFields() + cl->staticLayout()->nbFields();
 
-		res = J3ObjectHandle::doNewArray(type->loader()->vm()->fieldClass->getArray(), total);
+		res = J3ObjectHandle::doNewArray(vm->fieldClass->getArray(), total);
 
 		size_t cur = 0;
 		for(uint32_t i=0; i<cl->nbFields(); i++)
@@ -590,7 +591,7 @@ jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jbo
 			if(!publicOnly || J3Cst::isPublic(cl->staticLayout()->fields()[i].access()))
 				res->setObjectAt(cur++, cl->staticLayout()->fields()[i].javaField());
 	} else
-		res = J3ObjectHandle::doNewArray(type->loader()->vm()->fieldClass->getArray(), 0);
+		res = J3ObjectHandle::doNewArray(vm->fieldClass->getArray(), 0);
 
 	leaveJVM();
 

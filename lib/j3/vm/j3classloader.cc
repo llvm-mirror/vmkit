@@ -21,8 +21,8 @@ using namespace j3;
 
 J3ClassLoader::J3InterfaceMethodLess J3ClassLoader::j3InterfaceMethodLess;
 
-J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
-	: CompilationUnit(allocator, v, "class-loader"),
+J3ClassLoader::J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
+	: CompilationUnit(allocator, "class-loader"),
 		_globalReferences(allocator),
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
@@ -95,6 +95,7 @@ void J3ClassLoader::wrongType(J3ObjectType* from, const vmkit::Name* type) {
 }
 
 J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend, bool unify) {
+	J3*            vm   = J3Thread::get()->vm();
 	J3Type*        res  = 0;
 	const char*    type = typeName->cStr();
 	uint32_t       len  = typeName->length();
@@ -107,15 +108,15 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 
 		switch(type[pos]) {
 			case J3Cst::ID_Array:     prof++; pos++; break;
-			case J3Cst::ID_Void:      res = vm()->typeVoid; pos++; break;
-			case J3Cst::ID_Byte:      res = vm()->typeByte; pos++; break;
-			case J3Cst::ID_Char:      res = vm()->typeChar; pos++; break;
-			case J3Cst::ID_Double:    res = vm()->typeDouble; pos++; break;
-			case J3Cst::ID_Float:     res = vm()->typeFloat; pos++; break;
-			case J3Cst::ID_Integer:   res = vm()->typeInteger; pos++; break;
-			case J3Cst::ID_Long:      res = vm()->typeLong; pos++; break;
-			case J3Cst::ID_Short:     res = vm()->typeShort; pos++; break;
-			case J3Cst::ID_Boolean:   res = vm()->typeBoolean; pos++; break;
+			case J3Cst::ID_Void:      res = vm->typeVoid; pos++; break;
+			case J3Cst::ID_Byte:      res = vm->typeByte; pos++; break;
+			case J3Cst::ID_Char:      res = vm->typeChar; pos++; break;
+			case J3Cst::ID_Double:    res = vm->typeDouble; pos++; break;
+			case J3Cst::ID_Float:     res = vm->typeFloat; pos++; break;
+			case J3Cst::ID_Integer:   res = vm->typeInteger; pos++; break;
+			case J3Cst::ID_Long:      res = vm->typeLong; pos++; break;
+			case J3Cst::ID_Short:     res = vm->typeShort; pos++; break;
+			case J3Cst::ID_Boolean:   res = vm->typeBoolean; pos++; break;
 			case J3Cst::ID_Classname: 
 				if(unify) {
 					uint32_t start = ++pos;
@@ -125,7 +126,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 						wrongType(from, typeName);
 
 					pos++;
-					res = vm()->objectClass;
+					res = vm->objectClass;
 				} else {
 					uint32_t start = ++pos;
 					char buf[len + 1 - start], c;
@@ -140,7 +141,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 					
 					buf[pos++ - start] = 0;
 
-					res = loadClass(vm()->names()->get(buf));
+					res = loadClass(vm->names()->get(buf));
 				}
 				break;
 			case J3Cst::ID_Left:
@@ -154,7 +155,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 		
 	if(prof) {
 		if(unify)
-			res = vm()->objectClass;
+			res = vm->objectClass;
 		else
 			res = res->getArray(prof, start ? 0 : typeName);
 	}
@@ -203,9 +204,9 @@ bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j
 				&& (lhs->signature() < rhs->signature()));
 }
 
-J3InitialClassLoader::J3InitialClassLoader(J3* v, const char* rtjar, vmkit::BumpAllocator* _alloc) 
-	: J3ClassLoader(v, 0, _alloc) {
-	const char* archives = vm()->options()->rtJar;
+J3InitialClassLoader::J3InitialClassLoader(const char* rtjar, vmkit::BumpAllocator* _alloc) 
+	: J3ClassLoader(0, _alloc) {
+	const char* archives = J3Thread::get()->vm()->options()->rtJar;
 	J3ClassBytes* bytes = J3Reader::openFile(allocator(), archives);
 
 	//makeLLVMFunctions_j3();

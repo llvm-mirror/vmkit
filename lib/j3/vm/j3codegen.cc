@@ -37,7 +37,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	cl = method->cl()->asClass();
 	signature = method->signature();
 	loader = cl->loader();
-	vm = loader->vm();
+	vm = J3Thread::get()->vm();
 
 #if 0
 	if(m->cl()->name() == vm->names()->get("java/util/concurrent/atomic/AtomicInteger"))
@@ -134,13 +134,13 @@ void J3CodeGen::operator delete(void* ptr) {
 }
 
 void J3CodeGen::translate(J3Method* method, bool withMethod, bool withCaller) {
-	method->cl()->loader()->vm()->lockCompiler();
+	J3Thread::get()->vm()->lockCompiler();
 	
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
 	delete new(allocator) J3CodeGen(allocator, method, withMethod, withCaller);
 	vmkit::BumpAllocator::destroy(allocator);
 
-	method->cl()->loader()->vm()->unlockCompiler();
+	J3Thread::get()->vm()->unlockCompiler();
 }
 
 uint32_t J3CodeGen::wideReadU1() {

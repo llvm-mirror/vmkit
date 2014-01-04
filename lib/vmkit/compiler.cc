@@ -33,12 +33,10 @@ void* CompilationUnit::operator new(size_t n, BumpAllocator* allocator) {
 void  CompilationUnit::operator delete(void* self) {
 }
 
-CompilationUnit::CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const char* id) :
+CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id) :
 	_symbolTable(vmkit::Util::char_less, allocator) {
 	_allocator = allocator;
 	pthread_mutex_init(&_mutexSymbolTable, 0);
-
-	_vmkit = vmkit;
 
 	std::string err;
 
@@ -148,13 +146,14 @@ void CompilationUnit::compileModule(llvm::Module* module) {
 	ee()->finalizeObject();
 
 	vmkit::Safepoint* sf = Safepoint::get(this, module);
+	VMKit* vm = Thread::get()->vm();
 
 	if(!sf)
-		vm()->internalError("unable to find safepoints");
+		vm->internalError("unable to find safepoints");
 		
 	while(sf->addr()) {
 		sf->setUnit(this);
-		vm()->addSafepoint(sf);
+		vm->addSafepoint(sf);
 
 		//vm()->getSafepoint(sf->addr())->dump();
 		sf = sf->getNext();

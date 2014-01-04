@@ -78,7 +78,7 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 			memcpy(res->_virtualMethods, super->vt()->_virtualMethods, sizeof(void*)*super->vt()->nbVirtualMethods());
 
 		if(!J3Cst::isAbstract(cl->access())) {
-			void* interfaceTrampoline = cl->loader()->vm()->interfaceTrampoline;
+			void* interfaceTrampoline = J3Thread::get()->vm()->interfaceTrampoline;
 			for(uint32_t i=0; i<nbInterfaceMethodTable; i++)
 				res->_interfaceMethodTable[i] = interfaceTrampoline;
 		}
@@ -92,7 +92,8 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 }
 
 J3VirtualTable* J3VirtualTable::create(J3ArrayClass* cl) {
-	J3Class* objClass           = cl->loader()->vm()->objectClass;
+	J3* vm                      = J3Thread::get()->vm();
+	J3Class* objClass           = vm->objectClass;
 	J3Type* super               = cl->component();
 	J3Type* base                = super;
 	uint32_t dim                = 1;
@@ -114,18 +115,18 @@ J3VirtualTable* J3VirtualTable::create(J3ArrayClass* cl) {
 
 	if(base->isPrimitive()) {
 		super = objClass->getArray(dim-1);
-		nbSecondaries = cl->loader()->vm()->nbArrayInterfaces;
+		nbSecondaries = vm->nbArrayInterfaces;
 		secondaries = (J3Type**)cl->loader()->allocator()->allocate(nbSecondaries*sizeof(J3Type*));
 		for(uint32_t i=0; i<nbSecondaries; i++) {
-			secondaries[i] = cl->loader()->vm()->arrayInterfaces[i];
+			secondaries[i] = vm->arrayInterfaces[i];
 			if(dim > 1)
 				secondaries[i] = secondaries[i]->getArray(dim-1);
 		}
 	} else if(base == objClass) {
-		nbSecondaries = cl->loader()->vm()->nbArrayInterfaces;
+		nbSecondaries = vm->nbArrayInterfaces;
 		secondaries = (J3Type**)alloca(nbSecondaries*sizeof(J3Type*));
 		for(uint32_t i=0; i<nbSecondaries; i++) {
-			secondaries[i] = cl->loader()->vm()->arrayInterfaces[i];
+			secondaries[i] = vm->arrayInterfaces[i];
 			if(dim > 1)
 				secondaries[i] = secondaries[i]->getArray(dim - 1);
 		}

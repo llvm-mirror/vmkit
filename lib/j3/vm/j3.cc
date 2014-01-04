@@ -87,7 +87,7 @@ void J3::run() {
 	vmkit::BumpAllocator* loaderAllocator = vmkit::BumpAllocator::create();
 	initialClassLoader = 
 		new(loaderAllocator) 
-		J3InitialClassLoader(this, options()->rtJar, loaderAllocator);
+		J3InitialClassLoader(options()->rtJar, loaderAllocator);
 
 	vmkit::BumpAllocator* a = initialClassLoader->allocator();
 

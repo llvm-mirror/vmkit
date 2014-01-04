@@ -3,6 +3,7 @@
 #include "j3/j3codegen.h"
 #include "j3/j3classloader.h"
 #include "j3/j3class.h"
+#include "j3/j3thread.h"
 #include "j3/j3.h"
 
 #include "llvm/IR/Function.h"
@@ -42,9 +43,10 @@ void J3Signature::checkInOut() {
 }
 
 J3LLVMSignature* J3Signature::buildLLVMSignature(llvm::FunctionType* fType) {
-	J3LLVMSignature* res = loader()->vm()->llvmSignatures[fType];
+	J3* vm = J3Thread::get()->vm();
+	J3LLVMSignature* res = vm->llvmSignatures[fType];
 	if(!res) {
-		loader()->vm()->llvmSignatures[fType] = res = new(loader()->vm()->allocator()) J3LLVMSignature();
+		vm->llvmSignatures[fType] = res = new(vm->allocator()) J3LLVMSignature();
 		res->functionType = fType;
 	}
 	return res;
@@ -56,7 +58,7 @@ void J3Signature::checkFunctionType() {
 		std::vector<llvm::Type*> sins;
 		uint32_t                 cur = 1;
 
-		vins.push_back(loader()->vm()->objectClass->llvmType());
+		vins.push_back(J3Thread::get()->vm()->objectClass->llvmType());
 
 		if(name()->cStr()[0] != J3Cst::ID_Left)
 			loader()->wrongType(0, name());

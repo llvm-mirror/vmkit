@@ -37,7 +37,6 @@ namespace vmkit {
 	class CompilationUnit  : public llvm::SectionMemoryManager {
 		typedef std::map<const char*, Symbol*, Util::char_less_t, StdAllocator<std::pair<const char*, Symbol*> > > SymbolMap;
 
-		VMKit*                  _vmkit;
 		BumpAllocator*          _allocator;
 		SymbolMap               _symbolTable;
 		pthread_mutex_t         _mutexSymbolTable;
@@ -50,12 +49,10 @@ namespace vmkit {
 	public:
 		void* operator new(size_t n, BumpAllocator* allocator);
 
-		CompilationUnit(BumpAllocator* allocator, VMKit* vmkit, const char* id);
+		CompilationUnit(BumpAllocator* allocator, const char* id);
 		~CompilationUnit();
 
 		static void destroy(CompilationUnit* unit);
-
-		VMKit*                  vm() const { return _vmkit; }
 
 		void                    addSymbol(const char* id, vmkit::Symbol* symbol);
 		Symbol*                 getSymbol(const char* id);

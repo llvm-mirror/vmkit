@@ -23,8 +23,9 @@ jclass JNICALL FindClass(JNIEnv* env, const char* name) {
 
 	enterJVM();
 	J3Method* m = J3Thread::get()->getJavaCaller();
-	J3ClassLoader* loader = m ? m->cl()->loader() : J3Thread::get()->vm()->initialClassLoader;
-	J3Class* cl = loader->loadClass(loader->vm()->names()->get(name));
+	J3* vm = J3Thread::get()->vm();
+	J3ClassLoader* loader = m ? m->cl()->loader() : vm->initialClassLoader;
+	J3Class* cl = loader->loadClass(vm->names()->get(name));
 	cl->initialise();
 	res = cl->javaClass();
 	leaveJVM(); 
@@ -145,7 +146,7 @@ jmethodID JNICALL GetMethodID(JNIEnv* env, jclass clazz, const char* name, const
 	enterJVM(); 
 	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
 	cl->initialise();
-	vmkit::Names* n = cl->loader()->vm()->names();
+	vmkit::Names* n = J3Thread::get()->vm()->names();
 	res = cl->findMethod(0, n->get(name), cl->loader()->getSignature(cl, n->get(sig)), 0);
 	leaveJVM(); 
 
@@ -159,7 +160,7 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 	
 	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
 	cl->initialise();
-	vmkit::Names* n = cl->loader()->vm()->names();
+	vmkit::Names* n = J3Thread::get()->vm()->names();
 	res = cl->findMethod(J3Cst::ACC_STATIC, n->get(name), cl->loader()->getSignature(cl, n->get(sig)), 0);
 
 	leaveJVM(); 
@@ -499,7 +500,7 @@ void JNICALL GetDoubleArrayRegion(JNIEnv* env, jdoubleArray array, jsize start, 
 jint JNICALL RegisterNatives(JNIEnv* env, jclass clazz, const JNINativeMethod* methods, jint nMethods) {
 	enterJVM();
 	J3Class* cl = J3Class::nativeClass(clazz)->asClass();
-	J3*      j3 = cl->loader()->vm();
+	J3*      j3 = J3Thread::get()->vm();
 
  	for(jint i=0; i<nMethods; i++)
  		cl->registerNative(j3->names()->get(methods[i].name), j3->names()->get(methods[i].signature), methods[i].fnPtr);

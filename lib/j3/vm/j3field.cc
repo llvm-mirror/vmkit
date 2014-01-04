@@ -14,10 +14,9 @@ J3ObjectHandle* J3Field::javaField() {
 
 		if(!_javaField) {
 			J3ObjectHandle* prev = J3Thread::get()->tell();
-			_javaField = layout()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(layout()->loader()->vm()->fieldClass));
+			J3* vm = J3Thread::get()->vm();
 
-			J3* vm = layout()->loader()->vm();
-
+			_javaField = layout()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(vm->fieldClass));
 			vm->fieldClassInit->invokeSpecial(_javaField,                          /* this */
 																				layout()->javaClass(0),              /* declaring class */
 																				vm->nameToString(name(), 0),         /* name */

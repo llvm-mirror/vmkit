@@ -53,7 +53,7 @@ namespace j3 {
 		std::vector<void*, vmkit::StdAllocator<void*> > nativeLibraries;
 
 	public:
-		J3ClassLoader(J3* vm, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
+		J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
 
 		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end, bool unify);
 		J3Type*                       getType(J3ObjectType* from, const vmkit::Name* type);       /* find a type */
@@ -65,8 +65,6 @@ namespace j3 {
 		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
 		
 		J3ObjectHandle*               javaClassLoader(bool doPush=1);
-
-		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
 
 		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
 		J3Class*                      findLoadedClass(const vmkit::Name* name);
@@ -83,7 +81,7 @@ namespace j3 {
 		J3ZipArchive*                                     archive;
 		std::map<const char*, const char*, char_ptr_less> _cmangled;
 	public:
-		J3InitialClassLoader(J3* vm, const char* rtjar, vmkit::BumpAllocator* allocator);
+		J3InitialClassLoader(const char* rtjar, vmkit::BumpAllocator* allocator);
 
 		J3Class*    loadClass(const vmkit::Name* name);
 		const char* cmangled(const char* demangled) { return _cmangled[demangled]; }

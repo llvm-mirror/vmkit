@@ -96,9 +96,10 @@ void J3Method::postInitialise(uint32_t access, J3Attributes* attributes) {
 }
 
 J3Method* J3Method::resolve(J3ObjectHandle* obj) {
-	if(cl()->loader()->vm()->options()->debugLinking)
+	J3* vm = J3Thread::get()->vm();
+	if(vm->options()->debugLinking)
 		fprintf(stderr, "virtual linking %s::%s\n", cl()->name()->cStr(), name()->cStr());
-	vmkit::Names* n = cl()->loader()->vm()->names();
+	vmkit::Names* n = vm->names();
 	return obj->vt()->type()->asObjectType()->findMethod(0, name(), signature());
 }
 
@@ -121,7 +122,7 @@ J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {
 
 	llvm::FunctionType* fType = signature()->functionType(J3Cst::ACC_STATIC);      /* static signature for va */
 	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*(fType->getNumParams() + 1));
-	J3* vm = cl()->loader()->vm();
+	J3* vm = J3Thread::get()->vm();
 	uint32_t i = 0;
 
 	if(handle)
@@ -265,7 +266,7 @@ J3ObjectHandle* J3Method::javaMethod() {
 		cl()->lock();
 		if(!_javaMethod) {
 			J3ObjectHandle* prev = J3Thread::get()->tell();
-			J3* vm = cl()->loader()->vm();
+			J3* vm = J3Thread::get()->vm();
 
 			uint32_t nbIns = signature()->nbIns();
 
@@ -285,7 +286,7 @@ J3ObjectHandle* J3Method::javaMethod() {
 			J3ObjectHandle* annotations = cl()->asClass()->extractAttribute(attributes()->lookup(vm->annotationsAttribute));
 			J3ObjectHandle* paramAnnotations = cl()->asClass()->extractAttribute(attributes()->lookup(vm->paramAnnotationsAttribute));
 
-			if(name() == cl()->loader()->vm()->initName) {
+			if(name() == vm->initName) {
 				_javaMethod = cl()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(vm->constructorClass));
 
 				vm->constructorClassInit->invokeSpecial(_javaMethod,
