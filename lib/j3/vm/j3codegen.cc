@@ -1144,6 +1144,7 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_pop2: nyi();                   /* 0x58 */
+
 			case J3Cst::BC_dup:                           /* 0x59 */
 				stack.push(stack.top());
 				break;
@@ -1289,24 +1290,53 @@ void J3CodeGen::translate() {
 				stack.push(builder->CreateSIToFP(stack.pop(), vm->typeDouble->llvmType()));
 				break;
 
-			case J3Cst::BC_l2i: nyi();                    /* 0x88 */
-			case J3Cst::BC_l2f: nyi();                    /* 0x89 */
-			case J3Cst::BC_l2d: nyi();                    /* 0x8a */
+			case J3Cst::BC_l2i:                           /* 0x88 */
+				stack.push(builder->CreateTruncOrBitCast(stack.pop(), builder->getInt32Ty()));
+				break;
+
+			case J3Cst::BC_l2f:                           /* 0x89 */
+				stack.push(builder->CreateSIToFP(stack.pop(), vm->typeFloat->llvmType()));
+				break;
+
+			case J3Cst::BC_l2d:                           /* 0x8a */
+				stack.push(builder->CreateSIToFP(stack.pop(), vm->typeDouble->llvmType()));
+				break;
+
 			case J3Cst::BC_f2i:                           /* 0x8b */
 				floatToInteger(vm->typeFloat, vm->typeInteger);
 				break;
 
-			case J3Cst::BC_f2l: nyi();                    /* 0x8c */
-			case J3Cst::BC_f2d: nyi();                    /* 0x8d */
-			case J3Cst::BC_d2i: nyi();                    /* 0x8e */
-			case J3Cst::BC_d2l: nyi();                    /* 0x8f */
-			case J3Cst::BC_d2f: nyi();                    /* 0x90 */
-			case J3Cst::BC_i2b: nyi();                    /* 0x91 */
+			case J3Cst::BC_f2l:                           /* 0x8c */
+				floatToInteger(vm->typeFloat, vm->typeLong);
+				break;
+
+			case J3Cst::BC_f2d:                           /* 0x8d */
+				stack.push(builder->CreateFPExt(stack.pop(), vm->typeDouble->llvmType()));
+				break;
+
+			case J3Cst::BC_d2i:                           /* 0x8e */
+				floatToInteger(vm->typeDouble, vm->typeInteger);
+				break;
+
+			case J3Cst::BC_d2l:                           /* 0x8f */
+				floatToInteger(vm->typeDouble, vm->typeLong);
+				break;
+
+			case J3Cst::BC_d2f:                           /* 0x90 */
+				stack.push(builder->CreateFPTrunc(stack.pop(), vm->typeFloat->llvmType()));
+				break;
+
+			case J3Cst::BC_i2b:                           /* 0x91 */
+				stack.push(builder->CreateSExt(builder->CreateTrunc(stack.pop(), builder->getInt8Ty()), builder->getInt32Ty()));
+				break;
+
 			case J3Cst::BC_i2c:                           /* 0x92 */
 				stack.push(builder->CreateZExt(builder->CreateTrunc(stack.pop(), builder->getInt16Ty()), builder->getInt32Ty()));
 				break;
 
-			case J3Cst::BC_i2s: nyi();                    /* 0x93 */
+			case J3Cst::BC_i2s:                           /* 0x93 */
+				stack.push(builder->CreateSExt(builder->CreateTrunc(stack.pop(), builder->getInt16Ty()), builder->getInt32Ty()));
+				break;
 
 			case J3Cst::BC_lcmp:                          /* 0x94 */
 				compareLong();
