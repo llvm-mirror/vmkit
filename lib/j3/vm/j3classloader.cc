@@ -15,6 +15,7 @@
 #include "j3/j3method.h"
 #include "j3/j3lib.h"
 #include "j3/j3mangler.h"
+#include "j3/j3thread.h"
 
 using namespace j3;
 
@@ -34,6 +35,10 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	pthread_mutex_init(&_mutexMethodTypes, 0);
 
 	_javaClassLoader = globalReferences()->add(javaClassLoader);
+}
+
+J3ObjectHandle* J3ClassLoader::javaClassLoader(bool doPush) { 
+	return (_javaClassLoader && doPush) ? J3Thread::get()->push(_javaClassLoader) : _javaClassLoader;
 }
 
 uint32_t J3ClassLoader::interfaceIndex(J3Method* method) {

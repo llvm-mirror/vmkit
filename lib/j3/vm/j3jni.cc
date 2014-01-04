@@ -26,7 +26,7 @@ jclass JNICALL FindClass(JNIEnv* env, const char* name) {
 	J3ClassLoader* loader = m ? m->cl()->loader() : J3Thread::get()->vm()->initialClassLoader;
 	J3Class* cl = loader->loadClass(loader->vm()->names()->get(name));
 	cl->initialise();
-	res = cl->javaClass(1);
+	res = cl->javaClass();
 	leaveJVM(); 
 
 	return res;
@@ -41,7 +41,7 @@ jclass JNICALL GetSuperclass(JNIEnv* env, jclass sub) {
 	jclass res;
 	enterJVM();
 	J3ObjectType* cl = J3ObjectType::nativeClass(sub);
-	res = J3Thread::get()->vm()->objectClass ? 0 : cl->javaClass(1);
+	res = J3Thread::get()->vm()->objectClass ? 0 : cl->javaClass();
 	leaveJVM(); 
 	return res;
 }
@@ -131,7 +131,7 @@ jclass JNICALL GetObjectClass(JNIEnv* env, jobject obj) {
 	jclass res;
 
 	enterJVM(); 
-	res = obj->vt()->type()->asObjectType()->javaClass(1);
+	res = obj->vt()->type()->asObjectType()->javaClass();
 	leaveJVM(); 
 
 	return res;
@@ -423,7 +423,7 @@ jstring JNICALL NewStringUTF(JNIEnv* env, const char* utf) {
 	jstring res;
 
 	enterJVM(); 
-	res = J3Thread::get()->vm()->utfToString(utf, 1);
+	res = J3Thread::get()->vm()->utfToString(utf);
 	leaveJVM(); 
 
 	return res;

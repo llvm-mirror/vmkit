@@ -66,7 +66,7 @@ jstring JNICALL JVM_InternString(JNIEnv* env, jstring str) {
 	
 	J3Utf16Decoder::decode(value, copy);
 
-	res = vm->utfToString(copy, 1);
+	res = vm->utfToString(copy);
 
 	leaveJVM(); 
 	return res;
@@ -400,7 +400,7 @@ jclass JNICALL JVM_GetCallerClass(JNIEnv* env, int depth) {
 	if(!caller)
 		J3::internalError("unable to find caller class, what should I do?");
 
-	res = caller->cl()->javaClass(1);
+	res = caller->cl()->javaClass();
 
 	leaveJVM(); 
 
@@ -443,7 +443,7 @@ jclass JNICALL JVM_FindPrimitiveClass(JNIEnv* env, const char *utf) {
 	else
 		J3::internalError("unsupported primitive: %s", utf);
 
-	res = cl->javaClass(1);
+	res = cl->javaClass();
 	leaveJVM(); 
 	return res;
 }
@@ -484,7 +484,7 @@ jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *jname, jboo
 	else
 		cl->resolve();
 
-	res = cl->javaClass(1);
+	res = cl->javaClass();
 
 	leaveJVM(); 
 	return res;

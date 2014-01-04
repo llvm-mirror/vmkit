@@ -64,7 +64,7 @@ namespace j3 {
 
 		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
 		
-		J3ObjectHandle*               javaClassLoader() { return _javaClassLoader; }
+		J3ObjectHandle*               javaClassLoader(bool doPush=1);
 
 		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
 

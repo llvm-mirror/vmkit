@@ -63,7 +63,7 @@ namespace j3 {
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
 
-		J3ObjectHandle*             javaClass(bool doPush);
+		J3ObjectHandle*             javaClass(bool doPush=1);
 
 		virtual uint32_t            logSize() = 0;
 		uint64_t                    getSizeInBits();
