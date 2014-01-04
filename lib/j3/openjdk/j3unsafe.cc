@@ -47,20 +47,48 @@ extern "C" {
 		return fields[slot].offset();
 	}
 
-	JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapObject(JNIEnv* env, jobject unsafe, 
-																																	 jobject handle, jlong offset, jobject orig, jobject value) {
-		return handle->rawCASObject(offset, orig, value) == orig;
+	JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_allocateMemory(JNIEnv* env, jobject unsafe, jlong bytes) {
+		return (jlong)(uintptr_t)malloc(bytes); 
 	}
 
-	JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwapInt(JNIEnv* env, jobject unsafe, 
-																																jobject handle, jlong offset, jint orig, jint value) {
-		return handle->rawCASInteger(offset, orig, value) == orig;
+	JNIEXPORT void JNICALL Java_sun_misc_Unsafe_freeMemory(JNIEnv* env, jobject unsafe, jlong addr) {
+		free((void*)(uintptr_t)addr);
 	}
 
-	JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_getIntVolatile(JNIEnv* env, jobject unsafe, 
-																														 jobject handle, jlong offset) {
-		return handle->rawGetInteger(offset);
+#define unsafeGetPut(jtype, id, j3id, sign)															\
+	JNIEXPORT void JNICALL Java_sun_misc_Unsafe_put##id##__J##sign(JNIEnv* env, jobject unsafe, jlong addr, jtype value) { \
+		*(jtype*)(uintptr_t)addr = value;																		\
+	}																																			\
+																																				\
+	JNIEXPORT jtype JNICALL Java_sun_misc_Unsafe_get##id##__J(JNIEnv* env, jobject unsafe, jlong addr) { \
+		return *(jtype*)(uintptr_t)addr;																		\
 	}
+
+#define unsafeCAS(jtype, id, j3id, sign)																\
+	JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwap##id(JNIEnv* env, jobject unsafe, \
+																																 jobject handle, jlong offset, jtype orig, jtype value) { \
+		return handle->rawCAS##j3id(offset, orig, value) == orig;						\
+	}
+
+#define unsafeGetVolatile(jtype, id, j3id, sign)												\
+	JNIEXPORT jtype JNICALL Java_sun_misc_Unsafe_get##id##Volatile(JNIEnv* env, jobject unsafe, jobject handle, jlong offset) { \
+		return handle->rawGet##j3id(offset);																\
+	}
+
+#define defUnsafe(jtype, id, j3id, sign)								\
+	unsafeGetVolatile(jtype, id, j3id, sign)							\
+	unsafeCAS(jtype, id, j3id, sign)											\
+	unsafeGetPut(jtype, id, j3id, sign)
+
+	defUnsafe(jobject,  Object,  Object,   Ljava_lang_Object_2);
+	defUnsafe(jboolean, Boolean, Boolean,  Z);
+	defUnsafe(jbyte,    Byte,    Byte,     B);
+	defUnsafe(jchar,    Char,    Char,     C);
+	defUnsafe(jshort,   Short,   Short,    S);
+	defUnsafe(jint,     Int,     Integer,  I);
+	defUnsafe(jlong,    Long,    Long,     J);
+	defUnsafe(jfloat,   Float,   Float,    F);
+	defUnsafe(jdouble,  Double,  Double,   D);
 }
 
 
