@@ -99,7 +99,7 @@ void J3::run() {
 	clinitSign = initialClassLoader->getSignature(0, clinitSignName);
 
 #define z_class(clName)                      initialClassLoader->loadClass(names()->get(clName))
-#define z_method(access, cl, name, signature)     initialClassLoader->method(access, cl, name, initialClassLoader->getSignature(cl, signature))
+#define z_method(access, cl, name, signature) cl->findMethod(access, name, initialClassLoader->getSignature(cl, signature))
 #define z_field(access, cl, name, type)      cl->findField(access, names()->get(name), type)
 
 

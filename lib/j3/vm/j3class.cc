@@ -712,7 +712,7 @@ J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
 	if(!signature)
 		ctpResolved[idx] = signature = loader()->getSignature(this, nameAt(ctpValues[ntIdx] & 0xffff));
 
-	res = loader()->method(access, cl, name, signature);
+	res = cl->findMethod(access, name, signature);
 
 	ctpResolved[idx] = res;
 

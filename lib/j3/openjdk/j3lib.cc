@@ -27,25 +27,15 @@ void J3Lib::bootstrap(J3* vm) {
 #define z_signature(id) vm->initialClassLoader->getSignature(0, vm->names()->get(id))
 
 	J3Class*  threadGroupClass = vm->initialClassLoader->loadClass(vm->names()->get("java/lang/ThreadGroup"));
-	J3Method* sysThreadGroupInit = vm->initialClassLoader->method(0, 
-																																threadGroupClass, 
-																																vm->initName, 
-																																z_signature("()V"));
+	J3Method* sysThreadGroupInit = threadGroupClass->findMethod(0, vm->initName, z_signature("()V"));
 	J3ObjectHandle* sysThreadGroup = J3ObjectHandle::doNewObject(threadGroupClass);
 	sysThreadGroupInit->invokeSpecial(sysThreadGroup);
 
-
-	J3Method* appThreadGroupInit = vm->initialClassLoader->method(0, 
-																																threadGroupClass,
-																																vm->initName, 
-																																z_signature("(Ljava/lang/ThreadGroup;Ljava/lang/String;)V"));
+	J3Method* appThreadGroupInit = threadGroupClass->findMethod(0, vm->initName, z_signature("(Ljava/lang/ThreadGroup;Ljava/lang/String;)V"));
 	J3ObjectHandle* appThreadGroup = J3ObjectHandle::doNewObject(threadGroupClass);
 	appThreadGroupInit->invokeSpecial(appThreadGroup, sysThreadGroup, vm->utfToString("main"));
 
-	J3Method* threadInit = vm->initialClassLoader->method(0,
-																												vm->threadClass,
-																												vm->initName,
-																												z_signature("(Ljava/lang/ThreadGroup;Ljava/lang/String;)V"));
+	J3Method* threadInit = vm->threadClass->findMethod(0, vm->initName, z_signature("(Ljava/lang/ThreadGroup;Ljava/lang/String;)V"));
 	J3ObjectHandle* mainThread = J3ObjectHandle::doNewObject(vm->threadClass);
 
 	J3Thread::get()->assocJavaThread(mainThread);
@@ -53,10 +43,10 @@ void J3Lib::bootstrap(J3* vm) {
 
 	threadInit->invokeSpecial(mainThread, appThreadGroup, vm->utfToString("main"));
 						
-	vm->initialClassLoader->method(J3Cst::ACC_STATIC, 
-																 vm->initialClassLoader->loadClass(vm->names()->get("java/lang/System")), 
-																 vm->names()->get("initializeSystemClass"), 
-																 z_signature("()V"))->invokeStatic();
+	vm->initialClassLoader
+		->loadClass(vm->names()->get("java/lang/System"))
+		->findMethod(J3Cst::ACC_STATIC, vm->names()->get("initializeSystemClass"), z_signature("()V"))
+		->invokeStatic();
 
 	J3Thread::get()->restore(prev);
 }
