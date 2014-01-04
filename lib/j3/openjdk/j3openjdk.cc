@@ -86,8 +86,9 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 	if(!srcType0->isArrayClass() || !dstType0->isArrayClass() || !srcType0->isAssignableTo(dstType0))
 		J3::arrayStoreException();
 
-	if(src_pos >= src->arrayLength() || 
-		 dst_pos >= dst->arrayLength() ||
+	//fprintf(stderr, " array copy: [%d %d %d] [%d %d %d]\n", src_pos, length, src->arrayLength(), dst_pos, length, dst->arrayLength());
+	if(src_pos < 0 || 
+		 dst_pos < 0 ||
 		 (src_pos + length) > src->arrayLength() ||
 		 (dst_pos + length) > dst->arrayLength())
 		J3::arrayIndexOutOfBoundsException();
