@@ -271,15 +271,23 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 		leaveJVM();																													\
 	}
 
+#define defSetField(jtype, id, j3type)																	\
+	void JNICALL SetStatic##id##Field(JNIEnv* env, jclass clazz, jfieldID fieldID, jtype value) { \
+		enterJVM();																													\
+		J3ObjectType::nativeClass(clazz)->asClass()->staticInstance()->set##j3type(fieldID, value); \
+		leaveJVM();																													\
+	}
+
 #define defJNIObj(jtype, id, j3type)						\
 	defCall(jtype, id, j3type)										\
 	defNonVirtualCall(jtype, id, j3type)					\
 	defStaticCall(jtype, id, j3type)							\
+	defSetField(jtype, id, j3type)
 
 #define defJNI(jtype, id, j3type)								\
 	defJNIObj(jtype, id, j3type)									\
 	defNewArray(jtype, id, j3type)								\
-	defArrayRegion(jtype, id, j3type)
+	defArrayRegion(jtype, id, j3type)							
 
 	defJNIObj(jobject,  Object,  Object);
 	defJNI   (jboolean, Boolean, Boolean);
@@ -397,16 +405,6 @@ jint JNICALL GetStaticIntField(JNIEnv* env, jclass clazz, jfieldID fieldID) { en
 jlong JNICALL GetStaticLongField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
 jfloat JNICALL GetStaticFloatField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
 jdouble JNICALL GetStaticDoubleField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-
-void JNICALL SetStaticObjectField(JNIEnv* env, jclass clazz, jfieldID fieldID, jobject value) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetStaticBooleanField(JNIEnv* env, jclass clazz, jfieldID fieldID, jboolean value) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetStaticByteField(JNIEnv* env, jclass clazz, jfieldID fieldID, jbyte value) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetStaticCharField(JNIEnv* env, jclass clazz, jfieldID fieldID, jchar value) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetStaticShortField(JNIEnv* env, jclass clazz, jfieldID fieldID, jshort value) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetStaticIntField(JNIEnv* env, jclass clazz, jfieldID fieldID, jint value) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetStaticLongField(JNIEnv* env, jclass clazz, jfieldID fieldID, jlong value) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetStaticFloatField(JNIEnv* env, jclass clazz, jfieldID fieldID, jfloat value) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetStaticDoubleField(JNIEnv* env, jclass clazz, jfieldID fieldID, jdouble value) { enterJVM(); leaveJVM(); NYI(); }
 
 jstring JNICALL NewString(JNIEnv* env, const jchar* unicode, jsize len) { enterJVM(); leaveJVM(); NYI(); }
 jsize JNICALL GetStringLength(JNIEnv* env, jstring str) { 
