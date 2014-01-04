@@ -215,13 +215,21 @@ void J3ObjectType::prepareInterfaceTable() {
 					if(!method)
 						method = base;
 
-					total++;
 					uint32_t index = base->interfaceIndex() % J3VirtualTable::nbInterfaceMethodTable;
-					J3Method** tmp = (J3Method**)alloca(sizeof(J3Method*)*(slots[index].nbMethods+1));
-					memcpy(tmp, slots[index].methods, sizeof(J3Method*)*slots[index].nbMethods);
-					tmp[slots[index].nbMethods] = method;
-					slots[index].methods = tmp;
-					slots[index].nbMethods++;
+					uint32_t found = 0;
+
+					for(uint32_t i=0; !found && i<slots[index].nbMethods; i++)
+						if(slots[index].methods[i] == method)
+							found=1;
+
+					if(!found) {
+						total++;
+						J3Method** tmp = (J3Method**)alloca(sizeof(J3Method*)*(slots[index].nbMethods+1));
+						memcpy(tmp, slots[index].methods, sizeof(J3Method*)*slots[index].nbMethods);
+						tmp[slots[index].nbMethods] = method;
+						slots[index].methods = tmp;
+						slots[index].nbMethods++;
+					}
 				}
 			}
 		}
