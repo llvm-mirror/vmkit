@@ -96,8 +96,8 @@ namespace j3 {
 		llvm::BasicBlock*   forwardBranch(const char* id, uint32_t pc, bool doAlloc, bool doPush);
 		void                condBr(llvm::Value* op);
 
-		llvm::Value*        flatten(llvm::Value* v, J3Type* type);
-		llvm::Value*        unflatten(llvm::Value* v, J3Type* type);
+		llvm::Value*        flatten(llvm::Value* v, llvm::Type* type);
+		llvm::Value*        unflatten(llvm::Value* v, llvm::Type* type);
 
 		llvm::Value*        handleToObject(llvm::Value* obj);
 		llvm::Value*        javaClass(J3ObjectType* type);

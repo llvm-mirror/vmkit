@@ -159,31 +159,33 @@ uint32_t J3CodeGen::wideReadS1() {
 		return codeReader->readS1();
 }
 
-llvm::Value* J3CodeGen::flatten(llvm::Value* v, J3Type* type) {
-	if(type == vm->typeInteger || type == vm->typeLong || type == vm->typeFloat || type == vm->typeDouble)
+llvm::Value* J3CodeGen::flatten(llvm::Value* v, llvm::Type* type) {
+	if(type == vm->typeInteger->llvmType() || type == vm->typeLong->llvmType() || 
+		 type == vm->typeFloat->llvmType() || type == vm->typeDouble->llvmType())
 		return v;
-	else if(type->llvmType()->isPointerTy()) {
+	else if(type->isPointerTy()) {
 		if(v->getType() == vm->typeJ3ObjectPtr)
 			return v;
 		else
 			return builder->CreateBitCast(v, vm->typeJ3ObjectPtr);
-	} else if(type == vm->typeBoolean || type == vm->typeByte || type == vm->typeShort)
+	} else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
 		return builder->CreateSExt(v, vm->typeInteger->llvmType());
-	else if(type == vm->typeChar)
+	else if(type == vm->typeChar->llvmType())
 		return builder->CreateZExt(v, vm->typeInteger->llvmType());
 	else
 		J3::internalError("should not happen");
 }
 
-llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
-	if(type == vm->typeInteger || type == vm->typeLong || type == vm->typeFloat || type == vm->typeDouble)
+llvm::Value* J3CodeGen::unflatten(llvm::Value* v, llvm::Type* type) {
+	if(type == vm->typeInteger->llvmType() || type == vm->typeLong->llvmType() || 
+		 type == vm->typeFloat->llvmType() || type == vm->typeDouble->llvmType())
 		return v;
-	else if(type->llvmType()->isPointerTy())
-		return builder->CreateBitCast(v, type->llvmType());
-	else if(type == vm->typeBoolean || type == vm->typeByte || type == vm->typeShort)
-		return builder->CreateSExtOrTrunc(v, type->llvmType());
-	else if(type == vm->typeChar)
-		return builder->CreateZExtOrTrunc(v, type->llvmType());
+	else if(type->isPointerTy())
+		return builder->CreateBitCast(v, type);
+	else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
+		return builder->CreateSExtOrTrunc(v, type);
+	else if(type == vm->typeChar->llvmType())
+		return builder->CreateZExtOrTrunc(v, type);
 	else {
 		type->dump();
 		J3::internalError("should not happen");
@@ -374,12 +376,12 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	uint32_t d = 0;
 
 	if(!J3Cst::isStatic(access)) {
-		args.push_back(unflatten(stack.top(type->nbIns()), target->cl()));
+		args.push_back(unflatten(stack.top(type->nbIns()), target->cl()->llvmType()));
 		d = 1;
 	}
 
 	for(uint32_t i=0; i<type->nbIns(); i++)
-		args.push_back(unflatten(stack.top(type->nbIns() - i - 1), type->javaIns(i)));
+		args.push_back(unflatten(stack.top(type->nbIns() - i - 1), type->javaIns(i)->llvmType()));
 
 	stack.drop(d + type->nbIns());
 
@@ -395,7 +397,7 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 		res = builder->CreateCall(func, args);
 	
 	if(type->javaOut() != vm->typeVoid) {
-		stack.push(flatten(res, type->javaOut()));
+		stack.push(flatten(res, type->javaOut()->llvmType()));
 	}
 }
 
@@ -467,14 +469,14 @@ llvm::Value* J3CodeGen::fieldOffset(llvm::Value* obj, J3Field* f) {
 }
 
 void J3CodeGen::get(llvm::Value* src, J3Field* f) {
-	llvm::Value* res = flatten(builder->CreateLoad(fieldOffset(src, f)), f->type());
+	llvm::Value* res = flatten(builder->CreateLoad(fieldOffset(src, f)), f->type()->llvmType());
 	stack.push(res);
 }
 
 void J3CodeGen::getField(uint32_t idx) {
 	llvm::Value* obj = stack.pop(); 
 	J3Field* f = cl->fieldAt(idx, 0);
-	get(unflatten(nullCheck(obj), f->layout()), f);
+	get(unflatten(nullCheck(obj), f->layout()->llvmType()), f);
 }
 
 void J3CodeGen::getStatic(uint32_t idx) {
@@ -483,7 +485,7 @@ void J3CodeGen::getStatic(uint32_t idx) {
 }
 
 void J3CodeGen::put(llvm::Value* dest, llvm::Value* val, J3Field* f) {
-	builder->CreateStore(unflatten(val, f->type()), fieldOffset(dest, f));
+	builder->CreateStore(unflatten(val, f->type()->llvmType()), fieldOffset(dest, f));
 }
 
 void J3CodeGen::putStatic(uint32_t idx) {
@@ -495,7 +497,7 @@ void J3CodeGen::putField(uint32_t idx) {
 	J3Field* f = cl->fieldAt(idx, 0);
 	llvm::Value* val = stack.pop();
 	llvm::Value* obj = nullCheck(stack.pop());
-	put(unflatten(obj, f->layout()), val, f);
+	put(unflatten(obj, f->layout()->llvmType()), val, f);
 }
 
 void J3CodeGen::arrayBoundCheck(llvm::Value* obj, llvm::Value* idx) {
@@ -513,7 +515,7 @@ void J3CodeGen::arrayStore(J3Type* cType) {
 	llvm::Value* array = stack.pop();
 
 	arrayBoundCheck(array, idx);
-	builder->CreateStore(unflatten(val, cType), arrayContent(cType, array, idx));
+	builder->CreateStore(unflatten(val, cType->llvmType()), arrayContent(cType, array, idx));
 }
 
 void J3CodeGen::arrayLoad(J3Type* cType) {
@@ -521,7 +523,7 @@ void J3CodeGen::arrayLoad(J3Type* cType) {
 	llvm::Value* array = stack.pop();
 
 	arrayBoundCheck(array, idx);
-	stack.push(flatten(builder->CreateLoad(arrayContent(cType, array, idx)), cType));
+	stack.push(flatten(builder->CreateLoad(arrayContent(cType, array, idx)), cType->llvmType()));
 }
 
 llvm::Value* J3CodeGen::arrayLengthPtr(llvm::Value* obj) {
@@ -1607,7 +1609,7 @@ void J3CodeGen::generateJava() {
 		else
 			type = signature->javaIns(n++);
 
-		locals.setAt(flatten(cur, type), pos);
+		locals.setAt(flatten(cur, type->llvmType()), pos);
 
 		if(vm->options()->debugExecute)
 			builder->CreateCall4(funcEchoDebugExecute,
@@ -1642,7 +1644,7 @@ void J3CodeGen::generateJava() {
 		builder->CreateRetVoid();
 	} else {
 		ret.metaStack[0] = signature->javaOut()->llvmType();
-		builder->CreateRet(unflatten(ret.at(0), signature->javaOut()));
+		builder->CreateRet(unflatten(ret.at(0), signature->javaOut()->llvmType()));
 	}
 
 	if(J3Cst::isSynchronized(method->access())) {
@@ -1750,10 +1752,10 @@ void J3CodeGen::generateNative() {
 		llvm::Value* a;
 		if(!selfDone && !J3Cst::isStatic(method->access())) {
 			selfDone = 1; 
-			a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, method->cl()));
+			a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, method->cl()->llvmType()));
 		} else {
 			if(signature->javaIns(i)->llvmType()->isPointerTy())
-				a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, signature->javaIns(i)));
+				a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, signature->javaIns(i)->llvmType()));
 			else
 				a = cur;
 			i++;
@@ -1775,10 +1777,10 @@ void J3CodeGen::generateNative() {
 			builder->CreateCondBr(builder->CreateIsNull(res), ifnull, ifnotnull);
 
 			builder->SetInsertPoint(bb = ifnull);
-			builder->CreateRet(unflatten(nullValue, signature->javaOut()));
+			builder->CreateRet(unflatten(nullValue, signature->javaOut()->llvmType()));
 
 			builder->SetInsertPoint(bb = ifnotnull);
-			res = unflatten(handleToObject(res), signature->javaOut());
+			res = unflatten(handleToObject(res), signature->javaOut()->llvmType());
 		}
 		builder->CreateRet(res);
 	}
