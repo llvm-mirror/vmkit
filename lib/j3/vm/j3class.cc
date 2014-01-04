@@ -782,7 +782,10 @@ J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {
 
 	check(ntIdx, J3Cst::CONSTANT_NameAndType);
 	const vmkit::Name* name = nameAt(ctpValues[ntIdx] >> 16);
-	J3Type*            type = loader()->getType(this, nameAt(ctpValues[ntIdx] & 0xffff));
+	J3Type*            type = (J3Type*)ctpResolved[ntIdx];
+
+	if(!type)
+		ctpResolved[ntIdx] = type = loader()->getType(this, nameAt(ctpValues[ntIdx] & 0xffff));
 	
 	res = J3Cst::isStatic(access) ? cl->findStaticField(name, type) : cl->findVirtualField(name, type);
 
