@@ -40,13 +40,16 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	vm = J3Thread::get()->vm();
 
 #if 0
-	if(m->cl()->name() == vm->names()->get("java/util/concurrent/atomic/AtomicInteger"))
-		vm->options()->debugTranslate = 4;
+	/* usefull to debug a single function */
+	if(   cl->name() == vm->names()->get("java/nio/Bits") &&
+				method->name() == vm->names()->get("<clinit>") &&
+				method->signature()->name() == vm->names()->get("()V") )
+		vm->options()->debugTranslate = 3;
 #endif
 
 	if(vm->options()->debugTranslate)
 		fprintf(stderr, "  translating bytecode of: %s::%s%s\n", 
-						method->cl()->name()->cStr(), 
+						cl->name()->cStr(), 
 						method->name()->cStr(), 
 						method->signature()->name()->cStr());
 
@@ -697,6 +700,21 @@ void J3CodeGen::ldc(uint32_t idx) {
 	stack.push(res);
 }
 
+void J3CodeGen::lookupSwitch() {
+	codeReader->seek(((codeReader->tell() - 1) & -4) + 4, J3Reader::SeekSet);
+	llvm::Value* val = stack.pop();
+	llvm::BasicBlock* def = forwardBranch("lookupswitch-match", javaPC + codeReader->readU4(), 1, 1);
+	uint32_t n = codeReader->readU4();
+	
+	for(uint32_t i=0; i<n; i++) {
+		int32_t match = codeReader->readS4();
+		llvm::BasicBlock* ok = forwardBranch("lookupswitch-match", javaPC + codeReader->readS4(), 1, 1);
+		llvm::BasicBlock* nok = i == (n - 1) ? def : newBB("lookupswitch-next");
+		builder->CreateCondBr(builder->CreateICmpEQ(val, builder->getInt32(match)), ok, nok);
+		builder->SetInsertPoint(nok);
+	}
+}
+
 llvm::BasicBlock* J3CodeGen::newBB(const char* name) {
 	return llvm::BasicBlock::Create(llvmFunction->getContext(), name, llvmFunction);
 }
@@ -708,6 +726,8 @@ void J3CodeGen::condBr(llvm::Value* op) {
 }
 
 llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doAlloc, bool doPush) {
+	if(vm->options()->debugTranslate > 2)
+		fprintf(stderr, "        forward branch at %d\n", pc);
 	llvm::BasicBlock* res = opInfos[pc].bb;
 
 	if(res) 
@@ -908,7 +928,6 @@ void J3CodeGen::translate() {
 				llvmFunction->dump();
 			case 4:
 			case 3:
-				fprintf(stderr, "stack:\n");
 				stack.dump();
 			case 2:
 				fprintf(stderr, "    [%4d] decoding: %s\n", javaPC, J3Cst::opcodeNames[bc]);
@@ -921,7 +940,7 @@ void J3CodeGen::translate() {
 		if(vm->options()->genDebugExecute) {
 			char buf[256];
 			snprintf(buf, 256, "    [%4d] executing: %-20s in %s::%s", javaPC, 
-							 J3Cst::opcodeNames[bc], method->cl()->name()->cStr(), method->name()->cStr());
+							 J3Cst::opcodeNames[bc], cl->name()->cStr(), method->name()->cStr());
 			builder->CreateCall3(funcEchoDebugExecute,
 													 builder->getInt32(2),
 													 buildString("%s\n"),
@@ -1412,7 +1431,10 @@ void J3CodeGen::translate() {
 			case J3Cst::BC_jsr: nyi();                    /* 0xa8 */
 			case J3Cst::BC_ret: nyi();                    /* 0xa9 wide */
 			case J3Cst::BC_tableswitch: nyi();            /* 0xaa */
-			case J3Cst::BC_lookupswitch: nyi();           /* 0xab */
+
+			case J3Cst::BC_lookupswitch: 
+				lookupSwitch();
+				break;
 
 			case J3Cst::BC_ireturn:                       /* 0xac */
 			case J3Cst::BC_lreturn:                       /* 0xad */
@@ -1529,7 +1551,7 @@ void J3CodeGen::translate() {
 
 #if 0
 void J3CodeGen::explore() {
-	printf("  exploring bytecode of: %s::%s%s\n", method->cl()->name()->cStr(), method->name()->cStr(), method->signature()->cStr());
+	printf("  exploring bytecode of: %s::%s%s\n", cl->name()->cStr(), method->name()->cStr(), method->signature()->cStr());
 	while(codeReader->remaining()) {
 		uint8_t bc = codeReader->readU1();
 
@@ -1591,7 +1613,7 @@ void J3CodeGen::generateJava() {
 
 	if(vm->options()->genDebugExecute) {
 		char buf[256];
-		snprintf(buf, 256, "%s::%s", method->cl()->name()->cStr(), method->name()->cStr());
+		snprintf(buf, 256, "%s::%s", cl->name()->cStr(), method->name()->cStr());
 #if 0
 
 		fprintf(stderr, "bitcast: ");
@@ -1643,7 +1665,7 @@ void J3CodeGen::generateJava() {
 	builder->SetInsertPoint(bbRet);
 	if(vm->options()->genDebugExecute) {
 		char buf[256];
-		snprintf(buf, 256, "%s::%s", method->cl()->name()->cStr(), method->name()->cStr());
+		snprintf(buf, 256, "%s::%s", cl->name()->cStr(), method->name()->cStr());
 		builder->CreateCall3(funcEchoDebugEnter,
 												 builder->getInt32(1),
 												 buildString("%s\n"),
@@ -1684,7 +1706,7 @@ llvm::Type* J3CodeGen::doNativeType(llvm::Type* type) {
 llvm::Function* J3CodeGen::lookupNative() {
 	J3Mangler      mangler(cl);
 
-	mangler.mangle(mangler.javaId)->mangle(method->cl()->name(), method->name());
+	mangler.mangle(mangler.javaId)->mangle(cl->name(), method->name());
 	uint32_t length = mangler.length();
 	mangler.mangle(method->signature());
 

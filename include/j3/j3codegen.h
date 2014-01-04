@@ -145,6 +145,8 @@ namespace j3 {
 		void                newArray(J3ArrayClass* type);
 		void                newObject(J3Class* cl);
 
+		void                lookupSwitch();
+
 		void                ldc(uint32_t idx);
 
 		void                selectExceptionNode(uint32_t idx);

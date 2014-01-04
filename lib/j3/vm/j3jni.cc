@@ -255,6 +255,13 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 		return res.val##j3type;																							\
 	}
 
+#define defSetField(jtype, id, j3type)																	\
+	void JNICALL SetStatic##id##Field(JNIEnv* env, jclass clazz, jfieldID fieldID, jtype value) { \
+		enterJVM();																													\
+		J3ObjectType::nativeClass(clazz)->asClass()->staticInstance()->set##j3type(fieldID, value); \
+		leaveJVM();																													\
+	}
+
 #define defNewArray(jtype, id, j3type)																	\
 	jtype##Array JNICALL New##id##Array(JNIEnv* env, jsize len) {					\
 		jtype##Array res;																										\
@@ -268,13 +275,6 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 	void JNICALL Set##id##ArrayRegion(JNIEnv* env, jtype##Array array, jsize start, jsize len, const jtype* buf) { \
 		enterJVM();																													\
 		array->setRegion##j3type(0, buf, start, len);												\
-		leaveJVM();																													\
-	}
-
-#define defSetField(jtype, id, j3type)																	\
-	void JNICALL SetStatic##id##Field(JNIEnv* env, jclass clazz, jfieldID fieldID, jtype value) { \
-		enterJVM();																													\
-		J3ObjectType::nativeClass(clazz)->asClass()->staticInstance()->set##j3type(fieldID, value); \
 		leaveJVM();																													\
 	}
 

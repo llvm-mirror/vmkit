@@ -70,26 +70,8 @@ void J3CodeGenVar::init(J3CodeGen* _codeGen, uint32_t max, void* space) {
 
 void J3CodeGenVar::dump() {
 	for(uint32_t i=0; i<topStack; i++) {
-		fprintf(stderr, "  [%u]: ", i);
-		llvm::Type*  t = metaStack[i];
-		llvm::Value* v;
-
-		if(t->isIntegerTy(64))
-			v = doubleStack[i];
-		else if(t->isIntegerTy())
-			v = intStack[i];
-		else if(t->isFloatTy())
-			v = floatStack[i];
-		else if(t->isDoubleTy())
-			v = doubleStack[i];
-		else if(t->isPointerTy())
-			v = refStack[i];
-		else {
-			t->dump();
-			J3::internalError("should not happen");
-		}
-
-		v->dump();
+		fprintf(stderr, "              [%u]: ", i);
+		stackOf(metaStack[i])[i]->dump();
 		//fprintf(stderr, "\n");
 	}
 }
