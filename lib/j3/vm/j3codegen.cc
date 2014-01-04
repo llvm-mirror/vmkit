@@ -324,8 +324,8 @@ void J3CodeGen::initialiseJ3ObjectType(J3ObjectType* cl) {
 		builder->CreateCall(funcJ3TypeInitialise, typeDescriptor(cl, vm->typeJ3TypePtr));
 }
 
-llvm::Value* J3CodeGen::javaClass(J3ObjectType* type) {
-	return builder->CreateCall(funcJ3TypeJavaClass, typeDescriptor(type, vm->typeJ3TypePtr));
+llvm::Value* J3CodeGen::javaClass(J3ObjectType* type, bool doPush) {
+	return builder->CreateCall2(funcJ3TypeJavaClass, typeDescriptor(type, vm->typeJ3TypePtr), builder->getInt1(doPush));
 }
 
 llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
@@ -684,11 +684,12 @@ void J3CodeGen::ldc(uint32_t idx) {
 		case J3Cst::CONSTANT_Integer: res = builder->getInt32(cl->integerAt(idx)); break;
 		case J3Cst::CONSTANT_Float:   res = llvm::ConstantFP::get(builder->getFloatTy(), cl->floatAt(idx)); break;
 		case J3Cst::CONSTANT_Double:  res = llvm::ConstantFP::get(builder->getDoubleTy(), cl->doubleAt(idx)); break;
-		case J3Cst::CONSTANT_Class:   res = handleToObject(javaClass(cl->classAt(idx))); break;
+		case J3Cst::CONSTANT_Class:   res = handleToObject(javaClass(cl->classAt(idx), 0)); break;
 		case J3Cst::CONSTANT_String:  
-			res = handleToObject(builder->CreateCall2(funcJ3ClassStringAt, 
+			res = handleToObject(builder->CreateCall3(funcJ3ClassStringAt, 
 																								typeDescriptor(cl, vm->typeJ3ClassPtr),
-																								builder->getInt16(idx)));
+																								builder->getInt16(idx),
+																								builder->getInt1(0)));
 			break;
 		default:
 			J3::classFormatError(cl, "wrong ldc type: %d\n", cl->getCtpType(idx));
@@ -1747,7 +1748,7 @@ void J3CodeGen::generateNative() {
 
 	args.push_back(builder->CreateCall(funcJniEnv));
 	if(J3Cst::isStatic(method->access()))
-		args.push_back(builder->CreateCall2(funcJ3ThreadPushHandle, thread, javaClass(cl)));
+		args.push_back(javaClass(cl, 1));
 
 	uint32_t selfDone = 0;
 

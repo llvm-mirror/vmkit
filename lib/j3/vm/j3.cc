@@ -146,7 +146,7 @@ JNIEnv* J3::jniEnv() {
 	return J3Thread::get()->jniEnv();
 }
 
-J3ObjectHandle* J3::arrayToString(J3ObjectHandle* array) {
+J3ObjectHandle* J3::arrayToString(J3ObjectHandle* array, bool doPush) {
 	pthread_mutex_lock(&stringsMutex);
 	J3ObjectHandle* res = charArrayToStrings[array];
 	if(!res) {
@@ -159,10 +159,10 @@ J3ObjectHandle* J3::arrayToString(J3ObjectHandle* array) {
 		charArrayToStrings[array] = res;
 	}
 	pthread_mutex_unlock(&stringsMutex);
-	return res;
+	return doPush ? J3Thread::get()->push(res) : res;
 }
 
-J3ObjectHandle* J3::nameToString(const vmkit::Name* name) {
+J3ObjectHandle* J3::nameToString(const vmkit::Name* name, bool doPush) {
 	pthread_mutex_lock(&stringsMutex);
 	J3ObjectHandle* res = nameToCharArrays[name];
 	if(!res) {
@@ -181,11 +181,11 @@ J3ObjectHandle* J3::nameToString(const vmkit::Name* name) {
 		nameToCharArrays[name] = res;
 	}
 	pthread_mutex_unlock(&stringsMutex);
-	return arrayToString(res);
+	return arrayToString(res, doPush);
 }
 
-J3ObjectHandle* J3::utfToString(const char* name) {
-	return nameToString(names()->get(name));
+J3ObjectHandle* J3::utfToString(const char* name, bool doPush) {
+	return nameToString(names()->get(name), doPush);
 }
 
 void J3::classCastException() {

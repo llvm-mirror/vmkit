@@ -49,19 +49,19 @@ void J3Type::dump() {
 	fprintf(stderr, "Type: %s", name()->cStr());
 }
 
-J3ObjectHandle* J3Type::javaClass() {
+J3ObjectHandle* J3Type::javaClass(bool doPush) {
 	if(!_javaClass) {
 		lock();
 		if(!_javaClass) {
 			J3ObjectHandle* prev = J3Thread::get()->tell();
 			_javaClass = loader()->globalReferences()->add(J3ObjectHandle::doNewObject(loader()->vm()->classClass));
 			J3Thread::get()->restore(prev);
-			javaClass()->setLong(loader()->vm()->classClassVMData, (int64_t)(uintptr_t)this);
-			loader()->vm()->classClassInit->invokeSpecial(javaClass());
+			_javaClass->setLong(loader()->vm()->classClassVMData, (int64_t)(uintptr_t)this);
+			loader()->vm()->classClassInit->invokeSpecial(_javaClass);
 		}
 		unlock();
 	}
-	return _javaClass;
+	return doPush ? J3Thread::get()->push(_javaClass) : _javaClass;
 }
 
 void J3Type::doNativeName() {
@@ -436,7 +436,7 @@ void J3Class::doInitialise() {
 					case J3Cst::CONSTANT_Float:   staticInstance()->setFloat(cur, floatAt(idx)); break;
 					case J3Cst::CONSTANT_Double:  staticInstance()->setDouble(cur, doubleAt(idx)); break;
 					case J3Cst::CONSTANT_Integer: staticInstance()->setInteger(cur, integerAt(idx)); break;
-					case J3Cst::CONSTANT_String:  staticInstance()->setObject(cur, stringAt(idx)); break;
+					case J3Cst::CONSTANT_String:  staticInstance()->setObject(cur, stringAt(idx, 0)); break;
 					default:
 						J3::classFormatError(this, "invalid ctp entry ConstantAttribute with type %d", getCtpType(idx));
 				}
@@ -688,11 +688,11 @@ void* J3Class::getCtpResolved(uint16_t idx) {
 	return ctpResolved[idx];
 }
 
-J3ObjectHandle* J3Class::stringAt(uint16_t idx) {
+J3ObjectHandle* J3Class::stringAt(uint16_t idx, bool doPush) {
 	check(idx, J3Cst::CONSTANT_String);
 	J3ObjectHandle* res = (J3ObjectHandle*)ctpResolved[idx];
 	if(!res) {
-		ctpResolved[idx] = res = loader()->vm()->nameToString(nameAt(ctpValues[idx]));
+		ctpResolved[idx] = res = loader()->vm()->nameToString(nameAt(ctpValues[idx]), 0);
 	}
 	return (J3ObjectHandle*)res;
 }

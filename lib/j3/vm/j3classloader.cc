@@ -28,12 +28,12 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 		interfaces(j3InterfaceMethodLess, allocator),
 		methodTypes(vmkit::Name::less, allocator),
 		nativeLibraries(allocator) {
-	_javaClassLoader = javaClassLoader;
-
 	pthread_mutex_init(&_mutexClasses, 0);
 	pthread_mutex_init(&_mutexTypes, 0);
 	pthread_mutex_init(&_mutexInterfaces, 0);
 	pthread_mutex_init(&_mutexMethodTypes, 0);
+
+	_javaClassLoader = globalReferences()->add(javaClassLoader);
 }
 
 uint32_t J3ClassLoader::interfaceIndex(J3Method* method) {

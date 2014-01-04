@@ -100,7 +100,7 @@ namespace j3 {
 		llvm::Value*        unflatten(llvm::Value* v, llvm::Type* type);
 
 		llvm::Value*        handleToObject(llvm::Value* obj);
-		llvm::Value*        javaClass(J3ObjectType* type);
+		llvm::Value*        javaClass(J3ObjectType* type, bool doPush);
 		llvm::Value*        staticInstance(J3Class* cl);
 		llvm::Value*        vt(J3ObjectType* cl, bool resolve=0);
 		llvm::Value*        vt(llvm::Value* obj);

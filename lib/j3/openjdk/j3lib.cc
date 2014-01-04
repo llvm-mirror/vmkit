@@ -33,7 +33,7 @@ void J3Lib::bootstrap(J3* vm) {
 
 	J3Method* appThreadGroupInit = threadGroupClass->findMethod(0, vm->initName, z_signature("(Ljava/lang/ThreadGroup;Ljava/lang/String;)V"));
 	J3ObjectHandle* appThreadGroup = J3ObjectHandle::doNewObject(threadGroupClass);
-	appThreadGroupInit->invokeSpecial(appThreadGroup, sysThreadGroup, vm->utfToString("main"));
+	appThreadGroupInit->invokeSpecial(appThreadGroup, sysThreadGroup, vm->utfToString("main", 0));
 
 	J3Method* threadInit = vm->threadClass->findMethod(0, vm->initName, z_signature("(Ljava/lang/ThreadGroup;Ljava/lang/String;)V"));
 	J3ObjectHandle* mainThread = J3ObjectHandle::doNewObject(vm->threadClass);
@@ -41,7 +41,7 @@ void J3Lib::bootstrap(J3* vm) {
 	J3Thread::get()->assocJavaThread(mainThread);
 	mainThread->setInteger(vm->threadClass->findField(0, vm->names()->get("priority"), vm->typeInteger), 5);
 
-	threadInit->invokeSpecial(mainThread, appThreadGroup, vm->utfToString("main"));
+	threadInit->invokeSpecial(mainThread, appThreadGroup, vm->utfToString("main", 0));
 						
 	vm->initialClassLoader
 		->loadClass(vm->names()->get("java/lang/System"))

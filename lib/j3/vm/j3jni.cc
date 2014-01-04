@@ -26,7 +26,7 @@ jclass JNICALL FindClass(JNIEnv* env, const char* name) {
 	J3ClassLoader* loader = m ? m->cl()->loader() : J3Thread::get()->vm()->initialClassLoader;
 	J3Class* cl = loader->loadClass(loader->vm()->names()->get(name));
 	cl->initialise();
-	res = cl->javaClass();
+	res = cl->javaClass(1);
 	leaveJVM(); 
 
 	return res;
@@ -41,7 +41,7 @@ jclass JNICALL GetSuperclass(JNIEnv* env, jclass sub) {
 	jclass res;
 	enterJVM();
 	J3ObjectType* cl = J3ObjectType::nativeClass(sub);
-	res = J3Thread::get()->vm()->objectClass ? 0 : cl->javaClass();
+	res = J3Thread::get()->vm()->objectClass ? 0 : cl->javaClass(1);
 	leaveJVM(); 
 	return res;
 }
@@ -131,7 +131,7 @@ jclass JNICALL GetObjectClass(JNIEnv* env, jobject obj) {
 	jclass res;
 
 	enterJVM(); 
-	res = obj->vt()->type()->asObjectType()->javaClass();
+	res = obj->vt()->type()->asObjectType()->javaClass(1);
 	leaveJVM(); 
 
 	return res;
@@ -146,7 +146,7 @@ jmethodID JNICALL GetMethodID(JNIEnv* env, jclass clazz, const char* name, const
 	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
 	cl->initialise();
 	vmkit::Names* n = cl->loader()->vm()->names();
-	res = cl->findMethod(0, n->get(name), cl->loader()->getSignature(cl, n->get(sig)));
+	res = cl->findMethod(0, n->get(name), cl->loader()->getSignature(cl, n->get(sig)), 0);
 	leaveJVM(); 
 
 	return res;
@@ -160,7 +160,7 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
 	cl->initialise();
 	vmkit::Names* n = cl->loader()->vm()->names();
-	res = cl->findMethod(J3Cst::ACC_STATIC, n->get(name), cl->loader()->getSignature(cl, n->get(sig)));
+	res = cl->findMethod(J3Cst::ACC_STATIC, n->get(name), cl->loader()->getSignature(cl, n->get(sig)), 0);
 
 	leaveJVM(); 
 
@@ -347,7 +347,15 @@ void JNICALL CallStaticVoidMethodA(JNIEnv* env, jclass cls, jmethodID methodID, 
 	leaveJVM(); 
 }
 
-jfieldID JNICALL GetFieldID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { enterJVM(); leaveJVM(); NYI(); }
+jfieldID JNICALL GetFieldID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { 
+	jfieldID res;
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	J3Class* cl = J3ObjectType::nativeClass(clazz)->asClass();
+	res = cl->findField(0, vm->names()->get(name), cl->loader()->getType(cl, vm->names()->get(sig)), 0);
+	leaveJVM(); 
+	return res;
+}
 
 jobject JNICALL GetObjectField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
 jboolean JNICALL GetBooleanField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
@@ -369,7 +377,16 @@ void JNICALL SetLongField(JNIEnv* env, jobject obj, jfieldID fieldID, jlong val)
 void JNICALL SetFloatField(JNIEnv* env, jobject obj, jfieldID fieldID, jfloat val) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL SetDoubleField(JNIEnv* env, jobject obj, jfieldID fieldID, jdouble val) { enterJVM(); leaveJVM(); NYI(); }
 
-jfieldID JNICALL GetStaticFieldID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { enterJVM(); leaveJVM(); NYI(); }
+jfieldID JNICALL GetStaticFieldID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { 
+	jfieldID res;
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	J3Class* cl = J3ObjectType::nativeClass(clazz)->asClass();
+	res = cl->findField(J3Cst::ACC_STATIC, vm->names()->get(name), cl->loader()->getType(cl, vm->names()->get(sig)), 0);
+	leaveJVM(); 
+	return res;
+}
+
 jobject JNICALL GetStaticObjectField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
 jboolean JNICALL GetStaticBooleanField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
 jbyte JNICALL GetStaticByteField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
@@ -406,7 +423,7 @@ jstring JNICALL NewStringUTF(JNIEnv* env, const char* utf) {
 	jstring res;
 
 	enterJVM(); 
-	res = J3Thread::get()->push(J3Thread::get()->vm()->utfToString(utf)); /* harakiri want to kill me */
+	res = J3Thread::get()->vm()->utfToString(utf, 1);
 	leaveJVM(); 
 
 	return res;

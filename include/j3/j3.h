@@ -123,9 +123,9 @@ namespace j3 {
 
 		J3Options*                 options() { return &_options; }
 		vmkit::Names*              names() { return &_names; }
-		J3ObjectHandle*            utfToString(const char* name);
-		J3ObjectHandle*            nameToString(const vmkit::Name* name);
-		J3ObjectHandle*            arrayToString(J3ObjectHandle* array);
+		J3ObjectHandle*            utfToString(const char* name, bool doPush);
+		J3ObjectHandle*            nameToString(const vmkit::Name* name, bool doPush);
+		J3ObjectHandle*            arrayToString(J3ObjectHandle* array, bool doPush);
 
 		void                       run();
 		void                       start(int argc, char** argv);

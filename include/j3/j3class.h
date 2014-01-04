@@ -63,7 +63,7 @@ namespace j3 {
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
 
-		J3ObjectHandle*             javaClass();
+		J3ObjectHandle*             javaClass(bool doPush);
 
 		virtual uint32_t            logSize() = 0;
 		uint64_t                    getSizeInBits();
@@ -249,7 +249,7 @@ namespace j3 {
 		double              doubleAt(uint16_t idx);
 		uint32_t            integerAt(uint16_t idx);
 		uint64_t            longAt(uint16_t idx);
-		J3ObjectHandle*     stringAt(uint16_t idx);
+		J3ObjectHandle*     stringAt(uint16_t idx, bool doPush);
 		J3ObjectType*       classAt(uint16_t idx);
 		J3Method*           interfaceMethodAt(uint16_t idx, uint16_t access);
 		J3Method*           methodAt(uint16_t idx, uint16_t access);

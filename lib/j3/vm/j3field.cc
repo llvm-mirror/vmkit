@@ -18,13 +18,13 @@ J3ObjectHandle* J3Field::javaField() {
 
 			J3* vm = layout()->loader()->vm();
 
-			vm->fieldClassInit->invokeSpecial(_javaField,                       /* this */
-																				layout()->javaClass(),            /* declaring class */
-																				vm->nameToString(name()),         /* name */
-																				type()->javaClass(),              /* type */
-																				access(),                         /* access */
-																				slot(),                           /* slot */
-																				vm->nameToString(type()->name()), /* signature */
+			vm->fieldClassInit->invokeSpecial(_javaField,                          /* this */
+																				layout()->javaClass(0),              /* declaring class */
+																				vm->nameToString(name(), 0),         /* name */
+																				type()->javaClass(0),                /* type */
+																				access(),                            /* access */
+																				slot(),                              /* slot */
+																				vm->nameToString(type()->name(), 0), /* signature */
 																				layout()->extractAttribute(attributes()->lookup(vm->annotationsAttribute)));/* annotations */
 
 			J3Thread::get()->restore(prev);

@@ -272,7 +272,7 @@ J3ObjectHandle* J3Method::javaMethod() {
 			J3ObjectHandle* parameters = J3ObjectHandle::doNewArray(vm->classClass->getArray(), nbIns);
 
 			for(uint32_t i=0; i<nbIns; i++)
-				parameters->setObjectAt(i, signature()->javaIns(i)->javaClass());
+				parameters->setObjectAt(i, signature()->javaIns(i)->javaClass(0));
 
 			J3Attribute* exceptionAttribute = attributes()->lookup(vm->exceptionsAttribute);
 			J3ObjectHandle* exceptions;
@@ -289,12 +289,12 @@ J3ObjectHandle* J3Method::javaMethod() {
 				_javaMethod = cl()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(vm->constructorClass));
 
 				vm->constructorClassInit->invokeSpecial(_javaMethod,
-																								cl()->javaClass(),
+																								cl()->javaClass(0),
 																								parameters,
 																								exceptions,
 																								access(),
 																								slot(),
-																								vm->nameToString(signature()->name()),
+																								vm->nameToString(signature()->name(), 0),
 																								annotations,
 																								paramAnnotations);
 			} else 
