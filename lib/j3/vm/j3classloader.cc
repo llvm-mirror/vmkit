@@ -43,6 +43,7 @@ uint32_t J3ClassLoader::interfaceIndex(J3Method* method) {
 
 	if(it == interfaces.end()) {
 		res = interfaces.size();
+		fprintf(stderr, " new interface: %s::%s%s ---> %d\n", method->cl()->name()->cStr(), method->name()->cStr(), method->signature()->name()->cStr(), res);
 		interfaces[method] = res;
 	} else {
 		res = it->second;

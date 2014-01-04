@@ -102,7 +102,50 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 	leaveJVM(); 
 }
 
-jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) { 
+	enterJVM(); 
+#if 0
+	/*
+	 * <dt>java.version         <dd>Java version number
+	 * <dt>java.vendor          <dd>Java vendor specific string
+	 * <dt>java.vendor.url      <dd>Java vendor URL
+	 * <dt>java.home            <dd>Java installation directory
+	 * <dt>java.class.version   <dd>Java class version number
+	 * <dt>java.class.path      <dd>Java classpath
+	 * <dt>os.name              <dd>Operating System Name
+	 * <dt>os.arch              <dd>Operating System Architecture
+	 * <dt>os.version           <dd>Operating System Version
+	 * <dt>file.separator       <dd>File separator ("/" on Unix)
+	 * <dt>path.separator       <dd>Path separator (":" on Unix)
+	 * <dt>line.separator       <dd>Line separator ("\n" on Unix)
+	 * <dt>user.name            <dd>User account name
+	 * <dt>user.home            <dd>User home directory
+	 * <dt>user.dir             <dd>User's current working directory
+	 */
+  JavaObject * prop = *(JavaObject**)p;
+  llvm_gcroot(prop, 0);
+  setProperties(prop);
+  setCommandLineProperties(prop);
+
+  Jnjvm* vm = JavaThread::get()->getJVM();
+  const char * tmp = getenv("JAVA_COMPILER");
+  if (tmp)
+    setProperty(vm, prop, "java.compiler", tmp);
+
+  // Override properties to indicate java version 1.6
+  setProperty(vm, prop, "java.specification.version", "1.6");
+  setProperty(vm, prop, "java.version", "1.6");
+  setProperty(vm, prop, "java.runtime.version", "1.6");
+
+  // Set additional path properties
+  // For now, ignore JAVA_HOME.  We don't want to be using a location
+  // other than the one we precompiled against anyway.
+  setProperty(vm, prop, "java.home", OpenJDKJRE);
+  setProperty(vm, prop, "java.ext.dirs", OpenJDKExtDirs);
+#endif
+	leaveJVM(); 
+	return p;
+}
 
 /*
  * java.io.File
