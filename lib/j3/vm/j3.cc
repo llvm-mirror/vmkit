@@ -100,9 +100,7 @@ void J3::run() {
 
 #define z_class(clName)                      initialClassLoader->loadClass(names()->get(clName))
 #define z_method(access, cl, name, signature)     initialClassLoader->method(access, cl, name, initialClassLoader->getSignature(cl, signature))
-#define z_field(access, cl, name, type)      J3Cst::isStatic(access)	\
-			? cl->findStaticField(names()->get(name), type)									\
-			: cl->findVirtualField(names()->get(name), type);
+#define z_field(access, cl, name, type)      cl->findField(access, names()->get(name), type)
 
 
 	nbArrayInterfaces    = 2;
@@ -122,12 +120,11 @@ void J3::run() {
 	J3Field hf(J3Cst::ACC_PRIVATE, names()->get("** vmData **"), typeLong);
 	classClass->resolve(&hf, 1);
 	classClassInit           = z_method(0, classClass, initName, names()->get("()V"));
-	classClassVMData         = classClass->findVirtualField(hf.name(), hf.type());
+	classClassVMData         = classClass->findField(0, hf.name(), hf.type());
 
 	threadClass              = z_class("java/lang/Thread");
 	threadClassRun           = z_method(0, threadClass, names()->get("run"), names()->get("()V"));
-	threadClassVMData        = initialClassLoader->loadClass(names()->get("java/lang/Thread"))
-		->findVirtualField(names()->get("eetop"), typeLong);
+	threadClassVMData        = z_field(0, threadClass, "eetop", typeLong);
 
 	fieldClass               = z_class("java/lang/reflect/Field");
 	fieldClassClass          = z_field(0, fieldClass, "clazz", classClass);

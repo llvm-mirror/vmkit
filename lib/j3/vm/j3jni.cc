@@ -113,7 +113,7 @@ jmethodID JNICALL GetMethodID(JNIEnv* env, jclass clazz, const char* name, const
 	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
 	cl->initialise();
 	vmkit::Names* n = cl->loader()->vm()->names();
-	res = cl->findVirtualMethod(n->get(name), cl->loader()->getSignature(cl, n->get(sig)));
+	res = cl->findMethod(0, n->get(name), cl->loader()->getSignature(cl, n->get(sig)));
 	leaveJVM(); 
 
 	return res;
@@ -127,7 +127,7 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 	J3ObjectType* cl = J3ObjectType::nativeClass(clazz);
 	cl->initialise();
 	vmkit::Names* n = cl->loader()->vm()->names();
-	res = cl->findStaticMethod(n->get(name), cl->loader()->getSignature(cl, n->get(sig)));
+	res = cl->findMethod(J3Cst::ACC_STATIC, n->get(name), cl->loader()->getSignature(cl, n->get(sig)));
 
 	leaveJVM(); 
 

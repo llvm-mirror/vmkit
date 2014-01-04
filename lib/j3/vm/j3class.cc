@@ -168,12 +168,8 @@ llvm::Type* J3ObjectType::llvmType() {
 	return loader()->vm()->typeJ3ObjectPtr;
 }
 
-J3Method* J3ObjectType::findVirtualMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
+J3Method* J3ObjectType::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
 	J3::internalError("should not happe: %s::%s\n", J3ObjectType::name()->cStr(), name->cStr());
-}
-
-J3Method* J3ObjectType::findStaticMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
-	J3::internalError("should not happen");
 }
 
 J3ObjectType* J3ObjectType::nativeClass(J3ObjectHandle* handle) {
@@ -202,7 +198,7 @@ void J3ObjectType::prepareInterfaceTable() {
 					//fprintf(stderr, "    processing %s method %s %s\n", 
 					//J3Cst::isAbstract(base->access()) ? "abstract" : "concrete",
 					//base->signature()->cStr(), base->name()->cStr());
-					J3Method* method = findVirtualMethod(base->name(), base->signature(), J3Cst::isAbstract(base->access()));
+					J3Method* method = findMethod(0, base->name(), base->signature(), J3Cst::isAbstract(base->access()));
 
 					if(!method)
 						method = base;
@@ -264,7 +260,7 @@ uintptr_t J3Layout::structSize() {
 	return _structSize; 
 }
 
-J3Method* J3Layout::findMethod(const vmkit::Name* name, J3Signature* signature) {
+J3Method* J3Layout::localFindMethod(const vmkit::Name* name, J3Signature* signature) {
 	for(size_t i=0; i<nbMethods(); i++) {
 		J3Method* cur = methods()[i];
 
@@ -277,7 +273,7 @@ J3Method* J3Layout::findMethod(const vmkit::Name* name, J3Signature* signature) 
 	return 0;
 }
 
-J3Field* J3Layout::findField(const vmkit::Name* name, const J3Type* type) {
+J3Field* J3Layout::localFindField(const vmkit::Name* name, const J3Type* type) {
 	for(size_t i=0; i<nbFields(); i++) {
 		J3Field* cur = fields() + i;
 
@@ -313,14 +309,13 @@ J3ObjectHandle* J3Class::extractAttribute(J3Attribute* attr) {
 		return J3ObjectHandle::doNewArray(loader()->vm()->typeByte->getArray(), 0);
 }
 
-J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
-	//loader()->vm()->log("Lookup: %s %s in %s (%d)", methName->cStr(), methSign->cStr(), name()->cStr(), nbVirtualMethods);
+J3Method* J3Class::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
 	resolve();
 
 	J3Class* cur = this;
-
 	while(1) {
-		J3Method* res = cur->findMethod(name, signature);
+		J3Layout* layout = J3Cst::isStatic(access) ? (J3Layout*)cur->staticLayout() : cur;
+		J3Method* res = layout->localFindMethod(name, signature);
 
 		if(res)
 			return res;
@@ -335,35 +330,14 @@ J3Method* J3Class::findVirtualMethod(const vmkit::Name* name, J3Signature* signa
 	}
 }
 
-J3Method* J3Class::findStaticMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
-	//loader()->vm()->log("Lookup: %s %s in %s", methName->cStr(), methSign->cStr(), name()->cStr());
-	resolve();
-
-	J3Class* cur = this;
-
-	while(1) {
-		J3Method* res = cur->staticLayout()->findMethod(name, signature);
-
-		if(res)
-			return res;
-
-		if(cur == cur->super()) {
-			if(error)
-				J3::noSuchMethodError("no such method", this, name, signature);
-			else
-				return 0;
-		}
-		cur = cur->super();
-	}
-}
-
-J3Field* J3Class::findVirtualField(const vmkit::Name* name, J3Type* type, bool error) {
+J3Field* J3Class::findField(uint32_t access, const vmkit::Name* name, J3Type* type, bool error) {
 	//loader()->vm()->log("Lookup: %s %s in %s", type->name()->cStr(), name->cStr(), J3Class::name()->cStr());
 	resolve();
 	J3Class* cur = this;
 
 	while(1) {
-		J3Field* res = cur->findField(name, type);
+		J3Layout* layout = J3Cst::isStatic(access) ? (J3Layout*)cur->staticLayout() : cur;
+		J3Field* res = layout->localFindField(name, type);
 
 		if(res)
 			return res;
@@ -378,24 +352,12 @@ J3Field* J3Class::findVirtualField(const vmkit::Name* name, J3Type* type, bool e
 	}
 }
 
-J3Field* J3Class::findStaticField(const vmkit::Name* fname, J3Type* ftype, bool error) {
-	//fprintf(stderr, "Lookup static field %s %s::%s\n", ftype->name()->cStr(), name()->cStr(), fname->cStr());
-	resolve();
-
-	J3Field* res = staticLayout()->findField(fname, ftype);
-
-	if(!res)
-		J3::internalError("implement me");
-
-	return res;
-}
-
 void J3Class::registerNative(const vmkit::Name* name, const vmkit::Name* signatureName, void* fnPtr) {
 	resolve();
 	J3Signature* signature = loader()->getSignature(this, signatureName);
-	J3Method* res = staticLayout()->findMethod(name, signature);
+	J3Method* res = staticLayout()->localFindMethod(name, signature);
 	if(!res)
-		res = findMethod(name, signature);
+		res = localFindMethod(name, signature);
 	if(!res || !J3Cst::isNative(res->access()))
 		J3::noSuchMethodError("unable to find native method", this, name, signature);
 
@@ -451,7 +413,7 @@ void J3Class::doInitialise() {
 			}
 		}
 
-		J3Method* clinit = staticLayout()->findMethod(loader()->vm()->clinitName, loader()->vm()->clinitSign);
+		J3Method* clinit = staticLayout()->localFindMethod(loader()->vm()->clinitName, loader()->vm()->clinitSign);
 			
 		if(clinit)
 			clinit->invokeStatic();
@@ -787,7 +749,7 @@ J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {
 	if(!type)
 		ctpResolved[ntIdx] = type = loader()->getType(this, nameAt(ctpValues[ntIdx] & 0xffff));
 	
-	res = J3Cst::isStatic(access) ? cl->findStaticField(name, type) : cl->findVirtualField(name, type);
+	res = cl->findField(access, name, type);
 
 	return res;
 }
@@ -886,12 +848,8 @@ J3ObjectHandle* J3ArrayClass::clone(J3ObjectHandle* obj) {
 	return res;
 }
 
-J3Method* J3ArrayClass::findVirtualMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
-	return loader()->vm()->objectClass->findVirtualMethod(name, signature, error);
-}
-
-J3Method* J3ArrayClass::findStaticMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
-	return loader()->vm()->objectClass->findStaticMethod(name, signature, error);
+J3Method* J3ArrayClass::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
+	return loader()->vm()->objectClass->findMethod(access, name, signature, error);
 }
 
 void J3ArrayClass::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {

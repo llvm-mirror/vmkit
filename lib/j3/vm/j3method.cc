@@ -109,7 +109,7 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 	if(cl()->loader()->vm()->options()->debugLinking)
 		fprintf(stderr, "virtual linking %s::%s\n", cl()->name()->cStr(), name()->cStr());
 	vmkit::Names* n = cl()->loader()->vm()->names();
-	return obj->vt()->type()->asObjectType()->findVirtualMethod(name(), signature());
+	return obj->vt()->type()->asObjectType()->findMethod(0, name(), signature());
 }
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
