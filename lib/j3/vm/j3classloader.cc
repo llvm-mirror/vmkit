@@ -149,8 +149,12 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 
 	*pend = pos;
 		
-	if(prof && !unify)
-		res = res->getArray(prof, start ? 0 : typeName);
+	if(prof) {
+		if(unify)
+			res = vm()->objectClass;
+		else
+			res = res->getArray(prof, start ? 0 : typeName);
+	}
 
 	return res;
 }

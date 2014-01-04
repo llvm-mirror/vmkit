@@ -44,35 +44,41 @@ void J3Method::markCompiled(llvm::Function* llvmFunction, void* fnPtr) {
 	_fnPtr = fnPtr;
 }
 
-void* J3Method::fnPtr(bool withCaller) {
-	if(!isCompiled()) {
-		//fprintf(stderr, "materializing: %s::%s%s\n", this, cl()->name()->cStr(), name()->cStr(), signature()->cStr());
+void* J3Method::fnPtr() {
+	return _fnPtr;
+}
+
+J3LLVMSignature::function_t J3Method::cxxCaller() {
+	return signature()->llvmSignature(access())->caller();
+}
+
+void J3Method::ensureCompiled(bool withCaller) {
+	if(!fnPtr() || (withCaller && !cxxCaller())) {
+		// fprintf(stderr, "materializing: %s::%s%s\n", this, cl()->name()->cStr(), name()->cStr(), signature()->cStr());
 		if(!isResolved()) {
 			if(cl()->loader()->vm()->options()->debugLinking)
 				fprintf(stderr, "linking %s::%s\n", cl()->name()->cStr(), name()->cStr());
-
+			
 			cl()->initialise();
 			if(!isResolved())
 				J3::noSuchMethodError("unable to find method", cl(), name(), signature());
 		}
 
-		J3CodeGen::translate(this, 1, withCaller);
+		J3CodeGen::translate(this, !fnPtr(), withCaller);
  	}
-
-	return _fnPtr;
 }
 
 void* J3Method::functionPointerOrStaticTrampoline() {
-	if(isCompiled())
-		return _fnPtr;
+	if(fnPtr())
+		return fnPtr();
 	if(!_staticTrampoline)
 		_staticTrampoline = J3Trampoline::buildStaticTrampoline(cl()->loader()->allocator(), this);
 	return _staticTrampoline;
 }
 
 void* J3Method::functionPointerOrVirtualTrampoline() {
-	if(isCompiled())
-		return _fnPtr;
+	if(fnPtr())
+		return fnPtr();
 	if(!_virtualTrampoline)
 		_virtualTrampoline = J3Trampoline::buildVirtualTrampoline(cl()->loader()->allocator(), this);
 	return _virtualTrampoline;
@@ -106,92 +112,79 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 	return obj->vt()->type()->asObjectType()->findVirtualMethod(name(), signature());
 }
 
-J3Value J3Method::internalInvoke(bool statically, J3Value* inArgs) {
-	J3Method* target = statically ? this : resolve(inArgs[0].valObject);
+J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
+	ensureCompiled(1);
 
-	void* fn = fnPtr(1);
-
-	//fprintf(stderr, "Internal invoke %s::%s%s\n", target->cl()->name()->cStr(), target->name()->cStr(), target->signature()->cStr());
-
-	J3LLVMSignature::function_t caller = signature()->llvmSignature(access())->caller();
-	if(!caller) {
-		J3CodeGen::translate(this, 0, 1);
-		caller = signature()->llvmSignature(access())->caller();
-	}
-
-	J3Value res = caller(fn, inArgs);
-
-	return res;
-}
-
-J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* inArgs) {
 	J3Value* reIn;
 	if(handle) {
-		reIn = (J3Value*)alloca((signature()->nbIns()+1)*sizeof(J3Value));
+		uint32_t n = signature()->functionType(J3Cst::ACC_STATIC)->getNumParams();
+		reIn = (J3Value*)alloca((n+1)*sizeof(J3Value));
 		reIn[0].valObject = handle;
-		memcpy(reIn+1, inArgs, signature()->nbIns()*sizeof(J3Value));
+		memcpy(reIn+1, inArgs, n*sizeof(J3Value));
 	} else
 		reIn = inArgs;
-	return internalInvoke(statically, reIn);
+	return cxxCaller()(fnPtr(), reIn);
 }
 
-J3Value J3Method::internalInvoke(bool statically, J3ObjectHandle* handle, va_list va) {
-	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*(signature()->nbIns() + 1));
+J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {
+	ensureCompiled(1);
+
+	llvm::FunctionType* fType = signature()->functionType(J3Cst::ACC_STATIC);      /* static signature for va */
+	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*(fType->getNumParams() + 1));
 	J3* vm = cl()->loader()->vm();
-	J3Type* cur;
-	uint32_t d = 0;
+	uint32_t i = 0;
 
 	if(handle)
-		args[d++].valObject = handle;
+		args[i++].valObject = handle;
+	
+	for(llvm::FunctionType::param_iterator cur=fType->param_begin(); cur!=fType->param_end(); cur++, i++) {
+		llvm::Type* t = *cur;
 
-	for(uint32_t i=0; i<signature()->nbIns(); i++) {
-		cur = signature()->ins(i);
-
-		if(cur == vm->typeBoolean)
-			args[i+d].valBoolean = va_arg(va, bool);
-		else if(cur == vm->typeByte)
-			args[i+d].valByte = va_arg(va, int8_t);
-		else if(cur == vm->typeShort)
-			args[i+d].valShort = va_arg(va, int16_t);
-		else if(cur == vm->typeChar)
-			args[i+d].valChar = va_arg(va, uint16_t);
-		else if(cur == vm->typeInteger)
-			args[i+d].valInteger = va_arg(va, int32_t);
-		else if(cur == vm->typeLong)
-			args[i+d].valLong = va_arg(va, int64_t);
-		else if(cur == vm->typeFloat)
-			args[i+d].valFloat = va_arg(va, float);
-		else if(cur == vm->typeDouble)
-			args[i+d].valDouble = va_arg(va, double);
+		if(t == vm->typeBoolean->llvmType())
+			args[i].valBoolean = va_arg(va, bool);
+		else if(t == vm->typeByte->llvmType())
+			args[i].valByte = va_arg(va, int8_t);
+		else if(t == vm->typeShort->llvmType())
+			args[i].valShort = va_arg(va, int16_t);
+		else if(t == vm->typeChar->llvmType())
+			args[i].valChar = va_arg(va, uint16_t);
+		else if(t == vm->typeInteger->llvmType())
+			args[i].valInteger = va_arg(va, int32_t);
+		else if(t == vm->typeLong->llvmType())
+			args[i].valLong = va_arg(va, int64_t);
+		else if(t == vm->typeFloat->llvmType())
+			args[i].valFloat = va_arg(va, float);
+		else if(t == vm->typeDouble->llvmType())
+			args[i].valDouble = va_arg(va, double);
 		else
-			args[i+d].valObject = va_arg(va, J3ObjectHandle*);
+			args[i].valObject = va_arg(va, J3ObjectHandle*);
 	}
 
-	return internalInvoke(statically, args);
+	return cxxCaller()(fnPtr(), args);
 }
 
 J3Value J3Method::invokeStatic(J3Value* args) {
-	return internalInvoke(1, 0, args);
-}
-
-J3Value J3Method::invokeSpecial(J3ObjectHandle* handle, J3Value* args) {
-	return internalInvoke(1, handle, args);
-}
-
-J3Value J3Method::invokeVirtual(J3ObjectHandle* handle, J3Value* args) {
-	return internalInvoke(0, handle, args);
+	return internalInvoke(0, args);
 }
 
 J3Value J3Method::invokeStatic(va_list va) {
-	return internalInvoke(1, 0, va);
+	return internalInvoke(0, va);
+}
+
+J3Value J3Method::invokeSpecial(J3ObjectHandle* handle, J3Value* args) {
+	return internalInvoke(handle, args);
 }
 
 J3Value J3Method::invokeSpecial(J3ObjectHandle* handle, va_list va) {
-	return internalInvoke(1, handle, va);
+	return internalInvoke(handle, va);
+}
+
+J3Value J3Method::invokeVirtual(J3ObjectHandle* handle, J3Value* args) {
+	return resolve(handle)->internalInvoke(handle, args);
 }
 
 J3Value J3Method::invokeVirtual(J3ObjectHandle* handle, va_list va) {
-	return internalInvoke(0, handle, va);
+	return resolve(handle)->internalInvoke(handle, va);
 }
 
 J3Value J3Method::invokeStatic(...) {

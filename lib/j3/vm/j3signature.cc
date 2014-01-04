@@ -36,8 +36,8 @@ void J3Signature::checkFunctionType() {
 
 		llvm::Type* out = loader()->getTypeInternal(0, name(), cur+1, &cur, 1)->llvmType();
 
-		_staticFunctionType = llvm::FunctionType::get(out, vins, 0);
-		_virtualFunctionType = llvm::FunctionType::get(out, sins, 0);
+		_staticFunctionType = llvm::FunctionType::get(out, sins, 0);
+		_virtualFunctionType = llvm::FunctionType::get(out, vins, 0);
 	}
 }
 

@@ -16,7 +16,8 @@ void* J3Trampoline::interfaceTrampoline(J3Object* obj) {
 	void* res;
 
 	if(desc->nbMethods == 1) {
-		res = desc->methods[0]->fnPtr(0);
+		desc->methods[0]->ensureCompiled(0);
+		res = desc->methods[0]->fnPtr();
 		handle->vt()->_interfaceMethodTable[index] = res;
 	} else
 		J3::internalError("implement me: interface Trampoline with collision");
@@ -27,7 +28,8 @@ void* J3Trampoline::interfaceTrampoline(J3Object* obj) {
 }
 
 void* J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
-	return target->fnPtr(0);
+	target->ensureCompiled(0);
+	return target->fnPtr();
 }
 	
 void* J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
@@ -36,7 +38,8 @@ void* J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
 	J3ObjectType* cl = handle->vt()->type()->asObjectType();
 	J3Method* impl = cl == target->cl() ? target : cl->findVirtualMethod(target->name(), target->signature());
 
-	void* res = impl->fnPtr(0);
+	impl->ensureCompiled(0);
+	void* res = impl->fnPtr();
 	handle->vt()->virtualMethods()[impl->index()] = res;
 
 	J3Thread::get()->restore(prev);

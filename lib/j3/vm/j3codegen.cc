@@ -215,7 +215,7 @@ llvm::FunctionType* J3CodeGen::llvmFunctionType(J3Method* method) {
 }
 
 llvm::Function* J3CodeGen::buildFunction(J3Method* method, bool isStub) {
-	const char* id = (isStub && !method->isCompiled()) ? method->llvmStubName(cl) : method->llvmFunctionName(cl);
+	const char* id = (isStub && !method->fnPtr()) ? method->llvmStubName(cl) : method->llvmFunctionName(cl);
 	return (llvm::Function*)module->getOrInsertFunction(id, llvmFunctionType(method));
 }
 

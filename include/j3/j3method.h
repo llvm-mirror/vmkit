@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "vmkit/compiler.h"
+#include "j3/j3signature.h"
 
 namespace llvm {
 	class FunctionType;
@@ -53,9 +54,8 @@ namespace j3 {
 		void* volatile               _virtualTrampoline;
 		J3ObjectHandle* volatile     _javaMethod;
 
-		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, va_list va);
-		J3Value            internalInvoke(bool statically, J3ObjectHandle* handle, J3Value* args);
-		J3Value            internalInvoke(bool statically, J3Value* args);
+		J3Value            internalInvoke(J3ObjectHandle* handle, va_list va);
+		J3Value            internalInvoke(J3ObjectHandle* handle, J3Value* args);
 		void               buildLLVMNames(J3Class* from);
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Signature* signature);
@@ -84,7 +84,6 @@ namespace j3 {
 		uint32_t            index();
 		uint32_t*           indexPtr() { return &_index; }
 		bool                isResolved() { return _index != -1; }
-		bool                isCompiled() { return _fnPtr; }
 
 		J3Attributes*       attributes() const { return _attributes; }
 		uint16_t            access() const { return _access; }
@@ -104,7 +103,9 @@ namespace j3 {
 		J3Value             invokeVirtual(J3ObjectHandle* obj, J3Value* args);
 		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
 
-		void*               fnPtr(bool withCaller);
+		void                ensureCompiled(bool withCaller);
+		J3LLVMSignature::function_t cxxCaller();
+		void*               fnPtr();
 		void*               functionPointerOrStaticTrampoline();
 		void*               functionPointerOrVirtualTrampoline();
 
