@@ -108,15 +108,14 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	}
 
 	uint32_t access = method->access();
-	if(withCaller && !signature->caller(access))
+	uint32_t needsCaller = withCaller && !signature->caller(access);
+	if(needsCaller)
 		signature->generateCallerIR(access, this, module, "generic-caller");
 
 	loader->compileModule(module);
-
-	if(withCaller && !signature->caller(access)) {
-		J3Signature::function_t caller = (J3Signature::function_t)loader->ee()->getFunctionAddress("generic-caller");
-		signature->setCaller(access, caller);
-	}
+	
+	if(needsCaller)
+		signature->setCaller(access, (J3Signature::function_t)loader->ee()->getFunctionAddress("generic-caller"));
 
 	if(withMethod) {
 		void* fnPtr = (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
@@ -136,7 +135,7 @@ void J3CodeGen::operator delete(void* ptr) {
 
 void J3CodeGen::translate(J3Method* method, bool withMethod, bool withCaller) {
 	method->cl()->loader()->vm()->lockCompiler();
-
+	
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
 	delete new(allocator) J3CodeGen(allocator, method, withMethod, withCaller);
 	vmkit::BumpAllocator::destroy(allocator);
@@ -191,34 +190,9 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, J3Type* type) {
 	}
 }
 
-llvm::FunctionType* J3CodeGen::llvmFunctionType(J3Method* method) {
-	//	return method->functionType(method->access());
-
-	J3Signature* type = method->signature();
-	J3LLVMSignature* res = type->llvmSignature(method->access());
-
-	if(!res) {
-		std::vector<llvm::Type*> in;
-
-		if(!J3Cst::isStatic(method->access()))
-			in.push_back(vm->typeJ3ObjectPtr);
-
-		for(uint32_t i=0; i<type->nbIns(); i++)
-			in.push_back(type->ins(i)->llvmType());
-
-		llvm::FunctionType* funcType = llvm::FunctionType::get(type->out()->llvmType(), in, 0);
-		res = vm->llvmSignatures[funcType];
-		if(!res)
-			vm->llvmSignatures[funcType] = res = new(vm->allocator()) J3LLVMSignature(funcType);
-		type->setLLVMSignature(method->access(), res);
-	}
-
-	return res->functionType();
-}
-
 llvm::Function* J3CodeGen::buildFunction(J3Method* method, bool isStub) {
 	const char* id = (isStub && !method->fnPtr()) ? method->llvmStubName(cl) : method->llvmFunctionName(cl);
-	return (llvm::Function*)module->getOrInsertFunction(id, llvmFunctionType(method));
+	return (llvm::Function*)module->getOrInsertFunction(id, method->signature()->functionType(method->access()));
 }
 
 llvm::Value* J3CodeGen::typeDescriptor(J3ObjectType* objectType, llvm::Type* type) {
@@ -405,7 +379,7 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	}
 
 	for(uint32_t i=0; i<type->nbIns(); i++)
-		args.push_back(unflatten(stack.top(type->nbIns() - i - 1), type->ins(i)));
+		args.push_back(unflatten(stack.top(type->nbIns() - i - 1), type->javaIns(i)));
 
 	stack.drop(d + type->nbIns());
 
@@ -420,8 +394,8 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	} else
 		res = builder->CreateCall(func, args);
 	
-	if(type->out() != vm->typeVoid) {
-		stack.push(flatten(res, type->out()));
+	if(type->javaOut() != vm->typeVoid) {
+		stack.push(flatten(res, type->javaOut()));
 	}
 }
 
@@ -439,7 +413,7 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 															builder->getInt32(J3VirtualTable::gepInterfaceMethods),
 															builder->getInt32(index % J3VirtualTable::nbInterfaceMethodTable) };
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
-																						 llvmFunctionType(target)->getPointerTo());
+																						 target->signature()->functionType(target->access())->getPointerTo());
 
 	invoke(0, target, func);
 }
@@ -459,7 +433,7 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 															builder->getInt32(J3VirtualTable::gepVirtualMethods),
 															funcEntry };
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
-																						 llvmFunctionType(target)->getPointerTo());
+																						 target->signature()->functionType(target->access())->getPointerTo());
 
 	char buf[65536]; snprintf(buf, 65536, "%s::%s%s", 
 														target->cl()->name()->cStr(), 
@@ -1631,7 +1605,7 @@ void J3CodeGen::generateJava() {
 		if(!pos && !J3Cst::isStatic(method->access()))
 			type = method->cl();
 		else
-			type = signature->ins(n++);
+			type = signature->javaIns(n++);
 
 		locals.setAt(flatten(cur, type), pos);
 
@@ -1664,11 +1638,11 @@ void J3CodeGen::generateJava() {
 												 buildString("%s\n"),
 												 buildString(buf));
 	}
-	if(signature->out() == vm->typeVoid) {
+	if(signature->javaOut() == vm->typeVoid) {
 		builder->CreateRetVoid();
 	} else {
-		ret.metaStack[0] = signature->out()->llvmType();
-		builder->CreateRet(unflatten(ret.at(0), signature->out()));
+		ret.metaStack[0] = signature->javaOut()->llvmType();
+		builder->CreateRet(unflatten(ret.at(0), signature->javaOut()));
 	}
 
 	if(J3Cst::isSynchronized(method->access())) {
@@ -1731,9 +1705,9 @@ llvm::Function* J3CodeGen::lookupNative() {
 		nativeIns.push_back(vm->typeJ3ObjectHandlePtr);
 			
 	for(int i=0; i<signature->nbIns(); i++)
-		nativeIns.push_back(doNativeType(signature->ins(i)));
+		nativeIns.push_back(doNativeType(signature->javaIns(i)));
 
-	nativeOut = doNativeType(signature->out());
+	nativeOut = doNativeType(signature->javaOut());
 
 	char* buf = (char*)loader->allocator()->allocate(mangler.length()+1);
 	memcpy(buf, mangler.cStr(), mangler.length()+1);
@@ -1778,8 +1752,8 @@ void J3CodeGen::generateNative() {
 			selfDone = 1; 
 			a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, method->cl()));
 		} else {
-			if(signature->ins(i)->llvmType()->isPointerTy())
-				a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, signature->ins(i)));
+			if(signature->javaIns(i)->llvmType()->isPointerTy())
+				a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, signature->javaIns(i)));
 			else
 				a = cur;
 			i++;
@@ -1789,22 +1763,22 @@ void J3CodeGen::generateNative() {
 
 	res = builder->CreateCall(nat, args);
 
-	if(signature->out() == vm->typeVoid) {
+	if(signature->javaOut() == vm->typeVoid) {
 		builder->CreateCall2(funcJ3ThreadRestore, thread, frame);
 		builder->CreateRetVoid();
 	} else {
 		builder->CreateCall2(funcJ3ThreadRestore, thread, frame);
 
-		if(signature->out()->llvmType()->isPointerTy()) {
+		if(signature->javaOut()->llvmType()->isPointerTy()) {
 			llvm::BasicBlock* ifnull = newBB("ifnull");
 			llvm::BasicBlock* ifnotnull = newBB("ifnotnull");
 			builder->CreateCondBr(builder->CreateIsNull(res), ifnull, ifnotnull);
 
 			builder->SetInsertPoint(bb = ifnull);
-			builder->CreateRet(unflatten(nullValue, signature->out()));
+			builder->CreateRet(unflatten(nullValue, signature->javaOut()));
 
 			builder->SetInsertPoint(bb = ifnotnull);
-			res = unflatten(handleToObject(res), signature->out());
+			res = unflatten(handleToObject(res), signature->javaOut());
 		}
 		builder->CreateRet(res);
 	}

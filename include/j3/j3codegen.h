@@ -82,7 +82,6 @@ namespace j3 {
 		uint32_t            wideReadU1();
 		uint32_t            wideReadS1();
 
-		llvm::FunctionType* llvmFunctionType(J3Method* method);
 		llvm::Function*     buildFunction(J3Method* method, bool isStub=1);
 		llvm::Value*        methodDescriptor(J3Method* method);
 		llvm::Value*        typeDescriptor(J3ObjectType* objectType, llvm::Type* type);

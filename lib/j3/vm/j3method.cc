@@ -113,7 +113,7 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 }
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
-	ensureCompiled(1);
+	ensureCompiled(1);  /* force the generation of the code and thus of the functionType */
 
 	J3Value* reIn;
 	if(handle) {
@@ -127,7 +127,7 @@ J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
 }
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {
-	ensureCompiled(1);
+	ensureCompiled(1);  /* force the generation of the code and thus of the functionType */
 
 	llvm::FunctionType* fType = signature()->functionType(J3Cst::ACC_STATIC);      /* static signature for va */
 	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*(fType->getNumParams() + 1));
@@ -269,7 +269,7 @@ J3ObjectHandle* J3Method::javaMethod() {
 			J3ObjectHandle* parameters = J3ObjectHandle::doNewArray(vm->classClass->getArray(), nbIns);
 
 			for(uint32_t i=0; i<nbIns; i++)
-				parameters->setObjectAt(i, signature()->ins(i)->javaClass());
+				parameters->setObjectAt(i, signature()->javaIns(i)->javaClass());
 
 			J3Attribute* exceptionAttribute = attributes()->lookup(vm->exceptionsAttribute);
 			J3ObjectHandle* exceptions;

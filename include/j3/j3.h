@@ -8,12 +8,15 @@
 #include "vmkit/vmkit.h"
 #include "vmkit/allocator.h"
 
-#include "j3/j3signature.h"
 #include "j3/j3options.h"
 #include "j3/j3typesdef.h"
 #include "j3/j3jni.h"
 #include "j3/j3monitor.h"
 #include "j3/j3constants.h"
+
+namespace llvm {
+	class FunctionType;
+}
 
 namespace j3 {
 	class J3InitialClassLoader;
@@ -25,6 +28,7 @@ namespace j3 {
 	class J3Primitive;
 	class J3Lib;
 	class J3Method;
+	class J3LLVMSignature;
 	class J3Signature;
 
 	class J3 : public vmkit::VMKit {

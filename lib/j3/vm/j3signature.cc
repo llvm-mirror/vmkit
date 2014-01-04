@@ -17,8 +17,41 @@ J3Signature::J3Signature(J3ClassLoader* loader, const vmkit::Name* name) {
 	_name = name;
 }
 
+void J3Signature::checkInOut() {
+	if(!_out) {
+		J3Type*            args[1+name()->length()];
+		uint32_t           nbArgs = 0;
+		uint32_t           cur = 1;
+		
+		if(name()->cStr()[0] != J3Cst::ID_Left)
+			loader()->wrongType(0, name());
+
+		while(name()->cStr()[cur] != J3Cst::ID_Right)
+			args[nbArgs++] = loader()->getTypeInternal(0, name(), cur, &cur, 0);
+
+		if(nbArgs != nbIns())
+			J3::internalError("should not happen %d %d", nbArgs, nbIns());
+
+		_ins = (J3Type**)loader()->allocator()->allocate(nbArgs*sizeof(J3Type*));
+		memcpy(_ins, args, nbArgs*sizeof(J3Type*));
+
+		_out = loader()->getTypeInternal(0, name(), cur+1, &cur, 0); /* out has to be the last (thread safety) */
+		if(cur != name()->length())
+			loader()->wrongType(0, name());
+	}
+}
+
+J3LLVMSignature* J3Signature::buildLLVMSignature(llvm::FunctionType* fType) {
+	J3LLVMSignature* res = loader()->vm()->llvmSignatures[fType];
+	if(!res) {
+		loader()->vm()->llvmSignatures[fType] = res = new(loader()->vm()->allocator()) J3LLVMSignature();
+		res->functionType = fType;
+	}
+	return res;
+}
+
 void J3Signature::checkFunctionType() {
-	if(!_virtualFunctionType) {
+	if(!_virtualLLVMSignature) {
 		std::vector<llvm::Type*> vins;
 		std::vector<llvm::Type*> sins;
 		uint32_t                 cur = 1;
@@ -35,41 +68,33 @@ void J3Signature::checkFunctionType() {
 		}
 
 		llvm::Type* out = loader()->getTypeInternal(0, name(), cur+1, &cur, 1)->llvmType();
-
-		_staticFunctionType = llvm::FunctionType::get(out, sins, 0);
-		_virtualFunctionType = llvm::FunctionType::get(out, vins, 0);
+		
+		_staticLLVMSignature = buildLLVMSignature(llvm::FunctionType::get(out, sins, 0));
+		_virtualLLVMSignature = buildLLVMSignature(llvm::FunctionType::get(out, vins, 0));
 	}
+}
+
+J3LLVMSignature* J3Signature::llvmSignature(uint32_t access) { 
+	checkFunctionType();
+	return J3Cst::isStatic(access) ? _staticLLVMSignature : _virtualLLVMSignature; 
 }
 
 llvm::FunctionType* J3Signature::functionType(uint32_t access) {
-	checkFunctionType();
-	return J3Cst::isStatic(access) ? _staticFunctionType : _virtualFunctionType;
+	return llvmSignature(access)->functionType;
 }
 
-void J3Signature::checkInOut() {
-	if(!_out) {
-		J3Type*            args[1+name()->length()];
-		uint32_t           nbArgs = 0;
-		uint32_t           cur = 1;
-		
-		if(name()->cStr()[0] != J3Cst::ID_Left)
-			loader()->wrongType(0, name());
-
-		while(name()->cStr()[cur] != J3Cst::ID_Right)
-			args[nbArgs++] = loader()->getTypeInternal(0, name(), cur, &cur, 0);
-
-		_nbIns = nbArgs;
-		_ins = (J3Type**)loader()->allocator()->allocate(nbArgs*sizeof(J3Type*));
-		memcpy(_ins, args, nbArgs*sizeof(J3Type*));
-
-		_out = loader()->getTypeInternal(0, name(), cur+1, &cur, 0); /* has to be the last (thread safety) */
-		if(cur != name()->length())
-			loader()->wrongType(0, name());
-	}
+uint32_t J3Signature::nbIns() {
+	return functionType(J3Cst::ACC_STATIC)->getNumParams();
 }
 
-J3Signature::function_t J3Signature::caller(uint32_t access) { 
-	return llvmSignature(access)->z_caller(); 
+J3Signature::function_t J3Signature::caller(uint32_t access) {
+	if(!_virtualLLVMSignature)
+		J3::internalError("sould not happen");
+	return llvmSignature(access)->caller;
+}
+
+void J3Signature::setCaller(uint32_t access, J3Signature::function_t caller) {
+	llvmSignature(access)->caller = caller;
 }
 
 void J3Signature::generateCallerIR(uint32_t access, J3CodeGen* codeGen, llvm::Module* module, const char* id) {
@@ -144,24 +169,4 @@ void J3Signature::generateCallerIR(uint32_t access, J3CodeGen* codeGen, llvm::Mo
 		res = builder.getInt64(0);
 
 	builder.CreateRet(res);
-}
-
-void J3Signature::setCaller(uint32_t access, J3Signature::function_t caller) {
-	llvmSignature(access)->z_setCaller(caller);
-}
-
-void J3Signature::setLLVMSignature(uint32_t access, J3LLVMSignature* llvmSignature) { 
-	if(J3Cst::isStatic(access))
-		_staticLLVMSignature = llvmSignature;
-	else
-		_virtualLLVMSignature = llvmSignature;
-}
-
-J3LLVMSignature* J3Signature::llvmSignature(uint32_t access) { 
-	checkFunctionType();
-	return J3Cst::isStatic(access) ? _staticLLVMSignature : _virtualLLVMSignature; 
-}
-
-J3LLVMSignature::J3LLVMSignature(llvm::FunctionType* functionType) {
-	_functionType = functionType;
 }
