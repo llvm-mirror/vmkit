@@ -96,7 +96,7 @@ namespace j3 {
 		llvm::BasicBlock*   forwardBranch(const char* id, uint32_t pc, bool doAlloc, bool doPush);
 		void                condBr(llvm::Value* op);
 
-		llvm::Value*        flatten(llvm::Value* v, llvm::Type* type);
+		llvm::Value*        flatten(llvm::Value* v);
 		llvm::Value*        unflatten(llvm::Value* v, llvm::Type* type);
 
 		llvm::Value*        handleToObject(llvm::Value* obj);
@@ -158,7 +158,7 @@ namespace j3 {
 		void                generateJava();
 		void                generateNative();
 		llvm::Function*     lookupNative();
-		llvm::Type*         doNativeType(J3Type* type);
+		llvm::Type*         doNativeType(llvm::Type* type);
 
 		llvm::Value*        buildString(const char* msg);
 
