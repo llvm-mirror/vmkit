@@ -68,23 +68,12 @@ void J3Signature::checkInOut() {
 	}
 }
 
-void J3Signature::setLLVMSignature(uint32_t access, J3LLVMSignature* llvmSignature) { 
-	if(J3Cst::isStatic(access))
-		_staticLLVMSignature = llvmSignature;
-	else
-		_virtualLLVMSignature = llvmSignature;
+J3Signature::function_t J3Signature::caller(uint32_t access) { 
+	return llvmSignature(access)->z_caller(); 
 }
 
-J3LLVMSignature* J3Signature::llvmSignature(uint32_t access) { 
-	checkFunctionType();
-	return J3Cst::isStatic(access) ? _staticLLVMSignature : _virtualLLVMSignature; 
-}
-
-J3LLVMSignature::J3LLVMSignature(llvm::FunctionType* functionType) {
-	_functionType = functionType;
-}
-
-void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module, const char* id) {
+void J3Signature::generateCallerIR(uint32_t access, J3CodeGen* codeGen, llvm::Module* module, const char* id) {
+	llvm::FunctionType* fType = functionType(access);
 	llvm::Type* uint64Ty = llvm::Type::getInt64Ty(module->getContext());
 	llvm::Type* callerIn[] = { llvm::Type::getInt8Ty(module->getContext())->getPointerTo(),
 														 uint64Ty->getPointerTo() };
@@ -93,7 +82,7 @@ void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module,
 	llvm::IRBuilder<> builder(bb);
 
 	llvm::Function::arg_iterator cur = caller->arg_begin();
-	llvm::Value* method = builder.CreateBitCast(cur++, _functionType->getPointerTo());
+	llvm::Value* method = builder.CreateBitCast(cur++, fType->getPointerTo());
 	llvm::Value* ins = cur;
 
 	llvm::Value* one = builder.getInt32(1);
@@ -101,7 +90,7 @@ void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module,
 
 	std::vector<llvm::Value*> params;
 
-	for(llvm::FunctionType::param_iterator it=_functionType->param_begin(); it!=_functionType->param_end(); it++) {
+	for(llvm::FunctionType::param_iterator it=fType->param_begin(); it!=fType->param_end(); it++) {
 		llvm::Type*  t = *it;
 		llvm::Value* arg;
 
@@ -135,7 +124,7 @@ void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module,
 	}
 
 	llvm::Value* res = builder.CreateCall(method, params);
-	llvm::Type* ret = _functionType->getReturnType();
+	llvm::Type* ret = fType->getReturnType();
 
 	if(ret != builder.getVoidTy()) {
 		if(ret->isPointerTy()) {
@@ -155,6 +144,24 @@ void J3LLVMSignature::generateCallerIR(J3CodeGen* codeGen, llvm::Module* module,
 		res = builder.getInt64(0);
 
 	builder.CreateRet(res);
+}
 
-	//caller->dump();
+void J3Signature::setCaller(uint32_t access, J3Signature::function_t caller) {
+	llvmSignature(access)->z_setCaller(caller);
+}
+
+void J3Signature::setLLVMSignature(uint32_t access, J3LLVMSignature* llvmSignature) { 
+	if(J3Cst::isStatic(access))
+		_staticLLVMSignature = llvmSignature;
+	else
+		_virtualLLVMSignature = llvmSignature;
+}
+
+J3LLVMSignature* J3Signature::llvmSignature(uint32_t access) { 
+	checkFunctionType();
+	return J3Cst::isStatic(access) ? _staticLLVMSignature : _virtualLLVMSignature; 
+}
+
+J3LLVMSignature::J3LLVMSignature(llvm::FunctionType* functionType) {
+	_functionType = functionType;
 }

@@ -20,6 +20,10 @@ namespace j3 {
 	class J3CodeGen;
 
 	class J3Signature : public vmkit::PermanentObject {
+	public:
+		typedef J3Value (*function_t)(void* fn, J3Value* args);
+
+	private:
 		J3ClassLoader*               _loader;
 		const vmkit::Name*           _name;
 		J3LLVMSignature*             _staticLLVMSignature;
@@ -43,25 +47,24 @@ namespace j3 {
 		J3Type*             out() { checkInOut(); return _out; }
 		uint32_t            nbIns() { checkInOut(); return _nbIns; }
 		J3Type*             ins(uint32_t idx) { checkInOut(); return _ins[idx]; }
+
+		J3Signature::function_t caller(uint32_t access);
+		void                generateCallerIR(uint32_t access, J3CodeGen* codeGen, llvm::Module* module, const char* id);
+		void                setCaller(uint32_t access, J3Signature::function_t caller);
 	};
 
-	class J3LLVMSignature : vmkit::PermanentObject {
-		friend class J3CodeGen;
+	class J3LLVMSignature : public vmkit::PermanentObject {
+	private:
+		llvm::FunctionType*     _functionType;
+		J3Signature::function_t _caller;
 
 	public:
-		typedef J3Value (*function_t)(void* fn, J3Value* args);
-
-	private:
-		llvm::FunctionType* _functionType;
-		function_t          _caller;
-
-		void                generateCallerIR(J3CodeGen* vm, llvm::Module* module, const char* id);
-
 		J3LLVMSignature(llvm::FunctionType* functionType);
 
+		void z_setCaller(J3Signature::function_t caller) { _caller = caller; }
+		J3Signature::function_t z_caller() { return _caller; }
+
 		llvm::FunctionType* functionType() { return _functionType; }
-	public:
-		function_t          caller() { return _caller; }
 	};
 }
 

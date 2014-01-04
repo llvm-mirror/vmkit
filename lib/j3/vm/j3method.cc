@@ -48,8 +48,8 @@ void* J3Method::fnPtr() {
 	return _fnPtr;
 }
 
-J3LLVMSignature::function_t J3Method::cxxCaller() {
-	return signature()->llvmSignature(access())->caller();
+J3Signature::function_t J3Method::cxxCaller() {
+	return signature()->caller(access());
 }
 
 void J3Method::ensureCompiled(bool withCaller) {
