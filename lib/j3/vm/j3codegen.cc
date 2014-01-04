@@ -161,35 +161,38 @@ uint32_t J3CodeGen::wideReadS1() {
 
 llvm::Value* J3CodeGen::flatten(llvm::Value* v, llvm::Type* type) {
 	if(type == vm->typeInteger->llvmType() || type == vm->typeLong->llvmType() || 
-		 type == vm->typeFloat->llvmType() || type == vm->typeDouble->llvmType())
+		 type == vm->typeFloat->llvmType() || type == vm->typeDouble->llvmType() ||
+		 (type->isPointerTy() && (v->getType() == vm->typeJ3ObjectPtr)))
 		return v;
-	else if(type->isPointerTy()) {
-		if(v->getType() == vm->typeJ3ObjectPtr)
-			return v;
-		else
-			return builder->CreateBitCast(v, vm->typeJ3ObjectPtr);
-	} else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
+	else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
 		return builder->CreateSExt(v, vm->typeInteger->llvmType());
 	else if(type == vm->typeChar->llvmType())
 		return builder->CreateZExt(v, vm->typeInteger->llvmType());
-	else
-		J3::internalError("should not happen");
+
+	fprintf(stderr, " v: ");
+	v->getType()->dump();
+	fprintf(stderr, "\n type: ");
+	type->dump();
+	fprintf(stderr, "\n");
+	J3::internalError("should not happen");
 }
 
 llvm::Value* J3CodeGen::unflatten(llvm::Value* v, llvm::Type* type) {
 	if(type == vm->typeInteger->llvmType() || type == vm->typeLong->llvmType() || 
-		 type == vm->typeFloat->llvmType() || type == vm->typeDouble->llvmType())
+		 type == vm->typeFloat->llvmType() || type == vm->typeDouble->llvmType() ||
+		 (type->isPointerTy() && type == v->getType()))
 		return v;
-	else if(type->isPointerTy())
-		return builder->CreateBitCast(v, type);
 	else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
 		return builder->CreateSExtOrTrunc(v, type);
 	else if(type == vm->typeChar->llvmType())
 		return builder->CreateZExtOrTrunc(v, type);
-	else {
-		type->dump();
-		J3::internalError("should not happen");
-	}
+
+	fprintf(stderr, " v: ");
+	v->getType()->dump();
+	fprintf(stderr, "\n type: ");
+	type->dump();
+	fprintf(stderr, "\n");
+	J3::internalError("should not happen");
 }
 
 llvm::Function* J3CodeGen::buildFunction(J3Method* method, bool isStub) {
