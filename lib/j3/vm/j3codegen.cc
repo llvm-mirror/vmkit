@@ -376,7 +376,7 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	uint32_t d = 0;
 
 	if(!J3Cst::isStatic(access)) {
-		args.push_back(unflatten(stack.top(type->nbIns()), target->cl()->llvmType()));
+		args.push_back(stack.top(type->nbIns()));
 		d = 1;
 	}
 
@@ -476,7 +476,7 @@ void J3CodeGen::get(llvm::Value* src, J3Field* f) {
 void J3CodeGen::getField(uint32_t idx) {
 	llvm::Value* obj = stack.pop(); 
 	J3Field* f = cl->fieldAt(idx, 0);
-	get(unflatten(nullCheck(obj), f->layout()->llvmType()), f);
+	get(nullCheck(obj), f);
 }
 
 void J3CodeGen::getStatic(uint32_t idx) {
@@ -497,7 +497,7 @@ void J3CodeGen::putField(uint32_t idx) {
 	J3Field* f = cl->fieldAt(idx, 0);
 	llvm::Value* val = stack.pop();
 	llvm::Value* obj = nullCheck(stack.pop());
-	put(unflatten(obj, f->layout()->llvmType()), val, f);
+	put(obj, val, f);
 }
 
 void J3CodeGen::arrayBoundCheck(llvm::Value* obj, llvm::Value* idx) {
@@ -1752,10 +1752,10 @@ void J3CodeGen::generateNative() {
 		llvm::Value* a;
 		if(!selfDone && !J3Cst::isStatic(method->access())) {
 			selfDone = 1; 
-			a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, method->cl()->llvmType()));
+			a = builder->CreateCall2(funcJ3ThreadPush, thread, cur);
 		} else {
 			if(signature->javaIns(i)->llvmType()->isPointerTy())
-				a = builder->CreateCall2(funcJ3ThreadPush, thread, flatten(cur, signature->javaIns(i)->llvmType()));
+				a = builder->CreateCall2(funcJ3ThreadPush, thread, cur);
 			else
 				a = cur;
 			i++;
@@ -1777,10 +1777,10 @@ void J3CodeGen::generateNative() {
 			builder->CreateCondBr(builder->CreateIsNull(res), ifnull, ifnotnull);
 
 			builder->SetInsertPoint(bb = ifnull);
-			builder->CreateRet(unflatten(nullValue, signature->javaOut()->llvmType()));
+			builder->CreateRet(nullValue);
 
 			builder->SetInsertPoint(bb = ifnotnull);
-			res = unflatten(handleToObject(res), signature->javaOut()->llvmType());
+			res = handleToObject(res);
 		}
 		builder->CreateRet(res);
 	}
