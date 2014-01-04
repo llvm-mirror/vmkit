@@ -98,9 +98,34 @@ jint JNICALL EnsureLocalCapacity(JNIEnv* env, jint capacity) {
 }
 
 jobject JNICALL AllocObject(JNIEnv* env, jclass clazz) { enterJVM(); leaveJVM(); NYI(); }
-jobject JNICALL NewObject(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { enterJVM(); leaveJVM(); NYI(); }
-jobject JNICALL NewObjectV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { enterJVM(); leaveJVM(); NYI(); }
-jobject JNICALL NewObjectA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL NewObject(JNIEnv* env, jclass clazz, jmethodID methodID, ...) { 
+	jobject res;
+	enterJVM();
+	va_list va;
+	va_start(va, methodID);
+	res = env->NewObjectV(clazz, methodID, va);
+	va_end(va);
+	leaveJVM(); 
+	return res;
+}
+
+jobject JNICALL NewObjectV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) { 
+	jobject res;
+	enterJVM(); 
+	res = J3ObjectHandle::doNewObject(methodID->cl());
+	methodID->invokeSpecial(res, args);
+	leaveJVM(); 
+	return res;
+}
+
+jobject JNICALL NewObjectA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) { 
+	jobject res;
+	enterJVM(); 
+	res = J3ObjectHandle::doNewObject(methodID->cl());
+	methodID->invokeSpecial(res, args);
+	leaveJVM(); 
+	return res;
+}
 
 jclass JNICALL GetObjectClass(JNIEnv* env, jobject obj) { 
 	jclass res;

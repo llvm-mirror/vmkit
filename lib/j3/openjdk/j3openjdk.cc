@@ -534,9 +534,10 @@ jobject JNICALL JVM_InvokeMethod(JNIEnv* env, jobject method, jobject obj, jobje
  * java.lang.reflect.Constructor
  */
 jobject JNICALL JVM_NewInstanceFromConstructor(JNIEnv* env, jobject c, jobjectArray args0) { 
+	jobject res;
 	enterJVM(); 
 	J3Method* cons = J3Method::nativeMethod(c);
-	jobject res = J3ObjectHandle::doNewObject(cons->cl());
+	res = J3ObjectHandle::doNewObject(cons->cl());
 	if(cons->signature()->nbIns())
 		J3::internalError("implement me: JVM_NewInstanceFromConstructor with arguments");
 	cons->invokeSpecial(res);
