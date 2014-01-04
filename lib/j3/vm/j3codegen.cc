@@ -375,18 +375,15 @@ llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
 
 void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	J3Signature* type = target->signature();
+	llvm::FunctionType* fType = target->signature()->functionType(access);
+	uint32_t n = fType->getNumParams();
 	std::vector<llvm::Value*> args;
-	uint32_t d = 0;
+	uint32_t i=n-1;
 
-	if(!J3Cst::isStatic(access)) {
-		args.push_back(stack.top(type->nbIns()));
-		d = 1;
-	}
+	for(llvm::FunctionType::param_iterator it=fType->param_begin(); it!=fType->param_end(); it++)
+		args.push_back(unflatten(stack.top(i--), *it));
 
-	for(uint32_t i=0; i<type->nbIns(); i++)
-		args.push_back(unflatten(stack.top(type->nbIns() - i - 1), type->javaIns(i)->llvmType()));
-
-	stack.drop(d + type->nbIns());
+	stack.drop(n);
 
 	llvm::Value* res;
 
@@ -399,9 +396,8 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	} else
 		res = builder->CreateCall(func, args);
 	
-	if(type->javaOut() != vm->typeVoid) {
-		stack.push(flatten(res, type->javaOut()->llvmType()));
-	}
+	if(!fType->getReturnType()->isVoidTy())
+		stack.push(flatten(res, fType->getReturnType()));
 }
 
 void J3CodeGen::invokeInterface(uint32_t idx) {
