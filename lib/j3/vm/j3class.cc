@@ -580,8 +580,8 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 	for(size_t i=0; i<n; i++) {
 		uint16_t           access = reader.readU2();
 		const vmkit::Name* name = nameAt(reader.readU2());
-		const vmkit::Name* signature = nameAt(reader.readU2());
-		J3Method*          method = loader()->method(access, this, name, loader()->getSignature(this, signature));
+		J3Signature*       signature = loader()->getSignature(this, nameAt(reader.readU2()));
+		J3Method*          method = new(loader()->allocator()) J3Method(access, this, name, signature);
 		J3Attributes*      attributes = readAttributes(&reader);
 		
 		method->postInitialise(access, attributes);

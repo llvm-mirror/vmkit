@@ -25,21 +25,13 @@ namespace j3 {
 	class J3Class;
 
 	class J3ClassLoader : public vmkit::CompilationUnit {
-		struct J3MethodLess {
-			bool operator()(const J3Method* lhs, const J3Method* rhs) const;
-		};
-
 		struct J3InterfaceMethodLess {
 			bool operator()(const J3Method* lhs, const J3Method* rhs) const;
 		};
 
-		typedef std::map<J3Method*, J3Method*, J3MethodLess,
-										 vmkit::StdAllocator<std::pair<J3Method*, J3Method*> > > MethodRefMap;
-
 		typedef std::map<J3Method*, uint32_t, J3InterfaceMethodLess,
 										 vmkit::StdAllocator<std::pair<J3Method*, J3Method*> > > InterfaceMethodRefMap;
 
-		static J3MethodLess           j3MethodLess;
 		static J3InterfaceMethodLess  j3InterfaceMethodLess;
 
 		J3ObjectHandle*                      _javaClassLoader;
@@ -53,9 +45,6 @@ namespace j3 {
 
 		pthread_mutex_t                      _mutexInterfaces;
 		InterfaceMethodRefMap                interfaces; 
-
-		pthread_mutex_t                      _mutexMethods;
-		MethodRefMap                         methods;      /* all te known method */
 
 		pthread_mutex_t                      _mutexMethodTypes;
 		vmkit::NameMap<J3Signature*>::map   methodTypes;
@@ -78,9 +67,6 @@ namespace j3 {
 		J3ObjectHandle*               javaClassLoader() { return _javaClassLoader; }
 
 		J3*                           vm() const { return (J3*)vmkit::CompilationUnit::vm(); };
-
-		J3Method*                     method(uint16_t access, J3ObjectType* cl, 
-																				 const vmkit::Name* name, J3Signature* signature);
 
 		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
 		J3Class*                      findLoadedClass(const vmkit::Name* name);

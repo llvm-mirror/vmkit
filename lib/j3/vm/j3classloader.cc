@@ -18,7 +18,6 @@
 
 using namespace j3;
 
-J3ClassLoader::J3MethodLess          J3ClassLoader::j3MethodLess;
 J3ClassLoader::J3InterfaceMethodLess J3ClassLoader::j3InterfaceMethodLess;
 
 J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
@@ -27,7 +26,6 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
 		interfaces(j3InterfaceMethodLess, allocator),
-		methods(j3MethodLess, allocator),
 		methodTypes(vmkit::Name::less, allocator),
 		nativeLibraries(allocator) {
 	_javaClassLoader = javaClassLoader;
@@ -35,7 +33,6 @@ J3ClassLoader::J3ClassLoader(J3* v, J3ObjectHandle* javaClassLoader, vmkit::Bump
 	pthread_mutex_init(&_mutexClasses, 0);
 	pthread_mutex_init(&_mutexTypes, 0);
 	pthread_mutex_init(&_mutexInterfaces, 0);
-	pthread_mutex_init(&_mutexMethods, 0);
 	pthread_mutex_init(&_mutexMethodTypes, 0);
 }
 
@@ -194,42 +191,10 @@ J3Signature* J3ClassLoader::getSignature(J3ObjectType* from, const vmkit::Name* 
 	return res;
 }
 
-J3Method* J3ClassLoader::method(uint16_t access, J3ObjectType* type, const vmkit::Name* name, J3Signature* signature) {
-	if(type->isArrayClass())
-		return method(access, vm()->objectClass, name, signature);
-	else {
-		J3Class* cl = type->asClass();
-		J3Method method(access, cl, name, signature), *res;
-
-		pthread_mutex_lock(&_mutexMethods);
-		std::map<J3Method*, J3Method*>::iterator it = methods.find(&method);
-
-		if(it == methods.end()) {
-			res = new(allocator()) J3Method(access, cl, name, signature);
-			methods[res] = res;
-		} else {
-			res = it->second;
-		}
-		pthread_mutex_unlock(&_mutexMethods);
-
-		return res;
-	}
-}
-
 bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {
 	return lhs->name() < rhs->name()
 		|| (lhs->name() == rhs->name()
 				&& (lhs->signature() < rhs->signature()));
-}
-
-bool J3ClassLoader::J3MethodLess::operator()(j3::J3Method const* lhs, j3::J3Method const* rhs) const {
-	return lhs->name() < rhs->name()
-		|| (lhs->name() == rhs->name()
-				&& (lhs->signature() < rhs->signature()
-						|| (lhs->signature() == rhs->signature()
-								&& (lhs->cl() < rhs->cl()
-										|| (lhs->cl() == rhs->cl()
-												&& ((lhs->access() & J3Cst::ACC_STATIC) < (rhs->access() & J3Cst::ACC_STATIC)))))));
 }
 
 J3InitialClassLoader::J3InitialClassLoader(J3* v, const char* rtjar, vmkit::BumpAllocator* _alloc) 
