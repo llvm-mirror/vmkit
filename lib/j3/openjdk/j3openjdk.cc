@@ -124,6 +124,72 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
 	 */
   JavaObject * prop = *(JavaObject**)p;
   llvm_gcroot(prop, 0);
+
+  setProperty(vm, prop, "java.vm.specification.version", "1.0");
+  setProperty(vm, prop, "java.vm.specification.vendor",
+              "Sun Microsystems, Inc");
+  setProperty(vm, prop, "java.vm.specification.name",
+              "Java Virtual Machine Specification");
+  setProperty(vm, prop, "java.specification.version", "1.5");
+  setProperty(vm, prop, "java.specification.vendor", "Sun Microsystems, Inc");
+  setProperty(vm, prop, "java.specification.name",
+              "Java Platform API Specification");
+  setProperty(vm, prop, "java.version", "1.5");
+  setProperty(vm, prop, "java.runtime.version", "1.5");
+  setProperty(vm, prop, "java.vendor", "The VMKit Project");
+  setProperty(vm, prop, "java.vendor.url", "http://vmkit.llvm.org");
+
+  tmp = getenv("JAVA_HOME");
+  if (!tmp) tmp = "";
+  setProperty(vm, prop, "java.home", tmp);
+
+  JnjvmBootstrapLoader* JCL = vm->bootstrapLoader;
+  setProperty(vm, prop, "java.class.version", "49.0");
+  setProperty(vm, prop, "java.class.path", vm->classpath);
+  setProperty(vm, prop, "java.boot.class.path", JCL->bootClasspathEnv);
+  setProperty(vm, prop, "sun.boot.class.path", JCL->bootClasspathEnv);
+  setProperty(vm, prop, "java.vm.version", "0.28");
+  setProperty(vm, prop, "java.vm.vendor", "The VMKit Project");
+  setProperty(vm, prop, "java.vm.name", "J3");
+  setProperty(vm, prop, "java.specification.version", "1.5");
+  setProperty(vm, prop, "java.io.tmpdir", "/tmp");
+
+
+  setProperty(vm, prop, "build.compiler", "gcj");
+  setProperty(vm, prop, "gcj.class.path", JCL->bootClasspathEnv);
+  setProperty(vm, prop, "gnu.classpath.boot.library.path",
+              JCL->libClasspathEnv);
+  //setProperty(vm, prop, "java.library.path", TODO: getenv("LD_LIBRARY_PATH"))
+  setProperty(vm, prop, "sun.boot.library.path", JCL->libClasspathEnv);
+
+  // Align behavior with GNU Classpath for now, to pass mauve test
+  setProperty(vm, prop, "sun.lang.ClassLoader.allowArraySyntax", "true");
+
+  setUnameProp(vm, prop);
+
+  setProperty(vm, prop, "file.separator", vm->dirSeparator);
+  setProperty(vm, prop, "path.separator", vm->envSeparator);
+  setProperty(vm, prop, "line.separator", "\n");
+
+  tmp = getenv("USERNAME");
+  if (!tmp) tmp = getenv("LOGNAME");
+  if (!tmp) tmp = getenv("NAME");
+  if (!tmp) tmp = "";
+  setProperty(vm, prop, "user.name", tmp);
+
+  tmp  = getenv("HOME");
+  if (!tmp) tmp = "";
+  setProperty(vm, prop, "user.home", tmp);
+
+  tmp = getenv("PWD");
+  if (!tmp) tmp = "";
+  setProperty(vm, prop, "user.dir", tmp);
+
+  // Disable this property. The Classpath iconv implementation is really
+  // not optimized (it over-abuses JNI calls).
+  //setProperty(vm, prop, "gnu.classpath.nio.charset.provider.iconv", "true");
+  setProperty(vm, prop, "file.encoding", "ISO8859_1");
+  setProperty(vm, prop, "gnu.java.util.zoneinfo.dir", "/usr/share/zoneinfo");
   setProperties(prop);
   setCommandLineProperties(prop);
 

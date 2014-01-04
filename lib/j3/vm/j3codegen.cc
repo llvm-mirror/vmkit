@@ -433,17 +433,6 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
 																						 target->signature()->functionType(target->access())->getPointerTo());
 
-	char buf[65536]; snprintf(buf, 65536, "%s::%s%s", 
-														target->cl()->name()->cStr(), 
-														target->name()->cStr(), 
-														target->signature()->name()->cStr());
-	builder->CreateCall5(funcEchoDebugExecute,
-											 builder->getInt32(2),
-											 buildString("Invoking %s %p::%d\n"),
-											 buildString(buf),
-											 vt(obj),
-											 funcEntry);
-
 	invoke(0, target, func);
 }
 
@@ -600,13 +589,13 @@ llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) {
 
 void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
 	llvm::BasicBlock* after = forwardBranch("instanceof-after", codeReader->tell(), 0, 0);
-	llvm::BasicBlock* ok = newBB("instanceof-ok");
+	llvm::BasicBlock* nok = newBB("instanceof-null");
 	llvm::BasicBlock* test = newBB("instanceof");
 
-	builder->CreateCondBr(builder->CreateIsNull(obj), ok, test);
+	builder->CreateCondBr(builder->CreateIsNull(obj), nok, test);
 
-	builder->SetInsertPoint(ok);
-	stack.push(builder->getInt32(1));
+	builder->SetInsertPoint(nok);
+	stack.push(builder->getInt32(0));
 	builder->CreateBr(after);
 
 	stack.drop(1);
