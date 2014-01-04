@@ -48,7 +48,6 @@ jobject JNICALL JVM_Clone(JNIEnv* env, jobject obj) {
 	enterJVM(); 
 	res = obj->vt()->type()->asObjectType()->clone(obj);
 	leaveJVM(); 
-	NYI();
 	return res;
 }
 

@@ -77,13 +77,11 @@ namespace j3 {
 		char*               llvmStubName(J3Class* from=0);
 
 		void                postInitialise(uint32_t access, J3Attributes* attributes);
-		void                setResolved(uint32_t index); 
+		void                setIndex(uint32_t index); 
 
 		J3Method*           resolve(J3ObjectHandle* obj);
 
 		uint32_t            index();
-		uint32_t*           indexPtr() { return &_index; }
-		bool                isResolved() { return _index != -1; }
 
 		J3Attributes*       attributes() const { return _attributes; }
 		uint16_t            access() const { return _access; }

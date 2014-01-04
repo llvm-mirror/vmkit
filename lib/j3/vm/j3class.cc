@@ -587,12 +587,10 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 		method->postInitialise(access, attributes);
 		methodsTmp[i] = method;
 
-		if(J3Cst::isStatic(access)) {
+		if(J3Cst::isStatic(access))
 			nbStaticMethods++;
-			method->setResolved(0);
-		} else {
+		else
 			nbVirtualMethods++;
-		}
 	}
 
 	staticLayout()->_methods = (J3Method**)loader()->allocator()->allocate(sizeof(J3Method*)*nbStaticMethods);

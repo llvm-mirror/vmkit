@@ -424,12 +424,7 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 void J3CodeGen::invokeVirtual(uint32_t idx) {
 	J3Method*     target = cl->methodAt(idx, 0);
 	J3Signature* type = target->signature();
-	llvm::Value*  funcEntry;
-
-	if(target->isResolved())
-		funcEntry = builder->getInt32(target->index());
-	else
-		funcEntry = builder->CreateCall(funcJ3MethodIndex, methodDescriptor(target));
+	llvm::Value*  funcEntry = funcEntry = builder->getInt32(target->index());
 
 	llvm::Value*  obj = nullCheck(stack.top(type->nbIns()));
 	llvm::Value*  gepFunc[] = { builder->getInt32(0),

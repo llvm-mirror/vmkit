@@ -55,15 +55,7 @@ J3Signature::function_t J3Method::cxxCaller() {
 void J3Method::ensureCompiled(bool withCaller) {
 	if(!fnPtr() || (withCaller && !cxxCaller())) {
 		// fprintf(stderr, "materializing: %s::%s%s\n", this, cl()->name()->cStr(), name()->cStr(), signature()->cStr());
-		if(!isResolved()) {
-			if(cl()->loader()->vm()->options()->debugLinking)
-				fprintf(stderr, "linking %s::%s\n", cl()->name()->cStr(), name()->cStr());
-			
-			cl()->initialise();
-			if(!isResolved())
-				J3::noSuchMethodError("unable to find method", cl(), name(), signature());
-		}
-
+		cl()->initialise();
 		J3CodeGen::translate(this, !fnPtr(), withCaller);
  	}
 }
@@ -92,9 +84,7 @@ void* J3Method::getSymbolAddress() {
 	return this;
 }
 
-void J3Method::setResolved(uint32_t index) { 
-	if(isResolved())
-		J3::internalError("trying to re-resolve a resolved method, should not happen");
+void J3Method::setIndex(uint32_t index) { 
 	_index = index; 
 }
 

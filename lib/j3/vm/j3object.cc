@@ -56,10 +56,10 @@ J3VirtualTable* J3VirtualTable::create(J3Class* cl) {
 		
 		if(parent) {
 			pm[i] = parent;
-			meth->setResolved(parent->index());
+			meth->setIndex(parent->index());
 		} else {
 			pm[i] = meth;
-			meth->setResolved(n);
+			meth->setIndex(n);
 			n++;
 		}
 	}
