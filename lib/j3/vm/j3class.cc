@@ -744,10 +744,15 @@ J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
 	J3ObjectType* cl = classAt(ctpValues[idx] >> 16);
 
 	check(ntIdx, J3Cst::CONSTANT_NameAndType);
-	const vmkit::Name* name = nameAt(ctpValues[ntIdx] >> 16);
-	const vmkit::Name* signature = nameAt(ctpValues[ntIdx] & 0xffff);
 
-	res = loader()->method(access, cl, name, loader()->getSignature(this, signature));
+	const vmkit::Name* name = nameAt(ctpValues[ntIdx] >> 16);
+	J3Signature* signature = (J3Signature*)ctpResolved[ntIdx];
+	if(!signature)
+		ctpResolved[idx] = signature = loader()->getSignature(this, nameAt(ctpValues[ntIdx] & 0xffff));
+
+	res = loader()->method(access, cl, name, signature);
+
+	ctpResolved[idx] = res;
 
 	return res;
 }
