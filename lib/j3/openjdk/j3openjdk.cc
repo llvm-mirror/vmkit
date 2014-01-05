@@ -11,6 +11,7 @@
 
 #include <dlfcn.h>
 #include <sys/utsname.h>
+#include <sys/time.h>
 
 using namespace j3;
 
@@ -78,7 +79,16 @@ jstring JNICALL JVM_InternString(JNIEnv* env, jstring str) {
 /*
  * java.lang.System
  */
-jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored) { enterJVM(); NYI(); leaveJVM(); }
+jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored) { 
+	jlong res;
+	enterJVM(); 
+	struct timeval tv;
+	gettimeofday(&tv, 0);
+	res = tv.tv_sec*1e3 + tv.tv_usec/1000;
+	leaveJVM(); 
+	return res;
+}
+
 jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length) { 
 	enterJVM(); 
@@ -138,6 +148,11 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   setProp("java.boot.class.path", vm->options()->bootClasspath);
   setProp("sun.boot.library.path", vm->options()->systemLibraryPath);
   setProp("sun.boot.class.path", vm->options()->bootClasspath);
+  setProp("file.separator", "/");
+  setProp("path.separator", ":");
+  setProp("line.separator", "\n");
+	setPropEnv("java.home", "JAVA_HOME");
+
 #if 0
   setProp("java.vm.specification.version", "1.2");
   setProp("java.vm.specification.vendor", "Sun Microsystems, Inc");
@@ -149,7 +164,6 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   setProp("java.runtime.version", "1.8");
   setProp("java.vendor", "The VMKit Project");
   setProp("java.vendor.url", "http://vmkit.llvm.org");
-	setPropEnv("java.home", "JAVA_HOME");
   setProp("java.class.version", "52.0");
   setProp("java.vm.version", "0.5");
   setProp("java.vm.vendor", "The VMKit Project");
@@ -259,14 +273,21 @@ jlong JNICALL JVM_TotalMemory(void) { enterJVM(); NYI(); leaveJVM(); }
 jlong JNICALL JVM_FreeMemory(void) { enterJVM(); NYI(); leaveJVM(); }
 jlong JNICALL JVM_MaxMemory(void) { enterJVM(); NYI(); leaveJVM(); }
 jint JNICALL JVM_ActiveProcessorCount(void) { enterJVM(); NYI(); leaveJVM(); }
-void * JNICALL JVM_LoadLibrary(const char *name) { enterJVM(); NYI(); leaveJVM(); }
+
+void* JNICALL JVM_LoadLibrary(const char *name) { 
+	void* res;
+	enterJVM(); 
+	res = dlopen(name, RTLD_LAZY | RTLD_LOCAL);
+	leaveJVM(); 
+	return res;
+}
+
 void JNICALL JVM_UnloadLibrary(void * handle) { enterJVM(); NYI(); leaveJVM(); }
 
 void * JNICALL JVM_FindLibraryEntry(void *handle, const char *name) { 
 	void* res;
 	enterJVM(); 
 	res = dlsym(handle, name);
-	fprintf(stderr, " find entry %s in %p => %p\n", name, handle, res);
 	leaveJVM(); 
 	return res;
 }
@@ -442,29 +463,28 @@ jclass JNICALL JVM_FindPrimitiveClass(JNIEnv* env, const char *utf) {
 
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
-
 	J3ClassLoader* loader = vm->initialClassLoader;
 	vmkit::Names* names = vm->names();
-	J3Class* cl;
+	J3Type* cl;
 
   if(!strcmp(utf, "boolean"))
-		cl = loader->loadClass(names->get("java/lang/Boolean"));
+		cl = vm->typeBoolean;
 	else if(!strcmp(utf, "byte"))
-		cl = loader->loadClass(names->get("java/lang/Byte"));
+		cl = vm->typeByte;
 	else if(!strcmp(utf, "char"))
-		cl = loader->loadClass(names->get("java/lang/Character"));
+		cl = vm->typeCharacter;
 	else if(!strcmp(utf, "short"))
-		cl = loader->loadClass(names->get("java/lang/Short"));
+		cl = vm->typeShort;
 	else if(!strcmp(utf, "int"))
-		cl = loader->loadClass(names->get("java/lang/Integer"));
+		cl = vm->typeInteger;
 	else if(!strcmp(utf, "long"))
-		cl = loader->loadClass(names->get("java/lang/Long"));
+		cl = vm->typeLong;
 	else if(!strcmp(utf, "float"))
-		cl = loader->loadClass(names->get("java/lang/Float"));
+		cl = vm->typeFloat;
 	else if(!strcmp(utf, "double"))
-		cl = loader->loadClass(names->get("java/lang/Double"));
+		cl = vm->typeDouble;
 	else if(!strcmp(utf, "void"))
-		cl = loader->loadClass(names->get("java/lang/Void"));
+		cl = vm->typeVoid;
 	else
 		J3::internalError("unsupported primitive: %s", utf);
 
@@ -572,7 +592,20 @@ jboolean JNICALL JVM_IsArrayClass(JNIEnv* env, jclass cls) {
 	return res;
 }
 
-jboolean JNICALL JVM_IsPrimitiveClass(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_IsPrimitiveClass(JNIEnv* env, jclass cls) { 
+	jboolean res = 0;
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	if(0) {}
+#define testIt(id, ctype, llvmType, scale)			\
+	else if(cls->isSame(vm->type##id->javaClass()))	\
+		res = 1;
+	onJavaTypes(testIt)
+#undef testIt
+	leaveJVM(); 
+	return res;
+}
+
 jclass JNICALL JVM_GetComponentType(JNIEnv* env, jclass cls) { 
 	jclass res;
 	enterJVM();
