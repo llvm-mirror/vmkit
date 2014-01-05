@@ -153,6 +153,9 @@ void J3::run() {
 	if(options()->debugLifeCycle)
 		fprintf(stderr, "  Creating the system class loader\n");
 
+	//options()->genDebugExecute = 1;
+	//options()->debugExecute = 2;
+
 	z_method(J3Cst::ACC_STATIC, 
 					 z_class("java/lang/ClassLoader"), 
 					 names()->get("getSystemClassLoader"),

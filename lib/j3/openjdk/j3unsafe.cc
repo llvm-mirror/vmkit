@@ -29,7 +29,7 @@ extern "C" {
 	/// makes this type of access impossible or unsupported.
 	///
 	JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_arrayIndexScale(JNIEnv* env, jobject unsafe, jclass clazz) {
-		return J3ObjectType::nativeClass(clazz)->asArrayClass()->component()->logSize();
+		return 1<<J3ObjectType::nativeClass(clazz)->asArrayClass()->component()->logSize();
 	}
 
 	JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_addressSize(JNIEnv* env, jobject unsafe) {

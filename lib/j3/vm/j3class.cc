@@ -340,6 +340,33 @@ J3ObjectHandle* J3Class::extractAttribute(J3Attribute* attr) {
 		return J3ObjectHandle::doNewArray(J3Thread::get()->vm()->typeByte->getArray(), 0);
 }
 
+J3Method* J3Class::findInterfaceMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
+	resolve();
+
+	J3Class* cur = this;
+	while(1) {
+		J3Method* res = cur->localFindMethod(name, signature);
+
+		if(res)
+			return res;
+
+		switch(cur->nbInterfaces()) {
+			case 1: cur = cur->interfaces()[0]; break;
+			default:
+				for(uint32_t i=0; i<cur->nbInterfaces(); i++) {
+					res = cur->interfaces()[i]->findInterfaceMethod(name, signature, error);
+					if(res)
+						return res;
+				}
+			case 0:
+				if(error)
+					J3::noSuchMethodError("no such interface method", this, name, signature);
+				else
+					return 0;
+		}
+	}
+}
+
 J3Method* J3Class::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
 	resolve();
 
@@ -724,7 +751,7 @@ uint64_t J3Class::longAt(uint16_t idx) {
 	return ((uint64_t)ctpValues[idx] << 32) + (uint64_t)ctpValues[idx+1];
 }
 
-J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
+J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access, bool isInterfaceMethod) {
 	J3Method* res = (J3Method*)ctpResolved[idx];
 	
 	if(res) {
@@ -743,7 +770,9 @@ J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
 	if(!signature)
 		ctpResolved[idx] = signature = loader()->getSignature(this, nameAt(ctpValues[ntIdx] & 0xffff));
 
-	res = cl->findMethod(access, name, signature);
+	res = (isInterfaceMethod && J3Cst::isInterface(cl->access())) ? 
+		cl->asClass()->findInterfaceMethod(name, signature) : 
+		cl->findMethod(access, name, signature);
 
 	ctpResolved[idx] = res;
 
@@ -752,12 +781,12 @@ J3Method* J3Class::interfaceOrMethodAt(uint16_t idx, uint16_t access) {
 
 J3Method* J3Class::methodAt(uint16_t idx, uint16_t access) {
 	check(idx, J3Cst::CONSTANT_Methodref);
-	return interfaceOrMethodAt(idx, access);
+	return interfaceOrMethodAt(idx, access, 0);
 }
 
 J3Method* J3Class::interfaceMethodAt(uint16_t idx, uint16_t access) {
 	check(idx, J3Cst::CONSTANT_InterfaceMethodref);
-	return interfaceOrMethodAt(idx, access);
+	return interfaceOrMethodAt(idx, access, 1);
 }
 
 J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {

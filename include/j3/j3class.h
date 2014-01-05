@@ -218,7 +218,7 @@ namespace j3 {
 		void          doResolve(J3Field* hiddenFields, size_t nbHiddenFields);
 		void          doInitialise();
 
-		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access);
+		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access, bool isInterfaceMethod);
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes);
 
@@ -259,6 +259,7 @@ namespace j3 {
 
 		bool                isClass() { return 1; }
 
+		J3Method*           findInterfaceMethod(const vmkit::Name* name, J3Signature* signature, bool error=1);
 		J3Method*           findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error=1);
 		J3Field*            findField(uint32_t access, const vmkit::Name* name, J3Type* type, bool error=1);
 	};

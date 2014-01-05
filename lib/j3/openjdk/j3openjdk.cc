@@ -290,7 +290,9 @@ void JNICALL JVM_TraceMethodCalls(jboolean on) { enterJVM(); NYI(); leaveJVM(); 
 jlong JNICALL JVM_TotalMemory(void) { enterJVM(); NYI(); leaveJVM(); }
 jlong JNICALL JVM_FreeMemory(void) { enterJVM(); NYI(); leaveJVM(); }
 jlong JNICALL JVM_MaxMemory(void) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_ActiveProcessorCount(void) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_ActiveProcessorCount(void) { 
+	return sysconf(_SC_NPROCESSORS_ONLN);
+}
 
 void* JNICALL JVM_LoadLibrary(const char *name) { 
 	void* res;
