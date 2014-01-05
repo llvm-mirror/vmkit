@@ -10,6 +10,7 @@
 #include "jvm.h"
 
 #include <dlfcn.h>
+#include <sys/utsname.h>
 
 using namespace j3;
 
@@ -104,7 +105,17 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 
 jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) { 
 	enterJVM(); 
-#if 0
+	J3* vm = J3Thread::get()->vm();
+	J3Class* pcl = p->vt()->type()->asClass();
+	J3Method* _setProp = pcl->findMethod(0,
+																			 vm->names()->get("setProperty"), 
+																			 pcl->loader()
+																			    ->getSignature(0,
+																												 vm->names()->get("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;")));
+
+#define setProp(key, val) _setProp->invokeVirtual(p, vm->utfToString(key), vm->utfToString(val));
+#define setEnvProp(key, val) ({ const char* tmp = getenv(val); if(!tmp) tmp = ""; setProp(key, val); })
+
 	/*
 	 * <dt>java.version         <dd>Java version number
 	 * <dt>java.vendor          <dd>Java vendor specific string
@@ -122,38 +133,36 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
 	 * <dt>user.home            <dd>User home directory
 	 * <dt>user.dir             <dd>User's current working directory
 	 */
-  JavaObject * prop = *(JavaObject**)p;
-  llvm_gcroot(prop, 0);
 
-  setProperty(vm, prop, "java.vm.specification.version", "1.0");
-  setProperty(vm, prop, "java.vm.specification.vendor",
-              "Sun Microsystems, Inc");
-  setProperty(vm, prop, "java.vm.specification.name",
-              "Java Virtual Machine Specification");
-  setProperty(vm, prop, "java.specification.version", "1.5");
-  setProperty(vm, prop, "java.specification.vendor", "Sun Microsystems, Inc");
-  setProperty(vm, prop, "java.specification.name",
-              "Java Platform API Specification");
-  setProperty(vm, prop, "java.version", "1.5");
-  setProperty(vm, prop, "java.runtime.version", "1.5");
-  setProperty(vm, prop, "java.vendor", "The VMKit Project");
-  setProperty(vm, prop, "java.vendor.url", "http://vmkit.llvm.org");
+  setProp("java.vm.specification.version", "1.2");
+  setProp("java.vm.specification.vendor", "Sun Microsystems, Inc");
+  setProp("java.vm.specification.name", "Java Virtual Machine Specification");
+  setProp("java.specification.version", "1.8");
+  setProp("java.specification.vendor", "Sun Microsystems, Inc");
+  setProp("java.specification.name", "Java Platform API Specification");
+  setProp("java.version", "1.8");
+  setProp("java.runtime.version", "1.8");
+  setProp("java.vendor", "The VMKit Project");
+  setProp("java.vendor.url", "http://vmkit.llvm.org");
+	setEnvProp("java.home", "JAVA_HOME");
+  setProp("java.class.version", "52.0");
+  setProp("java.vm.version", "0.5");
+  setProp("java.vm.vendor", "The VMKit Project");
+  setProp("java.vm.name", "J3");
+  setProp("java.specification.version", "1.8");
 
-  tmp = getenv("JAVA_HOME");
-  if (!tmp) tmp = "";
-  setProperty(vm, prop, "java.home", tmp);
+  struct utsname infos;
+  uname(&infos);
+  setProp("os.name", infos.sysname);
+  setProp("os.arch", infos.machine);
+  setProp("os.version", infos.release);
+#if 0
 
+  setProp("java.io.tmpdir", "/tmp");
   JnjvmBootstrapLoader* JCL = vm->bootstrapLoader;
-  setProperty(vm, prop, "java.class.version", "49.0");
   setProperty(vm, prop, "java.class.path", vm->classpath);
   setProperty(vm, prop, "java.boot.class.path", JCL->bootClasspathEnv);
   setProperty(vm, prop, "sun.boot.class.path", JCL->bootClasspathEnv);
-  setProperty(vm, prop, "java.vm.version", "0.28");
-  setProperty(vm, prop, "java.vm.vendor", "The VMKit Project");
-  setProperty(vm, prop, "java.vm.name", "J3");
-  setProperty(vm, prop, "java.specification.version", "1.5");
-  setProperty(vm, prop, "java.io.tmpdir", "/tmp");
-
 
   setProperty(vm, prop, "build.compiler", "gcj");
   setProperty(vm, prop, "gcj.class.path", JCL->bootClasspathEnv);
@@ -165,7 +174,11 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   // Align behavior with GNU Classpath for now, to pass mauve test
   setProperty(vm, prop, "sun.lang.ClassLoader.allowArraySyntax", "true");
 
-  setUnameProp(vm, prop);
+  if (!strcmp(infos.machine, "ppc")) {
+    setProperty(vm, prop, "gnu.cpu.endian","big");
+  } else {
+    setProperty(vm, prop, "gnu.cpu.endian","little");
+  }
 
   setProperty(vm, prop, "file.separator", vm->dirSeparator);
   setProperty(vm, prop, "path.separator", vm->envSeparator);
