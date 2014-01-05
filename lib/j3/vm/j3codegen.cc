@@ -171,7 +171,7 @@ llvm::Value* J3CodeGen::flatten(llvm::Value* v) {
 		return v;
 	else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
 		return builder->CreateSExt(v, vm->typeInteger->llvmType());
-	else if(type == vm->typeChar->llvmType())
+	else if(type == vm->typeCharacter->llvmType())
 		return builder->CreateZExt(v, vm->typeInteger->llvmType());
 
 	fprintf(stderr, " v: ");
@@ -189,7 +189,7 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, llvm::Type* type) {
 		return v;
 	else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
 		return builder->CreateSExtOrTrunc(v, type);
-	else if(type == vm->typeChar->llvmType())
+	else if(type == vm->typeCharacter->llvmType())
 		return builder->CreateZExtOrTrunc(v, type);
 
 	fprintf(stderr, " v: ");
@@ -543,7 +543,7 @@ void J3CodeGen::newArray(uint8_t atype) {
 
 	switch(atype) {
 		case J3Cst::T_BOOLEAN: prim = vm->typeBoolean; break;
-		case J3Cst::T_CHAR:    prim = vm->typeChar; break;
+		case J3Cst::T_CHAR:    prim = vm->typeCharacter; break;
 		case J3Cst::T_FLOAT:   prim = vm->typeFloat; break;
 		case J3Cst::T_DOUBLE:  prim = vm->typeDouble; break;
 		case J3Cst::T_BYTE:    prim = vm->typeByte; break;
@@ -1066,7 +1066,7 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_caload:                        /* 0x34 */
-				arrayLoad(vm->typeChar);
+				arrayLoad(vm->typeCharacter);
 				break;
 
 			case J3Cst::BC_saload:                        /* 0x35 */
@@ -1141,7 +1141,7 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_castore:                       /* 0x55 */
-				arrayStore(vm->typeChar);
+				arrayStore(vm->typeCharacter);
 				break;
 
 			case J3Cst::BC_sastore:                       /* 0x56 */

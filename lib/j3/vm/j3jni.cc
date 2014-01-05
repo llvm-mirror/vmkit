@@ -319,7 +319,7 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 	defJNIObj(jobject,  Object,  Object);
 	defJNI   (jboolean, Boolean, Boolean);
 	defJNI   (jbyte,    Byte,    Byte);
-	defJNI   (jchar,    Char,    Char);
+	defJNI   (jchar,    Char,    Character);
 	defJNI   (jshort,   Short,   Short);
 	defJNI   (jint,     Int,     Integer);
 	defJNI   (jlong,    Long,    Long);
@@ -407,8 +407,8 @@ jstring JNICALL NewString(JNIEnv* env, const jchar* unicode, jsize len) {
 	jstring res;
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
-	J3ObjectHandle* content = J3ObjectHandle::doNewArray(vm->typeChar->getArray(), len);
-	content->setRegionChar(0, unicode, 0, len);
+	J3ObjectHandle* content = J3ObjectHandle::doNewArray(vm->typeCharacter->getArray(), len);
+	content->setRegionCharacter(0, unicode, 0, len);
 	res = J3ObjectHandle::doNewObject(vm->stringClass);
 	vm->stringClassInit->invokeSpecial(res, content, 0);
 	leaveJVM(); 
@@ -521,7 +521,7 @@ jint JNICALL GetJavaVM(JNIEnv* env, JavaVM** vm) { enterJVM(); leaveJVM(); NYI()
 
 void JNICALL GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len, jchar* buf) { 
 	enterJVM(); 
-	str->getObject(J3Thread::get()->vm()->stringClassValue)->getRegionChar(start, buf, 0, len);
+	str->getObject(J3Thread::get()->vm()->stringClassValue)->getRegionCharacter(start, buf, 0, len);
 	leaveJVM(); 
 }
 

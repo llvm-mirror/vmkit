@@ -5,14 +5,14 @@ namespace j3 {
 
 	/* name, ctype, llvmType, scale size */
 #define onJavaPrimitives(_)																							\
-	_(Boolean, bool,     Int1,   0)																				\
-	_(Byte,    int8_t,   Int8,   0)																				\
-	_(Short,   int16_t,  Int16,  1)																				\
-	_(Char,    uint16_t, Int16,  1)																				\
-	_(Integer, int32_t,  Int32,  2)																				\
-	_(Long,    int64_t,  Int64,  3)																				\
-	_(Float,   float,    Float,  2)																				\
-	_(Double,  double,   Double, 3)																				\
+	_(Boolean,   bool,     Int1,   0)																			\
+	_(Byte,      int8_t,   Int8,   0)																			\
+	_(Short,     int16_t,  Int16,  1)																			\
+	_(Character, uint16_t, Int16,  1)																			\
+	_(Integer,   int32_t,  Int32,  2)																			\
+	_(Long,      int64_t,  Int64,  3)																			\
+	_(Float,     float,    Float,  2)																			\
+	_(Double,    double,   Double, 3)																			\
 
 #define onJavaVoid(_)														\
 	_(Void, void,        Void, 0)																	

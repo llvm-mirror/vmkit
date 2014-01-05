@@ -295,6 +295,7 @@ namespace j3 {
 		uint32_t    logSize()     { return _logSize; }
 		bool        isPrimitive() { return 1; }
 		llvm::Type* llvmType()    { return _llvmType; }
+		void        defineJavaClass(const char* className);
 	};
 }
 

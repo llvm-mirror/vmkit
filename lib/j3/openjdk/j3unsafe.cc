@@ -80,15 +80,15 @@ extern "C" {
 	unsafeCAS(jtype, id, j3id, sign)											\
 	unsafeGetPut(jtype, id, j3id, sign)
 
-	defUnsafe(jobject,  Object,  Object,   Ljava_lang_Object_2);
-	defUnsafe(jboolean, Boolean, Boolean,  Z);
-	defUnsafe(jbyte,    Byte,    Byte,     B);
-	defUnsafe(jchar,    Char,    Char,     C);
-	defUnsafe(jshort,   Short,   Short,    S);
-	defUnsafe(jint,     Int,     Integer,  I);
-	defUnsafe(jlong,    Long,    Long,     J);
-	defUnsafe(jfloat,   Float,   Float,    F);
-	defUnsafe(jdouble,  Double,  Double,   D);
+	defUnsafe(jobject,  Object,  Object,    Ljava_lang_Object_2);
+	defUnsafe(jboolean, Boolean, Boolean,   Z);
+	defUnsafe(jbyte,    Byte,    Byte,      B);
+	defUnsafe(jchar,    Char,    Character, C);
+	defUnsafe(jshort,   Short,   Short,     S);
+	defUnsafe(jint,     Int,     Integer,   I);
+	defUnsafe(jlong,    Long,    Long,      J);
+	defUnsafe(jfloat,   Float,   Float,     F);
+	defUnsafe(jdouble,  Double,  Double,    D);
 }
 
 

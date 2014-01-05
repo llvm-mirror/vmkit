@@ -563,9 +563,25 @@ jboolean JNICALL JVM_IsInterface(JNIEnv* env, jclass cls) {
 jobjectArray JNICALL JVM_GetClassSigners(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_SetClassSigners(JNIEnv* env, jclass cls, jobjectArray signers) { enterJVM(); NYI(); leaveJVM(); }
 jobject JNICALL JVM_GetProtectionDomain(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
-jboolean JNICALL JVM_IsArrayClass(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+
+jboolean JNICALL JVM_IsArrayClass(JNIEnv* env, jclass cls) { 
+	jboolean res;
+	enterJVM(); 
+	res = J3ObjectType::nativeClass(cls)->isArrayClass();
+	leaveJVM(); 
+	return res;
+}
+
 jboolean JNICALL JVM_IsPrimitiveClass(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
-jclass JNICALL JVM_GetComponentType(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jclass JNICALL JVM_GetComponentType(JNIEnv* env, jclass cls) { 
+	jclass res;
+	enterJVM();
+	J3ObjectType* cl = J3ObjectType::nativeClass(cls);
+	res = cl->isArrayClass() ? cl->asArrayClass()->component()->javaClass() : 0;
+	leaveJVM(); 
+	return res;
+}
+
 jint JNICALL JVM_GetClassModifiers(JNIEnv* env, jclass cls) { 
 	jint res;
 	enterJVM(); 

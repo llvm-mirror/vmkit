@@ -934,3 +934,8 @@ J3Primitive::J3Primitive(J3ClassLoader* loader, char id, llvm::Type* type, uint3
 	_logSize = logSize;
 }
 
+void J3Primitive::defineJavaClass(const char* className) {
+	J3* vm = J3Thread::get()->vm();
+	fprintf(stderr, " ---> %s\n", className);
+	_javaClass = vm->initialClassLoader->loadClass(vm->names()->get(className))->javaClass(0);
+}

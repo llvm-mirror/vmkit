@@ -131,24 +131,14 @@ J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {
 	for(llvm::FunctionType::param_iterator cur=fType->param_begin(); cur!=fType->param_end(); cur++, i++) {
 		llvm::Type* t = *cur;
 
-		if(t == vm->typeBoolean->llvmType())
-			args[i].valBoolean = va_arg(va, bool);
-		else if(t == vm->typeByte->llvmType())
-			args[i].valByte = va_arg(va, int8_t);
-		else if(t == vm->typeShort->llvmType())
-			args[i].valShort = va_arg(va, int16_t);
-		else if(t == vm->typeChar->llvmType())
-			args[i].valChar = va_arg(va, uint16_t);
-		else if(t == vm->typeInteger->llvmType())
-			args[i].valInteger = va_arg(va, int32_t);
-		else if(t == vm->typeLong->llvmType())
-			args[i].valLong = va_arg(va, int64_t);
-		else if(t == vm->typeFloat->llvmType())
-			args[i].valFloat = va_arg(va, float);
-		else if(t == vm->typeDouble->llvmType())
-			args[i].valDouble = va_arg(va, double);
+		if(0) {}
+#define doIt(id, ctype, lt, scale)							\
+		else if(t == vm->type##id->llvmType())			\
+			args[i].val##id = va_arg(va, ctype);
+		onJavaPrimitives(doIt)
 		else
 			args[i].valObject = va_arg(va, J3ObjectHandle*);
+#undef doIt
 	}
 
 	return cxxCaller()(fnPtr(), args);

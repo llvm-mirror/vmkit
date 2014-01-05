@@ -108,15 +108,10 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 
 		switch(type[pos]) {
 			case J3Cst::ID_Array:     prof++; pos++; break;
-			case J3Cst::ID_Void:      res = vm->typeVoid; pos++; break;
-			case J3Cst::ID_Byte:      res = vm->typeByte; pos++; break;
-			case J3Cst::ID_Char:      res = vm->typeChar; pos++; break;
-			case J3Cst::ID_Double:    res = vm->typeDouble; pos++; break;
-			case J3Cst::ID_Float:     res = vm->typeFloat; pos++; break;
-			case J3Cst::ID_Integer:   res = vm->typeInteger; pos++; break;
-			case J3Cst::ID_Long:      res = vm->typeLong; pos++; break;
-			case J3Cst::ID_Short:     res = vm->typeShort; pos++; break;
-			case J3Cst::ID_Boolean:   res = vm->typeBoolean; pos++; break;
+#define doIt(id, ctype, llvmType, scale)				\
+				case J3Cst::ID_##id:    res = vm->type##id; pos++; break;
+				onJavaTypes(doIt)
+#undef doIt
 			case J3Cst::ID_Classname: 
 				if(unify) {
 					uint32_t start = ++pos;

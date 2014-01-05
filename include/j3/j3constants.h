@@ -81,7 +81,7 @@ namespace j3 {
 
 		static const char ID_Void =        'V';
 		static const char ID_Byte =        'B';
-		static const char ID_Char =        'C';
+		static const char ID_Character =   'C';
 		static const char ID_Double =      'D';
 		static const char ID_Float =       'F';
 		static const char ID_Integer =     'I';

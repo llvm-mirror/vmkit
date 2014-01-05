@@ -41,7 +41,7 @@ size_t J3Utf16Decoder::decode(J3ObjectHandle* charArray, char* dest) {
 	size_t pos = 0;
 
 	for(uint32_t i=0; i<length; i++) {
-		uint16_t c = charArray->getCharAt(i);
+		uint16_t c = charArray->getCharacterAt(i);
 		if(c > 127) {
 			J3::internalError("implement me: fun char");
 		} else {

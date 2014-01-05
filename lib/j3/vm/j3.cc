@@ -106,7 +106,7 @@ void J3::run() {
 	arrayInterfaces[0]   = z_class("java/lang/Cloneable");
 	arrayInterfaces[1]   = z_class("java/io/Serializable");
 
-	charArrayClass           = typeChar->getArray();
+	charArrayClass           = typeCharacter->getArray();
 	objectClass              = z_class("java/lang/Object");
 	objectClass->resolve();
 	
@@ -136,6 +136,11 @@ void J3::run() {
 	constructorClassSlot     = z_field(0, constructorClass, "slot", typeInteger);
 	constructorClassInit     = z_method(0, constructorClass, initName,
 																			names()->get("(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;IILjava/lang/String;[B[B)V"));
+
+#define defJavaClassPrimitive(name, ctype, llvmtype, scale)	\
+	type##name->defineJavaClass("java/lang/"#name);
+	onJavaTypes(defJavaClassPrimitive)
+#undef defJavaClassPrimitive
 
 	J3Lib::bootstrap(this);
 }
@@ -173,7 +178,7 @@ J3ObjectHandle* J3::nameToString(const vmkit::Name* name, bool doPush) {
 			buf[pos++] = encoder.nextUtf16();
 
 		res = initialClassLoader->globalReferences()->add(J3ObjectHandle::doNewArray(charArrayClass, pos));
-		res->setRegionChar(0, buf, 0, pos);
+		res->setRegionCharacter(0, buf, 0, pos);
 		J3Thread::get()->restore(prev);
 
 		nameToCharArrays[name] = res;
