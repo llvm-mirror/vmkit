@@ -34,7 +34,7 @@ namespace j3 {
 
 		uint32_t            metaStackSize();
 
-		llvm::Value*        at(uint32_t idx);
+		llvm::Value*        at(uint32_t idx, llvm::Type* t);
 		void                setAt(llvm::Value* value, uint32_t idx);
 		void                drop(uint32_t n);
 		llvm::Value*        top(uint32_t idx=0);

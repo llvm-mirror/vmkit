@@ -101,12 +101,10 @@ llvm::AllocaInst** J3CodeGenVar::stackOf(llvm::Type* t) {
 
 void J3CodeGenVar::setAt(llvm::Value* value, uint32_t idx) {
 	llvm::Type*   t = value->getType();
-	metaStack[idx] = t;
 	codeGen->builder->CreateStore(value, stackOf(t)[idx]);
 }
 
-llvm::Value* J3CodeGenVar::at(uint32_t idx) {
-	llvm::Type* t = metaStack[idx];
+llvm::Value* J3CodeGenVar::at(uint32_t idx, llvm::Type* t) {
 	return codeGen->builder->CreateLoad(stackOf(t)[idx]);
 }
 
@@ -117,20 +115,23 @@ void J3CodeGenVar::push(llvm::Value* value) {
 	if(topStack >= maxStack)
 		J3::classFormatError(codeGen->cl, "too many push in... ");
 
-	setAt(value, topStack++);
+	metaStack[topStack] = value->getType();
+	setAt(value, topStack);
+	topStack++;
 }
 
 llvm::Value* J3CodeGenVar::pop() {
 	if(!topStack)
 		J3::classFormatError(codeGen->cl, "too many pop in... ");
 
-	llvm::Value* res = at(--topStack);
-	return res;
+	--topStack;
+	return at(topStack, metaStack[topStack]);
 }
 
 llvm::Value* J3CodeGenVar::top(uint32_t idx) {
 	if(topStack <= idx)
 		J3::classFormatError(codeGen->cl, "too large top in... ");
-	
-	return at(topStack - idx - 1);
+
+	uint32_t n = topStack - idx - 1;
+	return at(n, metaStack[n]);
 }

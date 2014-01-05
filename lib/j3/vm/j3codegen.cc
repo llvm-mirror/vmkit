@@ -770,7 +770,7 @@ llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doA
 		llvm::BasicBlock* res = newBB(id);
 
 		if(doAlloc) {
-			opInfos[pc].metaStack = (llvm::Type**)allocator->allocate(sizeof(llvm::Type**)*stack.topStack);
+			opInfos[pc].metaStack = (llvm::Type**)allocator->allocate(sizeof(llvm::Type*)*stack.topStack);
 			memcpy(opInfos[pc].metaStack, stack.metaStack, sizeof(llvm::Type*)*stack.topStack);
 		}
 
@@ -946,7 +946,7 @@ void J3CodeGen::translate() {
 															 builder->getInt32(4),
 															 buildString("           stack[%d]: %p\n"),
 															 builder->getInt32(i),
-															 stack.at(i));
+															 stack.at(i, stack.metaStack[i]));
 			}
 
 			char buf[256];
@@ -1010,46 +1010,58 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_iload:                         /* 0x15 wide */
+				stack.push(locals.at(wideReadU1(), vm->typeInteger->llvmType()));
+				break;
+
 			case J3Cst::BC_lload:                         /* 0x16 wide */
+				stack.push(locals.at(wideReadU1(), vm->typeLong->llvmType()));
+				break;
+
 			case J3Cst::BC_fload:                         /* 0x17 wide */
+				stack.push(locals.at(wideReadU1(), vm->typeFloat->llvmType()));
+				break;
+
 			case J3Cst::BC_dload:                         /* 0x18 wide */
+				stack.push(locals.at(wideReadU1(), vm->typeDouble->llvmType()));
+				break;
+
 			case J3Cst::BC_aload:                         /* 0x19 wide */				
-				stack.push(locals.at(wideReadU1()));
+				stack.push(locals.at(wideReadU1(), vm->objectClass->llvmType()));
 				break;
 
 			case J3Cst::BC_iload_0:                       /* 0x1a */
 			case J3Cst::BC_iload_1:                       /* 0x1b */
 			case J3Cst::BC_iload_2:                       /* 0x1c */
 			case J3Cst::BC_iload_3:                       /* 0x1d */
-				stack.push(locals.at(bc - J3Cst::BC_iload_0));
+				stack.push(locals.at(bc - J3Cst::BC_iload_0, vm->typeInteger->llvmType()));
 				break;
 
 			case J3Cst::BC_lload_0:                       /* 0x1e */
 			case J3Cst::BC_lload_1:                       /* 0x1f */
 			case J3Cst::BC_lload_2:                       /* 0x20 */
 			case J3Cst::BC_lload_3:                       /* 0x21 */
-				stack.push(locals.at(bc - J3Cst::BC_lload_0));
+				stack.push(locals.at(bc - J3Cst::BC_lload_0, vm->typeLong->llvmType()));
 				break;
 
 			case J3Cst::BC_fload_0:                       /* 0x22 */
 			case J3Cst::BC_fload_1:                       /* 0x23 */
 			case J3Cst::BC_fload_2:                       /* 0x24 */
 			case J3Cst::BC_fload_3:                       /* 0x25 */
-				stack.push(locals.at(bc - J3Cst::BC_fload_0));
+				stack.push(locals.at(bc - J3Cst::BC_fload_0, vm->typeFloat->llvmType()));
 				break;
 
 			case J3Cst::BC_dload_0:                       /* 0x26 */
 			case J3Cst::BC_dload_1:                       /* 0x27 */
 			case J3Cst::BC_dload_2:                       /* 0x28 */
 			case J3Cst::BC_dload_3:                       /* 0x29 */
-				stack.push(locals.at(bc - J3Cst::BC_dload_0));
+				stack.push(locals.at(bc - J3Cst::BC_dload_0, vm->typeDouble->llvmType()));
 				break;
 
 			case J3Cst::BC_aload_0:                       /* 0x2a */
 			case J3Cst::BC_aload_1:                       /* 0x2b */
 			case J3Cst::BC_aload_2:                       /* 0x2c */
 			case J3Cst::BC_aload_3:                       /* 0x2d */
-				stack.push(locals.at(bc - J3Cst::BC_aload_0));
+				stack.push(locals.at(bc - J3Cst::BC_aload_0, vm->objectClass->llvmType()));
 				break;
 
 			case J3Cst::BC_iaload:                        /* 0x2e */
@@ -1295,7 +1307,7 @@ void J3CodeGen::translate() {
 			case J3Cst::BC_iinc:                          /* 0x84 wide */
 				{ uint32_t idx = wideReadU1(); 
 					int32_t  val = wideReadS1(); 
-					locals.setAt(builder->CreateAdd(locals.at(idx), builder->getInt32(val)), idx);
+					locals.setAt(builder->CreateAdd(locals.at(idx, vm->typeInteger->llvmType()), builder->getInt32(val)), idx);
 				} break;
 
 			case J3Cst::BC_i2l:                           /* 0x85 */
@@ -1658,7 +1670,7 @@ void J3CodeGen::generateJava() {
 													 builder->getInt32(2),
 													 buildString("            arg[%d]: %p\n"),
 													 builder->getInt32(pos),
-													 locals.at(pos));
+													 locals.at(pos, cur->getType()));
 		
 		pos += (cur->getType() == vm->typeLong->llvmType() || cur->getType() == vm->typeDouble->llvmType()) ? 2 : 1;
 	}
@@ -1685,10 +1697,8 @@ void J3CodeGen::generateJava() {
 
 	if(llvmFunction->getReturnType()->isVoidTy())
 		builder->CreateRetVoid();
-	else {
-		ret.metaStack[0] = llvmFunction->getReturnType();
-		builder->CreateRet(unflatten(ret.at(0), ret.metaStack[0]));
-	}
+	else
+		builder->CreateRet(unflatten(ret.at(0, llvmFunction->getReturnType()), llvmFunction->getReturnType()));
 
 	if(J3Cst::isSynchronized(method->access())) {
 		static bool echoDone = 0;
