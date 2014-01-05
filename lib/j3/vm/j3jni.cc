@@ -15,7 +15,9 @@
 
 namespace j3 {
 
-jint JNICALL GetVersion(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL GetVersion(JNIEnv* env) { 
+	return JNI_VERSION_1_8;
+}
 
 jclass JNICALL DefineClass(JNIEnv* env, const char* name, jobject loader, const jbyte* buf, jsize len) { enterJVM(); leaveJVM(); NYI(); }
 jclass JNICALL FindClass(JNIEnv* env, const char* name) { 
@@ -517,7 +519,10 @@ jint JNICALL UnregisterNatives(JNIEnv* env, jclass clazz) { enterJVM(); leaveJVM
 jint JNICALL MonitorEnter(JNIEnv* env, jobject obj) { enterJVM(); leaveJVM(); NYI(); }
 jint JNICALL MonitorExit(JNIEnv* env, jobject obj) { enterJVM(); leaveJVM(); NYI(); }
 
-jint JNICALL GetJavaVM(JNIEnv* env, JavaVM** vm) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL GetJavaVM(JNIEnv* env, JavaVM** vm) { 
+	*vm = J3Thread::get()->javaVM();
+	return 0;
+}
 
 void JNICALL GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len, jchar* buf) { 
 	enterJVM(); 

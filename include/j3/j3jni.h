@@ -5,6 +5,7 @@
 
 namespace j3 {
 	extern struct JNINativeInterface_ jniEnvTable;
+	extern struct JNIInvokeInterface_ javaVMTable;
 }
 
 #endif

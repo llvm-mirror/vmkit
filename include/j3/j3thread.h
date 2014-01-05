@@ -22,6 +22,7 @@ namespace j3 {
 
 		vmkit::BumpAllocator*      _allocator;
 		JNIEnv                     _jniEnv;
+		JavaVM                     _javaVM;
 		J3LocalReferences          _localReferences;
 		J3ObjectHandle*            _pendingException;
 		J3ObjectHandle             _javaThread;
@@ -54,6 +55,7 @@ namespace j3 {
 		J3* vm() { return (J3*)Thread::vm(); }
 
 		JNIEnv* jniEnv() { return &_jniEnv; }
+		JavaVM* javaVM() { return &_javaVM; }
 
 		static J3Thread* get();
 		static J3Thread* get(void* ptr);

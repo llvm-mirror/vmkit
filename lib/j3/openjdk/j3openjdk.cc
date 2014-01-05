@@ -25,7 +25,9 @@ using namespace j3;
  PART 0
  ************************************************************************/
 
-jint JNICALL JVM_GetInterfaceVersion(void) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetInterfaceVersion(void) { 
+  return JVM_INTERFACE_VERSION;
+}
 
 /*************************************************************************
  PART 1: Functions for Native Libraries
@@ -292,7 +294,13 @@ void * JNICALL JVM_FindLibraryEntry(void *handle, const char *name) {
 	return res;
 }
 
-jboolean JNICALL JVM_IsSupportedJNIVersion(jint version) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_IsSupportedJNIVersion(jint version) { 
+  return version == JNI_VERSION_1_1 ||
+         version == JNI_VERSION_1_2 ||
+         version == JNI_VERSION_1_4 ||
+         version == JNI_VERSION_1_6 ||
+         version == JNI_VERSION_1_8;
+}
 
 /*
  * java.lang.Float and java.lang.Double
@@ -787,7 +795,31 @@ jobject JNICALL JVM_GetStackAccessControlContext(JNIEnv* env, jclass cls) {
 
 void * JNICALL JVM_RegisterSignal(jint sig, void *handler) { enterJVM(); NYI(); leaveJVM(); }
 jboolean JNICALL JVM_RaiseSignal(jint sig) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_FindSignal(const char *name) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_FindSignal(const char *name) { 
+	jint res = 0;
+
+	enterJVM(); 
+
+  static struct {
+    const char * name;
+    int num;
+  } SignalMap[] =
+			{
+				{ "TERM", SIGTERM },
+				{ "HUP", SIGHUP },
+				{ "INT", SIGINT }
+			};
+  static uint32_t signal_count = sizeof(SignalMap)/sizeof(SignalMap[0]);
+
+  for(uint32_t i = 0; i < signal_count; ++i) {
+    if (!strcmp(name, SignalMap[i].name))
+      res = SignalMap[i].num;
+  }
+
+	leaveJVM(); 
+	
+	return res;
+}
 
 /*
  * Retrieve the assertion directives for the specified class.

@@ -13,6 +13,7 @@ J3Thread::J3Thread(J3* vm) :
 	_allocator(vmkit::BumpAllocator::create()),
 	_localReferences(_allocator) {
 	_jniEnv.functions = &jniEnvTable;
+	_javaVM.functions = &javaVMTable;
 }
 
 J3Thread::~J3Thread() {
