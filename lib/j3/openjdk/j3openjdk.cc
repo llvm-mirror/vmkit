@@ -796,8 +796,8 @@ jobject JNICALL JVM_GetStackAccessControlContext(JNIEnv* env, jclass cls) {
 void* JNICALL JVM_RegisterSignal(jint sig, void *handler) {
 	void* res;
 	enterJVM(); 
-	if(sig == SIGINT || sig == SIGTERM || sig == SIGHUP) {
-		J3Thread::get()->registerSignal(sig, (J3Thread::sa_action_t)handler);		
+	if(sig == SIGINT || sig == SIGTERM || sig == SIGHUP) { /* fixme: I need a full jvm to support this joke */
+		//J3Thread::get()->registerSignal(sig, (J3Thread::sa_action_t)handler);		
 		res = handler;
 	} else
 		res = (void*)-1;

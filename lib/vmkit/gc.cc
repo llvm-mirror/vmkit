@@ -1,5 +1,6 @@
 #include "vmkit/gc.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 using namespace vmkit;
 

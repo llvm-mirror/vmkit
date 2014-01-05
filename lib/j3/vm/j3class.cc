@@ -597,6 +597,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 		_structSize = super()->structSize();
 	}
 
+	_staticLayout._structSize = sizeof(J3Object);
 	_structSize = ((_structSize - 1) & -sizeof(uintptr_t)) + sizeof(uintptr_t);
 
 	fillFields(pFields3, i3);

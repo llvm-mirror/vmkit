@@ -75,7 +75,8 @@ void J3::start(int argc, char** argv) {
 
 	vmkitBootstrap(thread, options()->selfBitCodePath);	
 
-	fprintf(stderr, "  vm is bootstraped, congratulation!\n");
+	if(options()->debugLifeCycle)
+		fprintf(stderr, "  VM terminate\n");
 }
 
 void J3::run() {
@@ -144,7 +145,22 @@ void J3::run() {
 	onJavaTypes(defJavaClassPrimitive)
 #undef defJavaClassPrimitive
 
+	if(options()->debugLifeCycle)
+		fprintf(stderr, "  Bootstraping the system library\n");
+
 	J3Lib::bootstrap(this);
+
+	if(options()->debugLifeCycle)
+		fprintf(stderr, "  Creating the system class loader\n");
+
+	z_method(J3Cst::ACC_STATIC, 
+					 z_class("java/lang/ClassLoader"), 
+					 names()->get("getSystemClassLoader"),
+					 names()->get("()Ljava/lang/ClassLoader;"))
+		->invokeStatic();
+					 
+	//    public static ClassLoader getSystemClassLoader() {
+
 }
 
 JNIEnv* J3::jniEnv() {

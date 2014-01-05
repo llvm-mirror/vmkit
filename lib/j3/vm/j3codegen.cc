@@ -938,6 +938,15 @@ void J3CodeGen::translate() {
 		}
 
 		if(vm->options()->genDebugExecute) {
+			if(vm->options()->genDebugExecute > 1) {
+				for(uint32_t i=0; i<stack.topStack; i++)
+					builder->CreateCall4(funcEchoDebugExecute,
+															 builder->getInt32(4),
+															 buildString("           stack[%d]: %p\n"),
+															 builder->getInt32(i),
+															 stack.at(i));
+			}
+
 			char buf[256];
 			snprintf(buf, 256, "    [%4d] executing: %-20s in %s::%s", javaPC, 
 							 J3Cst::opcodeNames[bc], cl->name()->cStr(), method->name()->cStr());
@@ -1642,7 +1651,7 @@ void J3CodeGen::generateJava() {
 	for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++) {
 		locals.setAt(flatten(cur), pos);
 
-		if(vm->options()->debugExecute)
+		if(vm->options()->genDebugExecute)
 			builder->CreateCall4(funcEchoDebugExecute,
 													 builder->getInt32(2),
 													 buildString("            arg[%d]: %p\n"),

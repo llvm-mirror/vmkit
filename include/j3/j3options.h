@@ -36,6 +36,7 @@ namespace j3 {
 		uint32_t       debugIniting;
 		uint32_t       debugTranslate;
 		uint32_t       debugLinking;
+		uint32_t       debugLifeCycle;
 		
 		uintptr_t      stackSize;
 

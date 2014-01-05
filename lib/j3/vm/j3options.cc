@@ -23,8 +23,9 @@ J3Options::J3Options() {
 	debugIniting = 0;
 	debugTranslate = 0;
 	debugLinking = 0;
+	debugLifeCycle = 1;
 
-	genDebugExecute = debugExecute ? 1 : 0;
+	genDebugExecute = 0;//debugExecute ? 1 : 0;
 
 	stackSize = 0x80*0x1000;
 }
