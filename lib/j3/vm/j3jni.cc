@@ -255,11 +255,33 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 		return res.val##j3type;																							\
 	}
 
-#define defSetField(jtype, id, j3type)																	\
+#define defGetSetField(jtype, id, j3type)																\
 	void JNICALL SetStatic##id##Field(JNIEnv* env, jclass clazz, jfieldID fieldID, jtype value) { \
 		enterJVM();																													\
 		J3ObjectType::nativeClass(clazz)->asClass()->staticInstance()->set##j3type(fieldID, value); \
 		leaveJVM();																													\
+	}																																			\
+																																				\
+	jtype JNICALL GetStatic##id##Field(JNIEnv* env, jclass clazz, jfieldID fieldID) { \
+		jtype res;																													\
+		enterJVM();																													\
+		res = J3ObjectType::nativeClass(clazz)->asClass()->staticInstance()->get##j3type(fieldID); \
+		leaveJVM();																													\
+		return res;																													\
+	}																																			\
+																																				\
+	void JNICALL Set##id##Field(JNIEnv* env, jobject obj, jfieldID fieldID, jtype val) { \
+		enterJVM();																													\
+		obj->set##j3type(fieldID, val);																			\
+		leaveJVM();																													\
+	}																																			\
+																																				\
+	jtype JNICALL Get##id##Field(JNIEnv* env, jobject obj, jfieldID fieldID) { \
+		jtype res;																													\
+		enterJVM();																													\
+		res = obj->get##j3type(fieldID);																		\
+		leaveJVM();																													\
+		return res;																													\
 	}
 
 #define defNewArray(jtype, id, j3type)																	\
@@ -274,7 +296,12 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 #define defArrayRegion(jtype, id, j3type)																\
 	void JNICALL Set##id##ArrayRegion(JNIEnv* env, jtype##Array array, jsize start, jsize len, const jtype* buf) { \
 		enterJVM();																													\
-		array->setRegion##j3type(0, buf, start, len);												\
+		array->setRegion##j3type(start, buf, 0, len);												\
+		leaveJVM();																													\
+	}																																			\
+	void JNICALL Get##id##ArrayRegion(JNIEnv* env, jtype##Array array, jsize start, jsize len, jtype* buf) { \
+		enterJVM();																													\
+		array->getRegion##j3type(start, buf, 0, len);												\
 		leaveJVM();																													\
 	}
 
@@ -282,7 +309,7 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 	defCall(jtype, id, j3type)										\
 	defNonVirtualCall(jtype, id, j3type)					\
 	defStaticCall(jtype, id, j3type)							\
-	defSetField(jtype, id, j3type)
+	defGetSetField(jtype, id, j3type)
 
 #define defJNI(jtype, id, j3type)								\
 	defJNIObj(jtype, id, j3type)									\
@@ -366,26 +393,6 @@ jfieldID JNICALL GetFieldID(JNIEnv* env, jclass clazz, const char* name, const c
 	return res;
 }
 
-jobject JNICALL GetObjectField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL GetBooleanField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jbyte JNICALL GetByteField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jchar JNICALL GetCharField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jshort JNICALL GetShortField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL GetIntField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jlong JNICALL GetLongField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jfloat JNICALL GetFloatField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jdouble JNICALL GetDoubleField(JNIEnv* env, jobject obj, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-
-void JNICALL SetObjectField(JNIEnv* env, jobject obj, jfieldID fieldID, jobject val) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetBooleanField(JNIEnv* env, jobject obj, jfieldID fieldID, jboolean val) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetByteField(JNIEnv* env, jobject obj, jfieldID fieldID, jbyte val) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetCharField(JNIEnv* env, jobject obj, jfieldID fieldID, jchar val) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetShortField(JNIEnv* env, jobject obj, jfieldID fieldID, jshort val) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetIntField(JNIEnv* env, jobject obj, jfieldID fieldID, jint val) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetLongField(JNIEnv* env, jobject obj, jfieldID fieldID, jlong val) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetFloatField(JNIEnv* env, jobject obj, jfieldID fieldID, jfloat val) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetDoubleField(JNIEnv* env, jobject obj, jfieldID fieldID, jdouble val) { enterJVM(); leaveJVM(); NYI(); }
-
 jfieldID JNICALL GetStaticFieldID(JNIEnv* env, jclass clazz, const char* name, const char* sig) { 
 	jfieldID res;
 	enterJVM(); 
@@ -395,16 +402,6 @@ jfieldID JNICALL GetStaticFieldID(JNIEnv* env, jclass clazz, const char* name, c
 	leaveJVM(); 
 	return res;
 }
-
-jobject JNICALL GetStaticObjectField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL GetStaticBooleanField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jbyte JNICALL GetStaticByteField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jchar JNICALL GetStaticCharField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jshort JNICALL GetStaticShortField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL GetStaticIntField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jlong JNICALL GetStaticLongField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jfloat JNICALL GetStaticFloatField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
-jdouble JNICALL GetStaticDoubleField(JNIEnv* env, jclass clazz, jfieldID fieldID) { enterJVM(); leaveJVM(); NYI(); }
 
 jstring JNICALL NewString(JNIEnv* env, const jchar* unicode, jsize len) { 
 	jstring res;
@@ -502,15 +499,6 @@ void JNICALL ReleaseIntArrayElements(JNIEnv* env, jintArray array, jint* elems, 
 void JNICALL ReleaseLongArrayElements(JNIEnv* env, jlongArray array, jlong* elems, jint mode) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL ReleaseFloatArrayElements(JNIEnv* env, jfloatArray array, jfloat* elems, jint mode) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL ReleaseDoubleArrayElements(JNIEnv* env, jdoubleArray array, jdouble* elems, jint mode) { enterJVM(); leaveJVM(); NYI(); }
-
-void JNICALL GetBooleanArrayRegion(JNIEnv* env, jbooleanArray array, jsize start, jsize l, jboolean* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL GetByteArrayRegion(JNIEnv* env, jbyteArray array, jsize start, jsize len, jbyte* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL GetCharArrayRegion(JNIEnv* env, jcharArray array, jsize start, jsize len, jchar* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL GetShortArrayRegion(JNIEnv* env, jshortArray array, jsize start, jsize len, jshort* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL GetIntArrayRegion(JNIEnv* env, jintArray array, jsize start, jsize len, jint* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL GetLongArrayRegion(JNIEnv* env, jlongArray array, jsize start, jsize len, jlong* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL GetFloatArrayRegion(JNIEnv* env, jfloatArray array, jsize start, jsize len, jfloat* buf) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL GetDoubleArrayRegion(JNIEnv* env, jdoubleArray array, jsize start, jsize len, jdouble* buf) { enterJVM(); leaveJVM(); NYI(); }
 
 jint JNICALL RegisterNatives(JNIEnv* env, jclass clazz, const JNINativeMethod* methods, jint nMethods) {
 	enterJVM();

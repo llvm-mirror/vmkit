@@ -9,6 +9,8 @@
 #include "j3/j3utf16.h"
 #include "jvm.h"
 
+#include <dlfcn.h>
+
 using namespace j3;
 
 #define enterJVM()
@@ -246,7 +248,16 @@ jlong JNICALL JVM_MaxMemory(void) { enterJVM(); NYI(); leaveJVM(); }
 jint JNICALL JVM_ActiveProcessorCount(void) { enterJVM(); NYI(); leaveJVM(); }
 void * JNICALL JVM_LoadLibrary(const char *name) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_UnloadLibrary(void * handle) { enterJVM(); NYI(); leaveJVM(); }
-void * JNICALL JVM_FindLibraryEntry(void *handle, const char *name) { enterJVM(); NYI(); leaveJVM(); }
+
+void * JNICALL JVM_FindLibraryEntry(void *handle, const char *name) { 
+	void* res;
+	enterJVM(); 
+	res = dlsym(handle, name);
+	fprintf(stderr, " find entry %s in %p => %p\n", name, handle, res);
+	leaveJVM(); 
+	return res;
+}
+
 jboolean JNICALL JVM_IsSupportedJNIVersion(jint version) { enterJVM(); NYI(); leaveJVM(); }
 
 /*
