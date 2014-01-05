@@ -11,7 +11,9 @@ using namespace j3;
 J3Options::J3Options() {
 	assertionsEnabled = 1;
 	selfBitCodePath = SELF_BITCODE;
-	rtJar = J3Lib::systemClassesArchives();
+	bootClasspath = J3Lib::systemClassesArchives();
+	systemLibraryPath = J3Lib::systemLibraryPath();
+	classpath = "";
 
 	debugEnterIndent = 1;
 

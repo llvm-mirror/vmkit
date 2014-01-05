@@ -55,6 +55,10 @@ const char* J3Lib::systemClassesArchives() {
 	return rtjar;
 }
 
+const char* J3Lib::systemLibraryPath() {
+	return OPENJDK_LIBPATH;
+}
+
 int J3Lib::loadSystemLibraries(std::vector<void*, vmkit::StdAllocator<void*> >* nativeLibraries) {
 	/* JavaRuntimeSupport checks for a symbol defined in this library */
 	void* h0 = dlopen(OPENJDK_LIBPATH"/libinstrument"SHLIBEXT, RTLD_LAZY | RTLD_GLOBAL);

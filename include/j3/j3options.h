@@ -25,7 +25,9 @@ namespace j3 {
 	public:
 		bool           assertionsEnabled;
 		const char*    selfBitCodePath;
-		const char*    rtJar;
+		const char*    bootClasspath;
+		const char*    systemLibraryPath;
+		const char*    classpath;
 		bool           debugEnterIndent;
 		uint32_t       genDebugExecute;
 		uint32_t       debugExecute;

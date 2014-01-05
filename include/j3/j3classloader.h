@@ -81,7 +81,7 @@ namespace j3 {
 		J3ZipArchive*                                     archive;
 		std::map<const char*, const char*, char_ptr_less> _cmangled;
 	public:
-		J3InitialClassLoader(const char* rtjar, vmkit::BumpAllocator* allocator);
+		J3InitialClassLoader(vmkit::BumpAllocator* allocator);
 
 		J3Class*    loadClass(const vmkit::Name* name);
 		const char* cmangled(const char* demangled) { return _cmangled[demangled]; }

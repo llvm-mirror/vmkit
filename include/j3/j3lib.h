@@ -11,6 +11,7 @@ namespace j3 {
 	class J3Lib {
 	public:
 		static const char*  systemClassesArchives();
+		static const char*  systemLibraryPath();
 		static int          loadSystemLibraries(std::vector<void*, vmkit::StdAllocator<void*> >* handles);
 
 		static void         bootstrap(J3* vm);

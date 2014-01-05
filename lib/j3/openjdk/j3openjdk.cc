@@ -114,7 +114,7 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
 																												 vm->names()->get("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;")));
 
 #define setProp(key, val) _setProp->invokeVirtual(p, vm->utfToString(key), vm->utfToString(val));
-#define setEnvProp(key, val) ({ const char* tmp = getenv(val); if(!tmp) tmp = ""; setProp(key, val); })
+#define setPropEnv(key, val) ({ const char* tmp = getenv(val); if(!tmp) tmp = ""; setProp(key, val); })
 
 	/*
 	 * <dt>java.version         <dd>Java version number
@@ -134,6 +134,11 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
 	 * <dt>user.dir             <dd>User's current working directory
 	 */
 
+  setProp("java.class.path", vm->options()->classpath);
+  setProp("java.boot.class.path", vm->options()->bootClasspath);
+  setProp("sun.boot.library.path", vm->options()->systemLibraryPath);
+  setProp("sun.boot.class.path", vm->options()->bootClasspath);
+#if 0
   setProp("java.vm.specification.version", "1.2");
   setProp("java.vm.specification.vendor", "Sun Microsystems, Inc");
   setProp("java.vm.specification.name", "Java Virtual Machine Specification");
@@ -144,32 +149,27 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   setProp("java.runtime.version", "1.8");
   setProp("java.vendor", "The VMKit Project");
   setProp("java.vendor.url", "http://vmkit.llvm.org");
-	setEnvProp("java.home", "JAVA_HOME");
+	setPropEnv("java.home", "JAVA_HOME");
   setProp("java.class.version", "52.0");
   setProp("java.vm.version", "0.5");
   setProp("java.vm.vendor", "The VMKit Project");
   setProp("java.vm.name", "J3");
   setProp("java.specification.version", "1.8");
+  setPropEnv("java.library.path", "LD_LIBRARY_PATH");
 
   struct utsname infos;
   uname(&infos);
   setProp("os.name", infos.sysname);
   setProp("os.arch", infos.machine);
   setProp("os.version", infos.release);
-#if 0
 
   setProp("java.io.tmpdir", "/tmp");
   JnjvmBootstrapLoader* JCL = vm->bootstrapLoader;
-  setProperty(vm, prop, "java.class.path", vm->classpath);
-  setProperty(vm, prop, "java.boot.class.path", JCL->bootClasspathEnv);
-  setProperty(vm, prop, "sun.boot.class.path", JCL->bootClasspathEnv);
 
   setProperty(vm, prop, "build.compiler", "gcj");
   setProperty(vm, prop, "gcj.class.path", JCL->bootClasspathEnv);
   setProperty(vm, prop, "gnu.classpath.boot.library.path",
               JCL->libClasspathEnv);
-  //setProperty(vm, prop, "java.library.path", TODO: getenv("LD_LIBRARY_PATH"))
-  setProperty(vm, prop, "sun.boot.library.path", JCL->libClasspathEnv);
 
   // Align behavior with GNU Classpath for now, to pass mauve test
   setProperty(vm, prop, "sun.lang.ClassLoader.allowArraySyntax", "true");

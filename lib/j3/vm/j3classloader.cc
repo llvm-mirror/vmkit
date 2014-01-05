@@ -204,9 +204,9 @@ bool J3ClassLoader::J3InterfaceMethodLess::operator()(j3::J3Method const* lhs, j
 				&& (lhs->signature() < rhs->signature()));
 }
 
-J3InitialClassLoader::J3InitialClassLoader(const char* rtjar, vmkit::BumpAllocator* _alloc) 
+J3InitialClassLoader::J3InitialClassLoader(vmkit::BumpAllocator* _alloc) 
 	: J3ClassLoader(0, _alloc) {
-	const char* archives = J3Thread::get()->vm()->options()->rtJar;
+	const char* archives = J3Thread::get()->vm()->options()->bootClasspath;
 	J3ClassBytes* bytes = J3Reader::openFile(allocator(), archives);
 
 	//makeLLVMFunctions_j3();
