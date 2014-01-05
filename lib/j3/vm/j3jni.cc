@@ -49,7 +49,13 @@ jclass JNICALL GetSuperclass(JNIEnv* env, jclass sub) {
 	return res;
 }
 
-jboolean JNICALL IsAssignableFrom(JNIEnv* env, jclass sub, jclass sup) { enterJVM(); leaveJVM(); NYI(); }
+jboolean JNICALL IsAssignableFrom(JNIEnv* env, jclass sub, jclass sup) { 
+	jboolean res;
+	enterJVM();
+	res = J3ObjectType::nativeClass(sub)->isAssignableTo(J3ObjectType::nativeClass(sup));
+	leaveJVM(); 
+	return res;
+}
 
 jobject JNICALL ToReflectedField(JNIEnv* env, jclass cls, jfieldID fieldID, jboolean isStatic) { enterJVM(); leaveJVM(); NYI(); }
 

@@ -98,7 +98,8 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 	J3Type* srcType0 = src->vt()->type();
 	J3Type* dstType0 = dst->vt()->type();
 
-	if(!srcType0->isArrayClass() || !dstType0->isArrayClass() || !srcType0->isAssignableTo(dstType0))
+	fprintf(stderr, " array copy from %s to %s\n", srcType0->name()->cStr(), dstType0->name()->cStr());
+	if(!srcType0->isArrayClass() || !dstType0->isArrayClass())
 		J3::arrayStoreException();
 
 	//fprintf(stderr, " array copy: [%d %d %d] [%d %d %d]\n", src_pos, length, src->arrayLength(), dst_pos, length, dst->arrayLength());
@@ -110,7 +111,22 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 
 	uint32_t scale = srcType0->asArrayClass()->component()->logSize();
 
-	src->rawArrayCopyTo(src_pos << scale, dst, dst_pos << scale, length << scale);
+	if(srcType0->isAssignableTo(dstType0))
+		src->rawArrayCopyTo(src_pos << scale, dst, dst_pos << scale, length << scale);
+	else {
+		J3Type* srcEl = srcType0->asArrayClass()->component();
+		J3Type* dstEl = dstType0->asArrayClass()->component();
+
+		if(!srcEl->isObjectType() || !dstEl->isObjectType())
+			J3::arrayStoreException();
+
+		for(uint32_t i=0; i<length; i++) {
+			J3ObjectHandle* val = src->getObjectAt(src_pos + i);
+			if(!val->vt()->type()->isAssignableTo(dstEl))
+				J3::arrayStoreException();
+			dst->setObjectAt(dst_pos + i, val);
+		}
+	}
 
 	leaveJVM(); 
 }
