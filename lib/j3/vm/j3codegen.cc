@@ -1453,7 +1453,9 @@ void J3CodeGen::translate() {
 
 			case J3Cst::BC_jsr: nyi();                    /* 0xa8 */
 			case J3Cst::BC_ret: nyi();                    /* 0xa9 wide */
-			case J3Cst::BC_tableswitch: nyi();            /* 0xaa */
+			case J3Cst::BC_tableswitch:                   /* 0xaa */
+				lookupSwitch(); /* TODO, generate a better code */
+				break;
 
 			case J3Cst::BC_lookupswitch: 
 				lookupSwitch();
