@@ -793,8 +793,20 @@ jobject JNICALL JVM_GetStackAccessControlContext(JNIEnv* env, jclass cls) {
  * Other platform-dependent signal values may also be supported.
  */
 
-void * JNICALL JVM_RegisterSignal(jint sig, void *handler) { enterJVM(); NYI(); leaveJVM(); }
+void* JNICALL JVM_RegisterSignal(jint sig, void *handler) {
+	void* res;
+	enterJVM(); 
+	if(sig == SIGINT || sig == SIGTERM || sig == SIGHUP) {
+		J3Thread::get()->registerSignal(sig, (J3Thread::sa_action_t)handler);		
+		res = handler;
+	} else
+		res = (void*)-1;
+	leaveJVM(); 
+	return res;
+}
+
 jboolean JNICALL JVM_RaiseSignal(jint sig) { enterJVM(); NYI(); leaveJVM(); }
+
 jint JNICALL JVM_FindSignal(const char *name) { 
 	jint res = 0;
 

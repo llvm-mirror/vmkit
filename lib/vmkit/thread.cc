@@ -12,10 +12,6 @@ void Thread::sigsegvHandler(int n, siginfo_t* info, void* context) {
 	get()->vm()->sigsegv((uintptr_t)info->si_addr);
 }
 
-void Thread::sigendHandler(int n, siginfo_t* info, void* context) {
-	get()->vm()->sigend();
-}
-
 void* Thread::operator new(size_t n) {
 	return ThreadAllocator::allocator()->allocate();
 }
@@ -36,6 +32,26 @@ uintptr_t Thread::getThreadMask() {
 	return ThreadAllocator::allocator()->magic();
 }
 
+void Thread::registerSignalInternal(int n, sa_action_t handler, bool altStack) {
+  // Set the SIGSEGV handler to diagnose errors.
+  struct sigaction sa;
+  sigset_t mask;
+  sigfillset(&mask);
+  sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_NODEFER;
+	if(altStack)
+		sa.sa_flags = SA_ONSTACK;
+  sa.sa_mask = mask;
+  sa.sa_sigaction = handler;
+  sigaction(n, &sa, NULL);
+}
+
+bool Thread::registerSignal(int n, sa_action_t handler) {
+	if(n == SIGSEGV || n == SIGBUS)
+		return 0;
+	registerSignalInternal(n, handler, 0);
+	return 1;
+}
+
 void* Thread::doRun(void* _thread) {
 	Thread* thread = (Thread*)_thread;
 
@@ -47,28 +63,8 @@ void* Thread::doRun(void* _thread) {
   st.ss_size = ThreadAllocator::allocator()->alternateStackSize(thread);
   sigaltstack(&st, NULL);
 
-  // Set the SIGSEGV handler to diagnose errors.
-  struct sigaction sa;
-  sigset_t mask;
-  sigfillset(&mask);
-  sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_NODEFER;
-  sa.sa_mask = mask;
-  sa.sa_sigaction = sigsegvHandler;
-  sigaction(SIGSEGV, &sa, NULL);
-  sigaction(SIGBUS, &sa, NULL);
-
-  // to handle termination
-  st.ss_sp = ThreadAllocator::allocator()->alternateStackAddr(thread);
-  st.ss_flags = 0;
-  st.ss_size = ThreadAllocator::allocator()->alternateStackSize(thread);
-  sigaltstack(&st, NULL);
-  sigfillset(&mask);
-  sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_NODEFER;
-  sa.sa_mask = mask;
-  sa.sa_sigaction = sigendHandler;
-  //sigaction(SIGHUP, &sa, NULL);
-	//sigaction(SIGINT, &sa, NULL);
-  //sigaction(SIGTERM, &sa, NULL);
+	thread->registerSignalInternal(SIGSEGV, sigsegvHandler, 1);
+	thread->registerSignalInternal(SIGBUS, sigsegvHandler, 1);
 
 	thread->run();
 	return 0;

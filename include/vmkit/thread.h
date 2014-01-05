@@ -11,13 +11,17 @@ namespace vmkit {
 	class VMKit;
 
 	class Thread {
+	public:
+		typedef void (*sa_action_t)(int, siginfo_t *, void *);
+
+	private:
 		VMKit*               _vm;
 		pthread_t            _tid;
 
 		static void* doRun(void* thread);
 		static void sigsegvHandler(int n, siginfo_t* info, void* context);
-		static void sigendHandler(int n, siginfo_t* info, void* context);
 
+		void registerSignalInternal(int n, sa_action_t handler, bool altStack);
 	public:
 		Thread(VMKit* vm);
 		virtual ~Thread() {}
@@ -33,9 +37,10 @@ namespace vmkit {
 		static Thread* get(void* ptr);
 		static Thread* get();
 
+		bool registerSignal(int n, sa_action_t handler);
+
 		void start();
 		void join();
-
 	};
 
 	class StackWalker {

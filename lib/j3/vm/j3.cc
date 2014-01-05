@@ -74,6 +74,8 @@ void J3::start(int argc, char** argv) {
 	J3Thread* thread = new J3ThreadBootstrap(this);
 
 	vmkitBootstrap(thread, options()->selfBitCodePath);	
+
+	fprintf(stderr, "  vm is bootstraped, congratulation!\n");
 }
 
 void J3::run() {
