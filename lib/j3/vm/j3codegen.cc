@@ -41,10 +41,11 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 
 #if 0
 	/* usefull to debug a single function */
-	if(   cl->name() == vm->names()->get("java/nio/Bits") &&
-				method->name() == vm->names()->get("<clinit>") &&
-				method->signature()->name() == vm->names()->get("()V") )
-		vm->options()->debugTranslate = 3;
+	if(   cl->name() == vm->names()->get("sun/misc/Launcher") &&
+				method->name() == vm->names()->get("getFileURL") &&
+				method->signature()->name() == vm->names()->get("(Ljava/io/File;)Ljava/net/URL;") ) {
+		vm->options()->debugTranslate = 2;
+	}
 #endif
 
 	if(vm->options()->debugTranslate)
@@ -861,11 +862,12 @@ void J3CodeGen::translate() {
 	if(vm->options()->debugTranslate > 1)
 		exceptions.dump(vm->options()->debugTranslate-1);
 
-	selectExceptionNode(0);
-
 	stack.topStack = 0;
 	builder->SetInsertPoint(bb);
 	_onEndPoint();
+	closeBB = 1;
+
+	selectExceptionNode(0);
 
 	while(codeReader->remaining()) {
 		llvm::Value* val1;

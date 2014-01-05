@@ -98,7 +98,7 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 	J3Type* srcType0 = src->vt()->type();
 	J3Type* dstType0 = dst->vt()->type();
 
-	fprintf(stderr, " array copy from %s to %s\n", srcType0->name()->cStr(), dstType0->name()->cStr());
+	//fprintf(stderr, " array copy from %s to %s\n", srcType0->name()->cStr(), dstType0->name()->cStr());
 	if(!srcType0->isArrayClass() || !dstType0->isArrayClass())
 		J3::arrayStoreException();
 
@@ -116,10 +116,10 @@ void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_po
 	else {
 		J3Type* srcEl = srcType0->asArrayClass()->component();
 		J3Type* dstEl = dstType0->asArrayClass()->component();
-
+		
 		if(!srcEl->isObjectType() || !dstEl->isObjectType())
 			J3::arrayStoreException();
-
+		
 		for(uint32_t i=0; i<length; i++) {
 			J3ObjectHandle* val = src->getObjectAt(src_pos + i);
 			if(!val->vt()->type()->isAssignableTo(dstEl))

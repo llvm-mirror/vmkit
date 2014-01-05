@@ -21,7 +21,7 @@ J3Options::J3Options() {
 	debugLoad = 0;
 	debugResolve = 0;
 	debugIniting = 0;
-	debugTranslate = 1;
+	debugTranslate = 0;
 	debugLinking = 0;
 	debugLifeCycle = 1;
 

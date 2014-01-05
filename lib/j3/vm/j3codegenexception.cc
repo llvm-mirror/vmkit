@@ -102,7 +102,7 @@ void J3ExceptionTable::read(J3Reader* reader, uint32_t codeLength) {
 		entries[i].endPC = reader->readU2();
 		entries[i].handlerPC = reader->readU2();
 		entries[i].catchType = reader->readU2();
-		entries[i].bb = codeGen->forwardBranch("exception-handler", entries[i].handlerPC, 0, 1);
+		entries[i].bb = codeGen->forwardBranch("exception-handler", entries[i].handlerPC, 0, 0);
 		codeGen->opInfos[entries[i].handlerPC].topStack = -1;
 
 		J3ExceptionNode** cur = findPos(entries[i].startPC);
