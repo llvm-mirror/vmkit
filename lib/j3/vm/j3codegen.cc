@@ -41,10 +41,10 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 
 #if 0
 	/* usefull to debug a single function */
-	if(   cl->name() == vm->names()->get("sun/misc/Launcher") &&
-				method->name() == vm->names()->get("getFileURL") &&
-				method->signature()->name() == vm->names()->get("(Ljava/io/File;)Ljava/net/URL;") ) {
-		vm->options()->debugTranslate = 2;
+	if(   cl->name() == vm->names()->get("java/lang/CharacterData") &&
+				method->name() == vm->names()->get("of") &&
+				method->signature()->name() == vm->names()->get("(I)Ljava/lang/CharacterData;") ) {
+		vm->options()->debugTranslate = 3;
 	}
 #endif
 
@@ -704,7 +704,7 @@ void J3CodeGen::ldc(uint32_t idx) {
 void J3CodeGen::lookupSwitch() {
 	codeReader->seek(((codeReader->tell() - 1) & -4) + 4, J3Reader::SeekSet);
 	llvm::Value* val = stack.pop();
-	llvm::BasicBlock* def = forwardBranch("lookupswitch-match", javaPC + codeReader->readU4(), 1, 1);
+	llvm::BasicBlock* def = forwardBranch("lookupswitch-default", javaPC + codeReader->readU4(), 1, 1);
 	uint32_t n = codeReader->readU4();
 	
 	for(uint32_t i=0; i<n; i++) {
@@ -714,6 +714,19 @@ void J3CodeGen::lookupSwitch() {
 		builder->CreateCondBr(builder->CreateICmpEQ(val, builder->getInt32(match)), ok, nok);
 		builder->SetInsertPoint(nok);
 	}
+}
+
+void J3CodeGen::tableSwitch() {
+	codeReader->seek(((codeReader->tell() - 1) & -4) + 4, J3Reader::SeekSet);
+	llvm::Value* val = stack.pop();
+	llvm::BasicBlock* def = forwardBranch("tableswitch-default", javaPC + codeReader->readU4(), 1, 1);
+	int32_t low = codeReader->readU4();
+	int32_t high = codeReader->readU4();
+	llvm::SwitchInst* dispatch = builder->CreateSwitch(val, def, high - low + 1);
+
+	for(uint32_t i=low; i<=high; i++)
+		dispatch->addCase(builder->getInt32(i),
+											forwardBranch("tableswitch-match", javaPC + codeReader->readU4(), 1, 1));
 }
 
 llvm::BasicBlock* J3CodeGen::newBB(const char* name) {
@@ -727,12 +740,13 @@ void J3CodeGen::condBr(llvm::Value* op) {
 }
 
 llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doAlloc, bool doPush) {
-	if(vm->options()->debugTranslate > 2)
-		fprintf(stderr, "        forward branch at %d\n", pc);
 	llvm::BasicBlock* res = opInfos[pc].bb;
 
 	if(res) 
 		return res;
+
+	if(vm->options()->debugTranslate > 2)
+		fprintf(stderr, "        forward branch at %d\n", pc);
 
 	if(opInfos[pc].insn) {
 		//printf("split at %d (%s)\n", pc, id);
@@ -1454,11 +1468,13 @@ void J3CodeGen::translate() {
 			case J3Cst::BC_jsr: nyi();                    /* 0xa8 */
 			case J3Cst::BC_ret: nyi();                    /* 0xa9 wide */
 			case J3Cst::BC_tableswitch:                   /* 0xaa */
-				lookupSwitch(); /* TODO, generate a better code */
+				tableSwitch();
+				_onEndPoint();
 				break;
 
 			case J3Cst::BC_lookupswitch: 
 				lookupSwitch();
+				_onEndPoint();
 				break;
 
 			case J3Cst::BC_ireturn:                       /* 0xac */

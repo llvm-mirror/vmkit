@@ -146,6 +146,7 @@ namespace j3 {
 		void                newObject(J3Class* cl);
 
 		void                lookupSwitch();
+		void                tableSwitch();
 
 		void                ldc(uint32_t idx);
 
