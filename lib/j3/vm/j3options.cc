@@ -13,7 +13,7 @@ J3Options::J3Options() {
 	selfBitCodePath = SELF_BITCODE;
 	bootClasspath = J3Lib::systemClassesArchives();
 	systemLibraryPath = J3Lib::systemLibraryPath();
-	classpath = "";
+	classpath = ".";
 
 	debugEnterIndent = 1;
 
@@ -25,7 +25,7 @@ J3Options::J3Options() {
 	debugLinking = 0;
 	debugLifeCycle = 1;
 
-	genDebugExecute = debugExecute ? 1 : 0;
+	genDebugExecute = 2;//debugExecute ? 1 : 0;
 
 	stackSize = 0x80*0x1000;
 }

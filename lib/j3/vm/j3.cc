@@ -123,6 +123,10 @@ void J3::run() {
 	classClassInit           = z_method(0, classClass, initName, names()->get("()V"));
 	classClassVMData         = classClass->findField(0, hf.name(), hf.type());
 
+	classClassLoader         = z_class("java/lang/ClassLoader");
+	classClassLoader->resolve(&hf, 1);
+	classClassLoaderVMData   = classClassLoader->findField(0, hf.name(), hf.type());
+
 	threadClass              = z_class("java/lang/Thread");
 	threadClassRun           = z_method(0, threadClass, names()->get("run"), names()->get("()V"));
 	threadClassVMData        = z_field(0, threadClass, "eetop", typeLong);
@@ -151,19 +155,27 @@ void J3::run() {
 	J3Lib::bootstrap(this);
 
 	if(options()->debugLifeCycle)
-		fprintf(stderr, "  Creating the system class loader\n");
+		fprintf(stderr, "  Launching the application\n");
 
-	//options()->genDebugExecute = 1;
-	//options()->debugExecute = 2;
+	options()->genDebugExecute = 1;
+	options()->debugExecute = 5;
 
-	z_method(J3Cst::ACC_STATIC, 
-					 z_class("java/lang/ClassLoader"), 
-					 names()->get("getSystemClassLoader"),
-					 names()->get("()Ljava/lang/ClassLoader;"))
-		->invokeStatic();
-					 
+#if 0
+	J3Class* loaderClass = z_class("java/lang/ClassLoader");
+	J3ObjectHandle* sysLoader = z_method(J3Cst::ACC_STATIC, 
+																			 loaderClass,
+																			 names()->get("getSystemClassLoader"),
+																			 names()->get("()Ljava/lang/ClassLoader;"))->invokeStatic().valObject;
+#endif
+
+	J3ObjectHandle* res = z_method(J3Cst::ACC_STATIC,
+																 z_class("sun/launcher/LauncherHelper"),
+																 names()->get("checkAndLoadMain"),
+																 names()->get("(ZILjava/lang/String;)Ljava/lang/Class;"))
+		->invokeStatic(1, 1, utfToString("HelloWorld")).valObject;
+	
+	fprintf(stderr, "system class loader: sysLoader: %p - %p\n", res, res->obj());
 	//    public static ClassLoader getSystemClassLoader() {
-
 }
 
 JNIEnv* J3::jniEnv() {
@@ -210,6 +222,16 @@ J3ObjectHandle* J3::nameToString(const vmkit::Name* name, bool doPush) {
 
 J3ObjectHandle* J3::utfToString(const char* name, bool doPush) {
 	return nameToString(names()->get(name), doPush);
+}
+
+const vmkit::Name* J3::arrayToName(J3ObjectHandle* array) {
+	char copy[J3Utf16Decoder::maxSize(array)];
+	J3Utf16Decoder::decode(array, copy);
+	return names()->get(copy);
+}
+
+const vmkit::Name* J3::stringToName(J3ObjectHandle* str) {
+	return arrayToName(str->getObject(stringClassValue));
 }
 
 void J3::classCastException() {

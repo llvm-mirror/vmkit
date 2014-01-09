@@ -36,7 +36,7 @@ void Thread::registerSignalInternal(int n, sa_action_t handler, bool altStack) {
   // Set the SIGSEGV handler to diagnose errors.
   struct sigaction sa;
   sigset_t mask;
-  sigfillset(&mask);
+  sigemptyset(&mask);
   sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_NODEFER;
 	if(altStack)
 		sa.sa_flags = SA_ONSTACK;

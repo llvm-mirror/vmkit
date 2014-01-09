@@ -20,7 +20,6 @@ using namespace j3;
 
 #define NYI() { J3Thread::get()->vm()->internalError("not yet implemented: '%s'", __PRETTY_FUNCTION__); }
 
-
 /*************************************************************************
  PART 0
  ************************************************************************/
@@ -67,12 +66,7 @@ jstring JNICALL JVM_InternString(JNIEnv* env, jstring str) {
 
 	J3* vm = J3Thread::get()->vm();
 
-	J3ObjectHandle* value = str->getObject(vm->stringClassValue);
-	char copy[J3Utf16Decoder::maxSize(value)];
-	
-	J3Utf16Decoder::decode(value, copy);
-
-	res = vm->utfToString(copy);
+	res = vm->nameToString(vm->stringToName(str));
 
 	leaveJVM(); 
 	return res;
@@ -86,12 +80,22 @@ jlong JNICALL JVM_CurrentTimeMillis(JNIEnv* env, jclass ignored) {
 	enterJVM(); 
 	struct timeval tv;
 	gettimeofday(&tv, 0);
-	res = tv.tv_sec*1e3 + tv.tv_usec/1000;
+	res = tv.tv_sec*1e3 + tv.tv_usec/1e3;
 	leaveJVM(); 
 	return res;
 }
 
-jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored) { enterJVM(); NYI(); leaveJVM(); }
+jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored) { 
+	/* TODO: better timer? */
+	jlong res;
+	enterJVM(); 
+	struct timeval tv;
+	gettimeofday(&tv, 0);
+	res = tv.tv_sec*1e9 + tv.tv_usec*1e3;
+	leaveJVM(); 
+	return res;
+}
+
 void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length) { 
 	enterJVM(); 
 
@@ -145,31 +149,47 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
 #define setPropEnv(key, val) ({ const char* tmp = getenv(val); if(!tmp) tmp = ""; setProp(key, val); })
 
 	/*
-	 * <dt>java.version         <dd>Java version number
-	 * <dt>java.vendor          <dd>Java vendor specific string
-	 * <dt>java.vendor.url      <dd>Java vendor URL
-	 * <dt>java.home            <dd>Java installation directory
-	 * <dt>java.class.version   <dd>Java class version number
-	 * <dt>java.class.path      <dd>Java classpath
-	 * <dt>os.name              <dd>Operating System Name
-	 * <dt>os.arch              <dd>Operating System Architecture
-	 * <dt>os.version           <dd>Operating System Version
-	 * <dt>file.separator       <dd>File separator ("/" on Unix)
-	 * <dt>path.separator       <dd>Path separator (":" on Unix)
-	 * <dt>line.separator       <dd>Line separator ("\n" on Unix)
-	 * <dt>user.name            <dd>User account name
-	 * <dt>user.home            <dd>User home directory
-	 * <dt>user.dir             <dd>User's current working directory
-	 */
+	** <dt>java.version         <dd>Java version number
+	** <dt>java.vendor          <dd>Java vendor specific string
+	** <dt>java.vendor.url      <dd>Java vendor URL
+	** <dt>java.home            <dd>Java installation directory
+	** <dt>java.class.version   <dd>Java class version number
+	** <dt>java.class.path      <dd>Java classpath
+	** <dt>os.name              <dd>Operating System Name
+	** <dt>os.arch              <dd>Operating System Architecture
+	** <dt>os.version           <dd>Operating System Version
+	** <dt>file.separator       <dd>File separator ("/" on Unix)
+	** <dt>path.separator       <dd>Path separator (":" on Unix)
+	** <dt>line.separator       <dd>Line separator ("\n" on Unix)
+	** <dt>user.name            <dd>User account name
+	** <dt>user.home            <dd>User home directory
+	** <dt>user.dir             <dd>User's current working directory
+	*/
 
+  struct utsname infos;
+  uname(&infos);
+
+  setProp("java.version", "1.8");
+  setProp("java.vendor", "The VMKit Project");
+  setProp("java.vendor.url", "http://vmkit.llvm.org");
+	setPropEnv("java.home", "JAVA_HOME");
+  setProp("java.class.version", "52.0");
   setProp("java.class.path", vm->options()->classpath);
-  setProp("java.boot.class.path", vm->options()->bootClasspath);
-  setProp("sun.boot.library.path", vm->options()->systemLibraryPath);
-  setProp("sun.boot.class.path", vm->options()->bootClasspath);
+	//"file:///Users/gthomas/research/vmkit4/vmkit");//vm->options()->classpath);
+  setProp("os.name", infos.sysname);
+  setProp("os.arch", infos.machine);
+  setProp("os.version", infos.release);
   setProp("file.separator", "/");
   setProp("path.separator", ":");
   setProp("line.separator", "\n");
-	setPropEnv("java.home", "JAVA_HOME");
+  setPropEnv("user.name", "USERNAME");
+  setPropEnv("user.home", "HOME");
+	setPropEnv("user.dir", "PWD");
+
+  setProp("java.boot.class.path", vm->options()->bootClasspath);
+  setProp("sun.boot.library.path", vm->options()->systemLibraryPath);
+  setProp("sun.boot.class.path", vm->options()->bootClasspath);
+
 
 #if 0
   setProp("java.vm.specification.version", "1.2");
@@ -178,22 +198,13 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   setProp("java.specification.version", "1.8");
   setProp("java.specification.vendor", "Sun Microsystems, Inc");
   setProp("java.specification.name", "Java Platform API Specification");
-  setProp("java.version", "1.8");
   setProp("java.runtime.version", "1.8");
-  setProp("java.vendor", "The VMKit Project");
-  setProp("java.vendor.url", "http://vmkit.llvm.org");
-  setProp("java.class.version", "52.0");
   setProp("java.vm.version", "0.5");
   setProp("java.vm.vendor", "The VMKit Project");
   setProp("java.vm.name", "J3");
   setProp("java.specification.version", "1.8");
   setPropEnv("java.library.path", "LD_LIBRARY_PATH");
 
-  struct utsname infos;
-  uname(&infos);
-  setProp("os.name", infos.sysname);
-  setProp("os.arch", infos.machine);
-  setProp("os.version", infos.release);
 
   setProp("java.io.tmpdir", "/tmp");
   JnjvmBootstrapLoader* JCL = vm->bootstrapLoader;
@@ -527,7 +538,15 @@ void JNICALL JVM_ResolveClass(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leav
 /*
  * Find a class from a boot class loader. Returns NULL if class not found.
  */
-jclass JNICALL JVM_FindClassFromBootLoader(JNIEnv* env, const char *name) { enterJVM(); NYI(); leaveJVM(); }
+jclass JNICALL JVM_FindClassFromBootLoader(JNIEnv* env, const char *name) { 
+	jclass res;
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	J3Class* cl = vm->initialClassLoader->findLoadedClass(vm->names()->get(name));
+	res = cl ? cl->javaClass() : 0;
+	leaveJVM(); 
+	return res;
+}
 
 /*
  * Find a class from a given class loader. Throw ClassNotFoundException
@@ -567,7 +586,14 @@ jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *jname, jboo
 jclass JNICALL JVM_FindClassFromClass(JNIEnv* env, const char *name, jboolean init, jclass from) { enterJVM(); NYI(); leaveJVM(); }
 
 /* Find a loaded class cached by the VM */
-jclass JNICALL JVM_FindLoadedClass(JNIEnv* env, jobject loader, jstring name) { enterJVM(); NYI(); leaveJVM(); }
+jclass JNICALL JVM_FindLoadedClass(JNIEnv* env, jobject jloader, jstring name) { 
+	jclass res;
+	enterJVM(); 
+	J3Class* cl = J3ClassLoader::nativeClassLoader(jloader)->findLoadedClass(J3Thread::get()->vm()->stringToName(name));
+	res = cl ? cl->javaClass() : 0;
+	leaveJVM(); 
+	return res;
+}
 
 /* Define a class */
 jclass JNICALL JVM_DefineClass(JNIEnv* env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd) { enterJVM(); NYI(); leaveJVM(); }

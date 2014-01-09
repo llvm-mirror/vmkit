@@ -63,7 +63,8 @@ namespace j3 {
 		uint32_t                      interfaceIndex(J3Method* signature);
 
 		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
-		
+
+		static J3ClassLoader*         nativeClassLoader(J3ObjectHandle* jloader);
 		J3ObjectHandle*               javaClassLoader(bool doPush=1);
 
 		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);

@@ -167,6 +167,7 @@ namespace j3 {
 
 		static void         echoDebugEnter(uint32_t isLeave, const char* msg, ...);
 		static void         echoDebugExecute(uint32_t level, const char* msg, ...);
+		static void         echoElement(uint32_t level, uint32_t type, uintptr_t elmt);
 
 #define _x(name, id)														\
 		llvm::Function* name;

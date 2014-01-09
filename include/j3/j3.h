@@ -85,6 +85,9 @@ namespace j3 {
 		J3Method*        classClassInit;
 		J3Field*         classClassVMData;
 
+		J3Class*         classClassLoader;
+		J3Field*         classClassLoaderVMData;
+
 		J3Class*         threadClass;
 		J3Field*         threadClassVMData;
 		J3Method*        threadClassRun;
@@ -126,6 +129,8 @@ namespace j3 {
 		J3ObjectHandle*            utfToString(const char* name, bool doPush=1);
 		J3ObjectHandle*            nameToString(const vmkit::Name* name, bool doPush=1);
 		J3ObjectHandle*            arrayToString(J3ObjectHandle* array, bool doPush=1);
+		const vmkit::Name*         arrayToName(J3ObjectHandle* array);
+		const vmkit::Name*         stringToName(J3ObjectHandle* str);
 
 		void                       run();
 		void                       start(int argc, char** argv);

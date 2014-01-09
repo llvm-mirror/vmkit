@@ -684,7 +684,9 @@ void J3Class::fillFields(J3Field** fields, size_t n) {
 		J3Field*  cur = fields[i];
 		J3Layout* layout = J3Cst::isStatic(fields[i]->access()) ? (J3Layout*)staticLayout() : this;
 
-		//fprintf(stderr, "   adding static field: %s %s::%s\n", cur->type()->name()->cStr(), name()->cStr(), cur->name()->cStr());
+		//if(name() == J3Thread::get()->vm()->names()->get("java/lang/ClassLoader"))
+		//fprintf(stderr, " field %s: %s\n", J3Cst::isStatic(fields[i]->access()) ? "static" : "virtual", fields[i]->name()->cStr());
+
 		cur->_offset = layout->structSize();
 		cur->_slot = layout->_nbFields;
 		layout->_structSize += 1 << fields[i]->type()->logSize();

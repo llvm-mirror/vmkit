@@ -41,6 +41,18 @@ J3ObjectHandle* J3ClassLoader::javaClassLoader(bool doPush) {
 	return (_javaClassLoader && doPush) ? J3Thread::get()->push(_javaClassLoader) : _javaClassLoader;
 }
 
+J3ClassLoader* J3ClassLoader::nativeClassLoader(J3ObjectHandle* jloader) {
+	J3ClassLoader* res = (J3ClassLoader*)jloader->getLong(J3Thread::get()->vm()->classClassLoaderVMData);
+
+	if(!res) {
+		vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create(); 
+		res = new(allocator) J3ClassLoader(jloader, allocator);
+		jloader->setLong(J3Thread::get()->vm()->classClassLoaderVMData, (uint64_t)(uintptr_t)res);
+	}
+	
+	return res;
+}
+
 uint32_t J3ClassLoader::interfaceIndex(J3Method* method) {
 	pthread_mutex_lock(&_mutexInterfaces);
 	InterfaceMethodRefMap::iterator it = interfaces.find(method);

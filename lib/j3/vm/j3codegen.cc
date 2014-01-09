@@ -28,6 +28,10 @@ using namespace j3;
 
 #define _onEndPoint() ({ if(onEndPoint()) return; })
 
+#define DEBUG_TYPE_INT    0
+#define DEBUG_TYPE_FLOAT  1
+#define DEBUG_TYPE_OBJECT 2
+
 J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMethod, bool withCaller) :
 	exceptions(this) {
 	
@@ -872,6 +876,24 @@ void J3CodeGen::echoDebugExecute(uint32_t level, const char* msg, ...) {
 	}
 }
 
+void J3CodeGen::echoElement(uint32_t level, uint32_t type, uintptr_t elmt) {
+	if(J3Thread::get()->vm()->options()->debugExecute >= level) {
+		switch(type) {
+			case DEBUG_TYPE_INT:    
+				fprintf(stderr, "%lld", (uint64_t)elmt); 
+				break;
+
+			case DEBUG_TYPE_FLOAT:  
+				fprintf(stderr, "%lf", *((double*)&elmt)); 
+				break;
+
+			case DEBUG_TYPE_OBJECT: 
+				fprintf(stderr, "%p::%s", (void*)elmt, ((J3Object*)elmt)->vt()->type()->name()->cStr());
+				break;
+		}
+	}
+}
+
 void J3CodeGen::translate() {
 	if(vm->options()->debugTranslate > 1)
 		exceptions.dump(vm->options()->debugTranslate-1);
@@ -955,14 +977,39 @@ void J3CodeGen::translate() {
 
 		if(vm->options()->genDebugExecute) {
 			if(vm->options()->genDebugExecute > 1) {
-				for(uint32_t i=0; i<stack.topStack; i++)
-					builder->CreateCall4(funcEchoDebugExecute,
+				llvm::BasicBlock* debug = newBB("debug");
+				llvm::BasicBlock* after = newBB("after");
+				builder
+					->CreateCondBr(builder
+												 ->CreateICmpSGE(builder->CreateLoad(builder
+																														 ->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, 
+																																																		 (uintptr_t)&vm->options()->debugExecute),
+																																							uintPtrTy->getPointerTo())),
+																				builder->getInt32(4)),
+												 debug, after);
+				builder->SetInsertPoint(debug);
+				for(uint32_t i=0; i<stack.topStack; i++) {
+					builder->CreateCall3(funcEchoDebugExecute,
 															 builder->getInt32(4),
-															 buildString("           stack[%d]: %p\n"),
-															 builder->getInt32(i),
-															 stack.at(i, stack.metaStack[i]));
+															 buildString("           stack[%d]: "),
+															 builder->getInt32(i));
+					if(stack.metaStack[i]->isIntegerTy())
+						builder->CreateCall3(funcEchoElement, 
+																 builder->getInt32(4),
+																 builder->getInt32(DEBUG_TYPE_INT),
+																 builder->CreateSExtOrBitCast(stack.at(i, stack.metaStack[i]), uintPtrTy));
+					else if(stack.metaStack[i]->isPointerTy())
+						builder->CreateCall3(funcEchoElement, 
+																 builder->getInt32(4),
+																 builder->getInt32(DEBUG_TYPE_OBJECT),
+																 builder->CreatePtrToInt(stack.at(i, stack.metaStack[i]), uintPtrTy));
+					builder->CreateCall2(funcEchoDebugExecute,
+															 builder->getInt32(4),
+															 buildString("\n"));
+				}
+				builder->CreateBr(after);
+				builder->SetInsertPoint(bb = after);
 			}
-
 			char buf[256];
 			snprintf(buf, 256, "    [%4d] executing: %-20s in %s::%s", javaPC, 
 							 J3Cst::opcodeNames[bc], cl->name()->cStr(), method->name()->cStr());
