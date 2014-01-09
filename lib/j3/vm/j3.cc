@@ -273,6 +273,10 @@ void J3::linkageError(J3Method* method) {
 								method->signature()->name()->cStr());
 }
 
+void J3::negativeArraySizeException(int32_t length) {
+	internalError("negative array size exception: %ld", length);
+}
+
 void J3::arrayStoreException() {
 	internalError("array store exception");
 }

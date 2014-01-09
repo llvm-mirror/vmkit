@@ -486,9 +486,37 @@ jsize JNICALL GetArrayLength(JNIEnv* env, jarray array) {
 	return res;
 }
 
-jobjectArray JNICALL NewObjectArray(JNIEnv* env, jsize len, jclass clazz, jobject init) { enterJVM(); leaveJVM(); NYI(); }
-jobject JNICALL GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL SetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index, jobject val) { enterJVM(); leaveJVM(); NYI(); }
+jobjectArray JNICALL NewObjectArray(JNIEnv* env, jsize length, jclass elementClass, jobject initialElement) { 
+	jobjectArray res;
+	enterJVM(); 
+  if((signed)length < 0) J3::negativeArraySizeException(length);
+	res = J3ObjectHandle::doNewArray(J3ObjectType::nativeClass(elementClass)->getArray(), length);
+	if(initialElement)
+		for(jsize i=0; i<length; i++)
+			res->setObjectAt(i, initialElement);
+	leaveJVM(); 
+	return res;
+}
+
+jobject JNICALL GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index) { 
+	jobject res;
+	enterJVM(); 
+	if(index >= array->arrayLength())
+		J3::arrayIndexOutOfBoundsException();
+	res = array->getObjectAt(index);
+	leaveJVM(); 
+	return res;
+}
+
+void JNICALL SetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index, jobject val) { 
+	enterJVM(); 
+	if(index >= array->arrayLength())
+		J3::arrayIndexOutOfBoundsException();
+	if(!val->vt()->type()->isAssignableTo(array->vt()->type()->asArrayClass()->component()))
+		J3::arrayStoreException();
+	array->setObjectAt(index, val);
+	leaveJVM(); 
+}
 
 jboolean* JNICALL GetBooleanArrayElements(JNIEnv* env, jbooleanArray array, jboolean* isCopy) { enterJVM(); leaveJVM(); NYI(); }
 jbyte* JNICALL GetByteArrayElements(JNIEnv* env, jbyteArray array, jboolean* isCopy) { enterJVM(); leaveJVM(); NYI(); }

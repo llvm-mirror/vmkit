@@ -443,7 +443,16 @@ jobject JNICALL JVM_GetArrayElement(JNIEnv* env, jobject arr, jint index) { ente
 jvalue JNICALL JVM_GetPrimitiveArrayElement(JNIEnv* env, jobject arr, jint index, jint wCode) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_SetArrayElement(JNIEnv* env, jobject arr, jint index, jobject val) { enterJVM(); NYI(); leaveJVM(); }
 void JNICALL JVM_SetPrimitiveArrayElement(JNIEnv* env, jobject arr, jint index, jvalue v, unsigned char vCode) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_NewArray(JNIEnv* env, jclass eltClass, jint length) { enterJVM(); NYI(); leaveJVM(); }
+
+jobject JNICALL JVM_NewArray(JNIEnv* env, jclass eltClass, jint length) { 
+	jobject res;
+	enterJVM(); 
+  if(length < 0) J3::negativeArraySizeException(length);
+	res = J3ObjectHandle::doNewArray(J3Class::nativeClass(eltClass)->getArray(), length);
+	leaveJVM(); 
+	return res;
+}
+
 jobject JNICALL JVM_NewMultiArray(JNIEnv* env, jclass eltClass, jintArray dim) { enterJVM(); NYI(); leaveJVM(); }
 
 /*
