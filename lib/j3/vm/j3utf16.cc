@@ -23,7 +23,7 @@ uint16_t J3Utf16Encoder::nextUtf16() {
 	if(x & 0x80) {
 		uint16_t y = str[pos++];
 		if (x & 0x20) {
-			char z = str[pos++];
+			uint16_t z = str[pos++];
 			x = ((x & 0x0F) << 12) +
 				((y & 0x3F) << 6) +
 				(z & 0x3F);
@@ -42,10 +42,15 @@ size_t J3Utf16Decoder::decode(J3ObjectHandle* charArray, char* dest) {
 
 	for(uint32_t i=0; i<length; i++) {
 		uint16_t c = charArray->getCharacterAt(i);
-		if(c > 127) {
-			J3::internalError("implement me: fun char");
-		} else {
+		if(c < (1<<7)) {
 			dest[pos++] = (char)c;
+		} else if(c < (1<<11)) {
+			dest[pos++] = ((c>>6) & 0x1f) | 0x80;
+			dest[pos++] = c & 0x3f;
+		} else {
+			dest[pos++] = ((c>>12) & 0xf) | (0x80 + 0x20);
+			dest[pos++] = (c>>6) & 0x3f;
+			dest[pos++] = c & 0x3f;
 		}
 	}
 

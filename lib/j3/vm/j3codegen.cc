@@ -28,11 +28,6 @@ using namespace j3;
 
 #define _onEndPoint() ({ if(onEndPoint()) return; })
 
-#define DEBUG_TYPE_INT    0
-#define DEBUG_TYPE_FLOAT  1
-#define DEBUG_TYPE_OBJECT 2
-
-
 J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMethod, bool withCaller) :
 	exceptions(this) {
 	
@@ -849,52 +844,6 @@ llvm::Value* J3CodeGen::buildString(const char* msg) {
 	return builder->CreateGEP(var, gep);
 }
 
-void J3CodeGen::echoDebugEnter(uint32_t isLeave, const char* msg, ...) {
-	static __thread uint32_t prof = 0;
-	if(J3Thread::get()->vm()->options()->debugExecute >= 1) {
-		const char* enter = isLeave ? "leaving" : "entering";
-		va_list va;
-		va_start(va, msg);
-
-		if(!isLeave)
-			prof += J3Thread::get()->vm()->options()->debugEnterIndent;
-		fprintf(stderr, "%*s", prof, "");
-		if(isLeave)
-			prof -= J3Thread::get()->vm()->options()->debugEnterIndent;
-		
-		fprintf(stderr, "%s ", enter);
-		vfprintf(stderr, msg, va);
-		va_end(va);
-	}
-}
-
-void J3CodeGen::echoDebugExecute(uint32_t level, const char* msg, ...) {
-	if(J3Thread::get()->vm()->options()->debugExecute >= level) {
-		va_list va;
-		va_start(va, msg);
-		vfprintf(stderr, msg, va);
-		va_end(va);
-	}
-}
-
-void J3CodeGen::echoElement(uint32_t level, uint32_t type, uintptr_t elmt) {
-	if(J3Thread::get()->vm()->options()->debugExecute >= level) {
-		switch(type) {
-			case DEBUG_TYPE_INT:    
-				fprintf(stderr, "%lld", (uint64_t)elmt); 
-				break;
-
-			case DEBUG_TYPE_FLOAT:  
-				fprintf(stderr, "%lf", *((double*)&elmt)); 
-				break;
-
-			case DEBUG_TYPE_OBJECT: 
-				fprintf(stderr, "%p::%s", (void*)elmt, ((J3Object*)elmt)->vt()->type()->name()->cStr());
-				break;
-		}
-	}
-}
-
 void J3CodeGen::translate() {
 	if(vm->options()->debugTranslate > 1)
 		exceptions.dump(vm->options()->debugTranslate-1);
@@ -958,7 +907,7 @@ void J3CodeGen::translate() {
 		else 
 			opInfos[javaPC].insn = bb->end()->getPrevNode();
 
-		uint8_t bc   = codeReader->readU1();
+		bc = codeReader->readU1();
 
 		switch(vm->options()->debugTranslate) {
 			default:
@@ -976,49 +925,7 @@ void J3CodeGen::translate() {
 				break;
 		}
 
-		if(vm->options()->genDebugExecute) {
-			if(vm->options()->genDebugExecute > 1) {
-				llvm::BasicBlock* debug = newBB("debug");
-				llvm::BasicBlock* after = newBB("after");
-				builder
-					->CreateCondBr(builder
-												 ->CreateICmpSGE(builder->CreateLoad(builder
-																														 ->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, 
-																																																		 (uintptr_t)&vm->options()->debugExecute),
-																																							uintPtrTy->getPointerTo())),
-																				builder->getInt32(4)),
-												 debug, after);
-				builder->SetInsertPoint(debug);
-				for(uint32_t i=0; i<stack.topStack; i++) {
-					builder->CreateCall3(funcEchoDebugExecute,
-															 builder->getInt32(4),
-															 buildString("           stack[%d]: "),
-															 builder->getInt32(i));
-					if(stack.metaStack[i]->isIntegerTy())
-						builder->CreateCall3(funcEchoElement, 
-																 builder->getInt32(4),
-																 builder->getInt32(DEBUG_TYPE_INT),
-																 builder->CreateSExtOrBitCast(stack.at(i, stack.metaStack[i]), uintPtrTy));
-					else if(stack.metaStack[i]->isPointerTy())
-						builder->CreateCall3(funcEchoElement, 
-																 builder->getInt32(4),
-																 builder->getInt32(DEBUG_TYPE_OBJECT),
-																 builder->CreatePtrToInt(stack.at(i, stack.metaStack[i]), uintPtrTy));
-					builder->CreateCall2(funcEchoDebugExecute,
-															 builder->getInt32(4),
-															 buildString("\n"));
-				}
-				builder->CreateBr(after);
-				builder->SetInsertPoint(bb = after);
-			}
-			char buf[256];
-			snprintf(buf, 256, "    [%4d] executing: %-20s in %s::%s", javaPC, 
-							 J3Cst::opcodeNames[bc], cl->name()->cStr(), method->name()->cStr());
-			builder->CreateCall3(funcEchoDebugExecute,
-													 builder->getInt32(2),
-													 buildString("%s\n"),
-													 buildString(buf));
-		}
+		genDebugOpcode();
 
 		switch(bc) {
 			case J3Cst::BC_nop:                           /* 0x00 */
@@ -1642,7 +1549,7 @@ void J3CodeGen::translate() {
 void J3CodeGen::explore() {
 	printf("  exploring bytecode of: %s::%s%s\n", cl->name()->cStr(), method->name()->cStr(), method->signature()->cStr());
 	while(codeReader->remaining()) {
-		uint8_t bc = codeReader->readU1();
+		bc = codeReader->readU1();
 
 		printf("    exploring: %s (%d)\n", J3Cst::opcodeNames[bc], bc);
 		switch(bc) {
@@ -1699,45 +1606,11 @@ void J3CodeGen::generateJava() {
 	stack.init(this, maxStack, allocator->allocate(J3CodeGenVar::reservedSize(maxStack)));
 	ret.init(this, 1, allocator->allocate(J3CodeGenVar::reservedSize(1)));
 
-
-	if(vm->options()->genDebugExecute) {
-		char buf[256];
-		snprintf(buf, 256, "%s::%s", cl->name()->cStr(), method->name()->cStr());
-#if 0
-
-		fprintf(stderr, "bitcast: ");
-		builder->CreateBitCast(funcEchoDebugEnter, builder->getInt8PtrTy())->dump();
-		fprintf(stderr, "\n");
-
-		llvm::Value* args[] = {
-			builder->getInt64(42),   /* patch point id */
-			builder->getInt32(0),    /* pad */
-			builder->CreateBitCast(funcEchoDebugEnter, builder->getInt8PtrTy()),     /* function funcEchoDebugEnter */
-			builder->getInt32(3),    /* number of args */
-			builder->getInt32(0),    /* arg[0] */
-			buildString("bip %s\n"), /* arg[1] */
-			buildString(buf)         /* arg[2] */
-		};
-		builder->CreateCall(patchPointVoid, args)->dump();
-#else
-		builder->CreateCall3(funcEchoDebugEnter,
-												 builder->getInt32(0),
-												 buildString("%s\n"),
-												 buildString(buf));
-#endif
-	}
+	genDebugEnterLeave(0);
 
 	uint32_t n=0, pos=0;
 	for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++) {
 		locals.setAt(flatten(cur), pos);
-
-		if(vm->options()->genDebugExecute)
-			builder->CreateCall4(funcEchoDebugExecute,
-													 builder->getInt32(2),
-													 buildString("            arg[%d]: %p\n"),
-													 builder->getInt32(pos),
-													 locals.at(pos, cur->getType()));
-		
 		pos += (cur->getType() == vm->typeLong->llvmType() || cur->getType() == vm->typeDouble->llvmType()) ? 2 : 1;
 	}
 
@@ -1752,14 +1625,8 @@ void J3CodeGen::generateJava() {
 
 	bbRet = newBB("ret");
 	builder->SetInsertPoint(bbRet);
-	if(vm->options()->genDebugExecute) {
-		char buf[256];
-		snprintf(buf, 256, "%s::%s", cl->name()->cStr(), method->name()->cStr());
-		builder->CreateCall3(funcEchoDebugEnter,
-												 builder->getInt32(1),
-												 buildString("%s\n"),
-												 buildString(buf));
-	}
+
+	genDebugEnterLeave(1);
 
 	if(llvmFunction->getReturnType()->isVoidTy())
 		builder->CreateRetVoid();
