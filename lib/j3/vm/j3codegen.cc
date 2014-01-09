@@ -32,6 +32,7 @@ using namespace j3;
 #define DEBUG_TYPE_FLOAT  1
 #define DEBUG_TYPE_OBJECT 2
 
+
 J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMethod, bool withCaller) :
 	exceptions(this) {
 	
