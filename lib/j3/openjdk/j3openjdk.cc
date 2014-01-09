@@ -189,6 +189,7 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   setProp("java.boot.class.path", vm->options()->bootClasspath);
   setProp("sun.boot.library.path", vm->options()->systemLibraryPath);
   setProp("sun.boot.class.path", vm->options()->bootClasspath);
+  setProp("java.ext.dirs", vm->options()->extDirs);
 
 
 #if 0

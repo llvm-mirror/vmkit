@@ -1392,7 +1392,7 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_if_icmplt:                     /* 0xa1 */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpSLE(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpSLT(val1, val2));
 				break;
 
 			case J3Cst::BC_if_icmpge:                     /* 0xa2 */

@@ -157,25 +157,24 @@ void J3::run() {
 	if(options()->debugLifeCycle)
 		fprintf(stderr, "  Launching the application\n");
 
-	options()->genDebugExecute = 1;
-	options()->debugExecute = 5;
+	options()->debugExecute = 0;
 
-#if 0
+#if 1
 	J3Class* loaderClass = z_class("java/lang/ClassLoader");
 	J3ObjectHandle* sysLoader = z_method(J3Cst::ACC_STATIC, 
 																			 loaderClass,
 																			 names()->get("getSystemClassLoader"),
 																			 names()->get("()Ljava/lang/ClassLoader;"))->invokeStatic().valObject;
-#endif
+#else
 
 	J3ObjectHandle* res = z_method(J3Cst::ACC_STATIC,
 																 z_class("sun/launcher/LauncherHelper"),
 																 names()->get("checkAndLoadMain"),
 																 names()->get("(ZILjava/lang/String;)Ljava/lang/Class;"))
 		->invokeStatic(1, 1, utfToString("HelloWorld")).valObject;
-	
+
 	fprintf(stderr, "system class loader: sysLoader: %p - %p\n", res, res->obj());
-	//    public static ClassLoader getSystemClassLoader() {
+#endif
 }
 
 JNIEnv* J3::jniEnv() {

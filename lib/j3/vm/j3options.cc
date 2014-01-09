@@ -14,6 +14,7 @@ J3Options::J3Options() {
 	bootClasspath = J3Lib::systemClassesArchives();
 	systemLibraryPath = J3Lib::systemLibraryPath();
 	classpath = ".";
+	extDirs = J3Lib::extDirs();
 
 	debugEnterIndent = 1;
 
@@ -25,7 +26,7 @@ J3Options::J3Options() {
 	debugLinking = 0;
 	debugLifeCycle = 1;
 
-	genDebugExecute = 2;//debugExecute ? 1 : 0;
+	genDebugExecute = 0;//debugExecute ? 1 : 0;
 
 	stackSize = 0x80*0x1000;
 }

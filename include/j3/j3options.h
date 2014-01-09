@@ -28,6 +28,7 @@ namespace j3 {
 		const char*    bootClasspath;
 		const char*    systemLibraryPath;
 		const char*    classpath;
+		const char*    extDirs;
 		bool           debugEnterIndent;
 		uint32_t       genDebugExecute;
 		uint32_t       debugExecute;

@@ -63,11 +63,11 @@ void J3CodeGen::echoElement(uint32_t level, uint32_t type, uintptr_t elmt) {
 	if(J3Thread::get()->vm()->options()->debugExecute >= level) {
 		switch(type) {
 			case DEBUG_TYPE_INT:    
-				fprintf(stderr, "%lld", (uint64_t)elmt); 
+				fprintf(stderr, "(long)%lld", (uint64_t)elmt); 
 				break;
 
 			case DEBUG_TYPE_FLOAT:  
-				fprintf(stderr, "%lf", *((double*)&elmt)); 
+				fprintf(stderr, "(double)%lf", *((double*)&elmt)); 
 				break;
 
 			case DEBUG_TYPE_OBJECT: 
@@ -88,7 +88,7 @@ void J3CodeGen::echoElement(uint32_t level, uint32_t type, uintptr_t elmt) {
 						char buf[J3Utf16Decoder::maxSize(content)];
 						J3Utf16Decoder::decode(content, buf);
 						J3Thread::get()->restore(prev);
-						fprintf(stderr, "%s [%s]", pobj->vt()->type()->name()->cStr(), buf);
+						fprintf(stderr, "%s \"%s\"", pobj->vt()->type()->name()->cStr(), buf);
 					} else
 						fprintf(stderr, "%s@%p", pobj->vt()->type()->name()->cStr(), (void*)elmt);
 				} else
@@ -115,6 +115,15 @@ void J3CodeGen::genEchoElement(const char* msg, uint32_t idx, llvm::Value* val) 
 												 builder->getInt32(4),
 												 builder->getInt32(DEBUG_TYPE_OBJECT),
 												 builder->CreatePtrToInt(val, uintPtrTy));
+	else {
+		val = builder->CreateFPExt(val, builder->getDoubleTy());
+		llvm::Value* loc = builder->CreateAlloca(val->getType());
+		builder->CreateStore(val, loc);
+		builder->CreateCall3(funcEchoElement, 
+												 builder->getInt32(4),
+												 builder->getInt32(DEBUG_TYPE_FLOAT),
+												 builder->CreateLoad(builder->CreateBitCast(loc, uintPtrTy->getPointerTo())));
+	}
 	builder->CreateCall2(funcEchoDebugExecute,
 											 builder->getInt32(4),
 											 buildString("\n"));

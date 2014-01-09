@@ -59,6 +59,10 @@ const char* J3Lib::systemLibraryPath() {
 	return OPENJDK_LIBPATH;
 }
 
+const char* J3Lib::extDirs() {
+	return OPENJDK_HOME"jre/lib/ext";
+}
+
 int J3Lib::loadSystemLibraries(std::vector<void*, vmkit::StdAllocator<void*> >* nativeLibraries) {
 	/* JavaRuntimeSupport checks for a symbol defined in this library */
 	void* h0 = dlopen(OPENJDK_LIBPATH"/libinstrument"SHLIBEXT, RTLD_LAZY | RTLD_GLOBAL);
@@ -74,33 +78,3 @@ int J3Lib::loadSystemLibraries(std::vector<void*, vmkit::StdAllocator<void*> >* 
 	return 0;
 }
 
-
-#if 0
-// from openjdk
-
-
-// Creates the initial Thread
-static oop create_initial_thread(Handle thread_group, JavaThread* thread, TRAPS) {
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK_NULL);
-  instanceKlassHandle klass (THREAD, k);
-  instanceHandle thread_oop = klass->allocate_instance_handle(CHECK_NULL);
-
-  java_lang_Thread::set_thread(thread_oop(), thread);
-  java_lang_Thread::set_priority(thread_oop(), NormPriority);
-  thread->set_threadObj(thread_oop());
-
-  Handle string = java_lang_String::create_from_str("main", CHECK_NULL);
-
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, thread_oop,
-                                   klass,
-                                   vmSymbols::object_initializer_name(),
-                                   vmSymbols::threadgroup_string_void_signature(),
-                                   thread_group,
-                                   string,
-                                   CHECK_NULL);
-  return thread_oop();
-}
-
-// Creates the initial ThreadGroup
-#endif
