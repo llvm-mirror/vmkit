@@ -144,7 +144,7 @@ ifndef BASE_OBJ_FILES
 	BASE_OBJ_FILES=$(call find-sources,.cc)
 endif
 BC_FILES+=$(addsuffix .bc,$(addprefix $(BUILD_DIR)/,$(BASE_OBJ_FILES)))
-OBJ_FILES+=$(addsuffix .o,$(addprefix $(BUILD_DIR)/,$(BASE_OBJ_FILES)))
+OBJ_FILES+=$(addsuffix .o,$(addprefix $(BUILD_DIR)/,$(BASE_OBJ_FILES)	$(basename $(notdir $(wildcard $(PROJ_SRC_CWD)/*.s)))))
 DEP_FILES=$(addsuffix .d,$(addprefix $(BUILD_DIR)/,$(BASE_OBJ_FILES)))
 
 check::
@@ -312,21 +312,22 @@ $(GEN_MODULE).a: $(GC_OBJ_FILES)
 	$(Echo) "Assembling '$(notdir $<)'"
 	$(Verb) $(LLC) $(LLCFLAGS) $(GC_LLCFLAGS) -filetype=obj $< -o $@
 
+$(BUILD_DIR)/%.o: %.s $(SELF) $(BUILD_DIR)/.dir
+	$(Echo) "Assembling '$(notdir $<)'"
+	$(Verb) if $(CLANGXX) $(CXXFLAGS) $(DEPEND_OPTIONS) -c "$<" -o $@; $(DOM)
+
 %-gc.bc: %.bc
 	$(Echo) "Preparing GC '$(notdir $<)'"
 	$(Verb) $(LLOPT) -load=$(STATIC_GC_PASS_LIB) $(OPTFLAGS) -StaticGCPass $< -o $@
 
 define define_compile_rule
-$(BUILD_DIR)/%.bc: %$1 $(SELF) $(BUILD_DIR)/.dir
-	$(Echo) "Compiling '$$(notdir $$<)'"
-	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
-
-$(BUILD_DIR)/%.bc: $(BUILD_DIR)/%$1 $(SELF) $(BUILD_DIR)/.dir
+$(BUILD_DIR)/%.bc: $4%$1 $(SELF) $(BUILD_DIR)/.dir
 	$(Echo) "Compiling '$$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 endef
 
-$(eval $(call define_compile_rule,.cc,$(CLANGXX),$(CXXFLAGS)))
+$(eval $(call define_compile_rule,.cc,$(CLANGXX),$(CXXFLAGS),))
+$(eval $(call define_compile_rule,.cc,$(CLANGXX),$(CXXFLAGS),$(BUILD_DIR)/))
 
 %/.dir:
 	$(Verb) mkdir -p $(dir $@) && touch $@

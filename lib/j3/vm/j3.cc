@@ -70,6 +70,7 @@ void J3::start(int argc, char** argv) {
 	_options.process(argc, argv);
 
 	vmkit::ThreadAllocator::initialize(sizeof(J3Thread), options()->stackSize);
+	J3Trampoline::initialize(vmkit::Thread::getThreadMask());
 
 	J3Thread* thread = new J3ThreadBootstrap(this);
 
@@ -159,7 +160,7 @@ void J3::run() {
 
 	options()->debugExecute = 0;
 
-#if 1
+#if 0
 	J3Class* loaderClass = z_class("java/lang/ClassLoader");
 	J3ObjectHandle* sysLoader = z_method(J3Cst::ACC_STATIC, 
 																			 loaderClass,
@@ -311,7 +312,7 @@ void J3::printStackTrace() {
 		} else {
 			Dl_info info;
 			
-			if(dladdr(walker.ip(), &info)) {
+			if(dladdr((void*)((uintptr_t)walker.ip()-1), &info)) {
 				int   status;
 				const char* demangled = abi::__cxa_demangle(info.dli_sname, 0, 0, &status);
 				const char* name = demangled ? demangled : info.dli_sname;
