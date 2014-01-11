@@ -3,11 +3,12 @@
 
 #include <stdint.h>
 
-extern "C" char       trampoline_generic;
-extern "C" char       trampoline_generic_method;
-extern "C" char       trampoline_generic_resolver; 
-extern "C" char       trampoline_generic_end;
-extern "C" void       trampoline_restart(void* ptr, void* saveZone);
+/* defined by j3arch-dep.s */
+extern "C" char      trampoline_generic;
+extern "C" char      trampoline_generic_method;
+extern "C" char      trampoline_generic_resolver; 
+extern "C" char      trampoline_generic_end;
+extern "C" void      trampoline_restart(void* ptr, void* saveZone);
 
 namespace vmkit {
 	class BumpAllocator;
@@ -18,6 +19,9 @@ namespace j3 {
 	class J3Object;
 
 	class J3Trampoline {
+		/* used by j3arch-dep.s */
+		static uintptr_t argOffset;
+
 		static void  interfaceTrampoline(J3Object* obj);
 		static void  staticTrampoline(J3Object* obj, J3Method* ref);
 		static void  virtualTrampoline(J3Object* obj, J3Method* ref);

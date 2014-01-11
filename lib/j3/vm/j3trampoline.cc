@@ -5,13 +5,13 @@
 #include "j3/j3class.h"
 #include "j3/j3.h"
 
-
 using namespace j3;
 
-extern "C" uintptr_t trampoline_offset = (uint64_t)&((J3Thread*)0)->_trampolineArg;
+uintptr_t J3Trampoline::argOffset = (uint64_t)&((J3Thread*)0)->_trampolineArg;
 
 void J3Trampoline::interfaceTrampoline(J3Object* obj) {
 	J3TrampolineArg arg = J3Thread::get()->_trampolineArg;
+
 	J3ObjectHandle* prev = J3Thread::get()->tell();
 	J3ObjectHandle* handle = J3Thread::get()->push(obj);
 	J3ObjectType* type = obj->vt()->type()->asObjectType();
@@ -37,7 +37,9 @@ void J3Trampoline::interfaceTrampoline(J3Object* obj) {
 
 void J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
 	J3TrampolineArg arg = J3Thread::get()->_trampolineArg;
+
 	target->ensureCompiled(0);
+
 	trampoline_restart(target->fnPtr(), &arg);
 }
 	

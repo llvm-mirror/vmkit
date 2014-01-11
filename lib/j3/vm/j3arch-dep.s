@@ -1,5 +1,5 @@
 	.section	__DATA,__data
-	.globl _trampoline_offset, __ZN5vmkit15ThreadAllocator6_magicE
+	.globl __ZN2j312J3Trampoline9argOffsetE, __ZN5vmkit15ThreadAllocator6_magicE
 	.globl _trampoline_generic, _trampoline_generic_method, _trampoline_generic_resolver, _trampoline_generic_end
 	
 _trampoline_generic:
@@ -21,7 +21,7 @@ _trampoline_generic_end:
 _trampoline_save:
 	mov 		%rsp, %rax
 	and 		__ZN5vmkit15ThreadAllocator6_magicE(%rip), %rax
-	add 		_trampoline_offset(%rip), %rax
+	add 		__ZN2j312J3Trampoline9argOffsetE(%rip), %rax
 
 	mov 		%xmm0, 0(%rax)
 	mov 		%xmm1, 16(%rax)
