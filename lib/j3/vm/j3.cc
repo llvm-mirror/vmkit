@@ -70,7 +70,6 @@ void J3::start(int argc, char** argv) {
 	_options.process(argc, argv);
 
 	vmkit::ThreadAllocator::initialize(sizeof(J3Thread), options()->stackSize);
-	J3Trampoline::initialize(vmkit::Thread::getThreadMask());
 
 	J3Thread* thread = new J3ThreadBootstrap(this);
 

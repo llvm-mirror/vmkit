@@ -13,11 +13,11 @@ void Thread::sigsegvHandler(int n, siginfo_t* info, void* context) {
 }
 
 void* Thread::operator new(size_t n) {
-	return ThreadAllocator::allocator()->allocate();
+	return ThreadAllocator::allocate();
 }
 
 void Thread::operator delete(void* p) {
-	ThreadAllocator::allocator()->release(p);
+	ThreadAllocator::release(p);
 }
 
 Thread* Thread::get() {
@@ -29,7 +29,7 @@ Thread* Thread::get(void* ptr) {
 }
 
 uintptr_t Thread::getThreadMask() {
-	return ThreadAllocator::allocator()->magic();
+	return ThreadAllocator::magic();
 }
 
 void Thread::registerSignalInternal(int n, sa_action_t handler, bool altStack) {
@@ -58,9 +58,9 @@ void* Thread::doRun(void* _thread) {
   // Set the alternate stack as the second page of the thread's
   // stack.
   stack_t st;
-  st.ss_sp = ThreadAllocator::allocator()->alternateStackAddr(thread);
+  st.ss_sp = ThreadAllocator::alternateStackAddr(thread);
   st.ss_flags = 0;
-  st.ss_size = ThreadAllocator::allocator()->alternateStackSize(thread);
+  st.ss_size = ThreadAllocator::alternateStackSize(thread);
   sigaltstack(&st, NULL);
 
 	thread->registerSignalInternal(SIGSEGV, sigsegvHandler, 1);
@@ -74,7 +74,7 @@ void Thread::start() {
 	pthread_attr_t attr;
 
 	pthread_attr_init(&attr);
-	pthread_attr_setstack(&attr, ThreadAllocator::allocator()->stackAddr(this), ThreadAllocator::allocator()->stackSize(this));
+	pthread_attr_setstack(&attr, ThreadAllocator::stackAddr(this), ThreadAllocator::stackSize(this));
 
 	pthread_create(&_tid, &attr, doRun, this);
 

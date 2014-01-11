@@ -8,8 +8,10 @@
 
 using namespace j3;
 
-void* J3Trampoline::interfaceTrampoline(J3Object* obj) {
-	J3::internalError("implement me it");
+extern "C" uintptr_t trampoline_offset = (uint64_t)&((J3Thread*)0)->_trampolineArg;
+
+void J3Trampoline::interfaceTrampoline(J3Object* obj) {
+	J3TrampolineArg arg = J3Thread::get()->_trampolineArg;
 	J3ObjectHandle* prev = J3Thread::get()->tell();
 	J3ObjectHandle* handle = J3Thread::get()->push(obj);
 	J3ObjectType* type = obj->vt()->type()->asObjectType();
@@ -30,20 +32,17 @@ void* J3Trampoline::interfaceTrampoline(J3Object* obj) {
 
 	J3Thread::get()->restore(prev);
 
-	return res;
+	trampoline_restart(res, &arg);
 }
 
-void* J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
-	char saveZone[TRAMPOLINE_SAVE_ZONE];
-	memcpy(saveZone, J3Thread::get()->_trampolineSaveZone, TRAMPOLINE_SAVE_ZONE);
+void J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
+	J3TrampolineArg arg = J3Thread::get()->_trampolineArg;
 	target->ensureCompiled(0);
-	//return target->fnPtr();
-	trampoline_restart(target->fnPtr(), saveZone);
-	return 0;
+	trampoline_restart(target->fnPtr(), &arg);
 }
 	
-void* J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
-	J3::internalError("implement me vt");
+void J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
+	J3TrampolineArg arg = J3Thread::get()->_trampolineArg;
 	J3ObjectHandle* prev = J3Thread::get()->tell();
 	J3ObjectHandle* handle = J3Thread::get()->push(obj);
 	J3ObjectType* cl = handle->vt()->type()->asObjectType();
@@ -55,7 +54,7 @@ void* J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
 
 	J3Thread::get()->restore(prev);
 
-	return res;
+	trampoline_restart(res, &arg);
 }
 
 void* J3Trampoline::buildTrampoline(vmkit::BumpAllocator* allocator, J3Method* m, void* tra) {	
@@ -80,11 +79,5 @@ void* J3Trampoline::buildVirtualTrampoline(vmkit::BumpAllocator* allocator, J3Me
 
 void* J3Trampoline::buildInterfaceTrampoline(vmkit::BumpAllocator* allocator) {
 	return buildTrampoline(allocator, 0, (void*)interfaceTrampoline);
-}
-
-void J3Trampoline::initialize(uintptr_t mask) {
-	J3Thread* thread = J3Thread::get();
-	trampoline_mask = mask;
-	trampoline_offset = (uintptr_t)&thread->_trampolineSaveZone - (uintptr_t)thread;
 }
 

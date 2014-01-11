@@ -3,13 +3,10 @@
 
 #include <stdint.h>
 
-extern "C" uintptr_t  trampoline_mask;
-extern "C" uintptr_t  trampoline_offset;
 extern "C" char       trampoline_generic;
 extern "C" char       trampoline_generic_method;
 extern "C" char       trampoline_generic_resolver; 
 extern "C" char       trampoline_generic_end;
-extern "C" char       trampoline_save;
 extern "C" void       trampoline_restart(void* ptr, void* saveZone);
 
 namespace vmkit {
@@ -21,9 +18,9 @@ namespace j3 {
 	class J3Object;
 
 	class J3Trampoline {
-		static void* interfaceTrampoline(J3Object* obj);
-		static void* staticTrampoline(J3Object* obj, J3Method* ref);
-		static void* virtualTrampoline(J3Object* obj, J3Method* ref);
+		static void  interfaceTrampoline(J3Object* obj);
+		static void  staticTrampoline(J3Object* obj, J3Method* ref);
+		static void  virtualTrampoline(J3Object* obj, J3Method* ref);
 
 		static void* buildTrampoline(vmkit::BumpAllocator* allocator, J3Method* method, void* tra);
 	public:

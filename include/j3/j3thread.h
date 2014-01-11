@@ -17,7 +17,6 @@ namespace j3 {
 	class J3Thread : public vmkit::Thread {
 		friend class J3Monitor;
 		friend class J3CodeGen;
-		friend class J3Trampoline;
 
 		static const uint32_t gepInterfaceMethodIndex = 1;
 		uint32_t              _interfaceMethodIndex;
@@ -28,7 +27,9 @@ namespace j3 {
 		J3LocalReferences          _localReferences;
 		J3ObjectHandle*            _pendingException;
 		J3ObjectHandle             _javaThread;
-		char                       _trampolineSaveZone[TRAMPOLINE_SAVE_ZONE];
+	public:
+		J3TrampolineArg            _trampolineArg;
+	private:
 
 		virtual void run();
 		static void doRun();

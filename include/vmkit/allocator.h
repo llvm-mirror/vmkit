@@ -119,29 +119,26 @@ namespace vmkit {
 	class ThreadAllocator {
 		static const uint32_t refill = 128;
 
-		static ThreadAllocator* _allocator;
+		static pthread_mutex_t     mutex;
+		static uintptr_t           baseStack;
+		static uintptr_t           topStack;
+		static uintptr_t           _magic;
+		static std::vector<void*>* spaces;
+		static std::vector<void*>* freeThreads;
 
-		pthread_mutex_t       mutex;
-		std::vector<void*>    spaces;
-		std::vector<void*>    freeThreads;
-		uintptr_t             baseStack;
-		uintptr_t             topStack;
-
-		ThreadAllocator(uintptr_t minThreadStruct, uintptr_t minFullSize);
 	public:
 		static void initialize(uintptr_t minThreadStruct, uintptr_t minFullSize);
-		static ThreadAllocator* allocator() { return _allocator; }
 
-		void* allocate();
-		void  release(void* thread);
+		static void* allocate();
+		static void  release(void* thread);
 
-		void*     alternateStackAddr(void* thread);
-		size_t    alternateStackSize(void* thread); 
+		static void*     alternateStackAddr(void* thread);
+		static size_t    alternateStackSize(void* thread); 
 
-		void*     stackAddr(void* thread);
-		size_t    stackSize(void* thread); 
+		static void*     stackAddr(void* thread);
+		static size_t    stackSize(void* thread); 
 
-		uintptr_t magic() { return -topStack; }
+		static uintptr_t magic() { return _magic; }
 	};
 } // end namespace vmkit
 

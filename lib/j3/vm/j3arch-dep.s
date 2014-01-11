@@ -1,44 +1,27 @@
 	.section	__DATA,__data
-	.globl	_trampoline_mask, _trampoline_offset
+	.globl _trampoline_offset, __ZN5vmkit15ThreadAllocator6_magicE
 	.globl _trampoline_generic, _trampoline_generic_method, _trampoline_generic_resolver, _trampoline_generic_end
 	
-_trampoline_mask:
-	.quad	0
-_trampoline_offset:
-	.quad 0
-	
 _trampoline_generic:
-	.byte  0x48, 0xb8     			/* mov _trampoline_save, %rax (absolute adressing, what is the mnemonic?) */
-	.quad  _trampoline_save
+	movabsq $_trampoline_save, %rax   /* absolute to avoid any problem of relocation */
 	callq		*%rax
-	mov			%rsp,  184(%rax)
-	.byte 0x48, 0xbe  					/* mov _trampoline_generic_method, %rsi */
+	.byte 0x48, 0xbe  					      /* movabsq _trampoline_generic_method, %rsi (i.e., replace second arg) */
 _trampoline_generic_method:
 	.quad 0
-	.byte 0x48, 0xb8  					/* mov _trampoline_generic_resolver, %rax */
+	.byte 0x48, 0xb8  					      /* movabsq _trampoline_generic_resolver, %rax */
 _trampoline_generic_resolver:	
 	.quad 0
 	jmpq *%rax
 _trampoline_generic_end:	
 
 	.section	__TEXT,__text,regular,pure_instructions
-	.globl _trampoline_save, _trampoline_restart
+	.globl _trampoline_restart
 	.align	4
 	
-	/* compute the adress of the save zone area */
-	/* and return the adress in %rax */
-_trampoline_get_save_zone:	
-	push 		%rbx
-	mov 		%rsp, %rax
-	movq 		_trampoline_mask(%rip), %rbx
-	and 		%rbx, %rax
-	movq 		_trampoline_offset(%rip), %rbx
-	add			%rbx, %rax
-	pop			%rbx
-	ret
-	
 _trampoline_save:
-	call    _trampoline_get_save_zone
+	mov 		%rsp, %rax
+	and 		__ZN5vmkit15ThreadAllocator6_magicE(%rip), %rax
+	add 		_trampoline_offset(%rip), %rax
 
 	mov 		%xmm0, 0(%rax)
 	mov 		%xmm1, 16(%rax)
@@ -55,11 +38,14 @@ _trampoline_save:
 	mov 		%r8,   160(%rax)
 	mov 		%r9,   168(%rax)
 	mov 		%rbp,  176(%rax)
-
+	mov     %rsp,  184(%rax)
+	addq		$8, 184(%rax)    /* my own call :) */
+	
 	ret
 
-	/* %rdi contains the function */
-	/* %rsi contains the save zone area */
+	/* void trampoline_restart(void* ptr, void* saveZone); */
+	/* %rsi: saveZone */
+	/* %rdi: pointer to function */
 _trampoline_restart:
 	mov     %rdi, %rax
 
