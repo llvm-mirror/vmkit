@@ -1,20 +1,15 @@
 	.section	__DATA,__data
 	.globl	_trampoline_mask, _trampoline_offset
+	.globl _trampoline_generic, _trampoline_generic_method, _trampoline_generic_resolver, _trampoline_generic_end
 	
 _trampoline_mask:
 	.quad	0
 _trampoline_offset:
 	.quad 0
-
-	.section	__TEXT,__text,regular,pure_instructions
-	.globl _trampoline_generic, _trampoline_generic_save, _trampoline_save, _trampoline_generic_method
-	.globl _trampoline_generic_resolver, _trampoline_generic_end, _trampoline_restart
-	.align	4
-
+	
 _trampoline_generic:
-	.byte  0x48, 0xb8     			/* mov _trampoline_save, %rax */
-_trampoline_generic_save:	
-	.quad   0
+	.byte  0x48, 0xb8     			/* mov _trampoline_save, %rax (absolute adressing, what is the mnemonic?) */
+	.quad  _trampoline_save
 	callq		*%rax
 	mov			%rsp,  184(%rax)
 	.byte 0x48, 0xbe  					/* mov _trampoline_generic_method, %rsi */
@@ -25,6 +20,10 @@ _trampoline_generic_resolver:
 	.quad 0
 	jmpq *%rax
 _trampoline_generic_end:	
+
+	.section	__TEXT,__text,regular,pure_instructions
+	.globl _trampoline_save, _trampoline_restart
+	.align	4
 	
 	/* compute the adress of the save zone area */
 	/* and return the adress in %rax */

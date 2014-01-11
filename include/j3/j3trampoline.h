@@ -6,7 +6,6 @@
 extern "C" uintptr_t  trampoline_mask;
 extern "C" uintptr_t  trampoline_offset;
 extern "C" char       trampoline_generic;
-extern "C" char       trampoline_generic_save;
 extern "C" char       trampoline_generic_method;
 extern "C" char       trampoline_generic_resolver; 
 extern "C" char       trampoline_generic_end;

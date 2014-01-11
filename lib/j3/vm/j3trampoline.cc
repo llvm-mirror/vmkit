@@ -64,7 +64,6 @@ void* J3Trampoline::buildTrampoline(vmkit::BumpAllocator* allocator, J3Method* m
 
 	memcpy(res, &trampoline_generic, trampolineSize);
 
-	*((char**)(res + (&trampoline_generic_save - &trampoline_generic))) = &trampoline_save;
 	*((void**)(res + (&trampoline_generic_method - &trampoline_generic))) = (void*)m;
 	*((void**)(res + (&trampoline_generic_resolver - &trampoline_generic))) = tra;
 
