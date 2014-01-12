@@ -75,26 +75,9 @@ void J3Lib::loadSystemLibraries(J3ClassLoader* loader) {
 }
 
 J3ObjectHandle* J3Lib::newDirectByteBuffer(void* address, size_t len) {
-#if 0
-  JavaObject* res = 0;
-  llvm_gcroot(res, 0);
-
-  BEGIN_JNI_EXCEPTION
-
-  JavaThread* th = JavaThread::get();
-  Jnjvm* myvm = th->getJVM();
-  UserClass* BB = myvm->upcalls->newDirectByteBuffer;
-
-  res = BB->doNew(myvm);
-
-  myvm->upcalls->InitDirectByteBuffer->invokeIntSpecial(myvm, BB, res,
-    (uint64_t)(uintptr_t)address, (int)capacity);
-
-  jobject ret = (jobject)th->pushJNIRef(res);
-  RETURN_FROM_JNI(ret);
-  END_JNI_EXCEPTION
-
-  RETURN_FROM_JNI(0);
-#endif
-	J3::internalError("not yet implemented");
+	J3* vm = J3Thread::get()->vm();
+	J3Class* cl = vm->initialClassLoader->loadClass(vm->names()->get("java/nio/DirectByteBuffer"));
+	J3ObjectHandle* res = J3ObjectHandle::doNewObject(cl);
+	cl->findMethod(0, vm->initName, vm->initialClassLoader->getSignature(0, vm->names()->get("(JI)V")))->invokeSpecial(res, address, len);
+	return res;
 }
