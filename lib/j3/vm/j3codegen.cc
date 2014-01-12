@@ -1144,7 +1144,11 @@ void J3CodeGen::translate() {
 				stack.pop();
 				break;
 
-			case J3Cst::BC_pop2: nyi();                   /* 0x58 */
+			case J3Cst::BC_pop2:                          /* 0x58 */
+				val1 = stack.pop();
+				if(!val1->getType()->isDoubleTy() && !val1->getType()->isIntegerTy(64))
+					stack.pop();
+				break;
 
 			case J3Cst::BC_dup:                           /* 0x59 */
 				stack.push(stack.top());
@@ -1520,7 +1524,10 @@ void J3CodeGen::translate() {
 				monitorExit(stack.pop());
 				break;
 
-			case J3Cst::BC_wide: nyi();                   /* 0xc4 */
+			case J3Cst::BC_wide:                          /* 0xc4 */
+				isWide = 1;
+				break;
+
 			case J3Cst::BC_multianewarray: nyi();         /* 0xc5 */
 			case J3Cst::BC_ifnull:                        /* 0xc6 */
 				condBr(builder->CreateIsNull(stack.pop()));

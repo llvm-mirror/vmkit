@@ -314,8 +314,8 @@ void J3::printStackTrace() {
 
 		if(sf) {
 			J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
-			fprintf(stderr, "    in %s %s::%s index %d\n", m->signature()->name()->cStr(), m->cl()->name()->cStr(), m->name()->cStr(),
-							sf->sourceIndex());
+			fprintf(stderr, "    in %s::%s%s index %d\n", m->cl()->name()->cStr(), m->name()->cStr(),
+							m->signature()->name()->cStr(), sf->sourceIndex());
 		} else {
 			Dl_info info;
 			
