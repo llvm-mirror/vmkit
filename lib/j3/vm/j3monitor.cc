@@ -16,11 +16,16 @@ bool J3Monitor::isDeflatable() {
 	return pthread_mutex_trylock(&mutex) == 0;
 }
 
-void J3Monitor::prepare(J3Object* _object, uintptr_t _header, J3LockRecord* _record) {
+J3Monitor* J3Monitor::prepare(J3Object* _object, uintptr_t _header, J3LockRecord* _record) {
 	object = _object;
 	record = _record;
 	header = _header;
 	owner  = _record ? J3Thread::get(_record) : 0;
+	return this;
+}
+
+J3Monitor* J3Monitor::prepare() {
+	return prepare(0, 0, 0);
 }
 
 void J3Monitor::checkRecord() {

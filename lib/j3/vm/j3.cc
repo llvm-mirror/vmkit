@@ -273,6 +273,10 @@ void J3::linkageError(J3Method* method) {
 								method->signature()->name()->cStr());
 }
 
+void J3::outOfMemoryError() {
+	internalError("out of memory error");
+}
+
 void J3::negativeArraySizeException(int32_t length) {
 	internalError("negative array size exception: %ld", length);
 }
@@ -287,6 +291,10 @@ void J3::arrayIndexOutOfBoundsException() {
 
 void J3::illegalMonitorStateException() {
 	internalError("illegal monitor state exception");
+}
+
+void J3::illegalArgumentException(const char* msg) {
+	internalError("illegal argument exception: %s", msg);
 }
 
 void J3::vinternalError(const char* msg, va_list va) {

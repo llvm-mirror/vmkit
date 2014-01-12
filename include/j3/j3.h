@@ -148,6 +148,8 @@ namespace j3 {
 																		J3ObjectType* clName, const vmkit::Name* name, J3Type* type) __attribute__((noreturn));
 		static void    linkageError(J3Method* method) __attribute__((noreturn));
 
+		static void    outOfMemoryError() __attribute__((noreturn));
+
 		static void    nullPointerException() __attribute__((noreturn));
 		static void    classCastException() __attribute__((noreturn));
 
@@ -156,6 +158,8 @@ namespace j3 {
 		static void    arrayIndexOutOfBoundsException() __attribute__((noreturn));
 
 		static void    illegalMonitorStateException() __attribute__((noreturn));
+
+		static void    illegalArgumentException(const char* msg) __attribute__((noreturn));
 
 		static void    printStackTrace();
 

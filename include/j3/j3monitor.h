@@ -40,7 +40,8 @@ namespace j3 {
 		void init(J3Monitor* next); /* acquire the lock for the next inflate */		
 	public:
 		bool isDeflatable(); /* acquire the lock for the next inflate */
-		void prepare(J3Object* _object, uintptr_t header, J3LockRecord* _record);
+		J3Monitor* prepare(J3Object* _object, uintptr_t header, J3LockRecord* _record);
+		J3Monitor* prepare();
 
 		void lock();
 		void unlock();

@@ -11,7 +11,7 @@
 using namespace j3;
 
 extern "C" {
-	JNIEXPORT void JNICALL Java_sun_misc_Unsafe_registerNatives(JNIEnv* env, jobject unsafe) {
+	JNIEXPORT void JNICALL Java_sun_misc_Unsafe_registerNatives(JNIEnv* env, jclass clazz) {
 		// Nothing, we define the Unsafe methods with the expected signatures.
 	}
 
@@ -66,11 +66,19 @@ extern "C" {
 	}
 
 	JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_allocateMemory(JNIEnv* env, jobject unsafe, jlong bytes) {
-		return (jlong)(uintptr_t)malloc(bytes); 
+		jlong res;
+		enterJVM();
+		res = (jlong)(uintptr_t)malloc(bytes); 
+		if(!res)
+			J3::outOfMemoryError();
+		leaveJVM();
+		return res;
 	}
 
 	JNIEXPORT void JNICALL Java_sun_misc_Unsafe_freeMemory(JNIEnv* env, jobject unsafe, jlong addr) {
+		enterJVM();
 		free((void*)(uintptr_t)addr);
+		leaveJVM();
 	}
 
 #define unsafeGetPut(jtype, id, j3id, sign)															\

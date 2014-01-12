@@ -6,6 +6,7 @@
 #include "j3/j3method.h"
 #include "j3/j3thread.h"
 #include "j3/j3utf16.h"
+#include "j3/j3lib.h"
 #include <stdlib.h>
 
 #define NYI() { J3Thread::get()->vm()->internalError("not yet implemented: '%s'", __PRETTY_FUNCTION__); }
@@ -582,7 +583,14 @@ jboolean JNICALL ExceptionCheck(JNIEnv* env) {
 	return J3Thread::get()->hasPendingException();
 }
 
-jobject JNICALL NewDirectByteBuffer(JNIEnv* env, void* address, jlong capacity) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL NewDirectByteBuffer(JNIEnv* env, void* address, jlong capacity) { 
+	jobject res;
+	enterJVM(); 
+	res = J3Lib::newDirectByteBuffer(address, capacity);
+	leaveJVM(); 
+	return res;
+}
+
 void* JNICALL GetDirectBufferAddress(JNIEnv* env, jobject buf) { enterJVM(); leaveJVM(); NYI(); }
 jlong JNICALL GetDirectBufferCapacity(JNIEnv* env, jobject buf) { enterJVM(); leaveJVM(); NYI(); }
 

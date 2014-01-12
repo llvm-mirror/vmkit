@@ -7,6 +7,7 @@
 namespace j3 {
 	class J3;
 	class J3ClassLoader;
+	class J3ObjectHandle;
 
 	class J3Lib {
 	public:
@@ -16,6 +17,8 @@ namespace j3 {
 		static void         loadSystemLibraries(J3ClassLoader* loader);
 
 		static void         bootstrap(J3* vm);
+
+		static J3ObjectHandle* newDirectByteBuffer(void* address, size_t len);
 	};
 }
 

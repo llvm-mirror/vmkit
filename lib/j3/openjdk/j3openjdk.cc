@@ -12,6 +12,8 @@
 #include <dlfcn.h>
 #include <sys/utsname.h>
 #include <sys/time.h>
+#include <stdlib.h>
+#include <fcntl.h>
 
 using namespace j3;
 
@@ -1200,14 +1202,43 @@ jint JNICALL JVM_GetLastErrorString(char *buf, int len) { enterJVM(); leaveJVM()
  * cleanup, such as removing redundant separator characters.  It modifies
  * the given pathname string in place.
  */
-char * JNICALL JVM_NativePath(char *) { enterJVM(); leaveJVM(); NYI(); }
+char* JNICALL JVM_NativePath(char* path) { 
+	char buf[PATH_MAX];
+	enterJVM(); 
+	realpath(path, buf);
+	strcpy(path, buf);
+	leaveJVM(); 
+	return path;
+}
 
 /*
  * Open a file descriptor. This function returns a negative error code
  * on error, and a non-negative integer that is the file descriptor on
  * success.
  */
-jint JNICALL JVM_Open(const char *fname, jint flags, jint mode) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Open(const char *fname, jint flags, jint mode) { 
+	jint res;
+	enterJVM(); 
+  // Special flag the JVM uses
+  // means to delete the file after opening.
+  static const int O_DELETE = 0x10000;
+	res = open(fname, flags & ~O_DELETE, mode);
+
+  // Map EEXIST to special JVM_EEXIST, otherwise all errors are -1
+  if (res < 0) {
+    if (errno == EEXIST)
+      res = JVM_EEXIST;
+		else
+			res = -1;
+	}
+
+  // Handle O_DELETE flag, if specified
+  if (flags & O_DELETE)
+    unlink(fname);
+	leaveJVM(); 
+
+	return res;
+}
 
 /*
  * Close a file descriptor. This function returns -1 on error, and 0
@@ -1327,10 +1358,35 @@ int jio_vfprintf(FILE *f, const char *fmt, va_list va) {
 }
 
 
-void * JNICALL JVM_RawMonitorCreate(void) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL JVM_RawMonitorDestroy(void *mon) { enterJVM(); leaveJVM(); NYI(); }
-jint JNICALL JVM_RawMonitorEnter(void *mon) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL JVM_RawMonitorExit(void *mon) { enterJVM(); leaveJVM(); NYI(); }
+void* JNICALL JVM_RawMonitorCreate(void) { 
+	void* res;
+	enterJVM();
+	res = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+	if(!res)
+		J3::outOfMemoryError();
+	leaveJVM(); 
+	return res;
+}
+
+void JNICALL JVM_RawMonitorDestroy(void *mon) { 
+	enterJVM(); 
+	free(mon);
+	leaveJVM(); 
+}
+
+jint JNICALL JVM_RawMonitorEnter(void *mon) { 
+	jint res;
+	enterJVM(); 
+	res = pthread_mutex_lock((pthread_mutex_t*)mon);
+	leaveJVM(); 
+	return res;
+}
+
+void JNICALL JVM_RawMonitorExit(void *mon) { 
+	enterJVM(); 
+	pthread_mutex_unlock((pthread_mutex_t*)mon);
+	leaveJVM(); 
+}
 
 /*
  * java.lang.management support
