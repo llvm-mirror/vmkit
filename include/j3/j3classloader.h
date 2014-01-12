@@ -49,11 +49,13 @@ namespace j3 {
 		pthread_mutex_t                      _mutexMethodTypes;
 		vmkit::NameMap<J3Signature*>::map   methodTypes;
 
-	protected:
+		pthread_mutex_t                                 _mutexNativeLibraries;
 		std::vector<void*, vmkit::StdAllocator<void*> > nativeLibraries;
 
 	public:
 		J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
+
+		void                          addNativeLibrary(void* handle);
 
 		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end, bool unify);
 		J3Type*                       getType(J3ObjectType* from, const vmkit::Name* type);       /* find a type */

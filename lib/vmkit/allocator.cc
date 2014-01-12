@@ -87,11 +87,11 @@ void BumpAllocator::unmap(void* p, size_t n) {
 }
 
 void PermanentObject::operator delete(void* ptr) {
-	Thread::get()->vm()->internalError("should not happen");
+	//Thread::get()->vm()->internalError("should not happen");
 }
   
 void PermanentObject::operator delete[](void* ptr) {
-	Thread::get()->vm()->internalError("should not happen");
+	//Thread::get()->vm()->internalError("should not happen");
 }
 
 void ThreadAllocator::initialize(uintptr_t minThreadStruct, uintptr_t minFullSize) {

@@ -8,4 +8,7 @@ namespace j3 {
 	extern struct JNIInvokeInterface_ javaVMTable;
 }
 
+#define enterJVM() try {
+#define leaveJVM() } catch(void* e) { J3Thread::get()->setPendingException(J3Thread::get()->push((J3Object*)e)); }
+
 #endif

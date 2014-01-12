@@ -15,9 +15,6 @@
 
 using namespace j3;
 
-#define enterJVM()
-#define leaveJVM()
-
 #define NYI() { J3Thread::get()->vm()->internalError("not yet implemented: '%s'", __PRETTY_FUNCTION__); }
 
 /*************************************************************************
@@ -35,8 +32,9 @@ jint JNICALL JVM_GetInterfaceVersion(void) {
  * java.lang.Object
  */
 jint JNICALL JVM_IHashCode(JNIEnv* env, jobject obj) { 
+	uint32_t res;
 	enterJVM(); 
-	uint32_t res = obj ? obj->hashCode() : 0;
+	res = obj ? obj->hashCode() : 0;
 	leaveJVM(); 
 	return res;
 }
@@ -47,8 +45,8 @@ void JNICALL JVM_MonitorWait(JNIEnv* env, jobject obj, jlong ms) {
 	leaveJVM(); 
 }
 
-void JNICALL JVM_MonitorNotify(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_MonitorNotifyAll(JNIEnv* env, jobject obj) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_MonitorNotify(JNIEnv* env, jobject obj) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_MonitorNotifyAll(JNIEnv* env, jobject obj) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL JVM_Clone(JNIEnv* env, jobject obj) { 
 	jobject res;
 	enterJVM(); 
@@ -273,14 +271,14 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
 /*
  * java.io.File
  */
-void JNICALL JVM_OnExit(void (*func)(void)) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_OnExit(void (*func)(void)) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.Runtime
  */
-void JNICALL JVM_Exit(jint code) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_Halt(jint code) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_GC(void) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_Exit(jint code) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_Halt(jint code) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_GC(void) { enterJVM(); leaveJVM(); NYI(); }
 
 /* Returns the number of real-time milliseconds that have elapsed since the
  * least-recently-inspected heap object was last inspected by the garbage
@@ -296,12 +294,12 @@ void JNICALL JVM_GC(void) { enterJVM(); NYI(); leaveJVM(); }
  * longer strongly reachable may have to be inspected multiple times before it
  * can be reclaimed.
  */
-jlong JNICALL JVM_MaxObjectInspectionAge(void) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_TraceInstructions(jboolean on) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_TraceMethodCalls(jboolean on) { enterJVM(); NYI(); leaveJVM(); }
-jlong JNICALL JVM_TotalMemory(void) { enterJVM(); NYI(); leaveJVM(); }
-jlong JNICALL JVM_FreeMemory(void) { enterJVM(); NYI(); leaveJVM(); }
-jlong JNICALL JVM_MaxMemory(void) { enterJVM(); NYI(); leaveJVM(); }
+jlong JNICALL JVM_MaxObjectInspectionAge(void) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_TraceInstructions(jboolean on) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_TraceMethodCalls(jboolean on) { enterJVM(); leaveJVM(); NYI(); }
+jlong JNICALL JVM_TotalMemory(void) { enterJVM(); leaveJVM(); NYI(); }
+jlong JNICALL JVM_FreeMemory(void) { enterJVM(); leaveJVM(); NYI(); }
+jlong JNICALL JVM_MaxMemory(void) { enterJVM(); leaveJVM(); NYI(); }
 jint JNICALL JVM_ActiveProcessorCount(void) { 
 	return sysconf(_SC_NPROCESSORS_ONLN);
 }
@@ -310,11 +308,13 @@ void* JNICALL JVM_LoadLibrary(const char *name) {
 	void* res;
 	enterJVM(); 
 	res = dlopen(name, RTLD_LAZY | RTLD_LOCAL);
+	if(res)
+		J3Thread::get()->vm()->initialClassLoader->addNativeLibrary(res);
 	leaveJVM(); 
 	return res;
 }
 
-void JNICALL JVM_UnloadLibrary(void * handle) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_UnloadLibrary(void * handle) { enterJVM(); leaveJVM(); NYI(); }
 
 void * JNICALL JVM_FindLibraryEntry(void *handle, const char *name) { 
 	void* res;
@@ -335,25 +335,25 @@ jboolean JNICALL JVM_IsSupportedJNIVersion(jint version) {
 /*
  * java.lang.Float and java.lang.Double
  */
-jboolean JNICALL JVM_IsNaN(jdouble d) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_IsNaN(jdouble d) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.Throwable
  */
-void JNICALL JVM_FillInStackTrace(JNIEnv* env, jobject throwable) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_GetStackTraceDepth(JNIEnv* env, jobject throwable) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_GetStackTraceElement(JNIEnv* env, jobject throwable, jint index) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_FillInStackTrace(JNIEnv* env, jobject throwable) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_GetStackTraceDepth(JNIEnv* env, jobject throwable) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_GetStackTraceElement(JNIEnv* env, jobject throwable, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.Compiler
  */
-void JNICALL JVM_InitializeCompiler (JNIEnv* env, jclass compCls) { enterJVM(); NYI(); leaveJVM(); }
-jboolean JNICALL JVM_IsSilentCompiler(JNIEnv* env, jclass compCls) { enterJVM(); NYI(); leaveJVM(); }
-jboolean JNICALL JVM_CompileClass(JNIEnv* env, jclass compCls, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
-jboolean JNICALL JVM_CompileClasses(JNIEnv* env, jclass cls, jstring jname) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_CompilerCommand(JNIEnv* env, jclass compCls, jobject arg) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_EnableCompiler(JNIEnv* env, jclass compCls) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_DisableCompiler(JNIEnv* env, jclass compCls) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_InitializeCompiler (JNIEnv* env, jclass compCls) { enterJVM(); leaveJVM(); NYI(); }
+jboolean JNICALL JVM_IsSilentCompiler(JNIEnv* env, jclass compCls) { enterJVM(); leaveJVM(); NYI(); }
+jboolean JNICALL JVM_CompileClass(JNIEnv* env, jclass compCls, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
+jboolean JNICALL JVM_CompileClasses(JNIEnv* env, jclass cls, jstring jname) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_CompilerCommand(JNIEnv* env, jclass compCls, jobject arg) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_EnableCompiler(JNIEnv* env, jclass compCls) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_DisableCompiler(JNIEnv* env, jclass compCls) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.Thread
@@ -364,7 +364,7 @@ void JNICALL JVM_StartThread(JNIEnv* env, jobject thread) {
 	leaveJVM(); 
 }
 
-void JNICALL JVM_StopThread(JNIEnv* env, jobject thread, jobject exception) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_StopThread(JNIEnv* env, jobject thread, jobject exception) { enterJVM(); leaveJVM(); NYI(); }
 jboolean JNICALL JVM_IsThreadAlive(JNIEnv* env, jobject thread) { 
 	jboolean res;
 
@@ -375,8 +375,8 @@ jboolean JNICALL JVM_IsThreadAlive(JNIEnv* env, jobject thread) {
 	return res;
 }
 
-void JNICALL JVM_SuspendThread(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_ResumeThread(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_SuspendThread(JNIEnv* env, jobject thread) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_ResumeThread(JNIEnv* env, jobject thread) { enterJVM(); leaveJVM(); NYI(); }
 
 void JNICALL JVM_SetThreadPriority(JNIEnv* env, jobject thread, jint prio) { 
 	enterJVM(); 
@@ -384,8 +384,8 @@ void JNICALL JVM_SetThreadPriority(JNIEnv* env, jobject thread, jint prio) {
 	leaveJVM(); 
 }
 
-void JNICALL JVM_Yield(JNIEnv* env, jclass threadClass) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_Yield(JNIEnv* env, jclass threadClass) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis) { enterJVM(); leaveJVM(); NYI(); }
 
 jobject JNICALL JVM_CurrentThread(JNIEnv* env, jclass threadClass) { 
 	jobject res;
@@ -395,54 +395,54 @@ jobject JNICALL JVM_CurrentThread(JNIEnv* env, jclass threadClass) {
 	return res;
 }
 
-jint JNICALL JVM_CountStackFrames(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_Interrupt(JNIEnv* env, jobject thread) { enterJVM(); NYI(); leaveJVM(); }
-jboolean JNICALL JVM_IsInterrupted(JNIEnv* env, jobject thread, jboolean clearInterrupted) { enterJVM(); NYI(); leaveJVM(); }
-jboolean JNICALL JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_DumpAllStacks(JNIEnv* env, jclass unused) { enterJVM(); NYI(); leaveJVM(); }
-jobjectArray JNICALL JVM_GetAllThreads(JNIEnv* env, jclass dummy) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_CountStackFrames(JNIEnv* env, jobject thread) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_Interrupt(JNIEnv* env, jobject thread) { enterJVM(); leaveJVM(); NYI(); }
+jboolean JNICALL JVM_IsInterrupted(JNIEnv* env, jobject thread, jboolean clearInterrupted) { enterJVM(); leaveJVM(); NYI(); }
+jboolean JNICALL JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_DumpAllStacks(JNIEnv* env, jclass unused) { enterJVM(); leaveJVM(); NYI(); }
+jobjectArray JNICALL JVM_GetAllThreads(JNIEnv* env, jclass dummy) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name) { enterJVM(); leaveJVM(); NYI(); }
 
 /* getStackTrace() and getAllStackTraces() method */
-jobjectArray JNICALL JVM_DumpThreads(JNIEnv* env, jclass threadClass, jobjectArray threads) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_DumpThreads(JNIEnv* env, jclass threadClass, jobjectArray threads) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.SecurityManager
  */
-jclass JNICALL JVM_CurrentLoadedClass(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_CurrentClassLoader(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); }
-jobjectArray JNICALL JVM_GetClassContext(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_ClassDepth(JNIEnv* env, jstring name) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_ClassLoaderDepth(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); }
+jclass JNICALL JVM_CurrentLoadedClass(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_CurrentClassLoader(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
+jobjectArray JNICALL JVM_GetClassContext(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_ClassDepth(JNIEnv* env, jstring name) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_ClassLoaderDepth(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.Package
  */
-jstring JNICALL JVM_GetSystemPackage(JNIEnv* env, jstring name) { enterJVM(); NYI(); leaveJVM(); }
-jobjectArray JNICALL JVM_GetSystemPackages(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); }
+jstring JNICALL JVM_GetSystemPackage(JNIEnv* env, jstring name) { enterJVM(); leaveJVM(); NYI(); }
+jobjectArray JNICALL JVM_GetSystemPackages(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.io.ObjectInputStream
  */
-jobject JNICALL JVM_AllocateNewObject(JNIEnv* env, jobject obj, jclass currClass, jclass initClass) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_AllocateNewArray(JNIEnv* env, jobject obj, jclass currClass, jint length) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_LatestUserDefinedLoader(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_AllocateNewObject(JNIEnv* env, jobject obj, jclass currClass, jclass initClass) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_AllocateNewArray(JNIEnv* env, jobject obj, jclass currClass, jint length) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_LatestUserDefinedLoader(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * This function has been deprecated and should not be considered
  * part of the specified JVM interface.
  */
 jclass JNICALL
-JVM_LoadClass0(JNIEnv* env, jobject obj, jclass currClass, jstring currClassName) { enterJVM(); NYI(); leaveJVM(); }
+JVM_LoadClass0(JNIEnv* env, jobject obj, jclass currClass, jstring currClassName) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.reflect.Array
  */
-jint JNICALL JVM_GetArrayLength(JNIEnv* env, jobject arr) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_GetArrayElement(JNIEnv* env, jobject arr, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jvalue JNICALL JVM_GetPrimitiveArrayElement(JNIEnv* env, jobject arr, jint index, jint wCode) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_SetArrayElement(JNIEnv* env, jobject arr, jint index, jobject val) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_SetPrimitiveArrayElement(JNIEnv* env, jobject arr, jint index, jvalue v, unsigned char vCode) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetArrayLength(JNIEnv* env, jobject arr) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_GetArrayElement(JNIEnv* env, jobject arr, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jvalue JNICALL JVM_GetPrimitiveArrayElement(JNIEnv* env, jobject arr, jint index, jint wCode) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_SetArrayElement(JNIEnv* env, jobject arr, jint index, jobject val) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_SetPrimitiveArrayElement(JNIEnv* env, jobject arr, jint index, jvalue v, unsigned char vCode) { enterJVM(); leaveJVM(); NYI(); }
 
 jobject JNICALL JVM_NewArray(JNIEnv* env, jclass eltClass, jint length) { 
 	jobject res;
@@ -453,7 +453,7 @@ jobject JNICALL JVM_NewArray(JNIEnv* env, jclass eltClass, jint length) {
 	return res;
 }
 
-jobject JNICALL JVM_NewMultiArray(JNIEnv* env, jclass eltClass, jintArray dim) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_NewMultiArray(JNIEnv* env, jclass eltClass, jintArray dim) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.Class and java.lang.ClassLoader
@@ -543,7 +543,7 @@ jclass JNICALL JVM_FindPrimitiveClass(JNIEnv* env, const char *utf) {
 /*
  * Link the class
  */
-void JNICALL JVM_ResolveClass(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_ResolveClass(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Find a class from a boot class loader. Returns NULL if class not found.
@@ -593,7 +593,7 @@ jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *jname, jboo
 /*
  * Find a class from a given class.
  */
-jclass JNICALL JVM_FindClassFromClass(JNIEnv* env, const char *name, jboolean init, jclass from) { enterJVM(); NYI(); leaveJVM(); }
+jclass JNICALL JVM_FindClassFromClass(JNIEnv* env, const char *name, jboolean init, jclass from) { enterJVM(); leaveJVM(); NYI(); }
 
 /* Find a loaded class cached by the VM */
 jclass JNICALL JVM_FindLoadedClass(JNIEnv* env, jobject jloader, jstring name) { 
@@ -606,12 +606,12 @@ jclass JNICALL JVM_FindLoadedClass(JNIEnv* env, jobject jloader, jstring name) {
 }
 
 /* Define a class */
-jclass JNICALL JVM_DefineClass(JNIEnv* env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd) { enterJVM(); NYI(); leaveJVM(); }
+jclass JNICALL JVM_DefineClass(JNIEnv* env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd) { enterJVM(); leaveJVM(); NYI(); }
 
 /* Define a class with a source (added in JDK1.5) */
 jclass JNICALL JVM_DefineClassWithSource(JNIEnv* env, const char *name, jobject loader, 
 																									 const jbyte *buf, jsize len, jobject pd,
-																									 const char *source) { enterJVM(); NYI(); leaveJVM(); }
+																									 const char *source) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Reflection support functions
@@ -625,10 +625,11 @@ jstring JNICALL JVM_GetClassName(JNIEnv* env, jclass cls) {
 	return res;
 }
 
-jobjectArray JNICALL JVM_GetClassInterfaces(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetClassInterfaces(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL JVM_GetClassLoader(JNIEnv* env, jclass cls) { 
+	jobject res;
 	enterJVM(); 
-	jobject res = J3Class::nativeClass(cls)->loader()->javaClassLoader();
+	res = J3Class::nativeClass(cls)->loader()->javaClassLoader();
 	leaveJVM(); 
 	return res;
 }
@@ -642,9 +643,9 @@ jboolean JNICALL JVM_IsInterface(JNIEnv* env, jclass cls) {
 	return res;
 }
 
-jobjectArray JNICALL JVM_GetClassSigners(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_SetClassSigners(JNIEnv* env, jclass cls, jobjectArray signers) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_GetProtectionDomain(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetClassSigners(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_SetClassSigners(JNIEnv* env, jclass cls, jobjectArray signers) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_GetProtectionDomain(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
 
 jboolean JNICALL JVM_IsArrayClass(JNIEnv* env, jclass cls) { 
 	jboolean res;
@@ -685,24 +686,24 @@ jint JNICALL JVM_GetClassModifiers(JNIEnv* env, jclass cls) {
 	return res;
 }
 
-jobjectArray JNICALL JVM_GetDeclaredClasses(JNIEnv* env, jclass ofClass) { enterJVM(); NYI(); leaveJVM(); }
-jclass JNICALL JVM_GetDeclaringClass(JNIEnv* env, jclass ofClass) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetDeclaredClasses(JNIEnv* env, jclass ofClass) { enterJVM(); leaveJVM(); NYI(); }
+jclass JNICALL JVM_GetDeclaringClass(JNIEnv* env, jclass ofClass) { enterJVM(); leaveJVM(); NYI(); }
 
 /* Generics support (JDK 1.5) */
-jstring JNICALL JVM_GetClassSignature(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jstring JNICALL JVM_GetClassSignature(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
 
 /* Annotations support (JDK 1.5) */
-jbyteArray JNICALL JVM_GetClassAnnotations(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jbyteArray JNICALL JVM_GetClassAnnotations(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
 
 /* Type use annotations support (JDK 1.8) */
-jbyteArray JNICALL JVM_GetClassTypeAnnotations(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jbyteArray JNICALL JVM_GetClassTypeAnnotations(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
 
 
 /*
  * New (JDK 1.4) reflection implementation
  */
 
-jobjectArray JNICALL JVM_GetClassDeclaredMethods(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetClassDeclaredMethods(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); leaveJVM(); NYI(); }
 jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jboolean publicOnly) { 
 	jobjectArray res;
 
@@ -774,7 +775,7 @@ jint JNICALL JVM_GetClassAccessFlags(JNIEnv* env, jclass cls) {
 /*
  * java.lang.reflect.Method
  */
-jobject JNICALL JVM_InvokeMethod(JNIEnv* env, jobject method, jobject obj, jobjectArray args0) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_InvokeMethod(JNIEnv* env, jobject method, jobject obj, jobjectArray args0) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.reflect.Constructor
@@ -795,44 +796,45 @@ jobject JNICALL JVM_NewInstanceFromConstructor(JNIEnv* env, jobject c, jobjectAr
  * Constant pool access; currently used to implement reflective access to annotations (JDK 1.5)
  */
 
-jobject JNICALL JVM_GetClassConstantPool(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_ConstantPoolGetSize(JNIEnv* env, jobject unused, jobject jcpool) { enterJVM(); NYI(); leaveJVM(); }
-jclass JNICALL JVM_ConstantPoolGetClassAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jclass JNICALL JVM_ConstantPoolGetClassAtIfLoaded(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_ConstantPoolGetMethodAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_ConstantPoolGetMethodAtIfLoaded(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_ConstantPoolGetFieldAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jobject JNICALL JVM_ConstantPoolGetFieldAtIfLoaded(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jobjectArray JNICALL JVM_ConstantPoolGetMemberRefInfoAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_ConstantPoolGetIntAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jlong JNICALL JVM_ConstantPoolGetLongAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jfloat JNICALL JVM_ConstantPoolGetFloatAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jdouble JNICALL JVM_ConstantPoolGetDoubleAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jstring JNICALL JVM_ConstantPoolGetStringAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
-jstring JNICALL JVM_ConstantPoolGetUTF8At(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_GetClassConstantPool(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_ConstantPoolGetSize(JNIEnv* env, jobject unused, jobject jcpool) { enterJVM(); leaveJVM(); NYI(); }
+jclass JNICALL JVM_ConstantPoolGetClassAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jclass JNICALL JVM_ConstantPoolGetClassAtIfLoaded(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_ConstantPoolGetMethodAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_ConstantPoolGetMethodAtIfLoaded(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_ConstantPoolGetFieldAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jobject JNICALL JVM_ConstantPoolGetFieldAtIfLoaded(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jobjectArray JNICALL JVM_ConstantPoolGetMemberRefInfoAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_ConstantPoolGetIntAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jlong JNICALL JVM_ConstantPoolGetLongAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jfloat JNICALL JVM_ConstantPoolGetFloatAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jdouble JNICALL JVM_ConstantPoolGetDoubleAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jstring JNICALL JVM_ConstantPoolGetStringAt(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
+jstring JNICALL JVM_ConstantPoolGetUTF8At(JNIEnv* env, jobject unused, jobject jcpool, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Parameter reflection
  */
 
-jobjectArray JNICALL JVM_GetMethodParameters(JNIEnv* env, jobject method) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetMethodParameters(JNIEnv* env, jobject method) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.security.*
  */
 
 jobject JNICALL JVM_DoPrivileged(JNIEnv* env, jclass cls, jobject action, jobject context, jboolean wrapException) { 
+	jobject res;
 	enterJVM(); 
 
   // For now, we don't do anything special,
   // just call the requested 'run()' method...
 	jmethodID mid = env->GetMethodID(env->GetObjectClass(action), "run", "()Ljava/lang/Object;");
-	jobject res = env->CallObjectMethod(action, mid);
+	res = env->CallObjectMethod(action, mid);
 	leaveJVM(); 
 	return res;
 }
 
-jobject JNICALL JVM_GetInheritedAccessControlContext(JNIEnv* env, jclass cls) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_GetInheritedAccessControlContext(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL JVM_GetStackAccessControlContext(JNIEnv* env, jclass cls) { 
 	enterJVM(); 
   // not yet implemented
@@ -859,7 +861,7 @@ void* JNICALL JVM_RegisterSignal(jint sig, void *handler) {
 	return res;
 }
 
-jboolean JNICALL JVM_RaiseSignal(jint sig) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_RaiseSignal(jint sig) { enterJVM(); leaveJVM(); NYI(); }
 
 jint JNICALL JVM_FindSignal(const char *name) { 
 	jint res = 0;
@@ -891,9 +893,10 @@ jint JNICALL JVM_FindSignal(const char *name) {
  * Retrieve the assertion directives for the specified class.
  */
 jboolean JNICALL JVM_DesiredAssertionStatus(JNIEnv* env, jclass unused, jclass cls) { 
+	jboolean res;
 	enterJVM(); 
 	/* TODO: take into account the class name and its package (see j3options) */
-	jboolean res = J3Thread::get()->vm()->options()->assertionsEnabled ? JNI_TRUE : JNI_FALSE;
+	res = J3Thread::get()->vm()->options()->assertionsEnabled ? JNI_TRUE : JNI_FALSE;
 	leaveJVM(); 
 	return res;
 }
@@ -901,17 +904,17 @@ jboolean JNICALL JVM_DesiredAssertionStatus(JNIEnv* env, jclass unused, jclass c
 /*
  * Retrieve the assertion directives from the VM.
  */
-jobject JNICALL JVM_AssertionStatusDirectives(JNIEnv* env, jclass unused) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_AssertionStatusDirectives(JNIEnv* env, jclass unused) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.util.concurrent.atomic.AtomicLong
  */
-jboolean JNICALL JVM_SupportsCX8(void) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_SupportsCX8(void) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Get the version number the JVM was built with
  */
-jint JNICALL JVM_DTraceGetVersion(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_DTraceGetVersion(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Register new probe with given signature, return global handle
@@ -920,22 +923,22 @@ jint JNICALL JVM_DTraceGetVersion(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); 
  * built with.
  */
 jlong JNICALL JVM_DTraceActivate(JNIEnv* env, jint version, jstring module_name, 
-																					 jint providers_count, JVM_DTraceProvider* providers) { enterJVM(); NYI(); leaveJVM(); }
+																					 jint providers_count, JVM_DTraceProvider* providers) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Check JSDT probe
  */
-jboolean JNICALL JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Destroy custom DOF
  */
-void JNICALL JVM_DTraceDispose(JNIEnv* env, jlong activation_handle) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_DTraceDispose(JNIEnv* env, jlong activation_handle) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Check to see if DTrace is supported by OS
  */
-jboolean JNICALL JVM_DTraceIsSupported(JNIEnv* env) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_DTraceIsSupported(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
 
 /*************************************************************************
  PART 2: Support for the Verifier and Class File Format Checker
@@ -947,23 +950,23 @@ jboolean JNICALL JVM_DTraceIsSupported(JNIEnv* env) { enterJVM(); NYI(); leaveJV
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetClassNameUTF(JNIEnv* env, jclass cb) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetClassNameUTF(JNIEnv* env, jclass cb) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the constant pool types in the buffer provided by "types."
  */
-void JNICALL JVM_GetClassCPTypes(JNIEnv* env, jclass cb, unsigned char *types) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_GetClassCPTypes(JNIEnv* env, jclass cb, unsigned char *types) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the number of Constant Pool entries.
  */
-jint JNICALL JVM_GetClassCPEntriesCount(JNIEnv* env, jclass cb) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetClassCPEntriesCount(JNIEnv* env, jclass cb) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the number of *declared* fields or methods.
  */
-jint JNICALL JVM_GetClassFieldsCount(JNIEnv* env, jclass cb) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_GetClassMethodsCount(JNIEnv* env, jclass cb) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetClassFieldsCount(JNIEnv* env, jclass cb) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_GetClassMethodsCount(JNIEnv* env, jclass cb) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the CP indexes of exceptions raised by a given method.
@@ -971,12 +974,12 @@ jint JNICALL JVM_GetClassMethodsCount(JNIEnv* env, jclass cb) { enterJVM(); NYI(
  *
  * The method is identified by method_index.
  */
-void JNICALL JVM_GetMethodIxExceptionIndexes(JNIEnv* env, jclass cb, jint method_index, unsigned short *exceptions) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_GetMethodIxExceptionIndexes(JNIEnv* env, jclass cb, jint method_index, unsigned short *exceptions) { enterJVM(); leaveJVM(); NYI(); }
 /*
  * Returns the number of exceptions raised by a given method.
  * The method is identified by method_index.
  */
-jint JNICALL JVM_GetMethodIxExceptionsCount(JNIEnv* env, jclass cb, jint method_index) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetMethodIxExceptionsCount(JNIEnv* env, jclass cb, jint method_index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the byte code sequence of a given method.
@@ -984,13 +987,13 @@ jint JNICALL JVM_GetMethodIxExceptionsCount(JNIEnv* env, jclass cb, jint method_
  *
  * The method is identified by method_index.
  */
-void JNICALL JVM_GetMethodIxByteCode(JNIEnv* env, jclass cb, jint method_index, unsigned char *code) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_GetMethodIxByteCode(JNIEnv* env, jclass cb, jint method_index, unsigned char *code) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the length of the byte code sequence of a given method.
  * The method is identified by method_index.
  */
-jint JNICALL JVM_GetMethodIxByteCodeLength(JNIEnv* env, jclass cb, jint method_index) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetMethodIxByteCodeLength(JNIEnv* env, jclass cb, jint method_index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the exception table entry at entry_index of a given method.
@@ -999,55 +1002,55 @@ jint JNICALL JVM_GetMethodIxByteCodeLength(JNIEnv* env, jclass cb, jint method_i
  * The method is identified by method_index.
  */
 void JNICALL JVM_GetMethodIxExceptionTableEntry(JNIEnv* env, jclass cb, jint method_index, jint entry_index,
-																													JVM_ExceptionTableEntryType *entry) { enterJVM(); NYI(); leaveJVM(); }
+																													JVM_ExceptionTableEntryType *entry) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the length of the exception table of a given method.
  * The method is identified by method_index.
  */
-jint JNICALL JVM_GetMethodIxExceptionTableLength(JNIEnv* env, jclass cb, int index) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetMethodIxExceptionTableLength(JNIEnv* env, jclass cb, int index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the modifiers of a given field.
  * The field is identified by field_index.
  */
-jint JNICALL JVM_GetFieldIxModifiers(JNIEnv* env, jclass cb, int index) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetFieldIxModifiers(JNIEnv* env, jclass cb, int index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the modifiers of a given method.
  * The method is identified by method_index.
  */
-jint JNICALL JVM_GetMethodIxModifiers(JNIEnv* env, jclass cb, int index) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetMethodIxModifiers(JNIEnv* env, jclass cb, int index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the number of local variables of a given method.
  * The method is identified by method_index.
  */
-jint JNICALL JVM_GetMethodIxLocalsCount(JNIEnv* env, jclass cb, int index) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetMethodIxLocalsCount(JNIEnv* env, jclass cb, int index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the number of arguments (including this pointer) of a given method.
  * The method is identified by method_index.
  */
-jint JNICALL JVM_GetMethodIxArgsSize(JNIEnv* env, jclass cb, int index) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetMethodIxArgsSize(JNIEnv* env, jclass cb, int index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the maximum amount of stack (in words) used by a given method.
  * The method is identified by method_index.
  */
-jint JNICALL JVM_GetMethodIxMaxStack(JNIEnv* env, jclass cb, int index) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetMethodIxMaxStack(JNIEnv* env, jclass cb, int index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Is a given method a constructor.
  * The method is identified by method_index.
  */
-jboolean JNICALL JVM_IsConstructorIx(JNIEnv* env, jclass cb, int index) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_IsConstructorIx(JNIEnv* env, jclass cb, int index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Is the given method generated by the VM.
  * The method is identified by method_index.
  */
-jboolean JNICALL JVM_IsVMGeneratedMethodIx(JNIEnv* env, jclass cb, int index) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_IsVMGeneratedMethodIx(JNIEnv* env, jclass cb, int index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the name of a given method in UTF format.
@@ -1056,7 +1059,7 @@ jboolean JNICALL JVM_IsVMGeneratedMethodIx(JNIEnv* env, jclass cb, int index) { 
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetMethodIxNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetMethodIxNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the signature of a given method in UTF format.
@@ -1065,7 +1068,7 @@ const char * JNICALL JVM_GetMethodIxNameUTF(JNIEnv* env, jclass cb, jint index) 
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetMethodIxSignatureUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetMethodIxSignatureUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the name of the field refered to at a given constant pool
@@ -1077,7 +1080,7 @@ const char * JNICALL JVM_GetMethodIxSignatureUTF(JNIEnv* env, jclass cb, jint in
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetCPFieldNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetCPFieldNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the name of the method refered to at a given constant pool
@@ -1089,7 +1092,7 @@ const char * JNICALL JVM_GetCPFieldNameUTF(JNIEnv* env, jclass cb, jint index) {
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetCPMethodNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetCPMethodNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the signature of the method refered to at a given constant pool
@@ -1101,7 +1104,7 @@ const char * JNICALL JVM_GetCPMethodNameUTF(JNIEnv* env, jclass cb, jint index) 
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetCPMethodSignatureUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetCPMethodSignatureUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the signature of the field refered to at a given constant pool
@@ -1113,7 +1116,7 @@ const char * JNICALL JVM_GetCPMethodSignatureUTF(JNIEnv* env, jclass cb, jint in
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetCPFieldSignatureUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetCPFieldSignatureUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the class name refered to at a given constant pool index.
@@ -1124,7 +1127,7 @@ const char * JNICALL JVM_GetCPFieldSignatureUTF(JNIEnv* env, jclass cb, jint ind
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetCPClassNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetCPClassNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the class name refered to at a given constant pool index.
@@ -1137,7 +1140,7 @@ const char * JNICALL JVM_GetCPClassNameUTF(JNIEnv* env, jclass cb, jint index) {
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetCPFieldClassNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetCPFieldClassNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the class name refered to at a given constant pool index.
@@ -1151,7 +1154,7 @@ const char * JNICALL JVM_GetCPFieldClassNameUTF(JNIEnv* env, jclass cb, jint ind
  * The caller must treat the string as a constant and not modify it
  * in any way.
  */
-const char * JNICALL JVM_GetCPMethodClassNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); NYI(); leaveJVM(); }
+const char * JNICALL JVM_GetCPMethodClassNameUTF(JNIEnv* env, jclass cb, jint index) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the modifiers of a field in calledClass. The field is
@@ -1162,7 +1165,7 @@ const char * JNICALL JVM_GetCPMethodClassNameUTF(JNIEnv* env, jclass cb, jint in
  *
  * Returns -1 if the field does not exist in calledClass.
  */
-jint JNICALL JVM_GetCPFieldModifiers(JNIEnv* env, jclass cb, int index, jclass calledClass) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetCPFieldModifiers(JNIEnv* env, jclass cb, int index, jclass calledClass) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the modifiers of a method in calledClass. The method is
@@ -1170,17 +1173,17 @@ jint JNICALL JVM_GetCPFieldModifiers(JNIEnv* env, jclass cb, int index, jclass c
  *
  * Returns -1 if the method does not exist in calledClass.
  */
-jint JNICALL JVM_GetCPMethodModifiers(JNIEnv* env, jclass cb, int index, jclass calledClass) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetCPMethodModifiers(JNIEnv* env, jclass cb, int index, jclass calledClass) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Releases the UTF string obtained from the VM.
  */
-void JNICALL JVM_ReleaseUTF(const char *utf) { enterJVM(); NYI(); leaveJVM(); }
+void JNICALL JVM_ReleaseUTF(const char *utf) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Compare if two classes are in the same package.
  */
-jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class2) { enterJVM(); NYI(); leaveJVM(); }
+jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class2) { enterJVM(); leaveJVM(); NYI(); }
 
 /*************************************************************************
  PART 3: I/O and Network Support
@@ -1190,21 +1193,21 @@ jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class
  * that describes the most recent system-level error to occur in this thread.
  * Return the length of the string or zero if no error occurred.
  */
-jint JNICALL JVM_GetLastErrorString(char *buf, int len) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_GetLastErrorString(char *buf, int len) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Convert a pathname into native format.  This function does syntactic
  * cleanup, such as removing redundant separator characters.  It modifies
  * the given pathname string in place.
  */
-char * JNICALL JVM_NativePath(char *) { enterJVM(); NYI(); leaveJVM(); }
+char * JNICALL JVM_NativePath(char *) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Open a file descriptor. This function returns a negative error code
  * on error, and a non-negative integer that is the file descriptor on
  * success.
  */
-jint JNICALL JVM_Open(const char *fname, jint flags, jint mode) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_Open(const char *fname, jint flags, jint mode) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Close a file descriptor. This function returns -1 on error, and 0
@@ -1212,7 +1215,7 @@ jint JNICALL JVM_Open(const char *fname, jint flags, jint mode) { enterJVM(); NY
  *
  * fd        the file descriptor to close.
  */
-jint JNICALL JVM_Close(jint fd) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_Close(jint fd) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Read data from a file decriptor into a char array.
@@ -1223,7 +1226,7 @@ jint JNICALL JVM_Close(jint fd) { enterJVM(); NYI(); leaveJVM(); }
  *
  * This function returns -1 on error, and 0 on success.
  */
-jint JNICALL JVM_Read(jint fd, char *buf, jint nbytes) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_Read(jint fd, char *buf, jint nbytes) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Write data from a char array to a file decriptor.
@@ -1234,13 +1237,13 @@ jint JNICALL JVM_Read(jint fd, char *buf, jint nbytes) { enterJVM(); NYI(); leav
  *
  * This function returns -1 on error, and 0 on success.
  */
-jint JNICALL JVM_Write(jint fd, char *buf, jint nbytes) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_Write(jint fd, char *buf, jint nbytes) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns the number of bytes available for reading from a given file
  * descriptor
  */
-jint JNICALL JVM_Available(jint fd, jlong *pbytes) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_Available(jint fd, jlong *pbytes) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Move the file descriptor pointer from whence by offset.
@@ -1251,7 +1254,7 @@ jint JNICALL JVM_Available(jint fd, jlong *pbytes) { enterJVM(); NYI(); leaveJVM
  *
  * This function returns the resulting pointer location.
  */
-jlong JNICALL JVM_Lseek(jint fd, jlong offset, jint whence) { enterJVM(); NYI(); leaveJVM(); }
+jlong JNICALL JVM_Lseek(jint fd, jlong offset, jint whence) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Set the length of the file associated with the given descriptor to the given
@@ -1259,36 +1262,36 @@ jlong JNICALL JVM_Lseek(jint fd, jlong offset, jint whence) { enterJVM(); NYI();
  * is extended; the contents of the extended portion are not defined.  The
  * value of the file pointer is undefined after this procedure returns.
  */
-jint JNICALL JVM_SetLength(jint fd, jlong length) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_SetLength(jint fd, jlong length) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Synchronize the file descriptor's in memory state with that of the
  * physical device.  Return of -1 is an error, 0 is OK.
  */
-jint JNICALL JVM_Sync(jint fd) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_Sync(jint fd) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Networking library support
  */
 
-jint JNICALL JVM_InitializeSocketLibrary(void) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_Socket(jint domain, jint type, jint protocol) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_SocketClose(jint fd) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_SocketShutdown(jint fd, jint howto) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_Recv(jint fd, char *buf, jint nBytes, jint flags) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_Send(jint fd, char *buf, jint nBytes, jint flags) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_Timeout(int fd, long timeout) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_Listen(jint fd, jint count) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_Connect(jint fd, struct sockaddr *him, jint len) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_Bind(jint fd, struct sockaddr *him, jint len) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_Accept(jint fd, struct sockaddr *him, jint *len) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_RecvFrom(jint fd, char *buf, int nBytes, int flags, struct sockaddr *from, int *fromlen) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_SendTo(jint fd, char *buf, int len, int flags, struct sockaddr *to, int tolen) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_SocketAvailable(jint fd, jint *result) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_GetSockName(jint fd, struct sockaddr *him, int *len) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_GetSockOpt(jint fd, int level, int optname, char *optval, int *optlen) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen) { enterJVM(); NYI(); leaveJVM(); }
-int JNICALL JVM_GetHostName(char* name, int namelen) { enterJVM(); NYI(); leaveJVM(); }
+jint JNICALL JVM_InitializeSocketLibrary(void) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Socket(jint domain, jint type, jint protocol) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_SocketClose(jint fd) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_SocketShutdown(jint fd, jint howto) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Recv(jint fd, char *buf, jint nBytes, jint flags) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Send(jint fd, char *buf, jint nBytes, jint flags) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Timeout(int fd, long timeout) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Listen(jint fd, jint count) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Connect(jint fd, struct sockaddr *him, jint len) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Bind(jint fd, struct sockaddr *him, jint len) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_Accept(jint fd, struct sockaddr *him, jint *len) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_RecvFrom(jint fd, char *buf, int nBytes, int flags, struct sockaddr *from, int *fromlen) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_SendTo(jint fd, char *buf, int len, int flags, struct sockaddr *to, int tolen) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_SocketAvailable(jint fd, jint *result) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_GetSockName(jint fd, struct sockaddr *him, int *len) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_GetSockOpt(jint fd, int level, int optname, char *optval, int *optlen) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen) { enterJVM(); leaveJVM(); NYI(); }
+int JNICALL JVM_GetHostName(char* name, int namelen) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * The standard printing functions supported by the Java VM. (Should they
@@ -1324,22 +1327,22 @@ int jio_vfprintf(FILE *f, const char *fmt, va_list va) {
 }
 
 
-void * JNICALL JVM_RawMonitorCreate(void) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_RawMonitorDestroy(void *mon) { enterJVM(); NYI(); leaveJVM(); }
-jint JNICALL JVM_RawMonitorEnter(void *mon) { enterJVM(); NYI(); leaveJVM(); }
-void JNICALL JVM_RawMonitorExit(void *mon) { enterJVM(); NYI(); leaveJVM(); }
+void * JNICALL JVM_RawMonitorCreate(void) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_RawMonitorDestroy(void *mon) { enterJVM(); leaveJVM(); NYI(); }
+jint JNICALL JVM_RawMonitorEnter(void *mon) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_RawMonitorExit(void *mon) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * java.lang.management support
  */
-void* JNICALL JVM_GetManagement(jint version) { enterJVM(); NYI(); leaveJVM(); }
+void* JNICALL JVM_GetManagement(jint version) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * com.sun.tools.attach.VirtualMachine support
  *
  * Initialize the agent properties with the properties maintained in the VM.
  */
-jobject JNICALL JVM_InitAgentProperties(JNIEnv* env, jobject agent_props) { enterJVM(); NYI(); leaveJVM(); }
+jobject JNICALL JVM_InitAgentProperties(JNIEnv* env, jobject agent_props) { enterJVM(); leaveJVM(); NYI(); }
 
 /* Generics reflection support.
  *
@@ -1352,7 +1355,7 @@ jobject JNICALL JVM_InitAgentProperties(JNIEnv* env, jobject agent_props) { ente
  * and elements 1 and 2 are the java.lang.Strings for the enclosing
  * method's name and descriptor, respectively.
  */
-jobjectArray JNICALL JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns an array of the threadStatus values representing the
@@ -1360,7 +1363,7 @@ jobjectArray JNICALL JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass) { e
  * incompatible with the JDK or doesn't support the given
  * Java thread state.
  */
-jintArray JNICALL JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) { enterJVM(); NYI(); leaveJVM(); }
+jintArray JNICALL JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
  * Returns an array of the substate names representing the
@@ -1370,7 +1373,7 @@ jintArray JNICALL JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState) { 
  * values must be the jintArray returned from JVM_GetThreadStateValues
  * and javaThreadState.
  */
-jobjectArray JNICALL JVM_GetThreadStateNames(JNIEnv* env, jint javaThreadState, jintArray values) { enterJVM(); NYI(); leaveJVM(); }
+jobjectArray JNICALL JVM_GetThreadStateNames(JNIEnv* env, jint javaThreadState, jintArray values) { enterJVM(); leaveJVM(); NYI(); }
 
 /* =========================================================================
  * The following defines a private JVM interface that the JDK can query

@@ -33,8 +33,15 @@ J3ClassLoader::J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocat
 	pthread_mutex_init(&_mutexTypes, 0);
 	pthread_mutex_init(&_mutexInterfaces, 0);
 	pthread_mutex_init(&_mutexMethodTypes, 0);
+	pthread_mutex_init(&_mutexNativeLibraries, 0);
 
 	_javaClassLoader = globalReferences()->add(javaClassLoader);
+}
+
+void J3ClassLoader::addNativeLibrary(void* handle) {
+	pthread_mutex_lock(&_mutexNativeLibraries);
+	nativeLibraries.push_back(handle);
+	pthread_mutex_unlock(&_mutexNativeLibraries);
 }
 
 J3ObjectHandle* J3ClassLoader::javaClassLoader(bool doPush) { 
@@ -72,11 +79,15 @@ uint32_t J3ClassLoader::interfaceIndex(J3Method* method) {
 }
 
 void* J3ClassLoader::lookupNativeFunctionPointer(J3Method* method, const char* symbol) {
+	pthread_mutex_lock(&_mutexNativeLibraries);
 	for(std::vector<void*>::size_type i=0; i!=nativeLibraries.size(); i++) {
 		void* fnPtr = dlsym(nativeLibraries[i], symbol);
-		if(fnPtr)
+		if(fnPtr) {
+			pthread_mutex_unlock(&_mutexNativeLibraries);
 			return fnPtr;
+		}
 	}
+	pthread_mutex_unlock(&_mutexNativeLibraries);
 
 	return 0;
 }
@@ -226,8 +237,7 @@ J3InitialClassLoader::J3InitialClassLoader(vmkit::BumpAllocator* _alloc)
 	} else 
 		J3::internalError("unable to find system archive");
 
-	if(J3Lib::loadSystemLibraries(&nativeLibraries) == -1)
-		J3::internalError("unable to find java library");
+	J3Lib::loadSystemLibraries(this);
 }
 
 J3Class* J3InitialClassLoader::loadClass(const vmkit::Name* name) {

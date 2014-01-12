@@ -11,8 +11,14 @@
 using namespace j3;
 
 extern "C" {
-	JNIEXPORT void JNICALL Java_sun_misc_Unsafe_registerNatives(JNIEnv* env, jclass cls) {
+	JNIEXPORT void JNICALL Java_sun_misc_Unsafe_registerNatives(JNIEnv* env, jobject unsafe) {
 		// Nothing, we define the Unsafe methods with the expected signatures.
+	}
+
+	JNIEXPORT void JNICALL Java_sun_misc_Unsafe_ensureClassInitialized(JNIEnv* env, jobject unsafe, jclass clazz) {
+		enterJVM(); 
+		J3ObjectType::nativeClass(clazz)->initialise();
+		leaveJVM(); 
 	}
 
 	/// arrayBaseOffset - Offset from the array object where the actual
@@ -29,22 +35,34 @@ extern "C" {
 	/// makes this type of access impossible or unsupported.
 	///
 	JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_arrayIndexScale(JNIEnv* env, jobject unsafe, jclass clazz) {
-		return 1<<J3ObjectType::nativeClass(clazz)->asArrayClass()->component()->logSize();
+		jlong res;
+		enterJVM(); 
+		res = 1<<J3ObjectType::nativeClass(clazz)->asArrayClass()->component()->logSize();
+		leaveJVM(); 
+		return res;
 	}
 
 	JNIEXPORT jint JNICALL Java_sun_misc_Unsafe_addressSize(JNIEnv* env, jobject unsafe) {
-		return J3Thread::get()->vm()->objectClass->getSizeInBits()>>3;
+		jint res;
+		enterJVM(); 
+		res = J3Thread::get()->vm()->objectClass->getSizeInBits()>>3;
+		leaveJVM(); 
+		return res;
 	}
 
 	/// objectFieldOffset - Pointer offset of the specified field
 	///
 	JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_objectFieldOffset(JNIEnv* env, jobject unsafe, jobject field) {
+		jlong res;
+		enterJVM(); 
 		J3* vm = J3Thread::get()->vm();
 		J3Class* cl = J3Class::nativeClass(field->getObject(vm->fieldClassClass))->asClass();
 		uint32_t slot = field->getInteger(vm->fieldClassSlot);
 		uint32_t access = field->getInteger(vm->fieldClassAccess);
 		J3Field* fields = J3Cst::isStatic(access) ? cl->staticLayout()->fields() : cl->fields();
-		return fields[slot].offset();
+		res = fields[slot].offset();
+		leaveJVM(); 
+		return res;
 	}
 
 	JNIEXPORT jlong JNICALL Java_sun_misc_Unsafe_allocateMemory(JNIEnv* env, jobject unsafe, jlong bytes) {
@@ -67,12 +85,20 @@ extern "C" {
 #define unsafeCAS(jtype, id, j3id, sign)																\
 	JNIEXPORT bool JNICALL Java_sun_misc_Unsafe_compareAndSwap##id(JNIEnv* env, jobject unsafe, \
 																																 jobject handle, jlong offset, jtype orig, jtype value) { \
-		return handle->rawCAS##j3id(offset, orig, value) == orig;						\
+		bool res;																														\
+		enterJVM();																													\
+		res = handle->rawCAS##j3id(offset, orig, value) == orig;						\
+		leaveJVM();																													\
+		return res;																													\
 	}
 
 #define unsafeGetVolatile(jtype, id, j3id, sign)												\
 	JNIEXPORT jtype JNICALL Java_sun_misc_Unsafe_get##id##Volatile(JNIEnv* env, jobject unsafe, jobject handle, jlong offset) { \
-		return handle->rawGet##j3id(offset);																\
+		jtype res;																													\
+		enterJVM();																													\
+		res =  handle->rawGet##j3id(offset);																\
+		leaveJVM();																													\
+		return res;																													\
 	}
 
 #define defUnsafe(jtype, id, j3id, sign)								\

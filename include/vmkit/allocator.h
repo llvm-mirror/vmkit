@@ -29,7 +29,7 @@ namespace vmkit {
 		BumpAllocatorNode* current;
 
 		void* operator new(size_t n);
-		BumpAllocator(); /* private to force an allocation via the new operator */
+		BumpAllocator(); /* private to force an allocation via create */
 		~BumpAllocator();
 		void operator delete(void* p);
 	public:

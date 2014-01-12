@@ -63,18 +63,14 @@ const char* J3Lib::extDirs() {
 	return OPENJDK_HOME"jre/lib/ext";
 }
 
-int J3Lib::loadSystemLibraries(std::vector<void*, vmkit::StdAllocator<void*> >* nativeLibraries) {
+void J3Lib::loadSystemLibraries(J3ClassLoader* loader) {
 	/* JavaRuntimeSupport checks for a symbol defined in this library */
 	void* h0 = dlopen(OPENJDK_LIBPATH"/libinstrument"SHLIBEXT, RTLD_LAZY | RTLD_GLOBAL);
 	void* handle = dlopen(OPENJDK_LIBPATH"/libjava"SHLIBEXT, RTLD_LAZY | RTLD_LOCAL);
 	
-	if(!handle || !h0) {
-		fprintf(stderr, "Fatal: unable to find java system library: %s\n", dlerror());
-		abort();
-	}
+	if(!handle || !h0)
+		J3::internalError("Unable to find java system library: %s\n", dlerror());
 
-	nativeLibraries->push_back(handle);
-
-	return 0;
+	loader->addNativeLibrary(handle);
 }
 
