@@ -331,7 +331,7 @@ uint16_t J3Class::modifiers() {
 
 J3ObjectHandle* J3Class::clone(J3ObjectHandle* obj) {
 	J3ObjectHandle* res = J3ObjectHandle::doNewObject(this);
-	obj->rawObjectCopyTo(0, res, 0, structSize());
+	obj->rawObjectCopyTo(0, res, 0, structSize() - sizeof(J3Object));
 	return res;
 }
 

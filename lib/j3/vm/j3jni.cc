@@ -570,8 +570,15 @@ void JNICALL GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len
 	leaveJVM(); 
 }
 
-void* JNICALL GetPrimitiveArrayCritical(JNIEnv* env, jarray array, jboolean* isCopy) { enterJVM(); leaveJVM(); NYI(); }
-void JNICALL ReleasePrimitiveArrayCritical(JNIEnv* env, jarray array, void* carray, jint mode) { enterJVM(); leaveJVM(); NYI(); }
+void* JNICALL GetPrimitiveArrayCritical(JNIEnv* env, jarray array, jboolean* isCopy) { 
+	//GC::disable(); ?
+	if(isCopy)
+		isCopy = 0;
+	return array ? array->array()->content() : 0;
+}
+
+void JNICALL ReleasePrimitiveArrayCritical(JNIEnv* env, jarray array, void* carray, jint mode) { 
+}
 
 const jchar* JNICALL GetStringCritical(JNIEnv* env, jstring string, jboolean* isCopy) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL ReleaseStringCritical(JNIEnv* env, jstring string, const jchar* cstring) { enterJVM(); leaveJVM(); NYI(); }

@@ -158,7 +158,7 @@ void J3::run() {
 	if(options()->debugLifeCycle)
 		fprintf(stderr, "  Launching the application\n");
 
-	options()->debugExecute = 0;
+	//options()->debugExecute = 0;
 
 #if 0
 	J3Class* loaderClass = z_class("java/lang/ClassLoader");
@@ -340,5 +340,3 @@ void J3::forceSymbolDefinition() {
 	} catch(void* e) {
 	}
 }
-
-

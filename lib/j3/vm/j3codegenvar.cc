@@ -40,16 +40,13 @@ void J3CodeGenVar::killUnused() {
 	killUnused(refStack, 1);
 }
 
-uint32_t J3CodeGenVar::reservedSize(uint32_t max) {
-	return max*5*sizeof(llvm::AllocaInst*) + max*sizeof(llvm::Type*);
-}
-
 uint32_t J3CodeGenVar::metaStackSize() {
 	return topStack*sizeof(llvm::Type*);
 }
 
-void J3CodeGenVar::init(J3CodeGen* _codeGen, uint32_t max, void* space) {
+void J3CodeGenVar::init(J3CodeGen* _codeGen, uint32_t max) {
 	codeGen = _codeGen;
+	void* space = codeGen->allocator->allocate(max*5*sizeof(llvm::AllocaInst*) + max*sizeof(llvm::Type*));
 	maxStack = max;
 	intStack = (llvm::AllocaInst**)space;
 	longStack = intStack + max;

@@ -27,8 +27,7 @@ namespace j3 {
 		uint32_t            topStack;
 		uint32_t            maxStack;
 
-		static uint32_t     reservedSize(uint32_t max);
-		void                init(J3CodeGen* _codeGen, uint32_t max, void* space);
+		void                init(J3CodeGen* _codeGen, uint32_t max);
 
 		void                killUnused();
 

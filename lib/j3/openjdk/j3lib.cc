@@ -33,8 +33,9 @@ static char* buildPath(const char* base, const char* suffix) {
 void J3Lib::processOptions(J3* vm) {
 	const char* jh = getenv("JAVA_HOME");
 	jh = jh ? jh : OPENJDK_HOME"/jre";
+	jh = strdup(jh);
 
-	vm->options()->javaHome = jh ? jh : OPENJDK_HOME;
+	vm->options()->javaHome = jh;
 	vm->options()->bootClasspath = buildPath(jh, "/lib/rt.jar");
 	vm->options()->systemLibraryPath = buildPath(jh, OPENJDK_LIBPATH_SUFFIX);
 	vm->options()->extDirs = buildPath(jh, "/lib/ext");

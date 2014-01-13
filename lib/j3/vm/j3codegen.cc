@@ -41,9 +41,10 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 
 #if 0
 	/* usefull to debug a single function */
-	if(   cl->name() == vm->names()->get("java/lang/CharacterData") &&
-				method->name() == vm->names()->get("of") &&
-				method->signature()->name() == vm->names()->get("(I)Ljava/lang/CharacterData;") ) {
+	if(   cl->name() == vm->names()->get("sun/util/calendar/BaseCalendar") &&
+				method->name() == vm->names()->get("getFixedDate") &&
+				method->signature()->name() == vm->names()->get("(IIILsun/util/calendar/BaseCalendar$Date;)J") ) {
+
 		vm->options()->debugTranslate = 3;
 	}
 #endif
@@ -107,7 +108,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 		else
 			generateJava();
 
-		if(vm->options()->debugTranslate > 3)
+		if(vm->options()->debugTranslate > 4)
 			llvmFunction->dump();
 	}
 
@@ -399,8 +400,9 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 		res = builder->CreateInvoke(func, after, exceptions.nodes[curExceptionNode]->landingPad, args);
 		bb = after;
 		builder->SetInsertPoint(bb);
-	} else
+	} else {
 		res = builder->CreateCall(func, args);
+	}
 	
 	if(!res->getType()->isVoidTy())
 		stack.push(flatten(res));
@@ -784,7 +786,7 @@ llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doA
 		llvm::BasicBlock* res = newBB(id);
 
 		if(doAlloc) {
-			opInfos[pc].metaStack = (llvm::Type**)allocator->allocate(sizeof(llvm::Type*)*stack.topStack);
+			opInfos[pc].metaStack = (llvm::Type**)allocator->allocate(sizeof(llvm::Type*)*stack.maxStack);
 			memcpy(opInfos[pc].metaStack, stack.metaStack, sizeof(llvm::Type*)*stack.topStack);
 		}
 
@@ -858,6 +860,7 @@ void J3CodeGen::translate() {
 	while(codeReader->remaining()) {
 		llvm::Value* val1;
 		llvm::Value* val2;
+		llvm::Value* val3;
 
 		javaPC = codeReader->tell();
 
@@ -1159,7 +1162,16 @@ void J3CodeGen::translate() {
 				stack.push(val1); stack.push(val2); stack.push(val1);
 				break;
 
-			case J3Cst::BC_dup_x2: nyi();                 /* 0x5b */
+			case J3Cst::BC_dup_x2:                        /* 0x5b */
+				val1 = stack.pop();
+				val2 = stack.pop();
+				if(val2->getType()->isDoubleTy() || val2->getType()->isIntegerTy(64)) {
+					stack.push(val1); stack.push(val2); stack.push(val1);
+				} else {
+					val3 = stack.pop();
+					stack.push(val1); stack.push(val3); stack.push(val2); stack.push(val1);
+				}
+				break;
 
 			case J3Cst::BC_dup2:                          /* 0x5c */
 				val1 = stack.top();
@@ -1171,9 +1183,32 @@ void J3CodeGen::translate() {
 				}
 				break;
 
-			case J3Cst::BC_dup2_x1: nyi();                /* 0x5d */
-			case J3Cst::BC_dup2_x2: nyi();                /* 0x5e */
-			case J3Cst::BC_swap: nyi();                   /* 0x5f */
+			case J3Cst::BC_dup2_x1:                       /* 0x5d */
+				val1 = stack.pop();
+				val2 = stack.pop();
+				if(val1->getType()->isDoubleTy() || val1->getType()->isIntegerTy(64)) {
+					stack.push(val1); stack.push(val2); stack.push(val1);
+				} else {
+					val3 = stack.pop();
+					stack.push(val2); stack.push(val1); stack.push(val3); stack.push(val2); stack.push(val1);
+				}
+				break;
+
+			case J3Cst::BC_dup2_x2:                       /* 0x5e */
+				val1 = stack.pop();
+				val2 = stack.pop();
+				val3 = stack.pop();
+				if(val1->getType()->isDoubleTy() || val1->getType()->isIntegerTy(64)) {
+					stack.push(val1); stack.push(val3); stack.push(val2); stack.push(val1);
+				} else {
+					llvm::Value* val4 = stack.pop();
+					stack.push(val2); stack.push(val1); stack.push(val4); stack.push(val3); stack.push(val2); stack.push(val1);
+				}
+				break;
+
+			case J3Cst::BC_swap:                          /* 0x5f */
+				val1 = stack.pop(); val2 = stack.pop(); stack.push(val1); stack.push(val2);
+				break;
 
 			case J3Cst::BC_iadd:                          /* 0x60 */
 			case J3Cst::BC_ladd:                          /* 0x61 */
@@ -1609,9 +1644,9 @@ void J3CodeGen::generateJava() {
 	uint32_t nbLocals  = reader.readU2();
 	uint32_t codeLength = reader.readU4();
 
-	locals.init(this, nbLocals, allocator->allocate(J3CodeGenVar::reservedSize(nbLocals)));
-	stack.init(this, maxStack, allocator->allocate(J3CodeGenVar::reservedSize(maxStack)));
-	ret.init(this, 1, allocator->allocate(J3CodeGenVar::reservedSize(1)));
+	locals.init(this, nbLocals);
+	stack.init(this, maxStack);
+	ret.init(this, 1);
 
 	genDebugEnterLeave(0);
 
