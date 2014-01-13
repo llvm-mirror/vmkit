@@ -14,12 +14,48 @@
 using namespace j3;
 
 #ifdef LINUX_OS
-#define OPENJDK_LIBPATH OPENJDK_HOME"jre/lib/amd64"
+#define OPENJDK_LIBPATH_SUFFIX "jre/lib/amd64"
 #else
-#define OPENJDK_LIBPATH OPENJDK_HOME"jre/lib"
+#define OPENJDK_LIBPATH_SUFFIX "jre/lib"
 #endif
 
-static const char* rtjar = OPENJDK_HOME"jre/lib/rt.jar";
+static char* buildPath(const char* base, const char* suffix) {
+	size_t baseLen = strlen(base);
+	size_t suffixLen = strlen(suffix);
+
+	char* res = (char*)malloc(baseLen + suffixLen + 1);
+	memcpy(res, base, baseLen);
+	memcpy(res + baseLen, suffix, suffixLen + 1);
+
+	return res;
+}
+
+void J3Lib::processOptions(J3* vm) {
+	const char* jh = getenv("JAVA_HOME");
+	jh = jh ? jh : OPENJDK_HOME;
+
+	vm->options()->javaHome = jh ? jh : OPENJDK_HOME;
+	vm->options()->bootClasspath = buildPath(jh, "jre/lib/rt.jar");
+	vm->options()->systemLibraryPath = buildPath(jh, OPENJDK_LIBPATH_SUFFIX);
+	vm->options()->extDirs = buildPath(jh, "jre/lib/ext");
+}
+
+void J3Lib::loadSystemLibraries(J3ClassLoader* loader) {
+	const char* spath = J3Thread::get()->vm()->options()->systemLibraryPath;
+	char* libinstrument = buildPath(spath, "/libinstrument"SHLIBEXT);
+	char* libjava = buildPath(spath, "/libjava"SHLIBEXT);
+	/* JavaRuntimeSupport checks for a symbol defined in this library */
+	void* h0 = dlopen(libinstrument, RTLD_LAZY | RTLD_GLOBAL);
+	void* handle = dlopen(libjava, RTLD_LAZY | RTLD_LOCAL);
+
+	free(libinstrument);
+	free(libjava);
+
+	if(!handle || !h0)
+		J3::internalError("Unable to find java system library: %s\n", dlerror());
+
+	loader->addNativeLibrary(handle);
+}
 
 void J3Lib::bootstrap(J3* vm) {
 	J3ObjectHandle* prev = J3Thread::get()->tell();
@@ -49,29 +85,6 @@ void J3Lib::bootstrap(J3* vm) {
 		->invokeStatic();
 
 	J3Thread::get()->restore(prev);
-}
-
-const char* J3Lib::systemClassesArchives() {
-	return rtjar;
-}
-
-const char* J3Lib::systemLibraryPath() {
-	return OPENJDK_LIBPATH;
-}
-
-const char* J3Lib::extDirs() {
-	return OPENJDK_HOME"jre/lib/ext";
-}
-
-void J3Lib::loadSystemLibraries(J3ClassLoader* loader) {
-	/* JavaRuntimeSupport checks for a symbol defined in this library */
-	void* h0 = dlopen(OPENJDK_LIBPATH"/libinstrument"SHLIBEXT, RTLD_LAZY | RTLD_GLOBAL);
-	void* handle = dlopen(OPENJDK_LIBPATH"/libjava"SHLIBEXT, RTLD_LAZY | RTLD_LOCAL);
-	
-	if(!handle || !h0)
-		J3::internalError("Unable to find java system library: %s\n", dlerror());
-
-	loader->addNativeLibrary(handle);
 }
 
 J3ObjectHandle* J3Lib::newDirectByteBuffer(void* address, size_t len) {

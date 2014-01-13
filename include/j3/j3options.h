@@ -25,10 +25,14 @@ namespace j3 {
 	public:
 		bool           assertionsEnabled;
 		const char*    selfBitCodePath;
+
+		const char*    javaHome;
 		const char*    bootClasspath;
 		const char*    systemLibraryPath;
-		const char*    classpath;
 		const char*    extDirs;
+
+		const char*    classpath;
+
 		bool           debugEnterIndent;
 		uint32_t       genDebugExecute;
 		uint32_t       debugExecute;

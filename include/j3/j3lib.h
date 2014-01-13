@@ -8,15 +8,13 @@ namespace j3 {
 	class J3;
 	class J3ClassLoader;
 	class J3ObjectHandle;
+	class J3Options;
 
 	class J3Lib {
 	public:
-		static const char*  systemClassesArchives();
-		static const char*  systemLibraryPath();
-		static const char*  extDirs();
-		static void         loadSystemLibraries(J3ClassLoader* loader);
-
-		static void         bootstrap(J3* vm);
+		static void processOptions(J3* vm);
+		static void loadSystemLibraries(J3ClassLoader* loader);
+		static void bootstrap(J3* vm);
 
 		static J3ObjectHandle* newDirectByteBuffer(void* address, size_t len);
 	};

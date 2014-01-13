@@ -68,6 +68,7 @@ void J3::introspect() {
 
 void J3::start(int argc, char** argv) {
 	_options.process(argc, argv);
+	J3Lib::processOptions(this);
 
 	vmkit::ThreadAllocator::initialize(sizeof(J3Thread), options()->stackSize);
 

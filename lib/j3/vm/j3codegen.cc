@@ -1425,7 +1425,7 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_jsr: nyi();                    /* 0xa8 */
-			case J3Cst::BC_ret: nyi();                    /* 0xa9 wide */
+			case J3Cst::BC_ret: /* wide */ nyi();         /* 0xa9 */
 			case J3Cst::BC_tableswitch:                   /* 0xaa */
 				tableSwitch();
 				_onEndPoint();

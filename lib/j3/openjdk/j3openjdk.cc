@@ -146,7 +146,7 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
 																												 vm->names()->get("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;")));
 
 #define setProp(key, val) _setProp->invokeVirtual(p, vm->utfToString(key), vm->utfToString(val));
-#define setPropEnv(key, val) ({ const char* tmp = getenv(val); if(!tmp) tmp = ""; setProp(key, val); })
+#define setPropEnv(key, val, def) ({ const char* tmp = getenv(val); if(!tmp) tmp = def; setProp(key, val); })
 
 	/*
 	** <dt>java.version         <dd>Java version number
@@ -172,7 +172,7 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   setProp("java.version", "1.8");
   setProp("java.vendor", "The VMKit Project");
   setProp("java.vendor.url", "http://vmkit.llvm.org");
-	setPropEnv("java.home", "JAVA_HOME");
+	setProp("java.home", vm->options()->javaHome);
   setProp("java.class.version", "52.0");
   setProp("java.class.path", vm->options()->classpath);
 	//"file:///Users/gthomas/research/vmkit4/vmkit");//vm->options()->classpath);
@@ -182,9 +182,9 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   setProp("file.separator", "/");
   setProp("path.separator", ":");
   setProp("line.separator", "\n");
-  setPropEnv("user.name", "USERNAME");
-  setPropEnv("user.home", "HOME");
-	setPropEnv("user.dir", "PWD");
+  setPropEnv("user.name", "USERNAME", "");
+  setPropEnv("user.home", "HOME", "");
+	setPropEnv("user.dir", "PWD", "");
 
   setProp("java.boot.class.path", vm->options()->bootClasspath);
   setProp("sun.boot.library.path", vm->options()->systemLibraryPath);
@@ -204,7 +204,7 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
   setProp("java.vm.vendor", "The VMKit Project");
   setProp("java.vm.name", "J3");
   setProp("java.specification.version", "1.8");
-  setPropEnv("java.library.path", "LD_LIBRARY_PATH");
+  setPropEnv("java.library.path", "LD_LIBRARY_PATH", "");
 
 
   setProp("java.io.tmpdir", "/tmp");
