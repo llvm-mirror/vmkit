@@ -35,6 +35,10 @@ void J3Monitor::checkRecord() {
 	}
 }
 
+bool J3Monitor::isOwner(J3Thread* thread) {
+	return owner == thread;
+}
+
 void J3Monitor::lock() {
 	J3Thread* self = J3Thread::get();
 

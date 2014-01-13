@@ -400,7 +400,15 @@ jobject JNICALL JVM_CurrentThread(JNIEnv* env, jclass threadClass) {
 jint JNICALL JVM_CountStackFrames(JNIEnv* env, jobject thread) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL JVM_Interrupt(JNIEnv* env, jobject thread) { enterJVM(); leaveJVM(); NYI(); }
 jboolean JNICALL JVM_IsInterrupted(JNIEnv* env, jobject thread, jboolean clearInterrupted) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj) { enterJVM(); leaveJVM(); NYI(); }
+
+jboolean JNICALL JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj) { 
+	jboolean res;
+	enterJVM(); 
+	res = obj->isLockOwner();
+	leaveJVM(); 
+	return res;
+}
+
 void JNICALL JVM_DumpAllStacks(JNIEnv* env, jclass unused) { enterJVM(); leaveJVM(); NYI(); }
 jobjectArray JNICALL JVM_GetAllThreads(JNIEnv* env, jclass dummy) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name) { enterJVM(); leaveJVM(); NYI(); }

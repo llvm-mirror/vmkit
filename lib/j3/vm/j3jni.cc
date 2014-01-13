@@ -462,7 +462,7 @@ const char* JNICALL GetStringUTFChars(JNIEnv* env, jstring str, jboolean* isCopy
 	J3Utf16Decoder::decode(content, res);
 
 	if(isCopy)
-		*isCopy = 1;
+		*isCopy = JNI_TRUE;
 
 	leaveJVM(); 
 
@@ -573,7 +573,7 @@ void JNICALL GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len
 void* JNICALL GetPrimitiveArrayCritical(JNIEnv* env, jarray array, jboolean* isCopy) { 
 	//GC::disable(); ?
 	if(isCopy)
-		isCopy = 0;
+		*isCopy = JNI_FALSE;
 	return array ? array->array()->content() : 0;
 }
 

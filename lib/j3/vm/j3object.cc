@@ -333,6 +333,16 @@ uint32_t J3Object::hashCode() {
 	}
 }
 
+bool J3Object::isLockOwner() {
+	J3Thread* self = J3Thread::get();
+	uintptr_t header = _header;
+
+	if((header & 0x3) == 2) /* inflated */
+		return ((J3Monitor*)(header & -2))->isOwner(self);
+	else
+		return !(header & 3) && (J3Thread*)(header & J3Thread::getThreadMask()) == self;
+}
+
 J3Monitor* J3Object::monitor() {
 	uintptr_t header = _header;
 
@@ -382,6 +392,10 @@ J3Object* J3ArrayObject::doNew(J3ArrayClass* cl, uintptr_t length) {
  */
 void J3ObjectHandle::wait() {
 	obj()->monitor()->wait();
+}
+
+bool J3ObjectHandle::isLockOwner() {
+	return obj()->isLockOwner();
 }
 
 uint32_t J3ObjectHandle::hashCode() {

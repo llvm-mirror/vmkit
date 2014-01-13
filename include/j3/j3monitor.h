@@ -43,6 +43,7 @@ namespace j3 {
 		J3Monitor* prepare(J3Object* _object, uintptr_t header, J3LockRecord* _record);
 		J3Monitor* prepare();
 
+		bool isOwner(J3Thread* thread);
 		void lock();
 		void unlock();
 

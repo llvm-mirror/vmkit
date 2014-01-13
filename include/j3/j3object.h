@@ -43,7 +43,7 @@ namespace j3 {
 		friend class J3Trampoline;
 
 	public:
-		static const uint32_t nbInterfaceMethodTable = 41;
+		static const uint32_t nbInterfaceMethodTable = 43;
 		static const uint32_t gepObjectClass = 0;
 		static const uint32_t gepInterfaceMethods = 2;
 		static const uint32_t gepVirtualMethods = 4;
@@ -102,6 +102,7 @@ namespace j3 {
 
 		J3Object(); /* never directly allocate an object */
 
+		bool       isLockOwner();
 		J3Monitor* monitor();
 		uint32_t   hashCode();
 
@@ -157,6 +158,7 @@ namespace j3 {
 		static J3ObjectHandle* doNewObject(J3Class* cl);
 		static J3ObjectHandle* doNewArray(J3ArrayClass* cl, uint32_t length);
 
+		bool            isLockOwner();
 		void            wait();
 
 		bool            isSame(J3ObjectHandle* handle) { return obj() == handle->obj(); }
