@@ -14,9 +14,9 @@
 using namespace j3;
 
 #ifdef LINUX_OS
-#define OPENJDK_LIBPATH_SUFFIX "jre/lib/amd64"
+#define OPENJDK_LIBPATH_SUFFIX "/lib/amd64"
 #else
-#define OPENJDK_LIBPATH_SUFFIX "jre/lib"
+#define OPENJDK_LIBPATH_SUFFIX "/lib"
 #endif
 
 static char* buildPath(const char* base, const char* suffix) {
@@ -32,12 +32,12 @@ static char* buildPath(const char* base, const char* suffix) {
 
 void J3Lib::processOptions(J3* vm) {
 	const char* jh = getenv("JAVA_HOME");
-	jh = jh ? jh : OPENJDK_HOME;
+	jh = jh ? jh : OPENJDK_HOME"/jre";
 
 	vm->options()->javaHome = jh ? jh : OPENJDK_HOME;
-	vm->options()->bootClasspath = buildPath(jh, "jre/lib/rt.jar");
+	vm->options()->bootClasspath = buildPath(jh, "/lib/rt.jar");
 	vm->options()->systemLibraryPath = buildPath(jh, OPENJDK_LIBPATH_SUFFIX);
-	vm->options()->extDirs = buildPath(jh, "jre/lib/ext");
+	vm->options()->extDirs = buildPath(jh, "/lib/ext");
 }
 
 void J3Lib::loadSystemLibraries(J3ClassLoader* loader) {

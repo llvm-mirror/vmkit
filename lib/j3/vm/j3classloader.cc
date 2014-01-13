@@ -227,8 +227,6 @@ J3InitialClassLoader::J3InitialClassLoader(vmkit::BumpAllocator* _alloc)
 	const char* archives = J3Thread::get()->vm()->options()->bootClasspath;
 	J3ClassBytes* bytes = J3Reader::openFile(allocator(), archives);
 
-	//makeLLVMFunctions_j3();
-
 	if (bytes) {
 		archive = new(allocator()) J3ZipArchive(bytes, allocator());
 		if(!archive) {
