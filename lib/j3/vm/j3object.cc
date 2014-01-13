@@ -304,7 +304,7 @@ uint32_t J3Object::hashCode() {
 
 	while(1) {
 		uintptr_t header = _header;
-		if((header & 0x7) == 1) { /* not locked, not inflated */
+		if(isUnlocked(header)) { /* not locked, not inflated */
 			uint32_t res = header >> 8;
 			if(res)
 				return res;
@@ -316,7 +316,7 @@ uint32_t J3Object::hashCode() {
 				return res;
 		} else {
 			/* if stack locked, force the inflation because I can not modify the stack of the owner */
-			J3Monitor* m = monitor();
+			J3Monitor* m = inflate();
 
 			header = m->header;
 
@@ -333,24 +333,12 @@ uint32_t J3Object::hashCode() {
 	}
 }
 
-bool J3Object::isLockOwner() {
-	J3Thread* self = J3Thread::get();
-	uintptr_t header = _header;
-
-	if((header & 0x3) == 2) /* inflated */
-		return ((J3Monitor*)(header & -2))->isOwner(self);
-	else
-		return !(header & 3) && (J3Thread*)(header & J3Thread::getThreadMask()) == self;
-}
-
-J3Monitor* J3Object::monitor() {
-	uintptr_t header = _header;
-
+J3Monitor* J3Object::inflate() {
 	while(1) {
 		uintptr_t header = _header;
 
-		if((header & 0x3) == 2) { /* already inflated */ 
-			J3Monitor* res = (J3Monitor*)(header & -2);
+		if(isInflated(header)) { /* already inflated */ 
+			J3Monitor* res = asMonitor(header);
 			if(res)
 				return res;
 			else
@@ -359,21 +347,32 @@ J3Monitor* J3Object::monitor() {
 			/* ok, I'm the boss */
 			J3Monitor* monitor = J3Thread::get()->vm()->monitorManager.allocate();
 
-			if(!(header & 3)) { /* stack locked */
-				J3LockRecord* record = (J3LockRecord*)header;
+			if(isStackLocked(header)) { /* stack locked */
+				J3LockRecord* record = asLockRecord(header);
 				/* I can read record->header because, in the worst case, the owner is blocked in the sched_yield loop */
 				/* however, I can not read lockCount because the owner is maybe playing with this value */
 				monitor->prepare(this, record->header, record); 
 			} else {            /* not locked at all */
-				if((header & 7) != 1)
+				if(!isUnlocked(header))
 					J3::internalError("should not happen");
 				monitor->prepare(this, header, 0);
 			}
+
 			_header = (uintptr_t)monitor | 2;
 
 			return monitor;
 		}
 	}
+}
+
+bool J3Object::isLockOwner() {
+	J3Thread* self = J3Thread::get();
+	uintptr_t header = _header;
+
+	if(isInflated(header)) /* inflated */
+		return asMonitor(header)->isOwner(self);
+	else
+		return !isUnlocked(header) && (J3Thread*)(header & J3Thread::getThreadMask()) == self;
 }
 
 /*
@@ -391,7 +390,7 @@ J3Object* J3ArrayObject::doNew(J3ArrayClass* cl, uintptr_t length) {
  *    J3ObjectHandle
  */
 void J3ObjectHandle::wait() {
-	obj()->monitor()->wait();
+	obj()->inflate()->wait();
 }
 
 bool J3ObjectHandle::isLockOwner() {

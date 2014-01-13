@@ -23,6 +23,7 @@ namespace j3 {
 	class J3FixedPoint;
 	class J3Method;
 	class J3Monitor;
+	class J3LockRecord;
 
 	// see: Cliff Click and John Rose. 2002. Fast subtype checking in the HotSpot JVM. 
 	// In Proceedings of the 2002 joint ACM-ISCOPE conference on Java Grande (JGI '02). ACM, New York, NY, USA, 96-107. 
@@ -103,8 +104,14 @@ namespace j3 {
 		J3Object(); /* never directly allocate an object */
 
 		bool       isLockOwner();
-		J3Monitor* monitor();
+		J3Monitor* inflate();
 		uint32_t   hashCode();
+
+		static bool          isUnlocked(uintptr_t header) { return (header & 7) == 1; }
+		static bool          isInflated(uintptr_t header) { return (header & 3) == 2; }
+		static bool          isStackLocked(uintptr_t header) { return !(header & 3); }
+		static J3LockRecord* asLockRecord(uintptr_t header) { return (J3LockRecord*)header; }
+		static J3Monitor*    asMonitor(uintptr_t header) { return (J3Monitor*)(header & ~3); }
 
 		static void monitorEnter(J3Object* obj);
 		static void monitorExit(J3Object* obj);
