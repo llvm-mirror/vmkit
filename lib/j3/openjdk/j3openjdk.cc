@@ -342,7 +342,38 @@ jboolean JNICALL JVM_IsNaN(jdouble d) { enterJVM(); leaveJVM(); NYI(); }
 /*
  * java.lang.Throwable
  */
-void JNICALL JVM_FillInStackTrace(JNIEnv* env, jobject throwable) { enterJVM(); leaveJVM(); NYI(); }
+void JNICALL JVM_FillInStackTrace(JNIEnv* env, jobject throwable) { 
+	enterJVM(); 
+	uint32_t           cur = 0;
+	uint32_t           max = 1024;
+	int64_t            _buf[max];
+	int64_t*           buf = _buf;
+	vmkit::StackWalker walker;
+
+	while(walker.next()) {
+		if(cur == max) {
+			void* prev = buf;
+			buf = (int64_t*)malloc((max<<1)*sizeof(int64_t));
+			memcpy(buf, prev, max*sizeof(int64_t));
+			max <<= 1;
+			if(prev != _buf) 
+				free(prev);
+		}
+		buf[cur++] = (int64_t)(uintptr_t)walker.ip();
+	}
+	
+	J3* vm = J3Thread::get()->vm();
+	jobject backtrace = J3ObjectHandle::doNewArray(vm->typeLong->getArray(), cur);
+	backtrace->setRegionLong(0, buf, 0, cur);
+
+	if(buf != _buf)
+		free(buf);
+
+	throwable->setObject(vm->throwableClassBacktrace, backtrace);
+
+	leaveJVM(); 
+}
+
 jint JNICALL JVM_GetStackTraceDepth(JNIEnv* env, jobject throwable) { enterJVM(); leaveJVM(); NYI(); }
 jobject JNICALL JVM_GetStackTraceElement(JNIEnv* env, jobject throwable, jint index) { enterJVM(); leaveJVM(); NYI(); }
 

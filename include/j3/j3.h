@@ -103,6 +103,8 @@ namespace j3 {
 		J3Field*         constructorClassSlot;
 		J3Method*        constructorClassInit;
 
+		J3Field*         throwableClassBacktrace;
+
 		llvm::Type* typeJNIEnvPtr;
 		llvm::Type* typeJ3VirtualTablePtr;
 		llvm::Type* typeJ3Type;

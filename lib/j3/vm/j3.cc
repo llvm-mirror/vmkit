@@ -145,6 +145,8 @@ void J3::run() {
 	constructorClassInit     = z_method(0, constructorClass, initName,
 																			names()->get("(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;IILjava/lang/String;[B[B)V"));
 
+	throwableClassBacktrace  = z_field(0, z_class("java/lang/Throwable"), "backtrace", objectClass);
+
 #define defJavaClassPrimitive(name, ctype, llvmtype, scale)	\
 	type##name->defineJavaClass("java/lang/"#name);
 	onJavaTypes(defJavaClassPrimitive)
