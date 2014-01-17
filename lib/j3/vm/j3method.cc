@@ -114,7 +114,16 @@ J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
 		memcpy(reIn+1, inArgs, n*sizeof(J3Value));
 	} else
 		reIn = inArgs;
-	return cxxCaller()(fnPtr(), reIn);
+
+	J3Value res;
+	try {
+		res = cxxCaller()(fnPtr(), reIn);
+	} catch(void* e) {
+		fprintf(stderr, " catch exception e: %p during the execution of %s::%s%s\n",
+						e, cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
+		throw e;
+	}
+	return res;
 }
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {

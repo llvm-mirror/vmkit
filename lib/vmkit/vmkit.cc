@@ -183,16 +183,9 @@ void VMKit::sigend() {
 	internalError("sig terminate");
 }
 
-static int fake = 0;
-
 void VMKit::throwException(void* obj) {
-#if 0
-	void** exception = (void**)abi::__cxa_allocate_exception(sizeof(void*));
-	*exception = obj;
-	abi::__cxa_throw(exception, (std::type_info*)Thread::get()->vm()->ptrTypeInfo, 0);
-#endif
-	fprintf(stderr, " throw exception...\n");
-	if(fake)
-		throw (void*)0; /* force the symbol typeinfo for void* to be conserved in the bc file */
-	abort();
+	//internalError("throw exception...\n");
+	//fprintf(stderr, "throw %p\n", obj);
+	//Thread::get()->vm()->printStackTrace();
+	throw obj;
 }

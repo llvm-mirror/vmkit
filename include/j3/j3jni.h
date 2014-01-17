@@ -9,6 +9,8 @@ namespace j3 {
 }
 
 #define enterJVM() try {
-#define leaveJVM() } catch(void* e) { J3Thread::get()->setPendingException(J3Thread::get()->push((J3Object*)e)); }
+#define leaveJVM() } catch(void* e) {																		\
+	J3Thread::get()->setPendingException(J3Thread::get()->push((J3Object*)e)); \
+ }
 
 #endif

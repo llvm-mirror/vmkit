@@ -25,8 +25,9 @@ void J3Trampoline::interfaceTrampoline(J3Object* obj) {
 		handle->vt()->_interfaceMethodTable[index] = res;
 	} else {
 		for(uint32_t i=0; i<desc->nbMethods; i++)
-			fprintf(stderr, "   method: %s::%s%s\n", desc->methods[i]->cl()->name()->cStr(),
-							desc->methods[i]->name()->cStr(), desc->methods[i]->signature()->name()->cStr());
+			fprintf(stderr, "   method: %s::%s%s - %d\n", desc->methods[i]->cl()->name()->cStr(),
+							desc->methods[i]->name()->cStr(), desc->methods[i]->signature()->name()->cStr(),
+							desc->methods[i]->interfaceIndex());
 		J3::internalError("implement me: interface Trampoline with collision: %d", desc->nbMethods);
 	}
 

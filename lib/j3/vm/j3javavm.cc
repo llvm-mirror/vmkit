@@ -4,9 +4,6 @@
 
 namespace j3 {
 
-#define enterJVM() try {
-#define leaveJVM() } catch(void* e) { J3Thread::get()->setPendingException(J3Thread::get()->push((J3Object*)e)); }
-
 #define NYI() { J3Thread::get()->vm()->internalError("not yet implemented: '%s'", __PRETTY_FUNCTION__); }
 
 jint DestroyJavaVM(JavaVM *vm) { enterJVM(); leaveJVM(); NYI(); }

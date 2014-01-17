@@ -108,7 +108,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 		else
 			generateJava();
 
-		if(vm->options()->debugTranslate > 4)
+		if(vm->options()->debugTranslate > 2)
 			llvmFunction->dump();
 	}
 
@@ -918,8 +918,8 @@ void J3CodeGen::translate() {
 				fprintf(stderr, "--------------------------------------------\n");
 				llvmFunction->dump();
 			case 4:
-			case 3:
 				stack.dump();
+			case 3:
 			case 2:
 				fprintf(stderr, "    [%4d] decoding: %s\n", javaPC, J3Cst::opcodeNames[bc]);
 				break;
@@ -1536,11 +1536,16 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_athrow:                        /* 0xbf */
-				builder->CreateCall(funcThrowException, 
-														builder->CreateBitCast(stack.pop(), 
-																									 funcThrowException->getFunctionType()->getParamType(0)));
-				builder->CreateBr(bbRet);
-				_onEndPoint();
+				{
+					llvm::Value* excp = builder->CreateBitCast(stack.pop(), funcThrowException->getFunctionType()->getParamType(0));
+					if(exceptions.nodes[curExceptionNode]->landingPad)
+						builder->CreateInvoke(funcThrowException, bbRet, exceptions.nodes[curExceptionNode]->landingPad, excp);
+					else {
+						builder->CreateCall(funcThrowException, excp);
+						builder->CreateBr(bbRet);
+					}
+					_onEndPoint();
+				}
 				break;
 
 			case J3Cst::BC_checkcast:                     /* 0xc0 */
@@ -1605,6 +1610,39 @@ void J3CodeGen::explore() {
 	}
 }
 #endif
+
+void J3CodeGen::z_translate() {
+	bbRet = newBB("ret");
+	llvm::BasicBlock* landingPad = newBB("landing-pad");
+	llvm::Value* val = builder->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0x42),
+																						 vm->typeJ3ObjectPtr);	
+	builder->CreateInvoke(funcThrowException, bbRet, landingPad,
+												builder->CreateBitCast(val, funcThrowException->getFunctionType()->getParamType(0)));
+
+	builder->SetInsertPoint(landingPad);
+	llvm::LandingPadInst *caughtResult = builder->CreateLandingPad(vm->typeGXXException, 
+																																 funcGXXPersonality, 
+																																 1, 
+																																 "landing-pad");
+	caughtResult->addClause(gvTypeInfo);
+
+	llvm::Value* excp = builder->CreateBitCast(builder->CreateCall(funcCXABeginCatch, 
+																																 builder->CreateExtractValue(caughtResult, 0)),
+																						 vm->typeJ3ObjectPtr);
+	
+	builder->CreateCall(funcCXAEndCatch);
+
+	builder->CreateCall3(funcEchoDebugExecute, 
+											 builder->getInt32(-1), /* just to see my first exception :) */
+											 buildString("catching exception %p!\n"),
+											 excp);
+	builder->CreateBr(bbRet);
+
+	builder->SetInsertPoint(bbRet);
+	builder->CreateRetVoid();
+
+	llvmFunction->dump();
+}
 
 void J3CodeGen::generateJava() {
 	J3Attribute* attr = method->attributes()->lookup(vm->codeAttribute);
@@ -1778,6 +1816,7 @@ void J3CodeGen::generateNative() {
 	}
 
 	res = builder->CreateCall(nat, args);
+	builder->CreateCall(funcReplayException);
 
 	if(llvmFunction->getReturnType()->isVoidTy()) {
 		builder->CreateCall2(funcJ3ThreadRestore, thread, frame);

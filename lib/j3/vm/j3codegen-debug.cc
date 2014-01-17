@@ -51,7 +51,7 @@ void J3CodeGen::echoDebugEnter(uint32_t isLeave, const char* msg, ...) {
 }
 
 void J3CodeGen::echoDebugExecute(uint32_t level, const char* msg, ...) {
-	if(J3Thread::get()->vm()->options()->debugExecute >= level) {
+	if(level == -1 || J3Thread::get()->vm()->options()->debugExecute >= level) {
 		va_list va;
 		va_start(va, msg);
 		vfprintf(stderr, msg, va);

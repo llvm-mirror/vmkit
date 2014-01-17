@@ -50,6 +50,7 @@ namespace j3 {
 		J3ObjectHandle*    pendingException();
 		bool               hasPendingException() { return _pendingException; }
 		void               setPendingException(J3ObjectHandle* handle) { _pendingException = handle; }
+		static void        replayException();
 
 		J3ObjectHandle*    push(J3ObjectHandle* handle);
 		J3ObjectHandle*    push(J3Object* obj);

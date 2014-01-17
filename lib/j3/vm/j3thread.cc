@@ -58,6 +58,15 @@ J3ObjectHandle* J3Thread::pendingException() {
 		return 0;
 }
 
+void J3Thread::replayException() {
+	J3Thread* self = J3Thread::get();
+	J3ObjectHandle* pending = self->_pendingException;
+	if(pending) {
+		self->_pendingException = 0;
+		vmkit::VMKit::throwException(pending->obj());
+	}
+}
+
 void J3Thread::ensureCapacity(uint32_t capacity) {
 	_localReferences.ensureCapacity(capacity);
 }
