@@ -388,7 +388,7 @@ jint JNICALL JVM_GetStackTraceDepth(JNIEnv* env, jobject throwable) {
 		uint32_t max = backtrace->arrayLength();
 		int64_t buf[max];
 
-		while(!res) {
+		while(max && !res) {
 			for(uint32_t i=0; i<max; i++) {
 				uint64_t cur = backtrace->getLongAt(i);
 				vmkit::Safepoint* sf = vm->getSafepoint((void*)cur);
