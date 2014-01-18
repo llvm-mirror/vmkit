@@ -513,9 +513,9 @@ J3ObjectHandle* J3ObjectHandle::getObjectAt(uint32_t idx) {
 
 void J3ObjectHandle::rawObjectCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb) {
 	if(isSame(to))
-		memmove((uint8_t*)(to->obj()+1) + toOffset, (uint8_t*)(array()+1) + fromOffset, nbb); 
+		memmove((uint8_t*)(to->obj()+1) + toOffset, (uint8_t*)(obj()+1) + fromOffset, nbb); 
 	else
-		memcpy((uint8_t*)(to->obj()+1) + toOffset, (uint8_t*)(array()+1) + fromOffset, nbb); 
+		memcpy((uint8_t*)(to->obj()+1) + toOffset, (uint8_t*)(obj()+1) + fromOffset, nbb); 
 }
 
 void J3ObjectHandle::rawArrayCopyTo(uint32_t fromOffset, J3ObjectHandle* to, uint32_t toOffset, uint32_t nbb) {

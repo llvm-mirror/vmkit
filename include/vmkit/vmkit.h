@@ -67,7 +67,8 @@ namespace vmkit {
 		virtual void vinternalError(const char* msg, va_list va) __attribute__((noreturn));
 		virtual void sigsegv(uintptr_t addr) __attribute__((noreturn));
 		virtual void sigend() __attribute__((noreturn));
-		virtual void printStackTrace() = 0;
+		virtual void printStackTrace();
+		virtual void uncatchedException(void* e);
 
 		static void internalError(const char* msg, ...) __attribute__((noreturn));		
 		static void throwException(void* obj) __attribute__((noreturn));

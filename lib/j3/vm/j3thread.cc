@@ -20,11 +20,6 @@ J3Thread::~J3Thread() {
 	vmkit::BumpAllocator::destroy(_allocator);
 }
 
-void J3Thread::doRun() {
-	J3ObjectHandle* handle = get()->javaThread();
-	get()->vm()->threadClassRun->invokeVirtual(handle);
-}
-
 void J3Thread::run() {
 	J3ObjectHandle* handle = javaThread();
 	vm()->threadClassRun->invokeVirtual(handle);

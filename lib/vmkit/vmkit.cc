@@ -189,3 +189,11 @@ void VMKit::throwException(void* obj) {
 	//Thread::get()->vm()->printStackTrace();
 	throw obj;
 }
+
+void VMKit::printStackTrace() {
+	fprintf(stderr, " TODO: baseline printStackTrace\n");
+}
+
+void VMKit::uncatchedException(void* e) {
+	fprintf(stderr, "Uncatched exception: %p\n", e);
+}

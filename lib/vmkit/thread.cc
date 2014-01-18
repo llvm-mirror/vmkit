@@ -66,7 +66,11 @@ void* Thread::doRun(void* _thread) {
 	thread->registerSignalInternal(SIGSEGV, sigsegvHandler, 1);
 	thread->registerSignalInternal(SIGBUS, sigsegvHandler, 1);
 
-	thread->run();
+	try {
+		thread->run();
+	} catch(void* e) {
+		thread->vm()->uncatchedException(e);
+	}
 	return 0;
 }
 

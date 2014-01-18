@@ -334,6 +334,33 @@ void J3::printStackTrace() {
 	}
 }
 
+void J3::uncatchedException(void* e) {
+	J3Thread* thread = J3Thread::get();
+	J3ObjectHandle* prev = thread->tell();
+
+	try {
+		J3ObjectHandle* excp = thread->push((J3Object*)e);
+
+		J3ObjectHandle* handler = 
+			thread->javaThread()->vt()->type()->asObjectType()
+			->findMethod(0, 
+									 names()->get("getUncaughtExceptionHandler"),
+									 initialClassLoader->getSignature(0, names()->get("()Ljava/lang/Thread$UncaughtExceptionHandler;")))
+			->invokeVirtual(thread->javaThread())
+			.valObject;
+
+		handler->vt()->type()->asObjectType()
+			->findMethod(0,
+									 names()->get("uncaughtException"),
+									 initialClassLoader->getSignature(0, names()->get("(Ljava/lang/Thread;Ljava/lang/Throwable;)V")))
+			->invokeVirtual(handler, thread->javaThread(), excp);
+
+	} catch(void* e2) {
+		fprintf(stderr, "Fatal: double exception %p and %p\n", e, e2);
+	}
+	thread->restore(prev);
+}
+
 void J3::forceSymbolDefinition() {
 	J3ArrayObject a; a.length(); /* J3ArrayObject */
 	J3LockRecord* l = new J3LockRecord(); /* J3LockRecord */

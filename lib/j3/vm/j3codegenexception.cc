@@ -29,11 +29,13 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 
 		caughtResult->addClause(codeGen->gvTypeInfo);
 
-#if 0
-		codeGen->builder->CreateCall2(codeGen->funcEchoDebugExecute, 
-																	codeGen->builder->getInt32(-1), /* just to see my first exception :) */
-																	codeGen->buildString("catching exception!\n"));
-#endif
+		if(codeGen->vm->options()->debugExecute) {
+			char buf[256];
+			snprintf(buf, 256, "          catching exceptions in %s::%s", codeGen->cl->name()->cStr(), codeGen->method->name()->cStr());
+			codeGen->builder->CreateCall2(codeGen->funcEchoDebugExecute, 
+																		codeGen->builder->getInt32(1), 
+																		codeGen->buildString(buf));
+		}
 
 		llvm::Value* excp = codeGen->builder->CreateBitCast(codeGen->builder->CreateCall(codeGen->funcCXABeginCatch, 
 																																										 codeGen->builder->CreateExtractValue(caughtResult, 0)),
@@ -68,11 +70,16 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 void J3ExceptionNode::close(J3CodeGen* codeGen) {
 	if(curCheck) {
 		codeGen->builder->SetInsertPoint(curCheck);
-#if 0
-		codeGen->builder->CreateCall2(codeGen->funcEchoDebugExecute, 
-																	codeGen->builder->getInt32(-1), 
-																	codeGen->buildString("  not catched here, rethrow\n"));
-#endif
+
+		if(codeGen->vm->options()->debugExecute) {
+			char buf[256];
+			snprintf(buf, 256, "          exceptions not catched in %s::%s, rethrowing", 
+							 codeGen->cl->name()->cStr(), codeGen->method->name()->cStr());
+			codeGen->builder->CreateCall2(codeGen->funcEchoDebugExecute, 
+																		codeGen->builder->getInt32(1), 
+																		codeGen->buildString(buf));
+		}
+
 		codeGen->stack.metaStack[0] = codeGen->vm->typeJ3ObjectPtr;
 		codeGen->stack.topStack = 1;
 		codeGen->builder->CreateCall(codeGen->funcThrowException, 

@@ -164,6 +164,7 @@ namespace j3 {
 		static void    illegalArgumentException(const char* msg) __attribute__((noreturn));
 
 		void           printStackTrace();
+		void           uncatchedException(void* e);
 
 		void forceSymbolDefinition();
 	};

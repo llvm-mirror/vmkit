@@ -76,6 +76,8 @@ void J3CodeGen::echoElement(uint32_t level, uint32_t type, uintptr_t elmt) {
 					J3* vm = J3Thread::get()->vm();
 					J3ObjectHandle* prev = J3Thread::get()->tell();
 					J3ObjectHandle* content = 0;
+
+					fprintf(stderr, " %p - ", pobj);
 					
 					if(pobj->vt()->type() == vm->typeCharacter->getArray())
 						content = J3Thread::get()->push(pobj);
