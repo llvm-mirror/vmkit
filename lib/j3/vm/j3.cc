@@ -147,6 +147,10 @@ void J3::run() {
 
 	throwableClassBacktrace  = z_field(0, z_class("java/lang/Throwable"), "backtrace", objectClass);
 
+	stackTraceElementClass   = z_class("java/lang/StackTraceElement");
+	stackTraceElementClassInit = z_method(0, stackTraceElementClass, initName,
+																				names()->get("(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V"));
+
 #define defJavaClassPrimitive(name, ctype, llvmtype, scale)	\
 	type##name->defineJavaClass("java/lang/"#name);
 	onJavaTypes(defJavaClassPrimitive)

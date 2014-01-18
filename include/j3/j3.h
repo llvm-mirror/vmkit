@@ -105,6 +105,9 @@ namespace j3 {
 
 		J3Field*         throwableClassBacktrace;
 
+		J3Class*         stackTraceElementClass;
+		J3Method*        stackTraceElementClassInit;
+
 		llvm::Type* typeJNIEnvPtr;
 		llvm::Type* typeJ3VirtualTablePtr;
 		llvm::Type* typeJ3Type;
