@@ -382,16 +382,28 @@ jint JNICALL JVM_GetStackTraceDepth(JNIEnv* env, jobject throwable) {
 	J3ObjectHandle* backtrace = throwable->getObject(vm->throwableClassBacktrace);
 
 	bool simplify = 1;
+	bool ignore = 1;
 
 	if(simplify) {
 		uint32_t max = backtrace->arrayLength();
 		int64_t buf[max];
 
-		for(uint32_t i=0; i<max; i++) {
-			uint64_t cur = backtrace->getLongAt(i);
+		while(!res) {
+			for(uint32_t i=0; i<max; i++) {
+				uint64_t cur = backtrace->getLongAt(i);
+				vmkit::Safepoint* sf = vm->getSafepoint((void*)cur);
 
-			if(vm->getSafepoint((void*)cur))
-				buf[res++] = cur;
+				if(sf) {
+					J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
+					if(ignore) {
+						if(m->name() == vm->initName && m->cl() == throwable->vt()->type()) {
+							ignore = 0;
+						}
+					} else
+						buf[res++] = cur;
+				}
+			}
+			ignore = 0;
 		}
 
 		jobject newBt = J3ObjectHandle::doNewArray(backtrace->vt()->type()->asArrayClass(), res);
