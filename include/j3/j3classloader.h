@@ -69,7 +69,8 @@ namespace j3 {
 		static J3ClassLoader*         nativeClassLoader(J3ObjectHandle* jloader);
 		J3ObjectHandle*               javaClassLoader(bool doPush=1);
 
-		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes);
+		J3Class*                      defineClass(const vmkit::Name* name, J3ClassBytes* bytes, 
+																							J3ObjectHandle* protectionDomain, const char* source);
 		J3Class*                      findLoadedClass(const vmkit::Name* name);
 		virtual J3Class*              loadClass(const vmkit::Name* name);
 

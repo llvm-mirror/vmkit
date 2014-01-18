@@ -27,6 +27,8 @@ namespace j3 {
 		J3LocalReferences          _localReferences;
 		J3ObjectHandle*            _pendingException;
 		J3ObjectHandle             _javaThread;
+
+		bool                       _interrupted;
 	public:
 		J3TrampolineArg            _trampolineArg;
 	private:
@@ -38,6 +40,9 @@ namespace j3 {
 		J3Thread(J3* vm);
 		~J3Thread();
 
+		bool               isInterrupted() { return _interrupted; }
+		void               markInterrupted() { _interrupted = 1; }
+		
 		void               assocJavaThread(J3ObjectHandle* javaThread);
 		J3ObjectHandle*    javaThread() { return &_javaThread; }
 		static J3Thread*   nativeThread(J3ObjectHandle* handle);

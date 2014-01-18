@@ -25,6 +25,11 @@ class J3ClassBytes : vmkit::PermanentObject {
   uint32_t size;
   uint8_t  elements[1];
 
+  J3ClassBytes(uint8_t* buf, int l) {
+		memcpy(elements, buf, l);
+    size = l;
+  }
+
   J3ClassBytes(int l) {
     size = l;
   }

@@ -330,7 +330,11 @@ void J3CodeGen::initialiseJ3ObjectType(J3ObjectType* cl) {
 }
 
 llvm::Value* J3CodeGen::javaClass(J3ObjectType* type, bool doPush) {
-	return builder->CreateCall2(funcJ3TypeJavaClass, typeDescriptor(type, vm->typeJ3TypePtr), builder->getInt1(doPush));
+	return builder->CreateCall3(funcJ3TypeJavaClass, 
+															typeDescriptor(type, vm->typeJ3TypePtr), 
+															builder->getInt1(doPush),
+															builder->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0),
+																											vm->typeJ3ObjectHandlePtr));
 }
 
 llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {

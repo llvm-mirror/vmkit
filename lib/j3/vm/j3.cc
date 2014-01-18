@@ -105,49 +105,49 @@ void J3::run() {
 #define z_field(access, cl, name, type)      cl->findField(access, names()->get(name), type)
 
 
-	nbArrayInterfaces    = 2;
-	arrayInterfaces      = (J3Type**)initialClassLoader->allocator()->allocate(2*sizeof(J3Type*));
-	arrayInterfaces[0]   = z_class("java/lang/Cloneable");
-	arrayInterfaces[1]   = z_class("java/io/Serializable");
+	nbArrayInterfaces          = 2;
+	arrayInterfaces            = (J3Type**)initialClassLoader->allocator()->allocate(2*sizeof(J3Type*));
+	arrayInterfaces[0]         = z_class("java/lang/Cloneable");
+	arrayInterfaces[1]         = z_class("java/io/Serializable");
 
-	charArrayClass           = typeCharacter->getArray();
-	objectClass              = z_class("java/lang/Object");
+	charArrayClass             = typeCharacter->getArray();
+	objectClass                = z_class("java/lang/Object");
 	objectClass->resolve();
 	
-	stringClass              = z_class("java/lang/String");
-	stringClassInit          = z_method(0, stringClass, initName, names()->get("([CZ)V"));
-	stringClassValue         = z_field(0, stringClass, "value", charArrayClass);
+	stringClass                = z_class("java/lang/String");
+	stringClassInit            = z_method(0, stringClass, initName, names()->get("([CZ)V"));
+	stringClassValue           = z_field(0, stringClass, "value", charArrayClass);
 
-	classClass               = z_class("java/lang/Class");
-	J3Field hf(J3Cst::ACC_PRIVATE, names()->get("** vmData **"), typeLong);
-	classClass->resolve(&hf, 1);
-	classClassInit           = z_method(0, classClass, initName, names()->get("()V"));
-	classClassVMData         = classClass->findField(0, hf.name(), hf.type());
+	classClass                 = z_class("java/lang/Class");
+	J3Field vmData[] = { J3Field(J3Cst::ACC_PRIVATE, names()->get("** vmData **"), typeLong) };
+	classClass->resolve(vmData, 1);
+	classClassInit             = z_method(0, classClass, initName, names()->get("()V"));
+	classClassVMData           = classClass->findField(0, vmData[0].name(), vmData[0].type());
 
-	classClassLoader         = z_class("java/lang/ClassLoader");
-	classClassLoader->resolve(&hf, 1);
-	classClassLoaderVMData   = classClassLoader->findField(0, hf.name(), hf.type());
+	classLoaderClass           = z_class("java/lang/ClassLoader");
+	classLoaderClass->resolve(vmData, 1);
+	classLoaderClassVMData     = classLoaderClass->findField(0, vmData[0].name(), vmData[0].type());
 
-	threadClass              = z_class("java/lang/Thread");
-	threadClassRun           = z_method(0, threadClass, names()->get("run"), names()->get("()V"));
-	threadClassVMData        = z_field(0, threadClass, "eetop", typeLong);
+	threadClass                = z_class("java/lang/Thread");
+	threadClassRun             = z_method(0, threadClass, names()->get("run"), names()->get("()V"));
+	threadClassVMData          = z_field(0, threadClass, "eetop", typeLong);
 
-	fieldClass               = z_class("java/lang/reflect/Field");
-	fieldClassClass          = z_field(0, fieldClass, "clazz", classClass);
-	fieldClassSlot           = z_field(0, fieldClass, "slot", typeInteger);
-	fieldClassAccess         = z_field(0, fieldClass, "modifiers", typeInteger);
-	fieldClassInit           = z_method(0, fieldClass, initName, 
-																			names()->get("(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
+	fieldClass                 = z_class("java/lang/reflect/Field");
+	fieldClassClass            = z_field(0, fieldClass, "clazz", classClass);
+	fieldClassSlot             = z_field(0, fieldClass, "slot", typeInteger);
+	fieldClassAccess           = z_field(0, fieldClass, "modifiers", typeInteger);
+	fieldClassInit             = z_method(0, fieldClass, initName, 
+																				names()->get("(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
 
-	constructorClass         = z_class("java/lang/reflect/Constructor");
-	constructorClassClass    = z_field(0, constructorClass, "clazz", classClass);
-	constructorClassSlot     = z_field(0, constructorClass, "slot", typeInteger);
-	constructorClassInit     = z_method(0, constructorClass, initName,
+	constructorClass           = z_class("java/lang/reflect/Constructor");
+	constructorClassClass      = z_field(0, constructorClass, "clazz", classClass);
+	constructorClassSlot       = z_field(0, constructorClass, "slot", typeInteger);
+	constructorClassInit       = z_method(0, constructorClass, initName,
 																			names()->get("(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;IILjava/lang/String;[B[B)V"));
 
-	throwableClassBacktrace  = z_field(0, z_class("java/lang/Throwable"), "backtrace", objectClass);
+	throwableClassBacktrace    = z_field(0, z_class("java/lang/Throwable"), "backtrace", objectClass);
 
-	stackTraceElementClass   = z_class("java/lang/StackTraceElement");
+	stackTraceElementClass     = z_class("java/lang/StackTraceElement");
 	stackTraceElementClassInit = z_method(0, stackTraceElementClass, initName,
 																				names()->get("(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V"));
 

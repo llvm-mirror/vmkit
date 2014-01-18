@@ -49,7 +49,7 @@ void J3Type::dump() {
 	fprintf(stderr, "Type: %s", name()->cStr());
 }
 
-J3ObjectHandle* J3Type::javaClass(bool doPush) {
+J3ObjectHandle* J3Type::javaClass(bool doPush, J3ObjectHandle* protectionDomain) {
 	if(!_javaClass) {
 		lock();
 		if(!_javaClass) {
@@ -312,9 +312,11 @@ J3Field* J3Layout::localFindField(const vmkit::Name* name, const J3Type* type) {
 /*  
  *  ------------ J3Class ------------
  */
-J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes) : 
+J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes, J3ObjectHandle* protectionDomain, const char* source) : 
 	J3Layout(loader, name), 
-	_staticLayout(loader, this, name){
+	_staticLayout(loader, this, name) {
+	_protectionDomain = protectionDomain ? loader->globalReferences()->add(protectionDomain) : 0;
+	_source = source;
 	_bytes = bytes;
 	status = LOADED;
 }

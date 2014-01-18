@@ -7,6 +7,7 @@
 #include "j3/j3constants.h"
 #include "j3/j3field.h"
 #include "j3/j3utf16.h"
+#include "j3/j3reader.h"
 #include "jvm.h"
 
 #include <dlfcn.h>
@@ -147,7 +148,7 @@ jobject JNICALL JVM_InitProperties(JNIEnv* env, jobject p) {
 																												 vm->names()->get("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;")));
 
 #define setProp(key, val) _setProp->invokeVirtual(p, vm->utfToString(key), vm->utfToString(val));
-#define setPropEnv(key, val, def) ({ const char* tmp = getenv(val); if(!tmp) tmp = def; setProp(key, val); })
+#define setPropEnv(key, val, def) ({ const char* tmp = getenv(val); if(!tmp) tmp = def; setProp(key, tmp); })
 
 	/*
 	** <dt>java.version         <dd>Java version number
@@ -533,7 +534,13 @@ jobject JNICALL JVM_CurrentThread(JNIEnv* env, jclass threadClass) {
 
 jint JNICALL JVM_CountStackFrames(JNIEnv* env, jobject thread) { enterJVM(); leaveJVM(); NYI(); }
 void JNICALL JVM_Interrupt(JNIEnv* env, jobject thread) { enterJVM(); leaveJVM(); NYI(); }
-jboolean JNICALL JVM_IsInterrupted(JNIEnv* env, jobject thread, jboolean clearInterrupted) { enterJVM(); leaveJVM(); NYI(); }
+jboolean JNICALL JVM_IsInterrupted(JNIEnv* env, jobject thread, jboolean clearInterrupted) { 
+	jboolean res;
+	enterJVM(); 
+	res = J3Thread::nativeThread(thread)->isInterrupted();
+	leaveJVM(); 
+	return res;
+}
 
 jboolean JNICALL JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj) { 
 	jboolean res;
@@ -750,12 +757,23 @@ jclass JNICALL JVM_FindLoadedClass(JNIEnv* env, jobject jloader, jstring name) {
 }
 
 /* Define a class */
-jclass JNICALL JVM_DefineClass(JNIEnv* env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd) { enterJVM(); leaveJVM(); NYI(); }
+jclass JNICALL JVM_DefineClass(JNIEnv* env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd) { 
+	return JVM_DefineClassWithSource(env, name, loader, buf, len, pd, 0);
+}
 
 /* Define a class with a source (added in JDK1.5) */
-jclass JNICALL JVM_DefineClassWithSource(JNIEnv* env, const char *name, jobject loader, 
-																									 const jbyte *buf, jsize len, jobject pd,
-																									 const char *source) { enterJVM(); leaveJVM(); NYI(); }
+jclass JNICALL JVM_DefineClassWithSource(JNIEnv* env, const char *name, jobject _loader, 
+																				 const jbyte *buf, jsize len, jobject pd,
+																				 const char *source) { 
+	jclass res;
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	J3ClassLoader* loader = _loader ? J3ClassLoader::nativeClassLoader(_loader) : vm->initialClassLoader;
+	J3ClassBytes* bytes = new(loader->allocator(), len) J3ClassBytes((uint8_t*)buf, len);
+	res = loader->defineClass(vm->names()->get(name), bytes, pd, source)->javaClass();
+	leaveJVM(); 
+	return res;
+}
 
 /*
  * Reflection support functions

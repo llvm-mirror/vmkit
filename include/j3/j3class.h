@@ -63,7 +63,7 @@ namespace j3 {
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
 
-		J3ObjectHandle*             javaClass(bool doPush=1);
+		J3ObjectHandle*             javaClass(bool doPush=1, J3ObjectHandle* protectionDomain=0);
 
 		virtual uint32_t            logSize() = 0;
 		uint64_t                    getSizeInBits();
@@ -206,6 +206,9 @@ namespace j3 {
 		/* GC Object */
 		J3ObjectHandle*    _staticInstance;
 
+		J3ObjectHandle*    _protectionDomain;
+		const char*        _source;
+
 		J3Attributes* readAttributes(J3Reader* reader);
 		void          readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields);
 
@@ -220,7 +223,7 @@ namespace j3 {
 
 		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access, bool isInterfaceMethod);
 	public:
-		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes);
+		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes, J3ObjectHandle* protectionDomain, const char* source);
 
 		J3ObjectHandle*     clone(J3ObjectHandle* obj);
 

@@ -13,7 +13,9 @@ void Thread::sigsegvHandler(int n, siginfo_t* info, void* context) {
 }
 
 void* Thread::operator new(size_t n) {
-	return ThreadAllocator::allocate();
+	void* res = ThreadAllocator::allocate();
+	memset(res, 0, n);
+	return res;
 }
 
 void Thread::operator delete(void* p) {

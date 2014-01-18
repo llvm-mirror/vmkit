@@ -31,7 +31,7 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 
 		if(codeGen->vm->options()->debugExecute) {
 			char buf[256];
-			snprintf(buf, 256, "          catching exceptions in %s::%s", codeGen->cl->name()->cStr(), codeGen->method->name()->cStr());
+			snprintf(buf, 256, "          catching exceptions in %s::%s\n", codeGen->cl->name()->cStr(), codeGen->method->name()->cStr());
 			codeGen->builder->CreateCall2(codeGen->funcEchoDebugExecute, 
 																		codeGen->builder->getInt32(1), 
 																		codeGen->buildString(buf));
@@ -73,7 +73,7 @@ void J3ExceptionNode::close(J3CodeGen* codeGen) {
 
 		if(codeGen->vm->options()->debugExecute) {
 			char buf[256];
-			snprintf(buf, 256, "          exceptions not catched in %s::%s, rethrowing", 
+			snprintf(buf, 256, "          exceptions not catched in %s::%s, rethrowing\n", 
 							 codeGen->cl->name()->cStr(), codeGen->method->name()->cStr());
 			codeGen->builder->CreateCall2(codeGen->funcEchoDebugExecute, 
 																		codeGen->builder->getInt32(1), 

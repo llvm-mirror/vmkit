@@ -49,12 +49,12 @@ J3ObjectHandle* J3ClassLoader::javaClassLoader(bool doPush) {
 }
 
 J3ClassLoader* J3ClassLoader::nativeClassLoader(J3ObjectHandle* jloader) {
-	J3ClassLoader* res = (J3ClassLoader*)jloader->getLong(J3Thread::get()->vm()->classClassLoaderVMData);
+	J3ClassLoader* res = (J3ClassLoader*)jloader->getLong(J3Thread::get()->vm()->classLoaderClassVMData);
 
 	if(!res) {
 		vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create(); 
 		res = new(allocator) J3ClassLoader(jloader, allocator);
-		jloader->setLong(J3Thread::get()->vm()->classClassLoaderVMData, (uint64_t)(uintptr_t)res);
+		jloader->setLong(J3Thread::get()->vm()->classLoaderClassVMData, (uint64_t)(uintptr_t)res);
 	}
 	
 	return res;
@@ -100,11 +100,11 @@ J3Class* J3ClassLoader::findLoadedClass(const vmkit::Name* name) {
 	return res;
 }
 
-J3Class* J3ClassLoader::defineClass(const vmkit::Name* name, J3ClassBytes* bytes) {
+J3Class* J3ClassLoader::defineClass(const vmkit::Name* name, J3ClassBytes* bytes, J3ObjectHandle* protectionDomain, const char* source) {
 	pthread_mutex_lock(&_mutexClasses);
 	J3Class* res = classes[name];
 	if(!res)
-		classes[name] = res = new(allocator()) J3Class(this, name, bytes);
+		classes[name] = res = new(allocator()) J3Class(this, name, bytes, protectionDomain, source);
 	pthread_mutex_unlock(&_mutexClasses);
 	return res;
 }
@@ -258,7 +258,7 @@ J3Class* J3InitialClassLoader::loadClass(const vmkit::Name* name) {
 		J3ClassBytes* bytes = new(allocator(), file->ucsize) J3ClassBytes(file->ucsize);
 		
 		if(archive->readFile(bytes, file))
-			return defineClass(name, bytes);
+			return defineClass(name, bytes, 0, 0);
 	}
 
 	return 0;
