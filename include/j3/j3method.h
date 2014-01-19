@@ -60,6 +60,9 @@ namespace j3 {
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Signature* signature);
 
+
+		J3MethodCode*       selfCode() { return &_selfCode; }
+
 		uint32_t            slot() { return _slot; }
 
 		static J3Method*    nativeMethod(J3ObjectHandle* handle);

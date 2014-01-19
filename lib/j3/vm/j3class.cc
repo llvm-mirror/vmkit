@@ -887,8 +887,6 @@ void J3Class::doNativeName() {
 	_nativeName[_nativeNameLength-2] = '_';
 	_nativeName[_nativeNameLength-1] = '2';
 	_nativeName[_nativeNameLength]   = 0;
-
-	loader()->addSymbol(_nativeName, this);
 }
 
 /*  
@@ -958,13 +956,15 @@ void J3ArrayClass::doInitialise() {
 
 void J3ArrayClass::doNativeName() {
 	uint32_t len = component()->nativeNameLength();
+
 	_nativeNameLength = len + 2;
 	_nativeName = (char*)loader()->allocator()->allocate(_nativeNameLength + 1);
+
 	_nativeName[0] = '_';
 	_nativeName[1] = '3';
+
 	memcpy(_nativeName+2, component()->nativeName(), len);
 	_nativeName[_nativeNameLength] = 0;
-	loader()->addSymbol(_nativeName, this);
 }
 
 /*  

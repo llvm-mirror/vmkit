@@ -213,10 +213,6 @@ void J3Method::buildLLVMNames(J3Class* from) {
 	memcpy(_llvmAllNames, prefix, plen);
 	memcpy(_llvmAllNames+plen, mangler.cStr(), mangler.length());
 	_llvmAllNames[length] = 0;
-
-	cl()->loader()->addSymbol(_llvmAllNames+0,   &_selfCode);
-	cl()->loader()->addSymbol(_llvmAllNames+4, this);
-	cl()->loader()->addSymbol(_llvmAllNames+plen, &_selfCode);
 }
 
 char* J3Method::llvmFunctionName(J3Class* from) {

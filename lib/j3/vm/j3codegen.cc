@@ -204,17 +204,21 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, llvm::Type* type) {
 
 llvm::Function* J3CodeGen::buildFunction(J3Method* method, bool isStub) {
 	const char* id = (isStub && !method->fnPtr()) ? method->llvmStubName(cl) : method->llvmFunctionName(cl);
+	loader->addSymbol(id, method->selfCode());
 	return (llvm::Function*)module->getOrInsertFunction(id, method->signature()->functionType(method->access()));
 }
 
 llvm::Value* J3CodeGen::typeDescriptor(J3ObjectType* objectType, llvm::Type* type) {
-	llvm::Value* v = module->getOrInsertGlobal(objectType->nativeName(), 
-																							 vm->typeJ3ObjectType);
+	const char* id = objectType->nativeName();
+	loader->addSymbol(id, objectType);
+	llvm::Value* v = module->getOrInsertGlobal(id, vm->typeJ3ObjectType);
 	return type == vm->typeJ3ObjectTypePtr ? v : builder->CreateBitCast(v, type);
 }
 
 llvm::Value* J3CodeGen::methodDescriptor(J3Method* method) {
-	return module->getOrInsertGlobal(method->llvmDescriptorName(), vm->typeJ3Method);
+	const char* id = method->llvmDescriptorName();
+	loader->addSymbol(id, method);
+	return module->getOrInsertGlobal(id, vm->typeJ3Method);
 }
 
 llvm::Value* J3CodeGen::spToCurrentThread(llvm::Value* sp) {
