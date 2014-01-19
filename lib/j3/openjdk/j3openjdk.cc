@@ -788,11 +788,37 @@ jstring JNICALL JVM_GetClassName(JNIEnv* env, jclass cls) {
 	return res;
 }
 
-jobjectArray JNICALL JVM_GetClassInterfaces(JNIEnv* env, jclass cls) { enterJVM(); leaveJVM(); NYI(); }
+jobjectArray JNICALL JVM_GetClassInterfaces(JNIEnv* env, jclass cls) { 
+	jobject res;
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	J3ObjectType* type = J3ObjectType::nativeClass(cls);
+	J3Class** interfaces;
+	uint32_t  nbInterfaces;
+	
+	if(type->isClass()) {
+		J3Class* cl = type->asClass();
+		interfaces = cl->interfaces();
+		nbInterfaces = cl->nbInterfaces();
+	} else {
+		interfaces = vm->arrayInterfaces;
+		nbInterfaces = vm->nbArrayInterfaces;
+	}
+
+	res = J3ObjectHandle::doNewArray(vm->classClass->getArray(), nbInterfaces);
+
+	for(uint32_t i=0; i<nbInterfaces; i++)
+		res->setObjectAt(i, interfaces[i]->javaClass());
+
+	leaveJVM(); 
+
+	return res;
+}
+
 jobject JNICALL JVM_GetClassLoader(JNIEnv* env, jclass cls) { 
 	jobject res;
 	enterJVM(); 
-	res = J3Class::nativeClass(cls)->loader()->javaClassLoader();
+	res = J3ObjectType::nativeClass(cls)->loader()->javaClassLoader();
 	leaveJVM(); 
 	return res;
 }
@@ -876,7 +902,7 @@ jobjectArray JNICALL JVM_GetClassDeclaredMethods(JNIEnv* env, jclass ofClass, jb
 	if(type->isClass()) {
 		J3Class* cl = type->asClass();
 		cl->resolve();
-		res = J3ObjectHandle::doNewArray(vm->constructorClass->getArray(), 
+		res = J3ObjectHandle::doNewArray(vm->methodClass->getArray(), 
 																		 publicOnly ? 
 																		 cl->staticLayout()->nbPublicMethods() + cl->nbPublicMethods() - cl->nbPublicConstructors() : 
 																		 cl->staticLayout()->nbMethods() + cl->nbMethods() - cl->nbConstructors());

@@ -72,7 +72,7 @@ namespace j3 {
 
 		void*            interfaceTrampoline;
 
-		J3Type**         arrayInterfaces;
+		J3Class**        arrayInterfaces;
 		uint32_t         nbArrayInterfaces;
 		J3Class*         objectClass;
 		J3ArrayClass*    charArrayClass;
@@ -104,6 +104,11 @@ namespace j3 {
 		J3Field*         constructorClassClass;
 		J3Field*         constructorClassSlot;
 		J3Method*        constructorClassInit;
+
+		J3Class*         methodClass;
+		J3Field*         methodClassClass;
+		J3Field*         methodClassSlot;
+		J3Method*        methodClassInit;
 
 		J3Field*         throwableClassBacktrace;
 

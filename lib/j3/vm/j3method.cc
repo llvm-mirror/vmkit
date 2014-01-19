@@ -297,8 +297,24 @@ J3ObjectHandle* J3Method::javaMethod() {
 																								vm->nameToString(signature()->name(), 0),
 																								annotations,
 																								paramAnnotations);
-			} else 
-				J3::internalError("implement me: javaMethod");
+			} else {
+				J3ObjectHandle* annotationDefault = cl()->asClass()->extractAttribute(attributes()->lookup(vm->annotationDefaultAttribute));
+			
+				_javaMethod = cl()->loader()->globalReferences()->add(J3ObjectHandle::doNewObject(vm->methodClass));
+
+				vm->methodClassInit->invokeSpecial(_javaMethod,
+																					 cl()->javaClass(0),
+																					 vm->nameToString(name(), 0),
+																					 parameters,
+																					 signature()->javaOut()->javaClass(0),
+																					 exceptions,
+																					 access(),
+																					 slot(),
+																					 vm->nameToString(signature()->name(), 0),
+																					 annotations,
+																					 paramAnnotations,
+																					 annotationDefault);
+			}
 
 			J3Thread::get()->restore(prev);
 		}

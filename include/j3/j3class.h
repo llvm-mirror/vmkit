@@ -125,7 +125,6 @@ namespace j3 {
 		J3InterfaceSlotDescriptor* slotDescriptorAt(uint32_t index) { return &_interfaceSlotDescriptors[index]; }
 		void                       prepareInterfaceTable();
 
-
 		bool                       isObjectType() { return 1; }
 
 		static J3ObjectType*       nativeClass(J3ObjectHandle* handle);

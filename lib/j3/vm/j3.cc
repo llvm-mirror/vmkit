@@ -106,7 +106,7 @@ void J3::run() {
 
 
 	nbArrayInterfaces          = 2;
-	arrayInterfaces            = (J3Type**)initialClassLoader->allocator()->allocate(2*sizeof(J3Type*));
+	arrayInterfaces            = (J3Class**)initialClassLoader->allocator()->allocate(2*sizeof(J3Type*));
 	arrayInterfaces[0]         = z_class("java.lang.Cloneable");
 	arrayInterfaces[1]         = z_class("java.io.Serializable");
 
@@ -150,6 +150,12 @@ void J3::run() {
 	constructorClassSlot       = z_field(0, constructorClass, "slot", typeInteger);
 	constructorClassInit       = z_method(0, constructorClass, initName,
 																			names()->get("(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;IILjava/lang/String;[B[B)V"));
+
+	methodClass                = z_class("java.lang.reflect.Method");
+	methodClassClass           = z_field(0, methodClass, "clazz", classClass);
+	methodClassSlot            = z_field(0, methodClass, "slot", typeInteger);
+	methodClassInit            = z_method(0, methodClass, initName,
+		names()->get("(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;Ljava/lang/Class;[Ljava/lang/Class;IILjava/lang/String;[B[B[B)V"));
 
 	throwableClassBacktrace    = z_field(0, z_class("java.lang.Throwable"), "backtrace", objectClass);
 
