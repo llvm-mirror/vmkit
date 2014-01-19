@@ -1322,7 +1322,7 @@ Optional Packages:
   --with-clang-path=path  clang path (use llvm-config --bindir and then
                           default path)
   --with-jdkhome          JRE home (default is $JAVA_HOME)
-  --with-mmtkpath=path    MMTk path (use mmtk.jar)
+  --with-mmtkpath=path    MMTk path (default ../jikesrvm/target)
 
 Some influential environment variables:
   CC          C compiler command
@@ -2192,12 +2192,12 @@ fi
 if test "${with_mmtkpath+set}" = set; then :
   withval=$with_mmtkpath; mmtkpath=$with_mmtkpath
 else
-  mmtkpath="`pwd`/mmtk.jar"
+  mmtkpath="`pwd`/../jikesrvm/target"
 
 fi
 
 
-if test ! -f "$mmtkpath"; then
+if test ! -f "$mmtkpath/mmtk/mmtk.jar"; then
      as_fn_error $? "Cannot find MMTk in '$mmtkpath'" "$LINENO" 5
 fi
 

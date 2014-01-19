@@ -228,12 +228,12 @@ dnl **************************************************************************
 
 AC_ARG_WITH(mmtkpath,
        [AS_HELP_STRING(--with-mmtkpath=path,
-           [MMTk path (use mmtk.jar)])],
+           [MMTk path (default ../jikesrvm/target)])],
        [[mmtkpath=$with_mmtkpath]],
-       [[mmtkpath="`pwd`/mmtk.jar"]]
+       [[mmtkpath="`pwd`/../jikesrvm/target"]]
 )
 
-if test ! -f "$mmtkpath"; then
+if test ! -f "$mmtkpath/mmtk/mmtk.jar"; then
      AC_MSG_ERROR([Cannot find MMTk in '$mmtkpath'])
 fi
 

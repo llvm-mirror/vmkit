@@ -1026,7 +1026,6 @@ void J3ArrayClass::doNativeName() {
 }
 
 J3ObjectHandle* J3ArrayClass::multianewArray(uint32_t dim, uint32_t* args) {
-	fprintf(stderr, "allocating %s %d\n", name()->cStr(), args[0]);
 	J3ObjectHandle* res = J3ObjectHandle::doNewArray(this, args[0]);
 
 	if(dim > 1)

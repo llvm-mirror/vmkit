@@ -209,8 +209,6 @@ void J3::compileApplication() {
 				buf[name->length()-6] = 0;
 				J3Class* c = loader->getTypeFromQualified(0, buf)->asClass();
 
-				fprintf(stderr, " find: %s\n", c->name()->cStr());
-
 				c->aotCompile();
 			}
 		}
