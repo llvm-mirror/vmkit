@@ -178,13 +178,18 @@ void J3::run() {
 
 	//options()->debugExecute = 0;
 
-	J3ObjectHandle* res = z_method(J3Cst::ACC_STATIC,
-																 z_class("sun.launcher.LauncherHelper"),
-																 names()->get("checkAndLoadMain"),
-																 names()->get("(ZILjava/lang/String;)Ljava/lang/Class;"))
-		->invokeStatic(1, 1, utfToString("HelloWorld")).valObject;
+	J3Class* main = J3ObjectType::nativeClass(z_method(J3Cst::ACC_STATIC,
+																										 z_class("sun.launcher.LauncherHelper"),
+																										 names()->get("checkAndLoadMain"),
+																										 names()->get("(ZILjava/lang/String;)Ljava/lang/Class;"))
+																						->invokeStatic(1, 1, utfToString("HelloWorld")).valObject)->asClass();
 
-	fprintf(stderr, "system class loader: sysLoader: %p - %p\n", res, res->obj());
+
+	fprintf(stderr, " main class: %s\n", main->name()->cStr());
+
+	main
+		->findMethod(J3Cst::ACC_STATIC, names()->get("main"), initialClassLoader->getSignature(0, names()->get("([Ljava/lang/String;)V")))
+		->invokeStatic((J3ObjectHandle*)0);
 }
 
 JNIEnv* J3::jniEnv() {

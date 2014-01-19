@@ -170,7 +170,7 @@ llvm::Type* J3ObjectType::llvmType() {
 }
 
 J3Method* J3ObjectType::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
-	J3::internalError("should not happe: %s::%s\n", J3ObjectType::name()->cStr(), name->cStr());
+	J3::internalError("should not happen - findMethod: %s::%s\n", J3ObjectType::name()->cStr(), name->cStr());
 }
 
 J3ObjectType* J3ObjectType::nativeClass(J3ObjectHandle* handle) {
@@ -282,14 +282,14 @@ uintptr_t J3Layout::structSize() {
 }
 
 J3Method* J3Layout::localFindMethod(const vmkit::Name* name, J3Signature* signature) {
-	//fprintf(stderr, " --- lookup %s::%s in %s\n", name->cStr(), signature->name()->cStr(), J3Layout::name()->cStr());
+	//fprintf(stderr, " --- lookup %s%s in %s\n", name->cStr(), signature->name()->cStr(), J3Layout::name()->cStr());
 
 	for(size_t i=0; i<nbMethods(); i++) {
 		J3Method* cur = methods()[i];
 
 		//fprintf(stderr, "%s::%s%s\n", cur->cl()->name()->cStr(), cur->name()->cStr(), cur->signature()->name()->cStr());
 
-		if(cur->name() == name && cur->signature() == signature) {
+		if(cur->name() == name && cur->signature()->name() == signature->name()) {
 			return cur;
 		}
 	}
