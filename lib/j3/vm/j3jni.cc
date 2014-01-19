@@ -18,14 +18,16 @@ jint JNICALL GetVersion(JNIEnv* env) {
 }
 
 jclass JNICALL DefineClass(JNIEnv* env, const char* name, jobject loader, const jbyte* buf, jsize len) { enterJVM(); leaveJVM(); NYI(); }
+
 jclass JNICALL FindClass(JNIEnv* env, const char* name) { 
 	jclass res;
 
 	enterJVM();
 	J3Method* m = J3Thread::get()->getJavaCaller();
 	J3* vm = J3Thread::get()->vm();
-	J3ClassLoader* loader = m ? m->cl()->loader() : vm->initialClassLoader;
-	J3Class* cl = loader->loadClass(vm->names()->get(name));
+	J3ClassLoader* loader = m ? m->cl()->loader() : 
+		J3ClassLoader::nativeClassLoader(vm->classLoaderClassGetSystemClassLoader->invokeStatic().valObject);
+	J3ObjectType* cl = loader->getTypeFromQualified(m ? m->cl() : 0, name);
 	cl->initialise();
 	res = cl->javaClass();
 	leaveJVM(); 
@@ -394,7 +396,7 @@ jfieldID JNICALL GetFieldID(JNIEnv* env, jclass clazz, const char* name, const c
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
 	J3Class* cl = J3ObjectType::nativeClass(clazz)->asClass();
-	res = cl->findField(0, vm->names()->get(name), cl->loader()->getType(cl, vm->names()->get(sig)), 0);
+	res = cl->findField(0, vm->names()->get(name), cl->loader()->getTypeFromDescriptor(cl, vm->names()->get(sig)), 0);
 	leaveJVM(); 
 	return res;
 }
@@ -404,7 +406,7 @@ jfieldID JNICALL GetStaticFieldID(JNIEnv* env, jclass clazz, const char* name, c
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
 	J3Class* cl = J3ObjectType::nativeClass(clazz)->asClass();
-	res = cl->findField(J3Cst::ACC_STATIC, vm->names()->get(name), cl->loader()->getType(cl, vm->names()->get(sig)), 0);
+	res = cl->findField(J3Cst::ACC_STATIC, vm->names()->get(name), cl->loader()->getTypeFromDescriptor(cl, vm->names()->get(sig)), 0);
 	leaveJVM(); 
 	return res;
 }

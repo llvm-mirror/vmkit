@@ -114,21 +114,20 @@ J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
 	return J3Class::nativeClass(vm->classLoaderClassLoadClass->invokeVirtual(_javaClassLoader, vm->nameToString(name)).valObject)->asClass();
 }
 
-void J3ClassLoader::wrongType(J3ObjectType* from, const vmkit::Name* type) {
-	J3::classFormatError(from, "wrong type: %s", type->cStr());
+void J3ClassLoader::wrongType(J3ObjectType* from, const char* type, size_t length) {
+	J3::classFormatError(from, "wrong type: %s", J3Thread::get()->vm()->names()->get(type, 0, length));
 }
 
-J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* typeName, uint32_t start, uint32_t* pend, bool unify) {
+J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const char* type, 
+																			 size_t start, size_t len, size_t* pend, bool unify) {
 	J3*            vm   = J3Thread::get()->vm();
 	J3Type*        res  = 0;
-	const char*    type = typeName->cStr();
-	uint32_t       len  = typeName->length();
 	uint32_t       pos  = start;
 	uint32_t       prof = 0;
 
 	while(!res) {
 		if(pos >= len)
-			wrongType(from, typeName);
+			wrongType(from, type, len);
 
 		switch(type[pos]) {
 			case J3Cst::ID_Array:     prof++; pos++; break;
@@ -138,16 +137,16 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 #undef doIt
 			case J3Cst::ID_Classname: 
 				if(unify) {
-					uint32_t start = ++pos;
+					size_t start = ++pos;
 					for(; pos < len && type[pos] != J3Cst::ID_End; pos++);
 					
 					if(type[pos] != J3Cst::ID_End)
-						wrongType(from, typeName);
+						wrongType(from, type, len);
 
 					pos++;
 					res = vm->objectClass;
 				} else {
-					uint32_t start = ++pos;
+					size_t start = ++pos;
 					char buf[len + 1 - start], c;
 					
 					memset(buf, 0, len + 1 - pos);
@@ -156,7 +155,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 						buf[pos - start] = c;
 					
 					if(type[pos] != J3Cst::ID_End)
-						wrongType(from, typeName);
+						wrongType(from, type, len);
 					
 					buf[pos++ - start] = 0;
 
@@ -166,7 +165,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 			case J3Cst::ID_Left:
 			case J3Cst::ID_Right:
 			default:
-				wrongType(from, typeName);
+				wrongType(from, type, len);
 		}
 	}
 
@@ -176,34 +175,50 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const vmkit::Name* ty
 		if(unify)
 			res = vm->objectClass;
 		else
-			res = res->getArray(prof, start ? 0 : typeName);
+			res = res->getArray(prof);
 	}
 
 	return res;
 }
 
-J3Type* J3ClassLoader::getType(J3ObjectType* from, const vmkit::Name* type) {
+J3Type* J3ClassLoader::getTypeFromDescriptor(J3ObjectType* from, const vmkit::Name* typeName) {
 	pthread_mutex_lock(&_mutexTypes);
-	J3Type* res = types[type];
+	J3Type* res = types[typeName];
 	pthread_mutex_unlock(&_mutexTypes);
 
 	if(!res) {
-		uint32_t end;
-		res = getTypeInternal(from, type, 0, &end, 0);
+		const char* type = typeName->cStr();
+		size_t length = typeName->length();
+		size_t end;
+		res = getTypeInternal(from, type, 0, length, &end, 0);
 
-		if(end != type->length())
-			wrongType(from, type);
+		if(end != length)
+			wrongType(from, type, length);
 
 		//printf("Analyse %s => %ls\n", type->cStr(), res->name()->cStr());
 		
 		pthread_mutex_lock(&_mutexTypes);
-		types[type] = res;
+		types[typeName] = res;
 		pthread_mutex_unlock(&_mutexTypes);
 	}
 
 	return res;
 }
 
+J3ObjectType* J3ClassLoader::getTypeFromQualified(J3ObjectType* from, const char* type, size_t length) {
+	if(length == -1)
+		length = strlen(type);
+
+	if(type[0] == J3Cst::ID_Array)
+		return getTypeFromDescriptor(from, J3Thread::get()->vm()->names()->get(type, 0, length))->asObjectType();
+	else {
+		char buf[length+1];
+		for(size_t i=0; i<length; i++)
+			buf[i] = type[i];
+		buf[length] = 0;
+		return loadClass(J3Thread::get()->vm()->names()->get(buf));
+	}
+}
 
 J3Signature* J3ClassLoader::getSignature(J3ObjectType* from, const vmkit::Name* signature) {
 	pthread_mutex_lock(&_mutexMethodTypes);

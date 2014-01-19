@@ -598,7 +598,7 @@ void J3Class::readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields) {
 		} else {
 			f->_access     = reader.readU2();
 			f->_name       = nameAt(reader.readU2());
-			f->_type       = loader()->getType(this, nameAt(reader.readU2()));
+			f->_type       = loader()->getTypeFromDescriptor(this, nameAt(reader.readU2()));
 			f->_attributes = readAttributes(&reader);
 		}
 
@@ -814,7 +814,7 @@ J3Field* J3Class::fieldAt(uint16_t idx, uint16_t access) {
 	J3Type*            type = (J3Type*)ctpResolved[ntIdx];
 
 	if(!type)
-		ctpResolved[ntIdx] = type = loader()->getType(this, nameAt(ctpValues[ntIdx] & 0xffff));
+		ctpResolved[ntIdx] = type = loader()->getTypeFromDescriptor(this, nameAt(ctpValues[ntIdx] & 0xffff));
 	
 	res = cl->findField(access, name, type);
 
@@ -827,16 +827,28 @@ J3ObjectType* J3Class::classAt(uint16_t idx) {
 
 	if(res)
 		return res;
-	
-	const vmkit::Name* name = nameAt(ctpValues[idx]);
-	if(name->cStr()[0] == J3Cst::ID_Array)
-		res = loader()->getType(this, name)->asObjectType();
-	else
-		res = loader()->loadClass(name);
+
+	const char* buf;
+	size_t length; 
+
+	utfAt(ctpValues[idx], &buf, &length);
+
+	res = loader()->getTypeFromQualified(this, buf, length);
 
 	ctpResolved[idx] = res;
 
 	return res;
+}
+
+void J3Class::utfAt(uint16_t idx, const char** buf, size_t* length) {
+	check(idx, J3Cst::CONSTANT_Utf8);
+
+	J3Reader reader(_bytes);
+
+	reader.seek(ctpValues[idx], reader.SeekSet);
+
+	*length = reader.readU2();
+	*buf = (const char*)reader.pointer();
 }
 
 const vmkit::Name*  J3Class::nameAt(uint16_t idx) {
@@ -846,13 +858,11 @@ const vmkit::Name*  J3Class::nameAt(uint16_t idx) {
 	if(res)
 		return res;
 
-	J3Reader reader(_bytes);
+	const char* buf;
+	size_t length;
+	utfAt(idx, &buf, &length);
 
-	reader.seek(ctpValues[idx], reader.SeekSet);
-
-	uint16_t len = reader.readU2(), i=0, n=0;
-
-	res = J3Thread::get()->vm()->names()->get((const char*)reader.pointer(), 0, len);
+	res = J3Thread::get()->vm()->names()->get(buf, 0, length);//(const char*)reader.pointer(), 0, len);
 
 	ctpResolved[idx] = (void*)res;
 

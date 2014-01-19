@@ -247,6 +247,7 @@ namespace j3 {
 		uint8_t             getCtpType(uint16_t idx);
 		void*               getCtpResolved(uint16_t idx);
 
+		void                utfAt(uint16_t idx, const char** buf, size_t* length);
 		const vmkit::Name*  nameAt(uint16_t idx);
 		float               floatAt(uint16_t idx);
 		double              doubleAt(uint16_t idx);

@@ -129,6 +129,10 @@ void J3::run() {
 	classLoaderClassVMData     = classLoaderClass->findField(0, vmData[0].name(), vmData[0].type());
 	classLoaderClassLoadClass  = z_method(0, classLoaderClass, names()->get("loadClass"), 
 																				names()->get("(Ljava/lang/String;)Ljava/lang/Class;"));
+	classLoaderClassGetSystemClassLoader = z_method(J3Cst::ACC_STATIC, 
+																									classLoaderClass,
+																									names()->get("getSystemClassLoader"),
+																									names()->get("()Ljava/lang/ClassLoader;"));
 
 	threadClass                = z_class("java/lang/Thread");
 	threadClassRun             = z_method(0, threadClass, names()->get("run"), names()->get("()V"));
@@ -168,14 +172,6 @@ void J3::run() {
 
 	//options()->debugExecute = 0;
 
-#if 0
-	J3Class* loaderClass = z_class("java/lang/ClassLoader");
-	J3ObjectHandle* sysLoader = z_method(J3Cst::ACC_STATIC, 
-																			 loaderClass,
-																			 names()->get("getSystemClassLoader"),
-																			 names()->get("()Ljava/lang/ClassLoader;"))->invokeStatic().valObject;
-#else
-
 	J3ObjectHandle* res = z_method(J3Cst::ACC_STATIC,
 																 z_class("sun/launcher/LauncherHelper"),
 																 names()->get("checkAndLoadMain"),
@@ -183,7 +179,6 @@ void J3::run() {
 		->invokeStatic(1, 1, utfToString("HelloWorld")).valObject;
 
 	fprintf(stderr, "system class loader: sysLoader: %p - %p\n", res, res->obj());
-#endif
 }
 
 JNIEnv* J3::jniEnv() {

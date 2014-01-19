@@ -88,6 +88,7 @@ namespace j3 {
 		J3Class*         classLoaderClass;
 		J3Field*         classLoaderClassVMData;
 		J3Method*        classLoaderClassLoadClass;
+		J3Method*        classLoaderClassGetSystemClassLoader;
 
 		J3Class*         threadClass;
 		J3Field*         threadClassVMData;

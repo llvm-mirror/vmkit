@@ -57,10 +57,12 @@ namespace j3 {
 
 		void                          addNativeLibrary(void* handle);
 
-		J3Type*                       getTypeInternal(J3ObjectType* from, const vmkit::Name* type, uint32_t start, uint32_t* end, bool unify);
-		J3Type*                       getType(J3ObjectType* from, const vmkit::Name* type);       /* find a type */
+		J3Type*                       getTypeInternal(J3ObjectType* from, const char* type, 
+																									size_t start, size_t len, size_t* end, bool unify);
+		J3Type*                       getTypeFromDescriptor(J3ObjectType* from, const vmkit::Name* type);       /* find a type */
+		J3ObjectType*                 getTypeFromQualified(J3ObjectType* from, const char* type, size_t length=-1); /* find a type */
 		J3Signature*                  getSignature(J3ObjectType* from, const vmkit::Name* signature); /* get a method type */
-		void                          wrongType(J3ObjectType* from, const vmkit::Name* type);
+		void                          wrongType(J3ObjectType* from, const char* type, size_t length);
 
 		uint32_t                      interfaceIndex(J3Method* signature);
 
