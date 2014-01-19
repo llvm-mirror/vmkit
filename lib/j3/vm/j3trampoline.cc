@@ -39,6 +39,7 @@ void J3Trampoline::interfaceTrampoline(J3Object* obj) {
 void J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
 	J3TrampolineArg arg = J3Thread::get()->_trampolineArg;
 
+	target->cl()->initialise();
 	target->ensureCompiled(0);
 
 	trampoline_restart(target->fnPtr(), &arg);

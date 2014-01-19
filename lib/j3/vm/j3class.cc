@@ -321,6 +321,18 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	status = LOADED;
 }
 
+void J3Class::aotCompile() {
+	resolve();
+
+	for(uint32_t i=0; i<nbMethods(); i++) {
+		methods()[i]->aotCompile();
+	}
+
+	for(uint32_t i=0; i<staticLayout()->nbMethods(); i++) {
+		staticLayout()->methods()[i]->aotCompile();
+	}
+}
+
 uint16_t J3Class::modifiers() {
 	return access();
 #if 0

@@ -52,11 +52,15 @@ J3Signature::function_t J3Method::cxxCaller() {
 	return signature()->caller(access());
 }
 
-void J3Method::ensureCompiled(bool withCaller) {
+void J3Method::aotCompile() {
+	fprintf(stderr, "compiling: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
+	ensureCompiled(0, 1);
+}
+
+void J3Method::ensureCompiled(bool withCaller, bool onlyTranslate) {
 	if(!fnPtr() || (withCaller && !cxxCaller())) {
 		// fprintf(stderr, "materializing: %s::%s%s\n", this, cl()->name()->cStr(), name()->cStr(), signature()->cStr());
-		cl()->initialise();
-		J3CodeGen::translate(this, !fnPtr(), withCaller);
+		J3CodeGen::translate(this, !fnPtr(), withCaller, onlyTranslate);
  	}
 }
 
@@ -104,6 +108,7 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 }
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
+	cl()->initialise();
 	ensureCompiled(1);  /* force the generation of the code and thus of the functionType */
 
 	J3Value* reIn;
@@ -127,6 +132,7 @@ J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
 }
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {
+	cl()->initialise();
 	ensureCompiled(1);  /* force the generation of the code and thus of the functionType */
 
 	llvm::FunctionType* fType = signature()->functionType(J3Cst::ACC_STATIC);      /* static signature for va */

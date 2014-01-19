@@ -28,7 +28,7 @@ using namespace j3;
 
 #define _onEndPoint() ({ if(onEndPoint()) return; })
 
-J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMethod, bool withCaller) :
+J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMethod, bool withCaller, bool onlyTranslate) :
 	exceptions(this) {
 	
 	allocator = _allocator;
@@ -117,13 +117,14 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	if(needsCaller)
 		signature->generateCallerIR(access, this, module, "generic-caller");
 
-	loader->compileModule(module);
+	if(!onlyTranslate)
+		loader->compileModule(module);
 	
 	if(needsCaller)
 		signature->setCaller(access, (J3Signature::function_t)loader->ee()->getFunctionAddress("generic-caller"));
 
 	if(withMethod) {
-		void* fnPtr = (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
+		void* fnPtr = onlyTranslate ? 0 : (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
 		method->markCompiled(llvmFunction, fnPtr);
 	}
 }
@@ -138,11 +139,11 @@ void* J3CodeGen::operator new(size_t n, vmkit::BumpAllocator* _allocator) {
 void J3CodeGen::operator delete(void* ptr) {
 }
 
-void J3CodeGen::translate(J3Method* method, bool withMethod, bool withCaller) {
+void J3CodeGen::translate(J3Method* method, bool withMethod, bool withCaller, bool onlyTranslate) {
 	J3Thread::get()->vm()->lockCompiler();
 	
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
-	delete new(allocator) J3CodeGen(allocator, method, withMethod, withCaller);
+	delete new(allocator) J3CodeGen(allocator, method, withMethod, withCaller, onlyTranslate);
 	vmkit::BumpAllocator::destroy(allocator);
 
 	J3Thread::get()->vm()->unlockCompiler();
@@ -452,7 +453,6 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 
 void J3CodeGen::invokeStatic(uint32_t idx) {
 	J3Method* target = cl->methodAt(idx, J3Cst::ACC_STATIC);
-	initialiseJ3ObjectType(target->cl());
 	invoke(J3Cst::ACC_STATIC, target, buildFunction(target));
 }
 

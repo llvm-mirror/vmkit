@@ -105,7 +105,8 @@ namespace j3 {
 		J3Value             invokeVirtual(J3ObjectHandle* obj, J3Value* args);
 		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
 
-		void                ensureCompiled(bool withCaller);
+		void                aotCompile();
+		void                ensureCompiled(bool withCaller, bool onlyTranslate=0);
 		J3Signature::function_t cxxCaller();
 		void*               fnPtr();
 		void*               functionPointerOrStaticTrampoline();
