@@ -221,6 +221,10 @@ namespace j3 {
 		void          doInitialise();
 
 		J3Method*     interfaceOrMethodAt(uint16_t idx, uint16_t access, bool isInterfaceMethod);
+
+		J3Method*     findInterfaceMethodRecursive(const vmkit::Name* name, J3Signature* signature);
+		J3Field*      findInterfaceFieldRecursive(const vmkit::Name* name, J3Type* type);
+
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes, J3ObjectHandle* protectionDomain, const char* source);
 

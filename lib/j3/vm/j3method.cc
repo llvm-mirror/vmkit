@@ -53,13 +53,15 @@ J3Signature::function_t J3Method::cxxCaller() {
 }
 
 void J3Method::aotCompile() {
-	fprintf(stderr, "compiling: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
-	ensureCompiled(0, 1);
+	if(!J3Cst::isAbstract(access())) {
+		fprintf(stderr, "compiling: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
+		ensureCompiled(0, 1);
+	}
 }
 
 void J3Method::ensureCompiled(bool withCaller, bool onlyTranslate) {
 	if(!fnPtr() || (withCaller && !cxxCaller())) {
-		// fprintf(stderr, "materializing: %s::%s%s\n", this, cl()->name()->cStr(), name()->cStr(), signature()->cStr());
+		//fprintf(stderr, "materializing: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
 		J3CodeGen::translate(this, !fnPtr(), withCaller, onlyTranslate);
  	}
 }

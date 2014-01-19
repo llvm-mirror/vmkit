@@ -300,8 +300,7 @@ J3Field* J3Layout::localFindField(const vmkit::Name* name, const J3Type* type) {
 	for(size_t i=0; i<nbFields(); i++) {
 		J3Field* cur = fields() + i;
 
-		//printf("Compare %s - %s\n", cur->name()->cStr(), cur->type()->name()->cStr());
-		//printf("  with  %s - %s\n", name->cStr(), type->name()->cStr());
+		//printf("  compare with %s - %s\n", cur->name()->cStr(), cur->type()->name()->cStr());
 		if(cur->name() == name && cur->type() == type) {
 			return cur;
 		}
@@ -357,9 +356,7 @@ J3ObjectHandle* J3Class::extractAttribute(J3Attribute* attr) {
 		return J3ObjectHandle::doNewArray(J3Thread::get()->vm()->typeByte->getArray(), 0);
 }
 
-J3Method* J3Class::findInterfaceMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
-	resolve();
-
+J3Method* J3Class::findInterfaceMethodRecursive(const vmkit::Name* name, J3Signature* signature) {
 	J3Class* cur = this;
 	while(1) {
 		J3Method* res = cur->localFindMethod(name, signature);
@@ -371,17 +368,27 @@ J3Method* J3Class::findInterfaceMethod(const vmkit::Name* name, J3Signature* sig
 			case 1: cur = cur->interfaces()[0]; break;
 			default:
 				for(uint32_t i=0; i<cur->nbInterfaces(); i++) {
-					res = cur->interfaces()[i]->findInterfaceMethod(name, signature, error);
+					res = cur->interfaces()[i]->findInterfaceMethodRecursive(name, signature);
 					if(res)
 						return res;
 				}
 			case 0:
-				if(error)
-					J3::noSuchMethodError("no such interface method", this, name, signature);
-				else
-					return 0;
+				return 0;
 		}
 	}
+}
+
+J3Method* J3Class::findInterfaceMethod(const vmkit::Name* name, J3Signature* signature, bool error) {
+	resolve();
+	J3Method* res = findInterfaceMethodRecursive(name, signature);
+
+	if(res)
+		return res;
+
+	if(error)
+		J3::noSuchMethodError("no such interface method", this, name, signature);
+	else
+		return 0;
 }
 
 J3Method* J3Class::findMethod(uint32_t access, const vmkit::Name* name, J3Signature* signature, bool error) {
@@ -401,28 +408,67 @@ J3Method* J3Class::findMethod(uint32_t access, const vmkit::Name* name, J3Signat
 			else
 				return 0;
 		}
+
 		cur = cur->super();
 	}
 }
 
+J3Field* J3Class::findInterfaceFieldRecursive(const vmkit::Name* name, J3Type* type) {
+	J3Class* cur = this;
+
+	while(1) {
+		J3Field* res = cur->staticLayout()->localFindField(name, type);
+
+		if(res)
+			return res;
+
+		switch(cur->nbInterfaces()) {
+			case 1: cur = cur->interfaces()[0]; break;
+			default:
+				for(uint32_t i=0; i<cur->nbInterfaces(); i++) {
+					res = cur->interfaces()[i]->findInterfaceFieldRecursive(name, type);
+					if(res)
+						return res;
+				}
+			case 0:
+				return 0;
+		}
+	}
+}
+
 J3Field* J3Class::findField(uint32_t access, const vmkit::Name* name, J3Type* type, bool error) {
-	//loader()->vm()->log("Lookup: %s %s in %s", type->name()->cStr(), name->cStr(), J3Class::name()->cStr());
 	resolve();
+
 	J3Class* cur = this;
 
 	while(1) {
 		J3Layout* layout = J3Cst::isStatic(access) ? (J3Layout*)cur->staticLayout() : cur;
 		J3Field* res = layout->localFindField(name, type);
 
+		//fprintf(stderr, "[%d] Lookup: %s %s in %s\n", access, type->name()->cStr(), name->cStr(), cur->name()->cStr());
+
 		if(res)
 			return res;
 
 		if(cur == cur->super()) {
+			if(J3Cst::isStatic(access)) {
+				J3Class* prev = 0;
+				for(cur=this; cur!=prev; cur=cur->super()) {
+					for(uint32_t i=0; i<cur->nbInterfaces(); i++) {
+						res = cur->interfaces()[i]->findInterfaceFieldRecursive(name, type);
+						if(res)
+							return res;
+					}
+					prev = cur;
+				}
+			}
+
 			if(error)
 				J3::noSuchFieldError("no such field", this, name, type);
 			else
 				return 0;
 		}
+
 		cur = cur->super();
 	}
 }

@@ -38,11 +38,11 @@ VMKit::VMKit(vmkit::BumpAllocator* allocator) :
 	_allocator = allocator;
 	pthread_mutex_init(&safepointMapLock, 0);
 
-	//pthread_mutexattr_t attr;
-	//pthread_mutexattr_init(&attr);
-	//pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&_compilerLock, 0);
-	//pthread_mutexattr_destroy(&attr);
+	pthread_mutexattr_t attr;
+	pthread_mutexattr_init(&attr);
+	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&_compilerLock, &attr);
+	pthread_mutexattr_destroy(&attr);
 }
 
 void* VMKit::operator new(size_t n, vmkit::BumpAllocator* allocator) {
