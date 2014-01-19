@@ -207,7 +207,7 @@ dnl **************************************************************************
 
 AC_ARG_WITH(jdkhome,
        [AS_HELP_STRING(--with-jdkhome,
-           [Build J3 with OpenJDK JRE install (default is $JAVA_HOME or /usr/lib/java)])],
+           [JRE home (default is $JAVA_HOME)])],
        [[jdkhome=$with_jdkhome]],
        [[jdkhome=""]]
 )
@@ -221,6 +221,23 @@ if test -z "$jdkhome"; then
 fi
 
 AC_SUBST([jdkhome])
+
+dnl **************************************************************************
+dnl MMTk
+dnl **************************************************************************
+
+AC_ARG_WITH(mmtkpath,
+       [AS_HELP_STRING(--with-mmtkpath=path,
+           [MMTk path (use mmtk.jar)])],
+       [[mmtkpath=$with_mmtkpath]],
+       [[mmtkpath="`pwd`/mmtk.jar"]]
+)
+
+if test ! -f "$mmtkpath"; then
+     AC_MSG_ERROR([Cannot find MMTk in '$mmtkpath'])
+fi
+
+AC_SUBST([mmtkpath])
 
 dnl===-----------------------------------------------------------------------===
 dnl===

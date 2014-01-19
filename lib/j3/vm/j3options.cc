@@ -15,15 +15,15 @@ J3Options::J3Options() {
 
 	debugEnterIndent = 1;
 
-	debugExecute = 0;
+	debugExecute = 1;
 	debugLoad = 0;
 	debugResolve = 0;
 	debugIniting = 0;
 	debugTranslate = 0;
 	debugLinking = 0;
-	debugLifeCycle = 1;
+	debugLifeCycle = 0;
 
-	genDebugExecute = 0;//debugExecute ? 1 : 0;
+	genDebugExecute = 1;//debugExecute ? 1 : 0;
 
 	stackSize = 0x80*0x1000;
 }

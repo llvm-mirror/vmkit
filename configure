@@ -608,6 +608,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+mmtkpath
 jdkhome
 LLVM_LDFLAGS
 LLVM_LIBS
@@ -681,6 +682,7 @@ with_llvm_config_path
 with_llvm_runtime_config_path
 with_clang_path
 with_jdkhome
+with_mmtkpath
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1319,8 +1321,8 @@ Optional Packages:
                           llvm-runtime-config path (use llvm-config-path)
   --with-clang-path=path  clang path (use llvm-config --bindir and then
                           default path)
-  --with-jdkhome          Build J3 with OpenJDK JRE install (default is
-                          $JAVA_HOME or /usr/lib/java)
+  --with-jdkhome          JRE home (default is $JAVA_HOME)
+  --with-mmtkpath=path    MMTk path (use mmtk.jar)
 
 Some influential environment variables:
   CC          C compiler command
@@ -2180,6 +2182,23 @@ if test -z "$jdkhome"; then
 	 else
 			jdkhome=$JAVA_HOME
 	 fi
+fi
+
+
+
+
+
+# Check whether --with-mmtkpath was given.
+if test "${with_mmtkpath+set}" = set; then :
+  withval=$with_mmtkpath; mmtkpath=$with_mmtkpath
+else
+  mmtkpath="`pwd`/mmtk.jar"
+
+fi
+
+
+if test ! -f "$mmtkpath"; then
+     as_fn_error $? "Cannot find MMTk in '$mmtkpath'" "$LINENO" 5
 fi
 
 

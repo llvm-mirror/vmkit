@@ -31,4 +31,6 @@ LLVM_LDFLAGS=@LLVM_LDFLAGS@
 
 OPENJDK_HOME=@jdkhome@
 
+MMTK_PATH=@mmtkpath@
+
 OS=@OS@

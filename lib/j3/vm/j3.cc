@@ -169,12 +169,12 @@ void J3::run() {
 #undef defJavaClassPrimitive
 
 	if(options()->debugLifeCycle)
-		fprintf(stderr, "  Bootstraping the system library\n");
+		fprintf(stderr, "  Bootstrap the system library\n");
 
 	J3Lib::bootstrap(this);
 
 	if(options()->debugLifeCycle)
-		fprintf(stderr, "  Launching the application\n");
+		fprintf(stderr, "  Find the application\n");
 
 	//options()->debugExecute = 0;
 
@@ -185,7 +185,8 @@ void J3::run() {
 																						->invokeStatic(1, 1, utfToString("HelloWorld")).valObject)->asClass();
 
 
-	fprintf(stderr, " main class: %s\n", main->name()->cStr());
+	if(options()->debugLifeCycle)
+		fprintf(stderr, "  Launch the application\n");
 
 	main
 		->findMethod(J3Cst::ACC_STATIC, names()->get("main"), initialClassLoader->getSignature(0, names()->get("([Ljava/lang/String;)V")))
