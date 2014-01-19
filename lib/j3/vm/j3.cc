@@ -127,6 +127,8 @@ void J3::run() {
 	classLoaderClass           = z_class("java/lang/ClassLoader");
 	classLoaderClass->resolve(vmData, 1);
 	classLoaderClassVMData     = classLoaderClass->findField(0, vmData[0].name(), vmData[0].type());
+	classLoaderClassLoadClass  = z_method(0, classLoaderClass, names()->get("loadClass"), 
+																				names()->get("(Ljava/lang/String;)Ljava/lang/Class;"));
 
 	threadClass                = z_class("java/lang/Thread");
 	threadClassRun             = z_method(0, threadClass, names()->get("run"), names()->get("()V"));

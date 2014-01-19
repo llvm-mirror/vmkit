@@ -110,7 +110,8 @@ J3Class* J3ClassLoader::defineClass(const vmkit::Name* name, J3ClassBytes* bytes
 }
 
 J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
-	J3::internalError("implement me: loadClass from a Java class loader");
+	J3* vm = J3Thread::get()->vm();
+	return J3Class::nativeClass(vm->classLoaderClassLoadClass->invokeVirtual(_javaClassLoader, vm->nameToString(name)).valObject)->asClass();
 }
 
 void J3ClassLoader::wrongType(J3ObjectType* from, const vmkit::Name* type) {

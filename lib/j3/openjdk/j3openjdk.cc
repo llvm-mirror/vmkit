@@ -865,7 +865,40 @@ jbyteArray JNICALL JVM_GetClassTypeAnnotations(JNIEnv* env, jclass cls) { enterJ
  * New (JDK 1.4) reflection implementation
  */
 
-jobjectArray JNICALL JVM_GetClassDeclaredMethods(JNIEnv* env, jclass ofClass, jboolean publicOnly) { enterJVM(); leaveJVM(); NYI(); }
+jobjectArray JNICALL JVM_GetClassDeclaredMethods(JNIEnv* env, jclass ofClass, jboolean publicOnly) { 
+	jobjectArray res;
+
+	enterJVM(); 
+	J3* vm = J3Thread::get()->vm();
+	J3ObjectType* type = J3ObjectType::nativeClass(ofClass);
+	
+	if(type->isClass()) {
+		J3Class* cl = type->asClass();
+		cl->resolve();
+		res = J3ObjectHandle::doNewArray(vm->constructorClass->getArray(), 
+																		 publicOnly ? 
+																		 cl->staticLayout()->nbPublicMethods() + cl->nbPublicMethods() - cl->nbPublicConstructors() : 
+																		 cl->staticLayout()->nbMethods() + cl->nbMethods() - cl->nbConstructors());
+		
+		uint32_t pos = 0;
+		for(uint32_t i=0; i<cl->nbMethods(); i++) {
+			J3Method* m = cl->methods()[i];
+			if(m->name() != vm->initName && (!publicOnly || J3Cst::isPublic(m->access())))
+				res->setObjectAt(pos++, m->javaMethod());
+		}
+
+		for(uint32_t i=0; i<cl->staticLayout()->nbMethods(); i++) {
+			J3Method* m = cl->staticLayout()->methods()[i];
+			if(!publicOnly || J3Cst::isPublic(m->access()))
+				res->setObjectAt(pos++, m->javaMethod());
+		}
+	} else
+		res = J3ObjectHandle::doNewArray(vm->constructorClass->getArray(), 0);
+
+	leaveJVM(); 
+	return res;
+}
+
 jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jboolean publicOnly) { 
 	jobjectArray res;
 
@@ -899,6 +932,7 @@ jobjectArray JNICALL JVM_GetClassDeclaredFields(JNIEnv* env, jclass ofClass, jbo
 
 jobjectArray JNICALL JVM_GetClassDeclaredConstructors(JNIEnv* env, jclass ofClass, jboolean publicOnly) { 
 	jobjectArray res;
+
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
 	J3ObjectType* type = J3ObjectType::nativeClass(ofClass);
