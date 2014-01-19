@@ -568,6 +568,21 @@ void J3CodeGen::newArray(uint8_t atype) {
 	newArray(prim->getArray());
 }
 
+void J3CodeGen::multianewArray() {
+	J3ObjectType* base = cl->classAt(codeReader->readU2());
+	uint32_t dim = codeReader->readU1();
+
+	llvm::Value* values = builder->CreateAlloca(builder->getInt32Ty(), builder->getInt32(dim));
+	
+	for(uint32_t i=0; i<dim; i++)
+		builder->CreateStore(stack.pop(), builder->CreateGEP(values, builder->getInt32(dim-i-1)));
+
+	stack.push(builder->CreateCall3(funcJ3ArrayClassMultianewArray, 
+																	typeDescriptor(base, vm->typeJ3ArrayClassPtr), 
+																	builder->getInt32(dim), 
+																	values));
+}
+
 void J3CodeGen::newObject(J3Class* cl) {
 	initialiseJ3ObjectType(cl);
 
@@ -1576,7 +1591,10 @@ void J3CodeGen::translate() {
 				isWide = 1;
 				break;
 
-			case J3Cst::BC_multianewarray: nyi();         /* 0xc5 */
+			case J3Cst::BC_multianewarray:                /* 0xc5 */
+				multianewArray();
+				break;
+
 			case J3Cst::BC_ifnull:                        /* 0xc6 */
 				condBr(builder->CreateIsNull(stack.pop()));
 				break;

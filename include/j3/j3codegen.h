@@ -142,6 +142,7 @@ namespace j3 {
 		void                arrayStore(J3Type* cType);
 		void                arrayLoad(J3Type* cType);
 
+		void                multianewArray();
 		void                newArray(uint8_t atype);
 		void                newArray(J3ArrayClass* type);
 		void                newObject(J3Class* cl);

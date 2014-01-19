@@ -291,6 +291,10 @@ J3Object* J3Object::doNew(J3Class* cl) {
 	return doNewNoInit(cl);
 }
 
+J3Object* J3Object::multianewArray(J3ArrayClass* array, uint32_t dim, uint32_t* args) {
+	J3::internalError("implement me: multianewarray");
+}
+
 void J3Object::monitorEnter(J3Object* obj) {
 	J3::internalError("implement me: monitorenter");
 }
