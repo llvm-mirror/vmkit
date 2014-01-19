@@ -109,6 +109,14 @@ J3Class* J3ClassLoader::defineClass(const vmkit::Name* name, J3ClassBytes* bytes
 	return res;
 }
 
+void J3ClassLoader::aotSnapshot(llvm::Linker* linker) {
+	pthread_mutex_lock(&_mutexClasses);
+	for(vmkit::NameMap<J3Class*>::map::iterator it=classes.begin(); it!=classes.end(); it++) {
+		it->second->aotSnapshot(linker);
+	}
+	pthread_mutex_unlock(&_mutexClasses);
+}
+
 J3Class* J3ClassLoader::loadClass(const vmkit::Name* name) {
 	J3* vm = J3Thread::get()->vm();
 	return J3Class::nativeClass(vm->classLoaderClassLoadClass->invokeVirtual(_javaClassLoader, vm->nameToString(name)).valObject)->asClass();

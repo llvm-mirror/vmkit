@@ -15,6 +15,8 @@
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Linker.h"
 
 #include "vmkit/safepoint.h"
 #include "vmkit/system.h"
@@ -207,12 +209,14 @@ void J3::compileApplication() {
 				char buf[name->length() - 5];
 				memcpy(buf, name->cStr(), name->length() - 6);
 				buf[name->length()-6] = 0;
-				J3Class* c = loader->getTypeFromQualified(0, buf)->asClass();
-
-				c->aotCompile();
+				loader->getTypeFromQualified(0, buf)->asClass()->aotCompile();
 			}
 		}
 	}
+
+	llvm::Module* res = new llvm::Module("yop", llvmContext());
+	llvm::Linker* linker = new llvm::Linker(res);
+	loader->aotSnapshot(linker);
 }
 
 void J3::runApplication() {
@@ -402,7 +406,7 @@ void J3::printStackTrace() {
 		vmkit::Safepoint* sf = J3Thread::get()->vm()->getSafepoint(walker.ip());
 
 		if(sf) {
-			J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
+			J3Method* m = (J3Method*)sf->unit()->getSymbol(sf->functionName());
 			fprintf(stderr, "    in %s::%s%s index %d\n", m->cl()->name()->cStr(), m->name()->cStr(),
 							m->signature()->name()->cStr(), sf->sourceIndex());
 		} else {

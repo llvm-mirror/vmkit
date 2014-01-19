@@ -40,7 +40,7 @@ J3Method* J3Thread::getJavaCaller(uint32_t level) {
 		vmkit::Safepoint* sf = vm()->getSafepoint(walker.ip());
 
 		if(sf && !level--)
-			return ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
+			return (J3Method*)sf->unit()->getSymbol(sf->functionName());
 	}
 
 	return 0;

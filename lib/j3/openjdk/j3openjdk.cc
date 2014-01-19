@@ -395,7 +395,7 @@ jint JNICALL JVM_GetStackTraceDepth(JNIEnv* env, jobject throwable) {
 				vmkit::Safepoint* sf = vm->getSafepoint((void*)cur);
 
 				if(sf) {
-					J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
+					J3Method* m = (J3Method*)sf->unit()->getSymbol(sf->functionName());
 					if(ignore) {
 						if(m->name() == vm->initName && m->cl() == throwable->vt()->type()) {
 							ignore = 0;
@@ -452,7 +452,7 @@ jobject JNICALL JVM_GetStackTraceElement(JNIEnv* env, jobject throwable, jint in
 			fileName = vm->utfToString("??");
 		}
 	} else {
-		J3Method* m = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
+		J3Method* m = (J3Method*)sf->unit()->getSymbol(sf->functionName());
 		const vmkit::Name* cn = m->cl()->name();
 		uint32_t length = cn->length()+6;
 		uint32_t lastToken = 0;
@@ -645,7 +645,7 @@ jclass JNICALL JVM_GetCallerClass(JNIEnv* env, int depth) {
 
 		if(sf) {
 			if(!--depth)
-				caller = ((J3MethodCode*)sf->unit()->getSymbol(sf->functionName()))->self;
+				caller = (J3Method*)sf->unit()->getSymbol(sf->functionName());
 		}
 	}
 

@@ -10,6 +10,10 @@
 
 #include "j3/j3object.h"
 
+namespace llvm {
+	class Linker;
+}
+
 namespace vmkit {
 	class Symbol;
 }
@@ -54,6 +58,8 @@ namespace j3 {
 
 	public:
 		J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
+
+		void                          aotSnapshot(llvm::Linker* linker);
 
 		void                          addNativeLibrary(void* handle);
 

@@ -14,6 +14,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
+#include "llvm/Linker.h"
 
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
@@ -22,8 +23,7 @@
 
 using namespace j3;
 
-J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Signature* signature) :
-	_selfCode(this) {
+J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Signature* signature) {
 	_access = access;
 	_cl = cl;
 	_name = name;
@@ -59,6 +59,13 @@ void J3Method::aotCompile() {
 	}
 }
 
+void J3Method::aotSnapshot(llvm::Linker* linker) {
+	if(_llvmFunction) {
+		std::string err;
+		linker->linkInModule(_llvmFunction->getParent(), llvm::Linker::DestroySource, &err);
+	}
+}
+
 void J3Method::ensureCompiled(bool withCaller, bool onlyTranslate) {
 	if(!fnPtr() || (withCaller && !cxxCaller())) {
 		//fprintf(stderr, "materializing: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
@@ -82,12 +89,8 @@ void* J3Method::functionPointerOrVirtualTrampoline() {
 	return _virtualTrampoline;
 }
 
-void* J3MethodCode::getSymbolAddress() {
-	return self->functionPointerOrStaticTrampoline();
-}
-
 void* J3Method::getSymbolAddress() {
-	return this;
+	return functionPointerOrStaticTrampoline();
 }
 
 void J3Method::setIndex(uint32_t index) { 
@@ -227,12 +230,6 @@ char* J3Method::llvmFunctionName(J3Class* from) {
 	if(!_llvmAllNames)
 		buildLLVMNames(from ? from : cl());
 	return _llvmAllNames + 5;
-}
-
-char* J3Method::llvmDescriptorName(J3Class* from) {
-	if(!_llvmAllNames)
-		buildLLVMNames(from ? from : cl());
-	return _llvmAllNames + 4;
 }
 
 char* J3Method::llvmStubName(J3Class* from) {

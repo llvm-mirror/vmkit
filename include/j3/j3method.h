@@ -10,6 +10,7 @@
 namespace llvm {
 	class FunctionType;
 	class Function;
+	class Linker;
 }
 
 namespace vmkit {
@@ -27,18 +28,8 @@ namespace j3 {
 	class J3ObjectHandle;
 	class J3Signature;
 
-	class J3MethodCode : public vmkit::Symbol {
-	public:
-		J3Method* self;
-
-		J3MethodCode(J3Method* _self) { self = _self; }
-
-		void* getSymbolAddress();
-	};
-
 	class J3Method : public vmkit::Symbol {
 	public:
-		J3MethodCode                 _selfCode;
 		uint16_t                     _access;
 		J3Class*                     _cl;
 		const vmkit::Name*           _name;
@@ -60,9 +51,6 @@ namespace j3 {
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Signature* signature);
 
-
-		J3MethodCode*       selfCode() { return &_selfCode; }
-
 		uint32_t            slot() { return _slot; }
 
 		static J3Method*    nativeMethod(J3ObjectHandle* handle);
@@ -77,7 +65,6 @@ namespace j3 {
 		void*               getSymbolAddress();
 
 		char*               llvmFunctionName(J3Class* from=0);
-		char*               llvmDescriptorName(J3Class* from=0);
 		char*               llvmStubName(J3Class* from=0);
 
 		void                postInitialise(uint32_t access, J3Attributes* attributes);
@@ -106,6 +93,7 @@ namespace j3 {
 		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
 
 		void                aotCompile();
+		void                aotSnapshot(llvm::Linker* linker);
 		void                ensureCompiled(bool withCaller, bool onlyTranslate=0);
 		J3Signature::function_t cxxCaller();
 		void*               fnPtr();

@@ -332,6 +332,16 @@ void J3Class::aotCompile() {
 	}
 }
 
+void J3Class::aotSnapshot(llvm::Linker* linker) {
+	for(uint32_t i=0; i<nbMethods(); i++) {
+		methods()[i]->aotSnapshot(linker);
+	}
+
+	for(uint32_t i=0; i<staticLayout()->nbMethods(); i++) {
+		staticLayout()->methods()[i]->aotSnapshot(linker);
+	}
+}
+
 uint16_t J3Class::modifiers() {
 	return access();
 #if 0
