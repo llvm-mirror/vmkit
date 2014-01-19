@@ -178,19 +178,37 @@ void J3::run() {
 
 	//options()->debugExecute = 0;
 
+#define LM_CLASS 1
+#define LM_JAR   2
+
+	uint32_t    mode;
+	const char* what;
+
+	if(options()->mainClass) {
+		mode = LM_CLASS;
+		what = options()->mainClass;
+	} else {
+		mode = LM_JAR;
+		what = options()->jarFile;
+	}
+
 	J3Class* main = J3ObjectType::nativeClass(z_method(J3Cst::ACC_STATIC,
 																										 z_class("sun.launcher.LauncherHelper"),
 																										 names()->get("checkAndLoadMain"),
 																										 names()->get("(ZILjava/lang/String;)Ljava/lang/Class;"))
-																						->invokeStatic(1, 1, utfToString("HelloWorld")).valObject)->asClass();
+																						->invokeStatic(1, mode, utfToString(what)).valObject)->asClass();
 
 
 	if(options()->debugLifeCycle)
 		fprintf(stderr, "  Launch the application\n");
 
+	J3ObjectHandle* args = J3ObjectHandle::doNewArray(stringClass->getArray(), options()->nbArgs);
+	for(uint32_t i=0; i<options()->nbArgs; i++)
+		args->setObjectAt(i, utfToString(options()->args[i]));
+
 	main
 		->findMethod(J3Cst::ACC_STATIC, names()->get("main"), initialClassLoader->getSignature(0, names()->get("([Ljava/lang/String;)V")))
-		->invokeStatic((J3ObjectHandle*)0);
+		->invokeStatic(args);
 }
 
 JNIEnv* J3::jniEnv() {

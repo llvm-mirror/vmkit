@@ -11,21 +11,24 @@ using namespace j3;
 J3Options::J3Options() {
 	assertionsEnabled = 1;
 	selfBitCodePath = SELF_BITCODE;
-	classpath = ".";
+	classpath = getenv("CLASSPATH"); 
+	classpath = classpath ? classpath : ".";
 
 	debugEnterIndent = 1;
 
-	debugExecute = 1;
+	debugExecute = 0;
 	debugLoad = 0;
 	debugResolve = 0;
 	debugIniting = 0;
 	debugTranslate = 0;
 	debugLinking = 0;
-	debugLifeCycle = 0;
+	debugLifeCycle = 1;
 
-	genDebugExecute = 1;//debugExecute ? 1 : 0;
+	genDebugExecute = 0;//debugExecute ? 1 : 0;
 
 	stackSize = 0x80*0x1000;
+
+	isAOT = 0;
 }
 
 #define nyi(cmd) ({ fprintf(stderr, "option '%s' not yet implemented\n", cmd); })
@@ -40,14 +43,15 @@ J3CmdLineParser::J3CmdLineParser(J3Options* _options, int _argc, char** _argv) {
 #define optbeg(opt)  (!memcmp(argv[cur], opt, strlen(opt)))
 
 void J3CmdLineParser::process() {
+	bool done = 0;
 	cur = 1;
 
-	while(cur < argc) {
+	while(!done && cur < argc) {
 		if(opteq("-jar")) {
-			nyi("-jar");
-			return;
+			options->jarFile = argv[++cur];
+			done = 1;
 		} else if(opteq("-cp") || opteq("-classpath"))
-			nyi("-cp/-classpath");
+			options->classpath = argv[++cur];
 		else if(optbeg("-D"))
 			nyi("-D<name>=<value>");
 		else if(opteq("-verbose:class"))
@@ -70,6 +74,10 @@ void J3CmdLineParser::process() {
 			nyi("-no-jre-restrict-search");
 		else if(opteq("-?") || opteq("-help"))
 			help();
+		else if(opteq("-Xaot"))
+			options->isAOT = 1;
+		else if(opteq("-Xno-aot"))
+			options->isAOT = 0;
 		else if(optbeg("-X"))
 			nyi("-X");
 		else if(optbeg("-ea:") || optbeg("-enableassertions:"))
@@ -93,13 +101,18 @@ void J3CmdLineParser::process() {
 		else if(optbeg("-"))
 			help();
 		else {
-			nyi("class args");
-			return;
+			options->mainClass = argv[cur];
+			done = 1;
 		}
+
 		cur++;
 	}
 
-	help();
+	if(!options->jarFile && !options->mainClass)
+		help();
+
+	options->args = argv + cur;
+	options->nbArgs = argc - cur;
 }
 
 void J3CmdLineParser::help() {

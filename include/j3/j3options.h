@@ -1,6 +1,7 @@
 #ifndef _J3_CMD_LINE_H_
 #define _J3_CMD_LINE_H_
 
+#include <sys/types.h>
 #include <stdint.h>
 
 namespace j3 {
@@ -33,6 +34,11 @@ namespace j3 {
 
 		const char*    classpath;
 
+		const char*    jarFile;
+		const char*    mainClass;
+		char**         args;
+		size_t         nbArgs;
+
 		bool           debugEnterIndent;
 		uint32_t       genDebugExecute;
 		uint32_t       debugExecute;
@@ -44,6 +50,8 @@ namespace j3 {
 		uint32_t       debugLifeCycle;
 		
 		uintptr_t      stackSize;
+
+		bool           isAOT;
 
 		J3Options();
 
