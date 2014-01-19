@@ -99,6 +99,7 @@ J3Mangler* J3Mangler::mangle(uint16_t c) {
 			*cur++ = '_'; 
 			*cur++ = '3'; 
 			break;
+		case '.':
 		case '/': 
 			c = '_';
 		default: 

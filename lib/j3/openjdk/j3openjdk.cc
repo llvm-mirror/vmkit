@@ -703,7 +703,7 @@ jclass JNICALL JVM_FindClassFromBootLoader(JNIEnv* env, const char *name) {
 	jclass res;
 	enterJVM(); 
 	J3* vm = J3Thread::get()->vm();
-	J3Class* cl = vm->initialClassLoader->findLoadedClass(vm->names()->get(name));
+	J3ObjectType* cl = vm->initialClassLoader->getTypeFromQualified(0, name);
 	res = cl ? cl->javaClass() : 0;
 	leaveJVM(); 
 	return res;
@@ -721,9 +721,10 @@ jclass JNICALL JVM_FindClassFromClassLoader(JNIEnv* env, const char *jname, jboo
 	if(jloader)
 		J3::internalError("implement me: jloader");
 	J3ClassLoader* loader = J3Thread::get()->vm()->initialClassLoader;
-	const vmkit::Name* name = vm->names()->get(jname);
-	J3Class* cl = loader->loadClass(name);
+	J3ObjectType* cl = loader->getTypeFromQualified(0, jname);
+
 	if(!cl) {
+		const vmkit::Name* name = vm->names()->get(jname);
 		if(throwError)
 			J3::noClassDefFoundError(name);
 		else

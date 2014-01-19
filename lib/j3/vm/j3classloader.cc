@@ -152,7 +152,7 @@ J3Type* J3ClassLoader::getTypeInternal(J3ObjectType* from, const char* type,
 					memset(buf, 0, len + 1 - pos);
 					
 					for(; pos < len && (c = type[pos]) != J3Cst::ID_End; pos++)
-						buf[pos - start] = c;
+						buf[pos - start] = c == '/' ? '.' : c;
 					
 					if(type[pos] != J3Cst::ID_End)
 						wrongType(from, type, len);
@@ -213,8 +213,10 @@ J3ObjectType* J3ClassLoader::getTypeFromQualified(J3ObjectType* from, const char
 		return getTypeFromDescriptor(from, J3Thread::get()->vm()->names()->get(type, 0, length))->asObjectType();
 	else {
 		char buf[length+1];
-		for(size_t i=0; i<length; i++)
-			buf[i] = type[i];
+		for(size_t i=0; i<length; i++) {
+			char c = type[i];
+			buf[i] = c == '/' ? '.' : c;
+		}
 		buf[length] = 0;
 		return loadClass(J3Thread::get()->vm()->names()->get(buf));
 	}

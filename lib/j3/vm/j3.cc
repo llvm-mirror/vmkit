@@ -107,24 +107,24 @@ void J3::run() {
 
 	nbArrayInterfaces          = 2;
 	arrayInterfaces            = (J3Type**)initialClassLoader->allocator()->allocate(2*sizeof(J3Type*));
-	arrayInterfaces[0]         = z_class("java/lang/Cloneable");
-	arrayInterfaces[1]         = z_class("java/io/Serializable");
+	arrayInterfaces[0]         = z_class("java.lang.Cloneable");
+	arrayInterfaces[1]         = z_class("java.io.Serializable");
 
 	charArrayClass             = typeCharacter->getArray();
-	objectClass                = z_class("java/lang/Object");
+	objectClass                = z_class("java.lang.Object");
 	objectClass->resolve();
 	
-	stringClass                = z_class("java/lang/String");
+	stringClass                = z_class("java.lang.String");
 	stringClassInit            = z_method(0, stringClass, initName, names()->get("([CZ)V"));
 	stringClassValue           = z_field(0, stringClass, "value", charArrayClass);
 
-	classClass                 = z_class("java/lang/Class");
+	classClass                 = z_class("java.lang.Class");
 	J3Field vmData[] = { J3Field(J3Cst::ACC_PRIVATE, names()->get("** vmData **"), typeLong) };
 	classClass->resolve(vmData, 1);
 	classClassInit             = z_method(0, classClass, initName, names()->get("()V"));
 	classClassVMData           = classClass->findField(0, vmData[0].name(), vmData[0].type());
 
-	classLoaderClass           = z_class("java/lang/ClassLoader");
+	classLoaderClass           = z_class("java.lang.ClassLoader");
 	classLoaderClass->resolve(vmData, 1);
 	classLoaderClassVMData     = classLoaderClass->findField(0, vmData[0].name(), vmData[0].type());
 	classLoaderClassLoadClass  = z_method(0, classLoaderClass, names()->get("loadClass"), 
@@ -134,26 +134,26 @@ void J3::run() {
 																									names()->get("getSystemClassLoader"),
 																									names()->get("()Ljava/lang/ClassLoader;"));
 
-	threadClass                = z_class("java/lang/Thread");
+	threadClass                = z_class("java.lang.Thread");
 	threadClassRun             = z_method(0, threadClass, names()->get("run"), names()->get("()V"));
 	threadClassVMData          = z_field(0, threadClass, "eetop", typeLong);
 
-	fieldClass                 = z_class("java/lang/reflect/Field");
+	fieldClass                 = z_class("java.lang.reflect.Field");
 	fieldClassClass            = z_field(0, fieldClass, "clazz", classClass);
 	fieldClassSlot             = z_field(0, fieldClass, "slot", typeInteger);
 	fieldClassAccess           = z_field(0, fieldClass, "modifiers", typeInteger);
 	fieldClassInit             = z_method(0, fieldClass, initName, 
 																				names()->get("(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;IILjava/lang/String;[B)V"));
 
-	constructorClass           = z_class("java/lang/reflect/Constructor");
+	constructorClass           = z_class("java.lang.reflect.Constructor");
 	constructorClassClass      = z_field(0, constructorClass, "clazz", classClass);
 	constructorClassSlot       = z_field(0, constructorClass, "slot", typeInteger);
 	constructorClassInit       = z_method(0, constructorClass, initName,
 																			names()->get("(Ljava/lang/Class;[Ljava/lang/Class;[Ljava/lang/Class;IILjava/lang/String;[B[B)V"));
 
-	throwableClassBacktrace    = z_field(0, z_class("java/lang/Throwable"), "backtrace", objectClass);
+	throwableClassBacktrace    = z_field(0, z_class("java.lang.Throwable"), "backtrace", objectClass);
 
-	stackTraceElementClass     = z_class("java/lang/StackTraceElement");
+	stackTraceElementClass     = z_class("java.lang.StackTraceElement");
 	stackTraceElementClassInit = z_method(0, stackTraceElementClass, initName,
 																				names()->get("(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V"));
 
@@ -173,7 +173,7 @@ void J3::run() {
 	//options()->debugExecute = 0;
 
 	J3ObjectHandle* res = z_method(J3Cst::ACC_STATIC,
-																 z_class("sun/launcher/LauncherHelper"),
+																 z_class("sun.launcher.LauncherHelper"),
 																 names()->get("checkAndLoadMain"),
 																 names()->get("(ZILjava/lang/String;)Ljava/lang/Class;"))
 		->invokeStatic(1, 1, utfToString("HelloWorld")).valObject;

@@ -63,7 +63,7 @@ void J3Lib::bootstrap(J3* vm) {
 
 #define z_signature(id) vm->initialClassLoader->getSignature(0, vm->names()->get(id))
 
-	J3Class*  threadGroupClass = vm->initialClassLoader->loadClass(vm->names()->get("java/lang/ThreadGroup"));
+	J3Class*  threadGroupClass = vm->initialClassLoader->loadClass(vm->names()->get("java.lang.ThreadGroup"));
 	J3Method* sysThreadGroupInit = threadGroupClass->findMethod(0, vm->initName, z_signature("()V"));
 	J3ObjectHandle* sysThreadGroup = J3ObjectHandle::doNewObject(threadGroupClass);
 	sysThreadGroupInit->invokeSpecial(sysThreadGroup);
@@ -81,7 +81,7 @@ void J3Lib::bootstrap(J3* vm) {
 	threadInit->invokeSpecial(mainThread, appThreadGroup, vm->utfToString("main", 0));
 						
 	vm->initialClassLoader
-		->loadClass(vm->names()->get("java/lang/System"))
+		->loadClass(vm->names()->get("java.lang.System"))
 		->findMethod(J3Cst::ACC_STATIC, vm->names()->get("initializeSystemClass"), z_signature("()V"))
 		->invokeStatic();
 
@@ -90,7 +90,7 @@ void J3Lib::bootstrap(J3* vm) {
 
 J3ObjectHandle* J3Lib::newDirectByteBuffer(void* address, size_t len) {
 	J3* vm = J3Thread::get()->vm();
-	J3Class* cl = vm->initialClassLoader->loadClass(vm->names()->get("java/nio/DirectByteBuffer"));
+	J3Class* cl = vm->initialClassLoader->loadClass(vm->names()->get("java.nio.DirectByteBuffer"));
 	J3ObjectHandle* res = J3ObjectHandle::doNewObject(cl);
 	cl->findMethod(0, vm->initName, vm->initialClassLoader->getSignature(0, vm->names()->get("(JI)V")))->invokeSpecial(res, address, len);
 	return res;
