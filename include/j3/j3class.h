@@ -293,6 +293,8 @@ namespace j3 {
 		uint16_t            access();
 		uint16_t            modifiers();
 		J3Class*            super();
+
+		J3ObjectHandle*     multianewArray(uint32_t dim, uint32_t* args);
 	};
 
 	class J3Primitive : public J3Type {

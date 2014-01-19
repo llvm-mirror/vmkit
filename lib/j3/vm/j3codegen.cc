@@ -577,7 +577,7 @@ void J3CodeGen::multianewArray() {
 	for(uint32_t i=0; i<dim; i++)
 		builder->CreateStore(stack.pop(), builder->CreateGEP(values, builder->getInt32(dim-i-1)));
 
-	stack.push(builder->CreateCall3(funcJ3ArrayClassMultianewArray, 
+	stack.push(builder->CreateCall3(funcJ3ArrayObjectMultianewArray, 
 																	typeDescriptor(base, vm->typeJ3ArrayClassPtr), 
 																	builder->getInt32(dim), 
 																	values));

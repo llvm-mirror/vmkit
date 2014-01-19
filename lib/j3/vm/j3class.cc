@@ -1025,6 +1025,17 @@ void J3ArrayClass::doNativeName() {
 	_nativeName[_nativeNameLength] = 0;
 }
 
+J3ObjectHandle* J3ArrayClass::multianewArray(uint32_t dim, uint32_t* args) {
+	fprintf(stderr, "allocating %s %d\n", name()->cStr(), args[0]);
+	J3ObjectHandle* res = J3ObjectHandle::doNewArray(this, args[0]);
+
+	if(dim > 1)
+		for(uint32_t i=0; i<args[0]; i++)
+			res->setObjectAt(i, component()->asArrayClass()->multianewArray(dim-1, args+1));
+
+	return res;
+}
+
 /*  
  *  ------------ J3Primitive ------------
  */
