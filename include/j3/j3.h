@@ -50,6 +50,9 @@ namespace j3 {
 
 		void                       introspect();
 
+		void        runApplication();
+		void        compileApplication();
+
 		J3(vmkit::BumpAllocator* allocator);
 	public:
 		J3InitialClassLoader*                 initialClassLoader;
@@ -143,6 +146,8 @@ namespace j3 {
 		J3ObjectHandle*            arrayToString(J3ObjectHandle* array, bool doPush=1);
 		const vmkit::Name*         arrayToName(J3ObjectHandle* array);
 		const vmkit::Name*         stringToName(J3ObjectHandle* str);
+
+		const vmkit::Name*         qualifiedToBinaryName(const char* type, size_t length=-1);
 
 		void                       run();
 		void                       start(int argc, char** argv);

@@ -173,6 +173,49 @@ void J3::run() {
 
 	J3Lib::bootstrap(this);
 
+	if(options()->isAOT)
+		compileApplication();
+	else
+		runApplication();
+}
+
+void J3::compileApplication() {
+	if(options()->debugLifeCycle)
+		fprintf(stderr, "  Find the class loader\n");
+
+	J3ClassLoader* loader = J3ClassLoader::nativeClassLoader(z_method(J3Cst::ACC_STATIC, z_class("java.lang.ClassLoader"),
+																																		names()->get("getSystemClassLoader"),
+																																		names()->get("()Ljava/lang/ClassLoader;"))->invokeStatic().valObject);
+
+
+	if(options()->mainClass)
+		J3::internalError("compiling a single class is not yet supported");
+	else {
+		J3Class*        jarFileClass = z_class("java.util.jar.JarFile");
+		J3ObjectHandle* jarFile = J3ObjectHandle::doNewObject(jarFileClass);
+		z_method(0, jarFileClass, initName, names()->get("(Ljava/lang/String;)V"))->invokeSpecial(jarFile, utfToString(options()->jarFile));
+		J3ObjectHandle* it = z_method(0, jarFileClass, names()->get("entries"), 
+																	names()->get("()Ljava/util/Enumeration;"))->invokeVirtual(jarFile).valObject;
+		J3Method* hasMore = z_method(0, it->vt()->type()->asObjectType(), names()->get("hasMoreElements"), names()->get("()Z"));
+		J3Method* nextEl = z_method(0, it->vt()->type()->asObjectType(), names()->get("nextElement"), names()->get("()Ljava/lang/Object;"));
+		J3Method* getName = z_method(0, z_class("java.util.zip.ZipEntry"), names()->get("getName"), names()->get("()Ljava/lang/String;"));
+
+		while(hasMore->invokeVirtual(it).valBoolean) {
+			const vmkit::Name* name = stringToName(getName->invokeVirtual(nextEl->invokeVirtual(it).valObject).valObject);
+			
+			if(strcmp(name->cStr() + name->length() - 6, ".class") == 0) {
+				char buf[name->length() - 5];
+				memcpy(buf, name->cStr(), name->length() - 6);
+				buf[name->length()-6] = 0;
+				J3Class* c = loader->getTypeFromQualified(0, buf)->asClass();
+
+				fprintf(stderr, " find: %s\n", c->name()->cStr());
+			}
+		}
+	}
+}
+
+void J3::runApplication() {
 	if(options()->debugLifeCycle)
 		fprintf(stderr, "  Find the application\n");
 
@@ -213,6 +256,18 @@ void J3::run() {
 
 JNIEnv* J3::jniEnv() {
 	return J3Thread::get()->jniEnv();
+}
+
+const vmkit::Name* J3::qualifiedToBinaryName(const char* type, size_t length) {
+	if(length == -1)
+		length = strlen(type);
+	char buf[length+1];
+	for(size_t i=0; i<length; i++) {
+		char c = type[i];
+		buf[i] = c == '/' ? '.' : c;
+	}
+	buf[length] = 0;
+	return names()->get(buf);
 }
 
 J3ObjectHandle* J3::arrayToString(J3ObjectHandle* array, bool doPush) {

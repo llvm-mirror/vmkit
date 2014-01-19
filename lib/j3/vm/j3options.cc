@@ -111,6 +111,13 @@ void J3CmdLineParser::process() {
 	if(!options->jarFile && !options->mainClass)
 		help();
 
+	if(options->jarFile) {
+		size_t tot = strlen(options->classpath) + strlen(options->jarFile) + 1;
+		char* buf = (char*)malloc(tot);
+		snprintf(buf, tot, "%s:%s", options->jarFile, options->classpath);
+		options->classpath = buf;
+	}
+
 	options->args = argv + cur;
 	options->nbArgs = argc - cur;
 }

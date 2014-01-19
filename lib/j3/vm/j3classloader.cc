@@ -209,17 +209,12 @@ J3ObjectType* J3ClassLoader::getTypeFromQualified(J3ObjectType* from, const char
 	if(length == -1)
 		length = strlen(type);
 
+	J3* vm = J3Thread::get()->vm();
+
 	if(type[0] == J3Cst::ID_Array)
-		return getTypeFromDescriptor(from, J3Thread::get()->vm()->names()->get(type, 0, length))->asObjectType();
-	else {
-		char buf[length+1];
-		for(size_t i=0; i<length; i++) {
-			char c = type[i];
-			buf[i] = c == '/' ? '.' : c;
-		}
-		buf[length] = 0;
-		return loadClass(J3Thread::get()->vm()->names()->get(buf));
-	}
+		return getTypeFromDescriptor(from, vm->names()->get(type, 0, length))->asObjectType();
+	else
+		return loadClass(vm->qualifiedToBinaryName(type, length));
 }
 
 J3Signature* J3ClassLoader::getSignature(J3ObjectType* from, const vmkit::Name* signature) {

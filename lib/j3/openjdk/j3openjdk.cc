@@ -569,7 +569,15 @@ jint JNICALL JVM_ClassLoaderDepth(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); 
 /*
  * java.lang.Package
  */
-jstring JNICALL JVM_GetSystemPackage(JNIEnv* env, jstring name) { enterJVM(); leaveJVM(); NYI(); }
+jstring JNICALL JVM_GetSystemPackage(JNIEnv* env, jstring _name) { 
+	/* should implements this, but I don't see what I have to do... */
+	//enterJVM(); 
+	//const vmkit::Name* name = J3Thread::get()->vm()->stringToName(_name);
+	//fprintf(stderr, " get system package from: %s\n", name->cStr());
+	//leaveJVM(); 
+	return _name;
+}
+
 jobjectArray JNICALL JVM_GetSystemPackages(JNIEnv* env) { enterJVM(); leaveJVM(); NYI(); }
 
 /*
@@ -771,7 +779,7 @@ jclass JNICALL JVM_DefineClassWithSource(JNIEnv* env, const char *name, jobject 
 	J3* vm = J3Thread::get()->vm();
 	J3ClassLoader* loader = _loader ? J3ClassLoader::nativeClassLoader(_loader) : vm->initialClassLoader;
 	J3ClassBytes* bytes = new(loader->allocator(), len) J3ClassBytes((uint8_t*)buf, len);
-	res = loader->defineClass(vm->names()->get(name), bytes, pd, source)->javaClass();
+	res = loader->defineClass(vm->qualifiedToBinaryName(name), bytes, pd, source)->javaClass();
 	leaveJVM(); 
 	return res;
 }
