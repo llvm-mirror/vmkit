@@ -60,7 +60,7 @@ SHFLAGS=-lpthread -ldl -lz -lncurses -framework CoreFoundation -fno-common -Wl,-
 ###############################################################################
 #   Targets
 ###############################################################################
-.PHONY: all all-recursive clean clean-recursive clean-local tidy confclean check
+.PHONY: all all-parallel-recursive clean clean-parallel-recursive clean-local tidy confclean check
 .SECONDARY:
 .SUFFIXES:
 
@@ -69,8 +69,8 @@ SHFLAGS=-lpthread -ldl -lz -lncurses -framework CoreFoundation -fno-common -Wl,-
 ###############################################################################
 RECURSIVE_TARGETS=all clean
 
-define do_sub_target
-$1-recursive::
+define do_parallel_subdirs
+$1-parallel-recursive::
   #$(Echo) "Entering directory $$(PROF)/$2"
 	$(Verb) +$(MAKE) $(SUB_OPT) -C $2 $1 PROF=$(PROF)/$2; \
 		if [ $$$$? != 0 ]; then echo "$$(EchoMsg) abort with errors in $$(PROF)/$2"; exit 1; fi
@@ -78,11 +78,18 @@ endef
 
 define do_recursive_target
 $1:
-	 $(Verb) +$(MAKE) $(SUB_OPT) $1-recursive 
-	 $(Verb) +$(MAKE) $1-local
-$1-recursive::
+	$(Verb) for f in $$(DIRS); do \
+					$(MAKE) $(SUB_OPT) -C $$$$f $1 PROF=$(PROF)/$$$$f; \
+							if [ $$$$? != 0 ]; then echo "$$(EchoMsg) abort with errors in $$(PROF)/$$$$f"; exit 1; fi; \
+					done
+	$(Verb) +$(MAKE) -s $1-parallel-recursive
+
+$1-parallel-recursive::
+	$(Verb) +$(MAKE) -s $1-local
+
 $1-local::
-$$(foreach dir,$$(DIRS),$$(eval $$(call do_sub_target,$1,$$(dir))))
+
+$$(foreach dir,$$(PARALLEL_DIRS),$$(eval $$(call do_parallel_subdirs,$1,$$(dir))))
 endef
 
 $(foreach target,$(RECURSIVE_TARGETS),$(eval $(call do_recursive_target,$(target))))

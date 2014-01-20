@@ -5,6 +5,6 @@
 
 LEVEL := ../..
 
-DIRS := vm openjdk
+PARALLEL_DIRS := vm openjdk
 
 include $(LEVEL)/Makefile.rules

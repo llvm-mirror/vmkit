@@ -5,7 +5,7 @@
 
 LEVEL := ../..
 
-DIRS:=magic
+PARALLEL_DIRS:=magic
 
 BASE_OBJ_FILES=mmtk-lowered
 MODULE=mmtk
