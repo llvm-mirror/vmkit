@@ -3,6 +3,7 @@
 #include "j3/j3method.h"
 #include "j3/j3thread.h"
 #include "j3/j3class.h"
+#include "j3/j3codegen.h"
 #include "j3/j3.h"
 
 using namespace j3;
@@ -20,7 +21,7 @@ void J3Trampoline::interfaceTrampoline(J3Object* obj) {
 	void* res;
 
 	if(desc->nbMethods == 1) {
-		desc->methods[0]->ensureCompiled(0);
+		desc->methods[0]->ensureCompiled(J3CodeGen::WithMethod);
 		res = desc->methods[0]->fnPtr();
 		handle->vt()->_interfaceMethodTable[index] = res;
 	} else {
@@ -40,7 +41,7 @@ void J3Trampoline::staticTrampoline(J3Object* obj, J3Method* target) {
 	J3TrampolineArg arg = J3Thread::get()->_trampolineArg;
 
 	target->cl()->initialise();
-	target->ensureCompiled(0);
+	target->ensureCompiled(J3CodeGen::WithMethod);
 
 	trampoline_restart(target->fnPtr(), &arg);
 }
@@ -52,7 +53,7 @@ void J3Trampoline::virtualTrampoline(J3Object* obj, J3Method* target) {
 	J3ObjectType* cl = handle->vt()->type()->asObjectType();
 	J3Method* impl = cl == target->cl() ? target : cl->findMethod(0, target->name(), target->signature());
 
-	impl->ensureCompiled(0);
+	impl->ensureCompiled(J3CodeGen::WithMethod);
 	void* res = impl->fnPtr();
 	handle->vt()->virtualMethods()[impl->index()] = res;
 

@@ -28,17 +28,19 @@ using namespace j3;
 
 #define _onEndPoint() ({ if(onEndPoint()) return; })
 
-J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMethod, bool withCaller, bool onlyTranslate) :
+J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mode) :
 	builder(J3Thread::get()->vm()->llvmContext()),
 	exceptions(this) {
 
 	allocator = _allocator;
+	mode = _mode;
 
 	method = m;
 	cl = method->cl()->asClass();
 	signature = method->signature();
 	loader = cl->loader();
 	vm = J3Thread::get()->vm();
+	access = method->access();
 
 #if 0
 	/* usefull to debug a single function */
@@ -56,9 +58,8 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 						method->name()->cStr(), 
 						method->signature()->name()->cStr());
 
-	module = new llvm::Module(method->llvmFunctionName(), builder.getContext());
-	llvmFunction = buildFunction(method, 0);
-	llvmFunction->setGC("vmkit");
+	llvmFunction = method->llvmFunction();
+	module = llvmFunction ? llvmFunction->getParent() : new llvm::Module(method->llvmFunctionName(), builder.getContext());
 
 	bbCheckCastFailed = 0;
 	bbNullCheckFailed = 0;
@@ -95,8 +96,12 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	}
 #endif
 
-	if(withMethod) {
-		if(J3Cst::isNative(method->access()))
+	/* only translate of requested and not already translated */
+	if(withMethod() && !llvmFunction) {
+		llvmFunction = buildFunction(method, 0);
+		llvmFunction->setGC("vmkit");
+
+		if(J3Cst::isNative(access))
 			generateNative();
 		else
 			generateJava();
@@ -105,21 +110,23 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 			llvmFunction->dump();
 	}
 
-	uint32_t access = method->access();
-	uint32_t needsCaller = withCaller && !signature->caller(access);
+	uint32_t needsCaller = withCaller() && !signature->caller(access);
+
 	if(needsCaller)
 		signature->generateCallerIR(access, this, module, "generic-caller");
 
-	if(!onlyTranslate)
+	/* compile only if requested and not already compiled */
+	void* fnPtr;
+	if(withMethod() && !onlyTranslate() && !method->fnPtr()) {
 		loader->compileModule(module);
+		fnPtr = (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
+	} else
+		fnPtr = method->fnPtr();
 	
 	if(needsCaller)
 		signature->setCaller(access, (J3Signature::function_t)loader->ee()->getFunctionAddress("generic-caller"));
 
-	if(withMethod) {
-		void* fnPtr = onlyTranslate ? 0 : (void*)loader->ee()->getFunctionAddress(llvmFunction->getName().data());
-		method->markCompiled(llvmFunction, fnPtr);
-	}
+	method->markCompiled(llvmFunction, fnPtr);
 }
 
 J3CodeGen::~J3CodeGen() {
@@ -132,11 +139,11 @@ void* J3CodeGen::operator new(size_t n, vmkit::BumpAllocator* _allocator) {
 void J3CodeGen::operator delete(void* ptr) {
 }
 
-void J3CodeGen::translate(J3Method* method, bool withMethod, bool withCaller, bool onlyTranslate) {
+void J3CodeGen::translate(J3Method* method, uint32_t mode) {
 	J3Thread::get()->vm()->lockCompiler();
 	
 	vmkit::BumpAllocator* allocator = vmkit::BumpAllocator::create();
-	delete new(allocator) J3CodeGen(allocator, method, withMethod, withCaller, onlyTranslate);
+	delete new(allocator) J3CodeGen(allocator, method, mode);
 	vmkit::BumpAllocator::destroy(allocator);
 
 	J3Thread::get()->vm()->unlockCompiler();
@@ -1721,7 +1728,7 @@ void J3CodeGen::generateJava() {
 	else
 		builder.CreateRet(unflatten(ret.at(0, llvmFunction->getReturnType()), llvmFunction->getReturnType()));
 
-	if(J3Cst::isSynchronized(method->access())) {
+	if(J3Cst::isSynchronized(access)) {
 		static bool echoDone = 0;
 		if(!echoDone) {
 			fprintf(stderr, "IMPLEMENT ME: synchronized java\n");
@@ -1773,10 +1780,10 @@ llvm::Function* J3CodeGen::lookupNative() {
 
 	nativeIns.push_back(vm->typeJNIEnvPtr);
 
-	if(J3Cst::isStatic(method->access()))
+	if(J3Cst::isStatic(access))
 		nativeIns.push_back(doNativeType(vm->classClass->llvmType()));
 
-	llvm::FunctionType*      origFType = method->signature()->functionType(method->access());
+	llvm::FunctionType*      origFType = method->signature()->functionType(access);
 	for(llvm::FunctionType::param_iterator it=origFType->param_begin(); it!=origFType->param_end(); it++)
 		nativeIns.push_back(doNativeType(*it));
 
@@ -1807,7 +1814,7 @@ void J3CodeGen::generateNative() {
 	llvm::Value* thread = currentThread();
 	llvm::Value* frame = builder.CreateCall(funcJ3ThreadTell, thread);
 
-	if(J3Cst::isSynchronized(method->access())) {
+	if(J3Cst::isSynchronized(access)) {
 		static bool echoDone = 0;
 		if(!echoDone) {
 			fprintf(stderr, "IMPLEMENT ME: synchronized java\n");
@@ -1816,7 +1823,7 @@ void J3CodeGen::generateNative() {
 	}
 
 	args.push_back(builder.CreateCall(funcJniEnv));
-	if(J3Cst::isStatic(method->access()))
+	if(J3Cst::isStatic(access))
 		args.push_back(javaClass(cl, 1));
 
 	uint32_t selfDone = 0;

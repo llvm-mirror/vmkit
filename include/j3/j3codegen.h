@@ -36,10 +36,26 @@ namespace j3 {
 	};
 
 	class J3CodeGen {
+	public:
+		enum {
+			WithMethod = 1,
+			WithCaller = 2,
+			OnlyTranslate = 4,
+			NotUseStub = 8
+		};
+
+		bool withMethod() { return mode & WithMethod; }
+		bool withCaller() { return mode & WithCaller; }
+		bool onlyTranslate() { return mode & OnlyTranslate; }
+		bool useStub() { return !(mode & NotUseStub); }
+
+	private:
 		friend class J3CodeGenVar;
 		friend class J3ExceptionTable;
 		friend class J3ExceptionNode;
 		friend class J3Signature;
+
+		uint32_t               mode;
 
 		vmkit::BumpAllocator*  allocator;
 		llvm::Module*          module;
@@ -52,6 +68,7 @@ namespace j3 {
 		J3Method*              method;
 		J3Signature*           signature;
 		J3Reader*              codeReader;
+		uint32_t               access;
 
 		llvm::BasicBlock*      bbCheckCastFailed;
 		llvm::BasicBlock*      bbNullCheckFailed;
@@ -184,13 +201,13 @@ namespace j3 {
 		llvm::Function*    patchPoint64;
 		llvm::Function*    patchPointVoid;
 
-		J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* method, bool withMethod, bool withCaller, bool onlyTranslate);
+		J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* method, uint32_t mode);
 		~J3CodeGen();
 
 		void* operator new(size_t n, vmkit::BumpAllocator* _allocator);
 		void  operator delete(void* ptr);
 	public:
-		static void translate(J3Method* method, bool withMethod=1, bool withCaller=1, bool onlyTranslate=0);
+		static void translate(J3Method* method, uint32_t mode);
 	};
 }
 

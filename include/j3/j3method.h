@@ -94,9 +94,10 @@ namespace j3 {
 
 		void                aotCompile();
 		void                aotSnapshot(llvm::Linker* linker);
-		void                ensureCompiled(bool withCaller, bool onlyTranslate=0);
+		void                ensureCompiled(uint32_t mode);
 		J3Signature::function_t cxxCaller();
 		void*               fnPtr();
+		llvm::Function*     llvmFunction() { return _llvmFunction; }
 		void*               functionPointerOrStaticTrampoline();
 		void*               functionPointerOrVirtualTrampoline();
 

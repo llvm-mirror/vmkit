@@ -55,7 +55,7 @@ J3Signature::function_t J3Method::cxxCaller() {
 void J3Method::aotCompile() {
 	if(!J3Cst::isAbstract(access())) {
 		//fprintf(stderr, "compiling: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
-		ensureCompiled(0, 1);
+		ensureCompiled(J3CodeGen::WithMethod | J3CodeGen::OnlyTranslate);
 	}
 }
 
@@ -66,10 +66,10 @@ void J3Method::aotSnapshot(llvm::Linker* linker) {
 	}
 }
 
-void J3Method::ensureCompiled(bool withCaller, bool onlyTranslate) {
-	if(!fnPtr() || (withCaller && !cxxCaller())) {
+void J3Method::ensureCompiled(uint32_t mode) {
+	if(((mode & J3CodeGen::WithMethod) && !fnPtr()) || ((mode & J3CodeGen::WithCaller) && !cxxCaller())) {
 		//fprintf(stderr, "materializing: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
-		J3CodeGen::translate(this, !fnPtr(), withCaller, onlyTranslate);
+		J3CodeGen::translate(this, mode);
  	}
 }
 
@@ -114,7 +114,7 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
 	cl()->initialise();
-	ensureCompiled(1);  /* force the generation of the code and thus of the functionType */
+	ensureCompiled(J3CodeGen::WithMethod | J3CodeGen::WithCaller);  /* force the generation of the code and thus of the functionType */
 
 	J3Value* reIn;
 	if(handle) {
@@ -138,7 +138,7 @@ J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {
 	cl()->initialise();
-	ensureCompiled(1);  /* force the generation of the code and thus of the functionType */
+	ensureCompiled(J3CodeGen::WithMethod | J3CodeGen::WithCaller);  /* force the generation of the code and thus of the functionType */
 
 	llvm::FunctionType* fType = signature()->functionType(J3Cst::ACC_STATIC);      /* static signature for va */
 	J3Value* args = (J3Value*)alloca(sizeof(J3Value)*(fType->getNumParams() + 1));
