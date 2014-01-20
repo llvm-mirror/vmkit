@@ -326,7 +326,7 @@ void J3CodeGen::monitorExit(llvm::Value* obj) {
 }
 
 void J3CodeGen::initialiseJ3ObjectType(J3ObjectType* cl) {
-	if(!cl->isInitialised())
+	if(!supposeClinited() && !cl->isInitialised())
 		builder.CreateCall(funcJ3TypeInitialise, typeDescriptor(cl, vm->typeJ3TypePtr));
 }
 
@@ -358,12 +358,12 @@ llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
 }
 
 llvm::Value* J3CodeGen::vt(J3ObjectType* type, bool doResolve) {
-	llvm::Value* func = doResolve && !type->isResolved() ? funcJ3TypeVTAndResolve : funcJ3TypeVT;
+	llvm::Value* func = !supposeClinited() && doResolve && !type->isResolved() ? funcJ3TypeVTAndResolve : funcJ3TypeVT;
 	return builder.CreateCall(func, typeDescriptor(type, vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
-	if(exceptions.nodes[curExceptionNode]->landingPad) {
+	if(!noRuntimeCheck() && exceptions.nodes[curExceptionNode]->landingPad) {
 		llvm::BasicBlock* succeed = newBB("nullcheck-succeed");
 
 		if(!bbNullCheckFailed) {
@@ -431,17 +431,22 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 
 void J3CodeGen::invokeVirtual(uint32_t idx) {
 	J3Method*     target = cl->methodAt(idx, 0);
-	J3Signature* type = target->signature();
-	llvm::Value*  funcEntry = funcEntry = builder.getInt32(target->index());
 
-	llvm::Value*  obj = nullCheck(stack.top(type->nbIns()));
-	llvm::Value*  gepFunc[] = { builder.getInt32(0),
-															builder.getInt32(J3VirtualTable::gepVirtualMethods),
-															funcEntry };
-	llvm::Value* func = builder.CreateBitCast(builder.CreateLoad(builder.CreateGEP(vt(obj), gepFunc)), 
-																						 target->signature()->functionType(target->access())->getPointerTo());
+	if(J3Cst::isFinal(target->cl()->access()) || J3Cst::isFinal(target->cl()->access()))
+		invoke(0, target, buildFunction(target)); /* do not remove this optimization */
+	else {
+		J3Signature*  type = target->signature();
+		llvm::Value*  funcEntry = funcEntry = builder.getInt32(target->index());
 
-	invoke(0, target, func);
+		llvm::Value*  obj = nullCheck(stack.top(type->nbIns()));
+		llvm::Value*  gepFunc[] = { builder.getInt32(0),
+																builder.getInt32(J3VirtualTable::gepVirtualMethods),
+																funcEntry };
+		llvm::Value* func = builder.CreateBitCast(builder.CreateLoad(builder.CreateGEP(vt(obj), gepFunc)), 
+																							target->signature()->functionType(target->access())->getPointerTo());
+
+		invoke(0, target, func);
+	}
 }
 
 void J3CodeGen::invokeStatic(uint32_t idx) {
@@ -493,6 +498,9 @@ void J3CodeGen::putField(uint32_t idx) {
 }
 
 void J3CodeGen::arrayBoundCheck(llvm::Value* obj, llvm::Value* idx) {
+	if(!noRuntimeCheck()) {
+		/* implement me */
+	}
 }
 
 llvm::Value* J3CodeGen::arrayContent(J3Type* cType, llvm::Value* array, llvm::Value* idx) {
@@ -581,11 +589,8 @@ void J3CodeGen::newObject(J3Class* cl) {
 
 	llvm::Value* size;
 
-	if(!cl->isResolved()) {
-		size = builder.CreateCall(funcJ3LayoutStructSize, typeDescriptor(cl, vm->typeJ3LayoutPtr));
-	} else {
-		size = builder.getInt64(cl->structSize());
-	}
+	cl->resolve();
+	size = builder.getInt64(cl->structSize());
 
 	llvm::Value* res = builder.CreateCall2(funcJ3ObjectAllocate, vt(cl), size);
 
@@ -627,23 +632,25 @@ void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
 }
 
 void J3CodeGen::checkCast(llvm::Value* obj, J3ObjectType* type) {
-	llvm::BasicBlock* succeed = forwardBranch("checkcast-succeed", codeReader->tell(), 0, 0);
-	llvm::BasicBlock* test = newBB("checkcast");
+	if(!noRuntimeCheck()) {
+		llvm::BasicBlock* succeed = forwardBranch("checkcast-succeed", codeReader->tell(), 0, 0);
+		llvm::BasicBlock* test = newBB("checkcast");
 
-	builder.CreateCondBr(builder.CreateIsNull(obj), succeed, test);
+		builder.CreateCondBr(builder.CreateIsNull(obj), succeed, test);
 
-	if(!bbCheckCastFailed) {
-		bbCheckCastFailed = newBB("checkcast-failed");
-		builder.SetInsertPoint(bbCheckCastFailed);
-		builder.CreateCall(funcClassCastException);
-		builder.CreateBr(bbRet);
+		if(!bbCheckCastFailed) {
+			bbCheckCastFailed = newBB("checkcast-failed");
+			builder.SetInsertPoint(bbCheckCastFailed);
+			builder.CreateCall(funcClassCastException);
+			builder.CreateBr(bbRet);
+		}
+
+		builder.SetInsertPoint(test);
+
+		llvm::Value* res = isAssignableTo(obj, type);
+
+		builder.CreateCondBr(res, succeed, bbCheckCastFailed);
 	}
-
-	builder.SetInsertPoint(test);
-
-	llvm::Value* res = isAssignableTo(obj, type);
-
-	builder.CreateCondBr(res, succeed, bbCheckCastFailed);
 }
 
 void J3CodeGen::floatToInteger(J3Type* ftype, J3Type* itype) {

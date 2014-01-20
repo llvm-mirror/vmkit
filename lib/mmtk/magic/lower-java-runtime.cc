@@ -18,27 +18,36 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
-using namespace llvm;
-
 namespace {
-
-  class LowerJavaRT : public ModulePass {
+  class LowerJavaRT : public llvm::ModulePass {
   public:
     static char ID;
-    LowerJavaRT() : ModulePass(ID) { }
+    LowerJavaRT() : llvm::ModulePass(ID) { }
 
-    virtual bool runOnModule(Module &M);
+    virtual bool runOnModule(llvm::Module &M);
   private:
   };
+
   char LowerJavaRT::ID = 0;
-  static RegisterPass<LowerJavaRT> X("LowerJavaRT",
-                                     "Remove references to RT");
+  static llvm::RegisterPass<LowerJavaRT> X("LowerJavaRT",
+																					 "Remove references to RT");
 
 
-bool LowerJavaRT::runOnModule(Module& M) {
-  bool Changed = true;
+	bool LowerJavaRT::runOnModule(llvm::Module& module) {
+		bool Changed = true;
 
-	fprintf(stderr, "Lowering java runtime in %s\n", M.getModuleIdentifier().data());
+		for(llvm::Module::global_iterator it = module.global_begin(); it!=module.global_end(); it++) {
+			llvm::GlobalValue* gv = it;
+			
+			fprintf(stderr, "Global: %s\n", gv->getName().data());
+		}
+
+		for(llvm::Module::iterator it = module.begin(); it!=module.end(); it++) {
+			llvm::Function* function = it;
+			
+			if(!strncmp(function->getName().data(), "j3_java", 7))
+				fprintf(stderr, "processing %s\n", function->getName().data());
+		}
 
   return Changed;
 }

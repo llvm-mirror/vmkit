@@ -194,7 +194,11 @@ void J3::compileApplication() {
 																																		names()->get("()Ljava/lang/ClassLoader;"))->invokeStatic().valObject);
 
 
-	loader->setCompilationMode(J3CodeGen::OnlyTranslate | J3CodeGen::NotUseStub | J3CodeGen::NotNeedGC);
+	loader->setCompilationMode(J3CodeGen::OnlyTranslate | 
+														 J3CodeGen::NotUseStub | 
+														 J3CodeGen::NotNeedGC |
+														 J3CodeGen::SupposeClinited |
+														 J3CodeGen::NoRuntimeCheck);
 
 	if(options()->mainClass)
 		J3::internalError("compiling a single class is not yet supported");

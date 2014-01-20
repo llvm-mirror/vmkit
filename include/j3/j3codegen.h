@@ -42,7 +42,9 @@ namespace j3 {
 			WithCaller = 2,
 			OnlyTranslate = 4,
 			NotUseStub = 8,
-			NotNeedGC = 16
+			NotNeedGC = 16,
+			SupposeClinited = 32,
+			NoRuntimeCheck = 64
 		};
 
 		bool withMethod() { return mode & WithMethod; }
@@ -50,6 +52,8 @@ namespace j3 {
 		bool onlyTranslate() { return mode & OnlyTranslate; }
 		bool useStub() { return !(mode & NotUseStub); }
 		bool needGC() { return !(mode & NotNeedGC); }
+		bool supposeClinited() { return mode & SupposeClinited; }
+		bool noRuntimeCheck() { return mode & NoRuntimeCheck; }
 
 	private:
 		friend class J3CodeGenVar;

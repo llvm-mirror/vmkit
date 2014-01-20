@@ -44,7 +44,7 @@ typedef SmallPtrSet<Instruction*,128> InstSet;
 
 bool LowerMagic::runOnFunction(Function& F) {
   bool Changed = false;
-	fprintf(stderr, "Lowering magic of %s\n", F.getName().data());
+	//fprintf(stderr, "Lowering magic of %s\n", F.getName().data());
 	return Changed;
 }
 }
