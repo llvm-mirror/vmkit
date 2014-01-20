@@ -366,8 +366,6 @@ llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
 		}
 
 		builder.CreateCondBr(builder.CreateIsNotNull(obj), succeed, bbNullCheckFailed);
-
-		bb = succeed;
 		builder.SetInsertPoint(succeed);
 	}
 
@@ -394,7 +392,6 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 		//llvm::BasicBlock* after = forwardBranch("invoke-after", codeReader->tell(), 0, 0);
 		llvm::BasicBlock* after = newBB("invoke-after");
 		res = builder.CreateInvoke(func, after, exceptions.nodes[curExceptionNode]->landingPad, args);
-		bb = after;
 		builder.SetInsertPoint(after);
 	} else {
 		res = builder.CreateCall(func, args);
@@ -780,10 +777,9 @@ llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doA
 		if(fakeTerminator)
 			fakeTerminator->eraseFromParent();
 
-		if(isSelf) {
-			bb = after;
+		if(isSelf)
 			builder.SetInsertPoint(after);
-		}
+
 		//fprintf(stderr, "--- after split ---\n");
 		//before->dump();
 		//after->dump();
@@ -884,7 +880,7 @@ void J3CodeGen::translate() {
 		}
 
 		if(opInfos[javaPC].insn || opInfos[javaPC].bb) {
-			if(closeBB && !bb->getTerminator()) {
+			if(closeBB && !builder.GetInsertBlock()->getTerminator()) {
 				if(!opInfos[javaPC].bb)
 					J3::internalError("random split???");
 				builder.CreateBr(opInfos[javaPC].bb);
@@ -899,7 +895,6 @@ void J3CodeGen::translate() {
 		closeBB = 1;
 
 		if(opInfos[javaPC].bb) {
-			bb = opInfos[javaPC].bb;
 			builder.SetInsertPoint(opInfos[javaPC].bb);
 			//printf("Meta stack before: %p\n", metaStack);
 			if(opInfos[javaPC].metaStack) {
@@ -1658,8 +1653,6 @@ void J3CodeGen::generateJava() {
 	llvm::BasicBlock* entry = newBB("entry");
 	builder.SetInsertPoint(entry);
 
-	bb = entry;
-
 	J3Attribute* attr = method->attributes()->lookup(vm->codeAttribute);
 
 	if(!attr)
@@ -1804,8 +1797,7 @@ llvm::Function* J3CodeGen::lookupNative() {
 }
 
 void J3CodeGen::generateNative() {
-	bb = newBB("entry");
-	builder.SetInsertPoint(bb);
+	builder.SetInsertPoint(newBB("entry"));
 
 	std::vector<llvm::Value*> args;
 
@@ -1848,11 +1840,11 @@ void J3CodeGen::generateNative() {
 			llvm::BasicBlock* ifnotnull = newBB("ifnotnull");
 			builder.CreateCondBr(builder.CreateIsNull(res), ifnull, ifnotnull);
 
-			builder.SetInsertPoint(bb = ifnull);
+			builder.SetInsertPoint(ifnull);
 			builder.CreateCall2(funcJ3ThreadRestore, thread, frame);
 			builder.CreateRet(nullValue);
 
-			builder.SetInsertPoint(bb = ifnotnull);
+			builder.SetInsertPoint(ifnotnull);
 			res = handleToObject(res);
 			builder.CreateCall2(funcJ3ThreadRestore, thread, frame);
 		}

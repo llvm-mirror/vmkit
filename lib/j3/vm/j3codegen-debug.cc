@@ -160,7 +160,7 @@ void J3CodeGen::genDebugOpcode() {
 												 buildString(buf));
 
 		builder.CreateBr(after);
-		builder.SetInsertPoint(bb = after);
+		builder.SetInsertPoint(after);
 	}
 }
 

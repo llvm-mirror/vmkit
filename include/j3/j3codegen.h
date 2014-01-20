@@ -43,7 +43,6 @@ namespace j3 {
 
 		vmkit::BumpAllocator*  allocator;
 		llvm::Module*          module;
-		llvm::BasicBlock*      bb;
 		llvm::IRBuilder<>      builder;
 		llvm::Function*        llvmFunction;
 
