@@ -7,8 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#if 0
-
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
@@ -36,8 +34,15 @@ namespace {
   static RegisterPass<LowerJavaRT> X("LowerJavaRT",
                                      "Remove references to RT");
 
+
 bool LowerJavaRT::runOnModule(Module& M) {
   bool Changed = true;
+
+	fprintf(stderr, "Lowering java runtime in %s\n", M.getModuleIdentifier().data());
+
+  return Changed;
+}
+#if 0
 
   for (Module::iterator I = M.begin(), E = M.end(); I != E;) {
     Function& GV = *I;
@@ -147,9 +152,6 @@ bool LowerJavaRT::runOnModule(Module& M) {
   // malloc and barriers.
   M.getTypeByName("JavaObject")->setName("MMTk.JavaObject");
 
-  return Changed;
 }
-
-}
-
 #endif
+}

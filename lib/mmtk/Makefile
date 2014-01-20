@@ -5,7 +5,7 @@
 
 LEVEL := ../..
 
-PARALLEL_DIRS:=magic
+DIRS:=magic
 
 BASE_OBJ_FILES=mmtk-lowered
 MODULE=mmtk
@@ -16,9 +16,9 @@ MMTK_JAR=$(MMTK_PATH)/mmtk/mmtk.jar
 LOWER=$(LIB_DIR)/mmtk-pass$(SHLIBEXT)
 J3=$(BIN_DIR)/j3
 
-$(BUILD_DIR)/mmtk-lowered.bc: $(BUILD_DIR)/mmtk-bc.bc $(LOWER)
-	$(Echo) "Lowering '$(notdir $<)'"
-	$(Verb) cp $< $@
+$(BUILD_DIR)/mmtk-lowered.bc: $(BUILD_DIR)/mmtk-bc.bc $(LOWER) 
+	$(Echo) "Lowering magic '$(notdir $<)'"
+	$(Verb) $(LLOPT) -load=$(LOWER) -LowerMagic -LowerJavaRT $(OPTFLAGS) -f $< -o $@
 
 $(BUILD_DIR)/mmtk-bc.bc: $(MMTK_JAR) $(BUILD_DIR)/.dir $(J3) $(SELF)
 	$(Echo) "Compiling '$(notdir $<)'"

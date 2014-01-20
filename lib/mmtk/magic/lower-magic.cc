@@ -7,7 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#if 0
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
@@ -22,8 +21,8 @@
 
 #include <cstdio>
 
-#include "vmkit/GC.h"
-#include "vmkit/System.h"
+//#include "vmkit/GC.h"
+//#include "vmkit/System.h"
 
 using namespace llvm;
 
@@ -37,10 +36,19 @@ namespace vmmagic {
     virtual bool runOnFunction(Function &F);
   private:
   };
-  char LowerMagic::ID = 0;
-  static RegisterPass<LowerMagic> X("LowerMagic",
-                                    "Lower magic calls");
-  typedef SmallPtrSet<Instruction*,128> InstSet;
+
+char LowerMagic::ID = 0;
+static RegisterPass<LowerMagic> X("LowerMagic",
+																	"Lower magic calls");
+typedef SmallPtrSet<Instruction*,128> InstSet;
+
+bool LowerMagic::runOnFunction(Function& F) {
+  bool Changed = false;
+	fprintf(stderr, "Lowering magic of %s\n", F.getName().data());
+	return Changed;
+}
+}
+#if 0
 
 static const char* AddressClass = "JnJVM_org_vmmagic_unboxed_Address_";
 static const char* AddressZeroMethod = 0;
