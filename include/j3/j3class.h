@@ -40,7 +40,6 @@ namespace j3 {
 		J3Method** methods;
 	};
 
-
 	class J3Type : public vmkit::Symbol {
 		pthread_mutex_t        _mutex;
 		J3ClassLoader*         _loader;
@@ -52,7 +51,7 @@ namespace j3 {
 		const vmkit::Name*        _name;
 		char*                     _nativeName;
 		uint32_t                  _nativeNameLength;
-		J3VirtualTable*           _vt; 
+		J3VirtualTable*           _vt;
 		J3ObjectHandle* volatile  _javaClass;
 
 		volatile int           status;

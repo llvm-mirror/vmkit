@@ -144,7 +144,6 @@ namespace j3 {
 
 	class J3ObjectHandle {
 		friend class J3LocalReferences;
-		friend class J3GlobalReferences;
 		friend class J3Method;
 
 	public:
@@ -200,25 +199,6 @@ namespace j3 {
 #undef defAccessor
 	};
 
-	class J3LocalReferences : public vmkit::Stack<J3ObjectHandle> {
-	public:
-		J3LocalReferences(vmkit::BumpAllocator* _allocator) : vmkit::Stack<J3ObjectHandle>(_allocator) {}
-
-		J3ObjectHandle* push(J3ObjectHandle* handle) { return handle ? push(handle->obj()) : 0; }
-		J3ObjectHandle* push(J3Object* obj);
-	};
-
-	class J3GlobalReferences {
-		pthread_mutex_t               mutex;
-		vmkit::Stack<J3ObjectHandle>  references;
-		vmkit::Stack<J3ObjectHandle*> emptySlots;
-	public:
-		J3GlobalReferences(vmkit::BumpAllocator* _allocator);
-		
-		J3ObjectHandle* add(J3ObjectHandle* handle);
-		void            del(J3ObjectHandle* handle);
-	};
-
 	class J3Value {
 	public:
 		union {
@@ -234,6 +214,48 @@ namespace j3 {
 #undef doIt
 
 		J3Value() {}
+	};
+
+	class J3LocalReferences : public vmkit::Stack<J3ObjectHandle> {
+	public:
+		J3LocalReferences(vmkit::BumpAllocator* _allocator) : vmkit::Stack<J3ObjectHandle>(_allocator) {}
+
+		J3ObjectHandle* push(J3ObjectHandle* handle) { return handle ? push(handle->obj()) : 0; }
+		J3ObjectHandle* push(J3Object* obj);
+	};
+
+	template <class T>
+	class J3GlobalReferences {
+		pthread_mutex_t  mutex;
+		vmkit::Stack<T>  references;
+		vmkit::Stack<T*> emptySlots;
+
+	public:
+		J3GlobalReferences(vmkit::BumpAllocator* _allocator) :
+			references(_allocator),
+			emptySlots(_allocator) {
+			pthread_mutex_init(&mutex, 0);
+		}
+		
+		T*   add(T* handle) {
+			if(handle) {
+				pthread_mutex_lock(&mutex);
+				T* res = emptySlots.isEmpty() ? references.push() : *emptySlots.pop();
+				*res = *handle;
+				pthread_mutex_unlock(&mutex);
+				return res;
+			} else
+				return 0;
+		}
+
+		void del(T* handle) {
+			if(handle) {
+				handle->harakiri();
+				pthread_mutex_lock(&mutex);
+				*emptySlots.push() = handle;
+				pthread_mutex_unlock(&mutex);
+			}
+		}
 	};
 }
 

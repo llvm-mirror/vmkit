@@ -41,7 +41,7 @@ namespace j3 {
 		uint32_t                             _compilationMode;
 
 		J3ObjectHandle*                      _javaClassLoader;
-		J3GlobalReferences                   _globalReferences;
+		J3GlobalReferences<J3ObjectHandle>   _globalReferences;
 
 		pthread_mutex_t                      _mutexClasses;
 		vmkit::NameMap<J3Class*>::map        classes;      /* classes managed by this class loader */
@@ -77,7 +77,7 @@ namespace j3 {
 
 		uint32_t                      interfaceIndex(J3Method* signature);
 
-		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
+		J3GlobalReferences<J3ObjectHandle>* globalReferences() { return &_globalReferences; }
 
 		static J3ClassLoader*         nativeClassLoader(J3ObjectHandle* jloader);
 		J3ObjectHandle*               javaClassLoader(bool doPush=1);
