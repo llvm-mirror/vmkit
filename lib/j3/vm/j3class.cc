@@ -17,6 +17,7 @@
 #include "j3/j3thread.h"
 #include "j3/j3field.h"
 #include "j3/j3attribute.h"
+#include "j3/j3codegen.h"
 
 using namespace j3;
 
@@ -320,15 +321,17 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	status = LOADED;
 }
 
-void J3Class::aotCompile() {
+void J3Class::compileAll() {
 	resolve();
 
 	for(uint32_t i=0; i<nbMethods(); i++) {
-		methods()[i]->aotCompile();
+		if(!J3Cst::isAbstract(methods()[i]->access()))
+			methods()[i]->ensureCompiled(J3CodeGen::WithMethod);
 	}
 
 	for(uint32_t i=0; i<staticLayout()->nbMethods(); i++) {
-		staticLayout()->methods()[i]->aotCompile();
+		if(!J3Cst::isAbstract(staticLayout()->methods()[i]->access()))
+			staticLayout()->methods()[i]->ensureCompiled(J3CodeGen::WithMethod);
 	}
 }
 

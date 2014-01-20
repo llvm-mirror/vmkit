@@ -12,6 +12,7 @@
 #include "j3/j3lib.h"
 #include "j3/j3field.h"
 #include "j3/j3utf16.h"
+#include "j3/j3codegen.h"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -190,6 +191,8 @@ void J3::compileApplication() {
 																																		names()->get("()Ljava/lang/ClassLoader;"))->invokeStatic().valObject);
 
 
+	loader->setCompileMode(J3CodeGen::OnlyTranslate | J3CodeGen::NotUseStub);
+
 	if(options()->mainClass)
 		J3::internalError("compiling a single class is not yet supported");
 	else {
@@ -209,7 +212,7 @@ void J3::compileApplication() {
 				char buf[name->length() - 5];
 				memcpy(buf, name->cStr(), name->length() - 6);
 				buf[name->length()-6] = 0;
-				loader->getTypeFromQualified(0, buf)->asClass()->aotCompile();
+				loader->getTypeFromQualified(0, buf)->asClass()->compileAll();
 			}
 		}
 	}

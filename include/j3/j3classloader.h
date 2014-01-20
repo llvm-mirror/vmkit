@@ -38,6 +38,8 @@ namespace j3 {
 
 		static J3InterfaceMethodLess  j3InterfaceMethodLess;
 
+		uint32_t                             _compileMode;
+
 		J3ObjectHandle*                      _javaClassLoader;
 		J3GlobalReferences                   _globalReferences;
 
@@ -58,6 +60,9 @@ namespace j3 {
 
 	public:
 		J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
+
+		uint32_t                      compileMode() { return _compileMode; }
+		void                          setCompileMode(uint32_t mode) { _compileMode = mode; }
 
 		void                          aotSnapshot(llvm::Linker* linker);
 

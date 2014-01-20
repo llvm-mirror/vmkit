@@ -52,13 +52,6 @@ J3Signature::function_t J3Method::cxxCaller() {
 	return signature()->caller(access());
 }
 
-void J3Method::aotCompile() {
-	if(!J3Cst::isAbstract(access())) {
-		//fprintf(stderr, "compiling: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
-		ensureCompiled(J3CodeGen::WithMethod | J3CodeGen::OnlyTranslate | J3CodeGen::NotUseStub);
-	}
-}
-
 void J3Method::aotSnapshot(llvm::Linker* linker) {
 	if(_llvmFunction) {
 		std::string err;

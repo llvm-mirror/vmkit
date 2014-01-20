@@ -229,7 +229,7 @@ namespace j3 {
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes, J3ObjectHandle* protectionDomain, const char* source);
 
-		void                aotCompile();
+		void                compileAll();
 		void                aotSnapshot(llvm::Linker* linker);
 
 		J3ObjectHandle*     clone(J3ObjectHandle* obj);

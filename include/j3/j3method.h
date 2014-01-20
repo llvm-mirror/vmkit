@@ -92,7 +92,6 @@ namespace j3 {
 		J3Value             invokeVirtual(J3ObjectHandle* obj, J3Value* args);
 		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
 
-		void                aotCompile();
 		void                aotSnapshot(llvm::Linker* linker);
 		void                ensureCompiled(uint32_t mode);
 		J3Signature::function_t cxxCaller();
