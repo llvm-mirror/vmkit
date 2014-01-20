@@ -52,6 +52,7 @@ namespace j3 {
 		uintptr_t      stackSize;
 
 		bool           isAOT;
+		const char*    aotFile;
 
 		J3Options();
 

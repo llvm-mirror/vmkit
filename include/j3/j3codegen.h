@@ -41,13 +41,15 @@ namespace j3 {
 			WithMethod = 1,
 			WithCaller = 2,
 			OnlyTranslate = 4,
-			NotUseStub = 8
+			NotUseStub = 8,
+			NotNeedGC = 16
 		};
 
 		bool withMethod() { return mode & WithMethod; }
 		bool withCaller() { return mode & WithCaller; }
 		bool onlyTranslate() { return mode & OnlyTranslate; }
 		bool useStub() { return !(mode & NotUseStub); }
+		bool needGC() { return !(mode & NotNeedGC); }
 
 	private:
 		friend class J3CodeGenVar;

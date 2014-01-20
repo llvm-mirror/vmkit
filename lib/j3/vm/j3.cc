@@ -18,6 +18,9 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Linker.h"
+#include "llvm/Support/ToolOutputFile.h"
+#include "llvm/PassManager.h"
+#include "llvm/Bitcode/ReaderWriter.h"
 
 #include "vmkit/safepoint.h"
 #include "vmkit/system.h"
@@ -191,7 +194,7 @@ void J3::compileApplication() {
 																																		names()->get("()Ljava/lang/ClassLoader;"))->invokeStatic().valObject);
 
 
-	loader->setCompileMode(J3CodeGen::OnlyTranslate | J3CodeGen::NotUseStub);
+	loader->setCompilationMode(J3CodeGen::OnlyTranslate | J3CodeGen::NotUseStub | J3CodeGen::NotNeedGC);
 
 	if(options()->mainClass)
 		J3::internalError("compiling a single class is not yet supported");
@@ -221,7 +224,16 @@ void J3::compileApplication() {
 	llvm::Linker* linker = new llvm::Linker(res);
 	loader->aotSnapshot(linker);
 
-	res->dump();
+  std::string err;
+	llvm::tool_output_file out(options()->aotFile, err, llvm::sys::fs::F_Binary);
+  if(!err.empty())
+    fprintf(stderr, "%s\n", err.c_str());
+  else {
+		llvm::PassManager pm;
+    pm.add(llvm::createBitcodeWriterPass(out.os()));
+		pm.run(*res);
+		out.keep();
+	}
 }
 
 void J3::runApplication() {

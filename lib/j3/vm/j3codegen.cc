@@ -99,7 +99,9 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mo
 	/* only translate of requested and not already translated */
 	if(withMethod() && !llvmFunction) {
 		llvmFunction = buildFunction(method, 0);
-		llvmFunction->setGC("vmkit");
+
+		if(needGC())
+			llvmFunction->setGC("vmkit");
 
 		if(J3Cst::isNative(access))
 			generateNative();

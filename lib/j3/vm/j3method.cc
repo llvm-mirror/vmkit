@@ -62,7 +62,7 @@ void J3Method::aotSnapshot(llvm::Linker* linker) {
 void J3Method::ensureCompiled(uint32_t mode) {
 	if(((mode & J3CodeGen::WithMethod) && !fnPtr()) || ((mode & J3CodeGen::WithCaller) && !cxxCaller())) {
 		//fprintf(stderr, "materializing: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
-		J3CodeGen::translate(this, mode);
+		J3CodeGen::translate(this, mode | cl()->loader()->compilationMode());
  	}
 }
 

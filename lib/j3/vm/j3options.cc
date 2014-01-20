@@ -74,9 +74,10 @@ void J3CmdLineParser::process() {
 			nyi("-no-jre-restrict-search");
 		else if(opteq("-?") || opteq("-help"))
 			help();
-		else if(opteq("-Xaot"))
+		else if(opteq("-Xaot")) {
 			options->isAOT = 1;
-		else if(opteq("-Xno-aot"))
+			options->aotFile = argv[++cur];
+		} else if(opteq("-Xno-aot"))
 			options->isAOT = 0;
 		else if(optbeg("-X"))
 			nyi("-X");

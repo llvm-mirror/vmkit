@@ -24,8 +24,10 @@ void J3CodeGenVar::killUnused(llvm::AllocaInst** stack, bool isObj) {
 			llvm::dyn_cast<llvm::StoreInst>(*(cur->use_begin()))->eraseFromParent();
       cur->eraseFromParent();
     } else if(isObj) {
-			codeGen->builder.SetInsertPoint(cur->getNextNode());
-			codeGen->builder.CreateCall2(codeGen->gcRoot, codeGen->builder.CreateBitCast(refStack[i], i8ptrptr), meta);
+			if(codeGen->needGC()) {
+				codeGen->builder.SetInsertPoint(cur->getNextNode());
+				codeGen->builder.CreateCall2(codeGen->gcRoot, codeGen->builder.CreateBitCast(refStack[i], i8ptrptr), meta);
+			}
 			//codeGen->builder.CreateStore(codeGen->nullValue, cur);
 			//
 		}

@@ -14,4 +14,4 @@ J3=$(BIN_DIR)/j3
 
 $(BUILD_DIR)/mmtk-llvm.bc: $(BUILD_DIR)/.dir $(J3) $(SELF)
 	$(Echo) "Generating the llvm bytecode of mmtk"
-	$(Verb) $(J3) -Xaot -cp $(MMTK_PATH)/vmmagic-stub/classes/:$(MMTK_PATH)/options/classes/ -jar $(MMTK_PATH)/mmtk/mmtk.jar 
+	$(Verb) $(J3) -Xaot $@ -cp $(MMTK_PATH)/vmmagic-stub/classes/:$(MMTK_PATH)/options/classes/ -jar $(MMTK_PATH)/mmtk/mmtk.jar 
