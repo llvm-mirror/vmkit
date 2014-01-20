@@ -96,10 +96,6 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 #endif
 
 	if(withMethod) {
-		bb    = newBB("entry");
-
-		builder.SetInsertPoint(bb);
-
 		if(J3Cst::isNative(method->access()))
 			generateNative();
 		else
@@ -372,7 +368,7 @@ llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
 		builder.CreateCondBr(builder.CreateIsNotNull(obj), succeed, bbNullCheckFailed);
 
 		bb = succeed;
-		builder.SetInsertPoint(bb);
+		builder.SetInsertPoint(succeed);
 	}
 
 	return obj;
@@ -399,7 +395,7 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 		llvm::BasicBlock* after = newBB("invoke-after");
 		res = builder.CreateInvoke(func, after, exceptions.nodes[curExceptionNode]->landingPad, args);
 		bb = after;
-		builder.SetInsertPoint(bb);
+		builder.SetInsertPoint(after);
 	} else {
 		res = builder.CreateCall(func, args);
 	}
@@ -642,8 +638,6 @@ void J3CodeGen::checkCast(llvm::Value* obj, J3ObjectType* type) {
 	llvm::Value* res = isAssignableTo(obj, type);
 
 	builder.CreateCondBr(res, succeed, bbCheckCastFailed);
-
-	builder.SetInsertPoint(bb);
 }
 
 void J3CodeGen::floatToInteger(J3Type* ftype, J3Type* itype) {
@@ -865,7 +859,6 @@ void J3CodeGen::translate() {
 		exceptions.dump(vm->options()->debugTranslate-1);
 
 	stack.topStack = 0;
-	builder.SetInsertPoint(bb);
 	_onEndPoint();
 	closeBB = 1;
 
@@ -907,7 +900,7 @@ void J3CodeGen::translate() {
 
 		if(opInfos[javaPC].bb) {
 			bb = opInfos[javaPC].bb;
-			builder.SetInsertPoint(bb);
+			builder.SetInsertPoint(opInfos[javaPC].bb);
 			//printf("Meta stack before: %p\n", metaStack);
 			if(opInfos[javaPC].metaStack) {
 				stack.metaStack = opInfos[javaPC].metaStack;
@@ -919,10 +912,10 @@ void J3CodeGen::translate() {
 			//printf("Meta stack after: %p\n", metaStack);
 		}
 		
-		if(opInfos[javaPC].bb || bb->empty())
-			opInfos[javaPC].insn = bb->begin();
+		if(opInfos[javaPC].bb || builder.GetInsertBlock()->empty())
+			opInfos[javaPC].insn = builder.GetInsertBlock()->begin();
 		else 
-			opInfos[javaPC].insn = bb->end()->getPrevNode();
+			opInfos[javaPC].insn = builder.GetInsertBlock()->end()->getPrevNode();
 
 		bc = codeReader->readU1();
 
@@ -1662,6 +1655,11 @@ void J3CodeGen::z_translate() {
 }
 
 void J3CodeGen::generateJava() {
+	llvm::BasicBlock* entry = newBB("entry");
+	builder.SetInsertPoint(entry);
+
+	bb = entry;
+
 	J3Attribute* attr = method->attributes()->lookup(vm->codeAttribute);
 
 	if(!attr)
@@ -1743,6 +1741,9 @@ void J3CodeGen::generateJava() {
 	exceptions.read(&reader, codeLength);
 
 	pendingBranchs[topPendingBranchs++] = codeReader->tell();
+
+	builder.SetInsertPoint(entry);
+
 	translate();
 
 	locals.killUnused();
@@ -1803,6 +1804,9 @@ llvm::Function* J3CodeGen::lookupNative() {
 }
 
 void J3CodeGen::generateNative() {
+	bb = newBB("entry");
+	builder.SetInsertPoint(bb);
+
 	std::vector<llvm::Value*> args;
 
 	llvm::Function* nat = lookupNative();
