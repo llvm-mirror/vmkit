@@ -60,11 +60,47 @@ SHFLAGS=-lpthread -ldl -lz -lncurses -framework CoreFoundation -fno-common -Wl,-
 ###############################################################################
 #   Targets
 ###############################################################################
-.PHONY: all tidy clean confclean
+.PHONY: all all-recursive clean clean-recursive clean-local tidy confclean check
 .SECONDARY:
 .SUFFIXES:
 
-all::
+###############################################################################
+#   Recursive target managment
+###############################################################################
+RECURSIVE_TARGETS=all clean
+
+define do_sub_target
+$1-recursive::
+  #$(Echo) "Entering directory $$(PROF)/$2"
+	$(Verb) +$(MAKE) $(SUB_OPT) -C $2 $1 PROF=$(PROF)/$2; \
+		if [ $$$$? != 0 ]; then echo "$$(EchoMsg) abort with errors in $$(PROF)/$2"; exit 1; fi
+endef
+
+define do_recursive_target
+$1:
+	 $(Verb) +$(MAKE) $(SUB_OPT) $1-recursive 
+	 $(Verb) +$(MAKE) $1-local
+$1-recursive::
+$1-local::
+$$(foreach dir,$$(DIRS),$$(eval $$(call do_sub_target,$1,$$(dir))))
+endef
+
+$(foreach target,$(RECURSIVE_TARGETS),$(eval $(call do_recursive_target,$(target))))
+
+tidy:
+	$(Echo) "Cleaning temporary files"
+	$(Verb) find $(PROJ_OBJ_ROOT) \( -iname "*~" -o -iname "\#*" \) -exec rm -f {} \;
+
+clean-local::
+	$(Echo) "Cleaning compilation files"
+	$(Verb) rm -Rf $(BUILD_DIR)
+
+confclean: clean
+	$(Echo) "Cleaning configuration"
+	$(Verb) rm -Rf $(patsubst $(PROJ_OBJ_ROOT)/%,%,$(CONFIG_FILES))
+	$(Verb) rm -Rf $(patsubst $(PROJ_OBJ_ROOT)/%,%,$(CONFIG_HEADERS))
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/config.status $(PROJ_OBJ_ROOT)/config.log
+	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/autoconf/autom4te.cache $(PROJ_OBJ_ROOT)/autoconf/configure.bak
 
 check::
 	$(Echo) "---- building with: "
@@ -83,35 +119,6 @@ check::
 	$(Echo) "  CLANGXX: $(CLANGXX)"
 	$(Echo) "  LLC: $(LLC)"
 	$(Echo) "  LOPT: $(LOPT)"
-
-###############################################################################
-#   Recursive target managment
-###############################################################################
-RECURSIVE_TARGETS=all clean
-
-define do_sub_target
-$1::
-  #$(Echo) "Entering directory $$(PROF)/$2"
-	$(Verb) +$(MAKE) $(SUB_OPT) -C $2 $1 PROF=$(PROF)/$2; \
-		if [ $$$$? != 0 ]; then echo "$$(EchoMsg) abort with errors in $$(PROF)/$2"; exit 1; fi
-endef
-
-$(foreach target,$(RECURSIVE_TARGETS),$(foreach dir,$(DIRS),$(eval $(call do_sub_target,$(target),$(dir)))))
-
-tidy:
-	$(Echo) "Cleaning temporary files"
-	$(Verb) find $(PROJ_OBJ_ROOT) \( -iname "*~" -o -iname "\#*" \) -exec rm -f {} \;
-
-clean::
-	$(Echo) "Cleaning compilation files"
-	$(Verb) rm -Rf $(BUILD_DIR)
-
-confclean: clean
-	$(Echo) "Cleaning configuration"
-	$(Verb) rm -Rf $(patsubst $(PROJ_OBJ_ROOT)/%,%,$(CONFIG_FILES))
-	$(Verb) rm -Rf $(patsubst $(PROJ_OBJ_ROOT)/%,%,$(CONFIG_HEADERS))
-	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/config.status $(PROJ_OBJ_ROOT)/config.log
-	$(Verb) rm -Rf $(PROJ_OBJ_ROOT)/autoconf/autom4te.cache $(PROJ_OBJ_ROOT)/autoconf/configure.bak
 
 ###############################################################################
 #   Build system managment
@@ -158,7 +165,7 @@ ifdef MODULE
 
 GEN_MODULE=$(LIB_DIR)/$(MODULE)
 
-all:: $(LIB_DIR)/.dir $(GEN_MODULE).a $(GEN_MODULE).bc
+all-local:: $(LIB_DIR)/.dir $(GEN_MODULE).a $(GEN_MODULE).bc
 
 # not used for the moment
 ifdef __EXTRACT__
@@ -249,7 +256,7 @@ TOOL_FLAGS=$(LLVM_LDFLAGS) $(SHFLAGS)
 LDFLAGS=$(SO_LIBS)
 endif
 
-all:: $(TOOL_ALL)
+all-local:: $(TOOL_ALL)
 
 $(TOOL_OUT): $(TOOL_DEP)
 	$(Echo) "Linking '$(notdir $@)'"
@@ -270,7 +277,7 @@ endif
 ###############################################################################
 ifdef LIBRARY
 SONAME=$(LIB_DIR)/$(LIBRARY)
-all:: $(LIB_DIR)/.dir $(SONAME)$(SHLIBEXT)
+all-local:: $(LIB_DIR)/.dir $(SONAME)$(SHLIBEXT)
 
 SO_FILES=$(OBJ_FILES)
 
