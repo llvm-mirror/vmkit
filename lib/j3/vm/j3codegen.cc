@@ -29,8 +29,9 @@ using namespace j3;
 #define _onEndPoint() ({ if(onEndPoint()) return; })
 
 J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMethod, bool withCaller, bool onlyTranslate) :
+	builder(J3Thread::get()->vm()->llvmContext()),
 	exceptions(this) {
-	
+
 	allocator = _allocator;
 
 	method = m;
@@ -55,7 +56,7 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 						method->name()->cStr(), 
 						method->signature()->name()->cStr());
 
-	module = new llvm::Module(method->llvmFunctionName(), vm->llvmContext());
+	module = new llvm::Module(method->llvmFunctionName(), builder.getContext());
 	llvmFunction = buildFunction(method, 0);
 	llvmFunction->setGC("vmkit");
 
@@ -64,12 +65,8 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	topPendingBranchs = 0;
 	isWide = 0;
 
-	bb    = newBB("entry");
-	llvm::IRBuilder<> _builder(bb);
-
-	builder = &_builder;
-
-	uintPtrTy = builder->getIntPtrTy(vm->dataLayout());
+	uintPtrTy = vm->dataLayout()->getIntPtrType(module->getContext());
+	nullValue = llvm::ConstantPointerNull::get((llvm::PointerType*)vm->typeJ3ObjectPtr);
 
 #define _x(name, id)														\
 	name = vm->introspectFunction(module, id);
@@ -87,22 +84,22 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, bool withMet
 	//patchPointVoid = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::experimental_patchpoint_i64);
 	{
 		llvm::Type* ins[] = {
-			builder->getInt64Ty(),
-			builder->getInt32Ty(),
-			builder->getInt8PtrTy(),
-			builder->getInt32Ty()
+			builder.getInt64Ty(),
+			builder.getInt32Ty(),
+			builder.getInt8PtrTy(),
+			builder.getInt32Ty()
 		};
 		patchPointVoid = (llvm::Function*)
 			module->getOrInsertFunction(llvm::Intrinsic::getName(llvm::Intrinsic::experimental_patchpoint_void),
-																		llvm::FunctionType::get(builder->getVoidTy(), ins, 1));
+																		llvm::FunctionType::get(builder.getVoidTy(), ins, 1));
 	}
 #endif
 
-	nullValue = builder
-		->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0),
-										 vm->typeJ3ObjectPtr);
-
 	if(withMethod) {
+		bb    = newBB("entry");
+
+		builder.SetInsertPoint(bb);
+
 		if(J3Cst::isNative(method->access()))
 			generateNative();
 		else
@@ -173,9 +170,9 @@ llvm::Value* J3CodeGen::flatten(llvm::Value* v) {
 		 (type->isPointerTy() && (v->getType() == vm->typeJ3ObjectPtr)))
 		return v;
 	else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
-		return builder->CreateSExt(v, vm->typeInteger->llvmType());
+		return builder.CreateSExt(v, vm->typeInteger->llvmType());
 	else if(type == vm->typeCharacter->llvmType())
-		return builder->CreateZExt(v, vm->typeInteger->llvmType());
+		return builder.CreateZExt(v, vm->typeInteger->llvmType());
 
 	fprintf(stderr, " v: ");
 	v->getType()->dump();
@@ -191,9 +188,9 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, llvm::Type* type) {
 		 (type->isPointerTy() && type == v->getType()))
 		return v;
 	else if(type == vm->typeBoolean->llvmType() || type == vm->typeByte->llvmType() || type == vm->typeShort->llvmType())
-		return builder->CreateSExtOrTrunc(v, type);
+		return builder.CreateSExtOrTrunc(v, type);
 	else if(type == vm->typeCharacter->llvmType())
-		return builder->CreateZExtOrTrunc(v, type);
+		return builder.CreateZExtOrTrunc(v, type);
 
 	fprintf(stderr, " v: ");
 	v->getType()->dump();
@@ -213,24 +210,24 @@ llvm::Value* J3CodeGen::typeDescriptor(J3ObjectType* objectType, llvm::Type* typ
 	const char* id = objectType->nativeName();
 	loader->addSymbol(id, objectType);
 	llvm::Value* v = module->getOrInsertGlobal(id, vm->typeJ3ObjectType);
-	return type == vm->typeJ3ObjectTypePtr ? v : builder->CreateBitCast(v, type);
+	return type == vm->typeJ3ObjectTypePtr ? v : builder.CreateBitCast(v, type);
 }
 
 llvm::Value* J3CodeGen::spToCurrentThread(llvm::Value* sp) {
-	return builder->CreateIntToPtr(builder->CreateAnd(builder->CreatePtrToInt(sp, uintPtrTy),
+	return builder.CreateIntToPtr(builder.CreateAnd(builder.CreatePtrToInt(sp, uintPtrTy),
 																										llvm::ConstantInt::get(uintPtrTy, vmkit::Thread::getThreadMask())),
 																 vm->typeJ3Thread);
 }
 
 llvm::Value* J3CodeGen::currentThread() {
-	return spToCurrentThread(builder->CreateCall(frameAddress, builder->getInt32(0)));
+	return spToCurrentThread(builder.CreateCall(frameAddress, builder.getInt32(0)));
 }
 
 void J3CodeGen::monitorEnter(llvm::Value* obj) {
 	llvm::Type* recordTy = vm->typeJ3LockRecord;
 	llvm::Type* recordPtrTy = vm->typeJ3LockRecord->getPointerTo();
 
-	llvm::AllocaInst* recordPtr = builder->CreateAlloca(recordPtrTy);
+	llvm::AllocaInst* recordPtr = builder.CreateAlloca(recordPtrTy);
 
 	llvm::BasicBlock* ok = forwardBranch("lock-ok", codeReader->tell(), 0, 0);
 	llvm::BasicBlock* stackLocked = newBB("stack-locked");
@@ -238,41 +235,41 @@ void J3CodeGen::monitorEnter(llvm::Value* obj) {
 	llvm::BasicBlock* stackFail = newBB("stack-lock-fail");
 
 	/* already stack locked by myself? */
-	llvm::Value* gepH[] = { builder->getInt32(0), builder->getInt32(J3Object::gepHeader) };
-	llvm::Value* headerPtr = builder->CreateGEP(obj, gepH);
-	llvm::Value* header = builder->CreateLoad(headerPtr);
+	llvm::Value* gepH[] = { builder.getInt32(0), builder.getInt32(J3Object::gepHeader) };
+	llvm::Value* headerPtr = builder.CreateGEP(obj, gepH);
+	llvm::Value* header = builder.CreateLoad(headerPtr);
 	
-	builder->CreateStore(builder->CreateIntToPtr(header, recordPtrTy), recordPtr);
-	builder->CreateCondBr(builder->CreateICmpEQ(currentThread(), spToCurrentThread(header)),
+	builder.CreateStore(builder.CreateIntToPtr(header, recordPtrTy), recordPtr);
+	builder.CreateCondBr(builder.CreateICmpEQ(currentThread(), spToCurrentThread(header)),
 												stackLocked, tryStackLock);
 
 	/* try to stack lock */
-	builder->SetInsertPoint(tryStackLock);
-	llvm::AllocaInst* record = builder->CreateAlloca(recordTy);
-	builder->CreateStore(record, recordPtr);
-	llvm::Value* gepR[] = { builder->getInt32(0), builder->getInt32(J3LockRecord::gepHeader) };
-	builder->CreateStore(header, builder->CreateGEP(record, gepR));
-	llvm::Value* gepC[] = { builder->getInt32(0), builder->getInt32(J3LockRecord::gepLockCount) };
-	builder->CreateStore(builder->getInt32(0), builder->CreateGEP(record, gepC));
-	llvm::Value* orig = builder->CreateOr(builder->CreateAnd(header, llvm::ConstantInt::get(uintPtrTy, ~6)), 
+	builder.SetInsertPoint(tryStackLock);
+	llvm::AllocaInst* record = builder.CreateAlloca(recordTy);
+	builder.CreateStore(record, recordPtr);
+	llvm::Value* gepR[] = { builder.getInt32(0), builder.getInt32(J3LockRecord::gepHeader) };
+	builder.CreateStore(header, builder.CreateGEP(record, gepR));
+	llvm::Value* gepC[] = { builder.getInt32(0), builder.getInt32(J3LockRecord::gepLockCount) };
+	builder.CreateStore(builder.getInt32(0), builder.CreateGEP(record, gepC));
+	llvm::Value* orig = builder.CreateOr(builder.CreateAnd(header, llvm::ConstantInt::get(uintPtrTy, ~6)), 
 																				llvm::ConstantInt::get(uintPtrTy, 1)); /* ...001 */
-	llvm::Value* res = builder->CreateAtomicCmpXchg(headerPtr, 
+	llvm::Value* res = builder.CreateAtomicCmpXchg(headerPtr, 
 																									orig, 
-																									builder->CreatePtrToInt(record, uintPtrTy),
+																									builder.CreatePtrToInt(record, uintPtrTy),
 																									llvm::SequentiallyConsistent, 
 																									llvm::CrossThread);
-	builder->CreateCondBr(builder->CreateICmpEQ(res, orig), stackLocked, stackFail);
+	builder.CreateCondBr(builder.CreateICmpEQ(res, orig), stackLocked, stackFail);
 
 	/* stack locked, increment the counter */
-	builder->SetInsertPoint(stackLocked);
-	llvm::Value* countPtr = builder->CreateGEP(builder->CreateLoad(recordPtr), gepC);
-	builder->CreateStore(builder->CreateAdd(builder->CreateLoad(countPtr), builder->getInt32(1)), countPtr);
-	builder->CreateBr(ok);
+	builder.SetInsertPoint(stackLocked);
+	llvm::Value* countPtr = builder.CreateGEP(builder.CreateLoad(recordPtr), gepC);
+	builder.CreateStore(builder.CreateAdd(builder.CreateLoad(countPtr), builder.getInt32(1)), countPtr);
+	builder.CreateBr(ok);
 
 	/* unable to stack lock, fall back to monitor */
-	builder->SetInsertPoint(stackFail);
-	builder->CreateCall(funcJ3ObjectMonitorEnter, obj);
-	builder->CreateBr(ok);
+	builder.SetInsertPoint(stackFail);
+	builder.CreateCall(funcJ3ObjectMonitorEnter, obj);
+	builder.CreateBr(ok);
 }
 
 void J3CodeGen::monitorExit(llvm::Value* obj) {
@@ -286,78 +283,78 @@ void J3CodeGen::monitorExit(llvm::Value* obj) {
 	llvm::BasicBlock* stackRec = newBB("stack-rec");
 
 	/* stack locked by myself? */
-	llvm::Value* gepH[] = { builder->getInt32(0), builder->getInt32(J3Object::gepHeader) };
-	llvm::Value* headerPtr = builder->CreateGEP(obj, gepH);
-	llvm::Value* header = builder->CreateLoad(headerPtr);
+	llvm::Value* gepH[] = { builder.getInt32(0), builder.getInt32(J3Object::gepHeader) };
+	llvm::Value* headerPtr = builder.CreateGEP(obj, gepH);
+	llvm::Value* header = builder.CreateLoad(headerPtr);
 	
-	builder->CreateCondBr(builder->CreateICmpEQ(currentThread(), spToCurrentThread(header)),
+	builder.CreateCondBr(builder.CreateICmpEQ(currentThread(), spToCurrentThread(header)),
 												stackUnlock, monitorUnlock);
 	
 	/* ok, I'm the owner */
-	builder->SetInsertPoint(stackUnlock);
-	llvm::Value* gepC[] = { builder->getInt32(0), builder->getInt32(J3LockRecord::gepLockCount) };
-	llvm::Value* recordPtr = builder->CreateIntToPtr(header, recordPtrTy);
-	llvm::Value* countPtr = builder->CreateGEP(recordPtr, gepC);
-	llvm::Value* count = builder->CreateSub(builder->CreateLoad(countPtr), builder->getInt32(1));
-	builder->CreateCondBr(builder->CreateICmpEQ(count, builder->getInt32(0)), stackRelease, stackRec);
+	builder.SetInsertPoint(stackUnlock);
+	llvm::Value* gepC[] = { builder.getInt32(0), builder.getInt32(J3LockRecord::gepLockCount) };
+	llvm::Value* recordPtr = builder.CreateIntToPtr(header, recordPtrTy);
+	llvm::Value* countPtr = builder.CreateGEP(recordPtr, gepC);
+	llvm::Value* count = builder.CreateSub(builder.CreateLoad(countPtr), builder.getInt32(1));
+	builder.CreateCondBr(builder.CreateICmpEQ(count, builder.getInt32(0)), stackRelease, stackRec);
 
 	/* last unlock */
-	builder->SetInsertPoint(stackRelease);
-	llvm::Value* gepR[] = { builder->getInt32(0), builder->getInt32(J3LockRecord::gepHeader) };
-	llvm::Value* orig = builder->CreateLoad(builder->CreateGEP(recordPtr, gepR));
-	llvm::Value* res = builder->CreateAtomicCmpXchg(headerPtr, 
+	builder.SetInsertPoint(stackRelease);
+	llvm::Value* gepR[] = { builder.getInt32(0), builder.getInt32(J3LockRecord::gepHeader) };
+	llvm::Value* orig = builder.CreateLoad(builder.CreateGEP(recordPtr, gepR));
+	llvm::Value* res = builder.CreateAtomicCmpXchg(headerPtr, 
 																									header, 
 																									orig,
 																									llvm::SequentiallyConsistent, 
 																									llvm::CrossThread);
-	builder->CreateCondBr(builder->CreateICmpEQ(res, header), ok, monitorUnlock);
+	builder.CreateCondBr(builder.CreateICmpEQ(res, header), ok, monitorUnlock);
 
 	/* recursive unlock */
-	builder->SetInsertPoint(stackRec);
-	builder->CreateStore(count, countPtr);
-	builder->CreateBr(ok);
+	builder.SetInsertPoint(stackRec);
+	builder.CreateStore(count, countPtr);
+	builder.CreateBr(ok);
 
 	/* monitor unlock */
-	builder->SetInsertPoint(monitorUnlock);
-	builder->CreateCall(funcJ3ObjectMonitorExit, obj);
-	builder->CreateBr(ok);
+	builder.SetInsertPoint(monitorUnlock);
+	builder.CreateCall(funcJ3ObjectMonitorExit, obj);
+	builder.CreateBr(ok);
 }
 
 void J3CodeGen::initialiseJ3ObjectType(J3ObjectType* cl) {
 	if(!cl->isInitialised())
-		builder->CreateCall(funcJ3TypeInitialise, typeDescriptor(cl, vm->typeJ3TypePtr));
+		builder.CreateCall(funcJ3TypeInitialise, typeDescriptor(cl, vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::javaClass(J3ObjectType* type, bool doPush) {
-	return builder->CreateCall3(funcJ3TypeJavaClass, 
+	return builder.CreateCall3(funcJ3TypeJavaClass, 
 															typeDescriptor(type, vm->typeJ3TypePtr), 
-															builder->getInt1(doPush),
-															builder->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0),
+															builder.getInt1(doPush),
+															builder.CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0),
 																											vm->typeJ3ObjectHandlePtr));
 }
 
 llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
-	llvm::Value* gep[] = { builder->getInt32(0), builder->getInt32(J3ObjectHandle::gepObj) };
-	return builder->CreateLoad(builder->CreateGEP(obj, gep));
+	llvm::Value* gep[] = { builder.getInt32(0), builder.getInt32(J3ObjectHandle::gepObj) };
+	return builder.CreateLoad(builder.CreateGEP(obj, gep));
 }
 
 llvm::Value* J3CodeGen::staticInstance(J3Class* cl) {
 	initialiseJ3ObjectType(cl);
-	return handleToObject(builder->CreateCall(funcJ3ClassStaticInstance, 
+	return handleToObject(builder.CreateCall(funcJ3ClassStaticInstance, 
 																						typeDescriptor(cl, vm->typeJ3ClassPtr)));
 }
 
 llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
-	llvm::Value* gepVT[] = { builder->getInt32(0),
-													 builder->getInt32(J3Object::gepVT) };
-	llvm::Instruction* res = builder->CreateLoad(builder->CreateGEP(obj, gepVT));
+	llvm::Value* gepVT[] = { builder.getInt32(0),
+													 builder.getInt32(J3Object::gepVT) };
+	llvm::Instruction* res = builder.CreateLoad(builder.CreateGEP(obj, gepVT));
 	res->setDebugLoc(llvm::DebugLoc::get(javaPC, 1, dbgInfo));
 	return res;
 }
 
 llvm::Value* J3CodeGen::vt(J3ObjectType* type, bool doResolve) {
 	llvm::Value* func = doResolve && !type->isResolved() ? funcJ3TypeVTAndResolve : funcJ3TypeVT;
-	return builder->CreateCall(func, typeDescriptor(type, vm->typeJ3TypePtr));
+	return builder.CreateCall(func, typeDescriptor(type, vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
@@ -365,17 +362,17 @@ llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
 		llvm::BasicBlock* succeed = newBB("nullcheck-succeed");
 
 		if(!bbNullCheckFailed) {
-			llvm::BasicBlock* prev = builder->GetInsertBlock();
+			llvm::BasicBlock* prev = builder.GetInsertBlock();
 			bbNullCheckFailed = newBB("nullcheck-failed");
-			builder->SetInsertPoint(bbNullCheckFailed);
-			builder->CreateInvoke(funcNullPointerException, bbRet, exceptions.nodes[curExceptionNode]->landingPad);
-			builder->SetInsertPoint(prev);
+			builder.SetInsertPoint(bbNullCheckFailed);
+			builder.CreateInvoke(funcNullPointerException, bbRet, exceptions.nodes[curExceptionNode]->landingPad);
+			builder.SetInsertPoint(prev);
 		}
 
-		builder->CreateCondBr(builder->CreateIsNotNull(obj), succeed, bbNullCheckFailed);
+		builder.CreateCondBr(builder.CreateIsNotNull(obj), succeed, bbNullCheckFailed);
 
 		bb = succeed;
-		builder->SetInsertPoint(bb);
+		builder.SetInsertPoint(bb);
 	}
 
 	return obj;
@@ -400,11 +397,11 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	if(exceptions.nodes[curExceptionNode]->landingPad) {
 		//llvm::BasicBlock* after = forwardBranch("invoke-after", codeReader->tell(), 0, 0);
 		llvm::BasicBlock* after = newBB("invoke-after");
-		res = builder->CreateInvoke(func, after, exceptions.nodes[curExceptionNode]->landingPad, args);
+		res = builder.CreateInvoke(func, after, exceptions.nodes[curExceptionNode]->landingPad, args);
 		bb = after;
-		builder->SetInsertPoint(bb);
+		builder.SetInsertPoint(bb);
 	} else {
-		res = builder->CreateCall(func, args);
+		res = builder.CreateCall(func, args);
 	}
 	
 	if(!res->getType()->isVoidTy())
@@ -417,14 +414,14 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 
 	uint32_t     index = target->interfaceIndex();
 	llvm::Value* thread = currentThread();
-	llvm::Value* gep[] = { builder->getInt32(0), builder->getInt32(J3Thread::gepInterfaceMethodIndex) };
-	builder->CreateStore(builder->getInt32(index), builder->CreateGEP(thread, gep));
+	llvm::Value* gep[] = { builder.getInt32(0), builder.getInt32(J3Thread::gepInterfaceMethodIndex) };
+	builder.CreateStore(builder.getInt32(index), builder.CreateGEP(thread, gep));
 
 	llvm::Value*  obj = nullCheck(stack.top(type->nbIns()));
-	llvm::Value*  gepFunc[] = { builder->getInt32(0),
-															builder->getInt32(J3VirtualTable::gepInterfaceMethods),
-															builder->getInt32(index % J3VirtualTable::nbInterfaceMethodTable) };
-	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
+	llvm::Value*  gepFunc[] = { builder.getInt32(0),
+															builder.getInt32(J3VirtualTable::gepInterfaceMethods),
+															builder.getInt32(index % J3VirtualTable::nbInterfaceMethodTable) };
+	llvm::Value* func = builder.CreateBitCast(builder.CreateLoad(builder.CreateGEP(vt(obj), gepFunc)), 
 																						 target->signature()->functionType(target->access())->getPointerTo());
 
 	invoke(0, target, func);
@@ -433,13 +430,13 @@ void J3CodeGen::invokeInterface(uint32_t idx) {
 void J3CodeGen::invokeVirtual(uint32_t idx) {
 	J3Method*     target = cl->methodAt(idx, 0);
 	J3Signature* type = target->signature();
-	llvm::Value*  funcEntry = funcEntry = builder->getInt32(target->index());
+	llvm::Value*  funcEntry = funcEntry = builder.getInt32(target->index());
 
 	llvm::Value*  obj = nullCheck(stack.top(type->nbIns()));
-	llvm::Value*  gepFunc[] = { builder->getInt32(0),
-															builder->getInt32(J3VirtualTable::gepVirtualMethods),
+	llvm::Value*  gepFunc[] = { builder.getInt32(0),
+															builder.getInt32(J3VirtualTable::gepVirtualMethods),
 															funcEntry };
-	llvm::Value* func = builder->CreateBitCast(builder->CreateLoad(builder->CreateGEP(vt(obj), gepFunc)), 
+	llvm::Value* func = builder.CreateBitCast(builder.CreateLoad(builder.CreateGEP(vt(obj), gepFunc)), 
 																						 target->signature()->functionType(target->access())->getPointerTo());
 
 	invoke(0, target, func);
@@ -456,13 +453,13 @@ void J3CodeGen::invokeSpecial(uint32_t idx) {
 }
 
 llvm::Value* J3CodeGen::fieldOffset(llvm::Value* obj, J3Field* f) {
-	return builder->CreateIntToPtr(builder->CreateAdd(builder->CreatePtrToInt(obj, uintPtrTy),
+	return builder.CreateIntToPtr(builder.CreateAdd(builder.CreatePtrToInt(obj, uintPtrTy),
 																										llvm::ConstantInt::get(uintPtrTy, f->offset())),
 																 f->type()->llvmType()->getPointerTo());
 }
 
 void J3CodeGen::get(llvm::Value* src, J3Field* f) {
-	llvm::Value* res = flatten(builder->CreateLoad(fieldOffset(src, f)));
+	llvm::Value* res = flatten(builder.CreateLoad(fieldOffset(src, f)));
 	stack.push(res);
 }
 
@@ -478,7 +475,7 @@ void J3CodeGen::getStatic(uint32_t idx) {
 }
 
 void J3CodeGen::put(llvm::Value* dest, llvm::Value* val, J3Field* f) {
-	builder->CreateStore(unflatten(val, f->type()->llvmType()), fieldOffset(dest, f));
+	builder.CreateStore(unflatten(val, f->type()->llvmType()), fieldOffset(dest, f));
 }
 
 void J3CodeGen::putStatic(uint32_t idx) {
@@ -497,8 +494,8 @@ void J3CodeGen::arrayBoundCheck(llvm::Value* obj, llvm::Value* idx) {
 }
 
 llvm::Value* J3CodeGen::arrayContent(J3Type* cType, llvm::Value* array, llvm::Value* idx) {
-	array = builder->CreateBitCast(array, vm->typeJ3ArrayObjectPtr);
-	return builder->CreateGEP(builder->CreateBitCast(builder->CreateGEP(array, builder->getInt32(1)), cType->llvmType()->getPointerTo()),
+	array = builder.CreateBitCast(array, vm->typeJ3ArrayObjectPtr);
+	return builder.CreateGEP(builder.CreateBitCast(builder.CreateGEP(array, builder.getInt32(1)), cType->llvmType()->getPointerTo()),
 														idx);
 }
 
@@ -508,7 +505,7 @@ void J3CodeGen::arrayStore(J3Type* cType) {
 	llvm::Value* array = stack.pop();
 
 	arrayBoundCheck(array, idx);
-	builder->CreateStore(unflatten(val, cType->llvmType()), arrayContent(cType, array, idx));
+	builder.CreateStore(unflatten(val, cType->llvmType()), arrayContent(cType, array, idx));
 }
 
 void J3CodeGen::arrayLoad(J3Type* cType) {
@@ -516,29 +513,29 @@ void J3CodeGen::arrayLoad(J3Type* cType) {
 	llvm::Value* array = stack.pop();
 
 	arrayBoundCheck(array, idx);
-	stack.push(flatten(builder->CreateLoad(arrayContent(cType, array, idx))));
+	stack.push(flatten(builder.CreateLoad(arrayContent(cType, array, idx))));
 }
 
 llvm::Value* J3CodeGen::arrayLengthPtr(llvm::Value* obj) {
-	llvm::Value* gep[2] = { builder->getInt32(0), builder->getInt32(J3ArrayObject::gepLength) };
-	return builder->CreateGEP(builder->CreateBitCast(obj, vm->typeJ3ArrayObjectPtr), gep);
+	llvm::Value* gep[2] = { builder.getInt32(0), builder.getInt32(J3ArrayObject::gepLength) };
+	return builder.CreateGEP(builder.CreateBitCast(obj, vm->typeJ3ArrayObjectPtr), gep);
 }
 
 llvm::Value* J3CodeGen::arrayLength(llvm::Value* obj) {
-	return builder->CreateLoad(arrayLengthPtr(obj));
+	return builder.CreateLoad(arrayLengthPtr(obj));
 }
 
 void J3CodeGen::newArray(J3ArrayClass* array) {
 	initialiseJ3ObjectType(array);
 	llvm::Value* length = stack.pop();
 	llvm::Value* nbb = 
-		builder->CreateAdd(llvm::ConstantInt::get(uintPtrTy, sizeof(J3ArrayObject)),
-											 builder->CreateMul(llvm::ConstantInt::get(uintPtrTy, 1 << array->component()->logSize()),
-																					builder->CreateZExtOrBitCast(length, uintPtrTy)));
+		builder.CreateAdd(llvm::ConstantInt::get(uintPtrTy, sizeof(J3ArrayObject)),
+											 builder.CreateMul(llvm::ConstantInt::get(uintPtrTy, 1 << array->component()->logSize()),
+																					builder.CreateZExtOrBitCast(length, uintPtrTy)));
 	
-	llvm::Value* res = builder->CreateCall2(funcJ3ObjectAllocate, vt(array), nbb);
+	llvm::Value* res = builder.CreateCall2(funcJ3ObjectAllocate, vt(array), nbb);
 
-	builder->CreateStore(length, arrayLengthPtr(res));
+	builder.CreateStore(length, arrayLengthPtr(res));
 
 	stack.push(res);
 }
@@ -566,14 +563,14 @@ void J3CodeGen::multianewArray() {
 	J3ObjectType* base = cl->classAt(codeReader->readU2());
 	uint32_t dim = codeReader->readU1();
 
-	llvm::Value* values = builder->CreateAlloca(builder->getInt32Ty(), builder->getInt32(dim));
+	llvm::Value* values = builder.CreateAlloca(builder.getInt32Ty(), builder.getInt32(dim));
 	
 	for(uint32_t i=0; i<dim; i++)
-		builder->CreateStore(stack.pop(), builder->CreateGEP(values, builder->getInt32(dim-i-1)));
+		builder.CreateStore(stack.pop(), builder.CreateGEP(values, builder.getInt32(dim-i-1)));
 
-	stack.push(builder->CreateCall3(funcJ3ArrayObjectMultianewArray, 
+	stack.push(builder.CreateCall3(funcJ3ArrayObjectMultianewArray, 
 																	typeDescriptor(base, vm->typeJ3ArrayClassPtr), 
-																	builder->getInt32(dim), 
+																	builder.getInt32(dim), 
 																	values));
 }
 
@@ -583,12 +580,12 @@ void J3CodeGen::newObject(J3Class* cl) {
 	llvm::Value* size;
 
 	if(!cl->isResolved()) {
-		size = builder->CreateCall(funcJ3LayoutStructSize, typeDescriptor(cl, vm->typeJ3LayoutPtr));
+		size = builder.CreateCall(funcJ3LayoutStructSize, typeDescriptor(cl, vm->typeJ3LayoutPtr));
 	} else {
-		size = builder->getInt64(cl->structSize());
+		size = builder.getInt64(cl->structSize());
 	}
 
-	llvm::Value* res = builder->CreateCall2(funcJ3ObjectAllocate, vt(cl), size);
+	llvm::Value* res = builder.CreateCall2(funcJ3ObjectAllocate, vt(cl), size);
 
 	stack.push(res);
 }
@@ -599,14 +596,14 @@ llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) {
 
 	if(type->isResolved()) {
 		if(type->vt()->isPrimaryChecker())
-			return builder->CreateCall3(funcFastIsAssignableToPrimaryChecker, 
+			return builder.CreateCall3(funcFastIsAssignableToPrimaryChecker, 
 																	vtObj, 
 																	vtType,
-																	builder->getInt32(type->vt()->offset()));
+																	builder.getInt32(type->vt()->offset()));
 		else 
-			return builder->CreateCall2(funcFastIsAssignableToNonPrimaryChecker, vtObj, vtType);
+			return builder.CreateCall2(funcFastIsAssignableToNonPrimaryChecker, vtObj, vtType);
 	} else {
-		return builder->CreateCall2(funcIsAssignableTo, vtObj, vtType);
+		return builder.CreateCall2(funcIsAssignableTo, vtObj, vtType);
 	}
 }
 
@@ -615,38 +612,38 @@ void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
 	llvm::BasicBlock* nok = newBB("instanceof-null");
 	llvm::BasicBlock* test = newBB("instanceof");
 
-	builder->CreateCondBr(builder->CreateIsNull(obj), nok, test);
+	builder.CreateCondBr(builder.CreateIsNull(obj), nok, test);
 
-	builder->SetInsertPoint(nok);
-	stack.push(builder->getInt32(0));
-	builder->CreateBr(after);
+	builder.SetInsertPoint(nok);
+	stack.push(builder.getInt32(0));
+	builder.CreateBr(after);
 
 	stack.drop(1);
-	builder->SetInsertPoint(test);
-	stack.push(builder->CreateZExt(isAssignableTo(obj, type), builder->getInt32Ty()));
-	builder->CreateBr(after);
+	builder.SetInsertPoint(test);
+	stack.push(builder.CreateZExt(isAssignableTo(obj, type), builder.getInt32Ty()));
+	builder.CreateBr(after);
 }
 
 void J3CodeGen::checkCast(llvm::Value* obj, J3ObjectType* type) {
 	llvm::BasicBlock* succeed = forwardBranch("checkcast-succeed", codeReader->tell(), 0, 0);
 	llvm::BasicBlock* test = newBB("checkcast");
 
-	builder->CreateCondBr(builder->CreateIsNull(obj), succeed, test);
+	builder.CreateCondBr(builder.CreateIsNull(obj), succeed, test);
 
 	if(!bbCheckCastFailed) {
 		bbCheckCastFailed = newBB("checkcast-failed");
-		builder->SetInsertPoint(bbCheckCastFailed);
-		builder->CreateCall(funcClassCastException);
-		builder->CreateBr(bbRet);
+		builder.SetInsertPoint(bbCheckCastFailed);
+		builder.CreateCall(funcClassCastException);
+		builder.CreateBr(bbRet);
 	}
 
-	builder->SetInsertPoint(test);
+	builder.SetInsertPoint(test);
 
 	llvm::Value* res = isAssignableTo(obj, type);
 
-	builder->CreateCondBr(res, succeed, bbCheckCastFailed);
+	builder.CreateCondBr(res, succeed, bbCheckCastFailed);
 
-	builder->SetInsertPoint(bb);
+	builder.SetInsertPoint(bb);
 }
 
 void J3CodeGen::floatToInteger(J3Type* ftype, J3Type* itype) {
@@ -656,28 +653,28 @@ void J3CodeGen::floatToInteger(J3Type* ftype, J3Type* itype) {
 																					 llvm::APInt::getSignedMaxValue(itype->llvmType()->getPrimitiveSizeInBits()).getZExtValue());
 	llvm::Value* v = stack.pop();
 
-	llvm::Value* c = builder->CreateFCmpONE(v, v);
-	v = builder->CreateSelect(c, llvm::ConstantFP::get(ftype->llvmType(), 0), v); /* nan => 0 */
+	llvm::Value* c = builder.CreateFCmpONE(v, v);
+	v = builder.CreateSelect(c, llvm::ConstantFP::get(ftype->llvmType(), 0), v); /* nan => 0 */
 
-	c = builder->CreateFCmpOGE(v, max);
-	v = builder->CreateSelect(c, max, v);
-	c = builder->CreateFCmpOLE(v, min);
-	v = builder->CreateSelect(c, min, v);
+	c = builder.CreateFCmpOGE(v, max);
+	v = builder.CreateSelect(c, max, v);
+	c = builder.CreateFCmpOLE(v, min);
+	v = builder.CreateSelect(c, min, v);
 
-	stack.push(builder->CreateFPToSI(v, itype->llvmType()));
+	stack.push(builder.CreateFPToSI(v, itype->llvmType()));
 }
 
 void J3CodeGen::compareLong() {
 	llvm::Value* val2 = stack.pop();
 	llvm::Value* val1 = stack.pop();
-	llvm::Value* one = builder->getInt32(1);
-	llvm::Value* zero = builder->getInt32(0);
-	llvm::Value* minus = builder->getInt32(-1);
+	llvm::Value* one = builder.getInt32(1);
+	llvm::Value* zero = builder.getInt32(0);
+	llvm::Value* minus = builder.getInt32(-1);
 
-	llvm::Value* c = builder->CreateICmpSGT(val1, val2);
-	llvm::Value* r = builder->CreateSelect(c, one, zero);
-	c = builder->CreateICmpSLT(val1, val2);
-	r = builder->CreateSelect(c, minus, r);
+	llvm::Value* c = builder.CreateICmpSGT(val1, val2);
+	llvm::Value* r = builder.CreateSelect(c, one, zero);
+	c = builder.CreateICmpSLT(val1, val2);
+	r = builder.CreateSelect(c, minus, r);
 
 	stack.push(r);
 }
@@ -685,16 +682,16 @@ void J3CodeGen::compareLong() {
 void J3CodeGen::compareFP(bool isL) {
 	llvm::Value* val2 = stack.pop();
 	llvm::Value* val1 = stack.pop();
-	llvm::Value* one = builder->getInt32(1);
-	llvm::Value* zero = builder->getInt32(0);
-	llvm::Value* minus = builder->getInt32(-1);
+	llvm::Value* one = builder.getInt32(1);
+	llvm::Value* zero = builder.getInt32(0);
+	llvm::Value* minus = builder.getInt32(-1);
 
-	llvm::Value* c = builder->CreateFCmpUGT(val1, val2);
-	llvm::Value* r = builder->CreateSelect(c, one, zero);
-  c = builder->CreateFCmpULT(val1, val2);
-  r = builder->CreateSelect(c, minus, r);
-  c = builder->CreateFCmpUNO(val1, val2);
-  r = builder->CreateSelect(c, isL ? one : minus, r);
+	llvm::Value* c = builder.CreateFCmpUGT(val1, val2);
+	llvm::Value* r = builder.CreateSelect(c, one, zero);
+  c = builder.CreateFCmpULT(val1, val2);
+  r = builder.CreateSelect(c, minus, r);
+  c = builder.CreateFCmpUNO(val1, val2);
+  r = builder.CreateSelect(c, isL ? one : minus, r);
 
   stack.push(r);
 }
@@ -703,16 +700,16 @@ void J3CodeGen::ldc(uint32_t idx) {
 	llvm::Value* res;
 
 	switch(cl->getCtpType(idx)) {
-		case J3Cst::CONSTANT_Long:    res = builder->getInt64(cl->longAt(idx)); break;
-		case J3Cst::CONSTANT_Integer: res = builder->getInt32(cl->integerAt(idx)); break;
-		case J3Cst::CONSTANT_Float:   res = llvm::ConstantFP::get(builder->getFloatTy(), cl->floatAt(idx)); break;
-		case J3Cst::CONSTANT_Double:  res = llvm::ConstantFP::get(builder->getDoubleTy(), cl->doubleAt(idx)); break;
+		case J3Cst::CONSTANT_Long:    res = builder.getInt64(cl->longAt(idx)); break;
+		case J3Cst::CONSTANT_Integer: res = builder.getInt32(cl->integerAt(idx)); break;
+		case J3Cst::CONSTANT_Float:   res = llvm::ConstantFP::get(builder.getFloatTy(), cl->floatAt(idx)); break;
+		case J3Cst::CONSTANT_Double:  res = llvm::ConstantFP::get(builder.getDoubleTy(), cl->doubleAt(idx)); break;
 		case J3Cst::CONSTANT_Class:   res = handleToObject(javaClass(cl->classAt(idx), 0)); break;
 		case J3Cst::CONSTANT_String:  
-			res = handleToObject(builder->CreateCall3(funcJ3ClassStringAt, 
+			res = handleToObject(builder.CreateCall3(funcJ3ClassStringAt, 
 																								typeDescriptor(cl, vm->typeJ3ClassPtr),
-																								builder->getInt16(idx),
-																								builder->getInt1(0)));
+																								builder.getInt16(idx),
+																								builder.getInt1(0)));
 			break;
 		default:
 			J3::classFormatError(cl, "wrong ldc type: %d\n", cl->getCtpType(idx));
@@ -730,8 +727,8 @@ void J3CodeGen::lookupSwitch() {
 		int32_t match = codeReader->readS4();
 		llvm::BasicBlock* ok = forwardBranch("lookupswitch-match", javaPC + codeReader->readS4(), 1, 1);
 		llvm::BasicBlock* nok = i == (n - 1) ? def : newBB("lookupswitch-next");
-		builder->CreateCondBr(builder->CreateICmpEQ(val, builder->getInt32(match)), ok, nok);
-		builder->SetInsertPoint(nok);
+		builder.CreateCondBr(builder.CreateICmpEQ(val, builder.getInt32(match)), ok, nok);
+		builder.SetInsertPoint(nok);
 	}
 }
 
@@ -741,10 +738,10 @@ void J3CodeGen::tableSwitch() {
 	llvm::BasicBlock* def = forwardBranch("tableswitch-default", javaPC + codeReader->readU4(), 1, 1);
 	int32_t low = codeReader->readU4();
 	int32_t high = codeReader->readU4();
-	llvm::SwitchInst* dispatch = builder->CreateSwitch(val, def, high - low + 1);
+	llvm::SwitchInst* dispatch = builder.CreateSwitch(val, def, high - low + 1);
 
 	for(uint32_t i=low; i<=high; i++)
-		dispatch->addCase(builder->getInt32(i),
+		dispatch->addCase(builder.getInt32(i),
 											forwardBranch("tableswitch-match", javaPC + codeReader->readU4(), 1, 1));
 }
 
@@ -753,7 +750,7 @@ llvm::BasicBlock* J3CodeGen::newBB(const char* name) {
 }
 
 void J3CodeGen::condBr(llvm::Value* op) {
-	builder->CreateCondBr(op,
+	builder.CreateCondBr(op,
 												forwardBranch("if-true", javaPC + codeReader->readS2(), 1, 1),
 												forwardBranch("if-false", codeReader->tell(), 0, 0));
 }
@@ -777,7 +774,7 @@ llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doA
 		//insn->dump();
 		llvm::BasicBlock* before = insn->getParent();
 		llvm::BranchInst* fakeTerminator = 0;
-		bool isSelf = builder->GetInsertBlock() == before;
+		bool isSelf = builder.GetInsertBlock() == before;
 
 		//fprintf(stderr, "--- before split ---\n");
 		//before->dump();
@@ -791,7 +788,7 @@ llvm::BasicBlock* J3CodeGen::forwardBranch(const char* id, uint32_t pc, bool doA
 
 		if(isSelf) {
 			bb = after;
-			builder->SetInsertPoint(after);
+			builder.SetInsertPoint(after);
 		}
 		//fprintf(stderr, "--- after split ---\n");
 		//before->dump();
@@ -848,19 +845,19 @@ llvm::Value* J3CodeGen::buildString(const char* msg) {
 	uint32_t n;
 
 	for(n=0; msg[n]; n++)
-		elmts.push_back(builder->getInt8(msg[n]));
+		elmts.push_back(builder.getInt8(msg[n]));
 
-	elmts.push_back(builder->getInt8(0));
+	elmts.push_back(builder.getInt8(0));
 
-	llvm::Constant* str = llvm::ConstantArray::get(llvm::ArrayType::get(builder->getInt8Ty(), n+1), elmts);
+	llvm::Constant* str = llvm::ConstantArray::get(llvm::ArrayType::get(builder.getInt8Ty(), n+1), elmts);
 	llvm::Value* var = new llvm::GlobalVariable(*module,
 																							str->getType(),
 																							1,
 																							llvm::GlobalVariable::InternalLinkage,
 																							str);
-	llvm::Value* gep[] = { builder->getInt32(0), builder->getInt32(0) };
+	llvm::Value* gep[] = { builder.getInt32(0), builder.getInt32(0) };
 
-	return builder->CreateGEP(var, gep);
+	return builder.CreateGEP(var, gep);
 }
 
 void J3CodeGen::translate() {
@@ -868,7 +865,7 @@ void J3CodeGen::translate() {
 		exceptions.dump(vm->options()->debugTranslate-1);
 
 	stack.topStack = 0;
-	builder->SetInsertPoint(bb);
+	builder.SetInsertPoint(bb);
 	_onEndPoint();
 	closeBB = 1;
 
@@ -897,7 +894,7 @@ void J3CodeGen::translate() {
 			if(closeBB && !bb->getTerminator()) {
 				if(!opInfos[javaPC].bb)
 					J3::internalError("random split???");
-				builder->CreateBr(opInfos[javaPC].bb);
+				builder.CreateBr(opInfos[javaPC].bb);
 			}
 		}
 
@@ -910,7 +907,7 @@ void J3CodeGen::translate() {
 
 		if(opInfos[javaPC].bb) {
 			bb = opInfos[javaPC].bb;
-			builder->SetInsertPoint(bb);
+			builder.SetInsertPoint(bb);
 			//printf("Meta stack before: %p\n", metaStack);
 			if(opInfos[javaPC].metaStack) {
 				stack.metaStack = opInfos[javaPC].metaStack;
@@ -962,31 +959,31 @@ void J3CodeGen::translate() {
 			case J3Cst::BC_iconst_3:                      /* 0x06 */
 			case J3Cst::BC_iconst_4:                      /* 0x07 */
 			case J3Cst::BC_iconst_5:                      /* 0x08 */
-				stack.push(builder->getInt32(bc - J3Cst::BC_iconst_0));
+				stack.push(builder.getInt32(bc - J3Cst::BC_iconst_0));
 				break;
 
 			case J3Cst::BC_lconst_0:                      /* 0x09 */
 			case J3Cst::BC_lconst_1:                      /* 0x0a */
-				stack.push(builder->getInt64(bc - J3Cst::BC_lconst_0));
+				stack.push(builder.getInt64(bc - J3Cst::BC_lconst_0));
 				break;
 
 			case J3Cst::BC_fconst_0:                      /* 0x0b */
 			case J3Cst::BC_fconst_1:                      /* 0x0c */
 			case J3Cst::BC_fconst_2:                      /* 0x0d */
-				stack.push(llvm::ConstantFP::get(builder->getFloatTy(), (bc - J3Cst::BC_fconst_0)));
+				stack.push(llvm::ConstantFP::get(builder.getFloatTy(), (bc - J3Cst::BC_fconst_0)));
 				break;
 
 			case J3Cst::BC_dconst_0:                      /* 0x0e */
 			case J3Cst::BC_dconst_1:                      /* 0x0f */
-				stack.push(llvm::ConstantFP::get(builder->getDoubleTy(), (bc - J3Cst::BC_dconst_0)));
+				stack.push(llvm::ConstantFP::get(builder.getDoubleTy(), (bc - J3Cst::BC_dconst_0)));
 				break;
 
 			case J3Cst::BC_bipush:                        /* 0x10 */
-				stack.push(builder->getInt32(codeReader->readS1()));
+				stack.push(builder.getInt32(codeReader->readS1()));
 				break;
 
 			case J3Cst::BC_sipush:                        /* 0x11 */
-				stack.push(builder->getInt32(codeReader->readS2()));
+				stack.push(builder.getInt32(codeReader->readS2()));
 				break;
 
 			case J3Cst::BC_ldc:                           /* 0x12 */
@@ -1229,134 +1226,134 @@ void J3CodeGen::translate() {
 
 			case J3Cst::BC_iadd:                          /* 0x60 */
 			case J3Cst::BC_ladd:                          /* 0x61 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateAdd(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateAdd(val1, val2));
 				break;
 
 			case J3Cst::BC_fadd:                          /* 0x62 */
 			case J3Cst::BC_dadd:                          /* 0x63 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateFAdd(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateFAdd(val1, val2));
 				break;
 
 			case J3Cst::BC_isub:                          /* 0x64 */
 			case J3Cst::BC_lsub:                          /* 0x65 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateSub(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateSub(val1, val2));
 				break;
 
 			case J3Cst::BC_fsub:                          /* 0x66 */
 			case J3Cst::BC_dsub:                          /* 0x67 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateFSub(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateFSub(val1, val2));
 				break;
 
 			case J3Cst::BC_imul:                          /* 0x68 */
 			case J3Cst::BC_lmul:                          /* 0x69 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateMul(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateMul(val1, val2));
 				break;
 
 			case J3Cst::BC_fmul:                          /* 0x6a */
 			case J3Cst::BC_dmul:                          /* 0x6b */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateFMul(val1, val2)); 
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateFMul(val1, val2)); 
 				break;
 
 			case J3Cst::BC_idiv:                          /* 0x6c */
 			case J3Cst::BC_ldiv:                          /* 0x6d */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateSDiv(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateSDiv(val1, val2));
 				break;
 
 			case J3Cst::BC_fdiv:                          /* 0x6e */
 			case J3Cst::BC_ddiv:                          /* 0x6f */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateFDiv(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateFDiv(val1, val2));
 				break;
 
 			case J3Cst::BC_irem:                          /* 0x70 */
 			case J3Cst::BC_lrem:                          /* 0x71 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateSRem(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateSRem(val1, val2));
 				break;
 
 			case J3Cst::BC_frem:                          /* 0x72 */
 			case J3Cst::BC_drem:                          /* 0x73 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateFRem(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateFRem(val1, val2));
 				break;
 
 			case J3Cst::BC_ineg:                          /* 0x74 */
 			case J3Cst::BC_lneg:                          /* 0x75 */
-				stack.push(builder->CreateNeg(stack.pop()));
+				stack.push(builder.CreateNeg(stack.pop()));
 				break;
 
 			case J3Cst::BC_fneg:                          /* 0x76 */
 			case J3Cst::BC_dneg:                          /* 0x77 */
-				stack.push(builder->CreateFNeg(stack.pop()));
+				stack.push(builder.CreateFNeg(stack.pop()));
 				break;
 
 			case J3Cst::BC_ishl:                          /* 0x78 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateShl(val1, builder->CreateAnd(val2, 0x1f)));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateShl(val1, builder.CreateAnd(val2, 0x1f)));
 				break;
 
 			case J3Cst::BC_lshl:                          /* 0x79 */
 				val2 = stack.pop(); val1 = stack.pop(); 
-				stack.push(builder->CreateShl(val1, builder->CreateZExt(builder->CreateAnd(val2, 0x3f), builder->getInt64Ty())));
+				stack.push(builder.CreateShl(val1, builder.CreateZExt(builder.CreateAnd(val2, 0x3f), builder.getInt64Ty())));
 				break;
 
 			case J3Cst::BC_ishr:                          /* 0x7a */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateAShr(val1, builder->CreateAnd(val2, 0x1f)));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateAShr(val1, builder.CreateAnd(val2, 0x1f)));
 				break;
 
 			case J3Cst::BC_lshr:                          /* 0x7b */
 				val2 = stack.pop(); val1 = stack.pop(); 
-				stack.push(builder->CreateAShr(val1, builder->CreateZExt(builder->CreateAnd(val2, 0x3f), builder->getInt64Ty())));
+				stack.push(builder.CreateAShr(val1, builder.CreateZExt(builder.CreateAnd(val2, 0x3f), builder.getInt64Ty())));
 				break;
 
 			case J3Cst::BC_iushr:                         /* 0x7c */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateLShr(val1, builder->CreateAnd(val2, 0x1f)));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateLShr(val1, builder.CreateAnd(val2, 0x1f)));
 				break;
 
 			case J3Cst::BC_lushr:                         /* 0x7d */
 				val2 = stack.pop(); val1 = stack.pop(); 
-				stack.push(builder->CreateLShr(val1, builder->CreateZExt(builder->CreateAnd(val2, 0x3f), builder->getInt64Ty())));
+				stack.push(builder.CreateLShr(val1, builder.CreateZExt(builder.CreateAnd(val2, 0x3f), builder.getInt64Ty())));
 				break;
 
 			case J3Cst::BC_iand:                          /* 0x7e */
 			case J3Cst::BC_land:                          /* 0x7f */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateAnd(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateAnd(val1, val2));
 				break;
 
 			case J3Cst::BC_ior:                           /* 0x80 */
 			case J3Cst::BC_lor:                           /* 0x81 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateOr(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateOr(val1, val2));
 				break;
 
 			case J3Cst::BC_ixor:                          /* 0x82 */
 			case J3Cst::BC_lxor:                          /* 0x83 */
-				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder->CreateXor(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); stack.push(builder.CreateXor(val1, val2));
 				break;
 
 			case J3Cst::BC_iinc:                          /* 0x84 wide */
 				{ uint32_t idx = wideReadU1(); 
 					int32_t  val = wideReadS1(); 
-					locals.setAt(builder->CreateAdd(locals.at(idx, vm->typeInteger->llvmType()), builder->getInt32(val)), idx);
+					locals.setAt(builder.CreateAdd(locals.at(idx, vm->typeInteger->llvmType()), builder.getInt32(val)), idx);
 				} break;
 
 			case J3Cst::BC_i2l:                           /* 0x85 */
-				stack.push(builder->CreateSExt(stack.pop(), vm->typeLong->llvmType()));
+				stack.push(builder.CreateSExt(stack.pop(), vm->typeLong->llvmType()));
 				break;
 
 			case J3Cst::BC_i2f:                           /* 0x86 */
-				stack.push(builder->CreateSIToFP(stack.pop(), vm->typeFloat->llvmType()));
+				stack.push(builder.CreateSIToFP(stack.pop(), vm->typeFloat->llvmType()));
 				break;
 
 			case J3Cst::BC_i2d:                           /* 0x87 */
-				stack.push(builder->CreateSIToFP(stack.pop(), vm->typeDouble->llvmType()));
+				stack.push(builder.CreateSIToFP(stack.pop(), vm->typeDouble->llvmType()));
 				break;
 
 			case J3Cst::BC_l2i:                           /* 0x88 */
-				stack.push(builder->CreateTruncOrBitCast(stack.pop(), builder->getInt32Ty()));
+				stack.push(builder.CreateTruncOrBitCast(stack.pop(), builder.getInt32Ty()));
 				break;
 
 			case J3Cst::BC_l2f:                           /* 0x89 */
-				stack.push(builder->CreateSIToFP(stack.pop(), vm->typeFloat->llvmType()));
+				stack.push(builder.CreateSIToFP(stack.pop(), vm->typeFloat->llvmType()));
 				break;
 
 			case J3Cst::BC_l2d:                           /* 0x8a */
-				stack.push(builder->CreateSIToFP(stack.pop(), vm->typeDouble->llvmType()));
+				stack.push(builder.CreateSIToFP(stack.pop(), vm->typeDouble->llvmType()));
 				break;
 
 			case J3Cst::BC_f2i:                           /* 0x8b */
@@ -1368,7 +1365,7 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_f2d:                           /* 0x8d */
-				stack.push(builder->CreateFPExt(stack.pop(), vm->typeDouble->llvmType()));
+				stack.push(builder.CreateFPExt(stack.pop(), vm->typeDouble->llvmType()));
 				break;
 
 			case J3Cst::BC_d2i:                           /* 0x8e */
@@ -1380,19 +1377,19 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_d2f:                           /* 0x90 */
-				stack.push(builder->CreateFPTrunc(stack.pop(), vm->typeFloat->llvmType()));
+				stack.push(builder.CreateFPTrunc(stack.pop(), vm->typeFloat->llvmType()));
 				break;
 
 			case J3Cst::BC_i2b:                           /* 0x91 */
-				stack.push(builder->CreateSExt(builder->CreateTrunc(stack.pop(), builder->getInt8Ty()), builder->getInt32Ty()));
+				stack.push(builder.CreateSExt(builder.CreateTrunc(stack.pop(), builder.getInt8Ty()), builder.getInt32Ty()));
 				break;
 
 			case J3Cst::BC_i2c:                           /* 0x92 */
-				stack.push(builder->CreateZExt(builder->CreateTrunc(stack.pop(), builder->getInt16Ty()), builder->getInt32Ty()));
+				stack.push(builder.CreateZExt(builder.CreateTrunc(stack.pop(), builder.getInt16Ty()), builder.getInt32Ty()));
 				break;
 
 			case J3Cst::BC_i2s:                           /* 0x93 */
-				stack.push(builder->CreateSExt(builder->CreateTrunc(stack.pop(), builder->getInt16Ty()), builder->getInt32Ty()));
+				stack.push(builder.CreateSExt(builder.CreateTrunc(stack.pop(), builder.getInt16Ty()), builder.getInt32Ty()));
 				break;
 
 			case J3Cst::BC_lcmp:                          /* 0x94 */
@@ -1416,63 +1413,63 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_ifeq:                          /* 0x99 */
-				condBr(builder->CreateICmpEQ(stack.pop(), builder->getInt32(0)));
+				condBr(builder.CreateICmpEQ(stack.pop(), builder.getInt32(0)));
 				break;
 
 			case J3Cst::BC_ifne:                          /* 0x9a */
-				condBr(builder->CreateICmpNE(stack.pop(), builder->getInt32(0)));
+				condBr(builder.CreateICmpNE(stack.pop(), builder.getInt32(0)));
 				break;
 
 			case J3Cst::BC_iflt:                          /* 0x9b */
-				condBr(builder->CreateICmpSLT(stack.pop(), builder->getInt32(0)));
+				condBr(builder.CreateICmpSLT(stack.pop(), builder.getInt32(0)));
 				break;
 
 			case J3Cst::BC_ifge:                          /* 0x9c */
-				condBr(builder->CreateICmpSGE(stack.pop(), builder->getInt32(0)));
+				condBr(builder.CreateICmpSGE(stack.pop(), builder.getInt32(0)));
 				break;
 
 			case J3Cst::BC_ifgt:                          /* 0x9d */
-				condBr(builder->CreateICmpSGT(stack.pop(), builder->getInt32(0)));
+				condBr(builder.CreateICmpSGT(stack.pop(), builder.getInt32(0)));
 				break;
 
 			case J3Cst::BC_ifle:                          /* 0x9e */
-				condBr(builder->CreateICmpSLE(stack.pop(), builder->getInt32(0)));
+				condBr(builder.CreateICmpSLE(stack.pop(), builder.getInt32(0)));
 				break;
 
 			case J3Cst::BC_if_icmpeq:                     /* 0x9f */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpEQ(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder.CreateICmpEQ(val1, val2));
 				break;
 
 			case J3Cst::BC_if_icmpne:                     /* 0xa0 */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpNE(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder.CreateICmpNE(val1, val2));
 				break;
 
 			case J3Cst::BC_if_icmplt:                     /* 0xa1 */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpSLT(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder.CreateICmpSLT(val1, val2));
 				break;
 
 			case J3Cst::BC_if_icmpge:                     /* 0xa2 */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpSGE(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder.CreateICmpSGE(val1, val2));
 				break;
 
 			case J3Cst::BC_if_icmpgt:                     /* 0xa3 */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpSGT(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder.CreateICmpSGT(val1, val2));
 				break;
 
 			case J3Cst::BC_if_icmple:                     /* 0xa4 */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpSLE(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder.CreateICmpSLE(val1, val2));
 				break;
 
 			case J3Cst::BC_if_acmpeq:                     /* 0xa5 */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpEQ(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder.CreateICmpEQ(val1, val2));
 				break;
 
 			case J3Cst::BC_if_acmpne:                     /* 0xa6 */
-				val2 = stack.pop(); val1 = stack.pop(); condBr(builder->CreateICmpNE(val1, val2));
+				val2 = stack.pop(); val1 = stack.pop(); condBr(builder.CreateICmpNE(val1, val2));
 				break;
 
 			case J3Cst::BC_goto:                          /* 0xa7 */
-				builder->CreateBr(forwardBranch("goto", javaPC + codeReader->readS2(), 0, 1));
+				builder.CreateBr(forwardBranch("goto", javaPC + codeReader->readS2(), 0, 1));
 				_onEndPoint();
 				break;
 
@@ -1494,12 +1491,12 @@ void J3CodeGen::translate() {
 			case J3Cst::BC_dreturn:                       /* 0xaf */
 			case J3Cst::BC_areturn:                       /* 0xb0 */
 				ret.setAt(stack.pop(), 0);
-				builder->CreateBr(bbRet);
+				builder.CreateBr(bbRet);
 				_onEndPoint();
 				break;
 
 			case J3Cst::BC_return:                        /* 0xb1 */
-				builder->CreateBr(bbRet);
+				builder.CreateBr(bbRet);
 				_onEndPoint();
 				break;
 
@@ -1554,12 +1551,12 @@ void J3CodeGen::translate() {
 
 			case J3Cst::BC_athrow:                        /* 0xbf */
 				{
-					llvm::Value* excp = builder->CreateBitCast(stack.pop(), funcThrowException->getFunctionType()->getParamType(0));
+					llvm::Value* excp = builder.CreateBitCast(stack.pop(), funcThrowException->getFunctionType()->getParamType(0));
 					if(exceptions.nodes[curExceptionNode]->landingPad)
-						builder->CreateInvoke(funcThrowException, bbRet, exceptions.nodes[curExceptionNode]->landingPad, excp);
+						builder.CreateInvoke(funcThrowException, bbRet, exceptions.nodes[curExceptionNode]->landingPad, excp);
 					else {
-						builder->CreateCall(funcThrowException, excp);
-						builder->CreateBr(bbRet);
+						builder.CreateCall(funcThrowException, excp);
+						builder.CreateBr(bbRet);
 					}
 					_onEndPoint();
 				}
@@ -1590,11 +1587,11 @@ void J3CodeGen::translate() {
 				break;
 
 			case J3Cst::BC_ifnull:                        /* 0xc6 */
-				condBr(builder->CreateIsNull(stack.pop()));
+				condBr(builder.CreateIsNull(stack.pop()));
 				break;
 
 			case J3Cst::BC_ifnonnull:                     /* 0xc7 */
-				condBr(builder->CreateIsNotNull(stack.pop()));
+				condBr(builder.CreateIsNotNull(stack.pop()));
 				break;
 
 
@@ -1634,32 +1631,32 @@ void J3CodeGen::explore() {
 void J3CodeGen::z_translate() {
 	bbRet = newBB("ret");
 	llvm::BasicBlock* landingPad = newBB("landing-pad");
-	llvm::Value* val = builder->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0x42),
+	llvm::Value* val = builder.CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0x42),
 																						 vm->typeJ3ObjectPtr);	
-	builder->CreateInvoke(funcThrowException, bbRet, landingPad,
-												builder->CreateBitCast(val, funcThrowException->getFunctionType()->getParamType(0)));
+	builder.CreateInvoke(funcThrowException, bbRet, landingPad,
+												builder.CreateBitCast(val, funcThrowException->getFunctionType()->getParamType(0)));
 
-	builder->SetInsertPoint(landingPad);
-	llvm::LandingPadInst *caughtResult = builder->CreateLandingPad(vm->typeGXXException, 
+	builder.SetInsertPoint(landingPad);
+	llvm::LandingPadInst *caughtResult = builder.CreateLandingPad(vm->typeGXXException, 
 																																 funcGXXPersonality, 
 																																 1, 
 																																 "landing-pad");
 	caughtResult->addClause(gvTypeInfo);
 
-	llvm::Value* excp = builder->CreateBitCast(builder->CreateCall(funcCXABeginCatch, 
-																																 builder->CreateExtractValue(caughtResult, 0)),
+	llvm::Value* excp = builder.CreateBitCast(builder.CreateCall(funcCXABeginCatch, 
+																																 builder.CreateExtractValue(caughtResult, 0)),
 																						 vm->typeJ3ObjectPtr);
 	
-	builder->CreateCall(funcCXAEndCatch);
+	builder.CreateCall(funcCXAEndCatch);
 
-	builder->CreateCall3(funcEchoDebugExecute, 
-											 builder->getInt32(-1), /* just to see my first exception :) */
+	builder.CreateCall3(funcEchoDebugExecute, 
+											 builder.getInt32(-1), /* just to see my first exception :) */
 											 buildString("catching exception %p!\n"),
 											 excp);
-	builder->CreateBr(bbRet);
+	builder.CreateBr(bbRet);
 
-	builder->SetInsertPoint(bbRet);
-	builder->CreateRetVoid();
+	builder.SetInsertPoint(bbRet);
+	builder.CreateRetVoid();
 
 	llvmFunction->dump();
 }
@@ -1714,7 +1711,7 @@ void J3CodeGen::generateJava() {
 		pos += (cur->getType() == vm->typeLong->llvmType() || cur->getType() == vm->typeDouble->llvmType()) ? 2 : 1;
 	}
 
-	//builder->CreateCall(ziTry);
+	//builder.CreateCall(ziTry);
 
 	pendingBranchs = (uint32_t*)allocator->allocate(sizeof(uint32_t) * codeLength);
 	opInfos = (J3OpInfo*)allocator->allocate(sizeof(J3OpInfo) * codeLength);
@@ -1724,14 +1721,14 @@ void J3CodeGen::generateJava() {
 	codeReader = &codeReaderTmp;
 
 	bbRet = newBB("ret");
-	builder->SetInsertPoint(bbRet);
+	builder.SetInsertPoint(bbRet);
 
 	genDebugEnterLeave(1);
 
 	if(llvmFunction->getReturnType()->isVoidTy())
-		builder->CreateRetVoid();
+		builder.CreateRetVoid();
 	else
-		builder->CreateRet(unflatten(ret.at(0, llvmFunction->getReturnType()), llvmFunction->getReturnType()));
+		builder.CreateRet(unflatten(ret.at(0, llvmFunction->getReturnType()), llvmFunction->getReturnType()));
 
 	if(J3Cst::isSynchronized(method->access())) {
 		static bool echoDone = 0;
@@ -1812,7 +1809,7 @@ void J3CodeGen::generateNative() {
 
 	llvm::Value* res;
 	llvm::Value* thread = currentThread();
-	llvm::Value* frame = builder->CreateCall(funcJ3ThreadTell, thread);
+	llvm::Value* frame = builder.CreateCall(funcJ3ThreadTell, thread);
 
 	if(J3Cst::isSynchronized(method->access())) {
 		static bool echoDone = 0;
@@ -1822,7 +1819,7 @@ void J3CodeGen::generateNative() {
 		}
 	}
 
-	args.push_back(builder->CreateCall(funcJniEnv));
+	args.push_back(builder.CreateCall(funcJniEnv));
 	if(J3Cst::isStatic(method->access()))
 		args.push_back(javaClass(cl, 1));
 
@@ -1831,30 +1828,30 @@ void J3CodeGen::generateNative() {
 	for(llvm::Function::arg_iterator cur=llvmFunction->arg_begin(); cur!=llvmFunction->arg_end(); cur++) {
 		llvm::Value* v = cur;
 		args.push_back(v->getType()->isPointerTy() ?
-									 builder->CreateCall2(funcJ3ThreadPush, thread, v) :
+									 builder.CreateCall2(funcJ3ThreadPush, thread, v) :
 									 v);
 	}
 
-	res = builder->CreateCall(nat, args);
-	builder->CreateCall(funcReplayException);
+	res = builder.CreateCall(nat, args);
+	builder.CreateCall(funcReplayException);
 
 	if(llvmFunction->getReturnType()->isVoidTy()) {
-		builder->CreateCall2(funcJ3ThreadRestore, thread, frame);
-		builder->CreateRetVoid();
+		builder.CreateCall2(funcJ3ThreadRestore, thread, frame);
+		builder.CreateRetVoid();
 	} else {
 		if(llvmFunction->getReturnType()->isPointerTy()) {
 			llvm::BasicBlock* ifnull = newBB("ifnull");
 			llvm::BasicBlock* ifnotnull = newBB("ifnotnull");
-			builder->CreateCondBr(builder->CreateIsNull(res), ifnull, ifnotnull);
+			builder.CreateCondBr(builder.CreateIsNull(res), ifnull, ifnotnull);
 
-			builder->SetInsertPoint(bb = ifnull);
-			builder->CreateCall2(funcJ3ThreadRestore, thread, frame);
-			builder->CreateRet(nullValue);
+			builder.SetInsertPoint(bb = ifnull);
+			builder.CreateCall2(funcJ3ThreadRestore, thread, frame);
+			builder.CreateRet(nullValue);
 
-			builder->SetInsertPoint(bb = ifnotnull);
+			builder.SetInsertPoint(bb = ifnotnull);
 			res = handleToObject(res);
-			builder->CreateCall2(funcJ3ThreadRestore, thread, frame);
+			builder.CreateCall2(funcJ3ThreadRestore, thread, frame);
 		}
-		builder->CreateRet(res);
+		builder.CreateRet(res);
 	}
 }

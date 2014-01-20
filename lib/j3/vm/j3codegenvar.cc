@@ -10,8 +10,8 @@
 using namespace j3;
 
 void J3CodeGenVar::killUnused(llvm::AllocaInst** stack, bool isObj) {
-	llvm::Type* i8ptr = codeGen->builder->getInt8Ty()->getPointerTo();
-	llvm::Value* meta = codeGen->builder->CreateBitCast(codeGen->nullValue, i8ptr);
+	llvm::Type* i8ptr = codeGen->builder.getInt8Ty()->getPointerTo();
+	llvm::Value* meta = codeGen->builder.CreateBitCast(codeGen->nullValue, i8ptr);
 	llvm::Type* i8ptrptr = i8ptr->getPointerTo();
 
 	for(uint32_t i=0; i<maxStack; i++) {
@@ -24,9 +24,9 @@ void J3CodeGenVar::killUnused(llvm::AllocaInst** stack, bool isObj) {
 			llvm::dyn_cast<llvm::StoreInst>(*(cur->use_begin()))->eraseFromParent();
       cur->eraseFromParent();
     } else if(isObj) {
-			codeGen->builder->SetInsertPoint(cur->getNextNode());
-			codeGen->builder->CreateCall2(codeGen->gcRoot, codeGen->builder->CreateBitCast(refStack[i], i8ptrptr), meta);
-			//codeGen->builder->CreateStore(codeGen->nullValue, cur);
+			codeGen->builder.SetInsertPoint(cur->getNextNode());
+			codeGen->builder.CreateCall2(codeGen->gcRoot, codeGen->builder.CreateBitCast(refStack[i], i8ptrptr), meta);
+			//codeGen->builder.CreateStore(codeGen->nullValue, cur);
 			//
 		}
 	}
@@ -57,11 +57,11 @@ void J3CodeGenVar::init(J3CodeGen* _codeGen, uint32_t max) {
 	topStack = 0;
 	
 	for(uint32_t i=0; i<max; i++) {
-		intStack[i] = codeGen->builder->CreateAlloca(codeGen->builder->getInt32Ty());
-		longStack[i] = codeGen->builder->CreateAlloca(codeGen->builder->getInt64Ty());
-		floatStack[i] = codeGen->builder->CreateAlloca(codeGen->builder->getFloatTy());
-		doubleStack[i] = codeGen->builder->CreateAlloca(codeGen->builder->getDoubleTy());
-		refStack[i] = codeGen->builder->CreateAlloca(codeGen->vm->typeJ3ObjectPtr);
+		intStack[i] = codeGen->builder.CreateAlloca(codeGen->builder.getInt32Ty());
+		longStack[i] = codeGen->builder.CreateAlloca(codeGen->builder.getInt64Ty());
+		floatStack[i] = codeGen->builder.CreateAlloca(codeGen->builder.getFloatTy());
+		doubleStack[i] = codeGen->builder.CreateAlloca(codeGen->builder.getDoubleTy());
+		refStack[i] = codeGen->builder.CreateAlloca(codeGen->vm->typeJ3ObjectPtr);
 	}
 }
 
@@ -98,11 +98,11 @@ llvm::AllocaInst** J3CodeGenVar::stackOf(llvm::Type* t) {
 
 void J3CodeGenVar::setAt(llvm::Value* value, uint32_t idx) {
 	llvm::Type*   t = value->getType();
-	codeGen->builder->CreateStore(value, stackOf(t)[idx]);
+	codeGen->builder.CreateStore(value, stackOf(t)[idx]);
 }
 
 llvm::Value* J3CodeGenVar::at(uint32_t idx, llvm::Type* t) {
-	return codeGen->builder->CreateLoad(stackOf(t)[idx]);
+	return codeGen->builder.CreateLoad(stackOf(t)[idx]);
 }
 
 void J3CodeGenVar::push(llvm::Value* value) {

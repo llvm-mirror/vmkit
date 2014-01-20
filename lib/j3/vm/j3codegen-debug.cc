@@ -102,32 +102,32 @@ void J3CodeGen::echoElement(uint32_t level, uint32_t type, uintptr_t elmt) {
 
 void J3CodeGen::genEchoElement(const char* msg, uint32_t idx, llvm::Value* val) {
 	llvm::Type* t = val->getType();
-	builder->CreateCall3(funcEchoDebugExecute,
-											 builder->getInt32(4),
+	builder.CreateCall3(funcEchoDebugExecute,
+											 builder.getInt32(4),
 											 buildString(msg),
-											 builder->getInt32(idx));
+											 builder.getInt32(idx));
 
 	if(t->isIntegerTy())
-		builder->CreateCall3(funcEchoElement, 
-												 builder->getInt32(4),
-												 builder->getInt32(DEBUG_TYPE_INT),
-												 builder->CreateSExtOrBitCast(val, uintPtrTy));
+		builder.CreateCall3(funcEchoElement, 
+												 builder.getInt32(4),
+												 builder.getInt32(DEBUG_TYPE_INT),
+												 builder.CreateSExtOrBitCast(val, uintPtrTy));
 	else if(t->isPointerTy())
-		builder->CreateCall3(funcEchoElement, 
-												 builder->getInt32(4),
-												 builder->getInt32(DEBUG_TYPE_OBJECT),
-												 builder->CreatePtrToInt(val, uintPtrTy));
+		builder.CreateCall3(funcEchoElement, 
+												 builder.getInt32(4),
+												 builder.getInt32(DEBUG_TYPE_OBJECT),
+												 builder.CreatePtrToInt(val, uintPtrTy));
 	else {
-		val = builder->CreateFPExt(val, builder->getDoubleTy());
-		llvm::Value* loc = builder->CreateAlloca(val->getType());
-		builder->CreateStore(val, loc);
-		builder->CreateCall3(funcEchoElement, 
-												 builder->getInt32(4),
-												 builder->getInt32(DEBUG_TYPE_FLOAT),
-												 builder->CreateLoad(builder->CreateBitCast(loc, uintPtrTy->getPointerTo())));
+		val = builder.CreateFPExt(val, builder.getDoubleTy());
+		llvm::Value* loc = builder.CreateAlloca(val->getType());
+		builder.CreateStore(val, loc);
+		builder.CreateCall3(funcEchoElement, 
+												 builder.getInt32(4),
+												 builder.getInt32(DEBUG_TYPE_FLOAT),
+												 builder.CreateLoad(builder.CreateBitCast(loc, uintPtrTy->getPointerTo())));
 	}
-	builder->CreateCall2(funcEchoDebugExecute,
-											 builder->getInt32(4),
+	builder.CreateCall2(funcEchoDebugExecute,
+											 builder.getInt32(4),
 											 buildString("\n"));
 }
 
@@ -136,14 +136,14 @@ void J3CodeGen::genDebugOpcode() {
 		llvm::BasicBlock* debug = newBB("debug");
 		llvm::BasicBlock* after = newBB("after");
 		builder
-			->CreateCondBr(builder
-										 ->CreateICmpSGT(builder->CreateLoad(builder
-																												 ->CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, 
-																																																 (uintptr_t)&vm->options()->debugExecute),
-																																					uintPtrTy->getPointerTo())),
-																		 llvm::ConstantInt::get(uintPtrTy, 0)),
-										 debug, after);
-		builder->SetInsertPoint(debug);
+			.CreateCondBr(builder
+										.CreateICmpSGT(builder.CreateLoad(builder
+																											.CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, 
+																																														 (uintptr_t)&vm->options()->debugExecute),
+																																			uintPtrTy->getPointerTo())),
+																	 llvm::ConstantInt::get(uintPtrTy, 0)),
+										debug, after);
+		builder.SetInsertPoint(debug);
 
 		if(vm->options()->genDebugExecute > 1) {
 			for(uint32_t i=0; i<stack.topStack; i++) {
@@ -154,13 +154,13 @@ void J3CodeGen::genDebugOpcode() {
 		char buf[256];
 		snprintf(buf, 256, "    [%4d] executing: %-20s in %s::%s", javaPC, 
 						 J3Cst::opcodeNames[bc], cl->name()->cStr(), method->name()->cStr());
-		builder->CreateCall3(funcEchoDebugExecute,
-												 builder->getInt32(2),
+		builder.CreateCall3(funcEchoDebugExecute,
+												 builder.getInt32(2),
 												 buildString("%s\n"),
 												 buildString(buf));
 
-		builder->CreateBr(after);
-		builder->SetInsertPoint(bb = after);
+		builder.CreateBr(after);
+		builder.SetInsertPoint(bb = after);
 	}
 }
 
@@ -169,15 +169,15 @@ void J3CodeGen::genDebugEnterLeave(bool isLeave) {
 		if(isLeave) {
 			char buf[256];
 			snprintf(buf, 256, "%s::%s", cl->name()->cStr(), method->name()->cStr());
-			builder->CreateCall3(funcEchoDebugEnter,
-													 builder->getInt32(1),
+			builder.CreateCall3(funcEchoDebugEnter,
+													 builder.getInt32(1),
 													 buildString("%s\n"),
 													 buildString(buf));
 		} else {
 			char buf[256];
 			snprintf(buf, 256, "%s::%s", cl->name()->cStr(), method->name()->cStr());
-			builder->CreateCall3(funcEchoDebugEnter,
-													 builder->getInt32(0),
+			builder.CreateCall3(funcEchoDebugEnter,
+													 builder.getInt32(0),
 													 buildString("%s\n"),
 													 buildString(buf));
 			

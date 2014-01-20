@@ -20,9 +20,9 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 	if(!nbEntries) {
 		landingPad = codeGen->newBB("landing-pad");
 		curCheck = landingPad;
-		codeGen->builder->SetInsertPoint(landingPad);
+		codeGen->builder.SetInsertPoint(landingPad);
 
-		llvm::LandingPadInst *caughtResult = codeGen->builder->CreateLandingPad(codeGen->vm->typeGXXException, 
+		llvm::LandingPadInst *caughtResult = codeGen->builder.CreateLandingPad(codeGen->vm->typeGXXException, 
 																																						codeGen->funcGXXPersonality, 
 																																						1, 
 																																						"landing-pad");
@@ -32,16 +32,16 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 		if(codeGen->vm->options()->debugExecute) {
 			char buf[256];
 			snprintf(buf, 256, "          catching exceptions in %s::%s\n", codeGen->cl->name()->cStr(), codeGen->method->name()->cStr());
-			codeGen->builder->CreateCall2(codeGen->funcEchoDebugExecute, 
-																		codeGen->builder->getInt32(1), 
+			codeGen->builder.CreateCall2(codeGen->funcEchoDebugExecute, 
+																		codeGen->builder.getInt32(1), 
 																		codeGen->buildString(buf));
 		}
 
-		llvm::Value* excp = codeGen->builder->CreateBitCast(codeGen->builder->CreateCall(codeGen->funcCXABeginCatch, 
-																																										 codeGen->builder->CreateExtractValue(caughtResult, 0)),
+		llvm::Value* excp = codeGen->builder.CreateBitCast(codeGen->builder.CreateCall(codeGen->funcCXABeginCatch, 
+																																										 codeGen->builder.CreateExtractValue(caughtResult, 0)),
 																												codeGen->vm->typeJ3ObjectPtr);
 																							 
-		codeGen->builder->CreateCall(codeGen->funcCXAEndCatch);
+		codeGen->builder.CreateCall(codeGen->funcCXAEndCatch);
 
 		codeGen->stack.topStack = 0;
 		codeGen->stack.push(excp);
@@ -50,18 +50,18 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 	entries[nbEntries++] = entry;
 
 	if(curCheck) { /* = 0 if I already have a finally */
-		codeGen->builder->SetInsertPoint(curCheck);
+		codeGen->builder.SetInsertPoint(curCheck);
 		curCheck = codeGen->newBB("next-exception-check");
 
 		if(entry->catchType) {
 			codeGen->stack.metaStack[0] = codeGen->vm->typeJ3ObjectPtr;
 			codeGen->stack.topStack = 1;
-			codeGen->builder->CreateCondBr(codeGen->isAssignableTo(codeGen->stack.top(0), 
+			codeGen->builder.CreateCondBr(codeGen->isAssignableTo(codeGen->stack.top(0), 
 																														 codeGen->cl->classAt(entry->catchType)), 
 																		 entry->bb, 
 																		 curCheck);
 		} else {
-			codeGen->builder->CreateBr(entry->bb);
+			codeGen->builder.CreateBr(entry->bb);
 			curCheck = 0;
 		}
 	}
@@ -69,23 +69,23 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 
 void J3ExceptionNode::close(J3CodeGen* codeGen) {
 	if(curCheck) {
-		codeGen->builder->SetInsertPoint(curCheck);
+		codeGen->builder.SetInsertPoint(curCheck);
 
 		if(codeGen->vm->options()->debugExecute) {
 			char buf[256];
 			snprintf(buf, 256, "          exceptions not catched in %s::%s, rethrowing\n", 
 							 codeGen->cl->name()->cStr(), codeGen->method->name()->cStr());
-			codeGen->builder->CreateCall2(codeGen->funcEchoDebugExecute, 
-																		codeGen->builder->getInt32(1), 
+			codeGen->builder.CreateCall2(codeGen->funcEchoDebugExecute, 
+																		codeGen->builder.getInt32(1), 
 																		codeGen->buildString(buf));
 		}
 
 		codeGen->stack.metaStack[0] = codeGen->vm->typeJ3ObjectPtr;
 		codeGen->stack.topStack = 1;
-		codeGen->builder->CreateCall(codeGen->funcThrowException, 
-																 codeGen->builder->CreateBitCast(codeGen->stack.pop(), 
+		codeGen->builder.CreateCall(codeGen->funcThrowException, 
+																 codeGen->builder.CreateBitCast(codeGen->stack.pop(), 
 																																 codeGen->funcThrowException->getFunctionType()->getParamType(0)));
-		codeGen->builder->CreateBr(codeGen->bbRet);
+		codeGen->builder.CreateBr(codeGen->bbRet);
 	} 
 }
 

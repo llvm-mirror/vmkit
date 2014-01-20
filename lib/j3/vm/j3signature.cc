@@ -108,9 +108,11 @@ void J3Signature::generateCallerIR(uint32_t access, J3CodeGen* codeGen, llvm::Mo
 	llvm::Type* uint64Ty = llvm::Type::getInt64Ty(module->getContext());
 	llvm::Type* callerIn[] = { llvm::Type::getInt8Ty(module->getContext())->getPointerTo(),
 														 uint64Ty->getPointerTo() };
-	llvm::Function*   caller = (llvm::Function*)module->getOrInsertFunction(id, llvm::FunctionType::get(uint64Ty, callerIn, 0));
-	llvm::BasicBlock* bb = llvm::BasicBlock::Create(caller->getContext(), "entry", caller);
-	llvm::IRBuilder<> builder(bb);
+	llvm::Function*    caller = (llvm::Function*)module->getOrInsertFunction(id, llvm::FunctionType::get(uint64Ty, callerIn, 0));
+	llvm::BasicBlock*  bb = llvm::BasicBlock::Create(caller->getContext(), "entry", caller);
+	llvm::IRBuilder<>& builder = codeGen->builder;
+	
+	builder.SetInsertPoint(bb);
 
 	llvm::Function::arg_iterator cur = caller->arg_begin();
 	llvm::Value* method = builder.CreateBitCast(cur++, fType->getPointerTo());
@@ -159,7 +161,6 @@ void J3Signature::generateCallerIR(uint32_t access, J3CodeGen* codeGen, llvm::Mo
 
 	if(ret != builder.getVoidTy()) {
 		if(ret->isPointerTy()) {
-			codeGen->builder = &builder;
 			codeGen->currentThread();
 			res = builder.CreatePtrToInt(builder.CreateCall2(codeGen->funcJ3ThreadPush, codeGen->currentThread(), res),
 																	 uint64Ty);
