@@ -55,7 +55,7 @@ J3Signature::function_t J3Method::cxxCaller() {
 void J3Method::aotCompile() {
 	if(!J3Cst::isAbstract(access())) {
 		//fprintf(stderr, "compiling: %s::%s%s\n", cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
-		ensureCompiled(J3CodeGen::WithMethod | J3CodeGen::OnlyTranslate);
+		ensureCompiled(J3CodeGen::WithMethod | J3CodeGen::OnlyTranslate | J3CodeGen::NotUseStub);
 	}
 }
 

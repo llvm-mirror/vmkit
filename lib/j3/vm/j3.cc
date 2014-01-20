@@ -217,6 +217,8 @@ void J3::compileApplication() {
 	llvm::Module* res = new llvm::Module("yop", llvmContext());
 	llvm::Linker* linker = new llvm::Linker(res);
 	loader->aotSnapshot(linker);
+
+	res->dump();
 }
 
 void J3::runApplication() {

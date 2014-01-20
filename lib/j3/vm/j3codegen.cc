@@ -204,7 +204,7 @@ llvm::Value* J3CodeGen::unflatten(llvm::Value* v, llvm::Type* type) {
 }
 
 llvm::Function* J3CodeGen::buildFunction(J3Method* method, bool isStub) {
-	const char* id = (isStub && !method->fnPtr()) ? method->llvmStubName(cl) : method->llvmFunctionName(cl);
+	const char* id = (useStub() && isStub && !method->fnPtr()) ? method->llvmStubName(cl) : method->llvmFunctionName(cl);
 	loader->addSymbol(id, method);
 	return (llvm::Function*)module->getOrInsertFunction(id, method->signature()->functionType(method->access()));
 }
