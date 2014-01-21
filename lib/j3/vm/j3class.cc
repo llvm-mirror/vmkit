@@ -336,7 +336,8 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	_source = source;
 	_bytes = bytes;
 	status = LOADED;
-	_staticObjectSymbol = new(loader->staticObjects()) J3StaticObjectSymbol();
+	/* allocating the J3ObjectHande looks a little strange, but it will become important to reload AOT compiled class loaders */
+	_staticObjectSymbol = new(loader->staticObjects()) J3StaticObjectSymbol(loader->staticObjectHandles()->push());
 }
 
 void J3Class::compileAll() {
@@ -565,7 +566,7 @@ void J3Class::doInitialise() {
 					case J3Cst::CONSTANT_Float:   staticObject->setFloat(cur, floatAt(idx)); break;
 					case J3Cst::CONSTANT_Double:  staticObject->setDouble(cur, doubleAt(idx)); break;
 					case J3Cst::CONSTANT_Integer: staticObject->setInteger(cur, integerAt(idx)); break;
-					case J3Cst::CONSTANT_String:  staticObject->setObject(cur, stringAt(idx, 0)); break;
+					case J3Cst::CONSTANT_String:  staticObject->setObject(cur, stringAt(idx)->handle()); break;
 					default:
 						J3::classFormatError(this, "invalid ctp entry ConstantAttribute with type %d", getCtpType(idx));
 				}
@@ -820,13 +821,16 @@ void* J3Class::getCtpResolved(uint16_t idx) {
 	return ctpResolved[idx];
 }
 
-J3ObjectHandle* J3Class::stringAt(uint16_t idx, bool doPush) {
+J3StringSymbol* J3Class::stringAt(uint16_t idx) {
 	check(idx, J3Cst::CONSTANT_String);
-	J3ObjectHandle* res = (J3ObjectHandle*)ctpResolved[idx];
+	J3StringSymbol* res = (J3StringSymbol*)ctpResolved[idx];
+
 	if(!res) {
-		ctpResolved[idx] = res = J3Thread::get()->vm()->nameToString(nameAt(ctpValues[idx]), 0);
+		ctpResolved[idx] = res = loader()->newStringSymbol(J3Thread::get()->vm()->nameToString(nameAt(ctpValues[idx]), 0));
+		loader()->addSymbol(res->id(), res);
 	}
-	return (J3ObjectHandle*)res;
+
+	return res;
 }
 
 float J3Class::floatAt(uint16_t idx) {

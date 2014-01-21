@@ -24,6 +24,7 @@ J3ClassLoader::J3InterfaceMethodLess J3ClassLoader::j3InterfaceMethodLess;
 J3ClassLoader::J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
 	: CompilationUnit(allocator, "class-loader"),
 		_globalReferences(allocator),
+		_staticObjectHandles(allocator),
 		_staticObjects(allocator),
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
@@ -37,6 +38,16 @@ J3ClassLoader::J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocat
 	pthread_mutex_init(&_mutexNativeLibraries, 0);
 
 	_javaClassLoader = globalReferences()->add(javaClassLoader);
+}
+
+J3StringSymbol* J3ClassLoader::newStringSymbol(J3ObjectHandle* handle) {
+	size_t num = __sync_fetch_and_add(&_stringSymbolCounter, 1);
+	char buf[256];
+	snprintf(buf, 256, "jstr%lu", num);
+	size_t len = strlen(buf);
+	char* id = (char*)allocator()->allocate(len+1);
+	memcpy(id, buf, len+1);
+	return new(allocator()) J3StringSymbol(id, handle);
 }
 
 void J3ClassLoader::addNativeLibrary(void* handle) {

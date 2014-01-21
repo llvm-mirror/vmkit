@@ -263,7 +263,7 @@ namespace j3 {
 		double              doubleAt(uint16_t idx);
 		uint32_t            integerAt(uint16_t idx);
 		uint64_t            longAt(uint16_t idx);
-		J3ObjectHandle*     stringAt(uint16_t idx, bool doPush);
+		J3StringSymbol*     stringAt(uint16_t idx);
 		J3ObjectType*       classAt(uint16_t idx);
 		J3Method*           interfaceMethodAt(uint16_t idx, uint16_t access);
 		J3Method*           methodAt(uint16_t idx, uint16_t access);

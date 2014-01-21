@@ -44,6 +44,7 @@ namespace j3 {
 		J3ObjectHandle*                      _javaClassLoader;
 		J3GlobalReferences                   _globalReferences;
 
+		vmkit::LockedStack<J3ObjectHandle>       _staticObjectHandles;
 		vmkit::LockedStack<J3StaticObjectSymbol> _staticObjects;
 
 		pthread_mutex_t                      _mutexClasses;
@@ -61,8 +62,11 @@ namespace j3 {
 		pthread_mutex_t                                 _mutexNativeLibraries;
 		std::vector<void*, vmkit::StdAllocator<void*> > nativeLibraries;
 
+		size_t                               _stringSymbolCounter;
 	public:
 		J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator);
+
+		J3StringSymbol*               newStringSymbol(J3ObjectHandle* handle);
 
 		uint32_t                      compilationMode() { return _compilationMode; }
 		void                          setCompilationMode(uint32_t mode) { _compilationMode = mode; }
@@ -81,6 +85,8 @@ namespace j3 {
 		uint32_t                      interfaceIndex(J3Method* signature);
 
 		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
+
+		vmkit::LockedStack<J3ObjectHandle>*       staticObjectHandles() { return &_staticObjectHandles; }
 		vmkit::LockedStack<J3StaticObjectSymbol>* staticObjects() { return &_staticObjects; }
 
 		static J3ClassLoader*         nativeClassLoader(J3ObjectHandle* jloader);

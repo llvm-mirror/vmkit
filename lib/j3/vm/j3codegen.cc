@@ -717,10 +717,7 @@ void J3CodeGen::ldc(uint32_t idx) {
 		case J3Cst::CONSTANT_Double:  res = llvm::ConstantFP::get(builder.getDoubleTy(), cl->doubleAt(idx)); break;
 		case J3Cst::CONSTANT_Class:   res = handleToObject(javaClass(cl->classAt(idx), 0)); break;
 		case J3Cst::CONSTANT_String:  
-			res = handleToObject(builder.CreateCall3(funcJ3ClassStringAt, 
-																								typeDescriptor(cl, vm->typeJ3ClassPtr),
-																								builder.getInt16(idx),
-																								builder.getInt1(0)));
+			res = handleToObject(builder.CreateLoad(module->getOrInsertGlobal(cl->stringAt(idx)->id(), vm->typeJ3ObjectHandlePtr)));
 			break;
 		default:
 			J3::classFormatError(cl, "wrong ldc type: %d\n", cl->getCtpType(idx));
