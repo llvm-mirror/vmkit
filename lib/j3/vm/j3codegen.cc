@@ -608,41 +608,24 @@ void J3CodeGen::newObject(J3Class* cl) {
 	stack.push(res);
 }
 
-llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) {
+llvm::CallInst* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) {
 	llvm::Value* vtType = vt(type); /* force the resolution of type */
 	llvm::Value* vtObj = vt(obj);
-	llvm::CallInst* res;
-
-#if 0
-	llvm::Function* pc = vm->introspectFunction(0, "j3::J3VirtualTable::fastIsAssignableToPrimaryChecker(j3::J3VirtualTable*, unsigned int)");
-	llvm::Function* npc = vm->introspectFunction(0, "j3::J3VirtualTable::fastIsAssignableToNonPrimaryChecker(j3::J3VirtualTable*)");
-#endif
 
 	if(type->vt()->isPrimaryChecker())
-		res = builder.CreateCall3(funcFastIsAssignableToPrimaryChecker, 
-															vtObj, 
-															vtType,
-															builder.getInt32(type->vt()->offset()));
+		return builder.CreateCall3(funcFastIsAssignableToPrimaryChecker, 
+															 vtObj, 
+															 vtType,
+															 builder.getInt32(type->vt()->offset()));
 	else 
-		res = builder.CreateCall2(funcFastIsAssignableToNonPrimaryChecker, 
-															vtObj, 
-															vtType);
+		return builder.CreateCall2(funcFastIsAssignableToNonPrimaryChecker, 
+															 vtObj, 
+															 vtType);
+}
 
-#if 0
-	llvmFunction->dump();
-	fprintf(stderr, " *** \n");
-
+void J3CodeGen::inlineCall(llvm::CallInst* call) {
 	llvm::InlineFunctionInfo ifi;
-	llvm::InlineFunction(res, ifi);
-
-	llvmFunction->dump();
-	fprintf(stderr, " ----- \n");
-	//res->dump();
-
-	J3::internalError("implement me");
-#endif
-
-	return res;
+	llvm::InlineFunction(call, ifi, 0);
 }
 
 void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
@@ -658,8 +641,10 @@ void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
 
 	stack.drop(1);
 	builder.SetInsertPoint(test);
-	stack.push(builder.CreateZExt(isAssignableTo(obj, type), builder.getInt32Ty()));
+	llvm::CallInst* is = isAssignableTo(obj, type);
+	stack.push(builder.CreateZExt(is, builder.getInt32Ty()));
 	builder.CreateBr(after);
+	inlineCall(is);
 }
 
 void J3CodeGen::checkCast(llvm::Value* obj, J3ObjectType* type) {
@@ -678,9 +663,9 @@ void J3CodeGen::checkCast(llvm::Value* obj, J3ObjectType* type) {
 
 		builder.SetInsertPoint(test);
 
-		llvm::Value* res = isAssignableTo(obj, type);
-
-		builder.CreateCondBr(res, succeed, bbCheckCastFailed);
+		llvm::CallInst* is = isAssignableTo(obj, type);
+		builder.CreateCondBr(is, succeed, bbCheckCastFailed);
+		inlineCall(is);
 	}
 }
 

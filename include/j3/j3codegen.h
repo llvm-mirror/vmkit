@@ -132,7 +132,8 @@ namespace j3 {
 		void                monitorEnter(llvm::Value* obj);
 		void                monitorExit(llvm::Value* obj);
 
-		llvm::Value*        isAssignableTo(llvm::Value* obj, J3ObjectType* type);
+		llvm::CallInst*     isAssignableTo(llvm::Value* obj, J3ObjectType* type);
+		void                inlineCall(llvm::CallInst* call);
 		void                instanceof(llvm::Value* obj, J3ObjectType* type);
 		void                checkCast(llvm::Value* obj, J3ObjectType* type);
 
