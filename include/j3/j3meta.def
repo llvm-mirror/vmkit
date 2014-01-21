@@ -1,6 +1,6 @@
 _x(funcJ3TypeVT,                    "j3::J3Type::vt()")
-_x(funcJ3TypeVTAndResolve,          "j3::J3Type::vtAndResolve()")
-_x(funcJ3TypeInitialise,            "j3::J3Type::initialise()")
+_x(funcJ3ObjectTypeResolve,         "j3::J3Type::resolve()")
+_x(funcJ3ObjectTypeInitialise,      "j3::J3Type::initialise()")
 _x(funcJ3ClassStringAt,             "j3::J3Class::stringAt(unsigned short, bool)")
 _x(funcJ3TypeJavaClass,             "j3::J3Type::javaClass(bool, j3::J3ObjectHandle*)")
 _x(funcJniEnv,                      "j3::J3::jniEnv()")

@@ -126,6 +126,7 @@ namespace j3 {
 		llvm::Value*        staticObject(J3Class* cl);
 		llvm::Value*        vt(J3ObjectType* cl, bool resolve=0);
 		llvm::Value*        vt(llvm::Value* obj);
+		void                resolveJ3ObjectType(J3ObjectType* cl);
 		void                initialiseJ3ObjectType(J3ObjectType* cl);
 
 		void                monitorEnter(llvm::Value* obj);

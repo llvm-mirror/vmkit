@@ -325,9 +325,14 @@ void J3CodeGen::monitorExit(llvm::Value* obj) {
 	builder.CreateBr(ok);
 }
 
+void J3CodeGen::resolveJ3ObjectType(J3ObjectType* cl) {
+	if(!supposeClinited() && !cl->isResolved())
+		builder.CreateCall(funcJ3ObjectTypeResolve, typeDescriptor(cl, vm->typeJ3TypePtr));
+}
+
 void J3CodeGen::initialiseJ3ObjectType(J3ObjectType* cl) {
 	if(!supposeClinited() && !cl->isInitialised())
-		builder.CreateCall(funcJ3TypeInitialise, typeDescriptor(cl, vm->typeJ3TypePtr));
+		builder.CreateCall(funcJ3ObjectTypeInitialise, typeDescriptor(cl, vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::javaClass(J3ObjectType* type, bool doPush) {
@@ -361,8 +366,9 @@ llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
 }
 
 llvm::Value* J3CodeGen::vt(J3ObjectType* type, bool doResolve) {
-	llvm::Value* func = !supposeClinited() && doResolve && !type->isResolved() ? funcJ3TypeVTAndResolve : funcJ3TypeVT;
-	return builder.CreateCall(func, typeDescriptor(type, vm->typeJ3TypePtr));
+	if(doResolve)
+		resolveJ3ObjectType(type);
+	return builder.CreateCall(funcJ3TypeVT, typeDescriptor(type, vm->typeJ3TypePtr));
 }
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {

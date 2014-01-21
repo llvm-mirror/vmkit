@@ -18,10 +18,13 @@ namespace j3 {
 	public:
 		J3VTSymbol() {}
 
-		char* id() { return _id; }
-		void* getSymbolAddress() { return _vt; }
+		J3VirtualTable* vt() { return _vt; }
 		
-		void  set(char* id, J3VirtualTable* vt) { _id = id; _vt = vt; }
+		char* id() { return _id; }
+		void* getSymbolAddress() { return vt(); }
+		
+		void  setId(char* id) { _id = id; }
+		void  setVt(J3VirtualTable* vt) { _vt = vt; }
 	};
 
 	class J3StaticObjectSymbol : public vmkit::Symbol {
