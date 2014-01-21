@@ -33,12 +33,34 @@ J3Type::J3Type(J3ClassLoader* loader, const vmkit::Name* name) {
 	_name = name; 
 }
 
+const char* J3Type::genId(const char* prefix, const char* suffix) {
+	size_t plen = prefix ? strlen(prefix) : 0;
+	size_t slen = suffix ? strlen(suffix) : 0;
+	size_t len = nativeNameLength();
+	char* id = (char*)loader()->allocator()->allocate(plen + len + slen + 1);
+
+	memcpy(id, prefix, plen);
+	memcpy(id+plen, nativeName(), len);
+	memcpy(id+plen+plen, suffix, slen);
+
+	return id;
+}
+
 void* J3Type::getSymbolAddress() {
 	return this;
 }
 
+const char* J3Type::vtId() {
+	const char* id = vtSymbol()->id();
+
+	if(!id)
+		vtSymbol()->setId(id = genId("vt_"));
+
+	return id;
+}
+
 J3VirtualTable* J3Type::vt() { 
-	return _vt; 
+	return vtSymbol()->vt(); 
 }
 
 void J3Type::dump() {
@@ -494,16 +516,11 @@ void J3Class::registerNative(const vmkit::Name* name, const vmkit::Name* signatu
 	res->registerNative(fnPtr);
 }
 
-char* J3Class::staticObjectId() {
-	char* id = staticObjectSymbol()->id();
+const char* J3Class::staticObjectId() {
+	const char* id = staticObjectSymbol()->id();
 
-	if(!id) {
-		size_t len = nativeNameLength();
-		id = (char*)loader()->allocator()->allocate(len + 8);
-		memcpy(id, "static_", 7);
-		memcpy(id+7, nativeName(), len+1);
-		staticObjectSymbol()->setId(id);
-	}
+	if(!id)
+		staticObjectSymbol()->setId(id = genId("static_"));
 
 	return id;
 }
@@ -572,9 +589,9 @@ void J3Class::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 		status = RESOLVED;
 		readClassBytes(hiddenFields, nbHiddenFields);
 		
-		staticLayout()->_vt = J3VirtualTable::create(staticLayout());
+		staticLayout()->vtSymbol()->setVt(J3VirtualTable::create(staticLayout()));
 
-		_vt = J3VirtualTable::create(this);
+		vtSymbol()->setVt(J3VirtualTable::create(this));
 
 		if(!J3Cst::isInterface(access()) && !J3Cst::isAbstract(access()))
 			prepareInterfaceTable();
@@ -1021,7 +1038,7 @@ void J3ArrayClass::doResolve(J3Field* hiddenFields, size_t nbHiddenFields) {
 	lock();
 	if(status < RESOLVED) {
 		status = RESOLVED;
-		_vt = J3VirtualTable::create(this);
+		vtSymbol()->setVt(J3VirtualTable::create(this));
 		prepareInterfaceTable();
 	}
 	unlock();
@@ -1065,7 +1082,7 @@ J3Primitive::J3Primitive(J3ClassLoader* loader, char id, llvm::Type* type, uint3
 	_nativeName[0] = id;
 	_nativeName[1] = 0;
 	_nativeNameLength = 1;
-	_vt = J3VirtualTable::create(this);
+	vtSymbol()->setVt(J3VirtualTable::create(this));
 	_logSize = logSize;
 }
 

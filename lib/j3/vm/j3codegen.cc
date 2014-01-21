@@ -350,11 +350,9 @@ llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
 
 llvm::Value* J3CodeGen::staticObject(J3Class* cl) {
 	initialiseJ3ObjectType(cl);
-	char* id = cl->staticObjectId();
+	const char* id = cl->staticObjectId();
 	loader->addSymbol(id, cl->staticObjectSymbol());
 	return handleToObject(module->getOrInsertGlobal(id, vm->typeJ3ObjectHandle));
-	//return handleToObject(builder.CreateCall(funcJ3ClassStaticObject, 
-	//typeDescriptor(cl, vm->typeJ3ClassPtr)));
 }
 
 llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
@@ -365,10 +363,11 @@ llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
 	return res;
 }
 
-llvm::Value* J3CodeGen::vt(J3ObjectType* type, bool doResolve) {
-	if(doResolve)
-		resolveJ3ObjectType(type);
-	return builder.CreateCall(funcJ3TypeVT, typeDescriptor(type, vm->typeJ3TypePtr));
+llvm::Value* J3CodeGen::vt(J3ObjectType* type) {
+	type->resolve();
+	const char* id = type->vtId();
+	loader->addSymbol(id, type->vtSymbol());
+	return module->getOrInsertGlobal(id, vm->typeJ3VirtualTable);
 }
 
 llvm::Value* J3CodeGen::nullCheck(llvm::Value* obj) {
@@ -607,20 +606,16 @@ void J3CodeGen::newObject(J3Class* cl) {
 }
 
 llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) {
-	llvm::Value* vtType = vt(type, 1);
+	llvm::Value* vtType = vt(type); /* force the resolution of type */
 	llvm::Value* vtObj = vt(obj);
 
-	if(type->isResolved()) {
-		if(type->vt()->isPrimaryChecker())
-			return builder.CreateCall3(funcFastIsAssignableToPrimaryChecker, 
-																	vtObj, 
-																	vtType,
-																	builder.getInt32(type->vt()->offset()));
-		else 
-			return builder.CreateCall2(funcFastIsAssignableToNonPrimaryChecker, vtObj, vtType);
-	} else {
-		return builder.CreateCall2(funcIsAssignableTo, vtObj, vtType);
-	}
+	if(type->vt()->isPrimaryChecker())
+		return builder.CreateCall3(funcFastIsAssignableToPrimaryChecker, 
+															 vtObj, 
+															 vtType,
+															 builder.getInt32(type->vt()->offset()));
+	else 
+		return builder.CreateCall2(funcFastIsAssignableToNonPrimaryChecker, vtObj, vtType);
 }
 
 void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {

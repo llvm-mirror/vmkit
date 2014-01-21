@@ -50,7 +50,8 @@ J3* J3::create() {
 
 void J3::introspect() {
 	typeJNIEnvPtr           = llvm::PointerType::getUnqual(introspectType("struct.JNIEnv_"));
-	typeJ3VirtualTablePtr   = llvm::PointerType::getUnqual(introspectType("class.j3::J3VirtualTable"));
+	typeJ3VirtualTable      = introspectType("class.j3::J3VirtualTable");
+	typeJ3VirtualTablePtr   = llvm::PointerType::getUnqual(typeJ3VirtualTable);
 	typeJ3Type              = introspectType("class.j3::J3Type");
 	typeJ3TypePtr           = llvm::PointerType::getUnqual(typeJ3Type);
 	typeJ3LayoutPtr         = llvm::PointerType::getUnqual(introspectType("class.j3::J3Layout"));

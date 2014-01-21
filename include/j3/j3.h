@@ -119,6 +119,7 @@ namespace j3 {
 		J3Method*        stackTraceElementClassInit;
 
 		llvm::Type* typeJNIEnvPtr;
+		llvm::Type* typeJ3VirtualTable;
 		llvm::Type* typeJ3VirtualTablePtr;
 		llvm::Type* typeJ3Type;
 		llvm::Type* typeJ3TypePtr;

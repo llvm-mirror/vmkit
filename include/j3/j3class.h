@@ -49,11 +49,11 @@ namespace j3 {
 	protected:
 		enum { LOADED, RESOLVED, INITED };
 
-		const vmkit::Name*        _name;
-		char*                     _nativeName;
-		uint32_t                  _nativeNameLength;
-		J3VirtualTable*           _vt; 
-		J3ObjectHandle* volatile  _javaClass;
+		const vmkit::Name*          _name;
+		char*                       _nativeName;
+		uint32_t                    _nativeNameLength;
+		J3VTSymbol                  _vtSymbol;
+		J3ObjectHandle* volatile    _javaClass;
 
 		volatile int                status;
 
@@ -63,6 +63,8 @@ namespace j3 {
 		virtual void                doNativeName();
 	public:
 		J3Type(J3ClassLoader* loader, const vmkit::Name* name);
+
+		const char*                 genId(const char* prefix, const char* suffix=0);
 
 		J3ObjectHandle*             javaClass(bool doPush=1, J3ObjectHandle* protectionDomain=0);
 
@@ -79,6 +81,8 @@ namespace j3 {
 		J3Type*                     resolve();
 		J3Type*                     initialise();
 
+		const char*                 vtId();
+		J3VTSymbol*                 vtSymbol() { return &_vtSymbol; }
 		J3VirtualTable*             vt();
 
 		bool                        isAssignableTo(J3Type* parent);
@@ -245,7 +249,7 @@ namespace j3 {
 		uint16_t            access() { return _access; }
 		uint16_t            modifiers();
 
-		char*                 staticObjectId();
+		const char*           staticObjectId();
 		J3StaticObjectSymbol* staticObjectSymbol() { return _staticObjectSymbol; }
 
 		void                registerNative(const vmkit::Name* methName, const vmkit::Name* methSign, void* fnPtr);

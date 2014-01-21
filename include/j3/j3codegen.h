@@ -124,7 +124,7 @@ namespace j3 {
 		llvm::Value*        handleToObject(llvm::Value* obj);
 		llvm::Value*        javaClass(J3ObjectType* type, bool doPush);
 		llvm::Value*        staticObject(J3Class* cl);
-		llvm::Value*        vt(J3ObjectType* cl, bool resolve=0);
+		llvm::Value*        vt(J3ObjectType* cl);
 		llvm::Value*        vt(llvm::Value* obj);
 		void                resolveJ3ObjectType(J3ObjectType* cl);
 		void                initialiseJ3ObjectType(J3ObjectType* cl);

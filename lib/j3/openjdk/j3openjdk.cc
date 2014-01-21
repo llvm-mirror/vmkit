@@ -101,6 +101,8 @@ jlong JNICALL JVM_NanoTime(JNIEnv* env, jclass ignored) {
 void JNICALL JVM_ArrayCopy(JNIEnv* env, jclass ignored, jobject src, jint src_pos, jobject dst, jint dst_pos, jint length) { 
 	enterJVM(); 
 
+	//fprintf(stderr, " vt: %p and %p\n", src->vt(), dst->vt());
+	//fprintf(stderr, " types: %p and %p\n", src->vt()->type(), dst->vt()->type());
 	J3Type* srcType0 = src->vt()->type();
 	J3Type* dstType0 = dst->vt()->type();
 
