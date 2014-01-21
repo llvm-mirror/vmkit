@@ -9,6 +9,7 @@
 #include "vmkit/compiler.h"
 
 #include "j3/j3object.h"
+#include "j3/j3symbols.h"
 
 namespace llvm {
 	class Linker;
@@ -42,6 +43,8 @@ namespace j3 {
 
 		J3ObjectHandle*                      _javaClassLoader;
 		J3GlobalReferences                   _globalReferences;
+
+		vmkit::LockedStack<J3StaticObjectSymbol> _staticObjects;
 
 		pthread_mutex_t                      _mutexClasses;
 		vmkit::NameMap<J3Class*>::map        classes;      /* classes managed by this class loader */
@@ -78,6 +81,7 @@ namespace j3 {
 		uint32_t                      interfaceIndex(J3Method* signature);
 
 		J3GlobalReferences*           globalReferences() { return &_globalReferences; }
+		vmkit::LockedStack<J3StaticObjectSymbol>* staticObjects() { return &_staticObjects; }
 
 		static J3ClassLoader*         nativeClassLoader(J3ObjectHandle* jloader);
 		J3ObjectHandle*               javaClassLoader(bool doPush=1);

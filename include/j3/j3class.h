@@ -8,6 +8,7 @@
 #include "vmkit/compiler.h"
 
 #include "j3/j3object.h"
+#include "j3/j3symbols.h"
 
 namespace llvm {
 	class Type;
@@ -40,7 +41,6 @@ namespace j3 {
 		J3Method** methods;
 	};
 
-
 	class J3Type : public vmkit::Symbol {
 		pthread_mutex_t        _mutex;
 		J3ClassLoader*         _loader;
@@ -55,7 +55,7 @@ namespace j3 {
 		J3VirtualTable*           _vt; 
 		J3ObjectHandle* volatile  _javaClass;
 
-		volatile int           status;
+		volatile int                status;
 
 		virtual void                doResolve(J3Field* hiddenFields, size_t nbHiddenFields) { status = RESOLVED; }
 		virtual void                doInitialise() { status = INITED; }
@@ -184,30 +184,29 @@ namespace j3 {
 	};
 
 	class J3Class : public J3Layout {
-		J3StaticLayout     _staticLayout;
+		J3StaticLayout         _staticLayout;
 
-		uint16_t           _access;
+		uint16_t               _access;
 
-		size_t             _nbInterfaces;
-		J3Class**          _interfaces;
-		J3Class*           _super;       /* this for root */
+		size_t                 _nbInterfaces;
+		J3Class**              _interfaces;
+		J3Class*               _super;       /* this for root */
 
-		J3Attributes*      _attributes;
+		J3Attributes*          _attributes;
 
-		J3ClassBytes*      _bytes;
-		size_t             nbCtp;
-		uint8_t*           ctpTypes;
-		uint32_t*          ctpValues;
-		void**             ctpResolved;
+		J3ClassBytes*          _bytes;
+		size_t                 nbCtp;
+		uint8_t*               ctpTypes;
+		uint32_t*              ctpValues;
+		void**                 ctpResolved;
 
-		size_t             _nbConstructors;
-		size_t             _nbPublicConstructors;
+		size_t                 _nbConstructors;
+		size_t                 _nbPublicConstructors;
 
-		/* GC Object */
-		J3ObjectHandle*    _staticInstance;
+		J3StaticObjectSymbol*  _staticObjectSymbol;
 
-		J3ObjectHandle*    _protectionDomain;
-		const char*        _source;
+		J3ObjectHandle*        _protectionDomain;
+		const char*            _source;
 
 		J3Attributes* readAttributes(J3Reader* reader);
 		void          readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields);
@@ -247,7 +246,8 @@ namespace j3 {
 		uint16_t            access() { return _access; }
 		uint16_t            modifiers();
 
-		J3ObjectHandle*     staticInstance();
+		char*                 staticObjectId();
+		J3StaticObjectSymbol* staticObjectSymbol() { return _staticObjectSymbol; }
 
 		void                registerNative(const vmkit::Name* methName, const vmkit::Name* methSign, void* fnPtr);
 

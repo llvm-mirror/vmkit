@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <dlfcn.h>
 #include <cxxabi.h>
@@ -65,7 +66,8 @@ void J3::introspect() {
 	typeJ3Method            = introspectType("class.j3::J3Method");
 	typeJ3Object            = introspectType("class.j3::J3Object");
 	typeJ3ObjectPtr         = llvm::PointerType::getUnqual(typeJ3Object);
-	typeJ3ObjectHandlePtr   = llvm::PointerType::getUnqual(introspectType("class.j3::J3ObjectHandle"));
+	typeJ3ObjectHandle      = introspectType("class.j3::J3ObjectHandle");
+	typeJ3ObjectHandlePtr   = llvm::PointerType::getUnqual(typeJ3ObjectHandle);
 	typeJ3LockRecord        = introspectType("class.j3::J3LockRecord");
 
 	typeGXXException        = llvm::StructType::get(llvm::Type::getInt8Ty(llvmContext())->getPointerTo(), 

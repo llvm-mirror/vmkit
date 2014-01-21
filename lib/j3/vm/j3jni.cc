@@ -266,14 +266,14 @@ jmethodID JNICALL GetStaticMethodID(JNIEnv* env, jclass clazz, const char* name,
 #define defGetSetField(jtype, id, j3type)																\
 	void JNICALL SetStatic##id##Field(JNIEnv* env, jclass clazz, jfieldID fieldID, jtype value) { \
 		enterJVM();																													\
-		J3ObjectType::nativeClass(clazz)->asClass()->staticInstance()->set##j3type(fieldID, value); \
+		J3ObjectType::nativeClass(clazz)->asClass()->staticObjectSymbol()->handle()->set##j3type(fieldID, value); \
 		leaveJVM();																													\
 	}																																			\
 																																				\
 	jtype JNICALL GetStatic##id##Field(JNIEnv* env, jclass clazz, jfieldID fieldID) { \
 		jtype res;																													\
 		enterJVM();																													\
-		res = J3ObjectType::nativeClass(clazz)->asClass()->staticInstance()->get##j3type(fieldID); \
+		res = J3ObjectType::nativeClass(clazz)->asClass()->staticObjectSymbol()->handle()->get##j3type(fieldID); \
 		leaveJVM();																													\
 		return res;																													\
 	}																																			\

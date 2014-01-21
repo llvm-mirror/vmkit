@@ -24,6 +24,7 @@ J3ClassLoader::J3InterfaceMethodLess J3ClassLoader::j3InterfaceMethodLess;
 J3ClassLoader::J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
 	: CompilationUnit(allocator, "class-loader"),
 		_globalReferences(allocator),
+		_staticObjects(allocator),
 		classes(vmkit::Name::less, allocator),
 		types(vmkit::Name::less, allocator),
 		interfaces(j3InterfaceMethodLess, allocator),

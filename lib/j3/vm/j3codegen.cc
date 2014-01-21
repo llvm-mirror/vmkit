@@ -343,10 +343,13 @@ llvm::Value* J3CodeGen::handleToObject(llvm::Value* obj) {
 	return builder.CreateLoad(builder.CreateGEP(obj, gep));
 }
 
-llvm::Value* J3CodeGen::staticInstance(J3Class* cl) {
+llvm::Value* J3CodeGen::staticObject(J3Class* cl) {
 	initialiseJ3ObjectType(cl);
-	return handleToObject(builder.CreateCall(funcJ3ClassStaticInstance, 
-																						typeDescriptor(cl, vm->typeJ3ClassPtr)));
+	char* id = cl->staticObjectId();
+	loader->addSymbol(id, cl->staticObjectSymbol());
+	return handleToObject(module->getOrInsertGlobal(id, vm->typeJ3ObjectHandle));
+	//return handleToObject(builder.CreateCall(funcJ3ClassStaticObject, 
+	//typeDescriptor(cl, vm->typeJ3ClassPtr)));
 }
 
 llvm::Value* J3CodeGen::vt(llvm::Value* obj) {
@@ -478,7 +481,7 @@ void J3CodeGen::getField(uint32_t idx) {
 
 void J3CodeGen::getStatic(uint32_t idx) {
 	J3Field* f = cl->fieldAt(idx, J3Cst::ACC_STATIC);
-	get(staticInstance(f->layout()->asStaticLayout()->cl()), f);
+	get(staticObject(f->layout()->asStaticLayout()->cl()), f);
 }
 
 void J3CodeGen::put(llvm::Value* dest, llvm::Value* val, J3Field* f) {
@@ -487,7 +490,7 @@ void J3CodeGen::put(llvm::Value* dest, llvm::Value* val, J3Field* f) {
 
 void J3CodeGen::putStatic(uint32_t idx) {
 	J3Field* f = cl->fieldAt(idx, J3Cst::ACC_STATIC);
-	put(staticInstance(f->layout()->asStaticLayout()->cl()), stack.pop(), f);
+	put(staticObject(f->layout()->asStaticLayout()->cl()), stack.pop(), f);
 }
 
 void J3CodeGen::putField(uint32_t idx) {

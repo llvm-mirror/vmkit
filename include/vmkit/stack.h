@@ -82,6 +82,23 @@ namespace vmkit {
 			head->top = ptr;
 		}
 	};
+
+	template <class T>
+	class LockedStack : private Stack<T> {
+		pthread_mutex_t mutex;
+		
+	public:
+		LockedStack(BumpAllocator* _allocator) : Stack<T>(_allocator) {
+			pthread_mutex_init(&mutex, 0);
+		}
+
+		T* push() {
+			pthread_mutex_lock(&mutex);
+			T* res = Stack<T>::push();
+			pthread_mutex_unlock(&mutex);
+			return res;
+		}
+	};
 }
 
 #endif

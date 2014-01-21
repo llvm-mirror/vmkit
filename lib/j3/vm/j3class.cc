@@ -319,6 +319,7 @@ J3Class::J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* b
 	_source = source;
 	_bytes = bytes;
 	status = LOADED;
+	_staticObjectSymbol = new(loader->staticObjects()) J3StaticObjectSymbol();
 }
 
 void J3Class::compileAll() {
@@ -498,8 +499,18 @@ void J3Class::registerNative(const vmkit::Name* name, const vmkit::Name* signatu
 	res->registerNative(fnPtr);
 }
 
-J3ObjectHandle* J3Class::staticInstance() { 
-	return _staticInstance; 
+char* J3Class::staticObjectId() {
+	char* id = staticObjectSymbol()->id();
+
+	if(!id) {
+		size_t len = nativeNameLength();
+		id = (char*)loader()->allocator()->allocate(len + 8);
+		memcpy(id, "static_", 7);
+		memcpy(id+7, nativeName(), len+1);
+		staticObjectSymbol()->setId(id);
+	}
+
+	return id;
 }
 
 void J3Class::doInitialise() {
@@ -519,7 +530,7 @@ void J3Class::doInitialise() {
 		J3ObjectHandle* prev = J3Thread::get()->tell();
 		J3ObjectHandle* stacked = J3ObjectHandle::allocate(staticLayout()->vt(), staticLayout()->structSize());
 
-		_staticInstance = loader()->globalReferences()->add(stacked);
+		staticObjectSymbol()->setHandle(stacked);
 		J3Thread::get()->restore(prev);
 
 		for(size_t i=0; i<staticLayout()->nbFields(); i++) {
@@ -535,13 +546,14 @@ void J3Class::doInitialise() {
 					J3::classFormatError(this, "bad length for ConstantAttribute");
 				
 				uint32_t idx = reader.readU2();
+				J3ObjectHandle* staticObject = staticObjectSymbol()->handle();
 
 				switch(getCtpType(idx)) {
-					case J3Cst::CONSTANT_Long:    staticInstance()->setLong(cur, longAt(idx)); break;
-					case J3Cst::CONSTANT_Float:   staticInstance()->setFloat(cur, floatAt(idx)); break;
-					case J3Cst::CONSTANT_Double:  staticInstance()->setDouble(cur, doubleAt(idx)); break;
-					case J3Cst::CONSTANT_Integer: staticInstance()->setInteger(cur, integerAt(idx)); break;
-					case J3Cst::CONSTANT_String:  staticInstance()->setObject(cur, stringAt(idx, 0)); break;
+					case J3Cst::CONSTANT_Long:    staticObject->setLong(cur, longAt(idx)); break;
+					case J3Cst::CONSTANT_Float:   staticObject->setFloat(cur, floatAt(idx)); break;
+					case J3Cst::CONSTANT_Double:  staticObject->setDouble(cur, doubleAt(idx)); break;
+					case J3Cst::CONSTANT_Integer: staticObject->setInteger(cur, integerAt(idx)); break;
+					case J3Cst::CONSTANT_String:  staticObject->setObject(cur, stringAt(idx, 0)); break;
 					default:
 						J3::classFormatError(this, "invalid ctp entry ConstantAttribute with type %d", getCtpType(idx));
 				}
