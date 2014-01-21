@@ -117,7 +117,6 @@ namespace j3 {
 		static void monitorExit(J3Object* obj);
 
 		static J3Object* allocate(J3VirtualTable* vt, uintptr_t n);
-		static J3Object* doNewNoInit(J3Class* cl);
 		static J3Object* doNew(J3Class* cl);
 	public:
 

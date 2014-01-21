@@ -282,13 +282,9 @@ J3Object* J3Object::allocate(J3VirtualTable* vt, uintptr_t n) {
 	return res;
 }
 
-J3Object* J3Object::doNewNoInit(J3Class* cl) {
-	return allocate(cl->vtAndResolve(), cl->structSize());
-}
-
 J3Object* J3Object::doNew(J3Class* cl) {
 	cl->initialise();
-	return doNewNoInit(cl);
+	return allocate(cl->vt(), cl->structSize());
 }
 
 void J3Object::monitorEnter(J3Object* obj) {
@@ -379,7 +375,8 @@ bool J3Object::isLockOwner() {
  *    ---   J3ArrayObject ---
  */
 J3Object* J3ArrayObject::doNew(J3ArrayClass* cl, uintptr_t length) {
-	J3ArrayObject* res = (J3ArrayObject*)allocate(cl->vtAndResolve(), sizeof(J3ArrayObject) + (1 << cl->component()->logSize()) * length);
+	cl->resolve();
+	J3ArrayObject* res = (J3ArrayObject*)allocate(cl->vt(), sizeof(J3ArrayObject) + (1 << cl->component()->logSize()) * length);
 
 	res->_length = length;
 
