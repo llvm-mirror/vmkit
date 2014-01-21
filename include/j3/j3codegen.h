@@ -197,7 +197,7 @@ namespace j3 {
 		void                genDebugOpcode();
 		void                genDebugEnterLeave(bool isLeave);
 
-#define _x(name, id)														\
+#define _x(name, id, isLocal)										\
 		llvm::Function* name;
 #include "j3/j3meta.def"
 #undef _x

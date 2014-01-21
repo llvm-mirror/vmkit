@@ -90,14 +90,14 @@ llvm::Function* VMKit::introspectFunction(llvm::Module* dest, const char* name) 
 	if(!orig)
 		internalError("unable to find internal function: %s", name);
 
-	return (llvm::Function*)dest->getOrInsertFunction(orig->getName(), orig->getFunctionType());
+	return dest ? (llvm::Function*)dest->getOrInsertFunction(orig->getName(), orig->getFunctionType()) : orig;
 }
 
 llvm::GlobalValue* VMKit::introspectGlobalValue(llvm::Module* dest, const char* name) {
 	llvm::GlobalValue* orig = mangleMap[name];
 	if(!orig)
 		internalError("unable to find internal global value: %s", name);
-	return (llvm::GlobalValue*)dest->getOrInsertGlobal(orig->getName(), orig->getType());
+	return dest ? (llvm::GlobalValue*)dest->getOrInsertGlobal(orig->getName(), orig->getType()) : orig;
 }
 
 void VMKit::addSymbol(llvm::GlobalValue* gv) {
@@ -110,6 +110,7 @@ void VMKit::addSymbol(llvm::GlobalValue* gv) {
 	char* mangled = (char*)allocator()->allocate(length+1);
 	strcpy(mangled, tmp);
 	mangleMap[mangled] = gv;
+	gv->Materialize();
 	free(realname);
 }
 

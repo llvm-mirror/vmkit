@@ -217,11 +217,11 @@ void J3ObjectType::prepareInterfaceTable() {
 	uint32_t total = 0;
 	J3InterfaceSlotDescriptor* slots = _interfaceSlotDescriptors;
 
-	for(uint32_t i=0; i<vt()->checker()->nbSecondaryTypes; i++) {
-		J3Type* type = vt()->checker()->secondaryTypes[i]->type();
+	for(uint32_t i=0; i<vt()->checker.nbSecondaryTypes; i++) {
+		J3Type* type = vt()->checker.secondaryTypes[i]->type();
 
 		if(type->isClass()) {
-			J3Class* ifce = vt()->checker()->secondaryTypes[i]->type()->asClass();
+			J3Class* ifce = vt()->checker.secondaryTypes[i]->type()->asClass();
 			if(J3Cst::isInterface(ifce->access())) {
 				//fprintf(stderr, "  processing interface: %s\n", ifce->name()->cStr());
 				for(uint32_t j=0; j<ifce->nbMethods(); j++) {

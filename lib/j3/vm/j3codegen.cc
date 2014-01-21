@@ -21,6 +21,9 @@
 #include "llvm/IR/Argument.h"
 #include "llvm/IR/Intrinsics.h"
 
+#include "llvm/Transforms/Utils/Cloning.h"
+#include "llvm/Support/CallSite.h"
+
 #include "llvm/DebugInfo.h"
 #include "llvm/DIBuilder.h"
 
@@ -69,8 +72,8 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mo
 	uintPtrTy = vm->dataLayout()->getIntPtrType(module->getContext());
 	nullValue = llvm::ConstantPointerNull::get((llvm::PointerType*)vm->typeJ3ObjectPtr);
 
-#define _x(name, id)														\
-	name = vm->introspectFunction(module, id);
+#define _x(name, id, isLocal)											\
+	name = vm->introspectFunction(isLocal ? module : 0, id);
 #include "j3/j3meta.def"
 #undef _x
 
@@ -608,14 +611,38 @@ void J3CodeGen::newObject(J3Class* cl) {
 llvm::Value* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) {
 	llvm::Value* vtType = vt(type); /* force the resolution of type */
 	llvm::Value* vtObj = vt(obj);
+	llvm::CallInst* res;
+
+#if 0
+	llvm::Function* pc = vm->introspectFunction(0, "j3::J3VirtualTable::fastIsAssignableToPrimaryChecker(j3::J3VirtualTable*, unsigned int)");
+	llvm::Function* npc = vm->introspectFunction(0, "j3::J3VirtualTable::fastIsAssignableToNonPrimaryChecker(j3::J3VirtualTable*)");
+#endif
 
 	if(type->vt()->isPrimaryChecker())
-		return builder.CreateCall3(funcFastIsAssignableToPrimaryChecker, 
-															 vtObj, 
-															 vtType,
-															 builder.getInt32(type->vt()->offset()));
+		res = builder.CreateCall3(funcFastIsAssignableToPrimaryChecker, 
+															vtObj, 
+															vtType,
+															builder.getInt32(type->vt()->offset()));
 	else 
-		return builder.CreateCall2(funcFastIsAssignableToNonPrimaryChecker, vtObj, vtType);
+		res = builder.CreateCall2(funcFastIsAssignableToNonPrimaryChecker, 
+															vtObj, 
+															vtType);
+
+#if 0
+	llvmFunction->dump();
+	fprintf(stderr, " *** \n");
+
+	llvm::InlineFunctionInfo ifi;
+	llvm::InlineFunction(res, ifi);
+
+	llvmFunction->dump();
+	fprintf(stderr, " ----- \n");
+	//res->dump();
+
+	J3::internalError("implement me");
+#endif
+
+	return res;
 }
 
 void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
