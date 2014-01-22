@@ -6,7 +6,7 @@
 namespace vmkit {
 	class CompilationUnit;
 
-	llvm::FunctionPass* createFunctionInlinerPass(CompilationUnit* compiler);
+	llvm::FunctionPass* createFunctionInlinerPass(CompilationUnit* compiler, bool onlyAlwaysInline);
 }
 
 #endif

@@ -34,7 +34,7 @@ void* CompilationUnit::operator new(size_t n, BumpAllocator* allocator) {
 void  CompilationUnit::operator delete(void* self) {
 }
 
-CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id) :
+CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id, bool runInlinePass, bool onlyAlwaysInline) :
 	_symbolTable(vmkit::Util::char_less, allocator) {
 	_allocator = allocator;
 	pthread_mutex_init(&_mutexSymbolTable, 0);
@@ -64,7 +64,8 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id) :
 	pm->add(llvm::createBasicAliasAnalysisPass());
 #endif
 
-	pm->add(vmkit::createFunctionInlinerPass(this));
+	if(runInlinePass || onlyAlwaysInline)
+		pm->add(vmkit::createFunctionInlinerPass(this, onlyAlwaysInline));
 	pm->add(llvm::createCFGSimplificationPass());      // Clean up disgusting code
 
 #if 0
@@ -139,6 +140,7 @@ Symbol* CompilationUnit::getSymbol(const char* id, bool error) {
 		res = it->second;
 
 	pthread_mutex_unlock(&_mutexSymbolTable);
+
 	return res;
 }
 

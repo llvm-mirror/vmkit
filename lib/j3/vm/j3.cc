@@ -97,11 +97,13 @@ void J3::run() {
 
 	introspect();
 
+	if(options()->isAOT) {
 #define _x(name, id, forceInline)																				\
-	if(forceInline)																												\
-		introspectFunction(0, id)->addFnAttr(llvm::Attribute::AlwaysInline);
+		if(forceInline)																											\
+			introspectFunction(0, id)->addFnAttr(llvm::Attribute::AlwaysInline);
 #include "j3/j3meta.def"
 #undef _x
+	}
 
 	vmkit::BumpAllocator* loaderAllocator = vmkit::BumpAllocator::create();
 	initialClassLoader = new(loaderAllocator) J3InitialClassLoader(loaderAllocator);

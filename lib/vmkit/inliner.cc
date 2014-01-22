@@ -3,7 +3,6 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CallSite.h"
-//#include "llvm/Target/TargetData.h"
 #include "llvm/Analysis/InlineCost.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/Transforms/Utils/Cloning.h"
@@ -15,14 +14,17 @@ namespace vmkit {
   public:
     static char ID;
 
-		CompilationUnit*                             compiler;
-		llvm::InlineCostAnalysis                     costAnalysis;
-		unsigned int                                 inlineThreshold;
+		CompilationUnit*         compiler;
+		llvm::InlineCostAnalysis costAnalysis;
+		unsigned int             inlineThreshold; 		// 225 in llvm
+		bool                     onlyAlwaysInline;
 
 		//FunctionInliner() : FunctionPass(ID) {}
-    FunctionInliner(CompilationUnit* _compiler, unsigned int _inlineThreshold=225) : FunctionPass(ID) { 
+    FunctionInliner(CompilationUnit* _compiler, unsigned int _inlineThreshold, bool _onlyAlwaysInline) : 
+			FunctionPass(ID) { 
 			compiler = _compiler;
 			inlineThreshold = _inlineThreshold; 
+			onlyAlwaysInline = _onlyAlwaysInline;
 		}
 
     virtual const char* getPassName() const {
@@ -45,13 +47,20 @@ namespace vmkit {
 #endif
 
 	bool FunctionInliner::runOnFunction(llvm::Function& function) {
-		bool Changed = false;
+		bool     Changed = false;
 
+		//fprintf(stderr, "Analyzing: %s\n", function.getName().data());
+
+	restart:
 		for (llvm::Function::iterator bit=function.begin(); bit!=function.end(); bit++) { 
 			llvm::BasicBlock* bb = bit; 
+			uint32_t prof = 0;
 
-			for(llvm::BasicBlock::iterator it=bb->begin(); it!=bb->end();) {
-				llvm::Instruction *insn = it++;
+			for(llvm::BasicBlock::iterator it=bb->begin(), prev=0; it!=bb->end() && prof<42; prev=it++) {
+				llvm::Instruction *insn = it;
+
+				//fprintf(stderr, "  process: ");
+				//insn->dump();
 
 				if (insn->getOpcode() != llvm::Instruction::Call &&
 						insn->getOpcode() != llvm::Instruction::Invoke) {
@@ -59,47 +68,75 @@ namespace vmkit {
 				}
 
 				llvm::CallSite  call(insn);
-				llvm::Function* original = call.getCalledFunction();
-				llvm::Function* callee = original;
+				llvm::Function* callee = call.getCalledFunction();
 
 				if(!callee)
 					continue;
 
+				llvm::Function* bc = callee;
+
 				if(callee->isDeclaration()) { /* ok, resolve */
-					Symbol* s = compiler->getSymbol(callee->getName().data(), 0);
+					if(callee->isMaterializable())
+						callee->Materialize();
+
+					if(callee->isDeclaration()) {
+						Symbol* s = compiler->getSymbol(bc->getName().data(), 0);
 					
-					if(s && s->isInlinable())
-						callee = s->llvmFunction();
+						if(s && s->isInlinable())
+							bc = s->llvmFunction();
+					}
 				}
 
-				if(callee && !callee->isDeclaration()) {
-					llvm::InlineCost cost = getInlineCost(call, callee);
-					if(cost.isAlways()) {// || (!cost.isNever() && (cost))) {
-						//fprintf(stderr, "----   Inlining: %s\n", callee->getName().data());
+				/* getInlineCost does not like inter-module references */
+				if(callee->getParent() != function.getParent()) {
+					llvm::Function* local = (llvm::Function*)function.getParent()->getOrInsertFunction(callee->getName(), 
+																																															 callee->getFunctionType());
+					callee->replaceAllUsesWith(local);
+					callee = local;
+					Changed = 1;
+				}
 
+				if(bc && !bc->isDeclaration()) {
+					//fprintf(stderr, " processing %s\n", bc->getName().data());
+					//function.dump();
+					//fprintf(stderr, " %p and %p\n", function.getParent(), callee->getParent());
+					//callee->dump();
+
+					llvm::InlineCost cost = getInlineCost(call, bc);
+
+					//fprintf(stderr, "      Inlining: %s ", bc->getName().data());
+					//if(cost.isAlways())
+					//fprintf(stderr, " is always\n");
+					//else if(cost.isNever())
+					//fprintf(stderr, " is never\n");
+					//else 
+					//fprintf(stderr, " cost: %d (=> %s)\n", cost.getCost(), !cost ? "false" : "true");
+
+					if(cost.isAlways()) {// || (!onlyAlwaysInline && !cost.isNever() && cost)) {
+						if(bc != callee)
+							callee->replaceAllUsesWith(bc);
+						
 						llvm::InlineFunctionInfo ifi(0);
 						bool isInlined = llvm::InlineFunction(call, ifi, false);
 						Changed |= isInlined;
 
-						if(isInlined){
-							it = bb->begin();
-							continue;
+						if(isInlined) {
+							//							prof++;
+							//							it = prev ? prev : bb->begin();
+							//							continue;
+							goto restart;
 						}
 					}
-				}
-
-				if(original->getParent() != function.getParent()) {
-					callee = (llvm::Function*)function.getParent()->getOrInsertFunction(original->getName(), original->getFunctionType());
-					original->replaceAllUsesWith(callee);
-					Changed = 1;
 				}
 			}
 		}
 
+		//function.dump();
+
 		return Changed;
 	}
 
-	llvm::FunctionPass* createFunctionInlinerPass(CompilationUnit* compiler) {
-		return new FunctionInliner(compiler);
+	llvm::FunctionPass* createFunctionInlinerPass(CompilationUnit* compiler, bool onlyAlwaysInline) {
+		return new FunctionInliner(compiler, 2, onlyAlwaysInline);
 	}
 }

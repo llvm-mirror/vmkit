@@ -72,8 +72,8 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mo
 	uintPtrTy = vm->dataLayout()->getIntPtrType(module->getContext());
 	nullValue = llvm::ConstantPointerNull::get((llvm::PointerType*)vm->typeJ3ObjectPtr);
 
-#define _x(name, id, forceInline)											\
-	name = vm->introspectFunction(forceInline ? 0 : module, id);
+#define _x(name, id, forceInline)																				\
+	name = vm->introspectFunction(module, id);
 #include "j3/j3meta.def"
 #undef _x
 

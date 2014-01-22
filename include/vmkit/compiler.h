@@ -55,7 +55,7 @@ namespace vmkit {
 	public:
 		void* operator new(size_t n, BumpAllocator* allocator);
 
-		CompilationUnit(BumpAllocator* allocator, const char* id);
+		CompilationUnit(BumpAllocator* allocator, const char* id, bool runInlinePass, bool onlyAlwaysInline);
 		~CompilationUnit();
 
 		static void destroy(CompilationUnit* unit);

@@ -57,8 +57,16 @@ int main(int argc, char** argv) {
 	char* buf;
 
 	while(getline(&buf, &linecapp, fp) > 0) { 
-		char* p = strchr(buf, '"') + 1;
-		char* e = strchr(p, '"');
+		char* p = strchr(buf, '"');
+		
+		if(!p)
+			continue;
+
+		char* e = strchr(++p, '"');
+
+		if(!e)
+			continue;
+
 		*e = 0;
 		llvm::GlobalValue* gv = mangler[p];
 

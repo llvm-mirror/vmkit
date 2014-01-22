@@ -78,7 +78,6 @@ void J3CmdLineParser::process() {
 		else if(opteq("-Xaot")) {
 			options->isAOT = 1;
 			options->aotFile = argv[++cur];
-			options->enableInlining = 0;
 		} else if(opteq("-Xno-aot"))
 			options->isAOT = 0;
 		else if(optbeg("-X"))
@@ -123,6 +122,9 @@ void J3CmdLineParser::process() {
 
 	options->args = argv + cur;
 	options->nbArgs = argc - cur;
+
+	if(options->isAOT)
+		options->enableInlining = 1;
 }
 
 void J3CmdLineParser::help() {

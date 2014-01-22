@@ -23,7 +23,7 @@ using namespace j3;
 J3ClassLoader::J3InterfaceMethodLess J3ClassLoader::j3InterfaceMethodLess;
 
 J3ClassLoader::J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocator* allocator) 
-	: CompilationUnit(allocator, "class-loader"),
+	: CompilationUnit(allocator, "class-loader", J3Thread::get()->vm()->options()->enableInlining, J3Thread::get()->vm()->options()->isAOT),
 		_globalReferences(allocator),
 		_staticObjectHandles(allocator),
 		_staticObjects(allocator),
