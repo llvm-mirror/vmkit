@@ -5,6 +5,6 @@
 
 LEVEL := .
 
-DIRS := tools/vmkit-extract lib tools/j3 # lib/mmtk/
+DIRS := lib/vmkit-prepare-code tools/vmkit-extract lib tools/j3 # lib/mmtk/
 
 include $(LEVEL)/Makefile.rules

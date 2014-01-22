@@ -72,8 +72,8 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mo
 	uintPtrTy = vm->dataLayout()->getIntPtrType(module->getContext());
 	nullValue = llvm::ConstantPointerNull::get((llvm::PointerType*)vm->typeJ3ObjectPtr);
 
-#define _x(name, id, isLocal)											\
-	name = vm->introspectFunction(isLocal ? module : 0, id);
+#define _x(name, id, forceInline)											\
+	name = vm->introspectFunction(forceInline ? 0 : module, id);
 #include "j3/j3meta.def"
 #undef _x
 
@@ -609,7 +609,7 @@ void J3CodeGen::newObject(J3Class* cl) {
 }
 
 llvm::CallInst* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) {
-	llvm::Value* vtType = vt(type); /* force the resolution of type */
+	llvm::Value* vtType = vt(type); /* force the type resolution */
 	llvm::Value* vtObj = vt(obj);
 
 	if(type->vt()->isPrimaryChecker())
@@ -624,8 +624,8 @@ llvm::CallInst* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) 
 }
 
 void J3CodeGen::inlineCall(llvm::CallInst* call) {
-	llvm::InlineFunctionInfo ifi;
-	llvm::InlineFunction(call, ifi, 0);
+	//llvm::InlineFunctionInfo ifi;
+	//llvm::InlineFunction(call, ifi, 0);
 }
 
 void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
@@ -1820,7 +1820,7 @@ llvm::Function* J3CodeGen::lookupNative() {
 																							 buf,
 																							 module);
 
-	loader->addSymbol(buf, new(loader->allocator()) vmkit::NativeSymbol(fnPtr));
+	loader->addSymbol(buf, new(loader->allocator()) vmkit::NativeSymbol(0, fnPtr));
 
 	return res;
 }

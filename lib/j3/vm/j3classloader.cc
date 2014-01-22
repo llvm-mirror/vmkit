@@ -5,6 +5,7 @@
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 #include "vmkit/allocator.h"
+#include "vmkit/system.h"
 
 #include "j3/j3classloader.h"
 #include "j3/j3.h"
@@ -38,6 +39,16 @@ J3ClassLoader::J3ClassLoader(J3ObjectHandle* javaClassLoader, vmkit::BumpAllocat
 	pthread_mutex_init(&_mutexNativeLibraries, 0);
 
 	_javaClassLoader = globalReferences()->add(javaClassLoader);
+
+	J3* vm = J3Thread::get()->vm();
+#define _x(name, id, forceInline)																				\
+	{																																			\
+		llvm::Function* function = vm->introspectFunction(0, id);						\
+		void* addr = dlsym(SELF_HANDLE, function->getName().data());				\
+		addSymbol(function->getName().data(), new(allocator) vmkit::NativeSymbol(function, addr)); \
+	}
+#include "j3/j3meta.def"
+#undef _x
 }
 
 J3StringSymbol* J3ClassLoader::newStringSymbol(J3ObjectHandle* handle) {

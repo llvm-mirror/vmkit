@@ -29,6 +29,7 @@ J3Options::J3Options() {
 	stackSize = 0x80*0x1000;
 
 	isAOT = 0;
+	enableInlining = 1;
 }
 
 #define nyi(cmd) ({ fprintf(stderr, "option '%s' not yet implemented\n", cmd); })
@@ -77,6 +78,7 @@ void J3CmdLineParser::process() {
 		else if(opteq("-Xaot")) {
 			options->isAOT = 1;
 			options->aotFile = argv[++cur];
+			options->enableInlining = 0;
 		} else if(opteq("-Xno-aot"))
 			options->isAOT = 0;
 		else if(optbeg("-X"))

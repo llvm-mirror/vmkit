@@ -24,11 +24,11 @@
 namespace vmkit {
 	class System {
 	public:
-		static const char* mcjitSymbol(const std::string &Name) {
+		static const char* mcjitSymbol(const char* name) {
 #if defined(MACOS_OS)
-			return Name.c_str() + 1;
+			return name + 1;
 #elif defined(LINUX_OS)
-			return Name.c_str();
+			return name;
 #else
 #error "what is the correct symbol for your os?"
 #endif

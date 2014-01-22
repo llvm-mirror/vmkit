@@ -5,6 +5,7 @@
 
 LEVEL := ../..
 
+NO_PREPARE_CODE=1
 LIBS := 
 TOOL := vmkit-extract
 

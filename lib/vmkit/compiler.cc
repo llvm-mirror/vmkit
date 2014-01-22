@@ -5,6 +5,7 @@
 #include "vmkit/thread.h"
 #include "vmkit/vmkit.h"
 #include "vmkit/safepoint.h"
+#include "vmkit/inliner.h"
 
 #include "llvm/LinkAllPasses.h"
 #include "llvm/PassManager.h"
@@ -62,7 +63,8 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id) :
 #if 0
 	pm->add(llvm::createBasicAliasAnalysisPass());
 #endif
-	
+
+	pm->add(vmkit::createFunctionInlinerPass(this));
 	pm->add(llvm::createCFGSimplificationPass());      // Clean up disgusting code
 
 #if 0
@@ -114,21 +116,25 @@ void CompilationUnit::addSymbol(const char* id, vmkit::Symbol* symbol) {
 	pthread_mutex_unlock(&_mutexSymbolTable);
 }
 
-Symbol* CompilationUnit::getSymbol(const char* id) {
+Symbol* CompilationUnit::getSymbol(const char* id, bool error) {
 	pthread_mutex_lock(&_mutexSymbolTable);
 
 	std::map<const char*, vmkit::Symbol*>::iterator it = _symbolTable.find(id);
-	vmkit::Symbol* res;
+	vmkit::Symbol* res = 0;
 
 	if(it == _symbolTable.end()) {
 		uint8_t* addr = (uint8_t*)dlsym(SELF_HANDLE, id);
-		if(!addr)
-			Thread::get()->vm()->internalError("unable to resolve native symbol: %s", id);
-		res = new(allocator()) vmkit::NativeSymbol(addr);
-		size_t len = strlen(id);
-		char* buf = (char*)allocator()->allocate(len+1);
-		memcpy(buf, id, len+1);
-		_symbolTable[buf] = res;
+		//fprintf(stderr, "lookup: %s => %p\n", id, addr);
+		if(!addr) {
+			if(error)
+				Thread::get()->vm()->internalError("unable to resolve native symbol: %s", id);
+		} else {
+			res = new(allocator()) vmkit::NativeSymbol(0, addr);
+			size_t len = strlen(id);
+			char* buf = (char*)allocator()->allocate(len+1);
+			memcpy(buf, id, len+1);
+			_symbolTable[buf] = res;
+		}
 	} else
 		res = it->second;
 
@@ -137,7 +143,7 @@ Symbol* CompilationUnit::getSymbol(const char* id) {
 }
 
 uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
-	return (uint64_t)(uintptr_t)getSymbol(System::mcjitSymbol(Name))->getSymbolAddress();
+	return (uint64_t)(uintptr_t)getSymbol(System::mcjitSymbol(Name.c_str()))->getSymbolAddress();
 }
 
 void CompilationUnit::compileModule(llvm::Module* module) {

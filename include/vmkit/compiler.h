@@ -10,6 +10,7 @@ namespace llvm {
 	class Module;
 	class ExecutionEngine;
 	class GlobalValue;
+	class Function;
 
 	namespace legacy {
 		class PassManager;
@@ -23,15 +24,20 @@ namespace vmkit {
 
 	class Symbol : public PermanentObject {
 	public:
-		virtual void* getSymbolAddress();
+		virtual void*           getSymbolAddress();
+		virtual llvm::Function* llvmFunction() { return 0; }
+		virtual bool            isInlinable() { return 0; }
 	};
 
 	class NativeSymbol : public Symbol {
-		void* addr;
+		llvm::Function* original;
+		void*           addr;
 	public:
-		NativeSymbol(void* _addr) { addr = _addr; }
+		NativeSymbol(llvm::Function* _original, void* _addr) { original = _original; addr = _addr; }
 
-		void* getSymbolAddress() { return addr; }
+		llvm::Function* llvmFunction() { return original; }
+		void*           getSymbolAddress() { return addr; }
+		virtual bool    isInlinable() { return 1; }
 	};
 
 	class CompilationUnit  : public llvm::SectionMemoryManager {
@@ -55,7 +61,7 @@ namespace vmkit {
 		static void destroy(CompilationUnit* unit);
 
 		void                    addSymbol(const char* id, vmkit::Symbol* symbol);
-		Symbol*                 getSymbol(const char* id);
+		Symbol*                 getSymbol(const char* id, bool error=1);
 		uint64_t                getSymbolAddress(const std::string &Name);
 
 		BumpAllocator*          allocator() { return _allocator; }

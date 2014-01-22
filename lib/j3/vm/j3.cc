@@ -90,12 +90,18 @@ void J3::start(int argc, char** argv) {
 }
 
 void J3::run() {
-#define defJavaConstantName(name, id) \
+#define defJavaConstantName(name, id)						\
 	name = names()->get(id);
 	onJavaConstantNames(defJavaConstantName)
 #undef defJavaConstantName
 
 	introspect();
+
+#define _x(name, id, forceInline)																				\
+	if(forceInline)																												\
+		introspectFunction(0, id)->addFnAttr(llvm::Attribute::AlwaysInline);
+#include "j3/j3meta.def"
+#undef _x
 
 	vmkit::BumpAllocator* loaderAllocator = vmkit::BumpAllocator::create();
 	initialClassLoader = new(loaderAllocator) J3InitialClassLoader(loaderAllocator);

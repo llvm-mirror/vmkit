@@ -53,6 +53,7 @@ namespace j3 {
 
 		bool           isAOT;
 		const char*    aotFile;
+		bool           enableInlining;
 
 		J3Options();
 

@@ -96,7 +96,8 @@ namespace j3 {
 		void                ensureCompiled(uint32_t mode);
 		J3Signature::function_t cxxCaller();
 		void*               fnPtr();
-		llvm::Function*     llvmFunction() { return _llvmFunction; }
+		llvm::Function*     llvmFunction() { return _llvmFunction; } /* overwrite vmkit::Symbol */
+		bool                isInlinable();
 		void*               functionPointerOrStaticTrampoline();
 		void*               functionPointerOrVirtualTrampoline();
 

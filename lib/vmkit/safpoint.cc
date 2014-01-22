@@ -189,7 +189,7 @@ Safepoint* Safepoint::get(CompilationUnit* unit, llvm::Module* module) {
 	symName += '_';
 	symName += module->getModuleIdentifier();
 	symName += "__frametable";
-	return (vmkit::Safepoint*)unit->ee()->getGlobalValueAddress(System::mcjitSymbol(symName));
+	return (vmkit::Safepoint*)unit->ee()->getGlobalValueAddress(System::mcjitSymbol(symName.c_str()));
 }
 
 void Safepoint::dump() {
