@@ -31,8 +31,11 @@ J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Sign
 	_index = -1;
 }
 
-bool J3Method::isInlinable() {
-	return J3Thread::get()->vm()->options()->enableInlining;
+uint64_t J3Method::inlineWeight() {
+	if(J3Thread::get()->vm()->options()->enableInlining)
+		return vmkit::Symbol::inlineWeight();
+	else
+		return (uint64_t)-1;
 }
 
 uint32_t J3Method::interfaceIndex() {

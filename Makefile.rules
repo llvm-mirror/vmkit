@@ -296,6 +296,12 @@ endif
 ifndef NO_PREPARE_CODE
 DO_PREPARE_CODE_LIB=$(LIB_DIR)/vmkit-prepare-code$(SHLIBEXT)
 DO_PREPARE_CODE=-load=$(DO_PREPARE_CODE_LIB) -VMKitAdaptLinkage
+RAW=-raw
+
+%.bc: %$(RAW).bc $(DO_PREPARE_CODE_LIB)
+	$(Echo) "Prepare code for vmkit '$(notdir $@)'"
+	$(Verb) $(LLOPT) $(DO_PREPARE_CODE) $(OPTFLAGS) $< -o $@
+
 endif
 
 ###############################################################################
@@ -316,16 +322,16 @@ $(GEN_MODULE).a: $(OBJ_FILES)
 	$(Echo) "Linking module '$(notdir $@)'"
 	$(Verb) ar cru $@ $^ && ranlib $@
 
-%.o: %.bc $(DO_PREPARE_CODE_LIB)
+%.o: %.bc
 	$(Echo) "Assembling '$(notdir $<)'"
-	$(Verb) $(LLOPT) $(DO_PREPARE_CODE) $(OPTFLAGS) $< -o - | $(LLC) $(LLCFLAGS) -filetype=obj -o $@
+	$(Verb) $(LLC) $(LLCFLAGS) -filetype=obj -o $@ $<
 
 $(BUILD_DIR)/%.o: %.s $(SELF) $(BUILD_DIR)/.dir
 	$(Echo) "Assembling '$(notdir $<)'"
 	$(Verb) if $(CLANGXX) $(CXXFLAGS) $(DEPEND_OPTIONS) -c "$<" -o $@; $(DOM)
 
 define define_compile_rule
-$(BUILD_DIR)/%.bc: $4%$1 $(SELF) $(BUILD_DIR)/.dir
+$(BUILD_DIR)/%$(RAW).bc: $4%$1 $(SELF) $(BUILD_DIR)/.dir
 	$(Echo) "Compiling '$$(notdir $$<)'"
 	$(Verb) if $2 $3 $(DEPEND_OPTIONS) -emit-llvm -c "$$<" -o $$@; $(DOM)
 endef

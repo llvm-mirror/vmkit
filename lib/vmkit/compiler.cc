@@ -27,6 +27,25 @@ void* Symbol::getSymbolAddress() {
 	Thread::get()->vm()->internalError("implement me: getSymbolAddress");
 }
 
+uint64_t Symbol::inlineWeight() {
+	if(cachedWeight)
+		return cachedWeight;
+
+	uint64_t infinity = (uint64_t)-1;
+
+	if(llvmFunction()->size() > 4)
+		return cachedWeight = infinity;
+
+	uint64_t weight = 0;
+
+	for (llvm::Function::iterator bit=llvmFunction()->begin(); bit!=llvmFunction()->end(); bit++)
+		weight += bit->size();
+
+	weight = weight * 100;
+
+	return cachedWeight = weight;
+}
+
 void* CompilationUnit::operator new(size_t n, BumpAllocator* allocator) {
 	return allocator->allocate(n);
 }

@@ -23,10 +23,11 @@ namespace vmkit {
 	class VMKit;
 
 	class Symbol : public PermanentObject {
+		uint64_t                cachedWeight;
 	public:
 		virtual void*           getSymbolAddress();
 		virtual llvm::Function* llvmFunction() { return 0; }
-		virtual bool            isInlinable() { return 0; }
+		virtual uint64_t        inlineWeight();
 	};
 
 	class NativeSymbol : public Symbol {
@@ -37,7 +38,6 @@ namespace vmkit {
 
 		llvm::Function* llvmFunction() { return original; }
 		void*           getSymbolAddress() { return addr; }
-		virtual bool    isInlinable() { return 1; }
 	};
 
 	class CompilationUnit  : public llvm::SectionMemoryManager {

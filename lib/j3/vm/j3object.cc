@@ -288,11 +288,11 @@ J3Object* J3Object::doNew(J3Class* cl) {
 }
 
 void J3Object::monitorEnter(J3Object* obj) {
-	J3::internalError("implement me: monitorenter");
+	J3::internalError("implement me: monitor");
 }
 
 void J3Object::monitorExit(J3Object* obj) {
-	J3::internalError("implement me: monitorexit");
+	J3::internalError("implement me: monitor");
 }
 
 uint32_t J3Object::hashCode() {

@@ -158,27 +158,27 @@ namespace j3 {
 
 		static JNIEnv* jniEnv();
 
-		static void    classNotFoundException(const vmkit::Name* name) __attribute__((noreturn));
-		static void    noClassDefFoundError(const vmkit::Name* name) __attribute__((noreturn));
-		static void    classFormatError(J3ObjectType* cl, const char* reason, ...) __attribute__((noreturn));
+		static void    classNotFoundException(const vmkit::Name* name) __attribute__((noreturn, noinline));
+		static void    noClassDefFoundError(const vmkit::Name* name) __attribute__((noreturn, noinline));
+		static void    classFormatError(J3ObjectType* cl, const char* reason, ...) __attribute__((noreturn, noinline));
 		static void    noSuchMethodError(const char* msg, 
-																		 J3ObjectType* clName, const vmkit::Name* name, J3Signature* signature) __attribute__((noreturn));
+																		 J3ObjectType* clName, const vmkit::Name* name, J3Signature* signature) __attribute__((noreturn, noinline));
 		static void    noSuchFieldError(const char* msg, 
-																		J3ObjectType* clName, const vmkit::Name* name, J3Type* type) __attribute__((noreturn));
-		static void    linkageError(J3Method* method) __attribute__((noreturn));
+																		J3ObjectType* clName, const vmkit::Name* name, J3Type* type) __attribute__((noreturn, noinline));
+		static void    linkageError(J3Method* method) __attribute__((noreturn, noinline));
 
-		static void    outOfMemoryError() __attribute__((noreturn));
+		static void    outOfMemoryError() __attribute__((noreturn, noinline));
 
-		static void    nullPointerException() __attribute__((noreturn));
-		static void    classCastException() __attribute__((noreturn));
+		static void    nullPointerException() __attribute__((noreturn, noinline));
+		static void    classCastException() __attribute__((noreturn, noinline));
 
-		static void    negativeArraySizeException(int32_t length) __attribute__((noreturn));
+		static void    negativeArraySizeException(int32_t length) __attribute__((noreturn, noinline));
 		static void    arrayStoreException() __attribute__((noreturn));
-		static void    arrayIndexOutOfBoundsException() __attribute__((noreturn));
+		static void    arrayIndexOutOfBoundsException() __attribute__((noreturn, noinline));
 
-		static void    illegalMonitorStateException() __attribute__((noreturn));
+		static void    illegalMonitorStateException() __attribute__((noreturn, noinline));
 
-		static void    illegalArgumentException(const char* msg) __attribute__((noreturn));
+		static void    illegalArgumentException(const char* msg) __attribute__((noreturn, noinline));
 
 		void           printStackTrace();
 		void           uncatchedException(void* e);
