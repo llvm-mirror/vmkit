@@ -46,6 +46,11 @@ uint64_t Symbol::inlineWeight() {
 	return cachedWeight = weight;
 }
 
+void Symbol::markAsNeverInline() {
+	if(llvmFunction())
+		llvmFunction()->addFnAttr(llvm::Attribute::NoInline);
+}
+
 void* CompilationUnit::operator new(size_t n, BumpAllocator* allocator) {
 	return allocator->allocate(n);
 }

@@ -161,8 +161,11 @@ namespace vmkit {
 							takeNext = 0;
 							it = bb->begin();
 						}
-					} else if(bc != callee)
-						bc->replaceAllUsesWith(callee);
+					} else {
+						symbol->markAsNeverInline();
+						if(bc != callee)
+							bc->replaceAllUsesWith(callee);
+					}
 				}
 			}
 

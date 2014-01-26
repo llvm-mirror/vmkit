@@ -30,6 +30,7 @@ namespace vmkit {
 		virtual llvm::Function*  llvmFunction() { return 0; }
 		virtual uint64_t         inlineWeight();
 		virtual CompilationUnit* unit() { return 0; }
+		virtual void             markAsNeverInline();
 	};
 
 	class NativeSymbol : public Symbol {
