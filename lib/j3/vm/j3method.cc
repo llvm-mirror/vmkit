@@ -31,6 +31,10 @@ J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Sign
 	_index = -1;
 }
 
+vmkit::CompilationUnit* J3Method::unit() {
+	return cl()->loader();
+}
+
 uint64_t J3Method::inlineWeight() {
 	if(J3Thread::get()->vm()->options()->enableInlining)
 		return vmkit::Symbol::inlineWeight();

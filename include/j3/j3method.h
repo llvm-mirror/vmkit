@@ -51,57 +51,59 @@ namespace j3 {
 	public:
 		J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Signature* signature);
 
-		uint32_t            slot() { return _slot; }
+		vmkit::CompilationUnit* unit();
 
-		static J3Method*    nativeMethod(J3ObjectHandle* handle);
-		J3ObjectHandle*     javaMethod();
+		uint32_t                slot() { return _slot; }
 
-		void*               nativeFnPtr() { return _nativeFnPtr; }
+		static J3Method*        nativeMethod(J3ObjectHandle* handle);
+		J3ObjectHandle*         javaMethod();
 
-		void                markCompiled(llvm::Function* llvmFunction, void* fnPtr);
+		void*                   nativeFnPtr() { return _nativeFnPtr; }
 
-		uint32_t            interfaceIndex();
+		void                    markCompiled(llvm::Function* llvmFunction, void* fnPtr);
 
-		void*               getSymbolAddress();
+		uint32_t                interfaceIndex();
 
-		char*               llvmFunctionName(J3Class* from=0);
-		char*               llvmStubName(J3Class* from=0);
+		void*                   getSymbolAddress();
 
-		void                postInitialise(uint32_t access, J3Attributes* attributes);
-		void                setIndex(uint32_t index); 
+		char*                   llvmFunctionName(J3Class* from=0);
+		char*                   llvmStubName(J3Class* from=0);
 
-		J3Method*           resolve(J3ObjectHandle* obj);
+		void                    postInitialise(uint32_t access, J3Attributes* attributes);
+		void                    setIndex(uint32_t index); 
 
-		uint32_t            index();
+		J3Method*               resolve(J3ObjectHandle* obj);
 
-		J3Attributes*       attributes() const { return _attributes; }
-		uint16_t            access() const { return _access; }
-		J3Class*            cl()     const { return _cl; }
-		const vmkit::Name*  name()   const { return _name; }
-		J3Signature*        signature() const { return _signature; }
+		uint32_t                index();
 
-		void                registerNative(void* ptr);
+		J3Attributes*           attributes() const { return _attributes; }
+		uint16_t                access() const { return _access; }
+		J3Class*                cl()     const { return _cl; }
+		const vmkit::Name*      name()   const { return _name; }
+		J3Signature*            signature() const { return _signature; }
 
-		J3Value             invokeStatic(...);
-		J3Value             invokeStatic(J3Value* args);
-		J3Value             invokeStatic(va_list va);
-		J3Value             invokeSpecial(J3ObjectHandle* obj, ...);
-		J3Value             invokeSpecial(J3ObjectHandle* obj, J3Value* args);
-		J3Value             invokeSpecial(J3ObjectHandle* obj, va_list va);
-		J3Value             invokeVirtual(J3ObjectHandle* obj, ...);
-		J3Value             invokeVirtual(J3ObjectHandle* obj, J3Value* args);
-		J3Value             invokeVirtual(J3ObjectHandle* obj, va_list va);
+		void                    registerNative(void* ptr);
 
-		void                aotSnapshot(llvm::Linker* linker);
-		void                ensureCompiled(uint32_t mode);
+		J3Value                 invokeStatic(...);
+		J3Value                 invokeStatic(J3Value* args);
+		J3Value                 invokeStatic(va_list va);
+		J3Value                 invokeSpecial(J3ObjectHandle* obj, ...);
+		J3Value                 invokeSpecial(J3ObjectHandle* obj, J3Value* args);
+		J3Value                 invokeSpecial(J3ObjectHandle* obj, va_list va);
+		J3Value                 invokeVirtual(J3ObjectHandle* obj, ...);
+		J3Value                 invokeVirtual(J3ObjectHandle* obj, J3Value* args);
+		J3Value                 invokeVirtual(J3ObjectHandle* obj, va_list va);
+
+		void                    aotSnapshot(llvm::Linker* linker);
+		void                    ensureCompiled(uint32_t mode);
 		J3Signature::function_t cxxCaller();
-		void*               fnPtr();
-		llvm::Function*     llvmFunction() { return _llvmFunction; } /* overwrite vmkit::Symbol */
-		uint64_t            inlineWeight();
-		void*               functionPointerOrStaticTrampoline();
-		void*               functionPointerOrVirtualTrampoline();
+		void*                   fnPtr();
+		llvm::Function*         llvmFunction() { return _llvmFunction; } /* overwrite vmkit::Symbol */
+		uint64_t                inlineWeight();
+		void*                   functionPointerOrStaticTrampoline();
+		void*                   functionPointerOrVirtualTrampoline();
 
-		void                dump();
+		void                    dump();
 	};
 }
 

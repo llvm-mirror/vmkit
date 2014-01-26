@@ -21,23 +21,28 @@ namespace llvm {
 
 namespace vmkit {
 	class VMKit;
+	class CompilationUnit;
 
 	class Symbol : public PermanentObject {
 		uint64_t                cachedWeight;
 	public:
-		virtual void*           getSymbolAddress();
-		virtual llvm::Function* llvmFunction() { return 0; }
-		virtual uint64_t        inlineWeight();
+		virtual void*            getSymbolAddress();
+		virtual llvm::Function*  llvmFunction() { return 0; }
+		virtual uint64_t         inlineWeight();
+		virtual CompilationUnit* unit() { return 0; }
 	};
 
 	class NativeSymbol : public Symbol {
-		llvm::Function* original;
-		void*           addr;
+		llvm::Function*  original;
+		void*            addr;
 	public:
-		NativeSymbol(llvm::Function* _original, void* _addr) { original = _original; addr = _addr; }
+		NativeSymbol(llvm::Function* _original, void* _addr) { 
+			original = _original; 
+			addr = _addr; 
+		}
 
-		llvm::Function* llvmFunction() { return original; }
-		void*           getSymbolAddress() { return addr; }
+		llvm::Function*  llvmFunction() { return original; }
+		void*            getSymbolAddress() { return addr; }
 	};
 
 	class CompilationUnit  : public llvm::SectionMemoryManager {
