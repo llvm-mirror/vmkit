@@ -57,7 +57,8 @@ namespace vmkit {
 				return 1;
 			}
 
-			if(linkage == llvm::GlobalValue::PrivateLinkage) {
+
+			if(linkage == llvm::GlobalValue::PrivateLinkage && !memcmp(gv->getName().data(), ".str", 4)) {
 				size_t len = strlen(gv->getName().data());
 				if(len > reserved) {
 					reserved = (len << 2);

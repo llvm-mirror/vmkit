@@ -36,7 +36,7 @@ vmkit::CompilationUnit* J3Method::unit() {
 }
 
 uint64_t J3Method::inlineWeight() {
-	if(J3Thread::get()->vm()->options()->enableInlining)
+	if(0 && J3Thread::get()->vm()->options()->enableInlining)
 		return vmkit::Symbol::inlineWeight();
 	else
 		return (uint64_t)-1;
@@ -116,6 +116,22 @@ J3Method* J3Method::resolve(J3ObjectHandle* obj) {
 	return obj->vt()->type()->asObjectType()->findMethod(0, name(), signature());
 }
 
+J3Value J3Method::internalInvoke(J3Value* args) {
+#if 1
+	return cxxCaller()(fnPtr(), args);
+#else
+	J3Value res;
+	try { 
+		res = cxxCaller()(fnPtr(), args);
+	} catch(void* e) {
+		fprintf(stderr, " catch exception %p during the execution of %s::%s%s\n",
+						e, cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
+		throw e;
+	}
+	return res;
+#endif
+}
+
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
 	cl()->initialise();
 	ensureCompiled(J3CodeGen::WithMethod | J3CodeGen::WithCaller);  /* force the generation of the code and thus of the functionType */
@@ -129,15 +145,7 @@ J3Value J3Method::internalInvoke(J3ObjectHandle* handle, J3Value* inArgs) {
 	} else
 		reIn = inArgs;
 
-	J3Value res;
-	try {
-		res = cxxCaller()(fnPtr(), reIn);
-	} catch(void* e) {
-		fprintf(stderr, " catch exception e: %p during the execution of %s::%s%s\n",
-						e, cl()->name()->cStr(), name()->cStr(), signature()->name()->cStr());
-		throw e;
-	}
-	return res;
+	return internalInvoke(reIn);
 }
 
 J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {
@@ -165,7 +173,7 @@ J3Value J3Method::internalInvoke(J3ObjectHandle* handle, va_list va) {
 #undef doIt
 	}
 
-	return cxxCaller()(fnPtr(), args);
+	return internalInvoke(args);
 }
 
 J3Value J3Method::invokeStatic(J3Value* args) {

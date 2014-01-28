@@ -76,7 +76,7 @@ namespace vmkit {
 
 			return (!bc->hasFnAttribute(llvm::Attribute::NoInline)
 							&& (bc->hasFnAttribute(llvm::Attribute::AlwaysInline) || 
-									(0 && !onlyAlwaysInline && (uint64_t)(symbol->inlineWeight()-1) < inlineThreshold))) ? symbol : 0;
+									(!onlyAlwaysInline && (uint64_t)(symbol->inlineWeight()-1) < inlineThreshold))) ? symbol : 0;
 		}
 
 		bool visitBB(llvm::BasicBlock* bb) {
@@ -110,7 +110,7 @@ namespace vmkit {
 								function->getParent()->getOrInsertGlobal(gv->getName().data(), gv->getType()->getContainedType(0));
 
 							//fprintf(stderr, "<<<reimporting>>>: %s\n", gv->getName().data());
-							gv->replaceAllUsesWith(copy);
+							insn->setOperand(i, copy);
 						}
 					}
 				}
@@ -130,23 +130,23 @@ namespace vmkit {
 				
 				if(symbol) {
 					llvm::Function* bc = symbol->llvmFunction();
-
-					if(bc != callee)
-						callee->replaceAllUsesWith(bc);
 					
-					fprintf(stderr, "            inlining %s in %s\n", bc->getName().data(), function->getName().data());
+					//fprintf(stderr, "            inlining %s in %s\n", bc->getName().data(), function->getName().data());
 
 					if(llvm::isa<llvm::TerminatorInst>(insn)) {
 						llvm::TerminatorInst* terminator = llvm::cast<llvm::TerminatorInst>(insn);
 						for(unsigned i=0; i<terminator->getNumSuccessors(); i++)
-							push(symbol, terminator->getSuccessor(i));
+							push(curSymbol, terminator->getSuccessor(i));
 					} else {
 						size_t len = strlen(bc->getName().data());
-						char buf[len + 16];
+						char buf[len + 14];
 						memcpy(buf, bc->getName().data(), len);
 						memcpy(buf+len, ".after-inline", 14);
-						push(symbol, bb->splitBasicBlock(insn->getNextNode(), buf));
+						push(curSymbol, bb->splitBasicBlock(insn->getNextNode(), buf));
 					}
+
+					if(bc != callee)
+						call.setCalledFunction(bc);
 					
 					llvm::InlineFunctionInfo ifi(0);
 					bool isInlined = llvm::InlineFunction(call, ifi, false);
@@ -164,7 +164,7 @@ namespace vmkit {
 					} else {
 						symbol->markAsNeverInline();
 						if(bc != callee)
-							bc->replaceAllUsesWith(callee);
+							call.setCalledFunction(callee);
 					}
 				}
 			}
@@ -214,121 +214,13 @@ namespace vmkit {
 		}
 
     virtual const char* getPassName() const { return "VMKit inliner"; }
-		bool                ensureLocal(llvm::Function* function, llvm::Function* callee);
-		Symbol*             tryInline(llvm::Function* function, llvm::Function* callee);
-		bool                runOnBB(llvm::BasicBlock* bb);
-		bool                runOnFunction0(llvm::Function& function);
 		bool                runOnFunction(llvm::Function& function) {
-#if 0
-			return runOnFunction0(function);
-#else
 			FunctionInliner inliner(unit, &function, inlineThreshold, onlyAlwaysInline);
 			return inliner.proceed();
-#endif
 		}
 	};
 
   char FunctionInlinerPass::ID = 0;
-
-#if 0
-	llvm::RegisterPass<FunctionInlinerPass> X("FunctionInlinerPass",
-																				"Inlining Pass that inlines evaluator's functions.");
-#endif
-
-	//FunctionInlinerPass() : FunctionPass(ID) {}
-
-	bool FunctionInlinerPass::ensureLocal(llvm::Function* function, llvm::Function* callee) {
-		/* prevent exernal references because some llvm passes don't like that */
-		if(callee->getParent() != function->getParent()) {
-			//fprintf(stderr, "       rewrite local\n");
-			llvm::Function* local = (llvm::Function*)function->getParent()->getOrInsertFunction(callee->getName().data(), 
-																																													callee->getFunctionType());
-			callee->replaceAllUsesWith(local);
-			callee = local;
-			return 1;
-		} else
-			return 0;
-	}
-		
-	//llvm::SmallPtrSet<const Function*, 16> NeverInline;
-
-	bool FunctionInlinerPass::runOnBB(llvm::BasicBlock* bb) {
-		fprintf(stderr, " process basic block %s\n", bb->getName().data());
-
-			//SmallPtrSet<const BasicBlock*, 8> Visited;
-
-		return 0;
-	}
-
-	bool FunctionInlinerPass::runOnFunction0(llvm::Function& function) {
-		bool     changed = false;
-			
-		//fprintf(stderr, "Analyzing: %s\n", function.getName().data());
-			
-	restart:
-		for (llvm::Function::iterator bit=function.begin(); bit!=function.end(); bit++) { 
-			llvm::BasicBlock* bb = bit; 
-			uint32_t prof = 0;
-
-			for(llvm::BasicBlock::iterator it=bb->begin(), prev=0; it!=bb->end() && prof<42; prev=it++) {
-				llvm::Instruction *insn = it;
-
-				//fprintf(stderr, "  process: ");
-				//insn->dump();
-
-#if 0
-				if(insn->getOpcode() == llvm::Instruction::LandingPad) {
-					llvm::LandingPadInst* lp = (llvm::LandingPadInst*)insn;
-					ensureLocal(&function, (llvm::Function*)lp->getPersonalityFn());
-					continue;
-				}
-#endif
-
-				if (insn->getOpcode() != llvm::Instruction::Call &&
-						insn->getOpcode() != llvm::Instruction::Invoke) {
-					continue;
-				}
-				
-				llvm::CallSite  call(insn);
-				llvm::Function* callee = call.getCalledFunction();
-				
-				if(!callee)
-					continue;
-				
-				Symbol* symbol = tryInline(&function, callee);
-				llvm::Function* bc;
-				
-				if(symbol && (bc = symbol->llvmFunction()) != &function) {
-					if(bc != callee)
-						callee->replaceAllUsesWith(bc);
-					
-					//fprintf(stderr, "   inlining: %s\n", bc->getName().data());
-					//bc->dump();
-					llvm::InlineFunctionInfo ifi(0);
-					bool isInlined = llvm::InlineFunction(call, ifi, false);
-					changed |= isInlined;
-					
-					if(isInlined) {
-						prof++;
-						//it = prev ? prev : bb->begin();
-						//continue;
-						//fprintf(stderr, "... restart ....\n");
-						goto restart;
-					}
-				} else
-					changed |= ensureLocal(&function, callee);
-			}
-		}
-
-		//#if 0
-		if(changed) {
-			//function.dump();
-			//abort();
-		}
-		//#endif
-
-		return changed;
-	}
 
 #if 0
 	llvm::RegisterPass<FunctionInlinerPass> X("FunctionInlinerPass",

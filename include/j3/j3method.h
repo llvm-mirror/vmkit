@@ -45,6 +45,7 @@ namespace j3 {
 		void* volatile               _virtualTrampoline;
 		J3ObjectHandle* volatile     _javaMethod;
 
+		J3Value            internalInvoke(J3Value* args);
 		J3Value            internalInvoke(J3ObjectHandle* handle, va_list va);
 		J3Value            internalInvoke(J3ObjectHandle* handle, J3Value* args);
 		void               buildLLVMNames(J3Class* from);
