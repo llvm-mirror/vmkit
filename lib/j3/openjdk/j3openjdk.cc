@@ -636,20 +636,7 @@ jclass JNICALL JVM_GetCallerClass(JNIEnv* env, int depth) {
 	if(depth != -1)
 		J3::internalError("depth should be -1 while it is %d", depth);
 
-	depth = 3;
-	J3Method* caller = 0;
-	J3* vm = J3Thread::get()->vm();
-	vmkit::Safepoint* sf = 0;
-	vmkit::StackWalker walker;
-
-	while(!caller && walker.next()) {
-		vmkit::Safepoint* sf = vm->getSafepoint(walker.ip());
-
-		if(sf) {
-			if(!--depth)
-				caller = (J3Method*)sf->unit()->getSymbol(sf->functionName());
-		}
-	}
+	J3Method* caller = J3Thread::get()->getJavaCaller(2);
 
 	if(!caller)
 		J3::internalError("unable to find caller class, what should I do?");

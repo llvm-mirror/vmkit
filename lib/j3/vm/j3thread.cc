@@ -39,8 +39,12 @@ J3Method* J3Thread::getJavaCaller(uint32_t level) {
 	while(walker.next()) {
 		vmkit::Safepoint* sf = vm()->getSafepoint(walker.ip());
 
-		if(sf && !level--)
-			return (J3Method*)sf->unit()->getSymbol(sf->functionName());
+		if(sf) {
+			if(level < sf->inlineDepth())
+				return (J3Method*)sf->unit()->getSymbol(sf->functionName(level));
+			else
+				level -= sf->inlineDepth();
+		}
 	}
 
 	return 0;
