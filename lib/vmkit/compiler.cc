@@ -187,7 +187,7 @@ void CompilationUnit::compileModule(llvm::Module* module) {
 		sf->setUnit(this);
 		vm->addSafepoint(sf);
 
-		Thread::get()->vm()->getSafepoint(sf->addr())->dump();
+		//Thread::get()->vm()->getSafepoint(sf->addr())->dump();
 		sf = sf->getNext();
 	}
 }

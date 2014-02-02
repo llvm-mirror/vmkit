@@ -141,26 +141,6 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 
 			for(llvm::GCFunctionInfo::iterator safepoint=gcInfo->begin(); safepoint!=gcInfo->end(); safepoint++) {
 				llvm::DebugLoc* debug = &safepoint->Loc;
-				llvm::MDNode* inlinedAt = debug->getInlinedAt(getModule().getContext());
-
-				if(inlinedAt) {
-					fprintf(stderr, "find inline location in %s\n", gcInfo->getFunction().getName().data());
-					llvm::DISubprogram sub(debug->getScope(getModule().getContext()));
-					fprintf(stderr, "Inlined:                %s::%d\n", sub.getName().data(), debug->getLine());
-					llvm::DILocation cur(inlinedAt);
-					while(cur.getScope()) {
-						llvm::DISubprogram il(cur.getScope());
-						fprintf(stderr, "    =>                  %s::%d\n", il.getName().data(), cur.getLineNumber());
-						cur = cur.getOrigLocation();
-					};
-
-					llvm::DILocation   loc(inlinedAt);
-					llvm::DISubprogram il(loc.getScope());
-
-					if(strcmp(gcInfo->getFunction().getName().data(), il.getName().data()))
-						abort();
-				}
-
 				uint32_t  kind = safepoint->Kind;
 
 				const llvm::MCExpr* address = llvm::MCSymbolRefExpr::Create(safepoint->Label, AP.OutStreamer.getContext());
@@ -169,19 +149,64 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 					address = llvm::MCBinaryExpr::CreateAdd(address, one, AP.OutStreamer.getContext());
 				}
 
+				llvm::MDNode* inlinedAt = debug->getInlinedAt(getModule().getContext());
+
+				uint32_t inlineDepth = 1;
+
+				if(inlinedAt) {
+					llvm::DILocation cur(inlinedAt);
+					while(cur.getScope()) {
+						inlineDepth++;
+						cur = cur.getOrigLocation();
+					};
+				}
+
 				AP.OutStreamer.EmitValue(address, IntPtrSize);
-				AP.OutStreamer.EmitValue(funcName, IntPtrSize);
-				//				AP.EmitGlobalConstant(&gcInfo->getFunction());
+				/* CompilationUnit* */
 				AP.EmitInt32(0);
 				if(IntPtrSize == 8)
 					AP.EmitInt32(0);
-				AP.EmitInt32(debug->getLine());
+
+				/* number of live roots */
 				AP.EmitInt32(gcInfo->live_size(safepoint));
+				/* inline stack depth */
+				AP.EmitInt32(inlineDepth);
 
 				//fprintf(stderr, "emitting %lu lives\n", gcInfo->live_size(safepoint));
-				for(llvm::GCFunctionInfo::live_iterator live=gcInfo->live_begin(safepoint); live!=gcInfo->live_end(safepoint); live++) {
+				for(llvm::GCFunctionInfo::live_iterator live=gcInfo->live_begin(safepoint); live!=gcInfo->live_end(safepoint); live++)
 					AP.EmitInt32(live->StackOffset);
+
+				/* function names stack */
+				if(inlinedAt) {
+					//fprintf(stderr, "find inline location in %s: %d\n", gcInfo->getFunction().getName().data(), inlineDepth);
+					llvm::DISubprogram sub(debug->getScope(getModule().getContext()));
+
+					//fprintf(stderr, "Inlined:                %s::%d\n", sub.getName().data(), debug->getLine());
+					AP.OutStreamer.EmitValue(emitName(AP, sub.getName().data(), &funcNumber), IntPtrSize);
+					AP.EmitInt32(debug->getLine());
+
+					llvm::DILocation cur(inlinedAt);
+					while(cur.getScope()) {
+						llvm::DISubprogram il(cur.getScope());
+						//fprintf(stderr, "    =>                  %s::%d\n", il.getName().data(), cur.getLineNumber());
+						if(strcmp(il.getName().data(), gcInfo->getFunction().getName().data()))
+							AP.OutStreamer.EmitValue(emitName(AP, il.getName().data(), &funcNumber), IntPtrSize);
+						else
+							AP.OutStreamer.EmitValue(funcName, IntPtrSize);
+						AP.EmitInt32(cur.getLineNumber());
+						cur = cur.getOrigLocation();
+					};
+
+					llvm::DILocation   loc(inlinedAt);
+					llvm::DISubprogram il(loc.getScope());
+
+					//if(strcmp(gcInfo->getFunction().getName().data(), il.getName().data()))
+					//abort();
+				} else {
+					AP.OutStreamer.EmitValue(funcName, IntPtrSize);
+					AP.EmitInt32(debug->getLine());
 				}
+
 				AP.EmitAlignment(IntPtrSize == 4 ? 2 : 3);
 			}
 		}
@@ -194,7 +219,8 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
  *    Safepoint
  */
 Safepoint* Safepoint::getNext() {
-	uintptr_t next = (uintptr_t)this + sizeof(Safepoint) + nbLives()*sizeof(uint32_t);
+	uintptr_t next = (uintptr_t)this + sizeof(Safepoint) + nbLives()*sizeof(uint32_t) + 
+		inlineDepth()*(sizeof(const char*)+sizeof(uint32_t));
 	return (Safepoint*)(((next - 1) & -sizeof(uintptr_t)) + sizeof(uintptr_t));
 }
 
@@ -208,6 +234,12 @@ Safepoint* Safepoint::get(CompilationUnit* unit, llvm::Module* module) {
 
 void Safepoint::dump() {
 	fprintf(stderr, "  [%p] safepoint at %p for %s::%d\n", this, addr(), functionName(), sourceIndex());
+
+	for(uint32_t i=1; i<inlineDepth(); i++)
+		fprintf(stderr, "          inlined in %s::%d\n", functionName(i), sourceIndex(i));
 	for(uint32_t i=0; i<nbLives(); i++)
 		fprintf(stderr, "    live at %d\n", liveAt(i));
+
+	if(inlineDepth() == 4)
+		abort();
 }
