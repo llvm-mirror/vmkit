@@ -438,9 +438,11 @@ void J3::printStackTrace() {
 		vmkit::Safepoint* sf = J3Thread::get()->vm()->getSafepoint(walker.ip());
 
 		if(sf) {
-			J3Method* m = (J3Method*)sf->unit()->getSymbol(sf->functionName());
-			fprintf(stderr, "    in %s::%s%s index %d\n", m->cl()->name()->cStr(), m->name()->cStr(),
-							m->signature()->name()->cStr(), sf->sourceIndex());
+			for(uint32_t i=0; i<sf->inlineDepth(); i++) {
+				J3Method* m = (J3Method*)sf->unit()->getSymbol(sf->functionName(i));
+				fprintf(stderr, "    in %s::%s%s index %d\n", m->cl()->name()->cStr(), m->name()->cStr(),
+								m->signature()->name()->cStr(), sf->sourceIndex());
+			}
 		} else {
 			Dl_info info;
 			
