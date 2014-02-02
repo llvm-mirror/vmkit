@@ -346,11 +346,12 @@ jboolean JNICALL JVM_IsNaN(jdouble d) { enterJVM(); leaveJVM(); NYI(); }
 /*
  * java.lang.Throwable
  */
-static void addStackElement(int64_t* orig, int64_t*& buf, uint32_t& max, uint32_t& cur, uint64_t val) {
+template <class E>
+static void addStackElement(E* orig, E*& buf, uint32_t& max, uint32_t& cur, E val) {
 	if(cur == max) {
 		void* prev = buf;
-		buf = (int64_t*)malloc((max<<1)*sizeof(int64_t));
-		memcpy(buf, prev, max*sizeof(int64_t));
+		buf = (E*)malloc((max<<1)*sizeof(E));
+		memcpy(buf, prev, max*sizeof(E));
 		max <<= 1;
 		if(prev != orig) 
 			free(prev);
@@ -381,107 +382,107 @@ void JNICALL JVM_FillInStackTrace(JNIEnv* env, jobject throwable) {
 	leaveJVM(); 
 }
 
-jint JNICALL JVM_GetStackTraceDepth(JNIEnv* env, jobject throwable) { 
-	jint res = 0;
-	enterJVM(); 
+static jobject translateStackTrace(jobject throwable) {
 	J3* vm = J3Thread::get()->vm();
 	J3ObjectHandle* backtrace = throwable->getObject(vm->throwableClassBacktrace);
 
+	if(backtrace->vt()->type() == vm->stackTraceElementClass->getArray())
+		return backtrace;
+
 	bool simplify = 1;
-	bool ignore = 1;
+	bool ignore = 1; /* ignore the Throwable::<init> */
 
-	if(simplify) {
-		uint32_t max = backtrace->arrayLength();
-		int64_t buf[max];
+	uint32_t cur = 0;
+	uint32_t max = backtrace->arrayLength() << 1;
+	J3ObjectHandle*  orig[max];
+	J3ObjectHandle** buf = orig;
 
-		while(max && !res) {
-			for(uint32_t i=0; i<max; i++) {
-				uint64_t cur = backtrace->getLongAt(i);
-				vmkit::Safepoint* sf = vm->getSafepoint((void*)cur);
+	for(uint32_t i=0; i<backtrace->arrayLength(); i++) {
+		uintptr_t ip = (uintptr_t)throwable->getObject(vm->throwableClassBacktrace)->getLongAt(i);
 
-				if(sf) {
-					J3Method* m = (J3Method*)sf->unit()->getSymbol(sf->functionName());
-					if(ignore) {
-						if(m->name() == vm->initName && m->cl() == throwable->vt()->type()) {
-							ignore = 0;
-						}
-					} else
-						buf[res++] = cur;
+		vmkit::Safepoint* sf = vm->getSafepoint((void*)ip);
+
+		if(sf) {
+			for(uint32_t j=0; j<sf->inlineDepth(); j++) {
+				J3Method* m = (J3Method*)sf->unit()->getSymbol(sf->functionName(j));
+
+				if(ignore) {
+					if(m->name() == vm->initName && m->cl() == throwable->vt()->type())
+						ignore = 0;
+				} else {
+					J3ObjectHandle* element = J3ObjectHandle::doNewObject(vm->stackTraceElementClass);
+					addStackElement(orig, buf, max, cur, element);		
+
+					const vmkit::Name* cn = m->cl()->name();
+					uint32_t length = cn->length()+6;
+					uint32_t lastToken = 0;
+					char buf[length];
+
+					for(uint32_t i=0; i<cn->length(); i++) {
+						if(cn->cStr()[i] == '/') {
+							buf[i] = '.';
+							lastToken = i+1;
+						} else
+							buf[i] = cn->cStr()[i];
+					}
+					buf[cn->length()] = 0;
+
+					J3ObjectHandle* className = vm->utfToString(buf);
+
+					snprintf(buf, length, "%s.java", cn->cStr());
+					
+					vm->stackTraceElementClassInit
+						->invokeSpecial(element, 
+														className,
+														m->name() == vm->initName ? vm->utfToString(buf+lastToken) : vm->nameToString(m->name()),
+														vm->utfToString(buf), 
+														sf->sourceIndex(j));
 				}
 			}
-			ignore = 0;
+		} else if(!simplify) {
+			J3ObjectHandle* element = J3ObjectHandle::doNewObject(vm->stackTraceElementClass);
+			J3ObjectHandle* methodName;
+			J3ObjectHandle* fileName;
+			Dl_info         info;
+
+			if(dladdr((void*)(ip-1), &info)) {
+				int   status;
+				const char* demangled = abi::__cxa_demangle(info.dli_sname, 0, 0, &status);
+				const char* name = demangled ? demangled : info.dli_sname;
+				methodName = vm->utfToString(name);
+				fileName = vm->utfToString(info.dli_fname);
+			} else {
+				char buf[256];
+				snprintf(buf, 256, "??@%p", (void*)ip);
+				methodName = vm->utfToString(buf);
+				fileName = vm->utfToString("??");
+			}
+
+			addStackElement(orig, buf, max, cur, element);		
+			vm->stackTraceElementClassInit->invokeSpecial(element, vm->utfToString("<j3>"), methodName, fileName, -1);
 		}
+	}
 
-		jobject newBt = J3ObjectHandle::doNewArray(backtrace->vt()->type()->asArrayClass(), res);
-		newBt->setRegionLong(0, buf, 0, res);
-		throwable->setObject(vm->throwableClassBacktrace, newBt);
+	jobject newBt = J3ObjectHandle::doNewArray(vm->stackTraceElementClass->getArray(), cur);
+	for(uint32_t i=0; i<cur; i++)
+		newBt->setObjectAt(i, buf[i]);
+	throwable->setObject(vm->throwableClassBacktrace, newBt);
 
-	} else
-		res = backtrace->arrayLength();
+	return newBt;
+}
 
+jint JNICALL JVM_GetStackTraceDepth(JNIEnv* env, jobject throwable) { 
+	jint res = 0;
+	enterJVM(); 
+	res = translateStackTrace(throwable)->arrayLength();
 	leaveJVM(); 
-
 	return res;
 }
 
 jobject JNICALL JVM_GetStackTraceElement(JNIEnv* env, jobject throwable, jint index) { 
 	jobject res;
-
 	enterJVM(); 
-	J3* vm = J3Thread::get()->vm();
-	uintptr_t ip = (uintptr_t)throwable->getObject(vm->throwableClassBacktrace)->getLongAt(index);
-	J3ObjectHandle* className;
-	J3ObjectHandle* methodName;
-	J3ObjectHandle* fileName;
-	uint32_t lineNumber;
-
-	res = J3ObjectHandle::doNewObject(vm->stackTraceElementClass);
-
-	vmkit::Safepoint* sf = vm->getSafepoint((void*)ip);
-
-	if(!sf) {
-		lineNumber = -1;
-		className = vm->utfToString("<j3>");
-		Dl_info info;
-		
-		if(dladdr((void*)(ip-1), &info)) {
-			int   status;
-			const char* demangled = abi::__cxa_demangle(info.dli_sname, 0, 0, &status);
-			const char* name = demangled ? demangled : info.dli_sname;
-			methodName = vm->utfToString(name);
-			fileName = vm->utfToString(info.dli_fname);
-		} else {
-			char buf[256];
-			snprintf(buf, 256, "??@%p", (void*)ip);
-			methodName = vm->utfToString(buf);
-			fileName = vm->utfToString("??");
-		}
-	} else {
-		J3Method* m = (J3Method*)sf->unit()->getSymbol(sf->functionName());
-		const vmkit::Name* cn = m->cl()->name();
-		uint32_t length = cn->length()+6;
-		uint32_t lastToken = 0;
-		char buf[length];
-
-		for(uint32_t i=0; i<cn->length(); i++) {
-			if(cn->cStr()[i] == '/') {
-				buf[i] = '.';
-				lastToken = i+1;
-			} else
-				buf[i] = cn->cStr()[i];
-		}
-		buf[cn->length()] = 0;
-
-		lineNumber = sf->sourceIndex();
-		className = vm->utfToString(buf);
-		methodName = m->name() == vm->initName ? vm->utfToString(buf+lastToken) : vm->nameToString(m->name());
-		
-		snprintf(buf, length, "%s.java", cn->cStr());
-		fileName = vm->utfToString(buf);
-	}
-
-	vm->stackTraceElementClassInit->invokeSpecial(res, className, methodName, fileName, lineNumber);
-
+	res = translateStackTrace(throwable)->getObjectAt(index);
 	leaveJVM(); 
 	return res;
 }
