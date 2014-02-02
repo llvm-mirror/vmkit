@@ -44,6 +44,7 @@ namespace vmkit {
   };
 
   class VmkitGCMetadataPrinter : public llvm::GCMetadataPrinter {
+		const llvm::MCExpr* emitName(llvm::AsmPrinter &AP, llvm::StringRef str, unsigned int* num);
   public:
     void beginAssembly(llvm::AsmPrinter &AP) {}
     void finishAssembly(llvm::AsmPrinter &AP);
@@ -92,33 +93,31 @@ bool VmkitGCPass::findCustomSafePoints(llvm::GCFunctionInfo& FI, llvm::MachineFu
 	return false;
 }
 
+const llvm::MCExpr* VmkitGCMetadataPrinter::emitName(llvm::AsmPrinter &AP, llvm::StringRef str, unsigned int* num) {
+	AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getSectionForConstant(llvm::SectionKind::getMergeable1ByteCString()));
+	llvm::SmallString<256> id("gcFunc");
+	id += (*num)++;
+
+	llvm::MCSymbol *sym = AP.OutContext.GetOrCreateSymbol(id);
+	AP.OutStreamer.EmitLabel(sym);
+			
+	uint32_t len = str.size();
+	for(uint32_t n=0; n<len; n++)
+		AP.EmitInt8(str.data()[n]);
+	AP.EmitInt8(0);
+
+	AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getDataSection());
+
+	return llvm::MCSymbolRefExpr::Create(sym, AP.OutStreamer.getContext());
+}
+
 /*
  *    VmkitGCMetadataPrinter
  */
 void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 	unsigned IntPtrSize = AP.TM.getDataLayout()->getPointerSize(0);
-	uint32_t i = 0;
+	uint32_t funcNumber = 0;
 		
-	AP.OutStreamer.AddComment("--- function names for the frame tables ---");
-	AP.OutStreamer.AddBlankLine();
-	AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getSectionForConstant(llvm::SectionKind::getMergeable1ByteCString()));
-	for (iterator I = begin(), IE = end(); I != IE; ++I, i++) {
-		llvm::GCFunctionInfo* gcInfo = *I;
-		if(gcInfo->getFunction().hasGC()) {
-			llvm::SmallString<256> id("gcFunc");
-			id += i;
-
-			llvm::MCSymbol *sym = AP.OutContext.GetOrCreateSymbol(id);
-			AP.OutStreamer.EmitLabel(sym);
-			
-			llvm::StringRef ref = gcInfo->getFunction().getName();
-			uint32_t len = ref.size();
-			for(uint32_t n=0; n<len; n++)
-				AP.EmitInt8(ref.data()[n]);
-			AP.EmitInt8(0);
-		}
-	}
-
 	AP.OutStreamer.SwitchSection(AP.getObjFileLowering().getDataSection());
 
 	llvm::SmallString<256> symName("_");
@@ -134,18 +133,11 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 	AP.OutStreamer.AddBlankLine();
 	AP.OutStreamer.EmitLabel(sym);		
 
-	i = 0;
-	for (iterator I = begin(), IE = end(); I != IE; ++I, i++) {
+	for (iterator I = begin(), IE = end(); I != IE; ++I) {
 		llvm::GCFunctionInfo* gcInfo = *I;
 			
 		if(gcInfo->getFunction().hasGC()) {
-			AP.OutStreamer.AddComment("live roots for " + llvm::Twine(gcInfo->getFunction().getName()));
-			AP.OutStreamer.AddBlankLine();
-
-			llvm::SmallString<256> id("gcFunc");
-			id += i;
-
-			const llvm::MCExpr* funcName = llvm::MCSymbolRefExpr::Create(AP.OutContext.GetOrCreateSymbol(id), AP.OutStreamer.getContext());
+			const llvm::MCExpr* funcName = emitName(AP, gcInfo->getFunction().getName(), &funcNumber);
 
 			for(llvm::GCFunctionInfo::iterator safepoint=gcInfo->begin(); safepoint!=gcInfo->end(); safepoint++) {
 				llvm::DebugLoc* debug = &safepoint->Loc;
@@ -164,7 +156,6 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 
 					llvm::DILocation   loc(inlinedAt);
 					llvm::DISubprogram il(loc.getScope());
-					
 
 					if(strcmp(gcInfo->getFunction().getName().data(), il.getName().data()))
 						abort();
