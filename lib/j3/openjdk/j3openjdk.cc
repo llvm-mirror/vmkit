@@ -346,31 +346,34 @@ jboolean JNICALL JVM_IsNaN(jdouble d) { enterJVM(); leaveJVM(); NYI(); }
 /*
  * java.lang.Throwable
  */
+static void addStackElement(int64_t* orig, int64_t*& buf, uint32_t& max, uint32_t& cur, uint64_t val) {
+	if(cur == max) {
+		void* prev = buf;
+		buf = (int64_t*)malloc((max<<1)*sizeof(int64_t));
+		memcpy(buf, prev, max*sizeof(int64_t));
+		max <<= 1;
+		if(prev != orig) 
+			free(prev);
+	}
+	buf[cur++] = val;
+}
+
 void JNICALL JVM_FillInStackTrace(JNIEnv* env, jobject throwable) { 
 	enterJVM(); 
 	uint32_t           cur = 0;
 	uint32_t           max = 1024;
-	int64_t            _buf[max];
-	int64_t*           buf = _buf;
+	int64_t            orig[max];
+	int64_t*           buf = orig;
 	vmkit::StackWalker walker;
 
-	while(walker.next()) {
-		if(cur == max) {
-			void* prev = buf;
-			buf = (int64_t*)malloc((max<<1)*sizeof(int64_t));
-			memcpy(buf, prev, max*sizeof(int64_t));
-			max <<= 1;
-			if(prev != _buf) 
-				free(prev);
-		}
-		buf[cur++] = (int64_t)(uintptr_t)walker.ip();
-	}
+	while(walker.next())
+		addStackElement(orig, buf, max, cur, (int64_t)(uintptr_t)walker.ip());
 	
 	J3* vm = J3Thread::get()->vm();
 	jobject backtrace = J3ObjectHandle::doNewArray(vm->typeLong->getArray(), cur);
 	backtrace->setRegionLong(0, buf, 0, cur);
 
-	if(buf != _buf)
+	if(buf != orig)
 		free(buf);
 
 	throwable->setObject(vm->throwableClassBacktrace, backtrace);
