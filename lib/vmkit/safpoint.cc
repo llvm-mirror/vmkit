@@ -2,6 +2,8 @@
 #include "vmkit/compiler.h"
 #include "vmkit/system.h"
 
+#include "llvm/DebugInfo.h"
+
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Module.h"
@@ -147,6 +149,27 @@ void VmkitGCMetadataPrinter::finishAssembly(llvm::AsmPrinter &AP) {
 
 			for(llvm::GCFunctionInfo::iterator safepoint=gcInfo->begin(); safepoint!=gcInfo->end(); safepoint++) {
 				llvm::DebugLoc* debug = &safepoint->Loc;
+				llvm::MDNode* inlinedAt = debug->getInlinedAt(getModule().getContext());
+
+				if(inlinedAt) {
+					fprintf(stderr, "find inline location in %s\n", gcInfo->getFunction().getName().data());
+					llvm::DISubprogram sub(debug->getScope(getModule().getContext()));
+					fprintf(stderr, "Inlined:                %s::%d\n", sub.getName().data(), debug->getLine());
+					llvm::DILocation cur(inlinedAt);
+					while(cur.getScope()) {
+						llvm::DISubprogram il(cur.getScope());
+						fprintf(stderr, "    =>                  %s::%d\n", il.getName().data(), cur.getLineNumber());
+						cur = cur.getOrigLocation();
+					};
+
+					llvm::DILocation   loc(inlinedAt);
+					llvm::DISubprogram il(loc.getScope());
+					
+
+					if(strcmp(gcInfo->getFunction().getName().data(), il.getName().data()))
+						abort();
+				}
+
 				uint32_t  kind = safepoint->Kind;
 
 				const llvm::MCExpr* address = llvm::MCSymbolRefExpr::Create(safepoint->Label, AP.OutStreamer.getContext());

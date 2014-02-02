@@ -190,9 +190,10 @@ void VMKit::sigend() {
 }
 
 void VMKit::throwException(void* obj) {
-	//internalError("throw exception...\n");
-	//fprintf(stderr, "throw %p\n", obj);
-	//Thread::get()->vm()->printStackTrace();
+	//	internalError("throw exception...\n");
+	//	fprintf(stderr, "throw %p\n", obj);
+	//	Thread::get()->vm()->printStackTrace();
+	//	abort();
 	throw obj;
 }
 

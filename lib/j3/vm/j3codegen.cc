@@ -47,11 +47,16 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mo
 
 #if 0
 	/* usefull to debug a single function */
-	if(   cl->name() == vm->names()->get("sun/util/calendar/BaseCalendar") &&
-				method->name() == vm->names()->get("getFixedDate") &&
+	if(   cl->name() == vm->names()->get("java.lang.Class") &&
+				method->name() == vm->names()->get("asSubclass") &&
 				method->signature()->name() == vm->names()->get("(IIILsun/util/calendar/BaseCalendar$Date;)J") ) {
-
+		vm->options()->genDebugExecute = 2;
 		vm->options()->debugTranslate = 3;
+		vm->options()->debugExecute = 5;
+	} else {
+		vm->options()->genDebugExecute = 0;
+		vm->options()->debugTranslate = 0;
+		//vm->options()->debugExecute = 0;
 	}
 #endif
 
@@ -132,6 +137,9 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mo
 		signature->setCaller(access, (J3Signature::function_t)loader->ee()->getFunctionAddress("generic-caller"));
 
 	method->markCompiled(llvmFunction, fnPtr);
+
+	if(vm->options()->debugTranslate > 2)
+		llvmFunction->dump();
 }
 
 J3CodeGen::~J3CodeGen() {
@@ -406,7 +414,7 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 
 	stack.drop(n);
 
-	llvm::Value* res;
+	llvm::Instruction* res;
 
 	if(exceptions.nodes[curExceptionNode]->landingPad) {
 		//llvm::BasicBlock* after = forwardBranch("invoke-after", codeReader->tell(), 0, 0);
@@ -416,6 +424,8 @@ void J3CodeGen::invoke(uint32_t access, J3Method* target, llvm::Value* func) {
 	} else {
 		res = builder.CreateCall(func, args);
 	}
+
+	res->setDebugLoc(llvm::DebugLoc::get(javaPC, 0, dbgInfo));
 	
 	if(!res->getType()->isVoidTy())
 		stack.push(flatten(res));
@@ -1700,7 +1710,7 @@ void J3CodeGen::generateJava() {
 
 	llvm::DIBuilder* dbgBuilder = new llvm::DIBuilder(*module);
 
-  dbgInfo =
+	dbgInfo =
 		dbgBuilder->createFunction(llvm::DIDescriptor(),    // Function scope
 															 llvmFunction->getName(), // Function name
 															 llvmFunction->getName(), // Mangled name
@@ -1712,7 +1722,10 @@ void J3CodeGen::generateJava() {
 																				                                              // This includes return type at 0th index.
 															 false,                   // True if this function is not externally visible
 															 false,                   // True if this is a function definition
-															 0                        // Set to the beginning of the scope this starts
+															 0,                       // Set to the beginning of the scope this starts
+															 0, 
+															 false,
+															 llvmFunction
 															 );
 
 	uint32_t maxStack   = reader.readU2();
