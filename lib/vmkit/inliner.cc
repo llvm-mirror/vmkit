@@ -109,6 +109,12 @@ namespace vmkit {
 																													 llvm::cast<llvm::Function>(gv)->getFunctionType()) :
 								function->getParent()->getOrInsertGlobal(gv->getName().data(), gv->getType()->getContainedType(0));
 
+							if(curSymbol && curSymbol->unit()) {
+								Symbol* remoteSymbol = curSymbol->unit()->getSymbol(gv->getName().data(), 0);
+								if(remoteSymbol)
+									originalUnit->addSymbol(gv->getName().data(), remoteSymbol);
+							}
+
 							//fprintf(stderr, "<<<reimporting>>>: %s\n", gv->getName().data());
 							insn->setOperand(i, copy);
 						}
