@@ -211,7 +211,6 @@ namespace j3 {
 		J3ObjectHandle*        _protectionDomain;
 		const char*            _source;
 
-		J3Attributes* readAttributes(J3Reader* reader);
 		void          readClassBytes(J3Field* hiddenFields, uint32_t nbHiddenFields);
 
 		void          check(uint16_t idx, uint32_t id=-1);
@@ -230,6 +229,10 @@ namespace j3 {
 
 	public:
 		J3Class(J3ClassLoader* loader, const vmkit::Name* name, J3ClassBytes* bytes, J3ObjectHandle* protectionDomain, const char* source);
+
+		J3Attributes*       readAttributes(J3Reader* reader);
+
+		J3Attributes*       attributes() { return _attributes; }
 
 		void                compileAll();
 		void                aotSnapshot(llvm::Linker* linker);

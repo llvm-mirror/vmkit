@@ -8,6 +8,7 @@
 #include "j3/j3field.h"
 #include "j3/j3utf16.h"
 #include "j3/j3reader.h"
+#include "j3/j3attribute.h"
 #include "jvm.h"
 
 #include <dlfcn.h>
@@ -413,30 +414,30 @@ static jobject translateStackTrace(jobject throwable) {
 					J3ObjectHandle* element = J3ObjectHandle::doNewObject(vm->stackTraceElementClass);
 					addStackElement(orig, buf, max, cur, element);		
 
-					const vmkit::Name* cn = m->cl()->name();
-					uint32_t length = cn->length()+6;
-					uint32_t lastToken = 0;
-					char buf[length];
-
-					for(uint32_t i=0; i<cn->length(); i++) {
-						if(cn->cStr()[i] == '/') {
-							buf[i] = '.';
-							lastToken = i+1;
-						} else
-							buf[i] = cn->cStr()[i];
+					J3Attribute* sourceAttr = m->cl()->attributes()->lookup(vm->sourceFileAttribute);
+					const vmkit::Name* sourceFile = 0;
+					if(sourceAttr) {
+						J3Reader reader(m->cl()->bytes());
+						reader.seek(sourceAttr->offset(), reader.SeekSet);
+						reader.readU4();
+						sourceFile = m->cl()->nameAt(reader.readU2());
 					}
-					buf[cn->length()] = 0;
 
-					J3ObjectHandle* className = vm->utfToString(buf);
+					uint32_t lineNumber = -1;
+					J3Attribute* lineAttr = m->cl()->attributes()->lookup(vm->lineNumberTableAttribute);
 
-					snprintf(buf, length, "%s.java", cn->cStr());
+					if(lineAttr) {
+						fprintf(stderr, " find line attribute...\n");
+						//sf->sourceIndex(j));
+						abort();
+					}
 					
 					vm->stackTraceElementClassInit
 						->invokeSpecial(element, 
-														className,
-														m->name() == vm->initName ? vm->utfToString(buf+lastToken) : vm->nameToString(m->name()),
-														vm->utfToString(buf), 
-														sf->sourceIndex(j));
+														vm->nameToString(m->cl()->name()),
+														vm->nameToString(m->name()),
+														sourceFile ? vm->nameToString(sourceFile) : 0, 
+														lineNumber);
 				}
 			}
 		} else if(!simplify) {

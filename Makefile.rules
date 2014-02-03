@@ -130,7 +130,7 @@ check::
 ###############################################################################
 #   Build system managment
 ###############################################################################
-SELF=$(PROJ_SRC_ROOT)/Makefile.rules $(PROJ_OBJ_ROOT)/Makefile.config $(PROJ_SRC_CWD)/Makefile
+#SELF=$(PROJ_SRC_ROOT)/Makefile.rules $(PROJ_OBJ_ROOT)/Makefile.config $(PROJ_SRC_CWD)/Makefile
 
 $(PROJ_SRC_ROOT)/configure: $(PROJ_SRC_ROOT)/autoconf/configure.ac
 	$(Echo) "Rebootstraping project"

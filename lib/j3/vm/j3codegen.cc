@@ -1774,6 +1774,7 @@ void J3CodeGen::generateJava() {
 	reader.seek(codeLength, reader.SeekCur);
 
 	exceptions.read(&reader, codeLength);
+	//method->setCodeAttributes(cl->readAttributes(&reader));
 
 	pendingBranchs[topPendingBranchs++] = codeReader->tell();
 

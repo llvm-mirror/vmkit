@@ -35,6 +35,7 @@ namespace j3 {
 		const vmkit::Name*           _name;
 		J3Signature*                 _signature;
 		J3Attributes*                _attributes;
+		J3Attributes*                _codeAttributes;
 		uint32_t                     _index;
 		uint32_t                     _slot;
 		llvm::Function*              _llvmFunction;
@@ -76,6 +77,9 @@ namespace j3 {
 		J3Method*               resolve(J3ObjectHandle* obj);
 
 		uint32_t                index();
+
+		void                    setCodeAttributes(J3Attributes* attributes) { _codeAttributes = attributes; }
+		J3Attributes*           codeAttributes() const { return _codeAttributes; }
 
 		J3Attributes*           attributes() const { return _attributes; }
 		uint16_t                access() const { return _access; }
