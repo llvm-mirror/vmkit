@@ -10,6 +10,7 @@
 #include "j3/j3codegen.h"
 #include "j3/j3trampoline.h"
 #include "j3/j3attribute.h"
+#include "j3/j3reader.h"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Module.h"
@@ -29,6 +30,21 @@ J3Method::J3Method(uint16_t access, J3Class* cl, const vmkit::Name* name, J3Sign
 	_name = name;
 	_signature = signature;
 	_index = -1;
+}
+
+J3Attributes* J3Method::codeAttributes() { 
+	if(!_codeAttributes) {
+		J3* vm = J3Thread::get()->vm();
+		J3Attribute* codeAttr = attributes()->lookup(vm->codeAttribute);
+		if(codeAttr) {
+			J3Reader reader(cl()->bytes());
+			reader.seek(codeAttr->offset()+8, reader.SeekSet);
+			reader.seek(reader.readU4(), reader.SeekCur);
+			reader.seek(reader.readU2()*8, reader.SeekCur);
+			_codeAttributes = cl()->readAttributes(&reader);
+		}
+	}
+	return _codeAttributes;
 }
 
 vmkit::CompilationUnit* J3Method::unit() {

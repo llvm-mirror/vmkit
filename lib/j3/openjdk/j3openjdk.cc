@@ -418,18 +418,26 @@ static jobject translateStackTrace(jobject throwable) {
 					const vmkit::Name* sourceFile = 0;
 					if(sourceAttr) {
 						J3Reader reader(m->cl()->bytes());
-						reader.seek(sourceAttr->offset(), reader.SeekSet);
-						reader.readU4();
+						reader.seek(sourceAttr->offset() + 4, reader.SeekSet);
 						sourceFile = m->cl()->nameAt(reader.readU2());
 					}
 
 					uint32_t lineNumber = -1;
-					J3Attribute* lineAttr = m->cl()->attributes()->lookup(vm->lineNumberTableAttribute);
 
-					if(lineAttr) {
-						fprintf(stderr, " find line attribute...\n");
-						//sf->sourceIndex(j));
-						abort();
+					if(m->codeAttributes()) {
+						J3Attribute* lineAttr = m->codeAttributes()->lookup(vm->lineNumberTableAttribute);
+						if(lineAttr) {
+							J3Reader reader(m->cl()->bytes());
+							reader.seek(lineAttr->offset() + 4, reader.SeekSet);
+							uint32_t n = reader.readU2();
+							bool found = 0;
+							for(uint32_t i=0; i<n && !found; i++) {
+								if(sf->sourceIndex(j) < reader.readU2())
+									found = 1;
+								else
+									lineNumber = reader.readU2();
+							}
+						}
 					}
 					
 					vm->stackTraceElementClassInit

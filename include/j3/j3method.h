@@ -78,9 +78,7 @@ namespace j3 {
 
 		uint32_t                index();
 
-		void                    setCodeAttributes(J3Attributes* attributes) { _codeAttributes = attributes; }
-		J3Attributes*           codeAttributes() const { return _codeAttributes; }
-
+		J3Attributes*           codeAttributes();
 		J3Attributes*           attributes() const { return _attributes; }
 		uint16_t                access() const { return _access; }
 		J3Class*                cl()     const { return _cl; }
