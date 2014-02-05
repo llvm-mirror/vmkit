@@ -39,14 +39,14 @@ namespace {
 		for(llvm::Module::global_iterator it = module.global_begin(); it!=module.global_end(); it++) {
 			llvm::GlobalValue* gv = it;
 			
-			fprintf(stderr, "Global: %s\n", gv->getName().data());
+			//fprintf(stderr, "Global: %s\n", gv->getName().data());
 		}
 
 		for(llvm::Module::iterator it = module.begin(); it!=module.end(); it++) {
 			llvm::Function* function = it;
 			
-			if(!strncmp(function->getName().data(), "j3_java", 7))
-				fprintf(stderr, "processing %s\n", function->getName().data());
+			//if(!strncmp(function->getName().data(), "j3_java", 7))
+			//fprintf(stderr, "processing %s\n", function->getName().data());
 		}
 
   return Changed;

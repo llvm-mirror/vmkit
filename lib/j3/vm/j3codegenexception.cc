@@ -51,9 +51,9 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 
 	if(curCheck) { /* = 0 if I already have a finally */
 		codeGen->builder.SetInsertPoint(curCheck);
-		curCheck = codeGen->newBB("next-exception-check");
 
 		if(entry->catchType) {
+			curCheck = codeGen->newBB("next-exception-check");
 			codeGen->stack.metaStack[0] = codeGen->vm->typeJ3ObjectPtr;
 			codeGen->stack.topStack = 1;
 			llvm::CallInst* is = codeGen->isAssignableTo(codeGen->stack.top(0), 

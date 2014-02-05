@@ -88,9 +88,10 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id, bool 
 
 	if(runInlinePass || onlyAlwaysInline)
 		pm->add(vmkit::createFunctionInlinerPass(this, onlyAlwaysInline));
+
+#if 0
 	pm->add(llvm::createCFGSimplificationPass());      // Clean up disgusting code
 
-#if 1
 	pm->add(llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
 	pm->add(llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
 	pm->add(llvm::createScalarReplAggregatesPass()); // Break up aggregate allocas
@@ -170,8 +171,11 @@ uint64_t CompilationUnit::getSymbolAddress(const std::string &Name) {
 	return (uint64_t)(uintptr_t)getSymbol(System::mcjitSymbol(Name.c_str()))->getSymbolAddress();
 }
 
-void CompilationUnit::compileModule(llvm::Module* module) {
+void CompilationUnit::prepareModule(llvm::Module* module) {
 	pm->run(*module);
+}
+
+void CompilationUnit::compileModule(llvm::Module* module) {
 	ee()->addModule(module);
 	ee()->finalizeObject();
 

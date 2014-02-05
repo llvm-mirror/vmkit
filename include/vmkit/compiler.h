@@ -73,6 +73,7 @@ namespace vmkit {
 		BumpAllocator*          allocator() { return _allocator; }
 		llvm::ExecutionEngine*  ee() { return _ee; }
 
+		void                    prepareModule(llvm::Module* module);
 		void                    compileModule(llvm::Module* module);
 	};
 }

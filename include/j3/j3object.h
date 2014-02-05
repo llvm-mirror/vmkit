@@ -80,9 +80,9 @@ namespace j3 {
 		uint32_t      offset() { return checker.offset; }
 		bool          isPrimaryChecker() { return checker.offset < J3TypeChecker::cacheOffset; }
 
-		bool          slowIsAssignableTo(J3VirtualTable* parent) __attribute__((always_inline));
-		bool          fastIsAssignableToPrimaryChecker(J3VirtualTable* parent, uint32_t parentOffset);
-		bool          fastIsAssignableToNonPrimaryChecker(J3VirtualTable* parent);
+		bool          slowIsAssignableTo(J3VirtualTable* parent) __attribute__((noinline));
+		bool          fastIsAssignableToPrimaryChecker(J3VirtualTable* parent, uint32_t parentOffset) __attribute__((always_inline));
+		bool          fastIsAssignableToNonPrimaryChecker(J3VirtualTable* parent) __attribute__((noinline));
 		bool          isAssignableTo(J3VirtualTable* parent);
 
 		J3Type*       type() const { return _type; }

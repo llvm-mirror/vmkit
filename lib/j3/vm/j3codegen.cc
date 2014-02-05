@@ -118,6 +118,8 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mo
 			llvmFunction->dump();
 	}
 
+	loader->prepareModule(module);
+
 	uint32_t needsCaller = withCaller() && !signature->caller(access);
 
 	if(needsCaller)

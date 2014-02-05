@@ -52,7 +52,7 @@ vmkit::CompilationUnit* J3Method::unit() {
 }
 
 uint64_t J3Method::inlineWeight() {
-	if(1 && J3Thread::get()->vm()->options()->enableInlining)
+	if(J3Thread::get()->vm()->options()->enableInlining)
 		return vmkit::Symbol::inlineWeight();
 	else
 		return (uint64_t)-1;
