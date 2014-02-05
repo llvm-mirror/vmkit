@@ -1,5 +1,7 @@
+#include "vmkit/config.h"
+	
 	.section	__DATA,__data
-	.globl __ZN2j312J3Trampoline9argOffsetE, __ZN5vmkit15ThreadAllocator6_magicE
+	.globl __ZN2j312J3Trampoline9argOffsetE
 	.globl _trampoline_generic, _trampoline_generic_method, _trampoline_generic_resolver, _trampoline_generic_end
 	
 _trampoline_generic:
@@ -20,7 +22,7 @@ _trampoline_generic_end:
 	
 _trampoline_save:
 	mov 		%rsp, %rax
-	and 		__ZN5vmkit15ThreadAllocator6_magicE(%rip), %rax
+	and 		$-VMKIT_STACK_SIZE, %rax
 	add 		__ZN2j312J3Trampoline9argOffsetE(%rip), %rax
 
 	mov 		%xmm0, 0(%rax)

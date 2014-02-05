@@ -49,8 +49,6 @@ namespace j3 {
 		uint32_t       debugLinking;
 		uint32_t       debugLifeCycle;
 		
-		uintptr_t      stackSize;
-
 		bool           isAOT;
 		const char*    aotFile;
 		bool           enableInlining;

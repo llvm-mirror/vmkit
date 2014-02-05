@@ -10,7 +10,6 @@ using namespace vmkit;
 
 pthread_mutex_t     ThreadAllocator::mutex;
 uintptr_t           ThreadAllocator::baseStack = 0;
-uintptr_t           ThreadAllocator::topStack = 0;
 uintptr_t           ThreadAllocator::_magic = 0;
 std::vector<void*>* ThreadAllocator::spaces = 0;
 std::vector<void*>* ThreadAllocator::freeThreads = 0;
@@ -94,7 +93,7 @@ void PermanentObject::operator delete[](void* ptr) {
 	//Thread::get()->vm()->internalError("should not happen");
 }
 
-void ThreadAllocator::initialize(uintptr_t minThreadStruct, uintptr_t minFullSize) {
+void ThreadAllocator::initialize(uintptr_t minThreadStruct) {
 	if(spaces)
 		VMKit::internalError("thread allocation system is already initialized");
 	spaces = new std::vector<void*>();
@@ -107,18 +106,13 @@ void ThreadAllocator::initialize(uintptr_t minThreadStruct, uintptr_t minFullSiz
 	minThreadStruct = ((minThreadStruct - 1) & -PAGE_SIZE) + PAGE_SIZE;
 	baseStack = minThreadStruct + PAGE_SIZE;
 
-	uintptr_t min = PTHREAD_STACK_MIN + minThreadStruct + (PAGE_SIZE<<1);
-	if(minFullSize < min)
-		minFullSize = min;
-
-	topStack = 1L << (__builtin_clzl(0) - __builtin_clzl(minFullSize-1));
-	_magic = -topStack;
+	_magic = -VMKIT_STACK_SIZE;
 }
 
 void* ThreadAllocator::allocate() {
 	pthread_mutex_lock(&mutex);
 	if(!freeThreads->size()) {
-		void* space = mmap(0, topStack*refill, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+		void* space = mmap(0, VMKIT_STACK_SIZE*refill, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
 
 		if(space == MAP_FAILED) {
 			fprintf(stderr, "unable to allocate a thread\n");
@@ -127,13 +121,13 @@ void* ThreadAllocator::allocate() {
 
 		spaces->push_back(space);
 
-		uintptr_t base = (((uintptr_t)space - 1) & -topStack) + topStack;
+		uintptr_t base = (((uintptr_t)space - 1) & -VMKIT_STACK_SIZE) + VMKIT_STACK_SIZE;
 		uint32_t n = (base == (uintptr_t)space) ? refill : (refill - 1);
 
 		for(uint32_t i=0; i<n; i++) {
 			mprotect((void*)(base + baseStack), PROT_NONE, PAGE_SIZE);
 			freeThreads->push_back((void*)base);
-			base += topStack;
+			base += VMKIT_STACK_SIZE;
 		}
 	}
 
@@ -154,7 +148,7 @@ void* ThreadAllocator::stackAddr(void* thread) {
 }
 
 size_t ThreadAllocator::stackSize(void* thread) {
-	return topStack - baseStack;
+	return VMKIT_STACK_SIZE - baseStack;
 }
 
 void* ThreadAllocator::alternateStackAddr(void* thread) {

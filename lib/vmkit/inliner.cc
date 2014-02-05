@@ -163,7 +163,7 @@ namespace vmkit {
 				if(symbol) {
 					llvm::Function* bc = symbol->llvmFunction();
 					
-					fprintf(stderr, "            inlining %s in %s\n", bc->getName().data(), function->getName().data());
+					//fprintf(stderr, "            inlining %s in %s\n", bc->getName().data(), function->getName().data());
 
 					if(llvm::isa<llvm::TerminatorInst>(insn)) {
 						llvm::TerminatorInst* terminator = llvm::cast<llvm::TerminatorInst>(insn);
