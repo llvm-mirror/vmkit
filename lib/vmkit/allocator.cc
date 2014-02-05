@@ -1,6 +1,7 @@
 #include "vmkit/allocator.h"
 #include "vmkit/thread.h"
 #include "vmkit/vmkit.h"
+#include "vmkit/config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -10,7 +11,6 @@ using namespace vmkit;
 
 pthread_mutex_t     ThreadAllocator::mutex;
 uintptr_t           ThreadAllocator::baseStack = 0;
-uintptr_t           ThreadAllocator::_magic = 0;
 std::vector<void*>* ThreadAllocator::spaces = 0;
 std::vector<void*>* ThreadAllocator::freeThreads = 0;
 
@@ -105,8 +105,6 @@ void ThreadAllocator::initialize(uintptr_t minThreadStruct) {
 
 	minThreadStruct = ((minThreadStruct - 1) & -PAGE_SIZE) + PAGE_SIZE;
 	baseStack = minThreadStruct + PAGE_SIZE;
-
-	_magic = -VMKIT_STACK_SIZE;
 }
 
 void* ThreadAllocator::allocate() {

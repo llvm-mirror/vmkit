@@ -368,7 +368,7 @@ bool J3Object::isLockOwner() {
 	if(isInflated(header)) /* inflated */
 		return asMonitor(header)->isOwner(self);
 	else
-		return !isUnlocked(header) && (J3Thread*)(header & J3Thread::getThreadMask()) == self;
+		return !isUnlocked(header) && (J3Thread*)J3Thread::get((void*)header) == self;
 }
 
 /*

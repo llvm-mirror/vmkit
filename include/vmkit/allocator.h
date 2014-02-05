@@ -15,8 +15,6 @@
 #include <map>
 #include <vector>
 
-#include "vmkit/config.h"
-
 namespace vmkit {
 	class BumpAllocatorNode { /* always the first bytes of a bucket */
 	public:
@@ -123,7 +121,6 @@ namespace vmkit {
 
 		static pthread_mutex_t     mutex;
 		static uintptr_t           baseStack;
-		static uintptr_t           _magic;
 		static std::vector<void*>* spaces;
 		static std::vector<void*>* freeThreads;
 
@@ -138,8 +135,6 @@ namespace vmkit {
 
 		static void*     stackAddr(void* thread);
 		static size_t    stackSize(void* thread); 
-
-		static uintptr_t magic() { return -VMKIT_STACK_SIZE; }
 	};
 } // end namespace vmkit
 

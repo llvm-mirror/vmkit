@@ -231,7 +231,7 @@ llvm::Value* J3CodeGen::typeDescriptor(J3ObjectType* objectType, llvm::Type* typ
 
 llvm::Value* J3CodeGen::spToCurrentThread(llvm::Value* sp) {
 	return builder.CreateIntToPtr(builder.CreateAnd(builder.CreatePtrToInt(sp, uintPtrTy),
-																										llvm::ConstantInt::get(uintPtrTy, vmkit::Thread::getThreadMask())),
+																									llvm::ConstantInt::get(uintPtrTy, vmkit::Thread::getThreadMask())),
 																 vm->typeJ3Thread);
 }
 

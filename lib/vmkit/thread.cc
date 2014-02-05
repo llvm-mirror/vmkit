@@ -1,6 +1,7 @@
 #include "vmkit/thread.h"
 #include "vmkit/system.h"
 #include "vmkit/vmkit.h"
+#include "vmkit/config.h"
 
 using namespace vmkit;
 
@@ -31,7 +32,7 @@ Thread* Thread::get(void* ptr) {
 }
 
 uintptr_t Thread::getThreadMask() {
-	return ThreadAllocator::magic();
+	return -VMKIT_STACK_SIZE;
 }
 
 void Thread::registerSignalInternal(int n, sa_action_t handler, bool altStack) {
