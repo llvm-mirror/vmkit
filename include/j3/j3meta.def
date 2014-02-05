@@ -4,7 +4,7 @@ _x(funcJ3TypeJavaClass,             "j3::J3Type::javaClass(bool, j3::J3ObjectHan
 _x(funcJniEnv,                      "j3::J3::jniEnv()", 0)
 _x(funcJ3ArrayObjectMultianewArray, "j3::J3ArrayObject::multianewArray(j3::J3ArrayClass*, unsigned int, unsigned int*)", 0)
 _x(funcJ3ObjectAllocate,            "j3::J3Object::allocate(j3::J3VirtualTable*, unsigned long)", 0)
-_x(funcJ3ObjectMonitorEnter,        "j3::J3Object::monitorEnter(j3::J3Object*)", 0)
+_x(funcJ3ObjectMonitorEnter,        "j3::J3Object::monitorEnter(j3::J3Object*, j3::J3LockRecord*)", 0)
 _x(funcJ3ObjectMonitorExit,         "j3::J3Object::monitorExit(j3::J3Object*)", 0)
 _x(funcThrowException,              "vmkit::VMKit::throwException(void*)", 0)
 _x(funcReplayException,             "j3::J3Thread::replayException()", 0)

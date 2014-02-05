@@ -11,15 +11,7 @@ namespace vmkit {
 namespace j3 {
 	class J3Thread;
 	class J3Object;
-
-	class J3LockRecord {
-	public:
-		static const uint32_t gepHeader = 0;
-		static const uint32_t gepLockCount = 1;
-
-		uintptr_t header;
-		uint32_t  lockCount;
-	};
+	class J3LockRecord;
 
 	class J3Monitor {
 		friend class J3MonitorManager;
@@ -39,7 +31,7 @@ namespace j3 {
 
 		void init(J3Monitor* next); /* acquire the lock for the next inflate */		
 	public:
-		bool isDeflatable(); /* acquire the lock for the next inflate */
+		bool       isDeflatable(); /* acquire the lock for the next inflate */
 		J3Monitor* prepare(J3Object* _object, uintptr_t header, J3LockRecord* _record);
 		J3Monitor* prepare();
 

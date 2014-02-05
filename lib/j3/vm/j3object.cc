@@ -287,12 +287,40 @@ J3Object* J3Object::doNew(J3Class* cl) {
 	return allocate(cl->vt(), cl->structSize());
 }
 
-void J3Object::monitorEnter(J3Object* obj) {
-	J3::internalError("implement me: monitor");
+void J3Object::monitorEnter(J3Object* obj, J3LockRecord* newRecord) {
+	volatile uintptr_t* pheader = &obj->_header;
+	uintptr_t header = *pheader;
+
+	if(isStackLocked(header)) {
+		J3LockRecord* record = asLockRecord(header);
+		if(vmkit::Thread::get(record) == vmkit::Thread::get()) {
+			record->lockCount++;
+			return;
+		} 
+	} else if(isUnlocked(header)) {
+		newRecord->header = header;
+		newRecord->lockCount = 1;
+		if(__sync_val_compare_and_swap(pheader, header, (uintptr_t)newRecord) == header)
+			return;
+	}
+	obj->inflate()->lock();
 }
 
 void J3Object::monitorExit(J3Object* obj) {
-	J3::internalError("implement me: monitor");
+	volatile uintptr_t* pheader = &obj->_header;
+	uintptr_t  header = *pheader;
+
+	if(isStackLocked(header)) {
+		J3LockRecord* record = asLockRecord(header);
+		if(vmkit::Thread::get(record) == vmkit::Thread::get()) {
+			if(!--record->lockCount) {
+				if(__sync_val_compare_and_swap(pheader, header, record->header) == header)
+					return;
+			} else
+				return;
+		}
+	}
+	obj->inflate()->unlock();
 }
 
 uint32_t J3Object::hashCode() {

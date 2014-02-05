@@ -25,6 +25,15 @@ namespace j3 {
 	class J3Monitor;
 	class J3LockRecord;
 
+	class J3LockRecord {
+	public:
+		static const uint32_t gepHeader = 0;
+		static const uint32_t gepLockCount = 1;
+
+		uintptr_t header;
+		uint32_t  lockCount;
+	};
+
 	// see: Cliff Click and John Rose. 2002. Fast subtype checking in the HotSpot JVM. 
 	// In Proceedings of the 2002 joint ACM-ISCOPE conference on Java Grande (JGI '02). ACM, New York, NY, USA, 96-107. 
 	class J3TypeChecker {
@@ -113,8 +122,8 @@ namespace j3 {
 		static J3LockRecord* asLockRecord(uintptr_t header) { return (J3LockRecord*)header; }
 		static J3Monitor*    asMonitor(uintptr_t header) { return (J3Monitor*)(header & ~3); }
 
-		static void monitorEnter(J3Object* obj);
-		static void monitorExit(J3Object* obj);
+		static void monitorEnter(J3Object* object, J3LockRecord* lockRecord) __attribute__((always_inline));
+		static void monitorExit(J3Object* object) __attribute__((always_inline));
 
 		static J3Object* allocate(J3VirtualTable* vt, uintptr_t n);
 		static J3Object* doNew(J3Class* cl);

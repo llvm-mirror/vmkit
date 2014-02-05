@@ -238,100 +238,11 @@ llvm::Value* J3CodeGen::currentThread() {
 }
 
 void J3CodeGen::monitorEnter(llvm::Value* obj) {
-	llvm::Type* recordTy = vm->typeJ3LockRecord;
-	llvm::Type* recordPtrTy = vm->typeJ3LockRecord->getPointerTo();
-
-	llvm::AllocaInst* recordPtr = builder.CreateAlloca(recordPtrTy);
-
-	llvm::BasicBlock* ok = forwardBranch("lock-ok", codeReader->tell(), 0, 0);
-	llvm::BasicBlock* stackLocked = newBB("stack-locked");
-	llvm::BasicBlock* tryStackLock = newBB("try-stack-lock");
-	llvm::BasicBlock* stackFail = newBB("stack-lock-fail");
-
-	/* already stack locked by myself? */
-	llvm::Value* gepH[] = { builder.getInt32(0), builder.getInt32(J3Object::gepHeader) };
-	llvm::Value* headerPtr = builder.CreateGEP(obj, gepH);
-	llvm::Value* header = builder.CreateLoad(headerPtr);
-	
-	builder.CreateStore(builder.CreateIntToPtr(header, recordPtrTy), recordPtr);
-	builder.CreateCondBr(builder.CreateICmpEQ(currentThread(), spToCurrentThread(header)),
-											 stackLocked, tryStackLock);
-
-	/* try to stack lock */
-	builder.SetInsertPoint(tryStackLock);
-	llvm::AllocaInst* record = builder.CreateAlloca(recordTy);
-	builder.CreateStore(record, recordPtr);
-	llvm::Value* gepR[] = { builder.getInt32(0), builder.getInt32(J3LockRecord::gepHeader) };
-	builder.CreateStore(header, builder.CreateGEP(record, gepR));
-	llvm::Value* gepC[] = { builder.getInt32(0), builder.getInt32(J3LockRecord::gepLockCount) };
-	builder.CreateStore(builder.getInt32(0), builder.CreateGEP(record, gepC));
-	llvm::Value* orig = builder.CreateOr(builder.CreateAnd(header, llvm::ConstantInt::get(uintPtrTy, ~6)), 
-																				llvm::ConstantInt::get(uintPtrTy, 1)); /* ...001 */
-	llvm::Value* res = builder.CreateAtomicCmpXchg(headerPtr, 
-																									orig, 
-																									builder.CreatePtrToInt(record, uintPtrTy),
-																									llvm::SequentiallyConsistent, 
-																									llvm::CrossThread);
-	builder.CreateCondBr(builder.CreateICmpEQ(res, orig), stackLocked, stackFail);
-
-	/* stack locked, increment the counter */
-	builder.SetInsertPoint(stackLocked);
-	llvm::Value* countPtr = builder.CreateGEP(builder.CreateLoad(recordPtr), gepC);
-	builder.CreateStore(builder.CreateAdd(builder.CreateLoad(countPtr), builder.getInt32(1)), countPtr);
-	builder.CreateBr(ok);
-
-	/* unable to stack lock, fall back to monitor */
-	builder.SetInsertPoint(stackFail);
-	builder.CreateCall(funcJ3ObjectMonitorEnter, obj);
-	builder.CreateBr(ok);
+	builder.CreateCall2(funcJ3ObjectMonitorEnter, obj, builder.CreateAlloca(vm->typeJ3LockRecord));
 }
 
 void J3CodeGen::monitorExit(llvm::Value* obj) {
-	llvm::Type* recordPtrTy = vm->typeJ3LockRecord->getPointerTo();
-
-	llvm::BasicBlock* ok = forwardBranch("unlock-ok", codeReader->tell(), 0, 0);
-	llvm::BasicBlock* stackUnlock = newBB("stack-unlock");
-	//llvm::BasicBlock* tryStackLock = newBB("try-stack-lock");
-	llvm::BasicBlock* monitorUnlock = newBB("monitor-unlock");
-	llvm::BasicBlock* stackRelease = newBB("stack-release");
-	llvm::BasicBlock* stackRec = newBB("stack-rec");
-
-	/* stack locked by myself? */
-	llvm::Value* gepH[] = { builder.getInt32(0), builder.getInt32(J3Object::gepHeader) };
-	llvm::Value* headerPtr = builder.CreateGEP(obj, gepH);
-	llvm::Value* header = builder.CreateLoad(headerPtr);
-	
-	builder.CreateCondBr(builder.CreateICmpEQ(currentThread(), spToCurrentThread(header)),
-											 stackUnlock, monitorUnlock);
-	
-	/* ok, I'm the owner */
-	builder.SetInsertPoint(stackUnlock);
-	llvm::Value* gepC[] = { builder.getInt32(0), builder.getInt32(J3LockRecord::gepLockCount) };
-	llvm::Value* recordPtr = builder.CreateIntToPtr(header, recordPtrTy);
-	llvm::Value* countPtr = builder.CreateGEP(recordPtr, gepC);
-	llvm::Value* count = builder.CreateSub(builder.CreateLoad(countPtr), builder.getInt32(1));
-	builder.CreateCondBr(builder.CreateICmpEQ(count, builder.getInt32(0)), stackRelease, stackRec);
-
-	/* last unlock */
-	builder.SetInsertPoint(stackRelease);
-	llvm::Value* gepR[] = { builder.getInt32(0), builder.getInt32(J3LockRecord::gepHeader) };
-	llvm::Value* orig = builder.CreateLoad(builder.CreateGEP(recordPtr, gepR));
-	llvm::Value* res = builder.CreateAtomicCmpXchg(headerPtr, 
-																									header, 
-																									orig,
-																									llvm::SequentiallyConsistent, 
-																									llvm::CrossThread);
-	builder.CreateCondBr(builder.CreateICmpEQ(res, header), ok, monitorUnlock);
-
-	/* recursive unlock */
-	builder.SetInsertPoint(stackRec);
-	builder.CreateStore(count, countPtr);
-	builder.CreateBr(ok);
-
-	/* monitor unlock */
-	builder.SetInsertPoint(monitorUnlock);
 	builder.CreateCall(funcJ3ObjectMonitorExit, obj);
-	builder.CreateBr(ok);
 }
 
 void J3CodeGen::resolveJ3ObjectType(J3ObjectType* cl) {
