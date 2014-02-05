@@ -31,17 +31,15 @@ uint64_t Symbol::inlineWeight() {
 	if(cachedWeight)
 		return cachedWeight;
 
-	uint64_t infinity = (uint64_t)-1;
-
 	if(llvmFunction()->size() > 4)
-		return cachedWeight = infinity;
+		return cachedWeight = (uint64_t)-1;
 
 	uint64_t weight = 0;
 
 	for (llvm::Function::iterator bit=llvmFunction()->begin(); bit!=llvmFunction()->end(); bit++)
 		weight += bit->size();
 
-	weight = weight * 100;
+	weight = weight * 256;
 
 	return cachedWeight = weight;
 }
@@ -92,7 +90,7 @@ CompilationUnit::CompilationUnit(BumpAllocator* allocator, const char* id, bool 
 		pm->add(vmkit::createFunctionInlinerPass(this, onlyAlwaysInline));
 	pm->add(llvm::createCFGSimplificationPass());      // Clean up disgusting code
 
-#if 0
+#if 1
 	pm->add(llvm::createPromoteMemoryToRegisterPass());// Kill useless allocas
 	pm->add(llvm::createInstructionCombiningPass()); // Cleanup for scalarrepl.
 	pm->add(llvm::createScalarReplAggregatesPass()); // Break up aggregate allocas

@@ -14,35 +14,50 @@
 #include <dlfcn.h>
 
 namespace vmkit {
+	class InlineBB {
+	public:
+		Symbol*           symbol;
+		llvm::BasicBlock* bb;
+		uint64_t          threshold;
+
+		InlineBB(Symbol* _symbol, llvm::BasicBlock* _bb, uint64_t _threshold) {
+			symbol = _symbol;
+			bb = _bb;
+			threshold = _threshold;
+		}
+	};
+
 	class FunctionInliner {
 	public:
 		llvm::Function*                          function;
 		llvm::SmallPtrSet<llvm::BasicBlock*, 32> visited;
-		llvm::SmallVector<std::pair<Symbol*, llvm::BasicBlock*>, 8>  visitStack;
+		llvm::SmallVector<InlineBB, 8>           visitStack;
 		CompilationUnit*                         originalUnit;
 		Symbol*                                  curSymbol;
 		bool                                     onlyAlwaysInline;
 		uint64_t                                 inlineThreshold;
 
-		FunctionInliner(CompilationUnit* unit, llvm::Function* _function, uint64_t inlineThreshold, bool _onlyAlwaysInline) {
+		FunctionInliner(CompilationUnit* unit, llvm::Function* _function, uint64_t _inlineThreshold, bool _onlyAlwaysInline) {
 			function = _function;
 			originalUnit = unit;
 			onlyAlwaysInline = _onlyAlwaysInline;
+			inlineThreshold = _inlineThreshold;
 			push(0, &function->getEntryBlock());
 		}
 
 		void push(Symbol* symbol, llvm::BasicBlock* bb) {
 			if(visited.insert(bb))
-				visitStack.push_back(std::make_pair(symbol, bb));
+				visitStack.push_back(InlineBB(symbol, bb, inlineThreshold));
 		}
 
 		llvm::BasicBlock* pop() {
-			std::pair<Symbol*, llvm::BasicBlock*> top = visitStack.pop_back_val();
-			curSymbol = top.first;
-			return top.second;
+			InlineBB top = visitStack.pop_back_val();
+			curSymbol = top.symbol;
+			inlineThreshold = top.threshold;
+			return top.bb;
 		}
 
-		Symbol* tryInline(llvm::Function* callee) {
+		Symbol* tryInline(llvm::Function* callee, uint64_t* weight) {
 			if(callee->isIntrinsic())
 				return 0;
 
@@ -72,11 +87,21 @@ namespace vmkit {
 				symbol = new(unit->allocator()) NativeSymbol(callee, addr);
 				unit->addSymbol(id, symbol);
 			}
-		//fprintf(stderr, "       weight: %lld\n", symbol->inlineWeight());
+			
+			if(bc->hasFnAttribute(llvm::Attribute::NoInline))
+				return 0;
+			if(bc->hasFnAttribute(llvm::Attribute::AlwaysInline))
+				return symbol;
+			if(onlyAlwaysInline)
+				return 0;
 
-			return (!bc->hasFnAttribute(llvm::Attribute::NoInline)
-							&& (bc->hasFnAttribute(llvm::Attribute::AlwaysInline) || 
-									(!onlyAlwaysInline && (uint64_t)(symbol->inlineWeight()-1) < inlineThreshold))) ? symbol : 0;
+			*weight = symbol->inlineWeight();
+			if(*weight == -1)
+				return 0;
+
+			//fprintf(stderr, "       %s weight: %lld/%lld\n", bc->getName().data(), *weight, inlineThreshold);
+
+			return *weight < inlineThreshold ? symbol : 0;
 		}
 
 		bool visitBB(llvm::BasicBlock* bb) {
@@ -131,13 +156,14 @@ namespace vmkit {
 				
 				if(!callee)
 					continue;
-				
-				Symbol* symbol = tryInline(callee);
+
+				uint64_t weight;
+				Symbol* symbol = tryInline(callee, &weight);
 				
 				if(symbol) {
 					llvm::Function* bc = symbol->llvmFunction();
 					
-					//fprintf(stderr, "            inlining %s in %s\n", bc->getName().data(), function->getName().data());
+					fprintf(stderr, "            inlining %s in %s\n", bc->getName().data(), function->getName().data());
 
 					if(llvm::isa<llvm::TerminatorInst>(insn)) {
 						llvm::TerminatorInst* terminator = llvm::cast<llvm::TerminatorInst>(insn);
@@ -161,6 +187,7 @@ namespace vmkit {
 
 					if(isInlined) {
 						curSymbol = symbol;
+						inlineThreshold -= weight;
 						if(prev)
 							it = prev;
 						else {
@@ -234,6 +261,6 @@ namespace vmkit {
 #endif
 
 	llvm::FunctionPass* createFunctionInlinerPass(CompilationUnit* compiler, bool onlyAlwaysInline) {
-		return new FunctionInlinerPass(compiler, 2000, onlyAlwaysInline);
+		return new FunctionInlinerPass(compiler, 25*256, onlyAlwaysInline); /* aka 25 instructions */
 	}
 }
