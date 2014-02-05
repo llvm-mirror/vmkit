@@ -33,9 +33,9 @@ namespace vmkit {
 
 		VMKit* vm() { return _vm; }
 
-		static uintptr_t getThreadMask();
-		static Thread*   get(void* ptr);
-		static Thread*   get();
+		static uintptr_t getThreadMask() __attribute__((always_inline));
+		static Thread*   get(void* ptr) __attribute__((always_inline));
+		static Thread*   get() __attribute__((always_inline));
 
 		bool registerSignal(int n, sa_action_t handler);
 

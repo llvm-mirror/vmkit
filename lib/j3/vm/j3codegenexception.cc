@@ -59,7 +59,6 @@ void J3ExceptionNode::addEntry(J3CodeGen* codeGen, J3ExceptionEntry* entry) {
 			llvm::CallInst* is = codeGen->isAssignableTo(codeGen->stack.top(0), 
 																									 codeGen->cl->classAt(entry->catchType));
 			codeGen->builder.CreateCondBr(is, entry->bb, curCheck);
-			codeGen->inlineCall(is);
 		} else {
 			codeGen->builder.CreateBr(entry->bb);
 			curCheck = 0;

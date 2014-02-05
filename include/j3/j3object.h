@@ -112,18 +112,17 @@ namespace j3 {
 
 		J3Object(); /* never directly allocate an object */
 
+		static bool          isUnlocked(uintptr_t header) __attribute__((always_inline)) { return (header & 7) == 1; }
+		static bool          isInflated(uintptr_t header) __attribute__((always_inline)) { return (header & 3) == 2; }
+		static bool          isStackLocked(uintptr_t header) __attribute__((always_inline)) { return !(header & 3); }
+		static J3LockRecord* asLockRecord(uintptr_t header) __attribute__((always_inline)) { return (J3LockRecord*)header; }
+		static J3Monitor*    asMonitor(uintptr_t header) __attribute__((always_inline)) { return (J3Monitor*)(header & ~3); }
+
 		bool       isLockOwner();
 		J3Monitor* inflate();
 		uint32_t   hashCode();
-
-		static bool          isUnlocked(uintptr_t header) { return (header & 7) == 1; }
-		static bool          isInflated(uintptr_t header) { return (header & 3) == 2; }
-		static bool          isStackLocked(uintptr_t header) { return !(header & 3); }
-		static J3LockRecord* asLockRecord(uintptr_t header) { return (J3LockRecord*)header; }
-		static J3Monitor*    asMonitor(uintptr_t header) { return (J3Monitor*)(header & ~3); }
-
-		void monitorEnter(J3LockRecord* lockRecord) __attribute__((always_inline));
-		void monitorExit() __attribute__((always_inline));
+		void       monitorEnter(J3LockRecord* lockRecord) __attribute__((always_inline));
+		void       monitorExit() __attribute__((always_inline));
 
 		static J3Object* allocate(J3VirtualTable* vt, uintptr_t n);
 		static J3Object* doNew(J3Class* cl);

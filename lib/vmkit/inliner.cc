@@ -261,6 +261,6 @@ namespace vmkit {
 #endif
 
 	llvm::FunctionPass* createFunctionInlinerPass(CompilationUnit* compiler, bool onlyAlwaysInline) {
-		return new FunctionInlinerPass(compiler, 25*256, onlyAlwaysInline); /* aka 25 instructions */
+		return new FunctionInlinerPass(compiler, 50*256, onlyAlwaysInline); /* aka 50 llvm instructions */
 	}
 }

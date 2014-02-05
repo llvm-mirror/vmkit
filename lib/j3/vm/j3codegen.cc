@@ -357,7 +357,7 @@ void J3CodeGen::invokeVirtual(uint32_t idx) {
 	J3Method*     target = cl->methodAt(idx, 0);
 
 	if(J3Cst::isFinal(target->cl()->access()) || J3Cst::isFinal(target->cl()->access()))
-		invoke(0, target, buildFunction(target)); /* do not remove this optimization */
+		invoke(0, target, buildFunction(target)); /* do not remove this optimization, mandatory for mmtk */
 	else {
 		J3Signature*  type = target->signature();
 		llvm::Value*  funcEntry = funcEntry = builder.getInt32(target->index());
@@ -536,11 +536,6 @@ llvm::CallInst* J3CodeGen::isAssignableTo(llvm::Value* obj, J3ObjectType* type) 
 															 vtType);
 }
 
-void J3CodeGen::inlineCall(llvm::CallInst* call) {
-	//llvm::InlineFunctionInfo ifi;
-	//llvm::InlineFunction(call, ifi, 0);
-}
-
 void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
 	llvm::BasicBlock* after = forwardBranch("instanceof-after", codeReader->tell(), 0, 0);
 	llvm::BasicBlock* nok = newBB("instanceof-null");
@@ -557,7 +552,6 @@ void J3CodeGen::instanceof(llvm::Value* obj, J3ObjectType* type) {
 	llvm::CallInst* is = isAssignableTo(obj, type);
 	stack.push(builder.CreateZExt(is, builder.getInt32Ty()));
 	builder.CreateBr(after);
-	inlineCall(is);
 }
 
 void J3CodeGen::checkCast(llvm::Value* obj, J3ObjectType* type) {
@@ -578,7 +572,6 @@ void J3CodeGen::checkCast(llvm::Value* obj, J3ObjectType* type) {
 
 		llvm::CallInst* is = isAssignableTo(obj, type);
 		builder.CreateCondBr(is, succeed, bbCheckCastFailed);
-		inlineCall(is);
 	}
 }
 
@@ -1557,39 +1550,6 @@ void J3CodeGen::explore() {
 	}
 }
 #endif
-
-void J3CodeGen::z_translate() {
-	bbRet = newBB("ret");
-	llvm::BasicBlock* landingPad = newBB("landing-pad");
-	llvm::Value* val = builder.CreateIntToPtr(llvm::ConstantInt::get(uintPtrTy, (uintptr_t)0x42),
-																						 vm->typeJ3ObjectPtr);	
-	builder.CreateInvoke(funcThrowException, bbRet, landingPad,
-												builder.CreateBitCast(val, funcThrowException->getFunctionType()->getParamType(0)));
-
-	builder.SetInsertPoint(landingPad);
-	llvm::LandingPadInst *caughtResult = builder.CreateLandingPad(vm->typeGXXException, 
-																																 funcGXXPersonality, 
-																																 1, 
-																																 "landing-pad");
-	caughtResult->addClause(gvTypeInfo);
-
-	llvm::Value* excp = builder.CreateBitCast(builder.CreateCall(funcCXABeginCatch, 
-																																 builder.CreateExtractValue(caughtResult, 0)),
-																						 vm->typeJ3ObjectPtr);
-	
-	builder.CreateCall(funcCXAEndCatch);
-
-	builder.CreateCall3(funcEchoDebugExecute, 
-											 builder.getInt32(-1), /* just to see my first exception :) */
-											 buildString("catching exception %p!\n"),
-											 excp);
-	builder.CreateBr(bbRet);
-
-	builder.SetInsertPoint(bbRet);
-	builder.CreateRetVoid();
-
-	llvmFunction->dump();
-}
 
 void J3CodeGen::generateJava() {
 	llvm::BasicBlock* entry = newBB("entry");
