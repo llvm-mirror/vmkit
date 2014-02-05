@@ -388,13 +388,13 @@ J3Monitor* J3Object::inflate() {
 }
 
 bool J3Object::isLockOwner() {
-	J3Thread* self = J3Thread::get();
+	vmkit::Thread* self = vmkit::Thread::get();
 	uintptr_t header = _header;
 
 	if(isInflated(header)) /* inflated */
 		return asMonitor(header)->isOwner(self);
 	else
-		return !isUnlocked(header) && (J3Thread*)J3Thread::get((void*)header) == self;
+		return !isUnlocked(header) && vmkit::Thread::get((void*)header) == self;
 }
 
 /*

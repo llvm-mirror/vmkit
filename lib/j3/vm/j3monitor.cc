@@ -20,7 +20,7 @@ J3Monitor* J3Monitor::prepare(J3Object* _object, uintptr_t _header, J3LockRecord
 	object = _object;
 	record = _record;
 	header = _header;
-	owner  = _record ? J3Thread::get(_record) : 0;
+	owner  = _record ? vmkit::Thread::get(_record) : 0;
 	return this;
 }
 
@@ -35,7 +35,7 @@ void J3Monitor::checkRecord() {
 	}
 }
 
-bool J3Monitor::isOwner(J3Thread* thread) {
+bool J3Monitor::isOwner(vmkit::Thread* thread) {
 	return owner == thread;
 }
 

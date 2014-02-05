@@ -68,7 +68,6 @@ namespace j3 {
 		JavaVM* javaVM() { return &_javaVM; }
 
 		static J3Thread* get();
-		static J3Thread* get(void* ptr);
 
 		static void start(J3ObjectHandle* handle);
 	};

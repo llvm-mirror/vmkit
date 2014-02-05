@@ -227,12 +227,6 @@ llvm::Value* J3CodeGen::typeDescriptor(J3ObjectType* objectType, llvm::Type* typ
 	return type == vm->typeJ3ObjectTypePtr ? v : builder.CreateBitCast(v, type);
 }
 
-llvm::Value* J3CodeGen::spToCurrentThread(llvm::Value* sp) {
-	if(sp->getType()->isIntegerTy())
-		sp = builder.CreateIntToPtr(sp, funcJ3ThreadGetP->getFunctionType()->getParamType(0));
-	return builder.CreateCall(funcJ3ThreadGetP, sp);
-}
-
 llvm::Value* J3CodeGen::currentThread() {
 	return builder.CreateCall(funcJ3ThreadGet);
 }

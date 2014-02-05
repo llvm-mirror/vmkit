@@ -6,10 +6,10 @@
 
 namespace vmkit {
 	class BumpAllocator;
+	class Thread;
 }
 
 namespace j3 {
-	class J3Thread;
 	class J3Object;
 	class J3LockRecord;
 
@@ -19,7 +19,7 @@ namespace j3 {
 
 		J3Monitor*      _next;
 
-		J3Thread*       owner;
+		vmkit::Thread*  owner;
 		uint32_t        lockCount;
 		pthread_mutex_t mutex;
 		pthread_cond_t  cond;
@@ -35,7 +35,7 @@ namespace j3 {
 		J3Monitor* prepare(J3Object* _object, uintptr_t header, J3LockRecord* _record);
 		J3Monitor* prepare();
 
-		bool isOwner(J3Thread* thread);
+		bool isOwner(vmkit::Thread* thread);
 		void lock();
 		void unlock();
 

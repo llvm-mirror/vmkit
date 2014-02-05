@@ -108,7 +108,6 @@ namespace j3 {
 		llvm::Function*     buildFunction(J3Method* method, bool isStub=1);
 		llvm::Value*        typeDescriptor(J3ObjectType* objectType, llvm::Type* type);
 
-		llvm::Value*        spToCurrentThread(llvm::Value* sp);
 		llvm::Value*        currentThread();
 
 		llvm::Value*        nullCheck(llvm::Value* obj);
