@@ -204,7 +204,6 @@ namespace j3 {
 #undef _x
 		llvm::GlobalValue* gvTypeInfo;            /* typename void* */
 		llvm::Function*    gcRoot;             
-		llvm::Function*    frameAddress;
 		llvm::Function*    stackMap;
 		llvm::Function*    patchPoint64;
 		llvm::Function*    patchPointVoid;

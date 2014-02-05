@@ -86,8 +86,6 @@ J3CodeGen::J3CodeGen(vmkit::BumpAllocator* _allocator, J3Method* m, uint32_t _mo
 
 	gcRoot                   = vm->getGCRoot(module);
 
-	frameAddress             = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::frameaddress);
-
 #if 0
 	//stackMap       = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::experimental_stackmap);
 	//patchPointVoid = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::experimental_patchpoint_i64);
@@ -230,13 +228,13 @@ llvm::Value* J3CodeGen::typeDescriptor(J3ObjectType* objectType, llvm::Type* typ
 }
 
 llvm::Value* J3CodeGen::spToCurrentThread(llvm::Value* sp) {
-	return builder.CreateIntToPtr(builder.CreateAnd(builder.CreatePtrToInt(sp, uintPtrTy),
-																									llvm::ConstantInt::get(uintPtrTy, vmkit::Thread::getThreadMask())),
-																 vm->typeJ3Thread);
+	if(sp->getType()->isIntegerTy())
+		sp = builder.CreateIntToPtr(sp, funcJ3ThreadGetP->getFunctionType()->getParamType(0));
+	return builder.CreateCall(funcJ3ThreadGetP, sp);
 }
 
 llvm::Value* J3CodeGen::currentThread() {
-	return spToCurrentThread(builder.CreateCall(frameAddress, builder.getInt32(0)));
+	return builder.CreateCall(funcJ3ThreadGet);
 }
 
 void J3CodeGen::monitorEnter(llvm::Value* obj) {
@@ -257,7 +255,7 @@ void J3CodeGen::monitorEnter(llvm::Value* obj) {
 	
 	builder.CreateStore(builder.CreateIntToPtr(header, recordPtrTy), recordPtr);
 	builder.CreateCondBr(builder.CreateICmpEQ(currentThread(), spToCurrentThread(header)),
-												stackLocked, tryStackLock);
+											 stackLocked, tryStackLock);
 
 	/* try to stack lock */
 	builder.SetInsertPoint(tryStackLock);
@@ -304,7 +302,7 @@ void J3CodeGen::monitorExit(llvm::Value* obj) {
 	llvm::Value* header = builder.CreateLoad(headerPtr);
 	
 	builder.CreateCondBr(builder.CreateICmpEQ(currentThread(), spToCurrentThread(header)),
-												stackUnlock, monitorUnlock);
+											 stackUnlock, monitorUnlock);
 	
 	/* ok, I'm the owner */
 	builder.SetInsertPoint(stackUnlock);

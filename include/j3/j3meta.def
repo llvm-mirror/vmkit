@@ -25,6 +25,7 @@ _x(funcCXAEndCatch,                 "__cxa_end_catch", 0)
 _x(funcFake,                        "j3::J3::forceSymbolDefinition()", 0)
 
 _x(funcJ3ThreadGet,                 "j3::J3Thread::get()", 0)
+_x(funcJ3ThreadGetP,                "j3::J3Thread::get(void*)", 0)
 _x(funcVMKitThreadGet,              "vmkit::Thread::get()", 0)
 _x(funcVMKitThreadGetP,             "vmkit::Thread::get(void*)", 0)
 _x(funcJ3ThreadJniEnv,              "j3::J3Thread::jniEnv()", 0)
