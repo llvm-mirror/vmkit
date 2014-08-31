@@ -13,6 +13,18 @@
 
 <div id="content">
 
+  <!--*********************************************************************-->
+  <h1 style="background:red"><center>The VMKit project is retired</center></h1>
+  <!--*********************************************************************-->
+
+	<font color="red">
+		<p>You can still play with the last VMKit release, but the project is not more maintained.
+		Moreover, the information on these pages may be out of date.</p>
+	</font>
+
+		<p>If you are interested in restarting the project, 
+			please contact <a href="mailto:gael.thomas00@gmail.com">Gaël Thomas</a></p>
+
 <h1>Getting Started: Building and Running VMKit</h1>
 
 
@@ -26,9 +38,9 @@ involved</a> with the vmkit community.</p>
 <p>If you would like to check out and build the project, the current scheme
 is:</p>
 
-<p><b>Prerequisites</b><br/>
-You will have to install a C++ compiler and Java 1.5 or more in order to
-compile vmkit2</p>
+<!-- <p><b>Prerequisites</b><br/> -->
+<!-- You will have to install a C++ compiler and Java 1.5 or more in order to -->
+<!-- compile vmkit2</p> -->
 
 <ol>
   <li>Download <a href="http://llvm.org/releases/3.3/llvm-3.3.src.tar.gz">
@@ -48,42 +60,44 @@ compile vmkit2</p>
   <br>Note: To compile LLVM and VMKit with RTTI enabled, one can pass the parameter
 REQUIRES_RTTI=1 to llvm make. Passing this argument removes the flag -fno-rtti from
 the compiler options. Ex: $ make REQUIRES_RTTI=1
+	
+	<p>
+	<li>Download, compile and install <a href="http://openjdk.java.net/">Openjdk</a> version 6u23
+<!--   <p><b>Skip the Classpath steps if you plan to use OpenJDK.</b><br/> -->
+<!--   <li><a href="ftp://ftp.gnu.org/gnu/classpath/classpath-0.99.tar.gz">Download -->
+<!--    GNU Classpath 0.99</a>:</li> -->
 
-  <p><b>Skip the Classpath steps if you plan to use OpenJDK.</b><br/>
-  <li><a href="ftp://ftp.gnu.org/gnu/classpath/classpath-0.99.tar.gz">Download
-   GNU Classpath 0.99</a>:</li>
-
-  <ul>
-    <li><tt>tar zxvf classpath-0.99.tar.gz</tt></li>
-    <li><tt>cd classpath-0.99</tt></li>
-    <li><tt>./configure --disable-plugin --disable-examples --disable-Werror;
-    make</tt></li>
-    <li><tt>cd lib</li></tt>
-    <li><tt>If you are running on Linux:</li></tt>
-    <ul>
-      <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.so;</li></tt>
-      <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.so;</li></tt>
-      <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.so;</li></tt>
-      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.so;</li>
-      </tt>
-      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.so;</li></tt>
-      <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.so;</li></tt>
-      <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.so;</li></tt>
-      <li><tt>ln -s ../native/jni/java-util/.libs/libjavautil.so;</li></tt>
-    </ul>
-    <li><tt>If you are running on MacOS:</li></tt>
-    <ul>
-      <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.dylib;</li></tt>
-      <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.dylib;</li></tt>
-      <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.dylib;</li></tt>
-      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.dylib;
-      </li></tt>
-      <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.dylib;</li></tt>
-      <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.dylib;</li></tt>
-      <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.dylib;</li></tt>
-      <li><tt>ln -s ../native/jni/java-util/.libs/libjavautil.dylib;</li></tt>
-    </ul>
-  </ul>
+<!--   <ul> -->
+<!--     <li><tt>tar zxvf classpath-0.99.tar.gz</tt></li> -->
+<!--     <li><tt>cd classpath-0.99</tt></li> -->
+<!--     <li><tt>./configure --disable-plugin --disable-examples --disable-Werror; -->
+<!--     make</tt></li> -->
+<!--     <li><tt>cd lib</li></tt> -->
+<!--     <li><tt>If you are running on Linux:</li></tt> -->
+<!--     <ul> -->
+<!--       <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.so;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.so;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.so;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.so;</li> -->
+<!--       </tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.so;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.so;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.so;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-util/.libs/libjavautil.so;</li></tt> -->
+<!--     </ul> -->
+<!--     <li><tt>If you are running on MacOS:</li></tt> -->
+<!--     <ul> -->
+<!--       <li><tt>ln -s ../native/jni/gtk-peer/.libs/libgtkpeer.dylib;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/gconf-peer/.libs/libgconfpeer.dylib;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-io/.libs/libjavaio.dylib;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalangreflect.dylib; -->
+<!--       </li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-lang/.libs/libjavalang.dylib;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-net/.libs/libjavanet.dylib;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-nio/.libs/libjavanio.dylib;</li></tt> -->
+<!--       <li><tt>ln -s ../native/jni/java-util/.libs/libjavautil.dylib;</li></tt> -->
+<!--     </ul> -->
+<!--   </ul> -->
   
   <li>Checkout vmkit:</li>
   <ul>
@@ -108,32 +122,15 @@ the compiler options. Ex: $ make REQUIRES_RTTI=1
           <li><tt>org.mmtk.plan.generational.immix.GenImmix</tt></li>
         </ul>
       </dd>
-      <ul>
-        <li>
-          <p>you can use GNU Classpath by configuring the following :</p>
-          <dt>
-            <tt>--with-gnu-classpath-glibj=&lt;path/to/file/glibj.zip&gt;</tt>
-          </dt>
-          <dd>Tell vmkit where GNU Classpath glibj.zip is located.</dd>
-          <br/>
-          <dt>
-            <tt>--with-gnu-classpath-libs=&lt;path/to/libs/directory&gt;</tt>
-          </dt>
-          <dd>Tell vmkit where GNU Classpath libs are located.</dd>
-        </li>
-        <li>
-          <p>or OpenJDK by configuring :</p>
-          <dt>
-            <tt>--with-classpath-impl=openjdk</tt>
-          </dt>
-          <dd>Tell vmkit to use OpenJDK classpath implementation.</dd>
-          <br/>
-          <dt>
-            <tt>--with-openjdk-path=&lt;directory&gt;</tt>
-          </dt>
-          <dd>Tell vmkit where OpenJDK is located.</dd>
-        </li>
-      </ul>
+      <dt>
+        <tt>--with-classpath-impl=openjdk</tt>
+      </dt>
+      <dd>Tell vmkit to use OpenJDK classpath implementation.</dd>
+      <br/>
+      <dt>
+        <tt>--with-openjdk-path=&lt;directory&gt;</tt>
+      </dt>
+      <dd>Tell vmkit where OpenJDK is located.</dd>
     </dl>
   </ul>
 
