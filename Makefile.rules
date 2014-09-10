@@ -36,7 +36,7 @@ LLC_FLAGS+=-disable-cfi -disable-fp-elim -relocation-model=pic
 OPT_FLAGS+=-disable-cfi -disable-fp-elim 
 
 INCLUDES+=-I$(PROJ_SRC_CWD) -I$(PROJ_SRC_ROOT)/include -I$(PROJ_SRC_ROOT)/lib/vmkit/MMTk -I$(BUILD_DIR) \
-					-I$(shell $(LLVM_CONFIG) --includedir) -I$(shell $(LLVM_CONFIG) --src-root)
+					-I$(shell $(LLVM_CONFIG) --includedir) -I$(shell $(LLVM_CONFIG) --obj-root)/include -I$(shell $(LLVM_CONFIG) --src-root)
 
 WARN_CFLAGS=  -Wall -Wno-long-long -Wno-variadic-macros -Wno-unused-private-field -Wno-unused-variable
 COMMON_CFLAGS+= $(INCLUDES) -ansi -pedantic $(WARN_CFLAGS) -fPIC \
